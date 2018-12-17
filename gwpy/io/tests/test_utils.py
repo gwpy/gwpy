@@ -25,7 +25,7 @@ import tempfile
 
 from six import PY2
 
-from ...tests.utils import TemporaryFilename
+from ...testing.utils import TemporaryFilename
 from .. import utils as io_utils
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

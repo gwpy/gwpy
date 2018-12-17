@@ -31,8 +31,8 @@ from astropy import units
 from astropy.time import Time
 
 from ...detector import Channel
-from ...tests import utils
-from ...tests.mocks import mock
+from ...testing import utils
+from ...testing.compat import mock
 from ...time import LIGOTimeGPS
 from .. import Array
 

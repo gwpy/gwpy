@@ -21,18 +21,12 @@
 
 import inspect
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
-
 from six.moves.urllib.error import HTTPError
 
-import pytest
-
-from gwpy.detector import Channel
-from gwpy.time import LIGOTimeGPS
-from gwpy.segments import (Segment, SegmentList)
+from ..detector import Channel
+from ..time import LIGOTimeGPS
+from ..segments import (Segment, SegmentList)
+from .compat import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

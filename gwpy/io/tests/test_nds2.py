@@ -23,9 +23,9 @@ import os
 
 import pytest
 
-from ...tests import mocks
-from ...tests.mocks import mock
-from ...tests.utils import skip_missing_dependency
+from ...testing import mocks
+from ...testing.compat import mock
+from ...testing.utils import skip_missing_dependency
 from .. import nds2 as io_nds2
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

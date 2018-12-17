@@ -30,7 +30,7 @@ import numpy
 import pytest
 
 from ...segments import (Segment, SegmentList)
-from ...tests.utils import (skip_missing_dependency, TemporaryFilename)
+from ...testing.utils import (skip_missing_dependency, TemporaryFilename)
 from .. import cache as io_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -56,12 +56,6 @@ def cache():
 @pytest.fixture
 def segments():
     return deepcopy(SEGMENTS)
-
-
-@pytest.fixture
-def tmpfile():
-    with TemporaryFilename() as tmp:
-        yield tmp
 
 
 # -- tests --------------------------------------------------------------------

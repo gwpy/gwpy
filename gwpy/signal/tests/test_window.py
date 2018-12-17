@@ -22,7 +22,7 @@
 import numpy
 import pytest
 
-from ...tests import utils
+from ...testing import utils
 from .. import window
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

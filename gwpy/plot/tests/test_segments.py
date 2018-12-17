@@ -33,7 +33,6 @@ from ...time import LIGOTimeGPS
 from .. import SegmentAxes
 from ..segments import SegmentRectangle
 from .test_axes import TestAxes as _TestAxes
-from .utils import usetex  # pylint: disable=unused-import
 
 # extract color cycle
 COLOR_CONVERTER = ColorConverter()

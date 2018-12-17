@@ -40,8 +40,8 @@ from ...frequencyseries import (FrequencySeries, SpectralVariance)
 from ...segments import Segment
 from ...signal import filter_design
 from ...spectrogram import Spectrogram
-from ...tests import (mocks, utils)
-from ...tests.mocks import mock
+from ...testing import (mocks, utils)
+from ...testing.compat import mock
 from ...time import LIGOTimeGPS
 from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
