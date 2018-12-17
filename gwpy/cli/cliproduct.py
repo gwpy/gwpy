@@ -338,7 +338,7 @@ class CliProduct(object):
                            help='when running from ipython '
                                 'allows experimentation')
         group.add_argument('--title', action='store',
-                           help='Set title (below suptitle, defaults to'
+                           help='Set title (below suptitle, defaults to '
                                 'parameter summary')
         group.add_argument('--suptitle',
                            help='1st title line (larger than the others)')
