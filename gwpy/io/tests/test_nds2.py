@@ -79,7 +79,7 @@ class TestNds2DataType(_TestNds2Enum):
         """
         assert self.TEST_CLASS.find(input_) == self.TEST_CLASS.FLOAT64
 
-    @pytest.mark.parametrize('input_', ['blah', numpy.complex256])
+    @pytest.mark.parametrize('input_', ['blah', numpy.float16])
     def test_find_errors(self, input_):
         """Test error raising for :meth:`gwpy.io.nds2.Nds2ChannelType.find`
         """
