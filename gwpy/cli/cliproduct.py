@@ -34,7 +34,7 @@ from functools import wraps
 
 from six import add_metaclass
 
-from matplotlib import rcParams, rc
+from matplotlib import rcParams
 try:
     from matplotlib.cm import viridis as DEFAULT_CMAP
 except ImportError:
@@ -337,8 +337,9 @@ class CliProduct(object):
         group.add_argument('--interactive', action='store_true',
                            help='when running from ipython '
                                 'allows experimentation')
-        group.add_argument('--title', action='append',
-                           help='One or more title lines')
+        group.add_argument('--title', action='store',
+                           help='Set title (below suptitle, defaults to'
+                                'parameter summary')
         group.add_argument('--suptitle',
                            help='1st title line (larger than the others)')
         group.add_argument('--out', default='gwpy.png',
@@ -647,12 +648,11 @@ class CliProduct(object):
 
         if title is None:
             title = [self.get_title().rstrip(', ')]
-        for title_line in title:
-            if self.usetex:
-                title_line = label_to_latex(title_line)
-            if title_line:
-                self.ax.set_title(title_line, fontsize=12)
-                self.log(3, ('Title is: %s' % title_line))
+        if self.usetex:
+            title = label_to_latex(title)
+        if title:
+            self.ax.set_title(title, fontsize=12)
+            self.log(3, ('Title is: %s' % title))
 
     def set_suptitle(self, suptitle):
         """Set the super title for this plot.
