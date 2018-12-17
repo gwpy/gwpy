@@ -201,7 +201,7 @@ def test_auth_connect(connect):
 
 
 @skip_missing_dependency('nds2')
-@mock.patch('gwpy.io.kerberos.kinit')
+@mock.patch('gwpy.io.nds2.kinit')
 @mock.patch(
     'gwpy.io.nds2.connect',
     side_effect=(
