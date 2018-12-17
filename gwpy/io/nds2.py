@@ -22,12 +22,10 @@ to LIGO data.
 
 from __future__ import (absolute_import, print_function)
 
-# pylint: disable=wrong-import-order
 import enum
 import operator
 import os
 import re
-import sys
 import warnings
 from collections import OrderedDict
 from functools import wraps
@@ -36,20 +34,15 @@ from six.moves import reduce
 
 import numpy
 
-try:
-    import nds2
-except ImportError:
-    HAS_NDS2 = False
-else:
-    HAS_NDS2 = True
-
 from ..time import to_gps
 from .kerberos import kinit
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+# regular expression to match LIGO-standard NDS1 hostnames (e.g x1nds0)
 NDS1_HOSTNAME = re.compile(r'[a-z]1nds[0-9]\Z')
 
+# map of default hosts for each interferometer prefix
 DEFAULT_HOSTS = OrderedDict([
     (None, ('nds.ligo.caltech.edu', 31200)),
     ('H1', ('nds.ligo-wa.caltech.edu', 31200)),
@@ -148,12 +141,18 @@ class Nds2DataType(Nds2Enum):
         """
         try:
             return cls._member_map_[dtype]
-        except KeyError as exc:
-            dtype = numpy.dtype(dtype).type
-            for ndstype in cls._member_map_.values():
-                if ndstype.value and ndstype.numpy_dtype is dtype:
-                    return ndstype
-            raise exc
+        except KeyError:
+            try:
+                dtype = numpy.dtype(dtype).type
+            except TypeError:
+                for ndstype in cls._member_map_.values():
+                    if ndstype.value is dtype:
+                        return ndstype
+            else:
+                for ndstype in cls._member_map_.values():
+                    if ndstype.value and ndstype.numpy_dtype is dtype:
+                        return ndstype
+            raise ValueError('%s is not a valid %s' % (dtype, cls.__name__))
 
     UNKNOWN = 0
     INT16 = 1
@@ -243,7 +242,7 @@ def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
         default ``'NDSSERVER'``. The contents of this variable should
         be a comma-separated list of `host:port` strings, e.g.
         ``'nds1.server.com:80,nds2.server.com:80'``
-    epoch : `~gwpy.time.LIGOTimeGPS`, `float`
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
         GPS epoch of data requested
     lookback : `float`
         duration of spinning-disk cache. This value triggers defaulting to
@@ -295,6 +294,13 @@ def connect(host, port=None):
     connection : `nds2.connection`
         a new open connection to the given NDS host
     """
+    import nds2
+    # pylint: disable=no-member
+
+    # set default port for NDS1 connections (required, I think)
+    if port is None and NDS1_HOSTNAME.match(host):
+        port = 8088
+
     if port is None:
         return nds2.connection(host)
     return nds2.connection(host, port)
@@ -319,23 +325,15 @@ def auth_connect(host, port=None):
     connection : `nds2.connection`
         a new open connection to the given NDS host
     """
-    if not HAS_NDS2:
-        raise ImportError("No module named nds2")
-
-    # set default port for NDS1 connections (required, I think)
-    if port is None and NDS1_HOSTNAME.match(host):
-        port = 8088
-
     try:
         return connect(host, port)
     except RuntimeError as exc:
-        if 'Request SASL authentication' in str(exc):
-            print('\nError authenticating against %s' % host,
-                  file=sys.stderr)
-            kinit()
-            return connect(host, port)
-        else:
+        if 'Request SASL authentication' not in str(exc):
             raise
+    warnings.warn('Error authenticating against {0}:{1}'.format(host, port),
+                  NDSWarning)
+    kinit()
+    return connect(host, port)
 
 
 def open_connection(func):
@@ -376,12 +374,8 @@ def reset_epoch(func):
     """
     @wraps(func)
     def wrapped_func(*args, **kwargs):  # pylint: disable=missing-docstring
-        try:
-            connection = kwargs.get('connection')
-        except KeyError:
-            epoch = none
-        else:
-            epoch = connection.current_epoch()
+        connection = kwargs.get('connection', None)
+        epoch = connection.current_epoch() if connection else None
         try:
             return func(*args, **kwargs)
         finally:
@@ -542,8 +536,8 @@ def _strip_ctype(name, ctype, protocol=2):
         ctype = Nds2ChannelType.find(ctypestr).value
         # NDS1 stores channels with trend suffix, so we put it back:
         if protocol == 1 and ctype in (
-               Nds2ChannelType.STREND.value,
-               Nds2ChannelType.MTREND.value
+                Nds2ChannelType.STREND.value,
+                Nds2ChannelType.MTREND.value
         ):
             name += ',{0}'.format(ctypestr)
     return name, ctype
