@@ -34,7 +34,7 @@ from functools import wraps
 
 from six import add_metaclass
 
-from matplotlib import rcParams, rc
+from matplotlib import rcParams
 try:
     from matplotlib.cm import viridis as DEFAULT_CMAP
 except ImportError:
@@ -653,7 +653,6 @@ class CliProduct(object):
         if title:
             self.ax.set_title(title, fontsize=12)
             self.log(3, ('Title is: %s' % title))
-
 
     def set_suptitle(self, suptitle):
         """Set the super title for this plot.
