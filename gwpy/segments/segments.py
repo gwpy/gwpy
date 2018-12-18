@@ -27,6 +27,7 @@ from astropy.io import registry as io_registry
 from ligo.segments import (segment, segmentlist, segmentlistdict)
 
 from ..io.mp import read_multi as io_read_multi
+from ..utils.decorators import return_as
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -124,18 +125,24 @@ class SegmentList(segmentlist):
      Segment(30, infinity)]
     """
 
+    # -- representations ------------------------
+
     def __repr__(self):
         return "<SegmentList([%s])>" % "\n              ".join(map(repr, self))
 
+    def __str__(self):
+        return "[%s]" % "\n ".join(map(str, self))
+
+    # -- type casting ---------------------------
+
+    extent = return_as(Segment)(segmentlist.extent)
+
     def coalesce(self):
-        self = super(SegmentList, self).coalesce()
+        super(SegmentList, self).coalesce()
         for i, seg in enumerate(self):
             self[i] = Segment(seg[0], seg[1])
         return self
     coalesce.__doc__ = segmentlist.coalesce.__doc__
-
-    def __str__(self):
-        return "[%s]" % "\n ".join(map(str, self))
 
     # -- i/o ------------------------------------
 
