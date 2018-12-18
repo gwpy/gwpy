@@ -215,8 +215,11 @@ class TestArray(object):
         assert arraysq.epoch == array.epoch
         assert arraysq.channel == array.channel
 
-    def test_copy(self, array):
-        utils.assert_quantity_sub_equal(array, array.copy())
+    def test_copy(self):
+        array = self.create(channel='X1:TEST')
+        copy = array.copy()
+        utils.assert_quantity_sub_equal(array, copy)
+        assert copy.channel is not array.channel
 
     def test_repr(self, array):
         # just test that it runs
