@@ -68,6 +68,13 @@ class TestSegmentList(object):
 
     # -- test methods ---------------------------
 
+    def test_extent(self, segmentlist):
+        """Test `gwpy.segments.SegmentList.extent returns the right type
+        """
+        extent = segmentlist.extent()
+        assert isinstance(extent, self.ENTRY_CLASS)
+        assert extent == Segment(1, 10)
+
     def test_coalesce(self):
         segmentlist = self.create((1, 2), (3, 4), (4, 5))
         c = segmentlist.coalesce()
