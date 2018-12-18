@@ -20,18 +20,15 @@
 """
 
 import os
+import subprocess
 import sys
 
 import pytest
 
 from ...testing.compat import mock
-from ...testing.utils import TemporaryFilename
 from .. import kerberos as io_kerberos
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-# remove real user's keytab, if present
-_KTNAME = os.environ.get('KRB5_KTNAME', '_NO KT_')
 
 # mocked klist output
 KLIST = b"""Keytab name: FILE:/test.keytab
@@ -40,95 +37,179 @@ KVNO Principal
    1 albert.einstein@LIGO.ORG
    2 ronald.drever@LIGO.ORG"""
 
+# mock os.environ
+MOCK_ENV = None
+
 
 def setup_module():
-    os.environ.pop('KRB5_KTNAME', None)
+    global MOCK_ENV
+    MOCK_ENV = mock.patch.dict(os.environ, {})
+    MOCK_ENV.start()
+    for key in (
+        'KRB5_KTNAME',
+        'KRB5CCNAME',
+    ):
+        os.environ.pop(key, None)
 
 
 def teardown_module():
-    if _KTNAME != '_NO KT_':
-        os.environ['KRB5_KTNAME'] = _KTNAME
+    if MOCK_ENV is not None:
+        MOCK_ENV.stop()
 
 
-def mock_popen_return(popen, out='', err='', returncode=0):
-    mocked_p = mock.Mock()
-    mocked_p.__enter__ = mock.Mock(return_value=mocked_p)
-    mocked_p.__exit__ = mock.Mock(return_value=None)
-    mocked_p.configure_mock(**{
-        'communicate.return_value': (out, err),
-        'poll.return_value': returncode,
-        'returncode': returncode,
-    })
-    popen.return_value = mocked_p
-
-
-@mock.patch('subprocess.Popen')
-def test_parse_keytab(mocked_popen):
-    mock_popen_return(mocked_popen, out=KLIST)
-
+@mock.patch('subprocess.check_output', return_value=KLIST)
+def test_parse_keytab(check_output):
+    """Test `gwpy.io.kerberos.parse_keytab
+    """
     # assert principals get extracted correctly
     principals = io_kerberos.parse_keytab('test.keytab')
     assert principals == [['albert.einstein', 'LIGO.ORG'],
                           ['ronald.drever', 'LIGO.ORG']]
 
     # assert klist fail gets raise appropriately
-    mock_popen_return(mocked_popen, returncode=1)
-    with pytest.raises(io_kerberos.KerberosError):
+    check_output.side_effect = [
+        OSError('something'),
+        subprocess.CalledProcessError(1, 'something else'),
+    ]
+    with pytest.raises(io_kerberos.KerberosError) as exc:
         io_kerberos.parse_keytab('test.keytab')
+    assert str(exc.value) == "Failed to locate klist, cannot read keytab"
+    with pytest.raises(io_kerberos.KerberosError) as exc:
+        io_kerberos.parse_keytab('test.keytab')
+    assert str(exc.value) == "Cannot read keytab 'test.keytab'"
 
 
+@mock.patch('sys.stdout.isatty', return_value=True)
 @mock.patch('gwpy.io.kerberos.which', return_value='/bin/kinit')
-@mock.patch('subprocess.Popen')
-@mock.patch('getpass.getpass', return_value='test')
 @mock.patch('gwpy.io.kerberos.input', return_value='rainer.weiss')
-def test_kinit(raw_input_, getpass, mocked_popen, which, capsys):
-    mocked_popen.return_value.poll.return_value = 0
+@mock.patch('getpass.getpass', return_value='test')
+@mock.patch('subprocess.Popen')
+def test_kinit_up(popen, getpass, input_, which, _, capsys):
+    """Test `gwpy.io.kerberos.kinit` with username and password given
+    """
+    proc = popen.return_value
+    proc.poll.return_value = 0
 
-    # default popen kwargs
-    popen_kwargs = {'stdin': -1, 'stdout': -1, 'env': None}
+    # basic call should prompt for username and password
+    io_kerberos.kinit()
+    which.assert_called_with('kinit')
+    input_.assert_called_with(
+        "Please provide username for the LIGO.ORG kerberos realm: ",
+    )
+    getpass.assert_called_with(
+        prompt="Password for rainer.weiss@LIGO.ORG: ",
+        stream=sys.stdout,
+    )
+    popen.assert_called_with(
+        ['/bin/kinit', 'rainer.weiss@LIGO.ORG'],
+        stdin=-1,
+        stdout=-1,
+        env=None,
+    )
+    proc.communicate.aossert_called_with(b'test')
 
-    # pass username and password, and kinit exe path
-    io_kerberos.kinit(username='albert.einstein', password='test',
-                      exe='/usr/bin/kinit', verbose=True)
-    mocked_popen.assert_called_with(
-        ['/usr/bin/kinit', 'albert.einstein@LIGO.ORG'], **popen_kwargs)
-    out, err = capsys.readouterr()
-    assert out == (
-        'Kerberos ticket generated for albert.einstein@LIGO.ORG\n')
 
-    # configure klisting (remove Drever)
-    mock_popen_return(mocked_popen, out=KLIST.rsplit(b'\n', 1)[0])
-    os.environ['KRB5_KTNAME'] = '/test.keytab'
+@mock.patch('gwpy.io.kerberos.input')
+@mock.patch('getpass.getpass')
+@mock.patch('subprocess.Popen')
+def test_kinit_up_kwargs(popen, getpass, input_):
+    """Test `gwpy.io.kerberos.kinit` with username and password given
+    """
+    proc = popen.return_value
+    proc.poll.return_value = 0
+
+    io_kerberos.kinit(
+        username='albert.einstein',
+        password='test',
+        exe='/usr/bin/kinit',
+    )
+    assert input_.call_count == 0  # can use assert_not_called in python >= 3.5
+    assert getpass.call_count == 0
+    popen.assert_called_with(
+        ['/usr/bin/kinit', 'albert.einstein@LIGO.ORG'],
+        stdin=-1,
+        stdout=-1,
+        env=None,
+    )
+    popen.return_value.communicate.assert_called_with(b'test')
+
+
+@mock.patch('gwpy.io.kerberos.parse_keytab')
+@mock.patch('subprocess.Popen')
+def test_kinit_keytab_dne(popen, parse_keytab):
+    """Test `gwpy.io.kerberos.kinit` with a non-existent keytab
+    """
+    proc = popen.return_value
+    proc.poll.return_value = 0
 
     # test keytab from environment not found (default) prompts user
-    io_kerberos.kinit()
-    mocked_popen.assert_called_with(
-        ['/bin/kinit', 'rainer.weiss@LIGO.ORG'], **popen_kwargs)
+    io_kerberos.kinit(username='test', password='passwd',
+                      exe='/bin/kinit')
+    assert parse_keytab.call_count == 0  # assert_not_called()
+    popen.assert_called_with(
+        ['/bin/kinit', 'test@LIGO.ORG'],
+        stdin=-1,
+        stdout=-1,
+        env=None,
+    )
 
-    # test keytab from enviroment found
-    with TemporaryFilename(suffix='.keytab') as tmp:
-        io_kerberos.kinit(keytab=tmp)
-        mocked_popen.assert_called_with(
-            ['/bin/kinit', '-k', '-t', tmp, 'albert.einstein@LIGO.ORG'],
-            **popen_kwargs)
 
-    os.environ.pop('KRB5_KTNAME', None)
+@mock.patch.dict(os.environ, {'KRB5_KTNAME': '/test.keytab'})
+@mock.patch('os.path.isfile', return_value=True)
+@mock.patch(
+    'gwpy.io.kerberos.parse_keytab',
+    return_value=[['rainer.weiss', 'LIGO.ORG']],
+)
+@mock.patch('subprocess.Popen')
+def test_kinit_keytab(popen, *unused_mocks):
+    """Test `gwpy.io.kerberos.kinit` can handle keytabs properly
+    """
+    proc = popen.return_value
+    proc.poll.return_value = 0
 
-    # pass keytab
-    io_kerberos.kinit(keytab='test.keytab')
-    mocked_popen.assert_called_with(
-        ['/bin/kinit', '-k', '-t', 'test.keytab',
-         'albert.einstein@LIGO.ORG'], **popen_kwargs)
+    # test keytab kwarg
+    io_kerberos.kinit(keytab='test.keytab', exe='/bin/kinit')
+    popen.assert_called_with(
+        ['/bin/kinit', '-k', '-t', 'test.keytab', 'rainer.weiss@LIGO.ORG'],
+        stdin=-1,
+        stdout=-1,
+        env=None,
+    )
 
-    # don't pass keytab (prompts for username and password)
-    io_kerberos.kinit()
-    getpass.assert_called_with(
-        prompt='Password for rainer.weiss@LIGO.ORG: ', stream=sys.stdout)
-    mocked_popen.assert_called_with(
-        ['/bin/kinit', 'rainer.weiss@LIGO.ORG'], **popen_kwargs)
+    # pass keytab via environment
+    io_kerberos.kinit(exe='/bin/kinit')
+    popen.assert_called_with(
+        ['/bin/kinit', '-k', '-t', '/test.keytab', 'rainer.weiss@LIGO.ORG'],
+        stdin=-1,
+        stdout=-1,
+        env=None,
+    )
 
+
+@mock.patch('subprocess.Popen')
+def test_kinit_krb5ccname(popen):
+    """Test `gwpy.io.kerberos.kinit` passes `KRB5CCNAME` to /bin/kinit
+    """
     # test using krb5ccname (credentials cache)
-    io_kerberos.kinit(krb5ccname='/test_cc.krb5')
-    popen_kwargs['env'] = {'KRB5CCNAME': '/test_cc.krb5'}
-    mocked_popen.assert_called_with(
-        ['/bin/kinit', 'rainer.weiss@LIGO.ORG'], **popen_kwargs)
+    # this will raise error because we haven't patched the poll() method
+    # to return 0, but will test that we get the right error
+    with pytest.raises(subprocess.CalledProcessError):
+        io_kerberos.kinit(username='test', password='test',
+                          krb5ccname='/test_cc.krb5', exe='/bin/kinit')
+    popen.assert_called_with(
+        ['/bin/kinit', 'test@LIGO.ORG'],
+        stdin=-1,
+        stdout=-1,
+        env={'KRB5CCNAME': '/test_cc.krb5'},
+    )
+
+
+def test_kinit_notty():
+    """Test `gwpy.io.kerberos.kinit` raises an error in a non-interactive
+    session if it needs to prompt for information.
+
+    By default all tests are executed by pytest in a non-interactive session
+    so we don't have to mock anything!
+    """
+    with pytest.raises(io_kerberos.KerberosError):
+        io_kerberos.kinit(exe='/bin/kinit')
