@@ -591,7 +591,7 @@ class TimeSeriesBase(Series):
         return super(TimeSeriesBase, self).plot(method=method, **kwargs)
 
     @classmethod
-    def from_nds2_buffer(cls, buffer_, **metadata):
+    def from_nds2_buffer(cls, buffer_, scaled=True, copy=True, **metadata):
         """Construct a new series from an `nds2.buffer` object
 
         **Requires:** |nds2|_
@@ -600,6 +600,13 @@ class TimeSeriesBase(Series):
         ----------
         buffer_ : `nds2.buffer`
             the input NDS2-client buffer to read
+
+        scaled : `bool`, optional
+            apply slope and bias calibration to ADC data.
+
+        copy : `bool`, optional
+            if `True`, copy the contained data array to new  to a new array
+
         **metadata
             any other metadata keyword arguments to pass to the `TimeSeries`
             constructor
@@ -610,15 +617,28 @@ class TimeSeriesBase(Series):
             a new `TimeSeries` containing the data from the `nds2.buffer`,
             and the appropriate metadata
         """
-        # cast as TimeSeries and return
+        # get Channel from buffer
         channel = Channel.from_nds2(buffer_.channel)
+
+        # set default metadata
         metadata.setdefault('channel', channel)
         metadata.setdefault('epoch', LIGOTimeGPS(buffer_.gps_seconds,
                                                  buffer_.gps_nanoseconds))
         metadata.setdefault('sample_rate', channel.sample_rate)
         metadata.setdefault('unit', channel.unit)
-        metadata.setdefault('name', str(channel))
-        return cls(buffer_.data, **metadata)
+        metadata.setdefault('name', buffer_.name)
+
+        # unwrap data
+        slope = buffer_.signal_slope
+        offset = buffer_.signal_offset
+        if scaled and (slope != 1 or offset != 0):
+            data = buffer_.data.copy() * slope + offset
+            copy = False
+        else:
+            data = buffer_.data
+
+        # construct new TimeSeries-like object
+        return cls(data, copy=copy, **metadata)
 
     @classmethod
     def from_lal(cls, lalts, copy=True):

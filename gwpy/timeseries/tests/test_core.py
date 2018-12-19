@@ -137,20 +137,43 @@ class TestTimeSeriesBase(_TestSeries):
 
     @utils.skip_missing_dependency('nds2')
     def test_from_nds2_buffer(self):
+        # build fake buffer
         nds_buffer = mocks.nds2_buffer(
-            'X1:TEST', self.data, 1000000000, self.data.shape[0], 'm')
+            'X1:TEST',
+            self.data,
+            1000000000,
+            self.data.shape[0],
+            'm',
+            name='test',
+            slope=2,
+            offset=1,
+        )
+
+        # convert to TimeSeries
         a = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
+
+        # check everything works
         assert isinstance(a, self.TEST_CLASS)
-        utils.assert_array_equal(a.value, self.data)
+        assert not shares_memory(a.value, nds_buffer.data)
+        utils.assert_array_equal(a.value, nds_buffer.data * 2 + 1)
         if not type(a).__name__.startswith('State'):  # states don't have units
             assert a.unit == units.m
         assert a.t0 == 1000000000 * units.s
-        assert a.dt == units.s / self.data.shape[0]
-        assert a.name == 'X1:TEST'
-        assert a.channel == Channel('X1:TEST', sample_rate=self.data.shape[0],
-                                    unit='m', type='raw', dtype='float32')
-        b = self.TEST_CLASS.from_nds2_buffer(nds_buffer, sample_rate=128)
+        assert a.dt == units.s / nds_buffer.data.shape[0]
+        assert a.name == 'test'
+        assert a.channel == Channel(
+            'X1:TEST',
+            sample_rate=self.data.shape[0],
+            unit='m',
+            type='raw',
+            dtype='float32',
+        )
+
+        # check that we can use keywords to override settings
+        b = self.TEST_CLASS.from_nds2_buffer(nds_buffer, scaled=False,
+                                             copy=False, sample_rate=128)
         assert b.dt == 1/128. * units.s
+        assert shares_memory(nds_buffer.data, b.value)
 
     @utils.skip_missing_dependency('lal')
     def test_to_from_lal(self, array):
