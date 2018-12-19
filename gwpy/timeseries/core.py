@@ -1038,6 +1038,7 @@ class TimeSeriesBaseDict(OrderedDict):
             else:
                 tapes = [allow_tape]
             for allow_tape_ in tapes:
+                error = ""  # container for error message from cls.fetch()
                 for host_, port_ in hostlist:
                     try:
                         return cls.fetch(channels, start, end, host=host_,
@@ -1045,12 +1046,13 @@ class TimeSeriesBaseDict(OrderedDict):
                                          type=type, dtype=dtype, pad=pad,
                                          allow_tape=allow_tape_)
                     except (RuntimeError, ValueError) as exc:
-                        warnings.warn(str(exc).split('\n')[0],
+                        error = str(exc)  # need to assign to take out of scope
+                        warnings.warn(error.split('\n', 1)[0],
                                       io_nds2.NDSWarning)
 
                 # if failing occurred because of data on tape, don't try
                 # reading channels individually, the same error will occur
-                if not allow_tape_ and 'Requested data is on tape' in str(exc):
+                if not allow_tape_ and 'Requested data is on tape' in error:
                     continue
 
                 # if we got this far, we can't get all channels in one go
