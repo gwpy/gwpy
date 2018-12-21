@@ -44,7 +44,11 @@ FRAME_LIBRARY = 'LDAStools.frameCPP'
 # error regexs
 FRERR_NO_FRAME_AT_NUM = re.compile(
     r'\ARequest for frame (?P<frnum>\d+) exceeds the range of '
-    r'0 through (?P<nframes>\d+)\Z')
+    r'0 through (?P<nframes>\d+)\Z',
+)
+FRERR_NO_CHANNEL_OF_TYPE = re.compile(
+    r'\ANo Fr(Adc|Proc|Sim)Data structures with the name (?P<channel>\S+)\Z',
+)
 
 # get frameCPP type mapping
 NUMPY_TYPE_FROM_FRVECT = {
@@ -180,9 +184,6 @@ def read_gwf(filename, channels, start=None, end=None, scaled=True,
     stream = io_gwf.open_gwf(filename, 'r')
     nframes = stream.GetNumberOfFrames()
 
-    # get type for all channels
-    ctype = get_channel_types(stream, channels, ctype=ctype)
-
     # find channels
     out = series_class.DictClass()
 
@@ -210,7 +211,8 @@ def read_gwf(filename, channels, start=None, end=None, scaled=True,
         # and read all the channels
         for channel in channels:
             try:
-                new = _read_channel(stream, this, str(channel), ctype[channel],
+                new = _read_channel(stream, this, str(channel),
+                                    ctype.get(channel, None),
                                     epoch, start, end, scaled=scaled,
                                     series_class=series_class)
             except _Skip:  # don't need this frame for this channel
@@ -240,53 +242,27 @@ def _read_channel(stream, num, name, ctype, epoch, start, end,
                   scaled=True, series_class=TimeSeries):
     """Read a channel from a specific frame in a stream
     """
-    _reader = getattr(stream, 'ReadFr{0}Data'.format(ctype.title()))
-    data = _reader(num, name)
+    data = _get_frdata(stream, num, name, ctype=ctype)
     return read_frdata(data, epoch, start, end, name=name,
                        scaled=scaled, series_class=series_class)
 
 
-def get_channel_types(stream, channels, ctype=None):
-    """Determine the frame data type for all channels
+def _get_frdata(stream, num, name, ctype=None):
+    """Brute force-ish method to return the FrData structure for a channel
 
-    Parameters
-    ----------
-    stream : `~LDAStools.frameCPP.IFrameFStream`
-        the frame stream to read
-
-    channels : `list` of `str`
-        the list of channel names to find
-
-    ctype : `dict`, optional
-        ``(name, type)`` pairs for known channel types
-
-    Returns
-    -------
-    ctype : `dict`
-        the input `ctype` dict with types for all channels
+    This saves on pulling the channel type from the TOC
     """
-    ctype = ctype or {}
-
-    toclist = {}  # only get names once
-    toc = None  # only get TOC once
-
-    for channel in channels:
-        name = str(channel)
-        # if ctype not declared, find it from the table-of-contents
-        if not ctype.get(channel, None):
-            toc = toc or stream.GetTOC()
-            for typename in ['Sim', 'Proc', 'ADC']:
-                if typename not in toclist:
-                    toclist[typename] = getattr(toc,
-                                                'Get{0}'.format(typename))()
-                if name in toclist[typename]:
-                    ctype[channel] = typename.lower()
-                    break
-        # if still not found, channel isn't in the frame
-        if not ctype.get(channel, None):
-            raise ValueError(
-                "Channel {0} not found in table of contents".format(name))
-    return ctype
+    ctypes = (ctype,) if ctype else ('adc', 'proc', 'sim')
+    for ctype in ctypes:
+        _reader = getattr(stream, 'ReadFr{0}Data'.format(ctype.title()))
+        try:
+            return _reader(num, name)
+        except IndexError as exc:
+            if FRERR_NO_CHANNEL_OF_TYPE.match(str(exc)):
+                continue
+            raise
+    raise ValueError("no Fr{Adc,Proc,Sim}Data structures with the "
+                     "name {0}".format(name))
 
 
 def _need_frame(frame, start, end):
