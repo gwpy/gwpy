@@ -406,10 +406,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
                                      frametype_match='C01\Z')
         except (ImportError, RuntimeError) as e:
             pytest.skip(str(e))
-        except IOError as exc:
-            if 'reading from stdin' in str(exc):
-                pytest.skip(str(exc))
-            raise
         utils.assert_quantity_sub_equal(ts, losc_16384,
                                         exclude=['name', 'channel', 'unit'])
 
