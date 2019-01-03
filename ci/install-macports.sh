@@ -81,6 +81,9 @@ wvbpid=$!
 disown
 set -x
 
+# install scipy with openblas to fix symbols error
+sudo port -q install ${PY_PREFIX}-scipy +openblas
+
 # install py-gwpy
 sudo port -q install ${PY_PREFIX}-gwpy
 
