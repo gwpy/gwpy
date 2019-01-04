@@ -1749,11 +1749,65 @@ class TimeSeries(TimeSeriesBase):
                                   type=type, **kwargs)
         return self.filter(*zpk, filtfilt=filtfilt)
 
+    def q_gram(self, qrange=(4, 64), frange=(0, float('inf')), mismatch=0.2,
+               snrthresh=5.5, **kwargs):
+        """Scan a `TimeSeries` using the multi-Q transform and return an
+        `EventTable` of the most significant tiles
+
+        Parameters
+        ----------
+        qrange : `tuple` of `float`, optional
+            `(low, high)` range of Qs to scan
+
+        frange : `tuple` of `float`, optional
+            `(low, high)` range of frequencies to scan
+
+        mismatch : `float`, optional
+            maximum allowed fractional mismatch between neighbouring tiles,
+            default: 0.2
+
+        snrthresh : `float`, optional
+            lower inclusive threshold on individual tile SNR to keep in the
+            table, default: 5.5
+
+        **kwargs
+            other keyword arguments to be passed to :meth:`QTiling.transform`,
+            including ``'epoch'`` and ``'search'``
+
+        Returns
+        -------
+        qgram : `EventTable`
+            a table of time-frequency tiles on the most significant `QPlane`
+
+        See Also
+        --------
+        TimeSeries.q_transform
+            for a method to interpolate the raw Q-transform over a regularly
+            gridded spectrogram
+        gwpy.signal.qtransform
+            for code and documentation on how the Q-transform is implemented
+        gwpy.table.EventTable.tile
+            to render this `EventTable` as a collection of polygons
+
+        Notes
+        -----
+        Only tiles with signal energy greater than or equal to
+        `snrthresh ** 2 / 2` will be stored in the output `EventTable`. The
+        table columns are ``'time'``, ``'duration'``, ``'frequency'``,
+        ``'bandwidth'``, and ``'energy'``.
+        """
+        from ..signal.qtransform import q_scan
+        qscan, _ = q_scan(self, mismatch=mismatch, qrange=qrange,
+                          frange=frange, **kwargs)
+        qgram = qscan.table(snrthresh=snrthresh)
+        return qgram
+
     def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
                     gps=None, search=.5, tres=.001, fres=.5, logf=False,
-                    norm='median', outseg=None, whiten=True, fduration=2,
-                    highpass=None, **asd_kw):
-        """Scan a `TimeSeries` using a multi-Q transform
+                    norm='median', mismatch=0.2, outseg=None, whiten=True,
+                    fduration=2, highpass=None, **asd_kw):
+        """Scan a `TimeSeries` using the multi-Q transform and return an
+        interpolated high-resolution spectrogram
 
         Parameters
         ----------
@@ -1789,6 +1843,10 @@ class TimeSeries(TimeSeriesBase):
             default: `True` (``'median'``), other options: `False`,
             ``'mean'``
 
+        mismatch : `float`
+            maximum allowed fractional mismatch between neighbouring tiles,
+            default: 0.2
+
         outseg : `~gwpy.segments.Segment`, optional
             GPS `[start, stop)` segment for output `Spectrogram`
 
@@ -1811,7 +1869,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        specgram : `~gwpy.spectrogram.Spectrogram`
+        out : `~gwpy.spectrogram.Spectrogram`
             output `Spectrogram` of normalised Q energy
 
         See Also
@@ -1822,12 +1880,6 @@ class TimeSeries(TimeSeriesBase):
             for documentation on how the whitening is done
         gwpy.signal.qtransform
             for code and documentation on how the Q-transform is implemented
-        scipy.interpolate
-            for details on how the interpolation is implemented. This method
-            uses `~scipy.interpolate.InterpolatedUnivariateSpline` to
-            cast all frequency rows to the same time-axis, and then
-            `~scipy.interpolate.interpd` to apply the desired frequency
-            resolution across the band.
 
         Notes
         -----
@@ -1867,11 +1919,8 @@ class TimeSeries(TimeSeriesBase):
         >>> ax.set_epoch(0)
         >>> plot.show()
         """  # nopep8
-        from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
+        from ..signal.qtransform import q_scan
         from ..frequencyseries import FrequencySeries
-        from ..spectrogram import Spectrogram
-        from ..signal.qtransform import QTiling
-
         # condition data
         if whiten is True:  # generate ASD dynamically
             window = asd_kw.pop('window', 'hann')
@@ -1885,86 +1934,21 @@ class TimeSeries(TimeSeriesBase):
                 overlap = recommended_overlap(window) * fftlength
             whiten = self.asd(fftlength, overlap, window=window, **asd_kw)
         if isinstance(whiten, FrequencySeries):
-            # apply whitening (with errors on dividing by zero)
+            # apply whitening (with error on division by zero)
             with numpy.errstate(all='raise'):
                 data = self.whiten(asd=whiten, fduration=fduration,
                                    highpass=highpass)
         else:
             data = self
-
-        # perform FFT to feed into Q-transform
-        fdata = data.fft().value
-
-        # metadata
-        epoch = data.x0
-        span = data.span
-        if outseg is None:
-            outseg = span
-
-        # truncate search window to available data
-        if gps is not None:  # search is only used if gps is given
-            search = Segment(gps-search, gps+search) & span
-
-        # generate tiling
-        planes = QTiling(abs(span), self.sample_rate.value,
-                         qrange=qrange, frange=frange)
-
-        # set up results
-        peakq = None
-        peakenergy = 0
-
-        # Q-transform data for each `(Q, frequency)` tile
-        for plane in planes:
-            freqs, normenergies = plane.transform(fdata, norm=norm,
-                                                  epoch=epoch)
-            # find peak energy in this plane and record if loudest
-            for ts in normenergies:
-                if gps is None:
-                    peak = ts.value.max()
-                else:
-                    peak = ts.crop(*search).value.max()
-                if peak > peakenergy:
-                    peakenergy = peak
-                    peakq = plane.q
-                    norms = normenergies
-                    frequencies = freqs
-
-        # build regular Spectrogram from peak-Q data by interpolating each
-        # (Q, frequency) `TimeSeries` to have the same time resolution
-        xout = numpy.arange(outseg[0], outseg[1], tres)
-        nx = xout.size
-
-        ny = frequencies.size
-        out = Spectrogram(numpy.zeros((nx, ny)), x0=outseg[0], dx=tres,
-                          frequencies=frequencies)
-        # record Q in output
-        out.q = peakq
-        # interpolate rows
-        for i, row in enumerate(norms):
-            xrow = numpy.arange(row.x0.value, (row.x0 + row.duration).value,
-                                row.dx.value)
-            interp = InterpolatedUnivariateSpline(xrow, row.value)
-            out[:, i] = interp(xout)
-
-        if fres is None:
-            return out
-
-        # then interpolate the spectrogram to increase the frequency resolution
-        # --- this is done because duncan doesn't like interpolated images
-        #     because they don't support log scaling
-        interp = interp2d(xout, frequencies, out.value.T, kind='cubic')
-        if not logf:
-            outfreq = numpy.arange(planes.frange[0], planes.frange[1], fres)
-        else:
-            # using `~numpy.logspace` here to support numpy-1.7.1 for EPEL7,
-            # but numpy-1.12.0 introduced the function `~numpy.geomspace`
-            logfmin = numpy.log10(planes.frange[0])
-            logfmax = numpy.log10(planes.frange[1])
-            outfreq = numpy.logspace(logfmin, logfmax, fres)
-        new = Spectrogram(interp(xout, outfreq).T,
-                          x0=outseg[0], dx=tres, frequencies=outfreq)
-        new.q = peakq
-        return new
+        # determine search window
+        if gps is None:
+            search = None
+        elif search is not None:
+            search = Segment(gps-search/2, gps+search/2) & self.span
+        qgram, _ = q_scan(data, frange=frange, qrange=qrange, norm=norm,
+                          mismatch=mismatch, search=search)
+        return qgram.interpolate(
+            tres=tres, fres=fres, logf=logf, outseg=outseg)
 
 
 @as_series_dict_class(TimeSeries)
