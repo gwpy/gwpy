@@ -39,6 +39,7 @@ from astropy import units
 from ...frequencyseries import (FrequencySeries, SpectralVariance)
 from ...segments import Segment
 from ...signal import filter_design
+from ...table import EventTable
 from ...spectrogram import Spectrogram
 from ...testing import (mocks, utils)
 from ...testing.compat import mock
@@ -918,6 +919,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # test breaks when you try and 'fir' notch
         with pytest.raises(NotImplementedError):
             losc.notch(10, type='fir')
+
+    def test_q_gram(self, losc):
+        # test simple q-transform
+        qgram = losc.q_gram()
+        assert isinstance(qgram, EventTable)
+        assert qgram.meta['q'] == 45.25483399593904
+        assert qgram['energy'].min() >= 5.5**2 / 2
+        nptest.assert_almost_equal(qgram['energy'].max(), 10559.255014979768)
 
     def test_q_transform(self, losc):
         # test simple q-transform

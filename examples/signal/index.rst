@@ -9,3 +9,4 @@ Signal processing examples
    :numbered:
 
    gw150914
+   qscan
