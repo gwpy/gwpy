@@ -158,7 +158,7 @@ To replace an existing table of the given type in an existing file, while preser
 Coherence WaveBurst ASCII (aka `EVENTS.txt`)
 ============================================
 
-The `Coherent WaveBurst <http://dx.doi.org/10.1088/0264-9381/25/11/114029>`_ analysis pipeline is used to detect generic gravitational-wave bursts, without using a signal model to restrict the analysis, and runs in both low-latency (online) and offline modes over current GWO data.
+The `Coherent WaveBurst <https://doi.org/10.1088/0264-9381/25/11/114029>`_ analysis pipeline is used to detect generic gravitational-wave bursts, without using a signal model to restrict the analysis, and runs in both low-latency (online) and offline modes over current GWO data.
 The analysis uses the ROOT framework for most data products, but also produces ASCII data in a custom format commonly written in a file called ``EVENTS.txt``.
 
 Reading
