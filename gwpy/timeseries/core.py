@@ -51,9 +51,10 @@ from astropy import units
 from astropy import __version__ as astropy_version
 from astropy.io import registry as io_registry
 
-from ..types import (Array2D, Series)
+from ..types import Series
 from ..detector import (Channel, ChannelList)
 from ..io import datafind as io_datafind
+from ..segments import SegmentList
 from ..time import (Time, LIGOTimeGPS, gps_types, to_gps)
 from ..utils import gprint
 
@@ -811,6 +812,24 @@ class TimeSeriesBaseDict(OrderedDict):
     data access methods.
     """
     EntryClass = TimeSeriesBase
+
+    @property
+    def span(self):
+        """The GPS ``[start, stop)`` extent of data in this `dict`
+
+        :type: `~gwpy.segments.Segment`
+        """
+        span = SegmentList()
+        for value in self.values():
+            span.append(value.span)
+        try:
+            return span.extent()
+        except ValueError as exc:  # empty list
+            exc.args = (
+                'cannot calculate span for empty {0}'.format(
+                    type(self).__name__),
+            )
+            raise
 
     @classmethod
     def read(cls, source, *args, **kwargs):
