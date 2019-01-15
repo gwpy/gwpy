@@ -40,6 +40,12 @@ ${PIP} install "pip>=8.0.0" "setuptools>=20.2.2"
 # install test dependencies
 ${PIP} install ${PIP_FLAGS} -r requirements-test.txt
 
+# try and install pytest-cov again, which forces pip to make sure
+# that the right version of pytest is installed
+if grep -q "pytest-cov" requirements-test.txt; then
+    ${PIP} install ${PIP_FLAGS} pytest-cov
+fi
+
 # list all packages
 ${PIP} list installed
 
