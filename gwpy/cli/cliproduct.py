@@ -640,13 +640,14 @@ class CliProduct(object):
         return leg
 
     def set_title(self, title):
-        """Set the title for this plot.
+        """Set the title(s) for this plot.
 
         The `Axes.title` actually serves at the sub-title for the plot,
         typically giving processing parameters and information.
         """
+
         if title is None:
-            title = self.get_title().rstrip(', ')
+            title = [self.get_title().rstrip(', ')]
         if self.usetex:
             title = label_to_latex(title)
         if title:

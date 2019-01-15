@@ -96,9 +96,3 @@ if [ -d /usr/lib64/${PYTHON}/site-packages/LDAStools -a \
      ! -f /usr/lib64/${PYTHON}/site-packages/LDAStools/__init__.py ]; then
     touch /usr/lib64/${PYTHON}/site-packages/LDAStools/__init__.py
 fi
-
-# HACK: remove empty dist-info for python2-root
-_ROOT_DIST_INFO=$(rpm -ql python2-root | grep dist-info)
-if [ ! -s ${_ROOT_DIST_INFO} ]; then
-    rm -f ${_ROOT_DIST_INFO}
-fi
