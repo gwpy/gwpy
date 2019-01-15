@@ -184,8 +184,9 @@ class changelog(Command):
             config = repo.config_reader()
             version = str(tag)
             build = 1000
-            author = config.get_value("user", "name")
-            email = config.get_value("user", "email")
+            author = config.get_value("user", "name", default="user")
+            email = config.get_value("user", "email",
+                                     default="<user@email.com>")
             message = 'Test build'
             date = datetime.datetime.now()
             tz = 0
