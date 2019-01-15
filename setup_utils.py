@@ -167,36 +167,68 @@ class changelog(Command):
             self.start_tag = self._tag_version(self.start_tag)
 
     def format_changelog_entry(self, tag):
+        import git
         log.debug('    parsing changelog entry for {}'.format(tag))
-        if self.format == 'rpm':
-            return self._format_entry_rpm(tag)
-        elif self.format == 'deb':
-            return self._format_entry_deb(tag)
-        raise RuntimeError("unsupported changelog format")
-
-    def _format_entry_rpm(self, tag):
-        tago = tag.tag
-        date = datetime.date.fromtimestamp(tago.tagged_date)
-        dstr = date.strftime('%a %b %d %Y')
-        tagger = tago.tagger
-        message = tago.message.split('\n')[0]
-        return "* {} {} <{}>\n- {}\n".format(dstr, tagger.name, tagger.email,
-                                             message)
-
-    def _format_entry_deb(self, tag):
-        tago = tag.tag
-        date = datetime.datetime.fromtimestamp(tago.tagged_date)
-        dstr = date.strftime('%a, %d %b %Y %H:%M:%S')
-        tz = int(-tago.tagger_tz_offset / 3600. * 100)
-        version = tag.name.strip('v')
-        tagger = tago.tagger
-        message = tago.message.split('\n')[0]
+        if isinstance(tag, git.Tag):
+            tago = tag.tag
+            date = datetime.datetime.fromtimestamp(tago.tagged_date)
+            tz = tago.tagger_tz_offset
+            version = tag.name.strip('v')
+            tagger = tago.tagger
+            author = tago.tagger.name
+            email = tago.tagger.email
+            message = tago.message.split('\n')[0]
+            build = 1
+        else:
+            repo = git.Repo()
+            config = repo.config_reader()
+            version = str(tag)
+            build = 1000
+            author = config.get_value("user", "name")
+            email = config.get_value("user", "email")
+            message = 'Test build'
+            date = datetime.datetime.now()
+            tz = 0
         name = self.distribution.get_name()
-        return ("{} ({}-1) unstable; urgency=low\n\n"
-                "  * {}\n\n"
-                " -- {} <{}>  {} {:+05d}\n".format(
-                    name, version, message,
-                    tagger.name, tagger.email, dstr, tz))
+        if self.format == 'rpm':
+            formatter = self._format_entry_rpm
+        elif self.format == 'deb':
+            formatter = self._format_entry_deb
+        else:
+            raise RuntimeError("unsupported changelog format")
+        return formatter(name, version, build, author, email, message,
+                         date, tz)
+
+    @staticmethod
+    def _format_entry_rpm(name, version, build, author, email, message,
+                          date, tzoffset):
+        return (
+            "* {} {} <{}> - {}-{}\n"
+            "- {}\n".format(
+                date.strftime('%a %b %d %Y'),
+                author,
+                email,
+                version,
+                build,
+                message,
+        ))
+
+    @staticmethod
+    def _format_entry_deb(name, version, build, author, email, message,
+                          date, tzoffset):
+        return (
+            "{} ({}-{}) unstable; urgency=low\n\n"
+            "  * {}\n\n"
+            " -- {} <{}>  {} {:+05d}\n".format(
+                name,
+                version,
+                build,
+                message,
+                author,
+                email,
+                date.strftime('%a, %d %b %Y %H:%M:%S'),
+                int(-tzoffset / 3600. * 100),
+        ))
 
     @staticmethod
     def _tag_version(tag):
@@ -210,10 +242,21 @@ class changelog(Command):
         log.debug('found {} git tags'.format(len(tags)))
         return tags
 
+    def is_tag(self):
+        import git
+        repo = git.Repo()
+        return repo.git.describe() in repo.tags
+
     def run(self):
         log.info('creating changelog')
         lines = []
-        for tag in self.get_git_tags():
+        tags = self.get_git_tags()
+        if not self.is_tag():
+            version = self._tag_version(tags[0]).version
+            devversion = '{0}.{1}.{2}-dev'.format(version[0], version[1],
+                                                  version[2])
+            lines.append(self.format_changelog_entry(devversion))
+        for tag in tags:
             if self.start_tag and self._tag_version(tag) < self.start_tag:
                 log.debug('reached start tag ({}), stopping'.format(
                     self.start_tag))
