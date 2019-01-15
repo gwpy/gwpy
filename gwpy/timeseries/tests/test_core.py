@@ -27,7 +27,7 @@ import pytest
 import numpy
 try:
     from numpy import shares_memory
-except ImportError:  # old numpy
+except ImportError:  # numpy < 1.11.0
     from numpy import may_share_memory as shares_memory
 
 from matplotlib import rc_context

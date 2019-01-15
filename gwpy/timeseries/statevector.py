@@ -34,10 +34,10 @@ from six.moves import range
 
 import numpy
 
-from astropy import units
+from astropy import (units, __version__ as astropy_version)
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
-                   as_series_dict_class, ASTROPY_2_0)
+                   as_series_dict_class)
 from ..types import Array2D
 from ..detector import Channel
 from ..time import Time
@@ -198,7 +198,7 @@ class StateTimeSeries(TimeSeriesBase):
 
     # -- math handling (always boolean) ---------
 
-    if ASTROPY_2_0:
+    if astropy_version >= '2.0.0':  # remove _if_ when we pin astropy >= 2.0.0
         def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
             return super(StateTimeSeries, self).__array_ufunc__(
                 ufunc, method, *inputs, **kwargs).view(bool)
