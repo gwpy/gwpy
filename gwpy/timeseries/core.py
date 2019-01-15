@@ -61,7 +61,6 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 __all__ = ['TimeSeriesBase', 'TimeSeriesBaseDict', 'TimeSeriesBaseList']
 
-ASTROPY_2_0 = astropy_version >= '2.0'
 
 _UFUNC_STRING = {
     'less': '<',
@@ -739,7 +738,7 @@ class TimeSeriesBase(Series):
 
     # -- TimeSeries operations ------------------
 
-    if ASTROPY_2_0:
+    if astropy_version >= '2.0.0':  # remove _if_ when we pin astropy >= 2.0.0
         def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
             # this is new in numpy 1.13, astropy 2.0 adopts it, we need to
             # work out how to handle this and __array_wrap__ together properly
