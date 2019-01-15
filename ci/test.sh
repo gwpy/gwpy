@@ -40,5 +40,8 @@ ${PIP} install "pip>=8.0.0" "setuptools>=20.2.2"
 # install test dependencies
 ${PIP} install ${PIP_FLAGS} -r requirements-test.txt
 
+# list all packages
+${PIP} list installed
+
 # run tests with coverage
 ${PYTHON} -m pytest --pyargs gwpy --cov=gwpy
