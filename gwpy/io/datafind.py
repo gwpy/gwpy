@@ -454,7 +454,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
             continue
         ifos.add(ifo)
 
-        types = find_types(ifo, match=frametype_match, trend=chan.trend,
+        types = find_types(ifo, match=frametype_match, trend=chan.type,
                            connection=connection)
 
         # loop over types testing each in turn
