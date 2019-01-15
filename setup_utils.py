@@ -211,7 +211,8 @@ class changelog(Command):
                 version,
                 build,
                 message,
-        ))
+            )
+        )
 
     @staticmethod
     def _format_entry_deb(name, version, build, author, email, message,
@@ -228,7 +229,8 @@ class changelog(Command):
                 email,
                 date.strftime('%a, %d %b %Y %H:%M:%S'),
                 int(-tzoffset / 3600. * 100),
-        ))
+            )
+        )
 
     @staticmethod
     def _tag_version(tag):
