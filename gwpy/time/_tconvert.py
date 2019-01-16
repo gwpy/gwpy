@@ -233,12 +233,16 @@ def _str_to_datetime(datestr):
     try:  # try known string
         return DATE_STRINGS[str(datestr).lower()]()
     except KeyError:  # any other string
-        try:
-            return dateparser.parse(datestr)
-        except (ValueError, TypeError) as exc:
-            exc.args = ("Cannot parse date string {0!r}: {1}".format(
-                datestr, exc.args[0]),)
-            raise
+        try:  # use maya
+            import maya
+            return maya.when(datestr).datetime()
+        except ImportError:
+            try:  # use dateutil.parse
+                return dateparser.parse(datestr)
+            except (ValueError, TypeError) as exc:  # improve error reporting
+                exc.args = ("Cannot parse date string {0!r}: {1}".format(
+                    datestr, exc.args[0]),)
+                raise
 
 
 def _datetime_to_time(dtm):
