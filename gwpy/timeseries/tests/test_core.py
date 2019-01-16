@@ -19,7 +19,8 @@
 """Unit test for timeseries module
 """
 
-import os
+import operator
+from functools import reduce
 from io import BytesIO
 
 import pytest
@@ -27,7 +28,7 @@ import pytest
 import numpy
 try:
     from numpy import shares_memory
-except ImportError:  # old numpy
+except ImportError:  # numpy < 1.11.0
     from numpy import may_share_memory as shares_memory
 
 from matplotlib import rc_context
@@ -240,6 +241,15 @@ class TestTimeSeriesBaseDict(object):
     def test_series_link(self):
         assert self.ENTRY_CLASS.DictClass is self.TEST_CLASS
         assert self.TEST_CLASS.EntryClass is self.ENTRY_CLASS
+
+    def test_span(self, instance):
+        assert isinstance(instance.span, Segment)
+        assert instance.span == reduce(
+            operator.or_, (ts.span for ts in instance.values()), Segment(0, 0),
+        )
+        with pytest.raises(ValueError) as exc:
+            self.TEST_CLASS().span
+        assert 'cannot calculate span for empty ' in str(exc.value)
 
     def test_copy(self, instance):
         copy = instance.copy()

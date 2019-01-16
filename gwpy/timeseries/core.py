@@ -51,9 +51,10 @@ from astropy import units
 from astropy import __version__ as astropy_version
 from astropy.io import registry as io_registry
 
-from ..types import (Array2D, Series)
+from ..types import Series
 from ..detector import (Channel, ChannelList)
 from ..io import datafind as io_datafind
+from ..segments import SegmentList
 from ..time import (Time, LIGOTimeGPS, gps_types, to_gps)
 from ..utils import gprint
 
@@ -61,7 +62,6 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 __all__ = ['TimeSeriesBase', 'TimeSeriesBaseDict', 'TimeSeriesBaseList']
 
-ASTROPY_2_0 = astropy_version >= '2.0'
 
 _UFUNC_STRING = {
     'less': '<',
@@ -740,7 +740,7 @@ class TimeSeriesBase(Series):
 
     # -- TimeSeries operations ------------------
 
-    if ASTROPY_2_0:
+    if astropy_version >= '2.0.0':  # remove _if_ when we pin astropy >= 2.0.0
         def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
             # this is new in numpy 1.13, astropy 2.0 adopts it, we need to
             # work out how to handle this and __array_wrap__ together properly
@@ -813,6 +813,24 @@ class TimeSeriesBaseDict(OrderedDict):
     data access methods.
     """
     EntryClass = TimeSeriesBase
+
+    @property
+    def span(self):
+        """The GPS ``[start, stop)`` extent of data in this `dict`
+
+        :type: `~gwpy.segments.Segment`
+        """
+        span = SegmentList()
+        for value in self.values():
+            span.append(value.span)
+        try:
+            return span.extent()
+        except ValueError as exc:  # empty list
+            exc.args = (
+                'cannot calculate span for empty {0}'.format(
+                    type(self).__name__),
+            )
+            raise
 
     @classmethod
     def read(cls, source, *args, **kwargs):
