@@ -651,7 +651,8 @@ class TimeSeriesBase(Series):
         # unwrap data
         slope = buffer_.signal_slope
         offset = buffer_.signal_offset
-        if scaled and (slope != 1 or offset != 0):
+        null_scaling = slope == 1. and offset == 0.
+        if scaled and not null_scaling:
             data = buffer_.data.copy() * slope + offset
             copy = False
         else:
