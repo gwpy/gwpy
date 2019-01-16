@@ -337,8 +337,9 @@ class CliProduct(object):
         group.add_argument('--interactive', action='store_true',
                            help='when running from ipython '
                                 'allows experimentation')
-        group.add_argument('--title', action='append',
-                           help='One or more title lines')
+        group.add_argument('--title', action='store',
+                           help='Set title (below suptitle, defaults to '
+                                'parameter summary')
         group.add_argument('--suptitle',
                            help='1st title line (larger than the others)')
         group.add_argument('--out', default='gwpy.png',
@@ -639,13 +640,14 @@ class CliProduct(object):
         return leg
 
     def set_title(self, title):
-        """Set the title for this plot.
+        """Set the title(s) for this plot.
 
         The `Axes.title` actually serves at the sub-title for the plot,
         typically giving processing parameters and information.
         """
+
         if title is None:
-            title = self.get_title().rstrip(', ')
+            title = [self.get_title().rstrip(', ')]
         if self.usetex:
             title = label_to_latex(title)
         if title:
