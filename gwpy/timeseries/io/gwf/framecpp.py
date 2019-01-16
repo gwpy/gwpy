@@ -334,6 +334,9 @@ def read_frdata(frdata, epoch, start, end, name=None, scaled=True,
     except AttributeError:  # not FrAdcData
         slope = None
         bias = None
+        null_scaling = True
+    else:
+        null_scaling = slope == 1. and bias == 0.
 
     out = None
     for j in range(frdata.data.size()):
@@ -345,11 +348,12 @@ def read_frdata(frdata, epoch, start, end, name=None, scaled=True,
         except _Skip:
             continue
 
-        # apply ADC scaling
-        if slope is not None and scaled:
+        # apply ADC scaling (only if interesting; this prevents unnecessary
+        #                                         type-casting errors)
+        if scaled and not null_scaling:
             new *= slope
             new += bias
-        elif slope is not None:
+        if slope is not None:
             # user has deliberately disabled the ADC calibration, so
             # the stored engineering unit is not valid, revert to 'counts':
             new.override_unit('count')
