@@ -167,7 +167,7 @@ def test_host_resolution_order_warning():
     # test warnings for unknown IFO
     with pytest.warns(UserWarning) as record:
         # should produce warning
-        hro = io_nds2.host_resolution_order('X1')
+        hro = io_nds2.host_resolution_order('X1', env=None)
         assert hro == [('nds.ligo.caltech.edu', 31200)]
         # should _not_ produce warning
         hro = io_nds2.host_resolution_order('X1', env='TESTENV')
