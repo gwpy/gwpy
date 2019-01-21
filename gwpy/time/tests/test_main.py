@@ -19,7 +19,14 @@
 """Tests for the `gwpy.time` command-line interface
 """
 
+import datetime
+try:
+    from unittest import mock
+except ImportError:  # python < 3
+    import mock
+
 import pytest
+from dateutil import tz
 
 from .. import __main__ as gwpy_time_cli
 
@@ -27,11 +34,11 @@ from .. import __main__ as gwpy_time_cli
 @pytest.mark.parametrize('args, result', [
     (['Jan 1 2010'], 946339215),
     (['Jan', '1', '2010'], 946339215),
-    (['Oct 30 2016 12:34 CST'], 1161887657),
     (['946339215'], '2010-01-01 00:00:00.000000 UTC'),
-    (['1161887657'], '2016-10-30 18:34:00.000000 UTC'),
+    (['1161887657', '--local'], '2016-10-30 13:34:00.000000 CDT'),
 ])
-def test_main(args, result, capsys):
+@mock.patch('dateutil.tz.tzlocal', return_value=tz.gettz('America/Chicago'))
+def test_main(tzlocal, args, result, capsys):
     gwpy_time_cli.main(args)
     out, err = capsys.readouterr()
     assert not err

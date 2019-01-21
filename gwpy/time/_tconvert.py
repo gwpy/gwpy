@@ -23,6 +23,7 @@ Peter Shawhan.
 """
 
 import datetime
+import warnings
 from decimal import Decimal
 
 from six import string_types
@@ -230,19 +231,32 @@ DATE_STRINGS = {
 def _str_to_datetime(datestr):
     """Convert `str` to `datetime.datetime`.
     """
-    try:  # try known string
+    # try known string
+    try:
         return DATE_STRINGS[str(datestr).lower()]()
     except KeyError:  # any other string
-        try:  # use maya
-            import maya
-            return maya.when(datestr).datetime()
-        except ImportError:
-            try:  # use dateutil.parse
-                return dateparser.parse(datestr)
-            except (ValueError, TypeError) as exc:  # improve error reporting
-                exc.args = ("Cannot parse date string {0!r}: {1}".format(
-                    datestr, exc.args[0]),)
-                raise
+        pass
+
+    # use maya
+    try:
+        import maya
+        return maya.when(datestr).datetime()
+    except ImportError:
+        pass
+
+    # use dateutil.parse
+    with warnings.catch_warnings():
+        # don't allow lazy passing of time-zones
+        warnings.simplefilter("error", RuntimeWarning)
+        try:
+            return dateparser.parse(datestr)
+        except RuntimeWarning as exc:
+            raise ValueError("Cannot parse date string with timezone "
+                             "without maya, please install maya")
+        except (ValueError, TypeError) as exc:  # improve error reporting
+            exc.args = ("Cannot parse date string {0!r}: {1}".format(
+                datestr, exc.args[0]),)
+            raise
 
 
 def _datetime_to_time(dtm):
