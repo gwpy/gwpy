@@ -654,6 +654,7 @@ class CliProduct(object):
             self.ax.set_title(title, fontsize=12)
             self.log(3, ('Title is: %s' % title))
 
+
     def set_suptitle(self, suptitle):
         """Set the super title for this plot.
         """
