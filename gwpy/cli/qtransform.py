@@ -123,7 +123,7 @@ class Qtransform(Spectrogram):
 
         xpix = 1200.
         if args.geometry:
-            m = re.match('(\d+)x(\d+)', args.geometry)
+            m = re.match('(\\d+)x(\\d+)', args.geometry)
             if m:
                 xpix = float(m.group(1))
         # save output x for individual tres calulation
@@ -188,7 +188,7 @@ class Qtransform(Spectrogram):
         bits.extend([
             ('f-range', fformat(self.result.yspan)),
             ('e-range', '{:.3g}, {:.3g}]'.format(self.result.min(),
-                                                       self.result.max())),
+                                                 self.result.max())),
         ])
         return ', '.join([': '.join(bit) for bit in bits])
 
