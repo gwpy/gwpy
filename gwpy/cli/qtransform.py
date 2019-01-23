@@ -216,11 +216,10 @@ class Qtransform(Spectrogram):
             inseg = outseg.protract(4)
             strt_samp = int((inseg.start - self.timeseries[0].t0.value) /
                             self.timeseries[0].dt.value)
-            strt_samp = 0 if strt_samp < 0 else strt_samp
+            strt_samp = max(0, strt_samp)
             end_samp = int((inseg.end - self.timeseries[0].t0.value) /
                            self.timeseries[0].dt.value)
-            end_samp = len(self.timeseries[0]) if end_samp >= \
-                len(self.timeseries[0]) else end_samp
+            end_samp = min(len(self.timeseries[0]), end_samp)
             proc_ts = self.timeseries[0][strt_samp:end_samp]
             tres = float(outseg.end - outseg.start) / 2 / self.args.nx
             self.qxfrm_args['tres'] = tres
