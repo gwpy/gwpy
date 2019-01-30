@@ -193,6 +193,8 @@ class Qtransform(Spectrogram):
         return ', '.join([': '.join(bit) for bit in bits])
 
     def get_spectrogram(self):
+        """Worked on a single timesharing and generates a single Q-transform
+        spectrogram"""
         args = self.args
 
         asd = self.timeseries[0].asd().value
@@ -204,25 +206,25 @@ class Qtransform(Spectrogram):
         else:
             gps = self.qxfrm_args['gps']
             outseg = Segment(gps, gps).protract(args.plot[self.plot_num])
+
+            # This section tries to optimize the amount of data that is
+            # processed and the time resolution needed to create a good
+            # image. NB:For each time span specified
+            # NB: the timeseries h enough data for the longest plot
+            inseg = outseg.protract(-4) & self.timeseries[0].span
+            proc_ts = self.timeseries[0].crop(*inseg)
+
+            #  time resolution is calculated to provide about 4 times
+            # the number of output pixels for interpolation
+            tres = float(outseg.end - outseg.start) / 4 / self.args.nx
+            self.qxfrm_args['tres'] = tres
+            self.qxfrm_args['search'] = int(len(proc_ts) * proc_ts.dt.value)
+
             self.log(3, 'Q-transform arguments:')
             self.log(3, '{0:>15s} = {1}'.format('outseg', outseg))
             for key in sorted(self.qxfrm_args):
                 self.log(3, '{0:>15s} = {1}'.format(key, self.qxfrm_args[key]))
 
-            # This section tries to optimize the amount of data that is
-            # processed and the time resolution needed to create a good
-            # image. NB:For each time span specified
-
-            inseg = outseg.protract(4)
-            strt_samp = int((inseg.start - self.timeseries[0].t0.value) /
-                            self.timeseries[0].dt.value)
-            strt_samp = max(0, strt_samp)
-            end_samp = int((inseg.end - self.timeseries[0].t0.value) /
-                           self.timeseries[0].dt.value)
-            end_samp = min(len(self.timeseries[0]), end_samp)
-            proc_ts = self.timeseries[0][strt_samp:end_samp]
-            tres = float(outseg.end - outseg.start) / 2 / self.args.nx
-            self.qxfrm_args['tres'] = tres
             qtrans = proc_ts.q_transform(outseg=outseg, **self.qxfrm_args)
 
             if args.ymin is None:  # set before Spectrogram.make_plot
