@@ -506,17 +506,19 @@ def write_citing_rst(_):
 
 # -- add css and js files -----------------------------------------------------
 
-CSS_DIR = os.path.join(html_static_path[0], 'css')
-JS_DIR = os.path.join(html_static_path[0], 'js')
 
 def setup_static_content(app):
+    staticdir = os.path.join(SPHINX_DIR, html_static_path[0])
+
     # add stylesheets
-    for cssf in glob.glob(os.path.join(CSS_DIR, '*.css')):
-        app.add_stylesheet(cssf.split(os.path.sep, 1)[1])
+    cssdir = os.path.join(staticdir, 'css')
+    for cssf in glob.glob(os.path.join(cssdir, '*.css')):
+        app.add_stylesheet(os.path.sep.join(cssf.rsplit(os.path.sep, 2)[-2:]))
 
     # add custom javascript
-    for jsf in glob.glob(os.path.join(JS_DIR, '*.js')):
-        app.add_javascript(jsf.split(os.path.sep, 1)[1])
+    jsdir = os.path.join(staticdir, 'js')
+    for jsf in glob.glob(os.path.join(jsdir, '*.js')):
+        app.add_javascript(os.path.sep.join(jsf.rsplit(os.path.sep, 2)[-2:]))
 
 
 # -- setup --------------------------------------------------------------------
