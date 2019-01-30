@@ -263,8 +263,12 @@ class TestTable(object):
             # check write
             try:
                 table.write(tmp, 'test_read_write_gwf')
-            except ImportError as e:
-                pytest.skip(str(e))
+            except ImportError as exc:  # no frameCPP
+                pytest.skip(str(exc))
+            except TypeError as exc:  # frameCPP broken (2.6.7)
+                if 'ParamList' in str(exc):
+                    pytest.skip("bug in python-ldas-tools-framecpp")
+                raise
 
             # check read gives back same table
             t2 = self.TABLE.read(tmp, 'test_read_write_gwf', columns=columns)
