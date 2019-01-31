@@ -650,7 +650,7 @@ def q_scan(data, mismatch=0.2, qrange=(4, 64), frange=(0, float('inf')),
     if isinstance(data, TimeSeries):
         duration = abs(data.span)
         sampling = data.sample_rate.to('Hz').value
-        kwargs.update({'epoch': data.epoch.value})
+        kwargs.update({'epoch': data.t0.value})
         data = data.fft().value
     # return a raw Q-transform and its significance
     qgram, N = QTiling(duration, sampling, mismatch=mismatch, qrange=qrange,
