@@ -46,7 +46,7 @@ class Qtransform(Spectrogram):
             'gps': float(args.gps),
             'search': args.search / 2.,
             'fres': 0.5,
-            'tres': 0.002,
+            'tres': args.tres,
             'whiten': not args.nowhiten,
         }
         if args.qrange is not None:
@@ -112,11 +112,25 @@ class Qtransform(Spectrogram):
         """
         gps = args.gps
         search = args.search
-        # ennsure we have enough data for filter settling
+        # ensure we have enough data for filter settling
         max_plot = max(args.plot)
         search = max(search, max_plot * 2 + 6)
+        args.search = search
         self.log(3, "Search window: {0:.0f} sec, max plot window {1:.0f}".
                  format(search, max_plot))
+
+        # make sure we don't create too big interpolations
+
+        xpix = 1200.
+        if args.geometry:
+            m = re.match('(\\d+)x(\\d+)', args.geometry)
+            if m:
+                xpix = float(m.group(1))
+        # save output x for individual tres calulation
+        args.nx = xpix
+        self.args.tres = search / xpix / 2
+        self.log(3, 'Max time resolution (tres) set to {:.4f}'.format(
+                self.args.tres))
 
         args.start = [[int(gps - search/2)]]
         if args.epoch is None:
@@ -166,17 +180,21 @@ class Qtransform(Spectrogram):
             return '{0:.2f}'.format(x)
 
         bits = [('Q', fformat(self.result.q))]
+        bits.append(('tres', '{:.3g}'.format(self.qxfrm_args['tres'])))
         if self.qxfrm_args.get('qrange'):
             bits.append(('q-range', fformat(self.qxfrm_args['qrange'])))
         if self.qxfrm_args['whiten']:
             bits.append(('whitened',))
         bits.extend([
-            ('calc f-range', fformat(self.result.yspan)),
-            ('calc e-range', fformat((self.result.min(), self.result.max()))),
+            ('f-range', fformat(self.result.yspan)),
+            ('e-range', '{:.3g}, {:.3g}]'.format(self.result.min(),
+                                                 self.result.max())),
         ])
-        return ', '.join(['='.join(bit) for bit in bits])
+        return ', '.join([': '.join(bit) for bit in bits])
 
     def get_spectrogram(self):
+        """Worked on a single timesharing and generates a single Q-transform
+        spectrogram"""
         args = self.args
 
         asd = self.timeseries[0].asd().value
@@ -188,9 +206,26 @@ class Qtransform(Spectrogram):
         else:
             gps = self.qxfrm_args['gps']
             outseg = Segment(gps, gps).protract(args.plot[self.plot_num])
-            qtrans = self.timeseries[0].q_transform(
-                outseg=outseg,
-                **self.qxfrm_args)
+
+            # This section tries to optimize the amount of data that is
+            # processed and the time resolution needed to create a good
+            # image. NB:For each time span specified
+            # NB: the timeseries h enough data for the longest plot
+            inseg = outseg.protract(-4) & self.timeseries[0].span
+            proc_ts = self.timeseries[0].crop(*inseg)
+
+            #  time resolution is calculated to provide about 4 times
+            # the number of output pixels for interpolation
+            tres = float(outseg.end - outseg.start) / 4 / self.args.nx
+            self.qxfrm_args['tres'] = tres
+            self.qxfrm_args['search'] = int(len(proc_ts) * proc_ts.dt.value)
+
+            self.log(3, 'Q-transform arguments:')
+            self.log(3, '{0:>15s} = {1}'.format('outseg', outseg))
+            for key in sorted(self.qxfrm_args):
+                self.log(3, '{0:>15s} = {1}'.format(key, self.qxfrm_args[key]))
+
+            qtrans = proc_ts.q_transform(outseg=outseg, **self.qxfrm_args)
 
             if args.ymin is None:  # set before Spectrogram.make_plot
                 args.ymin = qtrans.yspan[0]

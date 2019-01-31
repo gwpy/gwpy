@@ -647,12 +647,15 @@ class CliProduct(object):
         """
 
         if title is None:
-            title = [self.get_title().rstrip(', ')]
+            title_line = self.get_title().rstrip(', ')
+        else:
+            title_line = title
+
         if self.usetex:
-            title = label_to_latex(title)
-        if title:
-            self.ax.set_title(title, fontsize=12)
-            self.log(3, ('Title is: %s' % title))
+            title_line = label_to_latex(title_line)
+        if title_line:
+            self.ax.set_title(title_line, fontsize=12)
+            self.log(3, ('Title is: %s' % title_line))
 
     def set_suptitle(self, suptitle):
         """Set the super title for this plot.
