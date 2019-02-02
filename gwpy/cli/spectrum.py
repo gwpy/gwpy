@@ -23,6 +23,7 @@
 """
 
 from astropy.time import Time
+import warnings
 
 from .cliproduct import (FrequencyDomainProduct, FFTMixin, unique)
 from ..plot import Plot
@@ -97,13 +98,27 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
         plot = Plot(figsize=self.figsize, dpi=self.dpi)
         ax = plot.gca()
 
-        for series in self.timeseries:
+        nlegargs = len(self.args.legend[0])
+        if nlegargs > 0 and nlegargs != self.n_datasets:
+            warnings.warn('The number of legends sppecified must match '
+                          'the number of time series'
+                          ' (channels * start times).  '
+                          'There are {:d} series and {:d} legends'.format(
+                    len(self.timeseries), len(self.args.legend)))
+            nlegargs = 0  # don't use  the
+        for i in range(0, self.n_datasets):
+            series = self.timeseries[i]
+            if nlegargs:
+                label = self.args.legend[0][i]
+            else:
+                label = series.channel.name
+                if len(self.start_list) > 1:
+                    label += ', {0}'.format(series.epoch.gps)
+
             asd = series.asd(fftlength=fftlength, overlap=overlap)
             self.spectra.append(asd)
 
-            label = series.channel.name
-            if len(self.start_list) > 1:
-                label += ', {0}'.format(series.epoch.gps)
+
             if self.usetex:
                 label = label_to_latex(label)
 
