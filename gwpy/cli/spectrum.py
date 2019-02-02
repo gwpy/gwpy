@@ -98,14 +98,19 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
         plot = Plot(figsize=self.figsize, dpi=self.dpi)
         ax = plot.gca()
 
-        nlegargs = len(self.args.legend[0])
+        # handle user specified plot labels
+        if self.args.legend:
+            nlegargs = len(self.args.legend[0])
+        else:
+            nlegargs = 0
         if nlegargs > 0 and nlegargs != self.n_datasets:
-            warnings.warn('The number of legends sppecified must match '
+            warnings.warn('The number of legends specified must match '
                           'the number of time series'
                           ' (channels * start times).  '
                           'There are {:d} series and {:d} legends'.format(
-                    len(self.timeseries), len(self.args.legend)))
-            nlegargs = 0  # don't use  the
+                            len(self.timeseries), len(self.args.legend)))
+            nlegargs = 0  # don't use  themm
+
         for i in range(0, self.n_datasets):
             series = self.timeseries[i]
             if nlegargs:
@@ -117,7 +122,6 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
 
             asd = series.asd(fftlength=fftlength, overlap=overlap)
             self.spectra.append(asd)
-
 
             if self.usetex:
                 label = label_to_latex(label)
