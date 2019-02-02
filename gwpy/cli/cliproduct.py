@@ -346,7 +346,7 @@ class CliProduct(object):
                            help='output filename')
 
         # legends match input files in position are displayed if specified.
-        group.add_argument('--legend', nargs='*', action='append',
+        group.add_argument('--legend', nargs='+', action='append', default=[],
                            help='strings to match data files')
         group.add_argument('--nolegend', action='store_true',
                            help='do not display legend')
@@ -632,11 +632,23 @@ class CliProduct(object):
         """Create a legend for this product (if applicable)
         """
         leg = self.ax.legend(prop={'size': 10})
-        if self.n_datasets == 1 and leg:
-            try:
-                leg.remove()
-            except NotImplementedError:
-                leg.set_visible(False)
+        if leg:
+            nlegargs = len(self.args.legend)
+            if self.n_datasets == 1 and nlegargs == 0:
+                try:
+                    leg.remove()
+                except NotImplementedError:
+                    leg.set_visible(False)
+            elif nlegargs == self.n_datasets:
+                legend_text = leg.get_texts()
+                for i in range(0, len(self.args.legend)):
+                    legend_text[i].set_text( self.args.legend[i][0])
+            elif nlegargs != self.n_datasets:
+                warnings.warn('The number of legends sppecified must match '
+                              'the number of time series'
+                              ' (channels * start times).  '
+                              'There are {:d} series and {:d} legends'.format(
+                               len(self.timeseries), len(self.args.legend)))
         return leg
 
     def set_title(self, title):
