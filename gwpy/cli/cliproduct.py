@@ -346,7 +346,7 @@ class CliProduct(object):
                            help='output filename')
 
         # legends match input files in position are displayed if specified.
-        group.add_argument('--legend', nargs='*', action='append',
+        group.add_argument('--legend', nargs='+', action='append', default=[],
                            help='strings to match data files')
         group.add_argument('--nolegend', action='store_true',
                            help='do not display legend')
@@ -632,7 +632,7 @@ class CliProduct(object):
         """Create a legend for this product (if applicable)
         """
         leg = self.ax.legend(prop={'size': 10})
-        if self.n_datasets == 1 and leg:
+        if leg and self.n_datasets == 1:
             try:
                 leg.remove()
             except NotImplementedError:
