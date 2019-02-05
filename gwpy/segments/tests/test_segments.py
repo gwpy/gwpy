@@ -25,8 +25,7 @@ import tempfile
 
 import pytest
 
-from ...tests.utils import (assert_segmentlist_equal, skip_missing_dependency,
-                            TemporaryFilename)
+from ...testing.utils import (assert_segmentlist_equal, TemporaryFilename)
 from ...time import LIGOTimeGPS
 from .. import (Segment, SegmentList)
 
@@ -69,6 +68,13 @@ class TestSegmentList(object):
 
     # -- test methods ---------------------------
 
+    def test_extent(self, segmentlist):
+        """Test `gwpy.segments.SegmentList.extent returns the right type
+        """
+        extent = segmentlist.extent()
+        assert isinstance(extent, self.ENTRY_CLASS)
+        assert extent == Segment(1, 10)
+
     def test_coalesce(self):
         segmentlist = self.create((1, 2), (3, 4), (4, 5))
         c = segmentlist.coalesce()
@@ -78,7 +84,6 @@ class TestSegmentList(object):
 
     # -- test I/O -------------------------------
 
-    @skip_missing_dependency('glue.segmentsUtils')
     def test_read_write_segwizard(self, segmentlist):
         with TemporaryFilename(suffix='.txt') as tmp:
             # check write/read returns the same list

@@ -21,18 +21,12 @@
 
 import inspect
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
-
 from six.moves.urllib.error import HTTPError
 
-import pytest
-
-from gwpy.detector import Channel
-from gwpy.time import LIGOTimeGPS
-from gwpy.segments import (Segment, SegmentList)
+from ..detector import Channel
+from ..time import LIGOTimeGPS
+from ..segments import (Segment, SegmentList)
+from .compat import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -120,14 +114,19 @@ def segdb_query_segments(result):
 
 # -- NDS2 ---------------------------------------------------------------------
 
-def nds2_buffer(channel, data, epoch, sample_rate, unit):
+def nds2_buffer(channel, data, epoch, sample_rate, unit,
+                name=None, slope=1, offset=0):
     import nds2
     epoch = LIGOTimeGPS(epoch)
     ndsbuffer = mock.create_autospec(nds2.buffer)
     ndsbuffer.length = len(data)
     ndsbuffer.channel = nds2_channel(channel, sample_rate, unit)
+    ndsbuffer.name = name or ndsbuffer.channel.name
+    ndsbuffer.sample_rate = sample_rate
     ndsbuffer.gps_seconds = epoch.gpsSeconds
     ndsbuffer.gps_nanoseconds = epoch.gpsNanoSeconds
+    ndsbuffer.signal_slope = slope
+    ndsbuffer.signal_offset = offset
     ndsbuffer.data = data
     return ndsbuffer
 
@@ -152,7 +151,7 @@ def nds2_channel(name, sample_rate, unit):
     return channel
 
 
-def nds2_connection(host='nds.test.gwpy', port=31200, buffers=[]):
+def nds2_connection(host='nds.test.gwpy', port=31200, buffers=[], protocol=2):
     import nds2
     NdsConnection = mock.create_autospec(nds2.connection)
     try:
@@ -162,6 +161,7 @@ def nds2_connection(host='nds.test.gwpy', port=31200, buffers=[]):
         pass
     NdsConnection.get_host.return_value = host
     NdsConnection.get_port.return_value = int(port)
+    NdsConnection.get_protocol.return_value = int(protocol)
 
     def iterate(start, end, names):
         if not buffers:
@@ -175,6 +175,22 @@ def nds2_connection(host='nds.test.gwpy', port=31200, buffers=[]):
         return [b.channel for b in buffers if b.channel.name == name]
 
     NdsConnection.find_channels = find_channels
+
+    def get_availability(names):
+        out = []
+        for buff in buffers:
+            name = '{0.name},{0.type}'.format(Channel.from_nds2(buff.channel))
+            if name not in names:
+                segs = []
+            else:
+                start = buff.gps_seconds + buff.gps_nanoseconds * 1e-9
+                end = start + buff.sample_rate * buff.length
+                segs = [(start, end)]
+            out.append(nds2_availability(name, segs))
+        return out
+
+    NdsConnection.get_availability = get_availability
+
     return NdsConnection
 
 
@@ -192,28 +208,3 @@ def nds2_segment(segment):
     nds2seg.gps_start = segment[0]
     nds2seg.gps_stop = segment[1]
     return nds2seg
-
-
-# -- glue.datafind ------------------------------------------------------------
-
-def mock_find_credential():
-    return '/mock/cert/path', '/mock/key/path'
-
-
-def mock_datafind_connection(framefile):
-    try:
-        from lal.utils import CacheEntry
-    except ImportError as e:
-        pytest.skip(str(e))
-    from glue import datafind
-    ce = CacheEntry.from_T050017(framefile)
-    frametype = ce.description
-    # create mock up of connection object
-    DatafindConnection = mock.create_autospec(
-        datafind.GWDataFindHTTPConnection)
-    DatafindConnection.find_types.return_value = [frametype]
-    DatafindConnection.find_latest.return_value = [ce]
-    DatafindConnection.find_frame_urls.return_value = [ce]
-    DatafindConnection.host = 'mockhost'
-    DatafindConnection.port = 80
-    return DatafindConnection

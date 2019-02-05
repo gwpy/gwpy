@@ -28,7 +28,7 @@ from scipy import __version__ as scipy_version
 from astropy import units
 
 from ... import astro
-from ...tests import utils
+from ...testing import utils
 from ...timeseries import TimeSeries
 from ...frequencyseries import FrequencySeries
 
@@ -69,9 +69,9 @@ else:
 
 @pytest.fixture(scope='module')
 def psd():
-    h5path = os.path.join(utils.TEST_DATA_DIR, 'HLV-HW100916-968654552-1.hdf')
     try:
-        data = TimeSeries.read(h5path, 'L1:LDAS-STRAIN', format='hdf5')
+        data = TimeSeries.read(utils.TEST_HDF5_FILE, 'L1:LDAS-STRAIN',
+                               format='hdf5')
     except ImportError as e:
         pytest.skip(str(e))
     return data.psd(.4, overlap=.2, window=('kaiser', 24))

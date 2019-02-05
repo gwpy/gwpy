@@ -45,8 +45,8 @@ Debian Linux
 
     $ apt-get install python3-gwpy
 
-Supported python versions: 2.7 (all), 3.4 (Jessie), 3.5 (Stretch), 3.6 (Buster),
-`click here <https://wiki.ligo.org/DASWG/SoftwareOnDebian>`__ for
+Supported python versions: 2.7 (all), 3.5 (Stretch), 3.6 (Buster),
+`click here <https://wiki.ligo.org/Computing/DASWG/SoftwareOnDebian>`__ for
 instructions on how to add the required repositories.
 
 

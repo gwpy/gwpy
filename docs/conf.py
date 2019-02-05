@@ -28,8 +28,7 @@ from string import Template
 
 from six.moves.configparser import (ConfigParser, NoOptionError)
 
-from matplotlib import use
-use('agg')
+import matplotlib
 
 from sphinx.util import logging
 
@@ -39,8 +38,9 @@ from numpydoc import docscrape_sphinx
 
 import gwpy
 from gwpy import _version as gwpy_version
-from gwpy.plot.rc import DEFAULT_PARAMS as GWPY_PLOT_PARAMS
 from gwpy.utils.sphinx import zenodo
+
+matplotlib.use('agg')
 
 GWPY_VERSION = gwpy_version.get_versions()
 
@@ -161,7 +161,7 @@ autosummary_generate = True
 
 # -- plot_directive -----------------------------
 
-plot_rcparams = GWPY_PLOT_PARAMS
+plot_rcparams = dict(matplotlib.rcParams)
 plot_rcparams.update({
     'backend': 'agg',
 })
@@ -506,17 +506,19 @@ def write_citing_rst(_):
 
 # -- add css and js files -----------------------------------------------------
 
-CSS_DIR = os.path.join(html_static_path[0], 'css')
-JS_DIR = os.path.join(html_static_path[0], 'js')
 
 def setup_static_content(app):
+    staticdir = os.path.join(SPHINX_DIR, html_static_path[0])
+
     # add stylesheets
-    for cssf in glob.glob(os.path.join(CSS_DIR, '*.css')):
-        app.add_stylesheet(cssf.split(os.path.sep, 1)[1])
+    cssdir = os.path.join(staticdir, 'css')
+    for cssf in glob.glob(os.path.join(cssdir, '*.css')):
+        app.add_stylesheet(os.path.sep.join(cssf.rsplit(os.path.sep, 2)[-2:]))
 
     # add custom javascript
-    for jsf in glob.glob(os.path.join(JS_DIR, '*.js')):
-        app.add_javascript(jsf.split(os.path.sep, 1)[1])
+    jsdir = os.path.join(staticdir, 'js')
+    for jsf in glob.glob(os.path.join(jsdir, '*.js')):
+        app.add_javascript(os.path.sep.join(jsf.rsplit(os.path.sep, 2)[-2:]))
 
 
 # -- setup --------------------------------------------------------------------

@@ -21,6 +21,8 @@
 
 import six
 
+from six.moves.urllib.parse import urlparse
+
 from ..time import to_gps
 from ..utils import shell
 from .cache import read_cache
@@ -66,6 +68,33 @@ def identify_gwf(origin, filepath, fileobj, *args, **kwargs):
                     return True
 
 
+def open_gwf(filename, mode='r'):
+    """Open a filename for reading or writing GWF format data
+
+    Parameters
+    ----------
+    filename : `str`
+        the path to read from, or write to
+
+    mode : `str`, optional
+        either ``'r'`` (read) or ``'w'`` (write)
+
+    Returns
+    -------
+    `LDAStools.frameCPP.IFrameFStream`
+        the input frame stream (if `mode='r'`), or
+    `LDAStools.frameCPP.IFrameFStream`
+        the output frame stream (if `mode='w'`)
+    """
+    if mode not in ('r', 'w'):
+        raise ValueError("mode must be either 'r' or 'w'")
+    from LDAStools import frameCPP
+    filename = urlparse(filename).path  # strip file://localhost or similar
+    if mode == 'r':
+        return frameCPP.IFrameFStream(str(filename))
+    return frameCPP.OFrameFStream(str(filename))
+
+
 def write_frames(filename, frames, compression=257, compression_level=6):
     """Write a list of frame objects to a file
 
@@ -86,8 +115,10 @@ def write_frames(filename, frames, compression=257, compression_level=6):
         compression level for given scheme
     """
     from LDAStools import frameCPP
+
     # open stream
-    stream = frameCPP.OFrameFStream(filename)
+    stream = open_gwf(filename, 'w')
+
     # write frames one-by-one
     if isinstance(frames, frameCPP.FrameH):
         frames = [frames]
@@ -282,7 +313,7 @@ def _iter_channels(framefile):
     """
     from LDAStools import frameCPP
     if not isinstance(framefile, frameCPP.IFrameFStream):
-        framefile = frameCPP.IFrameFStream(framefile)
+        framefile = open_gwf(framefile, 'r')
     toc = framefile.GetTOC()
     for typename in ('Sim', 'Proc', 'ADC'):
         typen = typename.lower()

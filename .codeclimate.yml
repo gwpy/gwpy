@@ -33,9 +33,9 @@ ratings:
 
 exclude_paths:
 - "versioneer.py"
+- "ci/*"
 - "docs/*"
 - "examples/*"
 - "gwpy/_version.py"
 - "**/tests/"
 - "gwpy/utils/sphinx/epydoc.py"
-- "gwpy/plotter/"

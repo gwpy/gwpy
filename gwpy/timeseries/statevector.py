@@ -34,10 +34,10 @@ from six.moves import range
 
 import numpy
 
-from astropy import units
+from astropy import (units, __version__ as astropy_version)
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
-                   as_series_dict_class, ASTROPY_2_0)
+                   as_series_dict_class)
 from ..types import Array2D
 from ..detector import Channel
 from ..time import Time
@@ -47,6 +47,70 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 __all__ = ['StateTimeSeries', 'StateTimeSeriesDict',
            'StateVector', 'StateVectorDict', 'StateVectorList', 'Bits']
+
+
+# -- utilities ----------------------------------------------------------------
+
+def _bool_segments(array, start=0, delta=1, minlen=1):
+    """Yield segments of consecutive `True` values in a boolean array
+
+    Parameters
+    ----------
+    array : `iterable`
+        An iterable of boolean-castable values.
+
+    start : `float`
+        The value of the first sample on the indexed axis
+        (e.g.the GPS start time of the array).
+
+    delta : `float`
+        The step size on the indexed axis (e.g. sample duration).
+
+    minlen : `int`, optional
+        The minimum number of consecutive `True` values for a segment.
+
+    Yields
+    ------
+    segment : `tuple`
+        ``(start + i * delta, start + (i + n) * delta)`` for a sequence
+        of ``n`` consecutive True values starting at position ``i``.
+
+    Notes
+    -----
+    This method is adapted from original code written by Kipp Cannon and
+    distributed under GPLv3.
+
+    The datatype of the values returned will be the larger of the types
+    of ``start`` and ``delta``.
+
+    Examples
+    --------
+    >>> print(list(_bool_segments([0, 1, 0, 0, 0, 1, 1, 1, 0, 1]))
+    [(1, 2), (5, 8), (9, 10)]
+    >>> print(list(_bool_segments([0, 1, 0, 0, 0, 1, 1, 1, 0, 1]
+    ...                           start=100., delta=0.1))
+    [(100.1, 100.2), (100.5, 100.8), (100.9, 101.0)]
+    """
+    array = iter(array)
+    i = 0
+    while True:
+        try:  # get next value
+            val = next(array)
+        except StopIteration:  # end of array
+            return
+
+        if val:  # start of new segment
+            n = 1  # count consecutive True
+            try:
+                while next(array):  # run until segment will end
+                    n += 1
+            except StopIteration:  # have reached the end
+                return  # stop
+            finally:  # yield segment (including at StopIteration)
+                if n >= minlen:  # ... if long enough
+                    yield (start + i * delta, start + (i + n) * delta)
+            i += n
+        i += 1
 
 
 # -- StateTimeSeries ----------------------------------------------------------
@@ -134,7 +198,7 @@ class StateTimeSeries(TimeSeriesBase):
 
     # -- math handling (always boolean) ---------
 
-    if ASTROPY_2_0:
+    if astropy_version >= '2.0.0':  # remove _if_ when we pin astropy >= 2.0.0
         def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
             return super(StateTimeSeries, self).__array_ufunc__(
                 ufunc, method, *inputs, **kwargs).view(bool)
@@ -165,7 +229,7 @@ class StateTimeSeries(TimeSeriesBase):
 
     def to_dqflag(self, name=None, minlen=1, dtype=None, round=False,
                   label=None, description=None):
-        """Convert this series into a `~gwpy.segments.DataQualityFlag`
+        """Convert this series into a `~gwpy.segments.DataQualityFlag`.
 
         Each contiguous set of `True` values are grouped as a
         `~gwpy.segments.Segment` running from the GPS time the first
@@ -174,7 +238,7 @@ class StateTimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
-        minlen : `int`, optional, default: 1
+        minlen : `int`, optional
             minimum number of consecutive `True` values to identify as a
             `~gwpy.segments.Segment`. This is useful to ignore single
             bit flips, for example.
@@ -184,9 +248,17 @@ class StateTimeSeries(TimeSeriesBase):
             casting, or a callable function that accepts a float and returns
             another numeric type, defaults to the `dtype` of the time index
 
-        round : `bool`, optional, default: False
+        round : `bool`, optional
             choose to round each `~gwpy.segments.Segment` to its
             inclusive integer boundaries
+
+        label : `str`, optional
+            the :attr:`~gwpy.segments.DataQualityFlag.label` for the
+            output flag.
+
+        description : `str`, optional
+            the :attr:`~gwpy.segments.DataQualityFlag.description` for the
+            output flag.
 
         Returns
         -------
@@ -195,28 +267,27 @@ class StateTimeSeries(TimeSeriesBase):
             defines the `known` segments, while the contiguous `True`
             sets defined each of the `active` segments
         """
-        from glue.segmentsUtils import from_bitstream
         from ..segments import (Segment, SegmentList, DataQualityFlag)
 
         # format dtype
         if dtype is None:
-            dtype = self.t0.dtype.type
-        elif isinstance(dtype, numpy.dtype):
+            dtype = self.t0.dtype
+        if isinstance(dtype, numpy.dtype):  # use callable dtype
             dtype = dtype.type
-        start = dtype(self.t0.value)  # <-- sets the dtype for the segments
-        dt = self.dt.value
+        start = dtype(self.t0.value)
+        dt = dtype(self.dt.value)
 
-        # build segmentlists
-        active = from_bitstream(self.value, start, dt, minlen=int(minlen))
-        known = SegmentList([Segment(*map(dtype, self.span))])
+        # build segmentlists (can use simple objects since DQFlag converts)
+        active = _bool_segments(self.value, start, dt, minlen=int(minlen))
+        known = [tuple(map(dtype, self.span))]
 
         # build flag and return
         out = DataQualityFlag(name=name or self.name, active=active,
                               known=known, label=label or self.name,
                               description=description)
         if round:
-            out = out.round()
-        return out.coalesce()
+            return out.round()
+        return out
 
     def to_lal(self, *args, **kwargs):
         """Bogus function inherited from superclass, do not use.

@@ -16,7 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/Output utilities for LAL Cache files.
+"""Input/Output utilities for GW Cache files.
+
+A cache file is a specially-formatted ASCII file that contains file paths
+and associated metadata for those files, designed to make identifying
+relevant data, and sieving large file lists, easier for the user.
 """
 
 from __future__ import division
@@ -24,11 +28,12 @@ from __future__ import division
 import os.path
 import tempfile
 import warnings
-from collections import OrderedDict
+from collections import (namedtuple, OrderedDict)
 from gzip import GzipFile
 
 from six import string_types
 from six.moves import StringIO
+from six.moves.urllib.parse import urlparse
 
 try:
     from lal.utils import CacheEntry
@@ -62,42 +67,139 @@ except NameError:  # python3.x
     )
 
 
+class _CacheEntry(namedtuple(
+        '_CacheEntry', ['observatory', 'description', 'segment', 'path'])):
+    """Quick version of lal.utils.CacheEntry for internal purposes only
+
+    Just to allow metadata handling for files that don't follow LIGO-T050017.
+    """
+    def __str__(self):
+        return self.path
+
+    @classmethod
+    def parse(cls, line, gpstype=LIGOTimeGPS):
+        from ..segments import Segment
+
+        if isinstance(line, bytes):
+            line = line.decode('utf-8')
+
+        # determine format
+        try:
+            # NOTE: cast to `str` here to avoid unicode on python2.7
+            #       which lal.LIGOTimeGPS doesn't like
+            a, b, c, d, e = map(str, line.strip().split())
+        except ValueError as exc:
+            exc.args = ("Cannot identify format for cache entry {!r}".format(
+                line.rstrip()),)
+            raise
+
+        try:  # Virgo FFL format includes GPS start time in second place
+            start = gpstype(b)
+        except (ValueError, RuntimeError):  # LAL format
+            start = gpstype(c)
+            end = start + float(d)
+            return cls(a, b, Segment(start, end), e)
+        path = a
+        start = float(b)
+        end = start + float(c)
+        try:
+            observatory, description = os.path.splitext(
+                os.path.basename(path))[0].split('-', 2)[:2]
+        except ValueError:
+            return cls(None, None, Segment(start, end), path)
+        return cls(observatory, description, Segment(start, end), path)
+
+
 # -- cache I/O ----------------------------------------------------------------
 
-def read_cache(lcf, coltype=LIGOTimeGPS):
-    """Read a LAL-format cache file
+def _iter_cache(cachefile, gpstype=LIGOTimeGPS):
+    """Internal method that yields a `_CacheEntry` for each line in the file
+
+    This method supports reading LAL- and (nested) FFL-format cache files.
+    """
+    try:
+        path = os.path.abspath(cachefile.name)
+    except AttributeError:
+        path = None
+    for line in cachefile:
+        try:
+            yield _CacheEntry.parse(line, gpstype=LIGOTimeGPS)
+        except ValueError:
+            # virgo FFL format (seemingly) supports nested FFL files
+            parts = line.split()
+            if len(parts) == 3 and os.path.abspath(parts[0]) != path:
+                with open(parts[0], 'r') as cache2:
+                    for entry in _iter_cache(cache2):
+                        yield entry
+            else:
+                raise
+
+
+def read_cache(cachefile, coltype=LIGOTimeGPS, sort=None, segment=None):
+    """Read a LAL- or FFL-format cache file as a list of file paths
 
     Parameters
     ----------
-    lcf : `str`, `file`
-        Input file or file path to read
+    cachefile : `str`, `file`
+        Input file or file path to read.
 
     coltype : `LIGOTimeGPS`, `int`, optional
-        Type for GPS times
+        Type for GPS times.
+
+    sort : `callable`, optional
+        A callable key function by which to sort the output list of file paths
+
+    segment : `gwpy.segments.Segment`, optional
+        A GPS `[start, stop)` interval, if given only files overlapping this
+        interval will be returned.
 
     Returns
     -------
-    cache : `list` of :class:`lal.utils.CacheEntry`
+    paths : `list` of `str`
+        A list of file paths as read from the cache file.
 
     Notes
     -----
     This method requires |lal|_.
     """
-    from lal.utils import CacheEntry  # pylint: disable=redefined-outer-name
-
     # open file
-    if not isinstance(lcf, FILE_LIKE):
-        with open(lcf, 'r') as fobj:
-            return read_cache(fobj, coltype=coltype)
+    if not isinstance(cachefile, FILE_LIKE):
+        with open(urlparse(cachefile).path, 'r') as fobj:
+            return read_cache(fobj, coltype=coltype, sort=sort,
+                              segment=segment)
 
     # read file
-    out = []
-    append = out.append
-    for line in lcf:
-        if isinstance(line, bytes):
-            line = line.decode('utf-8')
-        append(CacheEntry(line, coltype=coltype))
-    return out
+    cache = list(_iter_cache(cachefile, gpstype=coltype))
+
+    # sort and sieve
+    if sort:
+        cache.sort(key=sort)
+    if segment:
+        cache = sieve(cache, segment=segment)
+
+    # read simple paths
+    return [x.path for x in cache]
+
+
+def read_cache_entry(line):
+    """Read a file path from a line in a cache file.
+
+    Parameters
+    ----------
+    line : `str`, `bytes`
+        Line of text to parse
+
+    Returns
+    -------
+    path : `str`
+       The file path.
+
+    Raises
+    ------
+    ValueError
+        if the line cannot be parsed successfully
+    """
+    return _CacheEntry.parse(line).path
 
 
 def open_cache(*args, **kwargs):  # pragma: no cover
@@ -214,8 +316,9 @@ def file_list(flist):
         if the input `flist` cannot be interpreted as any of the above inputs
     """
     # open a cache file and return list of paths
-    if isinstance(flist, string_types) and flist.endswith(('.cache', '.lcf')):
-        return [e.path for e in read_cache(flist)]
+    if (isinstance(flist, string_types) and
+            flist.endswith(('.cache', '.lcf', '.ffl'))):
+        return read_cache(flist)
 
     # separate comma-separate list of names
     if isinstance(flist, string_types):

@@ -16,17 +16,36 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""User-friendly extensions to :mod:`glue.datafind`
+"""Utilities for auto-discovery of GW data files.
 
-The functions in this module mainly focus on matching a channel name to
-one or more frametypes that contain data for that channel.
+Automatic discovery of file paths for both LIGO and Virgo index solutions
+(``gwdatafind`` or ``ffl``, respectvely) is supported.
+
+The functions in this module are highly reliant on having local access to
+files (either directly, or via NFS, or CVMFS).
+
+Data discovery using the DataFind service requires the `gwdatafind` Python
+package, and either the ``LIGO_DATAFIND_SERVER`` environment variable to be
+set, or the ``host`` keyword must be passed to :func:`find_urls` and friends.
+
+Data discovery using the Virgo FFL system requires the ``FFLPATH`` environment
+variable to point to the directory containing FFL files, **or** the
+``VIRGODATA`` environment variable to point to a directory containing an
+``ffl` subdirectory, which contains FFL files.
 """
 
+import os
 import os.path
 import re
+import warnings
+from collections import namedtuple
+from functools import wraps
 
+from six.moves.urllib.parse import urlparse
+
+from ..segments import (Segment, SegmentList)
 from ..time import to_gps
-from .cache import cache_segments
+from .cache import (cache_segments, read_cache_entry, _iter_cache, _CacheEntry)
 from .gwf import (num_channels, iter_channel_names)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -36,39 +55,184 @@ SECOND_TREND_TYPE = re.compile(r'\A(.*_)?T\Z')  # T or anything ending in _T
 MINUTE_TREND_TYPE = re.compile(r'\A(.*_)?M\Z')  # M or anything ending in _M
 GRB_TYPE = re.compile(r'^(?!.*_GRB\d{6}([A-Z])?$)')
 HIGH_PRIORITY_TYPE = re.compile(
-    r'[A-Z]\d_HOFT_C\d\d(_T\d{7}_v\d)?\Z'  # X1_HOFT_CXY
+    r'\A[A-Z]\d_HOFT_C\d\d(_T\d{7}_v\d)?\Z'  # X1_HOFT_CXY
 )
 LOW_PRIORITY_TYPE = re.compile(
     r'(_GRB\d{6}([A-Z])?\Z|'  # endswith _GRBYYMMDD{A}
+    r'_bck\Z|'  # endswith _bck
     r'\AT1200307_V4_EARLY_RECOLORED_V2\Z)'  # annoying recoloured HOFT type
 )
 
 
-def connect(host=None, port=None):
-    """Open a new datafind connection
+# -- utilities ----------------------------------------------------------------
 
-    Parameters
-    ----------
-    host : `str`
-        name of datafind server to query
 
-    port : `int`
-        port of datafind server on host
-
-    Returns
-    -------
-    connection : :class:`~glue.datafind.GWDataFindHTTPConnection`
-        the new open connection
+class FflConnection(object):
+    """API for Virgo FFL queries that mimics `gwdatafind.http.HTTPConnection`
     """
-    from glue import datafind
+    _EXTENSION = 'ffl'
+    _SITE_REGEX = re.compile(r'\A(\w+)-')
 
-    port = port and int(port)
-    if port is not None and port != 80:
-        cert, key = datafind.find_credential()
-        return datafind.GWDataFindHTTPSConnection(
-            host=host, port=port, cert_file=cert, key_file=key)
+    def __init__(self, ffldir=None):
+        self.ffldir = ffldir or self._get_ffl_dir()
+        self.paths = {}
+        self.cache = {}
+        self._find_paths()
 
-    return datafind.GWDataFindHTTPConnection(host=host, port=port)
+    # -- utilities ------------------------------
+
+    @staticmethod
+    def _get_ffl_dir():
+        if 'FFLPATH' in os.environ:
+            return os.environ['FFLPATH']
+        if 'VIRGODATA' in os.environ:
+            return os.path.join(os.environ['VIRGODATA'], 'ffl')
+        raise KeyError("failed to parse FFTPATH from environment, please set "
+                       "FFLPATH to point to the directory containing FFL "
+                       "files")
+
+    @classmethod
+    def _is_ffl_file(cls, path):
+        return path.endswith('.{0}'.format(cls._EXTENSION))
+
+    def _find_paths(self):
+        _is_ffl = self._is_ffl_file
+
+        # reset
+        paths = self.paths = {}
+
+        # scan directory tree
+        for root, _, files in os.walk(self.ffldir):
+            for name in filter(_is_ffl, files):
+                path = os.path.join(root, name)
+                try:
+                    site, tag = self._get_site_tag(path)
+                except (OSError, IOError, AttributeError):
+                    # OSError: file is empty (or cannot be read at all)
+                    # IOError: as above on python2
+                    # AttributeError: last entry didn't match _SITE_REGEX
+                    continue
+                paths[(site, tag)] = path
+
+    # -- readers --------------------------------
+
+    def _read_ffl_cache(self, site, tag):
+        key = (site, tag)
+        path = self.ffl_path(site, tag)
+
+        # use cached result if already read, and file not modified since
+        try:
+            mtime = self.cache[key][0]
+        except KeyError:
+            mtime = 0
+        newm = os.path.getmtime(path)
+        if newm > mtime:  # read FFL file
+            def _update_metadata(entry):
+                return type(entry)(site, tag, entry.segment, entry.path)
+            with open(path, 'r') as fobj:
+                cache = list(map(_update_metadata, _iter_cache(fobj)))
+            self.cache[key] = newm, cache
+        return self.cache[key][-1]
+
+    @staticmethod
+    def _read_last_line(path):
+        with open(path, 'rb') as fobj:
+            # read last line of file only
+            fobj.seek(-2, os.SEEK_END)
+            while fobj.read(1) != b"\n":
+                fobj.seek(-2, os.SEEK_CUR)
+            line = fobj.readline().rstrip()
+            if isinstance(line, bytes):
+                return line.decode('utf-8')
+            return line
+
+    def _get_site_tag(self, path):
+        # tag is just name of file minus extension
+        tag = os.path.splitext(os.path.basename(path))[0]
+
+        # need to read first file from FFL to get site (IFO)
+        last = self._read_last_line(path).split()[0]
+        site = self._SITE_REGEX.match(os.path.basename(last)).groups()[0]
+
+        return site, tag
+
+    # -- UI -------------------------------------
+
+    def ffl_path(self, site, frametype):
+        """Returns the path of the FFL file for the given site and frametype
+
+        Examples
+        --------
+        >>> from gwpy.io.datafind import FflConnection
+        >>> conn = FflConnection()
+        >>> print(conn.ffl_path('V', 'V1Online'))
+        /virgoData/ffl/V1Online.ffl
+        """
+        try:
+            return self.paths[(site, frametype)]
+        except KeyError:
+            self._find_paths()
+            return self.paths[(site, frametype)]
+
+    def find_types(self, site=None, match=r'^(?!lastfile|spectro|\.).*'):
+        """Return the list of known data types.
+
+        This is just the basename of each FFL file found in the
+        FFL directory (minus the ``.ffl`` extension)
+        """
+        self._find_paths()
+        types = [tag for (site_, tag) in self.paths if site in (None, site_)]
+        if match is not None:
+            match = re.compile(match)
+            return list(filter(match.search, types))
+        return types
+
+    def find_urls(self, site, frametype, gpsstart, gpsend,
+                  match=None, on_gaps='warn'):
+        """Find all files of the given type in the [start, end) GPS interval.
+        """
+        span = Segment(gpsstart, gpsend)
+        cache = [e for e in self._read_ffl_cache(site, frametype) if
+                 e.observatory == site and e.description == frametype and
+                 e.segment.intersects(span)]
+        urls = [e.path for e in cache]
+        missing = SegmentList([span]) - cache_segments(cache)
+
+        if match:
+            match = re.compile(match)
+            urls = list(filter(match.search, urls))
+
+        # no missing data or don't care, return
+        if on_gaps == 'ignore' or not missing:
+            return urls
+
+        # handle missing data
+        msg = 'Missing segments: \n{0}'.format('\n'.join(map(str, missing)))
+        if on_gaps == 'warn':
+            warnings.warn(msg)
+            return urls
+        raise RuntimeError(msg)
+
+    def find_latest(self, site, frametype, on_missing='warn'):
+        """Return the most recent file of a given type.
+        """
+        try:
+            urls = [self.cache[(site, frametype)][-1].path]
+        except KeyError:
+            try:
+                path = self.ffl_path(site, frametype)
+                urls = [read_cache_entry(self._read_last_line(path))]
+            except (KeyError, OSError):
+                urls = []
+        if urls or on_missing == 'ignore':
+            return urls
+
+        # handle no files
+        msg = 'No files found'
+        if on_missing == 'warn':
+            warnings.warn(msg)
+            return urls
+        raise RuntimeError(msg)
 
 
 def reconnect(connection):
@@ -78,20 +242,96 @@ def reconnect(connection):
 
     Parameters
     ----------
-    connection : :class:`~glue.datafind.GWDataFindHTTPConnection`
+    connection : :class:`~gwdatafind.http.HTTPConnection` or `FflConnection`
         a connection object (doesn't need to be open)
 
     Returns
     -------
-    newconn : :class:`~glue.datafind.GWDataFindHTTPConnection`
+    newconn : :class:`~gwdatafind.http.HTTPConnection`
         the new open connection to the same `host:port` server
     """
-    return connect(connection.host, connection.port)
+    if isinstance(connection, FflConnection):
+        return type(connection)(connection.ffldir)
+    kw = {'context': connection._context} if connection.port != 80 else {}
+    return connection.__class__(connection.host, port=connection.port, **kw)
 
 
+def _type_priority(ifo, ftype, trend=None):
+    """Prioritise the given GWF type based on its name or trend status.
+
+    This is essentially an ad-hoc ordering function based on internal knowledge
+    of how LIGO does GWF type naming.
+    """
+    # if looking for a trend channel, prioritise the matching type
+    for trendname, trend_regex in [
+            ('m-trend', MINUTE_TREND_TYPE),
+            ('s-trend', SECOND_TREND_TYPE),
+    ]:
+        if trend == trendname and trend_regex.match(ftype):
+            return 0, len(ftype)
+
+    # otherwise rank this type according to priority
+    for reg, prio in {
+            HIGH_PRIORITY_TYPE: 1,
+            re.compile(r'[A-Z]\d_C'): 6,
+            LOW_PRIORITY_TYPE: 10,
+            MINUTE_TREND_TYPE: 10,
+            SECOND_TREND_TYPE: 10,
+    }.items():
+        if reg.search(ftype):
+            return prio, len(ftype)
+
+    return 5, len(ftype)
+
+
+def on_tape(*files):
+    """Determine whether any of the given files are on tape
+
+    Parameters
+    ----------
+    *files : `str`
+        one or more paths to GWF files
+
+    Returns
+    -------
+    True/False : `bool`
+        `True` if any of the files are determined to be on tape,
+        otherwise `False`
+    """
+    for path in files:
+        try:
+            if os.stat(path).st_blocks == 0:
+                return True
+        except AttributeError:  # windows doesn't have st_blocks
+            return False
+    return False
+
+
+def _choose_connection(**datafind_kw):
+    if os.getenv('LIGO_DATAFIND_SERVER') or datafind_kw.get('host'):
+        from gwdatafind import connect
+        return connect(**datafind_kw)
+    if os.getenv('VIRGODATA'):
+        return FflConnection()
+    raise RuntimeError("unknown datafind configuration, cannot discover data")
+
+
+def with_connection(func):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        if kwargs.get('connection') is None:
+            kwargs['connection'] = _choose_connection(host=kwargs.get('host'),
+                                                      port=kwargs.get('port'))
+        return func(*args, **kwargs)
+    return wrapped
+
+
+# -- user methods -------------------------------------------------------------
+
+@with_connection
 def find_frametype(channel, gpstime=None, frametype_match=None,
                    host=None, port=None, return_all=False, allow_tape=False,
-                   urltype='file', on_gaps='error'):
+                   connection=None, on_gaps='error'):
     """Find the frametype(s) that hold data for a given channel
 
     Parameters
@@ -118,14 +358,11 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
         do not test types whose frame files are stored on tape (not on
         spinning disk)
 
-    urltype : `str`, optional
-        scheme of URL to return, default is ``'file'``
-
     on_gaps : `str`, optional
         action to take when gaps are discovered in datafind coverage,
         default: ``'error'``, i.e. don't match frametypes with gaps.
         Select ``'ignore'`` to ignore gaps, or ``'warn'`` to display
-        warnings when gaps are found in a datafind `find_frame_urls` query
+        warnings when gaps are found in a datafind `find_urls` query
 
     Returns
     -------
@@ -217,61 +454,25 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
             continue
         ifos.add(ifo)
 
-        # connect and find list of all frame types
-        connection = connect(host, port)
-        types = connection.find_types(ifo, match=frametype_match)
-
-        # sort frametypes by likely requirements (to speed up matching)
-        def _type_key(ftype):
-            # HOFT types typically have small channel lists (so quick search)
-            if HIGH_PRIORITY_TYPE.match(ftype):  # HOFT types are small
-                prio = 1
-            # these types are bogus, or just unhelpful
-            elif LOW_PRIORITY_TYPE.match(ftype):
-                prio = 10
-
-            # if channel is trend, promote trend type (otherwise demote)
-            elif chan.type == 'm-trend' and MINUTE_TREND_TYPE.match(ftype):
-                prio = 0
-            elif MINUTE_TREND_TYPE.match(ftype):
-                prio = 10
-            elif chan.type == 's-trend' and SECOND_TREND_TYPE.match(ftype):
-                prio = 0
-            elif SECOND_TREND_TYPE.match(ftype):
-                prio = 10
-
-            # demote commissioning frames for LIGO
-            elif ftype == '{}_C'.format(chan.ifo):
-                prio = 6
-
-            # otherwise give a middle score
-            else:
-                prio = 5
-
-            # use score and length of name, shorter names are typically better
-            return (prio, len(ftype))
-
-        types.sort(key=_type_key)
+        types = find_types(ifo, match=frametype_match, trend=chan.type,
+                           connection=connection)
 
         # loop over types testing each in turn
         for ftype in types:
             # find instance of this frametype
             try:
-                connection = reconnect(connection)
-                path = _find_latest_frame(connection, ifo, ftype,
-                                          gpstime=gpstime,
-                                          allow_tape=allow_tape)
-            except (RuntimeError, IOError):  # something went wrong
+                path = find_latest(ifo, ftype, gpstime=gpstime,
+                                   allow_tape=allow_tape,
+                                   connection=connection, on_missing='ignore')
+            except (RuntimeError, IOError, IndexError):  # something went wrong
                 continue
 
             # check for gaps in the record for this type
             if gpssegment is None:
                 gaps = 0
             else:
-                connection = reconnect(connection)
-                cache = connection.find_frame_urls(ifo, ftype, *gpssegment,
-                                                   urltype=urltype,
-                                                   on_gaps=on_gaps)
+                cache = find_urls(ifo, ftype, *gpssegment, on_gaps=on_gaps,
+                                  connection=connection)
                 csegs = cache_segments(cache)
                 gaps = abs(gpssegment) - abs(csegs)
 
@@ -331,9 +532,10 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     return ftypes[str(channel)]
 
 
-def find_best_frametype(channel, start, end, urltype='file',
-                        host=None, port=None, frametype_match=None,
-                        allow_tape=True):
+@with_connection
+def find_best_frametype(channel, start, end,
+                        frametype_match=None, allow_tape=True,
+                        connection=None, host=None, port=None):
     """Intelligently select the best frametype from which to read this channel
 
     Parameters
@@ -348,9 +550,6 @@ def find_best_frametype(channel, start, end, urltype='file',
     end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
         GPS end time of period of interest,
         any input parseable by `~gwpy.time.to_gps` is fine
-
-    urltype : `str`, optional
-        scheme of URL to return, default is ``'file'``
 
     host : `str`, optional
         name of datafind host to use
@@ -383,15 +582,16 @@ def find_best_frametype(channel, start, end, urltype='file',
     'L1_HOFT_C00'
     """
     try:
-        return find_frametype(channel, gpstime=(start, end), host=host,
-                              port=port, frametype_match=frametype_match,
-                              allow_tape=allow_tape, urltype=urltype,
-                              on_gaps='error')
+        return find_frametype(channel, gpstime=(start, end),
+                              frametype_match=frametype_match,
+                              allow_tape=allow_tape, on_gaps='error',
+                              connection=connection, host=host, port=port)
     except RuntimeError:  # gaps (or something else went wrong)
-        ftout = find_frametype(channel, gpstime=(start, end), host=host,
-                               port=port, frametype_match=frametype_match,
+        ftout = find_frametype(channel, gpstime=(start, end),
+                               frametype_match=frametype_match,
                                return_all=True, allow_tape=allow_tape,
-                               urltype=urltype, on_gaps='ignore')
+                               on_gaps='ignore', connection=connection,
+                               host=host, port=port)
         try:
             if isinstance(ftout, dict):
                 return {key: ftout[key][0] for key in ftout}
@@ -400,53 +600,41 @@ def find_best_frametype(channel, start, end, urltype='file',
             raise ValueError("Cannot find any valid frametypes for channel(s)")
 
 
-def on_tape(*files):
-    """Determine whether any of the given files are on tape
-
-    Parameters
-    ----------
-    *files : `str`
-        one or more paths to GWF files
-
-    Returns
-    -------
-    True/False : `bool`
-        `True` if any of the files are determined to be on tape,
-        otherwise `False`
-    """
-    for path in files:
-        try:
-            if os.stat(path).st_blocks == 0:
-                return True
-        except AttributeError:  # windows doesn't have st_blocks
-            return False
-    return False
+@with_connection
+def find_types(observatory, match=None, trend=None,
+               connection=None, **connection_kw):
+    return sorted(connection.find_types(observatory, match=match),
+                  key=lambda x: _type_priority(observatory, x, trend=trend))
 
 
-# -- utilities ----------------------------------------------------------------
+@with_connection
+def find_urls(observatory, frametype, start, end, on_gaps='error',
+              connection=None, **connection_kw):
+    return connection.find_urls(observatory, frametype, start, end,
+                                on_gaps=on_gaps)
 
-def _find_latest_frame(connection, ifo, frametype, gpstime=None,
-                       allow_tape=False):
+
+@with_connection
+def find_latest(observatory, frametype, gpstime=None, allow_tape=False,
+                connection=None, **connection_kw):
     """Find the latest framepath for a given frametype
     """
-    ifo = ifo[0]
-    if gpstime is not None:
-        gpstime = int(to_gps(gpstime))
+    observatory = observatory[0]
     try:
-        if gpstime is None:
-            frame = connection.find_latest(ifo, frametype, urltype='file')[0]
+        if gpstime is not None:
+            gpstime = int(to_gps(gpstime))
+            path = connection.find_urls(observatory, frametype, gpstime,
+                                        gpstime+1, on_gaps='ignore')[-1]
         else:
-            frame = connection.find_frame_urls(ifo, frametype, gpstime,
-                                               gpstime, urltype='file',
-                                               on_gaps='ignore')[0]
+            path = connection.find_latest(observatory, frametype,
+                                          on_missing='ignore')[-1]
     except (IndexError, RuntimeError):
-        raise RuntimeError("No frames found for {}-{}".format(ifo, frametype))
-    else:
-        if not os.access(frame.path, os.R_OK):
-            raise IOError("Latest frame file for {}-{} is unreadable: "
-                          "{}".format(ifo, frametype, frame.path))
-        if not allow_tape and on_tape(frame.path):
-            raise IOError("Latest frame file for {}-{} is on tape "
-                          "(pass allow_tape=True to force): "
-                          "{}".format(ifo, frametype, frame.path))
-        return frame.path
+        raise RuntimeError(
+            "no files found for {}-{}".format(observatory, frametype))
+
+    path = urlparse(path).path
+    if not allow_tape and on_tape(path):
+        raise IOError("Latest frame file for {}-{} is on tape "
+                      "(pass allow_tape=True to force): "
+                      "{}".format(observatory, frametype, path))
+    return path

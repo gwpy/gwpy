@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014)
+#!/bin/bash
+# Copyright (C) Duncan Macleod (2018)
 #
 # This file is part of GWpy.
 #
@@ -16,14 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module redefines the matplotlib log scale to give a more
-helpful set of major and minor ticks.
-"""
+set -ex
+trap 'set +ex' RETURN
 
-# for backwards compatibility
-from ..plot.log import (  # pylint: disable=unused-import
-    GWpyLogFormatterMathtext,
-    MinorLogFormatterMathtext,
-    CombinedLogFormatterMathtext,
-    GWpyLogScale,
-)
+#
+# Install GWpy and all optional dependencies with pip
+#
+
+python -m pip install ${PIP_FLAGS} -r requirements-dev.txt
+python -m pip install ${PIP_FLAGS} .

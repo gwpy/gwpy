@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright (C) Duncan Macleod (2017)
+# -*- coding: utf-8 -*-
+# Copyright (C) Duncan Macleod (2018)
 #
 # This file is part of GWpy.
 #
@@ -16,8 +16,5 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-#
-# Upload build packages to relevant package servers
-#
-
-# WORK IN PROGRESS
+"""Testing utilities for GWpy
+"""

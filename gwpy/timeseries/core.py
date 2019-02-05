@@ -51,17 +51,17 @@ from astropy import units
 from astropy import __version__ as astropy_version
 from astropy.io import registry as io_registry
 
-from ..types import (Array2D, Series)
+from ..types import Series
 from ..detector import (Channel, ChannelList)
-from ..io import datafind
+from ..io import datafind as io_datafind
+from ..segments import SegmentList
 from ..time import (Time, LIGOTimeGPS, gps_types, to_gps)
 from ..utils import gprint
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-__all__ = ['TimeSeriesBase', 'ArrayTimeSeries', 'TimeSeriesBaseDict']
+__all__ = ['TimeSeriesBase', 'TimeSeriesBaseDict', 'TimeSeriesBaseList']
 
-ASTROPY_2_0 = astropy_version >= '2.0'
 
 _UFUNC_STRING = {
     'less': '<',
@@ -291,7 +291,7 @@ class TimeSeriesBase(Series):
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, verify=False, pad=None, allow_tape=None,
-              type=None, dtype=None):
+              scaled=True, type=None, dtype=None):
         """Fetch data from NDS
 
         Parameters
@@ -317,11 +317,17 @@ class TimeSeriesBase(Series):
         verify : `bool`, optional, default: `False`
             check channels exist in database before asking for data
 
+        scaled : `bool`, optional
+            apply slope and bias calibration to ADC data, for non-ADC data
+            this option has no effect
+
         connection : `nds2.connection`, optional
             open NDS connection to use
 
         verbose : `bool`, optional
-            print verbose output about NDS progress, useful for debugging
+            print verbose output about NDS progress, useful for debugging;
+            if ``verbose`` is specified as a string, this defines the
+            prefix for the progress meter
 
         type : `int`, optional
             NDS2 channel type integer
@@ -331,7 +337,7 @@ class TimeSeriesBase(Series):
         """
         return cls.DictClass.fetch(
             [channel], start, end, host=host, port=port, verbose=verbose,
-            connection=connection, verify=verify, pad=pad,
+            connection=connection, verify=verify, pad=pad, scaled=scaled,
             allow_tape=allow_tape, type=type, dtype=dtype)[str(channel)]
 
     @classmethod
@@ -454,8 +460,8 @@ class TimeSeriesBase(Series):
                                host=host, cls=cls, **kwargs)
 
     @classmethod
-    def find(cls, channel, start, end, frametype=None,
-             pad=None, dtype=None, nproc=1, verbose=False, **readargs):
+    def find(cls, channel, start, end, frametype=None, pad=None,
+             scaled=True, dtype=None, nproc=1, verbose=False, **readargs):
         """Find and read data from frames for a channel
 
         Parameters
@@ -479,6 +485,10 @@ class TimeSeriesBase(Series):
             value with which to fill gaps in the source data,
             by default gaps will result in a `ValueError`.
 
+        scaled : `bool`, optional
+            apply slope and bias calibration to ADC data, for non-ADC data
+            this option has no effect.
+
         nproc : `int`, optional, default: `1`
             number of parallel processes to use, serial process by
             default.
@@ -491,18 +501,27 @@ class TimeSeriesBase(Series):
             allow reading from frame files on (slow) magnetic tape
 
         verbose : `bool`, optional
-            print verbose output about NDS progress.
+            print verbose output about read progress, if ``verbose``
+            is specified as a string, this defines the prefix for the
+            progress meter
 
         **readargs
             any other keyword arguments to be passed to `.read()`
         """
         return cls.DictClass.find(
-            [channel], start, end, frametype=frametype, verbose=verbose,
-            pad=pad, dtype=dtype, nproc=nproc, **readargs)[str(channel)]
+            [channel], start, end,
+            frametype=frametype,
+            verbose=verbose,
+            pad=pad,
+            scaled=scaled,
+            dtype=dtype,
+            nproc=nproc,
+            **readargs
+        )[str(channel)]
 
     @classmethod
-    def get(cls, channel, start, end, pad=None, dtype=None, verbose=False,
-            allow_tape=None, **kwargs):
+    def get(cls, channel, start, end, pad=None, scaled=True,
+            dtype=None, verbose=False, allow_tape=None, **kwargs):
         """Get data for this channel from frames or NDS
 
         This method dynamically accesses either frames on disk, or a
@@ -525,6 +544,10 @@ class TimeSeriesBase(Series):
             value with which to fill gaps in the source data,
             by default gaps will result in a `ValueError`.
 
+        scaled : `bool`, optional
+            apply slope and bias calibration to ADC data, for non-ADC data
+            this option has no effect
+
         dtype : `numpy.dtype`, `str`, `type`, or `dict`
             numeric data type for returned data, e.g. `numpy.float`, or
             `dict` of (`channel`, `dtype`) pairs
@@ -541,7 +564,9 @@ class TimeSeriesBase(Series):
             retrieving data from tape if required
 
         verbose : `bool`, optional
-            print verbose output about NDS progress.
+            print verbose output about data access progress, if ``verbose``
+            is specified as a string, this defines the prefix for the
+            progress meter
 
         **kwargs
             other keyword arguments to pass to either
@@ -556,8 +581,8 @@ class TimeSeriesBase(Series):
             for discovering and reading data from local GWF files
         """
         return cls.DictClass.get(
-            [channel], start, end, pad=pad, dtype=dtype, verbose=verbose,
-            allow_tape=allow_tape, **kwargs)[str(channel)]
+            [channel], start, end, pad=pad, scaled=scaled, dtype=dtype,
+            verbose=verbose, allow_tape=allow_tape, **kwargs)[str(channel)]
 
     # -- utilities ------------------------------
 
@@ -585,7 +610,7 @@ class TimeSeriesBase(Series):
         return super(TimeSeriesBase, self).plot(method=method, **kwargs)
 
     @classmethod
-    def from_nds2_buffer(cls, buffer_, **metadata):
+    def from_nds2_buffer(cls, buffer_, scaled=True, copy=True, **metadata):
         """Construct a new series from an `nds2.buffer` object
 
         **Requires:** |nds2|_
@@ -594,6 +619,14 @@ class TimeSeriesBase(Series):
         ----------
         buffer_ : `nds2.buffer`
             the input NDS2-client buffer to read
+
+        scaled : `bool`, optional
+            apply slope and bias calibration to ADC data, for non-ADC data
+            this option has no effect
+
+        copy : `bool`, optional
+            if `True`, copy the contained data array to new  to a new array
+
         **metadata
             any other metadata keyword arguments to pass to the `TimeSeries`
             constructor
@@ -604,15 +637,29 @@ class TimeSeriesBase(Series):
             a new `TimeSeries` containing the data from the `nds2.buffer`,
             and the appropriate metadata
         """
-        # cast as TimeSeries and return
+        # get Channel from buffer
         channel = Channel.from_nds2(buffer_.channel)
+
+        # set default metadata
         metadata.setdefault('channel', channel)
         metadata.setdefault('epoch', LIGOTimeGPS(buffer_.gps_seconds,
                                                  buffer_.gps_nanoseconds))
         metadata.setdefault('sample_rate', channel.sample_rate)
         metadata.setdefault('unit', channel.unit)
-        metadata.setdefault('name', str(channel))
-        return cls(buffer_.data, **metadata)
+        metadata.setdefault('name', buffer_.name)
+
+        # unwrap data
+        slope = buffer_.signal_slope
+        offset = buffer_.signal_offset
+        null_scaling = slope == 1. and offset == 0.
+        if scaled and not null_scaling:
+            data = buffer_.data.copy() * slope + offset
+            copy = False
+        else:
+            data = buffer_.data
+
+        # construct new TimeSeries-like object
+        return cls(data, copy=copy, **metadata)
 
     @classmethod
     def from_lal(cls, lalts, copy=True):
@@ -693,7 +740,7 @@ class TimeSeriesBase(Series):
 
     # -- TimeSeries operations ------------------
 
-    if ASTROPY_2_0:
+    if astropy_version >= '2.0.0':  # remove _if_ when we pin astropy >= 2.0.0
         def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
             # this is new in numpy 1.13, astropy 2.0 adopts it, we need to
             # work out how to handle this and __array_wrap__ together properly
@@ -766,6 +813,24 @@ class TimeSeriesBaseDict(OrderedDict):
     data access methods.
     """
     EntryClass = TimeSeriesBase
+
+    @property
+    def span(self):
+        """The GPS ``[start, stop)`` extent of data in this `dict`
+
+        :type: `~gwpy.segments.Segment`
+        """
+        span = SegmentList()
+        for value in self.values():
+            span.append(value.span)
+        try:
+            return span.extent()
+        except ValueError as exc:  # empty list
+            exc.args = (
+                'cannot calculate span for empty {0}'.format(
+                    type(self).__name__),
+            )
+            raise
 
     @classmethod
     def read(cls, source, *args, **kwargs):
@@ -951,7 +1016,7 @@ class TimeSeriesBaseDict(OrderedDict):
     @classmethod
     def fetch(cls, channels, start, end, host=None, port=None,
               verify=False, verbose=False, connection=None,
-              pad=None, allow_tape=None, type=None,
+              pad=None, scaled=True, allow_tape=None, type=None,
               dtype=None):
         """Fetch data from NDS for a number of channels.
 
@@ -979,10 +1044,16 @@ class TimeSeriesBaseDict(OrderedDict):
             check channels exist in database before asking for data
 
         verbose : `bool`, optional
-            print verbose output about NDS progress.
+            print verbose output about NDS download progress, if ``verbose``
+            is specified as a string, this defines the prefix for the
+            progress meter
 
         connection : `nds2.connection`, optional
             open NDS connection to use.
+
+        scaled : `bool`, optional
+            apply slope and bias calibration to ADC data, for non-ADC data
+            this option has no effect.
 
         allow_tape : `bool`, optional
             allow data access from slow tapes. If `host` or `connection` is
@@ -1030,19 +1101,21 @@ class TimeSeriesBaseDict(OrderedDict):
             else:
                 tapes = [allow_tape]
             for allow_tape_ in tapes:
+                error = ""  # container for error message from cls.fetch()
                 for host_, port_ in hostlist:
                     try:
                         return cls.fetch(channels, start, end, host=host_,
                                          port=port_, verbose=verbose,
                                          type=type, dtype=dtype, pad=pad,
-                                         allow_tape=allow_tape_)
+                                         scaled=scaled, allow_tape=allow_tape_)
                     except (RuntimeError, ValueError) as exc:
-                        warnings.warn(str(exc).split('\n')[0],
+                        error = str(exc)  # need to assign to take out of scope
+                        warnings.warn(error.split('\n', 1)[0],
                                       io_nds2.NDSWarning)
 
                 # if failing occurred because of data on tape, don't try
                 # reading channels individually, the same error will occur
-                if not allow_tape_ and 'Requested data is on tape' in str(exc):
+                if not allow_tape_ and 'Requested data is on tape' in error:
                     continue
 
                 # if we got this far, we can't get all channels in one go
@@ -1052,6 +1125,7 @@ class TimeSeriesBaseDict(OrderedDict):
                                                  verbose=verbose, type=type,
                                                  verify=verify,
                                                  dtype=dtype.get(c), pad=pad,
+                                                 scaled=scaled,
                                                  allow_tape=allow_tape_))
                         for c in channels)
             err = "Cannot find all relevant data on any known server."
@@ -1070,11 +1144,12 @@ class TimeSeriesBaseDict(OrderedDict):
         return fetch(channels, istart, iend, connection=connection,
                      host=host, port=port, verbose=verbose, type=type,
                      dtype=dtype, pad=pad, allow_tape=allow_tape,
+                     scaled=scaled,
                      series_class=cls.EntryClass).crop(start, end)
 
     @classmethod
     def find(cls, channels, start, end, frametype=None,
-             frametype_match=None, pad=None, dtype=None, nproc=1,
+             frametype_match=None, pad=None, scaled=True, dtype=None, nproc=1,
              verbose=False, allow_tape=True, observatory=None, **readargs):
         """Find and read data from frames for a number of channels.
 
@@ -1102,6 +1177,10 @@ class TimeSeriesBaseDict(OrderedDict):
             value with which to fill gaps in the source data, defaults to
             'don't fill gaps'
 
+        scaled : `bool`, optional
+            apply slope and bias calibration to ADC data, for non-ADC data
+            this option has no effect.
+
         dtype : `numpy.dtype`, `str`, `type`, or `dict`
             numeric data type for returned data, e.g. `numpy.float`, or
             `dict` of (`channel`, `dtype`) pairs
@@ -1114,17 +1193,21 @@ class TimeSeriesBaseDict(OrderedDict):
             allow reading from frame files on (slow) magnetic tape
 
         verbose : `bool`, optional
-            print verbose output about NDS progress.
+            print verbose output about read progress, if ``verbose``
+            is specified as a string, this defines the prefix for the
+            progress meter
 
         **readargs
             any other keyword arguments to be passed to `.read()`
         """
+        import gwdatafind
+
         start = to_gps(start)
         end = to_gps(end)
 
         # -- find frametype(s)
         if frametype is None:
-            matched = datafind.find_best_frametype(
+            matched = io_datafind.find_best_frametype(
                 channels, start, end, frametype_match=frametype_match,
                 allow_tape=allow_tape)
             frametypes = {}
@@ -1161,25 +1244,23 @@ class TimeSeriesBaseDict(OrderedDict):
                     exc.args = "Cannot parse list of IFOs from channel names",
                     raise
             # find frames
-            connection = datafind.connect()
-            cache = connection.find_frame_urls(observatory, frametype, start,
-                                               end, urltype='file')
+            cache = io_datafind.find_urls(observatory, frametype, start, end)
             if not cache:
                 raise RuntimeError("No %s-%s frame files found for [%d, %d)"
                                    % (observatory, frametype, start, end))
             # read data
             readargs.setdefault('format', 'gwf')
             new = cls.read(cache, names, start=start, end=end, pad=pad,
-                           dtype=dtype, nproc=nproc, verbose=verbose,
-                           **readargs)
+                           scaled=scaled, dtype=dtype, nproc=nproc,
+                           verbose=verbose, **readargs)
             # map back to user-given channel name and append
             out.append(type(new)((key, new[chan]) for
                                  (key, chan) in zip(clist, names)))
         return out
 
     @classmethod
-    def get(cls, channels, start, end, pad=None, dtype=None, verbose=False,
-            allow_tape=None, **kwargs):
+    def get(cls, channels, start, end, pad=None, scaled=True,
+            dtype=None, verbose=False, allow_tape=None, **kwargs):
         """Retrieve data for multiple channels from frames or NDS
 
         This method dynamically accesses either frames on disk, or a
@@ -1206,6 +1287,10 @@ class TimeSeriesBaseDict(OrderedDict):
             value with which to fill gaps in the source data, only used if
             gap is not given, or `gap='pad'` is given
 
+        scaled : `bool`, optional
+            apply slope and bias calibration to ADC data, for non-ADC data
+            this option has no effect.
+
         dtype : `numpy.dtype`, `str`, `type`, or `dict`
             numeric data type for returned data, e.g. `numpy.float`, or
             `dict` of (`channel`, `dtype`) pairs
@@ -1222,7 +1307,9 @@ class TimeSeriesBaseDict(OrderedDict):
             retrieving data from tape if required
 
         verbose : `bool`, optional
-            print verbose output about NDS progress.
+            print verbose output about data access progress, if ``verbose``
+            is specified as a string, this defines the prefix for the
+            progress meter
 
         **kwargs
             other keyword arguments to pass to either
@@ -1237,12 +1324,15 @@ class TimeSeriesBaseDict(OrderedDict):
                 nds_kw[key] = val
 
         # try and find from frames
-        if os.getenv('LIGO_DATAFIND_SERVER') and not nds_kw:
+        if not nds_kw and (
+                os.getenv('LIGO_DATAFIND_SERVER') or
+                os.getenv('VIRGODATA')
+        ):
             if verbose:
                 gprint("Attempting to access data from frames...")
             try:
-                return cls.find(channels, start, end, pad=pad, dtype=dtype,
-                                verbose=verbose,
+                return cls.find(channels, start, end, pad=pad, scaled=scaled,
+                                dtype=dtype, verbose=verbose,
                                 allow_tape=allow_tape or False,
                                 **kwargs)
             except (ImportError, RuntimeError, ValueError) as exc:
@@ -1257,8 +1347,9 @@ class TimeSeriesBaseDict(OrderedDict):
 
         # otherwise fetch from NDS
         try:
-            return cls.fetch(channels, start, end, pad=pad, dtype=dtype,
-                             allow_tape=allow_tape, verbose=verbose, **kwargs)
+            return cls.fetch(channels, start, end, pad=pad, scaled=scaled,
+                             dtype=dtype, allow_tape=allow_tape,
+                             verbose=verbose, **kwargs)
         except RuntimeError as exc:
             # if all else fails, try and get each channel individually
             if len(channels) == 1:
@@ -1269,13 +1360,14 @@ class TimeSeriesBaseDict(OrderedDict):
                     gprint("Failed to access data for all channels as a "
                            "group, trying individually:")
                 return cls(
-                    (c, cls.EntryClass.get(c, start, end, pad=pad, dtype=dtype,
+                    (c, cls.EntryClass.get(c, start, end, pad=pad,
+                                           scaled=scaled, dtype=dtype,
                                            allow_tape=allow_tape,
                                            verbose=verbose, **kwargs))
                     for c in channels)
 
     @classmethod
-    def from_nds2_buffers(cls, buffers, **metadata):
+    def from_nds2_buffers(cls, buffers, scaled=True, copy=True, **metadata):
         """Construct a new dict from a list of `nds2.buffer` objects
 
         **Requires:** |nds2|_
@@ -1284,6 +1376,13 @@ class TimeSeriesBaseDict(OrderedDict):
         ----------
         buffers : `list` of `nds2.buffer`
             the input NDS2-client buffers to read
+
+        scaled : `bool`, optional
+            apply slope and bias calibration to ADC data, for non-ADC data
+            this option has no effect.
+
+        copy : `bool`, optional
+            if `True`, copy the contained data array to new  to a new array
 
         **metadata
             any other metadata keyword arguments to pass to the `TimeSeries`
@@ -1297,7 +1396,7 @@ class TimeSeriesBaseDict(OrderedDict):
         tsd = cls()
         for buf in buffers:
             tsd[buf.channel.name] = tsd.EntryClass.from_nds2_buffer(
-                buf, **metadata)
+                buf, scaled=scaled, copy=copy, **metadata)
         return tsd
 
     def plot(self, label='key', method='plot', figsize=(12, 4),
@@ -1446,7 +1545,7 @@ class TimeSeriesBaseList(list):
         del self[i:]
         return self
 
-    def join(self, pad=0.0, gap='raise'):
+    def join(self, pad=None, gap=None):
         """Concatenate all of the elements of this list into a single object
 
         Parameters
@@ -1455,22 +1554,23 @@ class TimeSeriesBaseList(list):
             value with which to pad gaps
 
         gap : `str`, optional, default: `'raise'`
-            what to do in the event of a discontguity in the data, one of
+            what to do if there are gaps in the data, one of
 
-            - 'raise': raise an exception
-            - 'warn': print a warning
-            - 'ignore': append series as if there was no gap
-            - 'pad': pad the gap with a value
+            - ``'raise'`` - raise a `ValueError`
+            - ``'ignore'`` - remove gap and join data
+            - ``'pad'`` - pad gap with zeros
+
+            If `pad` is given and is not `None`, the default is ``'pad'``,
+            otherwise ``'raise'``.
 
         Returns
         -------
-        `TimeSeriesBase`
-             a single `TimeSeriesBase` covering the full span of all entries
-             in this list
+        series : `gwpy.types.TimeSeriesBase` subclass
+             a single series containing all data from each entry in this list
 
         See Also
         --------
-        TimeSeriesBase.append
+        TimeSeries.append
             for details on how the individual series are concatenated together
         """
         if not self:

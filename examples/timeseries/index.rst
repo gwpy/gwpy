@@ -11,6 +11,7 @@
    public
    filter
    whiten
+   correlate
    blrms
    statevector
    qscan

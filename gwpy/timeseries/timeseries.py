@@ -1315,8 +1315,8 @@ class TimeSeries(TimeSeriesBase):
             stride (seconds) between calculations, defaults to 1 second
 
         exp : `bool`, optional
-            return the demodulated magnitude and phase trends as one
-            `TimeSeries` object representing a complex exponential
+            return the magnitude and phase trends as one `TimeSeries` object
+            representing a complex exponential, default: False
 
         deg : `bool`, optional
             if `exp=False`, calculates the phase in degrees
@@ -1336,46 +1336,46 @@ class TimeSeries(TimeSeriesBase):
         Demodulation is useful when trying to examine steady sinusoidal
         signals we know to be contained within data. For instance,
         we can download some data from LOSC to look at trends of the
-        amplitude and phase of Livingston's calibration line at 331.3 Hz:
+        amplitude and phase of LIGO Livingston's calibration line at 331.3 Hz:
 
         >>> from gwpy.timeseries import TimeSeries
         >>> data = TimeSeries.fetch_open_data('L1', 1131350417, 1131357617)
 
-        We can demodulate the `TimeSeries` at 331.3 Hz with a stride of once
-        per minute:
+        We can demodulate the `TimeSeries` at 331.3 Hz with a stride of one
+        minute:
 
         >>> amp, phase = data.demodulate(331.3, stride=60)
 
-        We can then plot these trends to visualize changes in the amplitude
-        and phase of the calibration line:
+        We can then plot these trends to visualize fluctuations in the
+        amplitude of the calibration line:
 
         >>> from gwpy.plot import Plot
-        >>> plot = Plot(amp, phase, separate=True, sharex=True)
+        >>> plot = Plot(amp)
+        >>> ax = plot.gca()
+        >>> ax.set_ylabel('Strain Amplitude at 331.3 Hz')
         >>> plot.show()
         """
         stridesamp = int(stride * self.sample_rate.value)
         nsteps = int(self.size // stridesamp)
-        # mix with a complex oscillator and stride through the TimeSeries,
+        # stride through the TimeSeries and mix with a local oscillator,
         # taking the average over each stride
-        out = numpy.zeros(nsteps, dtype=complex).view(type(self))
-        out.__metadata_finalize__(self)
-        out.sample_rate = 1/float(stride)
-        out._unit = self.unit
-        mixed = 2 * numpy.exp(-2*numpy.pi*1j*f*self.times.value) * self.value
-        # stride through the TimeSeries
+        out = type(self)(numpy.zeros(nsteps, dtype=complex))
+        out.__array_finalize__(self)
+        out.sample_rate = 1 / float(stride)
+        w = 2 * numpy.pi * f * self.dt.decompose().value
         for step in range(nsteps):
-            idx = int(stridesamp * step)
-            idx_end = idx + stridesamp
-            stepseries = mixed[idx:idx_end]
-            demod_ = numpy.average(stepseries)
-            out.value[step] = demod_
+            istart = int(stridesamp * step)
+            iend = istart + stridesamp
+            idx = numpy.arange(istart, iend)
+            mixed = 2 * numpy.exp(-1j * w * idx) * self.value[idx]
+            out.value[step] = mixed.mean()
         if exp:
             return out
-        mag = numpy.abs(out)
-        phase = numpy.angle(out, deg=deg).view(type(self))
-        phase.__metadata_finalize__(out)
+        mag = out.abs()
+        phase = type(mag)(numpy.angle(out, deg=deg))
+        phase.__array_finalize__(out)
         phase.override_unit('deg' if deg else 'rad')
-        return mag, phase
+        return (mag, phase)
 
     def taper(self, side='leftright'):
         """Taper the ends of this `TimeSeries` smoothly to zero.
@@ -1500,8 +1500,8 @@ class TimeSeries(TimeSeriesBase):
         --------
         TimeSeries.asd
             for details on the ASD calculation
-        scipy.signal.fftconvolve
-            for details on the convolution algorithm used here
+        TimeSeries.convolve
+            for details on convolution with the overlap-save method
         gwpy.signal.filter_design.fir_from_transfer
             for FIR filter design through spectrum truncation
 
@@ -1511,10 +1511,12 @@ class TimeSeries(TimeSeriesBase):
         and in preventing spectral leakage in the output.
 
         Due to filter settle-in, a segment of length `0.5*fduration` will be
-        corrupted at the beginning and end of the output.
+        corrupted at the beginning and end of the output. See
+        `~TimeSeries.convolve` for more details.
 
-        The input is detrended to give the whitened `TimeSeries` zero mean,
-        and the output is normalised to give it unit variance.
+        The input is detrended and the output normalised such that, if the
+        input is stationary and Gaussian, then the output will have zero mean
+        and unit variance.
 
         For more on inverse spectrum truncation, see arXiv:gr-qc/0509116.
         """
@@ -1531,13 +1533,164 @@ class TimeSeries(TimeSeriesBase):
                                               window=window, ncorner=ncorner)
         # condition the input data and apply the whitening filter
         in_ = self.copy().detrend(detrend)
-        pad = int(numpy.ceil(tdw.size/2))
-        window = signal.get_window(window, tdw.size)
-        in_[:pad] *= window[:pad]
-        in_[-pad:] *= window[-pad:]
-        out = type(self)(signal.fftconvolve(in_.value, tdw, mode='same'))
+        out = in_.convolve(tdw, window=window)
+        return out * numpy.sqrt(2 * in_.dt.decompose().value)
+
+    def convolve(self, fir, window='hanning'):
+        """Convolve this `TimeSeries` with an FIR filter using the
+           overlap-save method
+
+        Parameters
+        ----------
+        fir : `numpy.ndarray`
+            the time domain filter to convolve with
+
+        window : `str`, optional
+            window function to apply to boundaries, default: ``'hanning'``
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
+
+        Returns
+        -------
+        out : `TimeSeries`
+            the result of the convolution
+
+        See Also
+        --------
+        scipy.signal.fftconvolve
+            for details on the convolution scheme used here
+        TimeSeries.filter
+            for an alternative method designed for short filters
+
+        Notes
+        -----
+        The output `TimeSeries` is the same length and has the same timestamps
+        as the input.
+
+        Due to filter settle-in, a segment half the length of `fir` will be
+        corrupted at the left and right boundaries. To prevent spectral leakage
+        these segments will be windowed before convolving.
+        """
+        pad = int(numpy.ceil(fir.size/2))
+        nfft = min(8*fir.size, self.size)
+        # condition the input data
+        in_ = self.copy()
+        window = signal.get_window(window, fir.size)
+        in_.value[:pad] *= window[:pad]
+        in_.value[-pad:] *= window[-pad:]
+        # if FFT length is long enough, perform only one convolution
+        if nfft >= self.size/2:
+            conv = signal.fftconvolve(in_.value, fir, mode='same')
+        # else use the overlap-save algorithm
+        else:
+            nstep = nfft - 2*pad
+            conv = numpy.zeros(self.size)
+            # handle first chunk separately
+            conv[:nfft-pad] = signal.fftconvolve(in_.value[:nfft], fir,
+                                                 mode='same')[:nfft-pad]
+            # process chunks of length nstep
+            k = nfft - pad
+            while k < self.size - nfft + pad:
+                yk = signal.fftconvolve(in_.value[k-pad:k+nstep+pad], fir,
+                                        mode='same')
+                conv[k:k+yk.size-2*pad] = yk[pad:-pad]
+                k += nstep
+            # handle last chunk separately
+            conv[-nfft+pad:] = signal.fftconvolve(in_.value[-nfft:], fir,
+                                                  mode='same')[-nfft+pad:]
+        out = type(self)(conv)
         out.__array_finalize__(self)
-        return out / out.value.std()
+        return out
+
+    def correlate(self, mfilter, window='hanning', detrend='linear',
+                  whiten=False, wduration=2, highpass=None, **asd_kw):
+        """Cross-correlate this `TimeSeries` with another signal
+
+        Parameters
+        ----------
+        mfilter : `TimeSeries`
+            the time domain signal to correlate with
+
+        window : `str`, optional
+            window function to apply to timeseries prior to FFT,
+            default: ``'hanning'``
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
+
+        detrend : `str`, optional
+            type of detrending to do before FFT (see `~TimeSeries.detrend`
+            for more details), default: ``'linear'``
+
+        whiten : `bool`, optional
+            boolean switch to enable (`True`) or disable (`False`) data
+            whitening, default: `False`
+
+        wduration : `float`, optional
+            duration (in seconds) of the time-domain FIR whitening filter,
+            only used if `whiten=True`, defaults to 2 seconds
+
+        highpass : `float`, optional
+            highpass corner frequency (in Hz) of the FIR whitening filter,
+            only used if `whiten=True`, default: `None`
+
+        **asd_kw
+            keyword arguments to pass to `TimeSeries.asd` to generate
+            an ASD, only used if `whiten=True`
+
+        Returns
+        -------
+        snr : `TimeSeries`
+            the correlated signal-to-noise ratio (SNR) timeseries
+
+        See Also
+        --------
+        TimeSeries.asd
+            for details on the ASD calculation
+        TimeSeries.convolve
+            for details on convolution with the overlap-save method
+
+        Notes
+        -----
+        The `window` argument is used in ASD estimation, whitening, and
+        preventing spectral leakage in the output. It is not used to condition
+        the matched-filter, which should be windowed before passing to this
+        method.
+
+        Due to filter settle-in, a segment half the length of `mfilter` will be
+        corrupted at the beginning and end of the output. See
+        `~TimeSeries.convolve` for more details.
+
+        The input and matched-filter will be detrended, and the output will be
+        normalised so that the SNR measures number of standard deviations from
+        the expected mean.
+        """
+        self.is_compatible(mfilter)
+        # condition data
+        if whiten is True:
+            fftlength = asd_kw.pop('fftlength',
+                                   _fft_length_default(self.dt))
+            overlap = asd_kw.pop('overlap', None)
+            if overlap is None:
+                overlap = recommended_overlap(window) * fftlength
+            asd = self.asd(fftlength, overlap, window=window, **asd_kw)
+            # pad the matched-filter to prevent corruption
+            npad = int(wduration * mfilter.sample_rate.decompose().value / 2)
+            mfilter = mfilter.pad(npad)
+            # whiten (with errors on division by zero)
+            with numpy.errstate(all='raise'):
+                in_ = self.whiten(window=window, fduration=wduration, asd=asd,
+                                  highpass=highpass, detrend=detrend)
+                mfilter = mfilter.whiten(window=window, fduration=wduration,
+                                         asd=asd, highpass=highpass,
+                                         detrend=detrend)[npad:-npad]
+        else:
+            in_ = self.detrend(detrend)
+            mfilter = mfilter.detrend(detrend)
+        # compute matched-filter SNR and normalise
+        stdev = numpy.sqrt((mfilter.value**2).sum())
+        snr = in_.convolve(mfilter[::-1], window=window) / stdev
+        snr.__array_finalize__(self)
+        return snr
 
     def detrend(self, detrend='constant'):
         """Remove the trend from this `TimeSeries`
@@ -1596,11 +1749,65 @@ class TimeSeries(TimeSeriesBase):
                                   type=type, **kwargs)
         return self.filter(*zpk, filtfilt=filtfilt)
 
+    def q_gram(self, qrange=(4, 64), frange=(0, float('inf')), mismatch=0.2,
+               snrthresh=5.5, **kwargs):
+        """Scan a `TimeSeries` using the multi-Q transform and return an
+        `EventTable` of the most significant tiles
+
+        Parameters
+        ----------
+        qrange : `tuple` of `float`, optional
+            `(low, high)` range of Qs to scan
+
+        frange : `tuple` of `float`, optional
+            `(low, high)` range of frequencies to scan
+
+        mismatch : `float`, optional
+            maximum allowed fractional mismatch between neighbouring tiles,
+            default: 0.2
+
+        snrthresh : `float`, optional
+            lower inclusive threshold on individual tile SNR to keep in the
+            table, default: 5.5
+
+        **kwargs
+            other keyword arguments to be passed to :meth:`QTiling.transform`,
+            including ``'epoch'`` and ``'search'``
+
+        Returns
+        -------
+        qgram : `EventTable`
+            a table of time-frequency tiles on the most significant `QPlane`
+
+        See Also
+        --------
+        TimeSeries.q_transform
+            for a method to interpolate the raw Q-transform over a regularly
+            gridded spectrogram
+        gwpy.signal.qtransform
+            for code and documentation on how the Q-transform is implemented
+        gwpy.table.EventTable.tile
+            to render this `EventTable` as a collection of polygons
+
+        Notes
+        -----
+        Only tiles with signal energy greater than or equal to
+        `snrthresh ** 2 / 2` will be stored in the output `EventTable`. The
+        table columns are ``'time'``, ``'duration'``, ``'frequency'``,
+        ``'bandwidth'``, and ``'energy'``.
+        """
+        from ..signal.qtransform import q_scan
+        qscan, _ = q_scan(self, mismatch=mismatch, qrange=qrange,
+                          frange=frange, **kwargs)
+        qgram = qscan.table(snrthresh=snrthresh)
+        return qgram
+
     def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
-                    gps=None, search=.5, tres=.001, fres=.5, norm='median',
-                    outseg=None, whiten=True, fduration=2, highpass=None,
-                    **asd_kw):
-        """Scan a `TimeSeries` using a multi-Q transform
+                    gps=None, search=.5, tres=.001, fres=.5, logf=False,
+                    norm='median', mismatch=0.2, outseg=None, whiten=True,
+                    fduration=2, highpass=None, **asd_kw):
+        """Scan a `TimeSeries` using the multi-Q transform and return an
+        interpolated high-resolution spectrogram
 
         Parameters
         ----------
@@ -1620,15 +1827,25 @@ class TimeSeries(TimeSeriesBase):
         tres : `float`, optional
             desired time resolution (seconds) of output `Spectrogram`
 
-        fres : `float`, `None`, optional
+        fres : `float`, `int`, `None`, optional
             desired frequency resolution (Hertz) of output `Spectrogram`,
             give `None` to skip this step and return the original resolution,
             e.g. if you're going to do your own interpolation
+
+        logf : `bool`, optional
+            boolean switch to enable (`True`) or disable (`False`) use of
+            log-sampled frequencies in the output `Spectrogram`,
+            if `True` then `fres` is interpreted as a number of frequency
+            samples, default: `False`
 
         norm : `bool`, `str`, optional
             whether to normalize the returned Q-transform output, or how,
             default: `True` (``'median'``), other options: `False`,
             ``'mean'``
+
+        mismatch : `float`
+            maximum allowed fractional mismatch between neighbouring tiles,
+            default: 0.2
 
         outseg : `~gwpy.segments.Segment`, optional
             GPS `[start, stop)` segment for output `Spectrogram`
@@ -1652,7 +1869,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        specgram : `~gwpy.spectrogram.Spectrogram`
+        out : `~gwpy.spectrogram.Spectrogram`
             output `Spectrogram` of normalised Q energy
 
         See Also
@@ -1663,20 +1880,19 @@ class TimeSeries(TimeSeriesBase):
             for documentation on how the whitening is done
         gwpy.signal.qtransform
             for code and documentation on how the Q-transform is implemented
-        scipy.interpolate
-            for details on how the interpolation is implemented. This method
-            uses `~scipy.interpolate.InterpolatedUnivariateSpline` to
-            cast all frequency rows to the same time-axis, and then
-            `~scipy.interpolate.interpd` to apply the desired frequency
-            resolution across the band.
 
         Notes
         -----
-        It is highly recommended to use the `outseg` keyword argument when
-        only a small window around a given GPS time is of interest. This
+        To optimize plot rendering with `~matplotlib.axes.Axes.pcolormesh`,
+        the output `~gwpy.spectrogram.Spectrogram` can be given a log-sampled
+        frequency axis by passing `logf=True` at runtime. The `fres` argument
+        is then the number of points on the frequency axis. Note, this is
+        incompatible with `~matplotlib.axes.Axes.imshow`.
+
+        It is also highly recommended to use the `outseg` keyword argument
+        when only a small window around a given GPS time is of interest. This
         will speed up this method a little, but can greatly speed up
-        rendering the resulting `~gwpy.spectrogram.Spectrogram` using
-        `~matplotlib.axes.Axes.pcolormesh`.
+        rendering the resulting `Spectrogram` using `pcolormesh`.
 
         If you aren't going to use `pcolormesh` in the end, don't worry.
 
@@ -1703,98 +1919,36 @@ class TimeSeries(TimeSeriesBase):
         >>> ax.set_epoch(0)
         >>> plot.show()
         """  # nopep8
-        from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
+        from ..signal.qtransform import q_scan
         from ..frequencyseries import FrequencySeries
-        from ..spectrogram import Spectrogram
-        from ..signal.qtransform import QTiling
-
         # condition data
-        if whiten:
-            if not isinstance(whiten, FrequencySeries):
-                window = asd_kw.pop('window', 'hann')
-                fftlength = asd_kw.pop('fftlength',
-                                       _fft_length_default(self.dt))
-                overlap = asd_kw.pop('overlap', None)
-                if overlap is None and fftlength == self.duration.value:
-                    asd_kw['method'] = 'scipy-welch'
-                    overlap = 0
-                elif overlap is None:
-                    overlap = recommended_overlap(window) * fftlength
-                whiten = self.asd(fftlength, overlap, window=window, **asd_kw)
-            # apply whitening (with errors on dividing by zero)
+        if whiten is True:  # generate ASD dynamically
+            window = asd_kw.pop('window', 'hann')
+            fftlength = asd_kw.pop('fftlength',
+                                   _fft_length_default(self.dt))
+            overlap = asd_kw.pop('overlap', None)
+            if overlap is None and fftlength == self.duration.value:
+                asd_kw['method'] = 'scipy-welch'
+                overlap = 0
+            elif overlap is None:
+                overlap = recommended_overlap(window) * fftlength
+            whiten = self.asd(fftlength, overlap, window=window, **asd_kw)
+        if isinstance(whiten, FrequencySeries):
+            # apply whitening (with error on division by zero)
             with numpy.errstate(all='raise'):
                 data = self.whiten(asd=whiten, fduration=fduration,
                                    highpass=highpass)
         else:
             data = self
-
-        # perform FFT to feed into Q-transform
-        fdata = data.fft().value
-
-        # metadata
-        epoch = data.x0
-        span = data.span
-        if outseg is None:
-            outseg = span
-
-        # truncate search window to available data
-        if gps is not None:  # search is only used if gps is given
-            search = Segment(gps-search, gps+search) & span
-
-        # generate tiling
-        planes = QTiling(abs(span), self.sample_rate.value,
-                         qrange=qrange, frange=frange)
-
-        # set up results
-        peakq = None
-        peakenergy = 0
-
-        # Q-transform data for each `(Q, frequency)` tile
-        for plane in planes:
-            freqs, normenergies = plane.transform(fdata, norm=norm,
-                                                  epoch=epoch)
-            # find peak energy in this plane and record if loudest
-            for ts in normenergies:
-                if gps is None:
-                    peak = ts.value.max()
-                else:
-                    peak = ts.crop(*search).value.max()
-                if peak > peakenergy:
-                    peakenergy = peak
-                    peakq = plane.q
-                    norms = normenergies
-                    frequencies = freqs
-
-        # build regular Spectrogram from peak-Q data by interpolating each
-        # (Q, frequency) `TimeSeries` to have the same time resolution
-        nx = int(abs(Segment(*outseg)) / tres)
-        ny = frequencies.size
-        out = Spectrogram(numpy.zeros((nx, ny)), x0=outseg[0], dx=tres,
-                          frequencies=frequencies)
-        # FIXME: bug in Array2D.yindex setting
-        out._yindex = type(out.y0)(frequencies, out.y0.unit)
-        # record Q in output
-        out.q = peakq
-        # interpolate rows
-        for i, row in enumerate(norms):
-            interp = InterpolatedUnivariateSpline(
-                row.times.value, row.value)
-            out[:, i] = interp(out.times.value)
-
-        # then interpolate the spectrogram to increase the frequency resolution
-        # --- this is done because duncan doesn't like interpolated images
-        #     because they don't support log scaling
-        if fres is None:  # unless user tells us not to
-            return out
-
-        interp = interp2d(out.times.value, frequencies, out.value.T,
-                          kind='cubic')
-        freqs2 = numpy.arange(planes.frange[0], planes.frange[1], fres)
-        new = Spectrogram(interp(out.times.value, freqs2 + fres/2.).T,
-                          x0=outseg[0], dx=tres,
-                          f0=planes.frange[0], df=fres)
-        new.q = peakq
-        return new
+        # determine search window
+        if gps is None:
+            search = None
+        elif search is not None:
+            search = Segment(gps-search/2, gps+search/2) & self.span
+        qgram, _ = q_scan(data, frange=frange, qrange=qrange, norm=norm,
+                          mismatch=mismatch, search=search)
+        return qgram.interpolate(
+            tres=tres, fres=fres, logf=logf, outseg=outseg)
 
 
 @as_series_dict_class(TimeSeries)

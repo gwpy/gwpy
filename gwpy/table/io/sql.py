@@ -93,7 +93,8 @@ def fetch(engine, tablename, columns=None, selection=None, **kwargs):
     # Convert unicode columns to string
     types = tab.apply(lambda x: pd.api.types.infer_dtype(x.values))
 
-    for col in types[types == 'unicode'].index:
-        tab[col] = tab[col].astype(str)
+    if not tab.empty:
+        for col in types[types == 'unicode'].index:
+            tab[col] = tab[col].astype(str)
 
     return Table.from_pandas(tab).filled()

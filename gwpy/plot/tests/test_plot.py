@@ -32,10 +32,10 @@ from matplotlib import (pyplot, rc_context)
 from astropy.units import Unit
 
 from ...segments import (Segment, SegmentList)
-from ...tests import utils
+from ...testing import utils
 from ...types import (Series, Array2D)
 from .. import (Plot, Axes, BodePlot)
-from .utils import (usetex, FigureTestBase)
+from .utils import FigureTestBase
 
 numpy.random.seed(0)
 
@@ -126,13 +126,16 @@ class TestPlot(FigureTestBase):
         assert cbar.mappable is image
 
     def test_add_segments_bar(self, fig):
-        ax = fig.gca(xscale='auto-gps')
+        ax = fig.gca(xscale='auto-gps', epoch=150)
         ax.set_xlim(100, 200)
         ax.set_xlabel('test')
         segs = SegmentList([Segment(10, 110), Segment(150, 400)])
         segax = fig.add_segments_bar(segs)
         assert segax._sharex is ax
         assert ax.get_xlabel() == ''
+        for ax_ in (ax, segax):
+            assert ax_.get_xlim() == (100, 200)
+            assert ax_.get_epoch() == 150.
 
         # check that it works again
         segax = fig.add_segments_bar(segs, ax=ax)

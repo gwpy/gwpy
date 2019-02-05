@@ -25,18 +25,18 @@ from contextlib import contextmanager
 from importlib import import_module
 
 from six import PY2
+from six.moves import zip_longest
 
 import pytest
 
 import numpy
 from numpy.testing import (assert_array_equal, assert_allclose)
 
-import pytest
-
 # -- useful constants ---------------------------------------------------------
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 TEST_GWF_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.gwf')
+TEST_HDF5_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.hdf')
 
 
 # -- dependencies -------------------------------------------------------------
@@ -177,7 +177,7 @@ def assert_table_equal(a, b, is_copy=True, meta=False, check_types=True,
 def assert_segmentlist_equal(a, b):
     """Assert that two `SegmentList`s contain the same data
     """
-    for aseg, bseg in zip(a, b):
+    for aseg, bseg in zip_longest(a, b):
         assert aseg == bseg
 
 

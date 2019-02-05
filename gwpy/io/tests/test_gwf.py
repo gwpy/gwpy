@@ -19,9 +19,12 @@
 """Unit tests for :mod:`gwpy.io.gwf`
 """
 
+from six.moves.urllib.parse import urljoin
+
 import pytest
 
-from ...tests.utils import (TEST_GWF_FILE, skip_missing_dependency)
+from ...testing.utils import (TEST_GWF_FILE, skip_missing_dependency,
+                              TemporaryFilename)
 from .. import gwf as io_gwf
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -36,6 +39,21 @@ def test_identify_gwf():
     with open(TEST_GWF_FILE, 'rb') as gwff:
         assert io_gwf.identify_gwf('read', None, gwff) is True
     assert not io_gwf.identify_gwf('read', None, None)
+
+
+@skip_missing_dependency('LDAStools.frameCPP')
+def test_open_gwf():
+    from LDAStools import frameCPP
+    assert isinstance(io_gwf.open_gwf(TEST_GWF_FILE), frameCPP.IFrameFStream)
+    with TemporaryFilename() as tmp:
+        assert isinstance(io_gwf.open_gwf(tmp, mode='w'),
+                          frameCPP.OFrameFStream)
+        # check that we can use a file:// URL as well
+        url = urljoin('file:', tmp)
+        assert isinstance(io_gwf.open_gwf(url, mode='w'),
+                          frameCPP.OFrameFStream)
+    with pytest.raises(ValueError):
+        io_gwf.open_gwf('test', mode='a')
 
 
 @skip_missing_dependency('LDAStools.frameCPP')

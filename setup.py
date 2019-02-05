@@ -62,6 +62,7 @@ install_requires = [
     'ligo-segments >= 1.0.0',
     'tqdm >= 4.10.0',
     'ligotimegps >= 1.2.1',
+    'gwosc >= 0.3.1',
 ]
 
 # if setuptools is too old and we are building an EL7 or Debian 8
@@ -74,7 +75,7 @@ if not PEP_508 and (
 
 # test dependencies
 tests_require = [
-    'pytest>=3.1',
+    'pytest>=3.3.0',
     'freezegun>=0.2.3',
     'sqlparse>=0.2.0',
     'beautifulsoup4',
@@ -101,7 +102,6 @@ setup(
     packages=find_packages(),
     scripts=get_scripts(),
     include_package_data=True,
-    test_suite='gwpy.tests',
 
     # dependencies
     cmdclass=CMDCLASS,

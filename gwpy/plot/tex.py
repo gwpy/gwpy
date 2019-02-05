@@ -48,7 +48,7 @@ def has_tex():
     for exe in ('latex', 'pdflatex', 'dvipng'):
         try:
             which(exe)
-        except ValueError:
+        except (ValueError, KeyError):
             return False
     return True
 

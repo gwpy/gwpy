@@ -30,8 +30,8 @@ from matplotlib import rc_context
 from astropy import units
 
 from ...detector import Channel
-from ...time import Time
-from ...tests import utils
+from ...time import (Time, LIGOTimeGPS)
+from ...testing import (mocks, utils)
 from ...types import Array2D
 from .. import (StateVector, StateVectorDict, StateVectorList,
                 StateTimeSeries, StateTimeSeriesDict, Bits)
@@ -104,6 +104,42 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
         a2 = array ** 2
         assert a2.dtype is numpy.dtype(bool)
         utils.assert_array_equal(array.value, a2.value)
+
+    @utils.skip_missing_dependency('nds2')
+    def test_from_nds2_buffer(self):
+        # build fake buffer
+        nds_buffer = mocks.nds2_buffer(
+            'X1:TEST',
+            self.data,
+            1000000000,
+            self.data.shape[0],
+            'm',
+            name='test',
+        )
+        array = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
+        assert array.unit is units.dimensionless_unscaled
+        assert array.dtype is numpy.dtype(bool)
+
+    def test_to_dqflag(self, array):
+        flag = array.to_dqflag()
+        utils.assert_segmentlist_equal(
+            flag.active, [(1, 4), (7, 8), (10, 13), (14, 15), (16, 20)],
+        )
+        utils.assert_segmentlist_equal(flag.known, [array.span])
+        assert flag.name == array.name
+        assert flag.label == array.name
+        assert flag.description is None
+
+        flag = array.to_dqflag(minlen=2, dtype=LIGOTimeGPS, name='Test flag',
+                               round=True, label='Label',
+                               description='Description')
+        utils.assert_segmentlist_equal(
+            flag.active, [(1, 4), (10, 13), (16, 20)],
+        )
+        assert isinstance(flag.active[0][0], LIGOTimeGPS)
+        assert flag.name == 'Test flag'
+        assert flag.label == 'Label'
+        assert flag.description == 'Description'
 
     def test_override_unit(self):
         return NotImplemented
@@ -237,7 +273,6 @@ class TestStateVector(_TestTimeSeriesBase):
             array.get_bit_series(['blah'])
         assert str(exc.value) == "Bit 'blah' not found in StateVector"
 
-    @utils.skip_missing_dependency('glue.segmentsUtils')
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot()
@@ -294,6 +329,19 @@ class TestStateVector(_TestTimeSeriesBase):
                         bits=LOSC_GW150914_DQ_BITS[format]),
             exclude=['channel'])
 
+    @utils.skip_missing_dependency('nds2')
+    def test_from_nds2_buffer(self):
+        # build fake buffer
+        nds_buffer = mocks.nds2_buffer(
+            'X1:TEST',
+            self.data,
+            1000000000,
+            self.data.shape[0],
+            '',
+            name='test',
+        )
+        array = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
+        assert array.unit is units.dimensionless_unscaled
 
 # -- StateVectorDict ----------------------------------------------------------
 

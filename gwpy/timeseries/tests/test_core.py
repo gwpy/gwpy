@@ -19,7 +19,8 @@
 """Unit test for timeseries module
 """
 
-import os
+import operator
+from functools import reduce
 from io import BytesIO
 
 import pytest
@@ -27,7 +28,7 @@ import pytest
 import numpy
 try:
     from numpy import shares_memory
-except ImportError:  # old numpy
+except ImportError:  # numpy < 1.11.0
     from numpy import may_share_memory as shares_memory
 
 from matplotlib import rc_context
@@ -36,7 +37,7 @@ from astropy import units
 
 from ...detector import Channel
 from ...segments import (Segment, SegmentList)
-from ...tests import (mocks, utils)
+from ...testing import (mocks, utils)
 from ...time import Time
 from ...types.tests.test_series import TestSeries as _TestSeries
 from .. import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList)
@@ -137,20 +138,41 @@ class TestTimeSeriesBase(_TestSeries):
 
     @utils.skip_missing_dependency('nds2')
     def test_from_nds2_buffer(self):
+        # build fake buffer
         nds_buffer = mocks.nds2_buffer(
-            'X1:TEST', self.data, 1000000000, self.data.shape[0], 'm')
+            'X1:TEST',
+            self.data,
+            1000000000,
+            self.data.shape[0],
+            'm',
+            name='test',
+            slope=2,
+            offset=1,
+        )
+
+        # convert to TimeSeries
         a = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
+
+        # check everything works
         assert isinstance(a, self.TEST_CLASS)
-        utils.assert_array_equal(a.value, self.data)
-        if not type(a).__name__.startswith('State'):  # states don't have units
-            assert a.unit == units.m
+        assert not shares_memory(a.value, nds_buffer.data)
+        utils.assert_array_equal(a.value, nds_buffer.data * 2 + 1)
         assert a.t0 == 1000000000 * units.s
-        assert a.dt == units.s / self.data.shape[0]
-        assert a.name == 'X1:TEST'
-        assert a.channel == Channel('X1:TEST', sample_rate=self.data.shape[0],
-                                    unit='m', type='raw', dtype='float32')
-        b = self.TEST_CLASS.from_nds2_buffer(nds_buffer, sample_rate=128)
+        assert a.dt == units.s / nds_buffer.data.shape[0]
+        assert a.name == 'test'
+        assert a.channel == Channel(
+            'X1:TEST',
+            sample_rate=self.data.shape[0],
+            unit='m',
+            type='raw',
+            dtype='float32',
+        )
+
+        # check that we can use keywords to override settings
+        b = self.TEST_CLASS.from_nds2_buffer(nds_buffer, scaled=False,
+                                             copy=False, sample_rate=128)
         assert b.dt == 1/128. * units.s
+        assert shares_memory(nds_buffer.data, b.value)
 
     @utils.skip_missing_dependency('lal')
     def test_to_from_lal(self, array):
@@ -219,6 +241,15 @@ class TestTimeSeriesBaseDict(object):
     def test_series_link(self):
         assert self.ENTRY_CLASS.DictClass is self.TEST_CLASS
         assert self.TEST_CLASS.EntryClass is self.ENTRY_CLASS
+
+    def test_span(self, instance):
+        assert isinstance(instance.span, Segment)
+        assert instance.span == reduce(
+            operator.or_, (ts.span for ts in instance.values()), Segment(0, 0),
+        )
+        with pytest.raises(ValueError) as exc:
+            self.TEST_CLASS().span
+        assert 'cannot calculate span for empty ' in str(exc.value)
 
     def test_copy(self, instance):
         copy = instance.copy()
@@ -405,7 +436,8 @@ class TestTimeSeriesBaseList(object):
         new = self.ENTRY_CLASS([1, 2, 3, 4, 5])
         a.append(new)
         b.extend([new])
-        assert a == b
+        for i in range(max(map(len, (a, b)))):
+            utils.assert_quantity_sub_equal(a[i], b[i])
 
     def test_coalesce(self):
         a = self.TEST_CLASS()

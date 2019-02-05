@@ -85,7 +85,7 @@ def table_from_gwf(filename, name, columns=None, selection=None):
     # open frame file
     if isinstance(filename, FILE_LIKE):
         filename = filename.name
-    stream = frameCPP.IFrameFStream(filename)
+    stream = io_gwf.open_gwf(filename)
 
     # parse selections and map to column indices
     if selection is None:

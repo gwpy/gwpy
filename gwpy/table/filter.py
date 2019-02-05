@@ -142,9 +142,9 @@ def parse_column_filter(definition):
     >>> parse_column_filter("channel = "H1:TEST")
     [('channel', <function operator.eq>, 'H1:TEST')]
     """  # nopep8
-    # parse definition into parts
+    # parse definition into parts (skipping null tokens)
     parts = list(generate_tokens(StringIO(definition.strip()).readline))
-    if parts[-1][0] == token.ENDMARKER:  # remove end marker
+    while parts[-1][0] in (token.ENDMARKER, token.NEWLINE):
         parts = parts[:-1]
 
     # parse simple definition: e.g: snr > 5

@@ -26,7 +26,7 @@ import numpy
 from astropy import units
 
 from ...segments import Segment
-from ...tests import utils
+from ...testing import utils
 from .. import (Series, Array2D)
 from .test_series import TestSeries as _TestSeries
 

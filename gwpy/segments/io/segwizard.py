@@ -19,76 +19,141 @@
 """Read SegmentLists from seg-wizard format ASCII files
 """
 
-import warnings
+from __future__ import print_function
+
+import re
 
 from six import string_types
 
-from .. import (Segment, SegmentList, DataQualityFlag)
+from .. import (Segment, SegmentList)
 from ...io import registry
 from ...io.utils import identify_factory
-from ...io.cache import file_list
 from ...time import LIGOTimeGPS
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+_FLOAT_PAT = r'([\d.+-eE]+)'
+# simple two-column (gpsstart, gpsend)
+TWO_COL_REGEX = re.compile(
+    r'\A\s*{float}\s+{float}\s*\Z'.format(float=_FLOAT_PAT))
+# three column (gpsstart, gpsend, duration)
+THREE_COL_REGEX = re.compile(
+    r'\A\s*{float}\s+{float}\s+{float}\s*\Z'.format(float=_FLOAT_PAT))
+# four column (index, gpsstart, gpsend, duration)
+FOUR_COL_REGEX = re.compile(
+    r'\A\s*([\d]+)\s+{float}\s+{float}\s+{float}\s*\Z'.format(
+        float=_FLOAT_PAT))
+
 
 # -- read ---------------------------------------------------------------------
 
-def from_segwizard(source, coalesce=True, gpstype=LIGOTimeGPS, strict=True,
-                   nproc=1):
+def from_segwizard(source, gpstype=LIGOTimeGPS, strict=True):
     """Read segments from a segwizard format file into a `SegmentList`
+
+    Parameters
+    ----------
+    source : `file`, `str`
+        An open file, or file path, from which to read
+
+    gpstype : `type`, optional
+        The numeric type to which to cast times (from `str`) when reading.
+
+    strict : `bool`, optional
+        Check that recorded duration matches ``end-start`` for all segments;
+        only used when reading from a 3+-column file.
+
+    Returns
+    -------
+    segments : `~gwpy.segments.SegmentList`
+        The list of segments as parsed from the file.
+
+    Notes
+    -----
+    This method is adapted from original code written by Kipp Cannon and
+    distributed under GPLv3.
     """
-    from glue import segmentsUtils
+    # read file path
+    if isinstance(source, string_types):
+        with open(source, 'r') as fobj:
+            return from_segwizard(fobj, gpstype=gpstype, strict=strict)
 
-    if nproc != 1:
-        return SegmentList.read(source, coalesce=coalesce, gpstype=gpstype,
-                                strict=strict, nproc=nproc, format='cache')
+    # read file object
+    out = SegmentList()
+    fmt_pat = None
+    for line in source:
+        if line.startswith(('#', ';')):  # comment
+            continue
+        # determine line format
+        if fmt_pat is None:
+            fmt_pat = _line_format(line)
+        # parse line
+        tokens, = fmt_pat.findall(line)
+        out.append(_format_segment(tokens[-3:], gpstype=gpstype))
+    return out
 
-    # format list of files and read in serial
-    files = file_list(source)
-    segs = SegmentList()
-    for file_ in files:
-        with open(file_, 'r') as fobj:
-            raw = segmentsUtils.fromsegwizard(fobj, coltype=gpstype,
-                                              strict=strict)
-            segs.extend(SegmentList(map(Segment, raw)))
-    if coalesce:
-        segs.coalesce()
-    return segs
+
+def _line_format(line):
+    """Determine the column format pattern for a line in an ASCII segment file.
+    """
+    for pat in (FOUR_COL_REGEX, THREE_COL_REGEX, TWO_COL_REGEX):
+        if pat.match(line):
+            return pat
+    raise ValueError("unable to parse segment from line {!r}".format(line))
+
+
+def _format_segment(tokens, strict=True, gpstype=LIGOTimeGPS):
+    """Format a list of tokens parsed from an ASCII file into a segment.
+    """
+    try:
+        start, end, dur = tokens
+    except ValueError:  # two-columns
+        return Segment(map(gpstype, tokens))
+    seg = Segment(gpstype(start), gpstype(end))
+    if strict and abs(seg) != gpstype(dur):
+        raise ValueError("segment {0!r} has incorrect duration".format(seg))
+    return seg
 
 
 # -- write --------------------------------------------------------------------
 
-def to_segwizard(segs, fobj, header=True, coltype=int):
-    """Write the given `SegmentList` to the file object fobj
+# pylint: disable=inconsistent-return-statements
+def to_segwizard(segs, target, header=True, coltype=LIGOTimeGPS):
+    """Write the given `SegmentList` to a file in SegWizard format.
 
     Parameters
     ----------
-    segs : :class:`~gwpy.segments.segments.SegmentList`
-        segmentlist to print
-    fobj : `file`, `str`
-        open file object, or file path, to write to
+    segs : :class:`~gwpy.segments.SegmentList`
+        The list of segments to write.
+
+    target : `file`, `str`
+        An open file, or file path, to which to write.
+
     header : `bool`, optional
-        print header into the file, default: `True`
+        Print a column header into the file, default: `True`.
+
     coltype : `type`, optional
-        numerical type in which to cast times before printing
+        The numerical type in which to cast times before printing.
 
-    See Also
-    --------
-    glue.segmentsUtils
-        for definition of the segwizard format, and the to/from functions
-        used in this GWpy module
+    Notes
+    -----
+    This method is adapted from original code written by Kipp Cannon and
+    distributed under GPLv3.
     """
-    from glue import segmentsUtils
+    # write file path
+    if isinstance(target, string_types):
+        with open(target, 'w') as fobj:
+            return to_segwizard(segs, fobj, header=header, coltype=coltype)
 
-    if isinstance(fobj, string_types):
-        close = True
-        fobj = open(fobj, 'w')
-    else:
-        close = False
-    segmentsUtils.tosegwizard(fobj, segs, header=header, coltype=coltype)
-    if close:
-        fobj.close()
+    # write file object
+    if header:
+        print('# seg\tstart\tstop\tduration', file=target)
+    for i, seg in enumerate(segs):
+        print(
+            '\t'.join(map(
+                str, (i, coltype(seg[0]), coltype(seg[1]), coltype(abs(seg))),
+            )), file=target,
+        )
+
 
 # -- register -----------------------------------------------------------------
 

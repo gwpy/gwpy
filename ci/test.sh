@@ -16,31 +16,38 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+set -ex
+trap 'set +ex' RETURN
+
 #
 # Run the test suite for GWpy on the current system
 #
 
-if [ ! -z ${GWPY_PATH+x} ]; then
-    cd ${GWPY_PATH}
+# get path to python and pip
+PYTHON="python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}"
+PYTHON_PREFIX=$(${PYTHON} -c "import sys; print(sys.prefix)")
+
+# install with sudo on macports
+if [[ "${PYTHON_PREFIX}" =~ "/opt/local/"* ]]; then
+    PIP="sudo -H ${PYTHON} -m pip"
+else
+    PIP="${PYTHON} -m pip"
 fi
-. ci/lib.sh
 
-# macports PATH doesn't persist from install stage, which is annoying
-if [ $(get_package_manager) == port ]; then
-    . terryfy/travis_tools.sh
-    export PATH=$MACPORTS_PREFIX/bin:$PATH
-fi
-
-get_environment  # sets PIP variables etc
-get_python_version  # sets PYTHON_VERSION
-
-set -ex && trap 'set +xe' RETURN
+# upgrade setuptools in order to understand environment markers
+${PIP} install "pip>=8.0.0" "setuptools>=20.2.2"
 
 # install test dependencies
 ${PIP} install ${PIP_FLAGS} -r requirements-test.txt
 
-# run tests
-${PYTHON} -m coverage run ./setup.py --quiet test
+# try and install pytest-cov again, which forces pip to make sure
+# that the right version of pytest is installed
+if grep -q "pytest-cov" requirements-test.txt; then
+    ${PIP} install ${PIP_FLAGS} pytest-cov
+fi
 
-# print coverage
-${PYTHON} -m coverage report
+# list all packages
+${PIP} list installed
+
+# run tests with coverage
+${PYTHON} -m pytest --pyargs gwpy --cov=gwpy

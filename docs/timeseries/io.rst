@@ -86,20 +86,17 @@ The ``start`` and ``end`` keyword arguments can be used to downselect data to a 
 
     >>> data = TimeSeries.read('HLV-HW100916-968654552-1.gwf', 'L1:LDAS-STRAIN', start=968654552.5, end=968654553)
 
-Additionally, the following keyword arguments can be passed to manipulate the data on-the-fly when reading:
+Additionally, the following keyword arguments can be used:
 
-============  =======  ==========================================
-Keyword       Type     Usage
-============  =======  ==========================================
-``resample``  `float`  resample the data to a different number of
-                       samples per second
-``dtype``     `type`   cast the input data to a different data type
-============  =======  ==========================================
-
-For example::
-
-   >>> data = TimeSeries.read('HLV-HW100916-968654552-1.gwf', 'L1:LDAS-STRAIN',
-   ...                        resample=2048)
+============  =======  =======  ==========================================
+Keyword       Type     Default  Usage
+============  =======  =======  ==========================================
+``scaled``    `bool`   `True`   Apply ADC calibration when reading
+``type``      `str`    `None`   `dict` of channel types
+                                (``'ADC'``, ``'Proc'``, or ``'Sim'``) for
+                                each channel to be read. This option
+                                optimises the reading operation.
+============  =======  =======  ==========================================
 
 Reading multiple channels
 -------------------------
@@ -136,6 +133,10 @@ HDF5
 
 GWpy allows storing data in HDF5 format files, using a custom specification for storage of metadata.
 
+.. warning::
+
+   To read GWOSC (LOSC) data from HDF5, please see
+   :ref:`gwpy-timeseries-io-hdf5-gwosc`.
 
 Reading
 -------
@@ -175,6 +176,33 @@ To write a `TimeSeries` to an existing file, use ``append=True``::
 To replace an existing dataset in an existing file, while preserving other data, use *both* ``append=True`` and ``overwrite=True``::
 
     >>> data.write('output.hdf', append=True, overwrite=True)
+
+.. _gwpy-timeseries-io-hdf5-gwosc:
+
+============
+HDF5 (GWOSC)
+============
+
+The `Gravitational Wave Open Science Center (GWOSC)
+<https://www.gw-openscience.org>` write data in HDF5 using a custom schema
+that is incompatible with the `format='hdf5'`.
+
+-------
+Reading
+-------
+
+GWpy can read data from GWOSC (LOSC) HDF5 files using the `format='hdf5.losc'`
+keyword::
+
+   >>> data = TimeSeries.read('H-H1_GWOSC_16KHZ_R1-1187056280-4096.hdf5',
+   ...                        format='hdf5.losc')
+
+By default, `TimeSeries.read` will return the contents of the
+``/strain/Strain`` dataset, while `StateVector.read` will return those of
+``/quality/simple``.
+
+As with regular HDF5, the ``start`` and ``end`` keyword arguments can be used to downselect data to a specific ``[start, end)`` time segment when reading.
+
 
 .. _gwpy-timeseries-io-wav:
 

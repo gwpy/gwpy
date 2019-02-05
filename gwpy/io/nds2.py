@@ -22,12 +22,10 @@ to LIGO data.
 
 from __future__ import (absolute_import, print_function)
 
-# pylint: disable=wrong-import-order
 import enum
 import operator
 import os
 import re
-import sys
 import warnings
 from collections import OrderedDict
 from functools import wraps
@@ -36,28 +34,25 @@ from six.moves import reduce
 
 import numpy
 
-try:
-    import nds2
-except ImportError:
-    HAS_NDS2 = False
-else:
-    HAS_NDS2 = True
-
 from ..time import to_gps
 from .kerberos import kinit
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+# regular expression to match LIGO-standard NDS1 hostnames (e.g x1nds0)
 NDS1_HOSTNAME = re.compile(r'[a-z]1nds[0-9]\Z')
 
+# map of default hosts for each interferometer prefix
 DEFAULT_HOSTS = OrderedDict([
     (None, ('nds.ligo.caltech.edu', 31200)),
     ('H1', ('nds.ligo-wa.caltech.edu', 31200)),
     ('H0', ('nds.ligo-wa.caltech.edu', 31200)),
     ('L1', ('nds.ligo-la.caltech.edu', 31200)),
     ('L0', ('nds.ligo-la.caltech.edu', 31200)),
+    ('V1', ('nds.ligo.caltech.edu', 31200)),
     ('C1', ('nds40.ligo.caltech.edu', 31200)),
-    ('C0', ('nds40.ligo.caltech.edu', 31200))])
+    ('C0', ('nds40.ligo.caltech.edu', 31200)),
+])
 
 
 # -- enums --------------------------------------------------------------------
@@ -146,12 +141,18 @@ class Nds2DataType(Nds2Enum):
         """
         try:
             return cls._member_map_[dtype]
-        except KeyError as exc:
-            dtype = numpy.dtype(dtype).type
-            for ndstype in cls._member_map_.values():
-                if ndstype.value and ndstype.numpy_dtype is dtype:
-                    return ndstype
-            raise exc
+        except KeyError:
+            try:
+                dtype = numpy.dtype(dtype).type
+            except TypeError:
+                for ndstype in cls._member_map_.values():
+                    if ndstype.value is dtype:
+                        return ndstype
+            else:
+                for ndstype in cls._member_map_.values():
+                    if ndstype.value and ndstype.numpy_dtype is dtype:
+                        return ndstype
+            raise ValueError('%s is not a valid %s' % (dtype, cls.__name__))
 
     UNKNOWN = 0
     INT16 = 1
@@ -241,7 +242,7 @@ def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
         default ``'NDSSERVER'``. The contents of this variable should
         be a comma-separated list of `host:port` strings, e.g.
         ``'nds1.server.com:80,nds2.server.com:80'``
-    epoch : `~gwpy.time.LIGOTimeGPS`, `float`
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
         GPS epoch of data requested
     lookback : `float`
         duration of spinning-disk cache. This value triggers defaulting to
@@ -266,7 +267,11 @@ def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
         try:
             host, port = DEFAULT_HOSTS[difo]
         except KeyError:
-            warnings.warn('No default host found for ifo %r' % ifo)
+            # unknown default NDS2 host for detector, if we don't have
+            # hosts already defined (either by NDSSERVER or similar)
+            # we should warn the user
+            if not hosts:
+                warnings.warn('No default host found for ifo %r' % ifo)
         else:
             if (host, port) not in hosts:
                 hosts.append((host, port))
@@ -289,6 +294,13 @@ def connect(host, port=None):
     connection : `nds2.connection`
         a new open connection to the given NDS host
     """
+    import nds2
+    # pylint: disable=no-member
+
+    # set default port for NDS1 connections (required, I think)
+    if port is None and NDS1_HOSTNAME.match(host):
+        port = 8088
+
     if port is None:
         return nds2.connection(host)
     return nds2.connection(host, port)
@@ -313,23 +325,15 @@ def auth_connect(host, port=None):
     connection : `nds2.connection`
         a new open connection to the given NDS host
     """
-    if not HAS_NDS2:
-        raise ImportError("No module named nds2")
-
-    # set default port for NDS1 connections (required, I think)
-    if port is None and NDS1_HOSTNAME.match(host):
-        port = 8088
-
     try:
         return connect(host, port)
     except RuntimeError as exc:
-        if 'Request SASL authentication' in str(exc):
-            print('\nError authenticating against %s' % host,
-                  file=sys.stderr)
-            kinit()
-            return connect(host, port)
-        else:
+        if 'Request SASL authentication' not in str(exc):
             raise
+    warnings.warn('Error authenticating against {0}:{1}'.format(host, port),
+                  NDSWarning)
+    kinit()
+    return connect(host, port)
 
 
 def open_connection(func):
@@ -363,13 +367,31 @@ def parse_nds2_enums(func):
     return wrapped_func
 
 
+def reset_epoch(func):
+    """Wrap a function to reset the epoch when finished
+
+    This is useful for functions that wish to use `connection.set_epoch`.
+    """
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):  # pylint: disable=missing-docstring
+        connection = kwargs.get('connection', None)
+        epoch = connection.current_epoch() if connection else None
+        try:
+            return func(*args, **kwargs)
+        finally:
+            if epoch is not None:
+                connection.set_epoch(epoch.gps_start, epoch.gps_stop)
+    return wrapped_func
+
+
 # -- query methods ------------------------------------------------------------
 
 @open_connection
+@reset_epoch
 @parse_nds2_enums
 def find_channels(channels, connection=None, host=None, port=None,
                   sample_rate=None, type=Nds2ChannelType.any(),
-                  dtype=Nds2DataType.any(), unique=False, epoch=None):
+                  dtype=Nds2DataType.any(), unique=False, epoch='ALL'):
     # pylint: disable=unused-argument,redefined-builtin
     """Query an NDS2 server for channel information
 
@@ -401,6 +423,10 @@ def find_channels(channels, connection=None, host=None, port=None,
     unique : `bool`, optional, default: `False`
         require one (and only one) match per channel
 
+    epoch : `str`, `tuple` of `int`, optional
+        the NDS epoch to restrict to, either the name of a known epoch,
+        or a 2-tuple of GPS ``[start, stop)`` times
+
     Returns
     -------
     channels : `list` of `nds2.channel`
@@ -418,10 +444,9 @@ def find_channels(channels, connection=None, host=None, port=None,
     [<G1:DER_DATA_H (16384Hz, RDS, FLOAT64)>]
     """
     # set epoch
-    if isinstance(epoch, tuple):
-        connection.set_epoch(*epoch)
-    elif epoch is not None:
-        connection.set_epoch(epoch)
+    if not isinstance(epoch, tuple):
+        epoch = (epoch or 'All',)
+    connection.set_epoch(*epoch)
 
     # format sample_rate as tuple for find_channels call
     if isinstance(sample_rate, (int, float)):
@@ -471,13 +496,9 @@ def _find_channel(connection, name, ctype, dtype, sample_rate, unique=False):
     nds2.connection.find_channels
         for documentation on the underlying query method
     """
-    # parse channel type from name (e.g. 'L1:GDS-CALIB_STRAIN,reduced')
-    try:
-        name, ctype = name.rsplit(',', 1)
-    except ValueError:
-        pass
-    else:
-        ctype = Nds2ChannelType.find(ctype).value
+    # parse channel type from name,
+    # e.g. 'L1:GDS-CALIB_STRAIN,reduced' -> 'L1:GDS-CALIB_STRAIN', 'reduced'
+    name, ctype = _strip_ctype(name, ctype, connection.get_protocol())
 
     # query NDS2
     found = connection.find_channels(name, ctype, dtype, *sample_rate)
@@ -500,7 +521,30 @@ def _find_channel(connection, name, ctype, dtype, sample_rate, unique=False):
     return found
 
 
+def _strip_ctype(name, ctype, protocol=2):
+    """Strip the ctype from a channel name for the given nds server version
+
+    This is needed because NDS1 servers store trend channels _including_
+    the suffix, but not raw channels, and NDS2 doesn't do this.
+    """
+    # parse channel type from name (e.g. 'L1:GDS-CALIB_STRAIN,reduced')
+    try:
+        name, ctypestr = name.rsplit(',', 1)
+    except ValueError:
+        pass
+    else:
+        ctype = Nds2ChannelType.find(ctypestr).value
+        # NDS1 stores channels with trend suffix, so we put it back:
+        if protocol == 1 and ctype in (
+                Nds2ChannelType.STREND.value,
+                Nds2ChannelType.MTREND.value
+        ):
+            name += ',{0}'.format(ctypestr)
+    return name, ctype
+
+
 @open_connection
+@reset_epoch
 def get_availability(channels, start, end,
                      connection=None, host=None, port=None):
     # pylint: disable=unused-argument
@@ -509,9 +553,8 @@ def get_availability(channels, start, end,
     Parameters
     ----------
     channels : `list` of `str`
-        list of channel names to query, each name should be of the form
-        ``name,type``, e.g. ``L1:GDS-CALIB_STRAIN,reduced`` in order to
-        match results
+        list of channel names to query; this list is mapped to NDS channel
+        names using :func:`find_channels`.
 
     start : `int`
         GPS start time of query
@@ -534,6 +577,12 @@ def get_availability(channels, start, end,
     segdict : `~gwpy.segments.SegmentListDict`
         dict of ``(name, SegmentList)`` pairs
 
+    Raises
+    ------
+    ValueError
+        if the given channel name cannot be mapped uniquely to a name
+        in the NDS server database.
+
     See also
     --------
     nds2.connection.get_availability
@@ -541,10 +590,16 @@ def get_availability(channels, start, end,
     """
     from ..segments import (Segment, SegmentList, SegmentListDict)
     connection.set_epoch(start, end)
-    names = _get_nds2_names(channels)
+    # map user-given real names to NDS names
+    names = list(map(
+        _get_nds2_name, find_channels(channels, epoch=(start, end),
+                                      connection=connection, unique=True),
+    ))
+    # query for availability
     result = connection.get_availability(names)
+    # map to segment types
     out = SegmentListDict()
-    for name, result in zip(_get_nds2_names(channels), result):
+    for name, result in zip(channels, result):
         out[name] = SegmentList([Segment(s.gps_start, s.gps_stop) for s in
                                  result.simple_list()])
     return out

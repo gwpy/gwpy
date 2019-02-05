@@ -37,7 +37,7 @@ from matplotlib import rc_context
 
 from astropy import units
 
-from ...tests import utils
+from ...testing import utils
 from ...timeseries import TimeSeries
 from ...types.tests.test_series import TestSeries as _TestSeries
 from .. import FrequencySeries
@@ -125,7 +125,7 @@ class TestFrequencySeries(_TestSeries):
         # construct a TimeSeries, then check that it is unchanged by
         # the operation TimeSeries.fft().ifft()
         ts = TimeSeries([1.0, 0.0, -1.0, 0.0], sample_rate=1.0)
-        assert ts.fft().ifft() == ts
+        utils.assert_quantity_sub_equal(ts.fft().ifft(), ts)
         utils.assert_allclose(ts.fft().ifft().value, ts.value)
 
     def test_filter(self, array):
@@ -168,7 +168,7 @@ class TestFrequencySeries(_TestSeries):
         # create a simple FrequencySeries
         df, nyquist = 1, 256
         nsamp = int(nyquist/df) + 1
-        fseries = FrequencySeries(numpy.ones(nsamp), f0=0, df=df, unit='')
+        fseries = FrequencySeries(numpy.ones(nsamp), f0=1, df=df, unit='')
 
         # create an interpolated FrequencySeries
         newf = fseries.interpolate(df/2.)
@@ -176,6 +176,8 @@ class TestFrequencySeries(_TestSeries):
         # check that the interpolated series is what was expected
         assert newf.unit == fseries.unit
         assert newf.size == 2*(fseries.size - 1) + 1
+        assert newf.df == fseries.df / 2.
+        assert newf.f0 == fseries.f0
         utils.assert_allclose(newf.value, numpy.ones(2*int(nyquist/df) + 1))
 
     @utils.skip_missing_dependency('lal')

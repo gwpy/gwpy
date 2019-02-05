@@ -147,7 +147,7 @@ def write_channel_list_file(channels, fobj):
             out.add_section(group)
         for param, value in channel.params.items():
             out.set(group, param, value)
-        if channel.sample_rate:
+        if channel.sample_rate is not None:
             entry = '%s %s' % (str(channel),
                                str(channel.sample_rate.to('Hz').value))
         else:

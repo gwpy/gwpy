@@ -16,25 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+set -ex
+trap 'set +ex' RETURN
+
 #
 # Submit coverage data to coveralls.io
 #
 
-. ci/lib.sh
-get_environment
+PYTHON="python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}"
+PYTHON_PREFIX=$(${PYTHON} -c "import sys; print(sys.prefix)")
 
-# fix paths in coverage file for docker-based runs
-if [ ! -z ${DOCKER_IMAGE+x} ]; then
-    sed -i 's|"'${GWPY_PATH}'|"'$(pwd)'|g' .coverage;
-fi
-
-# install coveralls
-if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
-    PYTHON=/opt/local/bin/python${PYTHON_VERSION}
-    sudo -H ${PYTHON} -m pip install --quiet coveralls
+# install coveralls (using sudo on macports)
+if [[ "${PYTHON_PREFIX}" =~ "/opt/local/"* ]]; then
+    PIP="sudo -H ${PYTHON} -m pip"
 else
-    ${PIP} install --quiet coveralls
+    PIP="${PYTHON} -m pip"
 fi
+${PIP} install --quiet coveralls
 
-# submit coverage results (unwrapping path to coveralls from python)
-$(${PYTHON} -c "import sys; print(sys.prefix)")/bin/coveralls
+# submit coverage results
+${PYTHON} -m coveralls

@@ -35,8 +35,8 @@ from matplotlib import rc_context
 from ...plot import SegmentAxes
 from ...segments import (Segment, SegmentList,
                          DataQualityFlag, DataQualityDict)
-from ...tests import (mocks, utils)
-from ...tests.mocks import mock
+from ...testing import (mocks, utils)
+from ...testing.compat import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -46,26 +46,26 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 VETO_DEFINER_FILE = """<?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
 <LIGO_LW>
-	<Table Name="veto_definer:table">
-		<Column Type="int_4s" Name="veto_definer:category"/>
-		<Column Type="lstring" Name="veto_definer:comment"/>
-		<Column Type="int_4s" Name="veto_definer:end_pad"/>
-		<Column Type="ilwd:char" Name="veto_definer:process_id"/>
-		<Column Type="lstring" Name="veto_definer:name"/>
-		<Column Type="int_4s" Name="veto_definer:version"/>
-		<Column Type="int_4s" Name="veto_definer:start_pad"/>
-		<Column Type="int_4s" Name="veto_definer:start_time"/>
-		<Column Type="lstring" Name="veto_definer:ifo"/>
-		<Column Type="int_4s" Name="veto_definer:end_time"/>
-		<Stream Delimiter="," Type="Local" Name="veto_definer:table">
-			1,"Test flag 1",2,,"TEST-FLAG",1,-1,100,"X1",0,
-			2,"Test flag 1",2,,"TEST-FLAG_2",1,1,100,"X1",200,
-			2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,200,"X1",0,
-			2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,100,"Y1",0,
-		</Stream>
-	</Table>
+    <Table Name="veto_definer:table">
+        <Column Type="int_4s" Name="veto_definer:category"/>
+        <Column Type="lstring" Name="veto_definer:comment"/>
+        <Column Type="int_4s" Name="veto_definer:end_pad"/>
+        <Column Type="ilwd:char" Name="veto_definer:process_id"/>
+        <Column Type="lstring" Name="veto_definer:name"/>
+        <Column Type="int_4s" Name="veto_definer:version"/>
+        <Column Type="int_4s" Name="veto_definer:start_pad"/>
+        <Column Type="int_4s" Name="veto_definer:start_time"/>
+        <Column Type="lstring" Name="veto_definer:ifo"/>
+        <Column Type="int_4s" Name="veto_definer:end_time"/>
+        <Stream Delimiter="," Type="Local" Name="veto_definer:table">
+            1,"Test flag 1",2,,"TEST-FLAG",1,-1,100,"X1",0,
+            2,"Test flag 1",2,,"TEST-FLAG_2",1,1,100,"X1",200,
+            2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,200,"X1",0,
+            2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,100,"Y1",0,
+        </Stream>
+    </Table>
 </LIGO_LW>
-"""  # nopep8
+"""
 
 
 @pytest.fixture(scope='module')
@@ -101,7 +101,7 @@ KNOWNACTIVE = _as_segmentlist(
 
 # 'active' set contracted by 0.1 seconds
 ACTIVE_CONTRACTED = _as_segmentlist(
-    (1.1, 1.9), (3.1, 3.9))
+    (1.1, 1.9), (3.1, 3.9), (5.1, 6.9))
 
 # 'active' seg protracted by 0.1 seconts
 ACTIVE_PROTRACTED = _as_segmentlist(
@@ -321,8 +321,9 @@ class TestDataQualityFlag(object):
 
         # sub
         x = a - b
-        utils.assert_segmentlist_equal(x.active, a.active - b.active)
         utils.assert_segmentlist_equal(x.known, a.known & b.known)
+        utils.assert_segmentlist_equal(x.active,
+                                       (a.active - b.active) & x.known)
 
         # or
         x = a | b
@@ -856,3 +857,9 @@ class TestDataQualityDict(object):
                 vdf3[flag].known, QUERY_RESULTC[flag].known & span)
             utils.assert_segmentlist_equal(
                 vdf3[flag].active, QUERY_RESULTC[flag].active & span)
+
+    def test_coalesce(self):
+        instance = self.create()
+        instance.coalesce()
+        value = instance['X1:TEST-FLAG:1']
+        utils.assert_segmentlist_equal(value.active, KNOWNACTIVE)

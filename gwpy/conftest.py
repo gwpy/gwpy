@@ -24,13 +24,26 @@ import warnings
 
 import numpy
 
-from matplotlib import use
+from matplotlib import (use, rcParams)
 
-# ignore errors due from pyplot.show() using Agg
-warnings.filterwarnings('ignore', message=".*non-GUI backend.*")
+# register custom fixtures for all test modules
+from .testing.fixtures import *
 
 # set random seed to 1 for reproducability
 numpy.random.seed(1)
 
+# -- plotting options
+
+# ignore errors due from pyplot.show() using Agg
+warnings.filterwarnings('ignore', message=".*non-GUI backend.*")
+
 # force Agg for all tests
 use('agg', warn=False, force=True)
+
+# force simpler rcParams for all tests
+# (fixtures or tests may update these individually)
+# NOTE: this most-likely happens _after_ gwpy.plot has
+#       updated the rcParams once, so these settings should persist
+rcParams.update({
+    'text.usetex': False,  # TeX is slow most of the time
+})

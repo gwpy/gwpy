@@ -413,7 +413,7 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
     if isinstance(target, (Document, LIGO_LW)):
         xmldoc = target
     # open existing document, if possible
-    elif append and not overwrite:
+    elif append:
         xmldoc = open_xmldoc(
             target, contenthandler=kwargs.pop('contenthandler',
                                               LIGOLWContentHandler))

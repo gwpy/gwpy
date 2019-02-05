@@ -151,13 +151,15 @@ class CliProduct(object):
     action = None
 
     def __init__(self, args):
-        self._finalize_arguments(args)  # post-process args
 
         #: input argument Namespace
         self.args = args
 
         #: verbosity
         self.verbose = 0 if args.silent else args.verbose
+
+        # NB: finalizing may want to log if we're being verbose
+        self._finalize_arguments(args)  # post-process args
 
         if args.style:  # apply custom styling
             try:
@@ -335,15 +337,16 @@ class CliProduct(object):
         group.add_argument('--interactive', action='store_true',
                            help='when running from ipython '
                                 'allows experimentation')
-        group.add_argument('--title', action='append',
-                           help='One or more title lines')
+        group.add_argument('--title', action='store',
+                           help='Set title (below suptitle, defaults to '
+                                'parameter summary')
         group.add_argument('--suptitle',
                            help='1st title line (larger than the others)')
         group.add_argument('--out', default='gwpy.png',
                            help='output filename')
 
         # legends match input files in position are displayed if specified.
-        group.add_argument('--legend', nargs='*', action='append',
+        group.add_argument('--legend', nargs='+', action='append', default=[],
                            help='strings to match data files')
         group.add_argument('--nolegend', action='store_true',
                            help='do not display legend')
@@ -629,7 +632,7 @@ class CliProduct(object):
         """Create a legend for this product (if applicable)
         """
         leg = self.ax.legend(prop={'size': 10})
-        if self.n_datasets == 1 and leg:
+        if leg and self.n_datasets == 1:
             try:
                 leg.remove()
             except NotImplementedError:
@@ -637,18 +640,22 @@ class CliProduct(object):
         return leg
 
     def set_title(self, title):
-        """Set the title for this plot.
+        """Set the title(s) for this plot.
 
         The `Axes.title` actually serves at the sub-title for the plot,
         typically giving processing parameters and information.
         """
+
         if title is None:
-            title = self.get_title().rstrip(', ')
+            title_line = self.get_title().rstrip(', ')
+        else:
+            title_line = title
+
         if self.usetex:
-            title = label_to_latex(title)
-        if title:
-            self.ax.set_title(title, fontsize=12)
-            self.log(3, ('Title is: %s' % title))
+            title_line = label_to_latex(title_line)
+        if title_line:
+            self.ax.set_title(title_line, fontsize=12)
+            self.log(3, ('Title is: %s' % title_line))
 
     def set_suptitle(self, suptitle):
         """Set the super title for this plot.

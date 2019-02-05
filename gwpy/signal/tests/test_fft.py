@@ -34,7 +34,7 @@ try:
 except ImportError:
     pass
 
-from ...tests import utils
+from ...testing import utils
 from ...timeseries import TimeSeries
 from ..fft import (get_default_fft_api,
                    basic as fft_basic,
@@ -155,9 +155,13 @@ class TestUI(object):
         """
         a = TimeSeries(numpy.arange(400))
         chunks = list(fft_ui._chunk_timeseries(a, 100, 50))
-        assert chunks == [
-            a[:150], a[75:225], a[175:325], a[250:400],
-        ]
+        for i, (idxa, idxb) in enumerate([
+                (None, 150),
+                (75, 225),
+                (175, 325),
+                (250, 400),
+        ]):
+            utils.assert_quantity_sub_equal(chunks[i], a[idxa:idxb])
 
     def test_fft_library(self):
         """Test :func:`gwpy.signal.fft.ui._fft_library`

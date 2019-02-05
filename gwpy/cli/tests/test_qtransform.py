@@ -22,8 +22,8 @@
 import os
 
 from ... import cli
-from ...tests.utils import skip_missing_dependency
-from ...tests.mocks import mock
+from ...testing.compat import mock
+from ...testing.utils import skip_missing_dependency
 from .base import (update_namespace, mock_nds2_connection)
 from .test_spectrogram import TestCliSpectrogram as _TestCliSpectrogram
 
@@ -50,8 +50,8 @@ class TestCliQtransform(_TestCliSpectrogram):
         assert prod.qxfrm_args['qrange'] == (100., 110.)
 
     def test_get_title(self, dataprod):
-        t = ('Q=45.25, whitened, calc f-range=[36.01, 161.51], '
-             'calc e-range=[-0.14, 21.18]')
+        t = ('Q: 45.25, tres: 0.000208, whitened, f-range: [51.45, 161.45], '
+             'e-range: -0.134, 16.5]')
         assert dataprod.get_title() == t
 
     def test_get_suptitle(self, prod):

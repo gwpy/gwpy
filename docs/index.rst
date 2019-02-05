@@ -92,6 +92,7 @@ Working with data
    detector/channel
    time/index
    astro/index
+   env
 
 **Developer notes**
 
@@ -107,7 +108,6 @@ Working with data
    :hidden:
 
    examples/index
-   plotter/index
 
 Indices and tables
 ~~~~~~~~~~~~~~~~~~

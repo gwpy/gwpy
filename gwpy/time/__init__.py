@@ -42,13 +42,16 @@ from ._tconvert import (tconvert, to_gps, from_gps)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # build list of compatible gps types
-gps_types = tuple()
+gps_types = []
 for _modname in ('lal', 'ligotimegps', 'glue.lal',):
     try:
         _mod = import_module(_modname)
-    except ImportError:
+    except ImportError:  # library not installed
         continue
-    _gps = getattr(_mod, 'LIGOTimeGPS')
-    gps_types = gps_types + (_gps,)
+    try:
+        gps_types.append(getattr(_mod, 'LIGOTimeGPS'))
+    except AttributeError:  # no LIGOTimeGPS available
+        continue
+gps_types = tuple(gps_types)
 
 del import_module
