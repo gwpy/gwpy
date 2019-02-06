@@ -139,8 +139,9 @@ deploy:
       condition: -z "${DOCKER_IMAGE}"
       branch: master
       tags: true
-      python: '2.7'
+      python: '3.6'
       repo: gwpy/gwpy
+      skip_existing: true
 
 notifications:
   slack:
