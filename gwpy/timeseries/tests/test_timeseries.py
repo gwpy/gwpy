@@ -32,7 +32,7 @@ import pytest
 import numpy
 from numpy import testing as nptest
 
-from scipy import signal
+from scipy import (signal, __version__ as scipy_version)
 
 from astropy import units
 
@@ -49,6 +49,11 @@ from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
 from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
+
+if scipy_version < '1.2.0':
+    SCIPY_METHODS = ('welch', 'bartlett')
+else:
+    SCIPY_METHODS = ('welch', 'bartlett', 'median')
 
 FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C02'
 FIND_FRAMETYPE = 'L1_HOFT_C02'
@@ -452,7 +457,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         fs = losc.average_fft(fftlength=0.4, overlap=0.2)
 
-    @pytest.mark.parametrize('method', ('welch', 'bartlett'))
+    @pytest.mark.parametrize('method', SCIPY_METHODS)
     def test_psd_basic(self, losc, method):
         # check that basic methods always post a warning telling the user
         # to be more specific
@@ -487,7 +492,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             losc.psd(1, .5, method='lal_median_mean')
 
     @pytest.mark.parametrize('library, method', chain(
-        product(['scipy'], ['welch', 'bartlett']),
+        product(['scipy'], SCIPY_METHODS),
         product(['pycbc.psd'], ['welch', 'bartlett', 'median', 'median_mean']),
         product(['lal'], ['welch', 'bartlett', 'median', 'median_mean']),
     ))

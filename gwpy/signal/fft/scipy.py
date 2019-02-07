@@ -23,6 +23,7 @@ from __future__ import absolute_import
 
 import numpy
 
+from scipy import __version__ as scipy_version
 import scipy.signal
 
 from ...frequencyseries import FrequencySeries
@@ -33,6 +34,9 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 # -- density scaling methods --------------------------------------------------
+#
+# Developer note: as soon as we can pin to scipy >= 0.16.0, we can refactor
+#                 these methods to call out to the csd() function below
 
 def welch(timeseries, segmentlength, noverlap=None, **kwargs):
     """Calculate a PSD of this `TimeSeries` using Welch's method.
@@ -101,6 +105,41 @@ def bartlett(timeseries, segmentlength, **kwargs):
 for func in (welch, bartlett,):
     fft_registry.register_method(func, name='scipy-{}'.format(func.__name__),
                                  scaling='density')
+
+
+# scipy.signal.welch accepts an 'average' keyword as of 1.2.0
+if scipy_version >= '1.1.999':
+    def median(timeseries, segmentlength, **kwargs):
+        """Calculate a PSD using Welch's method with a median average
+
+        Parameters
+        ----------
+        timeseries : `~gwpy.timeseries.TimeSeries`
+            input `TimeSeries` data.
+
+        segmentlength : `int`
+            number of samples in single average.
+
+        noverlap : `int`
+            number of samples to overlap between segments, defaults to 50%.
+
+        Returns
+        -------
+        spectrum : `~gwpy.frequencyseries.FrequencySeries`
+            average power `FrequencySeries`
+
+        See also
+        --------
+        scipy.signal.welch
+        """
+        kwargs.setdefault('average', 'median')
+        return welch(timeseries, segmentlength, **kwargs)
+
+    fft_registry.register_method(
+        median,
+        name='scipy-median',
+        scaling='density',
+    )
 
 
 # -- other scaling methods ----------------------------------------------------

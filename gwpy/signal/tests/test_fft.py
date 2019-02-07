@@ -25,7 +25,7 @@ import pytest
 
 import numpy
 
-from scipy import signal
+from scipy import (signal, __version__ as scipy_version)
 
 from astropy import units
 
@@ -43,6 +43,12 @@ from ..fft import (get_default_fft_api,
                    pycbc as fft_pycbc,
                    utils as fft_utils,
                    registry as fft_registry, ui as fft_ui)
+
+# until we can pin to scipy >= 1.2.0 we need to work out ahead of time
+# what average methods scipy can handle
+SCIPY_METHODS = {'welch', 'bartlett', 'median'}
+if scipy_version < '1.2.0':
+    SCIPY_METHODS.remove('median')
 
 
 def test_get_default_fft_api():
@@ -112,16 +118,23 @@ class TestRegistry(object):
         assert '            The available methods are:' in doc
         assert 'scipy_welch `gwpy.signal.fft.scipy.welch`' in doc
 
-    @pytest.mark.parametrize('library', ['basic', 'pycbc', 'lal', 'scipy'])
-    def test_register_library(self, library):
+    @pytest.mark.parametrize(
+        'method',
+        ['welch', 'bartlett', 'median', 'median_mean'],
+    )
+    @pytest.mark.parametrize(
+        'library',
+        ['basic', 'pycbc', 'lal', 'scipy'],
+    )
+    def test_register_library(self, library, method):
         apilib = import_module('gwpy.signal.fft.{}'.format(library))
         regname = str if library == 'basic' else ('%s_{}' % library).format
-        for method in ('welch', 'bartlett', 'median', 'median_mean'):
-            if method == 'median' and library == 'scipy':
-                break
-            assert (
-                fft_registry.get_method(regname(method)) is
-                getattr(apilib, method))
+        if library == 'scipy' and method not in SCIPY_METHODS:
+            pytest.skip('no {0} method for {1}'.format(library, method))
+        assert (
+            fft_registry.get_method(regname(method)) is
+            getattr(apilib, method)
+        )
 
 
 # -- gwpy.signal.fft.ui -------------------------------------------------------
