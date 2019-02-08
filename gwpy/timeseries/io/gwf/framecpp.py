@@ -243,7 +243,7 @@ def _read_channel(stream, num, name, ctype, epoch, start, end,
     """Read a channel from a specific frame in a stream
     """
     data = _get_frdata(stream, num, name, ctype=ctype)
-    return read_frdata(data, epoch, start, end, name=name,
+    return read_frdata(data, epoch, start, end,
                        scaled=scaled, series_class=series_class)
 
 
@@ -277,7 +277,7 @@ def _need_frame(frame, start, end):
     return True
 
 
-def read_frdata(frdata, epoch, start, end, name=None, scaled=True,
+def read_frdata(frdata, epoch, start, end, scaled=True,
                 series_class=TimeSeries):
     """Read a series from an `FrData` structure
 
@@ -298,10 +298,6 @@ def read_frdata(frdata, epoch, start, end, name=None, scaled=True,
 
     scaled : `bool`, optional
         apply slope and bias calibration to ADC data.
-
-    name : `str`, optional
-        the name of the desired dataset, required to filter out
-        unrelated `FrVect` structures
 
     series_class : `type`, optional
         the `Series` sub-type to return.
@@ -344,7 +340,8 @@ def read_frdata(frdata, epoch, start, end, name=None, scaled=True,
         # related to iterating directly over frdata.data
         try:
             new = read_frvect(frdata.data[j], datastart, start, end,
-                              name=name, series_class=series_class)
+                              name=frdata.GetName(),
+                              series_class=series_class)
         except _Skip:
             continue
 
@@ -365,7 +362,7 @@ def read_frdata(frdata, epoch, start, end, name=None, scaled=True,
     return out
 
 
-def read_frvect(vect, epoch, start, end, series_class=TimeSeries, name=None):
+def read_frvect(vect, epoch, start, end, name=None, series_class=TimeSeries):
     """Read an array from an `FrVect` structure
 
     Parameters
@@ -381,13 +378,30 @@ def read_frvect(vect, epoch, start, end, series_class=TimeSeries, name=None):
 
     epoch : `float`
         the GPS start time of the containing `FrData` structure
+
+    name : `str`, optional
+        the name of the output `series_class`; this is also used
+        to ignore ``FrVect`` structures containing other information
+
+    series_class : `type`, optional
+        the `Series` sub-type to return.
+
+    Returns
+    -------
+    series : `~gwpy.timeseries.TimeSeriesBase`
+        the formatted data series
+
+    Raises
+    ------
+    _Skip
+        if this vect doesn't overlap with the requested
+        ``[start, end)`` interval, or the name doesn't match.
     """
     # only read FrVect with matching name (or no name set)
     #    frame spec allows for arbitrary other FrVects
     #    to hold other information
     if vect.GetName() and name and vect.GetName() != name:
         raise _Skip()
-    name = vect.GetName()
 
     # get array
     arr = vect.GetDataArray()
