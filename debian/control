@@ -32,7 +32,8 @@ Depends: ${misc:Depends},
          python-ldas-tools-framecpp (>= 2.6.0),
          python-lal (>= 6.14.0),
          python-tqdm (>= 4.10.0),
-         python-gwosc (>= 0.3.1)
+         python-gwosc (>= 0.3.1),
+         python-dqsegdb2
 Suggests: python-pymysql,
           python-gwdatafind,
           python-dqsegdb,
@@ -60,7 +61,8 @@ Depends: ${misc:Depends},
          python3-lal (>= 6.14.0),
          python3-ligo-segments,
          python3-tqdm (>= 4.10.0),
-         python3-gwosc (>= 0.3.1)
+         python3-gwosc (>= 0.3.1),
+         python3-dqsegdb2
 Suggests: python3-pymysql,
           python3-gwdatafind,
           python3-dqsegdb,

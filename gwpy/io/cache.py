@@ -32,7 +32,6 @@ from collections import (namedtuple, OrderedDict)
 from gzip import GzipFile
 
 from six import string_types
-from six.moves import StringIO
 from six.moves.urllib.parse import urlparse
 
 try:
@@ -342,7 +341,7 @@ def file_name(fobj):
     """
     if isinstance(fobj, string_types):
         return fobj
-    if isinstance(fobj, FILE_LIKE) and not isinstance(fobj, StringIO):
+    if (isinstance(fobj, FILE_LIKE) and hasattr(fobj, 'name')):
         return fobj.name
     if HAS_CACHEENTRY and isinstance(fobj, CacheEntry):
         return fobj.path
