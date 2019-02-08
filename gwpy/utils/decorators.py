@@ -24,6 +24,10 @@ from functools import wraps
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+DEPRECATED_FUNCTION_WARNING = (
+    "this function has been deprecated, and will be "
+    "removed in a future release."
+)
 
 class deprecated_property(property):  # pylint: disable=invalid-name
     """sub-class of `property` that invokes DeprecationWarning on every call
@@ -54,6 +58,17 @@ class deprecated_property(property):  # pylint: disable=invalid-name
             fget = _warn(fget)
 
         super(deprecated_property, self).__init__(fget, fset, fdel, doc)
+
+
+def deprecated_function(func, warning=DEPRECATED_FUNCTION_WARNING):
+    """Adds a `DeprecationWarning` to a function
+    """
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        warnings.warn(DEPRECATED_FUNCTION_WARNING, DeprecationWarning)
+        return func(*args, **kwargs)
+
+    return wrapped_func
 
 
 def return_as(returntype):
