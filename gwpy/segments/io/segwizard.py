@@ -88,7 +88,8 @@ def from_segwizard(source, gpstype=LIGOTimeGPS, strict=True):
             fmt_pat = _line_format(line)
         # parse line
         tokens, = fmt_pat.findall(line)
-        out.append(_format_segment(tokens[-3:], gpstype=gpstype))
+        out.append(_format_segment(tokens[-3:], gpstype=gpstype,
+                                   strict=strict))
     return out
 
 
@@ -109,8 +110,10 @@ def _format_segment(tokens, strict=True, gpstype=LIGOTimeGPS):
     except ValueError:  # two-columns
         return Segment(map(gpstype, tokens))
     seg = Segment(gpstype(start), gpstype(end))
-    if strict and abs(seg) != gpstype(dur):
-        raise ValueError("segment {0!r} has incorrect duration".format(seg))
+    if strict and not float(abs(seg)) == float(dur):
+        raise ValueError(
+            "segment {0!r} has incorrect duration {1!r}".format(seg, dur),
+        )
     return seg
 
 
@@ -148,10 +151,12 @@ def to_segwizard(segs, target, header=True, coltype=LIGOTimeGPS):
     if header:
         print('# seg\tstart\tstop\tduration', file=target)
     for i, seg in enumerate(segs):
+        a = coltype(seg[0])
+        b = coltype(seg[1])
+        c = float(b - a)
         print(
-            '\t'.join(map(
-                str, (i, coltype(seg[0]), coltype(seg[1]), coltype(abs(seg))),
-            )), file=target,
+            '\t'.join(map(str, (i, a, b, c))),
+            file=target,
         )
 
 
