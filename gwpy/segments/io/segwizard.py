@@ -110,8 +110,10 @@ def _format_segment(tokens, strict=True, gpstype=LIGOTimeGPS):
     except ValueError:  # two-columns
         return Segment(map(gpstype, tokens))
     seg = Segment(gpstype(start), gpstype(end))
-    if strict and abs(seg) != gpstype(dur):
-        raise ValueError("segment {0!r} has incorrect duration".format(seg))
+    if strict and not float(abs(seg)) == float(dur):
+        raise ValueError(
+            "segment {0!r} has incorrect duration {1!r}".format(seg, dur),
+        )
     return seg
 
 
