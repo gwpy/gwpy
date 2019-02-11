@@ -19,6 +19,8 @@
 """Tests for :mod:`gwpy.segments.segments`
 """
 
+from __future__ import print_function
+
 import os
 import shutil
 import tempfile
