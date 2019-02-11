@@ -88,7 +88,8 @@ def from_segwizard(source, gpstype=LIGOTimeGPS, strict=True):
             fmt_pat = _line_format(line)
         # parse line
         tokens, = fmt_pat.findall(line)
-        out.append(_format_segment(tokens[-3:], gpstype=gpstype))
+        out.append(_format_segment(tokens[-3:], gpstype=gpstype,
+                                   strict=strict))
     return out
 
 
