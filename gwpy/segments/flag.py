@@ -429,6 +429,9 @@ class DataQualityFlag(object):
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
+        warnings.warn("query_segdb is deprecated and will be removed in a "
+                      "future release", DeprecationWarning)
+
         # parse arguments
         qsegs = _parse_query_segments(args, cls.query_segdb)
 
@@ -1112,6 +1115,9 @@ class DataQualityDict(OrderedDict):
             An ordered `DataQualityDict` of (name, `DataQualityFlag`)
             pairs.
         """
+        warnings.warn("query_segdb is deprecated and will be removed in a "
+                      "future release", DeprecationWarning)
+
         # parse segments
         qsegs = _parse_query_segments(args, cls.query_segdb)
 
