@@ -56,7 +56,7 @@ asdax, rayax = plot.axes
 
 asdax.set_yscale('log')
 asdax.set_ylim(5e-24, 1e-21)
-asdax.set_ylabel(r'[strain/\rtHz]')
+asdax.set_ylabel(r'[strain/$\sqrt{\mathrm{Hz}}$]')
 
 rayax.set_ylim(0, 2)
 rayax.set_ylabel('Rayleigh statistic')

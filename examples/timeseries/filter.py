@@ -64,7 +64,7 @@ plot = Plot(whiteasd, dispasd, separate=True, sharex=True,
 # Finally, we prettify our plot with some limits, and some labels:
 plot.text(0.95, 0.05, 'Preliminary', fontsize=40, color='gray', ha='right', rotation=45, va='bottom', alpha=0.5)  # hide
 plot.axes[0].set_ylabel('ASD [whitened]')
-plot.axes[1].set_ylabel(r'ASD [m/\rtHz]')
+plot.axes[1].set_ylabel(r'ASD [m/$\sqrt{\mathrm{Hz}}$]')
 plot.axes[1].set_xlabel('Frequency [Hz]')
 plot.axes[1].set_ylim(1e-20, 1e-15)
 plot.axes[1].set_xlim(5, 4000)
