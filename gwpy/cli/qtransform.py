@@ -211,7 +211,7 @@ class Qtransform(Spectrogram):
             # processed and the time resolution needed to create a good
             # image. NB:For each time span specified
             # NB: the timeseries h enough data for the longest plot
-            inseg = outseg.protract(-4) & self.timeseries[0].span
+            inseg = outseg.protract(4) & self.timeseries[0].span
             proc_ts = self.timeseries[0].crop(*inseg)
 
             #  time resolution is calculated to provide about 4 times
