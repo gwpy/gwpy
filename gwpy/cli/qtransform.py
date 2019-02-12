@@ -114,7 +114,7 @@ class Qtransform(Spectrogram):
         search = args.search
         # ensure we have enough data for filter settling
         max_plot = max(args.plot)
-        search = max(search, max_plot * 2 + 6)
+        search = max(search, max_plot * 2 + 8)
         args.search = search
         self.log(3, "Search window: {0:.0f} sec, max plot window {1:.0f}".
                  format(search, max_plot))
