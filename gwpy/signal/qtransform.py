@@ -225,7 +225,8 @@ class QPlane(QBase):
     mismatch : `float`
         maximum fractional mismatch between neighbouring tiles
     """
-    def __init__(self, q, frange, duration, sampling, mismatch=DEFAULT_MISMATCH):
+    def __init__(self, q, frange, duration, sampling,
+                 mismatch=DEFAULT_MISMATCH):
         super(QPlane, self).__init__(q, duration, sampling, mismatch=mismatch)
         self.frange = [float(frange[0]), float(frange[1])]
 
@@ -326,7 +327,8 @@ class QPlane(QBase):
 class QTile(QBase):
     """Representation of a tile with fixed Q and frequency
     """
-    def __init__(self, q, frequency, duration, sampling, mismatch=DEFAULT_MISMATCH):
+    def __init__(self, q, frequency, duration, sampling,
+                 mismatch=DEFAULT_MISMATCH):
         super(QTile, self).__init__(q, duration, sampling, mismatch=mismatch)
         self.frequency = frequency
 
@@ -476,7 +478,8 @@ class QGram(object):
                 })
         return peak
 
-    def interpolate(self, tres=.001, fres="<default>", logf=False, outseg=None):
+    def interpolate(self, tres=.001, fres="<default>",
+                    logf=False, outseg=None):
         """Interpolate this `QGram` over a regularly-gridded spectrogram
 
         Parameters
