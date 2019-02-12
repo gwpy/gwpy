@@ -200,7 +200,7 @@ def read_losc_hdf5(h5f, path='strain/Strain',
     """
     dataset = io_hdf5.find_dataset(h5f, path)
     # read data
-    nddata = dataset.value
+    nddata = dataset[()]
     # read metadata
     xunit = parse_unit(dataset.attrs['Xunits'])
     epoch = dataset.attrs['Xstart']
