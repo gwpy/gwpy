@@ -42,6 +42,11 @@ __credits__ = 'Scott Coughlin <scott.coughlin@ligo.org>, ' \
               'Alex Urban <alexander.urban@ligo.org>'
 __all__ = ['QTiling', 'QPlane', 'QTile', 'QGram', 'q_scan']
 
+# q-transform defaults
+DEFAULT_FRANGE = (0, float('inf'))
+DEFAULT_MISMATCH = 0.2
+DEFAULT_QRANGE = (4, 64)
+
 
 # -- object class definitions -------------------------------------------------
 
@@ -53,7 +58,7 @@ class QObject(object):
     """
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, duration, sampling, mismatch=.2):
+    def __init__(self, duration, sampling, mismatch=DEFAULT_MISMATCH):
         self.duration = float(duration)
         self.sampling = float(sampling)
         self.mismatch = float(mismatch)
@@ -72,7 +77,7 @@ class QBase(QObject):
 
     This class just provides a property for Q-prime = Q / sqrt(11)
     """
-    def __init__(self, q, duration, sampling, mismatch=.2):
+    def __init__(self, q, duration, sampling, mismatch=DEFAULT_MISMATCH):
         super(QBase, self).__init__(duration, sampling, mismatch=mismatch)
         self.q = float(q)
 
@@ -107,7 +112,9 @@ class QTiling(QObject):
         maximum fractional mismatch between neighbouring tiles
     """
     def __init__(self, duration, sampling,
-                 qrange=(4, 64), frange=(0, numpy.inf), mismatch=.2):
+                 qrange=DEFAULT_QRANGE,
+                 frange=DEFAULT_FRANGE,
+                 mismatch=DEFAULT_MISMATCH):
         super(QTiling, self).__init__(duration, sampling, mismatch=mismatch)
         self.qrange = (float(qrange[0]), float(qrange[1]))
         self.frange = [float(frange[0]), float(frange[1])]
@@ -219,7 +226,7 @@ class QPlane(QBase):
     mismatch : `float`
         maximum fractional mismatch between neighbouring tiles
     """
-    def __init__(self, q, frange, duration, sampling, mismatch=.2):
+    def __init__(self, q, frange, duration, sampling, mismatch=DEFAULT_MISMATCH):
         super(QPlane, self).__init__(q, duration, sampling, mismatch=mismatch)
         self.frange = [float(frange[0]), float(frange[1])]
 
@@ -320,7 +327,7 @@ class QPlane(QBase):
 class QTile(QBase):
     """Representation of a tile with fixed Q and frequency
     """
-    def __init__(self, q, frequency, duration, sampling, mismatch=.2):
+    def __init__(self, q, frequency, duration, sampling, mismatch=DEFAULT_MISMATCH):
         super(QTile, self).__init__(q, duration, sampling, mismatch=mismatch)
         self.frequency = frequency
 
@@ -468,7 +475,7 @@ class QGram(object):
                 })
         return peak
 
-    def interpolate(self, tres=.001, fres=.5, logf=False, outseg=None):
+    def interpolate(self, tres=.001, fres="<default>", logf=False, outseg=None):
         """Interpolate this `QGram` over a regularly-gridded spectrogram
 
         Parameters
@@ -478,13 +485,13 @@ class QGram(object):
 
         fres : `float`, `int`, `None`, optional
             desired frequency resolution (Hertz) of output `Spectrogram`,
-            give `None` to skip this step and return the original resolution
+            or, if ``logf=True``, the number of frequency samples;
+            give `None` to skip this step and return the original resolution,
+            default is 0.5 Hz or 500 frequency samples
 
         logf : `bool`, optional
             boolean switch to enable (`True`) or disable (`False`) use of
-            log-sampled frequencies in the output `Spectrogram`,
-            if `True` then `fres` is interpreted as number of frequency
-            samples, default: `False`
+            log-sampled frequencies in the output `Spectrogram`
 
         outseg : `~gwpy.segments.Segment`, optional
             GPS `[start, stop)` segment for output `Spectrogram`
@@ -541,14 +548,18 @@ class QGram(object):
         #     since they don't support log scaling
         interp = interp2d(xout, frequencies, out.value.T, kind='cubic')
         if not logf:
+            if fres == "<default>":
+                fres = .5
             outfreq = numpy.arange(
                 self.plane.frange[0], self.plane.frange[1], fres)
         else:
+            if fres == "<default>":
+                fres = 500
             # using `~numpy.logspace` here to support numpy-1.7.1 for EPEL7,
             # but numpy-1.12.0 introduced the function `~numpy.geomspace`
             logfmin = numpy.log10(self.plane.frange[0])
             logfmax = numpy.log10(self.plane.frange[1])
-            outfreq = numpy.logspace(logfmin, logfmax, fres)
+            outfreq = numpy.logspace(logfmin, logfmax, num=int(fres))
         new = type(out)(interp(xout, outfreq).T,
                         t0=outseg[0], dt=tres, frequencies=outfreq)
         new.q = self.plane.q
@@ -604,8 +615,9 @@ def next_power_of_two(x):
     return 2**(ceil(log(x, 2)))
 
 
-def q_scan(data, mismatch=0.2, qrange=(4, 64), frange=(0, float('inf')),
-           duration=None, sampling=None, **kwargs):
+def q_scan(data, mismatch=DEFAULT_MISMATCH, qrange=DEFAULT_QRANGE,
+           frange=DEFAULT_FRANGE, duration=None, sampling=None,
+           **kwargs):
     """Transform data by scanning over a `QTiling`
 
     This utility is provided mainly to allow direct manipulation of the
@@ -618,8 +630,7 @@ def q_scan(data, mismatch=0.2, qrange=(4, 64), frange=(0, float('inf')),
         the time- or frequency-domain input data
 
     mismatch : `float`, optional
-        maximum allowed fractional mismatch between neighbouring tiles,
-        default: 0.2
+        maximum allowed fractional mismatch between neighbouring tiles
 
     qrange : `tuple` of `float`, optional
         `(low, high)` range of Qs to scan
