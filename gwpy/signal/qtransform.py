@@ -35,7 +35,6 @@ import numpy
 from numpy import fft as npfft
 
 from ..segments import Segment
-from ..timeseries import TimeSeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Scott Coughlin <scott.coughlin@ligo.org>, ' \
@@ -415,6 +414,8 @@ class QTile(QBase):
             a `TimeSeries` of the energy from the Q-transform of
             this tile against the data.
         """
+        from ..timeseries import TimeSeries
+
         windowed = fseries[self.get_data_indices()] * self.get_window()
         # pad data, move negative frequencies to the end, and IFFT
         padded = numpy.pad(windowed, self.padding, mode='constant')
@@ -657,6 +658,7 @@ def q_scan(data, mismatch=DEFAULT_MISMATCH, qrange=DEFAULT_QRANGE,
         expected false alarm rate (Hertz) of white Gaussian noise with the
         same peak energy and total duration as `qgram`
     """
+    from gwpy.timeseries import TimeSeries
     # prepare input
     if isinstance(data, TimeSeries):
         duration = abs(data.span)

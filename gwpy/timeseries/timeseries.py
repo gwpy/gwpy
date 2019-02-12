@@ -32,7 +32,7 @@ from scipy import signal
 from astropy import units
 
 from ..segments import Segment
-from ..signal import filter_design
+from ..signal import (filter_design, qtransform)
 from ..signal.fft import (registry as fft_registry, ui as fft_ui)
 from ..signal.window import (recommended_overlap, planck)
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
@@ -1749,8 +1749,12 @@ class TimeSeries(TimeSeriesBase):
                                   type=type, **kwargs)
         return self.filter(*zpk, filtfilt=filtfilt)
 
-    def q_gram(self, qrange=(4, 64), frange=(0, float('inf')), mismatch=0.2,
-               snrthresh=5.5, **kwargs):
+    def q_gram(self,
+               qrange=qtransform.DEFAULT_QRANGE,
+               frange=qtransform.DEFAULT_FRANGE,
+               mismatch=qtransform.DEFAULT_MISMATCH,
+               snrthresh=5.5,
+               **kwargs):
         """Scan a `TimeSeries` using the multi-Q transform and return an
         `EventTable` of the most significant tiles
 
@@ -1763,12 +1767,11 @@ class TimeSeries(TimeSeriesBase):
             `(low, high)` range of frequencies to scan
 
         mismatch : `float`, optional
-            maximum allowed fractional mismatch between neighbouring tiles,
-            default: 0.2
+            maximum allowed fractional mismatch between neighbouring tiles
 
         snrthresh : `float`, optional
             lower inclusive threshold on individual tile SNR to keep in the
-            table, default: 5.5
+            table
 
         **kwargs
             other keyword arguments to be passed to :meth:`QTiling.transform`,
@@ -1796,16 +1799,26 @@ class TimeSeries(TimeSeriesBase):
         table columns are ``'time'``, ``'duration'``, ``'frequency'``,
         ``'bandwidth'``, and ``'energy'``.
         """
-        from ..signal.qtransform import q_scan
-        qscan, _ = q_scan(self, mismatch=mismatch, qrange=qrange,
-                          frange=frange, **kwargs)
+        qscan, _ = qtransform.q_scan(self, mismatch=mismatch, qrange=qrange,
+                                     frange=frange, **kwargs)
         qgram = qscan.table(snrthresh=snrthresh)
         return qgram
 
-    def q_transform(self, qrange=(4, 64), frange=(0, numpy.inf),
-                    gps=None, search=.5, tres=.001, fres=.5, logf=False,
-                    norm='median', mismatch=0.2, outseg=None, whiten=True,
-                    fduration=2, highpass=None, **asd_kw):
+    def q_transform(self,
+                    qrange=qtransform.DEFAULT_QRANGE,
+                    frange=qtransform.DEFAULT_FRANGE,
+                    gps=None,
+                    search=.5,
+                    tres=.001,
+                    fres="<default>",
+                    logf=False,
+                    norm='median',
+                    mismatch=qtransform.DEFAULT_MISMATCH,
+                    outseg=None,
+                    whiten=True,
+                    fduration=2,
+                    highpass=None,
+                    **asd_kw):
         """Scan a `TimeSeries` using the multi-Q transform and return an
         interpolated high-resolution spectrogram
 
@@ -1829,8 +1842,9 @@ class TimeSeries(TimeSeriesBase):
 
         fres : `float`, `int`, `None`, optional
             desired frequency resolution (Hertz) of output `Spectrogram`,
+            or, if ``logf=True``, the number of frequency samples;
             give `None` to skip this step and return the original resolution,
-            e.g. if you're going to do your own interpolation
+            default is 0.5 Hz or 500 frequency samples
 
         logf : `bool`, optional
             boolean switch to enable (`True`) or disable (`False`) use of
@@ -1844,8 +1858,7 @@ class TimeSeries(TimeSeriesBase):
             ``'mean'``
 
         mismatch : `float`
-            maximum allowed fractional mismatch between neighbouring tiles,
-            default: 0.2
+            maximum allowed fractional mismatch between neighbouring tiles
 
         outseg : `~gwpy.segments.Segment`, optional
             GPS `[start, stop)` segment for output `Spectrogram`
@@ -1919,7 +1932,6 @@ class TimeSeries(TimeSeriesBase):
         >>> ax.set_epoch(0)
         >>> plot.show()
         """  # nopep8
-        from ..signal.qtransform import q_scan
         from ..frequencyseries import FrequencySeries
         # condition data
         if whiten is True:  # generate ASD dynamically
@@ -1945,8 +1957,9 @@ class TimeSeries(TimeSeriesBase):
             search = None
         elif search is not None:
             search = Segment(gps-search/2, gps+search/2) & self.span
-        qgram, _ = q_scan(data, frange=frange, qrange=qrange, norm=norm,
-                          mismatch=mismatch, search=search)
+        qgram, _ = qtransform.q_scan(
+            data, frange=frange, qrange=qrange, norm=norm,
+            mismatch=mismatch, search=search)
         return qgram.interpolate(
             tres=tres, fres=fres, logf=logf, outseg=outseg)
 
