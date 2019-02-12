@@ -21,6 +21,9 @@
 .. |gwosc| replace:: `gwosc`
 .. _gwosc: http://gwosc.readthedocs.io/en/stable/
 
+.. |dqsegdb2| replace:: `dqsegdb2`
+.. _dqsegdb2: https://dqsegdb2.readthedocs.io
+
 .. |h5py| replace:: `h5py`
 .. _h5py: http://docs.h5py.org/en/latest/
 
@@ -37,9 +40,6 @@
 .. _ligotimegps: https://github.com/gwpy/ligotimegps/
 
 .. -- Extra software ----------------------------
-
-.. |dqsegdb| replace:: `dqsegdb`
-.. _dqsegdb: https://wiki.ligo.org/DASWG/DQSEGDB
 
 .. |LDAStools.frameCPP| replace:: `LDAStools.frameCPP`
 .. _LDAStools.frameCPP: https://ldas-jobs.ligo.caltech.edu/~emaros/share/doc/ldas-tools/framecpp/html/

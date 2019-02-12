@@ -63,6 +63,7 @@ install_requires = [
     'tqdm >= 4.10.0',
     'ligotimegps >= 1.2.1',
     'gwosc >= 0.3.1',
+    'dqsegdb2',
 ]
 
 # if setuptools is too old and we are building an EL7 or Debian 8

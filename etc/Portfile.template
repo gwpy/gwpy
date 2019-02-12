@@ -43,7 +43,8 @@ if {${name} ne ${subport}} {
                         port:py${python.version}-lal \
                         port:py${python.version}-ligo-segments \
                         port:py${python.version}-tqdm \
-                        port:py${python.version}-gwosc
+                        port:py${python.version}-gwosc \
+                        port:py${python.version}-dqsegdb2
 
     if {${python.version} < 34} {
         depends_lib-append port:py${python.version}-enum34

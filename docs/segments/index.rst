@@ -6,13 +6,26 @@
 Data-quality segments
 #####################
 
-In order to successfully search data for gravitational-wave signals, precise records of when each observatory was operating, and in a particular configuration, are kept to enable search teams to pick the best data to analyse.
+In order to successfully search data for gravitational-wave signals, precise
+records of when each observatory was operating, and in which configuration,
+are kept to enable search teams to pick the best data to analyse.
 
-Time segments are recorded denoting when each observatory was taking science-quality data and when the calibration was nominal, as well as during times of possible problems - electronics glitches or severe weather, for example.
+Time segments are recorded denoting when each observatory was taking
+observation-quality data and when the calibration was nominal, as well as
+during times of possible problems - electronics glitches or severe weather,
+for example.
 
-The international collaboration operates using the GPS time standard (seconds since the GPS epoch of midnight on January 6th 1980), and records such times as semi-open GPS ``[start, stop)`` segments.
+The international collaboration operates using the GPS time standard
+(seconds since the GPS epoch of midnight on January 6th 1980), and records
+such times as semi-open GPS ``[start, stop)`` segments.
 
-GWpy provides a number of classes for generating and manipulating such segments, inherited most functionality from the :mod:`ligo.segments` package.
+=============================================
+The :class:`Segment` and :class:`SegmentList`
+=============================================
+
+GWpy provides a number of classes for generating and manipulating such
+segments, enhancing the functionality provided by the (excellent)
+:mod:`ligo.segments` package.
 All credits for their usefulness go to the authors of that package.
 
 These basic objects are as follows:
@@ -22,18 +35,26 @@ These basic objects are as follows:
 
    Segment
    SegmentList
-   SegmentListDict
 
-While these objects are key to representing core data segments, they are usually applied to analyses of data as a `DataQualityFlag`.
+While these objects are key to representing core data segments,
+they are usually applied to analyses of data as a `DataQualityFlag`.
 
 ============================
 The :class:`DataQualityFlag`
 ============================
 
-A `DataQualityFlag` is an annotated set of segments that indicate something about instrumental operation.
-Each flag is defined by applying some algorithm on data and generating a :class:`SegmentList` that indicates some good or bad condition has been met during those times.
-For example, the times during which the LIGO interferometers are operating under observing conditions are recorded as the 'analysis-ready' flag, which are used by data analysis groups to define periods of data over which to run their pipelines.
-Conversely, high seismic noise around the observatory buildings is recorded in a data-quality flag used by analysis groups to veto periods of analysis as a result of sub-standard data.
+A `DataQualityFlag` is an annotated set of segments that indicate something
+about instrumental operation.
+Each flag is defined by applying some algorithm on data and generating a
+:class:`SegmentList` that indicates some good or bad condition has been met
+during those times.
+For example, the times during which the LIGO interferometers are operating
+under observing conditions are recorded as the '*analysis-ready*' flag, which
+is used by data analysis groups to define periods of data over which to search
+for gravitational-wave signals.
+Conversely, high seismic noise around the observatory buildings is recorded
+in a data-quality flag used by those groups to veto periods of analysis as
+a result of sub-standard data.
 
 Each `DataQualityFlag` has some key attributes:
 
@@ -43,7 +64,12 @@ Each `DataQualityFlag` has some key attributes:
    ~DataQualityFlag.known
    ~DataQualityFlag.active
 
-By convention, the :attr:`~DataQualityFlag.name` is typically constructed of three colon-separated components: the :attr:`~DataQualityFlag.ifo`, :attr:`~DataQualityFlag.tag`, and :attr:`~DataQualityFlag.version`, e.g. ``L1:DMT-ANALYSIS_READY:1``.
+By convention, the :attr:`~DataQualityFlag.name` is typically constructed of
+three colon-separated components: the
+:attr:`~DataQualityFlag.ifo`,
+:attr:`~DataQualityFlag.tag`, and
+:attr:`~DataQualityFlag.version`,
+e.g. ``L1:DMT-ANALYSIS_READY:1``.
 
 =============================
 Combining `DataQualityFlag`\s
