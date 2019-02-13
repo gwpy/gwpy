@@ -75,6 +75,6 @@ ax.set_yscale('log')
 ax.set_ylabel('Frequency [Hz]')
 ax.set_title('LIGO-Hanford strain data')
 ax.colorbar(cmap='viridis', norm='log', clim=(1e-23, 1e-19),
-            label=r'Strain noise [1/\rtHz]')
+            label=r'Strain noise [1/$\sqrt{\mathrm{Hz}}$]')
 plot.add_segments_bar(h1segs)
 plot.show()
