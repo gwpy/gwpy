@@ -17,14 +17,16 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """GWpy API to the pycbc.psd FFT routines
+
+This module is deprecated and will be removed in a future release.
 """
 
 from __future__ import absolute_import
 
 from ...frequencyseries import FrequencySeries
 from ...utils.misc import null_context
-from .utils import scale_timeseries_unit
-from . import registry as fft_registry
+from ._utils import scale_timeseries_unit
+from . import _registry as fft_registry
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -86,6 +88,8 @@ def bartlett(*args, **kwargs):  # pylint: disable=missing-docstring
     kwargs['avg_method'] = 'mean'
     kwargs['noverlap'] = 0
     return welch(*args, **kwargs)
+
+
 bartlett.__doc__ = welch.__doc__.replace('mean average',
                                          'non-overlapping mean average')
 
@@ -93,17 +97,24 @@ bartlett.__doc__ = welch.__doc__.replace('mean average',
 def median(*args, **kwargs):  # pylint: disable=missing-docstring
     kwargs['avg_method'] = 'median'
     return welch(*args, **kwargs)
+
+
 median.__doc__ = welch.__doc__.replace('mean average', 'median average')
 
 
 def median_mean(*args, **kwargs):  # pylint: disable=missing-docstring
     kwargs['avg_method'] = 'median-mean'
     return welch(*args, **kwargs)
+
+
 median_mean.__doc__ = welch.__doc__.replace('mean average',
                                             'median-mean average')
 
 
 # register new functions
 for func in (welch, bartlett, median, median_mean):
-    fft_registry.register_method(func, scaling='density',
-                                 name='pycbc-{}'.format(func.__name__))
+    fft_registry.register_method(
+        func,
+        name='pycbc-{}'.format(func.__name__),
+        deprecated=True,
+    )

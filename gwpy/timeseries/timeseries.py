@@ -21,8 +21,6 @@
 
 from __future__ import (division, print_function)
 
-from warnings import warn
-
 from six.moves import range
 
 import numpy
@@ -32,25 +30,17 @@ from scipy import signal
 from astropy import units
 
 from ..segments import Segment
-from ..signal import (filter_design, qtransform)
-from ..signal.fft import (registry as fft_registry, ui as fft_ui)
+from ..signal import (filter_design, qtransform, spectral)
 from ..signal.window import (recommended_overlap, planck)
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+DEFAULT_FFT_METHOD = "welch"
+
 
 # -- utilities ----------------------------------------------------------------
-
-def _update_doc_with_fft_methods(func):
-    """Update a function's docstring to append a table of FFT methods
-
-    See `gwpy.signal.fft.registry` for more details
-    """
-    fft_registry.update_doc(func)
-    return func
-
 
 def _fft_length_default(dt):
     """Choose an appropriate FFT length (in seconds) based on a sample rate
@@ -264,9 +254,8 @@ class TimeSeries(TimeSeriesBase):
         mean.channel = self.channel
         return mean
 
-    @_update_doc_with_fft_methods
     def psd(self, fftlength=None, overlap=None, window='hann',
-            method='scipy-welch', **kwargs):
+            method=DEFAULT_FFT_METHOD, **kwargs):
         """Calculate the PSD `FrequencySeries` for this `TimeSeries`
 
         Parameters
@@ -285,8 +274,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method, default: ``'scipy-welch'``,
-            see *Notes* for more details
+            FFT-averaging method, see *Notes* for more details
 
         **kwargs
             other keyword arguments are passed to the underlying
@@ -298,18 +286,22 @@ class TimeSeries(TimeSeriesBase):
             a data series containing the PSD.
 
         Notes
-        -----"""
+        -----
+        The accepted ``method`` arguments are:
+
+        - ``'bartlett'`` : a mean average of non-overlapping periodograms
+        - ``'median'`` : a median average of overlapping periodograms
+        - ``'welch'`` : a mean average of overlapping periodograms
+        """
         # get method
-        scaling = kwargs.get('scaling', 'density')
-        method_func = fft_registry.get_method(method, scaling=scaling)
+        method_func = spectral.get_method(method)
 
         # calculate PSD using UI method
-        return fft_ui.psd(self, method_func, fftlength=fftlength,
-                          overlap=overlap, window=window, **kwargs)
+        return spectral.psd(self, method_func, fftlength=fftlength,
+                            overlap=overlap, window=window, **kwargs)
 
-    @_update_doc_with_fft_methods
     def asd(self, fftlength=None, overlap=None, window='hann',
-            method='scipy-welch', **kwargs):
+            method=DEFAULT_FFT_METHOD, **kwargs):
         """Calculate the ASD `FrequencySeries` of this `TimeSeries`
 
         Parameters
@@ -328,8 +320,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method, default: ``'scipy-welch'``,
-            see *Notes* for more details
+            FFT-averaging method, see *Notes* for more details
 
         Returns
         -------
@@ -342,8 +333,11 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
-        The available methods are:
+        The accepted ``method`` arguments are:
 
+        - ``'bartlett'`` : a mean average of non-overlapping periodograms
+        - ``'median'`` : a median average of overlapping periodograms
+        - ``'welch'`` : a mean average of overlapping periodograms
         """
         return self.psd(method=method, fftlength=fftlength, overlap=overlap,
                         window=window, **kwargs) ** (1/2.)
@@ -375,16 +369,17 @@ class TimeSeries(TimeSeriesBase):
         csd :  `~gwpy.frequencyseries.FrequencySeries`
             a data series containing the CSD.
         """
-        # get method
-        method_func = fft_registry.get_method('scipy-csd', scaling='other')
+        return spectral.psd(
+            (self, other),
+            spectral.csd,
+            fftlength=fftlength,
+            overlap=overlap,
+            window=window,
+            **kwargs
+        )
 
-        # calculate CSD using UI method
-        return fft_ui.psd((self, other), method_func, fftlength=fftlength,
-                          overlap=overlap, window=window, **kwargs)
-
-    @_update_doc_with_fft_methods
-    def spectrogram(self, stride, fftlength=None, overlap=None,
-                    window='hann', method='scipy-welch', nproc=1, **kwargs):
+    def spectrogram(self, stride, fftlength=None, overlap=None, window='hann',
+                    method=DEFAULT_FFT_METHOD, nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
 
@@ -414,8 +409,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method, default: ``'scipy-welch'``,
-            see *Notes* for more details
+            FFT-averaging method, see *Notes* for more details
 
         nproc : `int`
             number of CPUs to use in parallel processing of FFTs
@@ -427,15 +421,26 @@ class TimeSeries(TimeSeriesBase):
             input time-series.
 
         Notes
-        -----"""
+        -----
+        The accepted ``method`` arguments are:
+
+        - ``'bartlett'`` : a mean average of non-overlapping periodograms
+        - ``'median'`` : a median average of overlapping periodograms
+        - ``'welch'`` : a mean average of overlapping periodograms
+        """
         # get method
-        scaling = kwargs.get('scaling', 'density')
-        method_func = fft_registry.get_method(method, scaling=scaling)
+        method_func = spectral.get_method(method)
 
         # calculate PSD using UI method
-        return fft_ui.average_spectrogram(self, method_func, stride,
-                                          fftlength=fftlength, overlap=overlap,
-                                          window=window, **kwargs)
+        return spectral.average_spectrogram(
+            self,
+            method_func,
+            stride,
+            fftlength=fftlength,
+            overlap=overlap,
+            window=window,
+            **kwargs
+        )
 
     def spectrogram2(self, fftlength, overlap=None, window='hann', **kwargs):
         """Calculate the non-averaged power `Spectrogram` of this `TimeSeries`
@@ -487,9 +492,9 @@ class TimeSeries(TimeSeriesBase):
         # set kwargs for periodogram()
         kwargs.setdefault('fs', self.sample_rate.to('Hz').value)
         # run
-        return fft_ui.spectrogram(self, signal.periodogram,
-                                  fftlength=fftlength, overlap=overlap,
-                                  window=window, **kwargs)
+        return spectral.spectrogram(self, signal.periodogram,
+                                    fftlength=fftlength, overlap=overlap,
+                                    window=window, **kwargs)
 
     def fftgram(self, fftlength, overlap=None, window='hann', **kwargs):
         """Calculate the Fourier-gram of this `TimeSeries`.
@@ -546,9 +551,8 @@ class TimeSeries(TimeSeriesBase):
                            xindex=self.t0.value + times,
                            yindex=frequencies)
 
-    @_update_doc_with_fft_methods
     def spectral_variance(self, stride, fftlength=None, overlap=None,
-                          method='scipy-welch', window='hann', nproc=1,
+                          method=DEFAULT_FFT_METHOD, window='hann', nproc=1,
                           filter=None, bins=None, low=None, high=None,
                           nbins=500, log=False, norm=False, density=False):
         """Calculate the `SpectralVariance` of this `TimeSeries`.
@@ -562,8 +566,7 @@ class TimeSeries(TimeSeriesBase):
             number of seconds in single FFT
 
         method : `str`, optional
-            FFT-averaging method, default: ``'scipy-welch'``,
-            see *Notes* for more details
+            FFT-averaging method, see *Notes* for more details
 
         overlap : `float`, optional
             number of seconds of overlap between FFTs, defaults to the
@@ -614,7 +617,13 @@ class TimeSeries(TimeSeriesBase):
             for details on specifying bins and weights
 
         Notes
-        -----"""
+        -----
+        The accepted ``method`` arguments are:
+
+        - ``'bartlett'`` : a mean average of non-overlapping periodograms
+        - ``'median'`` : a median average of overlapping periodograms
+        - ``'welch'`` : a mean average of overlapping periodograms
+        """
         specgram = self.spectrogram(stride, fftlength=fftlength,
                                     overlap=overlap, method=method,
                                     window=window, nproc=nproc) ** (1/2.)
@@ -625,6 +634,9 @@ class TimeSeries(TimeSeriesBase):
 
     def rayleigh_spectrum(self, fftlength=None, overlap=None):
         """Calculate the Rayleigh `FrequencySeries` for this `TimeSeries`.
+
+        The Rayleigh statistic is calculated as the ratio of the standard
+        deviation and the mean of a number of periodograms.
 
         Parameters
         ----------
@@ -641,10 +653,12 @@ class TimeSeries(TimeSeriesBase):
         psd :  `~gwpy.frequencyseries.FrequencySeries`
             a data series containing the PSD.
         """
-        method_func = fft_registry.get_method('scipy-rayleigh',
-                                              scaling='other')
-        return fft_ui.psd(self, method_func, fftlength=fftlength,
-                          overlap=overlap)
+        return spectral.psd(
+            self,
+            spectral.rayleigh,
+            fftlength=fftlength,
+            overlap=overlap,
+        )
 
     def rayleigh_spectrogram(self, stride, fftlength=None, overlap=0,
                              nproc=1, **kwargs):
@@ -670,13 +684,21 @@ class TimeSeries(TimeSeriesBase):
         spectrogram : `~gwpy.spectrogram.Spectrogram`
             time-frequency Rayleigh spectrogram as generated from the
             input time-series.
+
+        See Also
+        --------
+        TimeSeries.rayleigh
+            for details of the statistic calculation
         """
-        method_func = fft_registry.get_method('scipy-rayleigh',
-                                              scaling='other')
-        specgram = fft_ui.average_spectrogram(self, method_func, stride,
-                                              fftlength=fftlength,
-                                              overlap=overlap, nproc=nproc,
-                                              **kwargs)
+        specgram = spectral.average_spectrogram(
+            self,
+            spectral.rayleigh,
+            stride,
+            fftlength=fftlength,
+            overlap=overlap,
+            nproc=nproc,
+            **kwargs
+        )
         specgram.override_unit('')
         return specgram
 
@@ -715,12 +737,16 @@ class TimeSeries(TimeSeriesBase):
             time-frequency cross spectrogram as generated from the
             two input time-series.
         """
-        method_func = fft_registry.get_method('scipy-csd', scaling='other')
-        specgram = fft_ui.average_spectrogram((self, other), method_func,
-                                              stride, fftlength=fftlength,
-                                              overlap=overlap, window=window,
-                                              nproc=nproc, **kwargs)
-        return specgram
+        return spectral.average_spectrogram(
+            (self, other),
+            spectral.csd,
+            stride,
+            fftlength=fftlength,
+            overlap=overlap,
+            window=window,
+            nproc=nproc,
+            **kwargs
+        )
 
     # -- TimeSeries filtering -------------------
 
@@ -1444,7 +1470,7 @@ class TimeSeries(TimeSeriesBase):
         out *= planck(out.size, nleft=nleft, nright=nright)
         return out
 
-    def whiten(self, fftlength=None, overlap=0, method='scipy-welch',
+    def whiten(self, fftlength=None, overlap=0, method=DEFAULT_FFT_METHOD,
                window='hanning', detrend='constant', asd=None,
                fduration=2, highpass=None, **kwargs):
         """Whiten this `TimeSeries` using inverse spectrum truncation
@@ -1460,8 +1486,7 @@ class TimeSeries(TimeSeriesBase):
             recommended overlap for the given window (if given), or 0
 
         method : `str`, optional
-            FFT-averaging method, default: ``'scipy-welch'``,
-            see *Notes* for more details
+            FFT-averaging method
 
         window : `str`, `numpy.ndarray`, optional
             window function to apply to timeseries prior to FFT,
@@ -1507,10 +1532,16 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
-        The `window` argument is used in ASD estimation, FIR filter design,
+        The accepted ``method`` arguments are:
+
+        - ``'bartlett'`` : a mean average of non-overlapping periodograms
+        - ``'median'`` : a median average of overlapping periodograms
+        - ``'welch'`` : a mean average of overlapping periodograms
+
+        The ``window`` argument is used in ASD estimation, FIR filter design,
         and in preventing spectral leakage in the output.
 
-        Due to filter settle-in, a segment of length `0.5*fduration` will be
+        Due to filter settle-in, a segment of length ``0.5*fduration`` will be
         corrupted at the beginning and end of the output. See
         `~TimeSeries.convolve` for more details.
 
@@ -1940,7 +1971,7 @@ class TimeSeries(TimeSeriesBase):
                                    _fft_length_default(self.dt))
             overlap = asd_kw.pop('overlap', None)
             if overlap is None and fftlength == self.duration.value:
-                asd_kw['method'] = 'scipy-welch'
+                asd_kw['method'] = DEFAULT_FFT_METHOD
                 overlap = 0
             elif overlap is None:
                 overlap = recommended_overlap(window) * fftlength

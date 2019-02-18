@@ -29,6 +29,7 @@ DEPRECATED_FUNCTION_WARNING = (
     "removed in a future release."
 )
 
+
 class deprecated_property(property):  # pylint: disable=invalid-name
     """sub-class of `property` that invokes DeprecationWarning on every call
     """
