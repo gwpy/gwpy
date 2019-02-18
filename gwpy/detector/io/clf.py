@@ -140,6 +140,10 @@ def read_channel_list_file(*source):
 def write_channel_list_file(channels, fobj):
     """Write a `~gwpy.detector.ChannelList` to a INI-format channel list file
     """
+    if not isinstance(fobj, FILE_LIKE):
+        with open(fobj, "w") as fobj:
+            return write_channel_list_file(channels, fobj)
+
     out = configparser.ConfigParser(dict_type=OrderedDict)
     for channel in channels:
         group = channel.group
@@ -160,14 +164,8 @@ def write_channel_list_file(channels, fobj):
             out.set(group, 'channels', '\n%s' % entry)
         else:
             out.set(group, 'channels', clist + '\n%s' % entry)
-    if isinstance(fobj, FILE_LIKE):
-        close = False
-    else:
-        fobj = open(fobj, 'w')
-        close = True
+
     out.write(fobj)
-    if close:
-        fobj.close()
 
 
 registry.register_reader('ini', ChannelList, read_channel_list_file)
