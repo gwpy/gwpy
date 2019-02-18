@@ -30,7 +30,7 @@ from six import string_types
 
 import numpy
 
-from .cache import (file_list, FILE_LIKE)
+from .utils import (file_list, FILE_LIKE)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

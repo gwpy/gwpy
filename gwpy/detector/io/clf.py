@@ -74,8 +74,7 @@ from six.moves import configparser
 from numpy import inf
 
 from ...io import registry
-from ...io.utils import identify_factory
-from ...io.cache import (file_list, FILE_LIKE)
+from ...io.utils import (FILE_LIKE, file_list, identify_factory)
 from .. import (Channel, ChannelList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

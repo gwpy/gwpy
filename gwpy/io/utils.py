@@ -20,10 +20,25 @@
 """
 
 import gzip
+import tempfile
 
 from six import string_types
+from six.moves.urllib.parse import urlparse
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+# build list of file-like types
+try:  # python < 3
+    FILE_LIKE = (
+        file, gzip.GzipFile,
+        tempfile._TemporaryFileWrapper,  # pylint: disable=protected-access
+    )
+except NameError:  # python >= 3
+    from io import IOBase
+    FILE_LIKE = (
+        IOBase, gzip.GzipFile,
+        tempfile._TemporaryFileWrapper,  # pylint: disable=protected-access
+    )
 
 GZIP_SIGNATURE = b'\x1f\x8b\x08'
 
@@ -89,3 +104,98 @@ def gopen(name, *args, **kwargs):
         fobj.close()  # GzipFile won't close orig file when it closes
         return gzip.open(name, *args, **kwargs)
     return fobj
+
+
+# -- file list utilities ------------------------------------------------------
+
+def file_list(flist):
+    """Parse a number of possible input types into a list of filepaths.
+
+    Parameters
+    ----------
+    flist : `file-like` or `list-like` iterable
+        the input data container, normally just a single file path, or a list
+        of paths, but can generally be any of the following
+
+        - `str` representing a single file path (or comma-separated collection)
+        - open `file` or `~gzip.GzipFile` object
+        - :class:`~lal.utils.CacheEntry`
+        - `str` with ``.cache`` or ``.lcf`` extension
+        - simple `list` or `tuple` of `str` paths
+
+    Returns
+    -------
+    files : `list`
+        `list` of `str` file paths
+
+    Raises
+    ------
+    ValueError
+        if the input `flist` cannot be interpreted as any of the above inputs
+    """
+    # open a cache file and return list of paths
+    if (isinstance(flist, string_types) and
+            flist.endswith(('.cache', '.lcf', '.ffl'))):
+        from .cache import read_cache
+        return read_cache(flist)
+
+    # separate comma-separate list of names
+    if isinstance(flist, string_types):
+        return flist.split(',')
+
+    # parse list of entries (of some format)
+    if isinstance(flist, (list, tuple)):
+        return list(map(file_path, flist))
+
+    # otherwise parse a single entry
+    try:
+        return [file_path(flist)]
+    except ValueError as exc:
+        exc.args = (
+            "Could not parse input {!r} as one or more "
+            "file-like objects".format(flist),
+        )
+        raise
+
+
+def file_path(fobj):
+    """Determine the path of a file.
+
+    This doesn't do any sanity checking to check that the file
+    actually exists, or is readable.
+
+    Parameters
+    ----------
+    fobj : `file`, `str`, `CacheEntry`, ...
+        the file object or path to parse
+
+    Returns
+    -------
+    path : `str`
+        the path of the underlying file
+
+    Raises
+    ------
+    ValueError
+        if a file path cannnot be determined
+
+    Examples
+    --------
+    >>> from gwpy.io.utils import file_path
+    >>> file_path("test.txt")
+    'test.txt'
+    >>> file_path(open("test.txt", "r"))
+    'test.txt'
+    >>> file_path("file:///home/user/test.txt")
+    '/home/user/test.txt'
+    """
+    if isinstance(fobj, string_types) and fobj.startswith("file:"):
+        return urlparse(fobj).path
+    if isinstance(fobj, string_types):
+        return fobj
+    if (isinstance(fobj, FILE_LIKE) and hasattr(fobj, "name")):
+        return fobj.name
+    try:
+        return fobj.path
+    except AttributeError:
+        raise ValueError("Cannot parse file name for {!r}".format(fobj))
