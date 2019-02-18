@@ -34,7 +34,8 @@ import lal
 from lal.utils import CacheEntry
 
 
-from ....io import cache as io_cache
+from ....io.cache import is_cache
+from ....io.utils import (FILE_LIKE, file_list)
 from ....utils import lal as lalutils
 from ... import TimeSeries
 
@@ -63,7 +64,7 @@ def open_data_source(source):
     ValueError
         If the input format cannot be identified.
     """
-    if isinstance(source, io_cache.FILE_LIKE):
+    if isinstance(source, FILE_LIKE):
         source = source.name
     if isinstance(source, CacheEntry):
         source = source.path
@@ -74,9 +75,9 @@ def open_data_source(source):
         return lalframe.FrStreamCacheOpen(lal.CacheImport(source))
 
     # read glue cache object
-    if isinstance(source, list) and io_cache.is_cache(source):
+    if isinstance(source, list) and is_cache(source):
         cache = lal.Cache()
-        for entry in io_cache.file_list(source):
+        for entry in file_list(source):
             cache = lal.CacheMerge(cache, lal.CacheGlob(*os.path.split(entry)))
         return lalframe.FrStreamCacheOpen(cache)
 

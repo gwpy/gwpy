@@ -30,7 +30,7 @@ import numpy
 from LDAStools import frameCPP
 
 from ....io import gwf as io_gwf
-from ....io.cache import file_list
+from ....io.utils import file_list
 from ....segments import Segment
 from ....time import LIGOTimeGPS
 from ... import TimeSeries

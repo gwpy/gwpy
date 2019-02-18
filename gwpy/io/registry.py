@@ -34,7 +34,7 @@ from astropy.io.registry import (  # pylint: disable=unused-import
 )
 from astropy.utils.data import get_readable_fileobj
 
-from .cache import (file_list, FILE_LIKE)
+from .utils import (file_list, FILE_LIKE)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

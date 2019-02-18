@@ -30,8 +30,8 @@ from six import string_types
 from astropy.io.registry import (read as io_read)
 from astropy.utils.data import get_readable_fileobj
 
-from .cache import (FILE_LIKE, file_list)
 from .registry import get_read_format
+from .utils import file_list
 from ..utils import mp as mp_utils
 
 

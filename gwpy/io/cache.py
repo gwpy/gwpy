@@ -26,13 +26,13 @@ relevant data, and sieving large file lists, easier for the user.
 from __future__ import division
 
 import os.path
-import tempfile
 import warnings
 from collections import (namedtuple, OrderedDict)
-from gzip import GzipFile
 
 from six import string_types
-from six.moves.urllib.parse import urlparse
+
+from ..time import LIGOTimeGPS
+from .utils import (FILE_LIKE, file_path)
 
 try:
     from lal.utils import CacheEntry
@@ -48,22 +48,7 @@ except ImportError:
 else:
     HAS_CACHE = True
 
-from ..time import LIGOTimeGPS
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-# build list of file-like types
-try:  # python2.x
-    FILE_LIKE = (
-        file, GzipFile,
-        tempfile._TemporaryFileWrapper,  # pylint: disable=protected-access
-    )
-except NameError:  # python3.x
-    from io import IOBase
-    FILE_LIKE = (
-        IOBase, GzipFile,
-        tempfile._TemporaryFileWrapper,  # pylint: disable=protected-access
-    )
 
 
 class _CacheEntry(namedtuple(
@@ -163,7 +148,7 @@ def read_cache(cachefile, coltype=LIGOTimeGPS, sort=None, segment=None):
     """
     # open file
     if not isinstance(cachefile, FILE_LIKE):
-        with open(urlparse(cachefile).path, 'r') as fobj:
+        with open(file_path(cachefile), 'r') as fobj:
             return read_cache(fobj, coltype=coltype, sort=sort,
                               segment=segment)
 
@@ -289,65 +274,6 @@ def is_cache_entry(path):
 
 # -- cache manipulation -------------------------------------------------------
 
-def file_list(flist):
-    """Parse a number of possible input types into a list of filepaths.
-
-    Parameters
-    ----------
-    flist : `file-like` or `list-like` iterable
-        the input data container, normally just a single file path, or a list
-        of paths, but can generally be any of the following
-
-        - `str` representing a single file path (or comma-separated collection)
-        - open `file` or `~gzip.GzipFile` object
-        - :class:`~lal.utils.CacheEntry`
-        - `str` with ``.cache`` or ``.lcf`` extension
-        - simple `list` or `tuple` of `str` paths
-
-    Returns
-    -------
-    files : `list`
-        `list` of `str` file paths
-
-    Raises
-    ------
-    ValueError
-        if the input `flist` cannot be interpreted as any of the above inputs
-    """
-    # open a cache file and return list of paths
-    if (isinstance(flist, string_types) and
-            flist.endswith(('.cache', '.lcf', '.ffl'))):
-        return read_cache(flist)
-
-    # separate comma-separate list of names
-    if isinstance(flist, string_types):
-        return flist.split(',')
-
-    # parse list of entries (of some format)
-    if isinstance(flist, (list, tuple)):
-        return list(map(file_name, flist))
-
-    # otherwise parse a single entry
-    try:
-        return [file_name(flist)]
-    except ValueError as exc:
-        exc.args = ("Could not parse input %r as one or more "
-                    "file-like objects" % flist,)
-        raise
-
-
-def file_name(fobj):
-    """Returns the name (path) of the file object
-    """
-    if isinstance(fobj, string_types):
-        return fobj
-    if (isinstance(fobj, FILE_LIKE) and hasattr(fobj, 'name')):
-        return fobj.name
-    if HAS_CACHEENTRY and isinstance(fobj, CacheEntry):
-        return fobj.path
-    raise ValueError("Cannot parse file name for %r" % fobj)
-
-
 def file_segment(filename):
     """Return the data segment for a filename following T050017
 
@@ -453,3 +379,19 @@ def sieve(cache, segment=None):
         The ``[start, stop)`` interval to match against.
     """
     return type(cache)(e for e in cache if segment.intersects(file_segment(e)))
+
+
+# -- moved functions ----------------------------------------------------------
+
+def file_name(*args, **kwargs):
+    from .utils import file_path
+    warnings.warn("this function has been moved to gwpy.io.utils.file_path",
+                  DeprecationWarning)
+    return file_path(*args, **kwargs)
+
+
+def file_list(*args, **kwargs):
+    from .utils import file_list
+    warnings.warn("this function has been moved to gwpy.io.utils.file_list",
+                  DeprecationWarning)
+    return file_list(*args, **kwargs)
