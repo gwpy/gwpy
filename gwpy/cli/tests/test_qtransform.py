@@ -20,6 +20,7 @@
 """
 
 import os
+import re
 
 from ... import cli
 from ...testing.compat import mock
@@ -50,9 +51,18 @@ class TestCliQtransform(_TestCliSpectrogram):
         assert prod.qxfrm_args['qrange'] == (100., 110.)
 
     def test_get_title(self, dataprod):
-        t = ('Q: 45.25, tres: 0.000208, whitened, f-range: [51.45, 161.45], '
-             'e-range: -0.134, 16.5]')
-        assert dataprod.get_title() == t
+        _float_reg = r"[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?"
+        title_reg = re.compile(
+            r"\A"
+            r"q: {float}, "
+            r"tres: {float}, "
+            r"whitened, "
+            r"f-range: \[{float}, {float}\], "
+            r"e-range: \[{float}, {float}\]"
+            r"\Z".format(float=_float_reg),
+            re.I,
+        )
+        assert title_reg.match(dataprod.get_title())
 
     def test_get_suptitle(self, prod):
         assert prod.get_suptitle() == 'Q-transform: {0}'.format(
