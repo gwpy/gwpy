@@ -555,7 +555,8 @@ class TestEventTable(TestTable):
             utils.assert_table_equal(table, t2)
 
             # assert processed colums works
-            t2 = self.TABLE.read(fp,
+            t2 = self.TABLE.read(
+                fp,
                 format="hdf5.pycbc_live",
                 ifo="X1",
                 columns=["mchirp", "new_snr"],
