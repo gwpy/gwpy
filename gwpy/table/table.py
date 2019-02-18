@@ -46,12 +46,6 @@ def inherit_io_registrations(cls):
     parent = cls.__mro__[1]
     for row in registry.get_formats(data_class=parent):
         name = row["Format"]
-        # dont inherit deprecated names
-        try:
-            if row["Deprecated"].lower() == "yes":
-                continue
-        except KeyError:
-            pass
         # read
         if row["Read"].lower() == "yes":
             registry.register_reader(
