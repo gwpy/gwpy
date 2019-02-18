@@ -187,8 +187,8 @@ class Qtransform(Spectrogram):
             bits.append(('whitened',))
         bits.extend([
             ('f-range', fformat(self.result.yspan)),
-            ('e-range', '{:.3g}, {:.3g}]'.format(self.result.min(),
-                                                 self.result.max())),
+            ('e-range', '[{:.3g}, {:.3g}]'.format(self.result.min(),
+                                                  self.result.max())),
         ])
         return ', '.join([': '.join(bit) for bit in bits])
 
