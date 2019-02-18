@@ -29,7 +29,7 @@ from six import string_types
 import numpy
 
 from astropy.table import (Table, Column, vstack)
-from astropy.io.registry import write as io_write
+from astropy.io import registry
 from astropy.units import Quantity
 
 from ..io.mp import read_multi as io_read_multi
@@ -41,6 +41,43 @@ __all__ = ['EventColumn', 'EventTable']
 
 
 # -- utilities ----------------------------------------------------------------
+
+def inherit_io_registrations(cls):
+    parent = cls.__mro__[1]
+    for row in registry.get_formats(data_class=parent):
+        name = row["Format"]
+        # dont inherit deprecated names
+        try:
+            if row["Deprecated"].lower() == "yes":
+                continue
+        except KeyError:
+            pass
+        # read
+        if row["Read"].lower() == "yes":
+            registry.register_reader(
+                name,
+                cls,
+                registry.get_reader(name, parent),
+                force=False,
+            )
+        # write
+        if row["Write"].lower() == "yes":
+            registry.register_writer(
+                name,
+                cls,
+                registry.get_writer(name, parent),
+                force=False,
+            )
+        # identify
+        if row["Auto-identify"].lower() == "yes":
+            registry.register_identifier(
+                name,
+                cls,
+                registry._identifiers[(name, parent)],
+                force=False,
+            )
+    return cls
+
 
 def _rates_preprocess(func):
     @wraps(func)
@@ -99,6 +136,7 @@ class EventColumn(Column):
 
 # -- Table --------------------------------------------------------------------
 
+@inherit_io_registrations
 class EventTable(Table):
     """A container for a table of events
 
@@ -166,7 +204,10 @@ class EventTable(Table):
             the format of the given source files; if not given, an attempt
             will be made to automatically identify the format
 
-        selection : `str`, or `list` of `str`
+        columns : `list` of `str`, optional
+            the list of column names to read
+
+        selection : `str`, or `list` of `str`, optional
             one or more column filters with which to downselect the
             returned table rows as they as read, e.g. ``'snr > 5'``;
             multiple selections should be connected by ' && ', or given as
@@ -195,24 +236,7 @@ class EventTable(Table):
 
         Notes
         -----"""
-        # astropy's ASCII formats don't support on-the-fly selection, so
-        # we pop the selection argument out here
-        if str(kwargs.get('format')).startswith('ascii'):
-            selection = kwargs.pop('selection', [])
-            if isinstance(selection, string_types):
-                selection = [selection]
-        else:
-            selection = []
-
-        # read the table
-        tab = io_read_multi(vstack, cls, source, *args, **kwargs)
-
-        # apply the selection if required:
-        if selection:
-            tab = tab.filter(*selection)
-
-        # and return
-        return tab
+        return io_read_multi(vstack, cls, source, *args, **kwargs)
 
     def write(self, target, *args, **kwargs):  # pylint: disable=arguments-differ
         """Write this table to a file
@@ -242,7 +266,7 @@ class EventTable(Table):
 
         Notes
         -----"""
-        return io_write(self, target, *args, **kwargs)
+        return registry.write(self, target, *args, **kwargs)
 
     @classmethod
     def fetch(cls, format_, *args, **kwargs):
