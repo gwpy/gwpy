@@ -112,6 +112,14 @@ class TestSegmentList(object):
             sl = self.TEST_CLASS.read(tmp, strict=False, format='segwizard')
             assert_segmentlist_equal(sl, [(0, 1)])
 
+    def test_read_write_segwizard_twocol(self):
+        with TemporaryFilename(suffix='.txt') as tmp:
+            with open(tmp, "w") as tmpf:
+                print("0 1", file=tmpf)
+                print("2 3", file=tmpf)
+            sl = self.TEST_CLASS.read(tmp, format='segwizard')
+            assert_segmentlist_equal(sl, [(0, 1), (2, 3)])
+
     @pytest.mark.parametrize('ext', ('.hdf5', '.h5'))
     def test_read_write_hdf5(self, segmentlist, ext):
         with TemporaryFilename(suffix=ext) as fp:
