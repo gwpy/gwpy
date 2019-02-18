@@ -423,24 +423,62 @@ class TestEventTable(TestTable):
 
     # -- test I/O -------------------------------
 
+    def test_read_write_hdf5(self, table):
+        # check that our overrides of astropy's H5 reader
+        # didn't break everything
+        with utils.TemporaryFilename(suffix=".h5") as tmp:
+            table.write(tmp, path="/data")
+            t2 = self.TABLE.read(tmp, path="/data")
+            utils.assert_table_equal(t2, table)
+
+            t2 = self.TABLE.read(
+                tmp,
+                path="/data",
+                selection="frequency>500",
+                columns=["time", "snr"],
+            )
+            utils.assert_table_equal(
+                t2,
+                filter_table(table, "frequency>500")[("time", "snr")],
+            )
+
     @pytest.mark.parametrize('fmtname', ('Omega', 'cWB'))
     def test_read_write_ascii(self, table, fmtname):
-        fmt = 'ascii.%s' % fmtname.lower()
+        fmt = 'ascii.{}'.format(fmtname.lower())
         with utils.TemporaryFilename(suffix='.txt') as tmp:
             # check write/read returns the same table
             with open(tmp, 'w') as fobj:
                 table.write(fobj, format=fmt)
-            utils.assert_table_equal(table, self.TABLE.read(tmp, format=fmt),
-                                     almost_equal=True)
+            t2 = self.TABLE.read(tmp, format=fmt)
+            utils.assert_table_equal(table, t2, almost_equal=True)
 
+            # check that we can use selections and column filtering
+            t2 = self.TABLE.read(
+                tmp,
+                format=fmt,
+                selection="frequency>500",
+                columns=["time", "snr"],
+            )
+            utils.assert_table_equal(
+                t2,
+                filter_table(table, "frequency>500")[("time", "snr")],
+                almost_equal=True,
+            )
+
+    @pytest.mark.parametrize('fmtname', ('Omega', 'cWB'))
+    def test_read_write_ascii_error(self, table, fmtname):
         with utils.TemporaryFilename(suffix='.txt') as tmp:
             with open(tmp, 'w') as f:
                 pass  # write empty file
             # assert reading blank file doesn't work with column name error
             with pytest.raises(InconsistentTableError) as exc:
-                self.TABLE.read(tmp, format=fmt)
-            assert str(exc.value) == ('No column names found in %s header'
-                                      % fmtname)
+                self.TABLE.read(
+                    tmp,
+                    format="ascii.{}".format(fmtname.lower()),
+                )
+            assert str(exc.value) == (
+                'No column names found in {} header'.format(fmtname)
+            )
 
     def test_read_pycbc_live(self):
         table = self.create(
@@ -460,22 +498,25 @@ class TestEventTable(TestTable):
                 group['psd'].attrs['delta_f'] = psd.df.to('Hz').value
 
             # check that we can read
-            t2 = self.TABLE.read(fp)
+            t2 = self.TABLE.read(fp, format="hdf5.pycbc_live")
             utils.assert_table_equal(table, t2)
             # and check metadata was recorded correctly
             assert t2.meta['ifo'] == 'X1'
 
             # check keyword arguments result in same table
-            t2 = self.TABLE.read(fp, format='hdf5.pycbc_live')
-            utils.assert_table_equal(table, t2)
             t2 = self.TABLE.read(fp, format='hdf5.pycbc_live', ifo='X1')
+            utils.assert_table_equal(table, t2)
 
             # assert loudest works
-            t2 = self.TABLE.read(fp, loudest=True)
+            t2 = self.TABLE.read(fp, format="hdf5.pycbc_live", loudest=True)
             utils.assert_table_equal(table.filter('snr > 500'), t2)
 
             # check extended_metadata=True works (default)
-            t2 = self.TABLE.read(fp, extended_metadata=True)
+            t2 = self.TABLE.read(
+                fp,
+                format="hdf5.pycbc_live",
+                extended_metadata=True,
+            )
             utils.assert_table_equal(table, t2)
             utils.assert_array_equal(t2.meta['loudest'], loudest)
             utils.assert_quantity_sub_equal(
@@ -483,11 +524,20 @@ class TestEventTable(TestTable):
                 exclude=['name', 'channel', 'unit', 'epoch'])
 
             # check extended_metadata=False works
-            t2 = self.TABLE.read(fp, extended_metadata=False)
+            t2 = self.TABLE.read(
+                fp,
+                format="hdf5.pycbc_live",
+                extended_metadata=False,
+            )
             assert t2.meta == {'ifo': 'X1'}
 
             # double-check that loudest and extended_metadata=False work
-            t2 = self.TABLE.read(fp, loudest=True, extended_metadata=False)
+            t2 = self.TABLE.read(
+                fp,
+                format="hdf5.pycbc_live",
+                loudest=True,
+                extended_metadata=False,
+            )
             utils.assert_table_equal(table.filter('snr > 500'), t2)
             assert t2.meta == {'ifo': 'X1'}
 
@@ -496,7 +546,7 @@ class TestEventTable(TestTable):
             with h5py.File(fp) as h5f:
                 h5f.create_group('Z1')
             with pytest.raises(ValueError) as exc:
-                self.TABLE.read(fp)
+                self.TABLE.read(fp, format="hdf5.pycbc_live")
             assert str(exc.value).startswith(
                 'PyCBC live HDF5 file contains dataset groups')
 
@@ -505,15 +555,28 @@ class TestEventTable(TestTable):
             utils.assert_table_equal(table, t2)
 
             # assert processed colums works
-            t2 = self.TABLE.read(fp, ifo='X1', columns=['mchirp', 'new_snr'])
+            t2 = self.TABLE.read(
+                fp,
+                format="hdf5.pycbc_live",
+                ifo="X1",
+                columns=["mchirp", "new_snr"],
+            )
             mchirp = (table['mass1'] * table['mass2']) ** (3/5.) / (
                 table['mass1'] + table['mass2']) ** (1/5.)
             utils.assert_array_equal(t2['mchirp'], mchirp)
 
-            # test with selection
-            t2 = self.TABLE.read(fp, format='hdf5.pycbc_live',
-                                 ifo='X1', selection='snr>.5')
-            utils.assert_table_equal(filter_table(table, 'snr>.5'), t2)
+            # test with selection and columns
+            t2 = self.TABLE.read(
+                fp,
+                format='hdf5.pycbc_live',
+                ifo='X1',
+                selection='snr>.5',
+                columns=("a", "b", "mass1"),
+            )
+            utils.assert_table_equal(
+                t2,
+                filter_table(table, 'snr>.5')[("a", "b", "mass1")],
+            )
         finally:
             if os.path.isdir(os.path.dirname(fp)):
                 shutil.rmtree(os.path.dirname(fp))

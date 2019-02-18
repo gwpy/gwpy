@@ -25,6 +25,7 @@ from astropy.io.ascii import core
 
 from ...io import registry
 from .. import (Table, EventTable)
+from .utils import decorate_registered_reader
 
 
 class OmegaHeader(core.BaseHeader):
@@ -80,6 +81,14 @@ class Omega(core.BaseReader):
     data_class = OmegaData
 
 
-# register ascii.omega for EventTable
+# register for EventTable
+# (to populate that object's docstring)
 registry.register_reader(
-    'ascii.omega', EventTable, registry.get_reader('ascii.omega', Table))
+    'ascii.omega',
+    EventTable,
+    registry.get_reader("ascii.omega", Table),
+)
+decorate_registered_reader(
+    "ascii.omega",
+    EventTable,
+)

@@ -19,8 +19,6 @@
 """Read events from ROOT trees into Tables
 """
 
-import warnings
-
 from six import string_types
 
 from ...io import registry
@@ -31,21 +29,10 @@ from .. import (Table, EventTable)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def table_from_root(source, treename=None, include_names=None, **kwargs):
+def table_from_root(source, treename=None, columns=None, **kwargs):
     """Read a Table from a ROOT tree
     """
     import root_numpy
-
-    if include_names is None:
-        try:
-            include_names = kwargs.pop('columns')
-        except KeyError:
-            pass
-        else:
-            warnings.warn("Keyword argument `columns` has been renamed to "
-                          "`include_names` to better match default "
-                          "astropy.table.Table.read kwargs, please update "
-                          "your call.", DeprecationWarning)
 
     # parse column filters into tree2array ``selection`` keyword
     # NOTE: not all filters can be passed directly to root_numpy, so we store
@@ -84,8 +71,12 @@ def table_from_root(source, treename=None, include_names=None, **kwargs):
                              % (source, ', '.join(map(repr, trees))))
 
     # read, filter, and return
-    t = Table(root_numpy.root2array(source, treename,
-                                    branches=include_names, **kwargs))
+    t = Table(root_numpy.root2array(
+        source,
+        treename,
+        branches=columns,
+        **kwargs
+    ))
     if filters:
         return filter_table(t, *filters)
     return t
