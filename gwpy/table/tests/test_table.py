@@ -564,10 +564,18 @@ class TestEventTable(TestTable):
                 table['mass1'] + table['mass2']) ** (1/5.)
             utils.assert_array_equal(t2['mchirp'], mchirp)
 
-            # test with selection
-            t2 = self.TABLE.read(fp, format='hdf5.pycbc_live',
-                                 ifo='X1', selection='snr>.5')
-            utils.assert_table_equal(filter_table(table, 'snr>.5'), t2)
+            # test with selection and columns
+            t2 = self.TABLE.read(
+                fp,
+                format='hdf5.pycbc_live',
+                ifo='X1',
+                selection='snr>.5',
+                columns=("a", "b", "mass1"),
+            )
+            utils.assert_table_equal(
+                t2,
+                filter_table(table, 'snr>.5')[("a", "b", "mass1")],
+            )
         finally:
             if os.path.isdir(os.path.dirname(fp)):
                 shutil.rmtree(os.path.dirname(fp))

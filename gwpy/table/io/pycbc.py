@@ -29,6 +29,7 @@ import h5py
 from ...io.hdf5 import (identify_hdf5, with_read_hdf5)
 from ...io.registry import (register_reader, register_identifier)
 from .. import (Table, EventTable)
+from ..filter import (filter_table, parse_column_filters)
 from .utils import read_with_selection
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -41,9 +42,8 @@ PYCBC_FILENAME = re.compile('([A-Z][0-9])+-Live-[0-9.]+-[0-9.]+.hdf')
 
 
 @with_read_hdf5
-@read_with_selection
-def table_from_file(source, ifo=None, columns=None, loudest=False,
-                    extended_metadata=True):
+def table_from_file(source, ifo=None, columns=None, selection=None,
+                    loudest=False, extended_metadata=True):
     """Read a `Table` from a PyCBC live HDF5 file
 
     Parameters
@@ -79,7 +79,13 @@ def table_from_file(source, ifo=None, columns=None, loudest=False,
 
     # parse default columns
     if columns is None:
-        columns = _get_columns(source)
+        columns = list(_get_columns(source))
+    readcols = list(columns)
+
+    # parse selections
+    selection = parse_column_filters(selection or [])
+    if selection:
+        readcols.extend(list(zip(*selection))[0])
 
     # set up meta dict
     meta = {'ifo': ifo}
@@ -92,7 +98,7 @@ def table_from_file(source, ifo=None, columns=None, loudest=False,
 
     # map data to columns
     data = []
-    for name in columns:
+    for name in readcols:
         # convert hdf5 dataset into Column
         try:
             arr = source[name][:]
@@ -105,7 +111,8 @@ def table_from_file(source, ifo=None, columns=None, loudest=False,
             arr = arr[loudidx]
         data.append(Table.Column(arr, name=name))
 
-    return Table(data, meta=meta)
+    # read, applying selection filters, and column filters
+    return filter_table(Table(data, meta=meta), selection)[columns]
 
 
 def _find_table_group(h5file, ifo=None):
