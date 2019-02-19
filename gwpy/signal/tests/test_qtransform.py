@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Alex Urban (2018-2019)
 #
 # This file is part of GWpy.
 #
