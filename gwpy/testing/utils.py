@@ -22,6 +22,7 @@
 import os.path
 import tempfile
 from contextlib import contextmanager
+from distutils.version import LooseVersion
 from importlib import import_module
 
 from six import PY2
@@ -63,7 +64,7 @@ def skip_missing_dependency(module):
 
 def module_older_than(module, minversion):
     mod = import_module(module)
-    return mod.__version__ < minversion
+    return LooseVersion(mod.__version__) < LooseVersion(minversion)
 
 
 def skip_minimum_version(module, minversion):
