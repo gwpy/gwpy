@@ -49,21 +49,21 @@ setup_requires = get_setup_requires()
 
 # runtime dependencies
 install_requires = [
-    'six >= 1.5',
-    'python-dateutil',
-    'enum34 ; python_version < \'3\'',
-    'numpy >= 1.7.1',
-    'scipy >= 0.12.1',
-    'matplotlib >= 1.2.0, != 2.1.0, != 2.1.1',
     'astropy >= 1.1.1, < 3.0.0 ; python_version < \'3\'',
     'astropy >= 1.1.1 ; python_version >= \'3\'',
+    'dqsegdb2',
+    'enum34 ; python_version < \'3\'',
+    'gwdatafind',
+    'gwosc >= 0.3.1',
     'h5py >= 1.3',
     'ligo-segments >= 1.0.0',
-    'tqdm >= 4.10.0',
     'ligotimegps >= 1.2.1',
-    'gwosc >= 0.3.1',
-    'dqsegdb2',
-    'gwdatafind',
+    'matplotlib >= 1.2.0, != 2.1.0, != 2.1.1',
+    'numpy >= 1.7.1',
+    'python-dateutil',
+    'scipy >= 0.12.1',
+    'six >= 1.5',
+    'tqdm >= 4.10.0',
 ]
 
 # if setuptools is too old and we are building an EL7 or Debian 8

@@ -8,13 +8,13 @@
 -r requirements-doc.txt
 
 # extras
-pymysql
-pyRXP
-lscsoft-glue ; sys_platform != 'win32'
 lalsuite ; sys_platform != 'win32'
-pycbc >= 1.10.1 ; python_version == '2.7' and sys_platform != 'win32'
 git+https://github.com/duncanmmacleod/ligo.org.git
-sqlalchemy
-psycopg2
+lscsoft-glue ; sys_platform != 'win32'
 pandas ; python_version != '3.4'
 pandas < 0.21 ; python_version == '3.4'
+psycopg2
+pycbc >= 1.10.1 ; python_version == '2.7' and sys_platform != 'win32'
+pymysql
+pyRXP
+sqlalchemy
