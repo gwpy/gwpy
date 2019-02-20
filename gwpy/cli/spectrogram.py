@@ -144,7 +144,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             specgram = self.get_spectrogram()
 
             # there may be data that can't be processed
-            if specgram:
+            if specgram is not None:  # <-DMM: why is this here?
                 # apply normalisation
                 if args.norm:
                     specgram = specgram.ratio(args.norm)

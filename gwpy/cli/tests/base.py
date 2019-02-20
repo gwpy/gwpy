@@ -192,7 +192,11 @@ class _TestCliProduct(object):
             mocker.return_value = conn
             prod.get_data()
 
-        assert prod.timeseries[0] == data[0]
+        utils.assert_quantity_sub_equal(
+            prod.timeseries[0],
+            data[0],
+            exclude=("channel",),
+        )
 
     @pytest.mark.parametrize('ftype, filt', [
         ('highpass', {'highpass': 10}),
