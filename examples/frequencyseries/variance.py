@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
-# Copyright (C) Duncan Macleod (2013-2015)
+# -*- coding: utf-8 -*-
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>
+# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Calculating and plotting a `SpectralVariance` histogram
 

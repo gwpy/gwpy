@@ -24,7 +24,14 @@ Step-by-step
 
       $ git flow release start 1.0.0
 
-   and then ``publish`` it, allowing CI to run, and others to contribute:
+#. **Update the copyright:**
+
+   .. code-block:: bash
+
+      $ python -c "from setup_utils import update_all_copyright; update_all_copyright($(date +%Y))"
+      $ git commit -S . -m "Updated copyright for release"
+
+#. **``publish`` the release branch**, allowing CI to run, and others to contribute:
 
    .. code-block:: bash
 

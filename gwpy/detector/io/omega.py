@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2015)
+# Copyright (C) Duncan Macleod (2015-2019)
 #
-# This file is part of the GWpy python package.
+# This file is part of GWpy.
 #
 # GWpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
