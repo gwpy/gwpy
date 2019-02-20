@@ -425,6 +425,7 @@ def open_xmldoc(fobj, **kwargs):
         raise
 
 
+@ilwdchar_compat
 def get_ligolw_element(xmldoc):
     """Find an existing <LIGO_LW> element in this XML Document
     """
@@ -445,6 +446,7 @@ def get_ligolw_element(xmldoc):
     raise ValueError("Cannot find LIGO_LW element in XML Document")
 
 
+@ilwdchar_compat
 def write_tables_to_document(xmldoc, tables, overwrite=False):
     """Write the given LIGO_LW table into a :class:`Document`
 
@@ -487,6 +489,7 @@ def write_tables_to_document(xmldoc, tables, overwrite=False):
     return xmldoc
 
 
+@ilwdchar_compat
 def write_tables(target, tables, append=False, overwrite=False, **kwargs):
     """Write an LIGO_LW table to file
 
@@ -542,6 +545,7 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
 
 # -- utilities ----------------------------------------------------------------
 
+@ilwdchar_compat
 def list_tables(source):
     # pylint: disable=line-too-long
     """List the names of all tables in this file(s)
@@ -557,15 +561,10 @@ def list_tables(source):
     >>> print(list_tables('H1-LDAS_STRAIN-968654552-10.xml.gz'))
     ['process', 'process_params', 'sngl_burst', 'search_summary', 'segment_definer', 'segment_summary', 'segment']
     """  # noqa: E501
-    from ligo.lw.ligolw import (Document, Stream)
-    from ligo.lw.table import Table
-    table_types = (Table,)
     try:
-        from glue.ligolw.ligolw import Table as GlueTable
-    except ImportError:
-        pass
-    else:
-        table_types += (GlueTable,)
+        from ligo.lw.ligolw import (Document, Stream)
+    except ImportError:  # no python-ligo-lw
+        from glue.ligolw.ligolw import Document, Stream
 
     # read file object
     if isinstance(source, Document):
@@ -577,8 +576,10 @@ def list_tables(source):
     # get list of table names
     tables = []
     for tbl in xmldoc.childNodes[0].childNodes:
-        if isinstance(tbl, table_types):
+        try:
             tables.append(tbl.TableName(tbl.Name))
+        except AttributeError:  # not a table
+            continue
     return tables
 
 
