@@ -43,6 +43,8 @@ from functools import wraps
 
 from six.moves.urllib.parse import urlparse
 
+from gwdatafind import connect
+
 from ..segments import (Segment, SegmentList)
 from ..time import to_gps
 from .cache import (cache_segments, read_cache_entry, _iter_cache, _CacheEntry)
@@ -309,7 +311,6 @@ def on_tape(*files):
 
 def _choose_connection(**datafind_kw):
     if os.getenv('LIGO_DATAFIND_SERVER') or datafind_kw.get('host'):
-        from gwdatafind import connect
         return connect(**datafind_kw)
     if os.getenv('VIRGODATA'):
         return FflConnection()

@@ -1200,8 +1200,6 @@ class TimeSeriesBaseDict(OrderedDict):
         **readargs
             any other keyword arguments to be passed to `.read()`
         """
-        import gwdatafind
-
         start = to_gps(start)
         end = to_gps(end)
 

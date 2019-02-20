@@ -63,6 +63,7 @@ install_requires = [
     'ligotimegps >= 1.2.1',
     'gwosc >= 0.3.1',
     'dqsegdb2',
+    'gwdatafind',
 ]
 
 # if setuptools is too old and we are building an EL7 or Debian 8

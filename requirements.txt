@@ -15,3 +15,4 @@ tqdm >= 4.10.0
 ligotimegps >= 1.2.1
 gwosc >= 0.3.1
 dqsegdb2
+gwdatafind

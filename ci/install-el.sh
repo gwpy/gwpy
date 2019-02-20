@@ -77,7 +77,6 @@ yum -y -q install \
     python-beautifulsoup4 \
     python-sqlalchemy \
     python2-PyMySQL \
-    python2-gwdatafind \
     m2crypto \
     glue \
     dqsegdb \

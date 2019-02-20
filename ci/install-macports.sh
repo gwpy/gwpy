@@ -98,7 +98,6 @@ fi
 # install extras (see requirements-dev.txt)
 #sudo port -q install \
 #    kerberos5 \
-#    ${PY_PREFIX}-gwdatafind \
 #    ${PY_PREFIX}-lal \
 #    ${PY_PREFIX}-lalframe \
 #    ${PY_PREFIX}-lalsimulation \

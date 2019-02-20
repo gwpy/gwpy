@@ -33,9 +33,9 @@ Depends: ${misc:Depends},
          python-lal (>= 6.14.0),
          python-tqdm (>= 4.10.0),
          python-gwosc (>= 0.3.1),
-         python-dqsegdb2
+         python-dqsegdb2,
+         python-gwdatafind
 Suggests: python-pymysql,
-          python-gwdatafind,
           python-dqsegdb,
           python-sqlalchemy,
           python-psycopg2,
@@ -62,9 +62,9 @@ Depends: ${misc:Depends},
          python3-ligo-segments,
          python3-tqdm (>= 4.10.0),
          python3-gwosc (>= 0.3.1),
-         python3-dqsegdb2
+         python3-dqsegdb2,
+         python3-gwdatafind
 Suggests: python3-pymysql,
-          python3-gwdatafind,
           python3-dqsegdb,
           python3-sqlalchemy,
           python3-psycopg2,
