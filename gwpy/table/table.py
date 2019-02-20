@@ -372,7 +372,7 @@ class EventTable(Table):
         """Return the `Column` with the given name
 
         This method is provided only for compatibility with the
-        :class:`glue.ligolw.table.Table`.
+        :class:`ligo.lw.table.Table`.
 
         Parameters
         ----------

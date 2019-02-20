@@ -16,23 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read LIGO_LW documents into :class:`~glue.ligolw.table.Table` objects.
+"""Read LIGO_LW documents into :class:`~ligo.lw.table.Table` objects.
 """
-
-import inspect
 
 import numpy
 
 try:
-    from glue.ligolw.lsctables import TableByName
+    from ligo.lw.lsctables import TableByName as _TableByName
 except ImportError:
-    TableByName = dict()
+    LIGOLW_TABLES = set()
+else:
+    LIGOLW_TABLES = set(_TableByName.values())
+try:
+    from glue.ligolw.lsctables import TableByName as _TableByName
+    LIGOLW_TABLES.update(_TableByName.values())
+except ImportError:
+    pass
 
 from ...io import registry
-from ...io.ligolw import (is_ligolw, read_table as read_ligolw_table,
-                          write_tables as write_ligolw_tables,
-                          patch_ligotimegps,
-                          to_table_type as to_ligolw_table_type)
+from ...io.ligolw import (
+    LigolwElementError,
+    ilwdchar_compat,
+    is_ligolw,
+    patch_ligotimegps,
+    read_table as read_ligolw_table,
+    to_table_type as to_ligolw_table_type,
+    write_tables as write_ligolw_tables,
+)
 from .. import (Table, EventTable)
 from .utils import read_with_selection
 
@@ -45,12 +55,12 @@ GET_AS_EXCLUDE = ['get_column', 'get_table']
 # map custom object types to numpy-compatible type
 NUMPY_TYPE_MAP = dict()
 try:
-    from glue.ligolw.lsctables import LIGOTimeGPS
+    from ligo.lw.lsctables import LIGOTimeGPS
 except ImportError:
     pass
 else:
-    from glue.ligolw.ilwd import ilwdchar
-    from glue.ligolw._ilwd import ilwdchar as _ilwdchar
+    from ligo.lw.ilwd import ilwdchar
+    from ligo.lw._ilwd import ilwdchar as _ilwdchar
     ilwdchar_types = (ilwdchar, _ilwdchar)
     NUMPY_TYPE_MAP[ilwdchar_types] = numpy.int_
     NUMPY_TYPE_MAP[LIGOTimeGPS] = numpy.float_
@@ -58,6 +68,7 @@ else:
 
 # -- utilities ----------------------------------------------------------------
 
+@ilwdchar_compat
 def _get_property_columns(tabletype, columns):
     """Returns list of GPS columns required to read gpsproperties for a table
 
@@ -66,7 +77,7 @@ def _get_property_columns(tabletype, columns):
     >>> _get_property_columns(lsctables.SnglBurstTable, ['peak'])
     ['peak_time', 'peak_time_ns']
     """
-    from glue.ligolw.lsctables import gpsproperty as GpsProperty
+    from ligo.lw.lsctables import gpsproperty as GpsProperty
     # get properties for row object
     rowvars = vars(tabletype.RowType)
     # build list of real column names for fancy properties
@@ -85,14 +96,14 @@ def _get_property_columns(tabletype, columns):
 
 def to_astropy_table(llwtable, apytable, copy=False, columns=None,
                      use_numpy_dtypes=False, rename=None):
-    """Convert a :class:`~glue.ligolw.table.Table` to an `~astropy.tableTable`
+    """Convert a :class:`~ligo.lw.table.Table` to an `~astropy.tableTable`
 
     This method is designed as an internal method to be attached to
-    :class:`~glue.ligolw.table.Table` objects as `__astropy_table__`.
+    :class:`~ligo.lw.table.Table` objects as `__astropy_table__`.
 
     Parameters
     ----------
-    llwtable : :class:`~glue.ligolw.table.Table`
+    llwtable : :class:`~ligo.lw.table.Table`
         the LIGO_LW table to convert from
 
     apytable : `type`
@@ -124,27 +135,13 @@ def to_astropy_table(llwtable, apytable, copy=False, columns=None,
     if columns is None:
         columns = llwtable.columnnames
 
-    # get names of get_xxx() methods for this table
-    getters = [
-        name.split('_', 1)[1] for (name, _) in
-        inspect.getmembers(llwtable, predicate=inspect.ismethod) if
-        name.startswith('get_') and name not in GET_AS_EXCLUDE and
-        name not in llwtable.columnnames]
-
     # extract columns from LIGO_LW table as astropy.table.Column
     data = []
     for colname in columns:
-        # extract using Table.get_<>()
-        if colname in getters:
-            with patch_ligotimegps():
-                arr = getattr(llwtable, 'get_{}'.format(colname))()
-
-        # extract as standard column
-        else:
-            arr = llwtable.getColumnByName(colname)
+        arr = _get_column(llwtable, colname)
 
         # transform to astropy.table.Column
-        copythis = False if colname in getters else copy
+        copythis = isinstance(arr, numpy.ndarray)
         data.append(to_astropy_column(arr, apytable.Column, copy=copythis,
                                       use_numpy_dtype=use_numpy_dtypes,
                                       name=rename.get(colname, colname)))
@@ -153,13 +150,28 @@ def to_astropy_table(llwtable, apytable, copy=False, columns=None,
     return apytable(data, copy=False, meta={'tablename': str(llwtable.Name)})
 
 
+def _get_column(llwtable, name):
+    # try get_{}
+    get_ = "get_{}".format(name)
+    if name not in GET_AS_EXCLUDE and hasattr(llwtable, get_):
+        with patch_ligotimegps(module=type(llwtable).__module__):
+            return getattr(llwtable, get_)()
+
+    # try array of property values
+    try:
+        with patch_ligotimegps(module=type(llwtable).__module__):
+            return numpy.asarray([getattr(row, name) for row in llwtable])
+    except AttributeError:
+        return llwtable.getColumnByName(name)
+
+
 def to_astropy_column(llwcol, cls, copy=False, dtype=None,
                       use_numpy_dtype=False, **kwargs):
-    """Convert a :class:`~glue.ligolw.table.Column` to `astropy.table.Column`
+    """Convert a :class:`~ligo.lw.table.Column` to `astropy.table.Column`
 
     Parameters
     -----------
-    llwcol : :class:`~glue.ligolw.table.Column`, `numpy.ndarray`, iterable
+    llwcol : :class:`~ligo.lw.table.Column`, `numpy.ndarray`, iterable
         the LIGO_LW column to convert, or an iterable
 
     cls : `~astropy.table.Column`
@@ -211,12 +223,13 @@ def to_astropy_column(llwcol, cls, copy=False, dtype=None,
         raise
 
 
+@ilwdchar_compat
 def _get_column_dtype(llwcol):
     """Get the data type of a LIGO_LW `Column`
 
     Parameters
     ----------
-    llwcol : :class:`~glue.ligolw.table.Column`, `numpy.ndarray`, iterable
+    llwcol : :class:`~ligo.lw.table.Column`, `numpy.ndarray`, iterable
         a LIGO_LW column, a numpy array, or an iterable
 
     Returns
@@ -232,7 +245,7 @@ def _get_column_dtype(llwcol):
             raise AttributeError
         return dtype
     except AttributeError:  # dang
-        try:  # glue.ligolw.table.Column
+        try:  # ligo.lw.table.Column
             llwtype = llwcol.parentNode.validcolumns[llwcol.Name]
         except AttributeError:  # not a column
             try:
@@ -240,17 +253,18 @@ def _get_column_dtype(llwcol):
             except IndexError:
                 return None
         else:  # map column type str to python type
-            from glue.ligolw.types import (ToPyType, ToNumPyType)
+            from ligo.lw.types import (ToPyType, ToNumPyType)
             try:
                 return ToNumPyType[llwtype]
             except KeyError:
                 return ToPyType[llwtype]
 
 
+@ilwdchar_compat
 def table_to_ligolw(table, tablename):
-    """Convert a `astropy.table.Table` to a :class:`glue.ligolw.table.Table`
+    """Convert a `astropy.table.Table` to a :class:`ligo.lw.table.Table`
     """
-    from glue.ligolw import lsctables
+    from ligo.lw import lsctables
 
     # create new LIGO_LW table
     columns = table.columns.keys()
@@ -280,7 +294,7 @@ def table_to_ligolw(table, tablename):
 def read_table(source, tablename=None, **kwargs):
     """Read a `Table` from one or more LIGO_LW XML documents
 
-    source : `file`, `str`, :class:`~glue.ligolw.ligolw.Document`, `list`
+    source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
         one or more open files, file paths, or LIGO_LW `Document` objects
 
     tablename : `str`, optional
@@ -297,7 +311,8 @@ def read_table(source, tablename=None, **kwargs):
     gwpy.table.io.ligolw.to_astropy_table
         for details of keyword arguments for the conversion operation
     """
-    from glue.ligolw import table as ligolw_table
+    from ligo.lw import table as ligolw_table
+    from ligo.lw.lsctables import TableByName
 
     # -- keyword handling -----------------------
 
@@ -348,21 +363,39 @@ def read_table(source, tablename=None, **kwargs):
 
 # -- write --------------------------------------------------------------------
 
-def write_table(table, target, tablename=None, **kwargs):
+def write_table(table, target, tablename=None, ilwdchar_compat=None,
+                **kwargs):
     """Write a `~astropy.table.Table` to file in LIGO_LW XML format
+
+    This method will attempt to write in the new `ligo.lw` format
+    (if ``ilwdchar_compat`` is ``None`` or ``False``),
+    but will fall back to the older `glue.ligolw` (in that order) if that
+    fails (if ``ilwdchar_compat`` is ``None`` or ``True``).
     """
     if tablename is None:  # try and get tablename from metadata
         tablename = table.meta.get('tablename', None)
     if tablename is None:  # panic
         raise ValueError("please pass ``tablename=`` to specify the target "
                          "LIGO_LW Table Name")
-    return write_ligolw_tables(target, [table_to_ligolw(table, tablename)],
-                               **kwargs)
+    try:
+        llwtable = table_to_ligolw(
+            table,
+            tablename,
+            ilwdchar_compat=ilwdchar_compat or False,
+        )
+    except LigolwElementError as exc:
+        if ilwdchar_compat is not None:
+            raise
+        try:
+            llwtable = table_to_ligolw(table, tablename, ilwdchar_compat=True)
+        except Exception:
+            raise exc
+    return write_ligolw_tables(target, [llwtable], **kwargs)
 
 
 # -- register -----------------------------------------------------------------
 
-for table_ in TableByName.values():
+for table_ in LIGOLW_TABLES:
     # register conversion from LIGO_LW to astropy Table
     table_.__astropy_table__ = to_astropy_table
 

@@ -32,7 +32,7 @@ import pytest
 
 import sqlparse
 
-from numpy import (random, isclose, dtype)
+from numpy import (random, isclose, dtype, asarray)
 
 import h5py
 
@@ -119,7 +119,7 @@ class TestTable(object):
 
     # -- test I/O -------------------------------
 
-    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    @utils.skip_missing_dependency('ligo.lw.lsctables')
     @pytest.mark.parametrize('ext', ['xml', 'xml.gz'])
     def test_read_write_ligolw(self, ext):
         table = self.create(
@@ -146,7 +146,7 @@ class TestTable(object):
             assert t2.meta.get('tablename', None) == 'sngl_burst'
 
             # check numpy type casting works
-            from glue.ligolw.lsctables import LIGOTimeGPS as LigolwGPS
+            from ligo.lw.lsctables import LIGOTimeGPS as LigolwGPS
             t3 = _read(columns=['peak'])
             assert isinstance(t3['peak'][0], LigolwGPS)
             t3 = _read(columns=['peak'], use_numpy_dtypes=True)
@@ -207,7 +207,7 @@ class TestTable(object):
             assert str(exc.value) == ('document must contain exactly '
                                       'one sngl_burst table')
 
-    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    @utils.skip_missing_dependency('ligo.lw.lsctables')
     def test_read_write_ligolw_property_columns(self):
         table = self.create(100, ['peak', 'snr', 'central_freq'],
                             ['f8', 'f4', 'f4'])
@@ -220,7 +220,10 @@ class TestTable(object):
             for col in ('peak_time', 'peak_time_ns'):
                 assert col in llw.columnnames
             with io_ligolw.patch_ligotimegps():
-                utils.assert_array_equal(llw.get_peak(), table['peak'])
+                utils.assert_array_equal(
+                    asarray([row.peak for row in llw]),
+                    table['peak'],
+                )
 
             # read table and assert gpsproperty was repacked properly
             t2 = self.TABLE.read(f, columns=table.colnames,

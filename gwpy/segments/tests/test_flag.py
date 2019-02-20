@@ -38,6 +38,7 @@ from ...segments import (Segment, SegmentList,
                          DataQualityFlag, DataQualityDict)
 from ...testing import (mocks, utils)
 from ...testing.compat import mock
+from ...utils.misc import null_context
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -437,9 +438,9 @@ class TestDataQualityFlag(object):
         with pytest.raises(TypeError):
             flag.pad(*PADDING, kwarg='test')
 
-    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    @utils.skip_missing_dependency('ligo.lw.lsctables')
     def test_from_veto_def(self):
-        from glue.ligolw.lsctables import VetoDef
+        from ligo.lw.lsctables import VetoDef
 
         def veto_def(ifo, name, version, **kwargs):
             vdef = VetoDef()
@@ -476,8 +477,6 @@ class TestDataQualityFlag(object):
     # -- test I/O -------------------------------
 
     @pytest.mark.parametrize('format, ext, rw_kwargs, simple', [
-        ('ligolw', 'xml', {}, False),
-        ('ligolw', 'xml.gz', {}, False),
         ('hdf5', 'hdf5', {'path': 'test-dqflag'}, False),
         ('hdf5', 'h5', {'path': 'test-dqflag'}, False),
         ('json', 'json', {}, True),
@@ -500,10 +499,7 @@ class TestDataQualityFlag(object):
 
         # perform complicated test
         else:
-            try:
-                _read_write(autoidentify=False)
-            except ImportError as e:
-                pytest.skip(str(e))
+            _read_write(autoidentify=False)
             with pytest.raises(IOError):
                 _read_write(autoidentify=True)
             _read_write(autoidentify=True, write_kw={'overwrite': True})
@@ -524,14 +520,36 @@ class TestDataQualityFlag(object):
             utils.assert_flag_equal(f2, flag)
 
     @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    @pytest.mark.parametrize("ilwdchar_compat", [
+        pytest.param(
+            False,
+            marks=utils.skip_missing_dependency("ligo.lw.lsctables"),
+        ),
+        pytest.param(
+            True,
+            marks=utils.skip_missing_dependency("glue.ligolw.lsctables"),
+        ),
+    ])
+    def test_read_write_ligolw(self, flag, ilwdchar_compat):
+        utils.test_read_write(
+            flag, "ligolw", extension="xml",
+            assert_equal=utils.assert_flag_equal,
+            autoidentify=False,
+            read_kw={}, write_kw={"ilwdchar_compat": ilwdchar_compat},
+        )
+
+    @utils.skip_missing_dependency('ligo.lw.lsctables')
     def test_write_ligolw_attrs(self, flag):
         from gwpy.io.ligolw import read_table
         with tempfile.NamedTemporaryFile(suffix='.xml') as f:
-            flag.write(f, format='ligolw',
-                       attrs={'process_id': 'process:process_id:100'})
+            flag.write(
+                f,
+                format='ligolw',
+                attrs={'process_id': 100},
+                ilwdchar_compat=False,
+            )
             segdeftab = read_table(f, 'segment_definer')
-            assert str(segdeftab[0].process_id) == (
-                'process:process_id:100')
+            assert int(segdeftab[0].process_id) == 100
 
     # -- test queries ---------------------------
 
@@ -735,7 +753,7 @@ class TestDataQualityDict(object):
 
     # -- test I/O -------------------------------
 
-    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    @utils.skip_missing_dependency('ligo.lw.lsctables')
     def test_from_veto_definer_file(self, veto_definer):
         # read veto definer
         vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer)
@@ -761,19 +779,11 @@ class TestDataQualityDict(object):
         assert 'X1:TEST-FLAG_2:1' not in vdf
 
     @pytest.mark.parametrize('format, ext, dep, rw_kwargs', [
-        ('ligolw', 'xml', 'glue.ligolw.lsctables', {}),
-        ('ligolw', 'xml.gz', 'glue.ligolw.lsctables', {}),
         ('hdf5', 'hdf5', 'h5py', {}),
         ('hdf5', 'h5', 'h5py', {}),
         ('hdf5', 'hdf5', 'h5py', {'path': 'test-dqdict'}),
     ])
     def test_read_write(self, instance, format, ext, dep, rw_kwargs):
-        from importlib import import_module
-        try:
-            import_module(dep)
-        except ImportError as e:
-            pytest.skip(str(e))
-
         # define assertion
         def _assert(a, b):
             return utils.assert_dict_equal(a, b, utils.assert_flag_equal)
@@ -793,6 +803,27 @@ class TestDataQualityDict(object):
         with pytest.raises(IOError):
             _read_write(autoidentify=True)
         _read_write(autoidentify=True, write_kw={'overwrite': True})
+
+    @pytest.mark.parametrize("ilwdchar_compat", [
+        pytest.param(
+            False,
+            marks=utils.skip_missing_dependency("ligo.lw.lsctables"),
+        ),
+        pytest.param(
+            True,
+            marks=utils.skip_missing_dependency("glue.ligolw.lsctables"),
+        ),
+    ])
+    def test_read_write_ligolw(self, instance, ilwdchar_compat):
+        def _assert(a, b):
+            return utils.assert_dict_equal(a, b, utils.assert_flag_equal)
+        utils.test_read_write(
+            instance, "ligolw", extension="xml",
+            assert_equal=_assert,
+            autoidentify=False,
+            read_kw={},
+            write_kw={"ilwdchar_compat": ilwdchar_compat},
+        )
 
     def test_read_on_missing(self, instance):
         with h5py.File('test', driver='core', backing_store=False) as h5f:
@@ -821,6 +852,40 @@ class TestDataQualityDict(object):
             # check on_missing=<anything else> raises exception
             with pytest.raises(ValueError) as exc:
                 _read(on_missing='blah')
+
+    @pytest.mark.parametrize("ilwdchar_compat", [
+        pytest.param(  # default `None` maps to `True` for now
+            None,
+            marks=utils.skip_missing_dependency("ligo.lw.lsctables"),
+        ),
+        pytest.param(
+            False,
+            marks=utils.skip_missing_dependency("ligo.lw.lsctables"),
+        ),
+        pytest.param(
+            True,
+            marks=utils.skip_missing_dependency("glue.ligolw.lsctables"),
+        ),
+    ])
+    def test_to_ligolw_tables(self, instance, ilwdchar_compat):
+        if ilwdchar_compat is None:
+            ctx = pytest.warns(PendingDeprecationWarning)
+        else:
+            ctx = null_context()
+        with ctx:
+            tables = instance.to_ligolw_tables(
+                ilwdchar_compat=ilwdchar_compat,
+            )
+
+        if ilwdchar_compat is False:
+            mod = "ligo.lw.lsctables"
+        else:  # True or None
+            mod = "glue.ligolw.lsctables"
+        for tab in tables:
+            assert type(tab).__module__ == mod
+        assert len(tables[0]) == len(instance)  # segdef
+        assert len(tables[1]) == sum(len(x.known) for x in instance.values())
+        assert len(tables[2]) == sum(len(x.active) for x in instance.values())
 
     # -- test queries ---------------------------
 
