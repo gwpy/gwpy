@@ -34,12 +34,14 @@ from scipy.signal import get_window
 
 from astropy.units import Quantity
 
-from . import (utils as fft_utils, get_default_fft_api)
+from . import _utils as fft_utils
 from ...utils import mp as mp_utils
 from ..window import (canonical_name, recommended_overlap)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+
+# -- handle physical quantities and set defaults ------------------------------
 
 def seconds_to_samples(x, rate):
     """Convert a value in seconds to a number of samples for a given rate
@@ -49,7 +51,7 @@ def seconds_to_samples(x, rate):
     x : `float`, `~astropy.units.Quantity`
         number of seconds (or `Quantity` in any time units)
 
-    rate : `float`
+    rate : `float`, `~astropy.units.Quantity`
         the rate of the relevant data, in Hertz (or `Quantity` in
         any frequency units)
 
@@ -61,7 +63,6 @@ def seconds_to_samples(x, rate):
     Examples
     --------
     >>> from astropy import units
-    >>> from gwpy.signal.fft.ui import seconds_to_samples
     >>> seconds_to_samples(4, 256)
     1024
     >>> seconds_to_samples(1 * units.minute, 16)
@@ -84,8 +85,7 @@ def normalize_fft_params(series, kwargs=None, func=None):
     recommended overlap for that window type, if ``overlap`` is not given.
 
     If a ``window`` is given as a `str`, it will be converted to a
-    `numpy.ndarray` containing the correct window (of the correct length),
-    or a `lal.REAL8Window`-type object for `lal` library methods.
+    `numpy.ndarray` containing the correct window (of the correct length).
 
     Parameters
     ----------
@@ -102,7 +102,6 @@ def normalize_fft_params(series, kwargs=None, func=None):
     --------
     >>> from numpy.random import normal
     >>> from gwpy.timeseries import TimeSeries
-    >>> from gwpy.signal.fft.ui import normalize_fft_params
     >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256))
     {'nfft': 1024, 'noverlap': 0}
     >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256),
@@ -138,7 +137,7 @@ def normalize_fft_params(series, kwargs=None, func=None):
 
     # create FFT plan for LAL
     if library == 'lal' and kwargs.get('plan', None) is None:
-        from .lal import generate_fft_plan
+        from ._lal import generate_fft_plan
         kwargs['plan'] = generate_fft_plan(nfft, dtype=series.dtype)
 
     kwargs.update({
@@ -208,16 +207,17 @@ def _normalize_window(window, nfft, library, dtype):
     window : `numpy.ndarray`, `lal.REAL8Window`
         a numpy-, or `LAL`-format window array
     """
-    if library == 'lal' and isinstance(window, numpy.ndarray):
-        from .lal import window_from_array
+    if library == '_lal' and isinstance(window, numpy.ndarray):
+        from ._lal import window_from_array
         return window_from_array(window)
-    if library == 'lal':
-        from .lal import generate_window
+    if library == '_lal':
+        from ._lal import generate_window
         return generate_window(nfft, window=window, dtype=dtype)
     if isinstance(window, string_types):
         window = canonical_name(window)
     if isinstance(window, string_types + (tuple,)):
         return get_window(window, nfft)
+    return None
 
 
 def set_fft_params(func):
@@ -240,6 +240,8 @@ def set_fft_params(func):
     return wrapped_func
 
 
+# -- processing functions -----------------------------------------------------
+
 @set_fft_params
 def psd(timeseries, method_func, *args, **kwargs):
     """Generate a PSD using a method function
@@ -258,10 +260,10 @@ def psd(timeseries, method_func, *args, **kwargs):
         other arguments to pass to ``method_func`` when calling
     """
     # decorator has translated the arguments for us, so just call psdn()
-    return psdn(timeseries, method_func, *args, **kwargs)
+    return _psdn(timeseries, method_func, *args, **kwargs)
 
 
-def psdn(timeseries, method_func, *args, **kwargs):
+def _psdn(timeseries, method_func, *args, **kwargs):
     """Generate a PSD using a method function with FFT arguments in samples
 
     All arguments are presumed to be in sample counts, not physical units
@@ -326,7 +328,7 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
     def _psd(series):
         """Calculate a single PSD for a spectrogram
         """
-        psd_ = psdn(series, method_func, *args, **kwargs)
+        psd_ = _psdn(series, method_func, *args, **kwargs)
         del psd_.epoch  # fixes Segmentation fault (no idea why it faults)
         return psd_
 
@@ -371,7 +373,7 @@ def spectrogram(timeseries, method_func, **kwargs):
 
     # define chunks
     chunks = []
-    x = y = 0
+    x = 0
     while x + nfft <= timeseries.size:
         y = min(timeseries.size, x + nfft)
         chunks.append((x, y))
@@ -418,7 +420,7 @@ def spectrogram(timeseries, method_func, **kwargs):
 
 def _chunk_timeseries(series, nstride, noverlap):
     # define chunks
-    x = y = 0
+    x = 0
     step = nstride - int(noverlap // 2.)  # the first step is smaller
     nfft = nstride + noverlap
     while x + nstride <= series.size:
@@ -433,6 +435,6 @@ def _chunk_timeseries(series, nstride, noverlap):
 
 def _fft_library(method_func):
     mod = method_func.__module__.rsplit('.', 1)[-1]
-    if mod == 'basic':
-        return get_default_fft_api().split('.', 1)[0]
+    if mod == 'median-mean':
+        return "lal"
     return mod

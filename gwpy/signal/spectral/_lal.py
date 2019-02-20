@@ -21,6 +21,8 @@
 See the `LAL TimeFreqFFT.h documentation
 <http://software.ligo.org/docs/lalsuite/lal/group___time_freq_f_f_t__h.html>`_
 for more details
+
+This module is deprecated and will be removed in a future release.
 """
 
 from __future__ import absolute_import
@@ -32,8 +34,8 @@ import numpy
 
 from ...frequencyseries import FrequencySeries
 from ..window import canonical_name
-from .utils import scale_timeseries_unit
-from . import registry as fft_registry
+from ._utils import scale_timeseries_unit
+from . import _registry as fft_registry
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -57,7 +59,7 @@ def generate_fft_plan(length, level=None, dtype='float64', forward=True):
         amount of work to do when planning the FFT, default set by
         `LAL_FFTPLAN_LEVEL` module variable.
 
-    dtype : :class:`numpy.dtype`, str, optional
+    dtype : :class:`numpy.dtype`, `type`, `str`, optional
         numeric type of data to plan for
 
     forward : bool, optional, default: `True`
@@ -385,4 +387,4 @@ def median_mean(timeseries, segmentlength, noverlap=None,
 # register LAL methods without overriding scipy method
 for func in (welch, bartlett, median, median_mean,):
     fft_registry.register_method(func, name='lal-{}'.format(func.__name__),
-                                 scaling='density')
+                                 deprecated=True)

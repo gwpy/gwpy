@@ -27,8 +27,8 @@ from scipy import __version__ as scipy_version
 import scipy.signal
 
 from ...frequencyseries import FrequencySeries
-from .utils import scale_timeseries_unit
-from . import registry as fft_registry
+from ._utils import scale_timeseries_unit
+from . import _registry as fft_registry
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -40,109 +40,57 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 def welch(timeseries, segmentlength, noverlap=None, **kwargs):
     """Calculate a PSD of this `TimeSeries` using Welch's method.
-
-    Parameters
-    ----------
-    timeseries : `~gwpy.timeseries.TimeSeries`
-        input `TimeSeries` data.
-
-    segmentlength : `int`
-        number of samples in single average.
-
-    noverlap : `int`
-        number of samples to overlap between segments, defaults to 50%.
-
-    Returns
-    -------
-    spectrum : `~gwpy.frequencyseries.FrequencySeries`
-        average power `FrequencySeries`
-
-    See also
-    --------
-    scipy.signal.welch
     """
     # calculate PSD
     freqs, psd_ = scipy.signal.welch(
-        timeseries.value, noverlap=noverlap,
+        timeseries.value,
+        noverlap=noverlap,
         fs=timeseries.sample_rate.decompose().value,
-        nperseg=segmentlength, **kwargs)
+        nperseg=segmentlength,
+        **kwargs
+    )
     # generate FrequencySeries and return
-    unit = scale_timeseries_unit(timeseries.unit,
-                                 kwargs.get('scaling', 'density'))
-    return FrequencySeries(psd_, unit=unit, frequencies=freqs,
-                           name=timeseries.name, epoch=timeseries.epoch,
-                           channel=timeseries.channel)
+    unit = scale_timeseries_unit(
+        timeseries.unit,
+        kwargs.get('scaling', 'density'),
+    )
+    return FrequencySeries(
+        psd_,
+        unit=unit,
+        frequencies=freqs,
+        name=timeseries.name,
+        epoch=timeseries.epoch,
+        channel=timeseries.channel,
+    )
 
 
 def bartlett(timeseries, segmentlength, **kwargs):
-    """Calculate a PSD of this `TimeSeries` using Bartlett's method
-
-    Parameters
-    ----------
-    timeseries : `~gwpy.timeseries.TimeSeries`
-        input `TimeSeries` data.
-
-    segmentlength : `int`
-        number of samples in single average.
-
-    noverlap : `int`
-        number of samples to overlap between segments, defaults to 50%.
-
-    Returns
-    -------
-    spectrum : `~gwpy.frequencyseries.FrequencySeries`
-        average power `FrequencySeries`
-
-    See also
-    --------
-    scipy.signal.welch
+    """Calculate a PSD using Bartlett's method
     """
     kwargs.pop('noverlap', None)
     return welch(timeseries, segmentlength, noverlap=0, **kwargs)
 
 
+def median(timeseries, segmentlength, **kwargs):
+    """Calculate a PSD using Welch's method with a median average
+    """
+    if scipy_version <= '1.1.9999':
+        raise ValueError(
+            "median average PSD estimation requires scipy >= 1.2.0",
+        )
+    kwargs.setdefault('average', 'median')
+    return welch(timeseries, segmentlength, **kwargs)
+
+
 # register
-for func in (welch, bartlett,):
-    fft_registry.register_method(func, name='scipy-{}'.format(func.__name__),
-                                 scaling='density')
+for func in (welch, bartlett, median):
+    fft_registry.register_method(func, name=func.__name__)
+
+    # DEPRECATED:
+    fft_registry.register_method(func, name='scipy-{}'.format(func.__name__))
 
 
-# scipy.signal.welch accepts an 'average' keyword as of 1.2.0
-if scipy_version >= '1.1.999':
-    def median(timeseries, segmentlength, **kwargs):
-        """Calculate a PSD using Welch's method with a median average
-
-        Parameters
-        ----------
-        timeseries : `~gwpy.timeseries.TimeSeries`
-            input `TimeSeries` data.
-
-        segmentlength : `int`
-            number of samples in single average.
-
-        noverlap : `int`
-            number of samples to overlap between segments, defaults to 50%.
-
-        Returns
-        -------
-        spectrum : `~gwpy.frequencyseries.FrequencySeries`
-            average power `FrequencySeries`
-
-        See also
-        --------
-        scipy.signal.welch
-        """
-        kwargs.setdefault('average', 'median')
-        return welch(timeseries, segmentlength, **kwargs)
-
-    fft_registry.register_method(
-        median,
-        name='scipy-median',
-        scaling='density',
-    )
-
-
-# -- other scaling methods ----------------------------------------------------
+# -- others -------------------------------------------------------------------
 
 def rayleigh(timeseries, segmentlength, noverlap=0):
     """Calculate a Rayleigh statistic spectrum
@@ -228,10 +176,3 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
         csd_, unit=unit, frequencies=freqs,
         name=str(timeseries.name)+'---'+str(other.name),
         epoch=timeseries.epoch, channel=timeseries.channel)
-
-
-# register
-for func in (rayleigh, csd,):
-    fft_registry.register_method(func, scaling='other')
-    fft_registry.register_method(func, name='scipy-{}'.format(func.__name__),
-                                 scaling='other')

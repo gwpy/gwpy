@@ -457,21 +457,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         fs = losc.average_fft(fftlength=0.4, overlap=0.2)
 
-    @pytest.mark.parametrize('method', SCIPY_METHODS)
-    def test_psd_basic(self, losc, method):
-        # check that basic methods always post a warning telling the user
-        # to be more specific
-        with pytest.warns(UserWarning):
-            fs = losc.psd(1, method=method, window=None)
-
-        # and check that the basic parameters are sane
-        assert fs.size == losc.sample_rate.value // 2 + 1
-        assert fs.f0 == 0 * units.Hz
-        assert fs.df == 1 * units.Hz
-        assert fs.name == losc.name
-        assert fs.channel is losc.channel
-        assert fs.unit == losc.unit ** 2 / units.Hz
-
     def test_psd_default_overlap(self, losc):
         utils.assert_quantity_sub_equal(
             losc.psd(.5, window='hann'),
@@ -491,79 +476,70 @@ class TestTimeSeries(_TestTimeSeriesBase):
         with pytest.warns(UserWarning):
             losc.psd(1, .5, method='lal_median_mean')
 
+    @pytest.mark.parametrize('method', SCIPY_METHODS)
+    def test_psd(self, noisy_sinusoid, method):
+        fftlength = .5
+        overlap = .25
+        fs = noisy_sinusoid.psd(fftlength=fftlength, overlap=overlap)
+        assert fs.unit == noisy_sinusoid.unit ** 2 / "Hz"
+        assert fs.max() == fs.value_at(500)
+        assert fs.size == fftlength * noisy_sinusoid.sample_rate.value // 2 + 1
+        assert fs.f0 == 0 * units.Hz
+        assert fs.df == units.Hz / fftlength
+        assert fs.name == noisy_sinusoid.name
+        assert fs.channel is noisy_sinusoid.channel
+
     @pytest.mark.parametrize('library, method', chain(
-        product(['scipy'], SCIPY_METHODS),
-        product(['pycbc.psd'], ['welch', 'bartlett', 'median', 'median_mean']),
+        product(['pycbc'], ['welch', 'bartlett', 'median', 'median_mean']),
         product(['lal'], ['welch', 'bartlett', 'median', 'median_mean']),
     ))
-    @pytest.mark.parametrize(
-        'window', (None, 'hann', ('kaiser', 24), 'array'),
-    )
-    def test_psd(self, losc, library, method, window):
-        try:
-            importlib.import_module(library)
-        except ImportError as exc:
-            pytest.skip(str(exc))
+    def test_psd_deprecated(self, noisy_sinusoid, library, method):
+        """Test deprecated average methods for TimeSeries.psd
+        """
+        pytest.importorskip("library")
 
         fftlength = .5
         overlap = .25
 
         # remove final .25 seconds to stop median-mean complaining
         # (means an even number of overlapping FFT segments)
-        if method == 'median_mean':
+        if method == "median_mean":
             losc = losc.crop(end=losc.span[1]-overlap)
 
         # get actual method name
         library = library.split('.', 1)[0]
-        method = '{}_{}'.format(library, method)
 
-        def _psd(fftlength, overlap=None, **kwargs):
-            # create window of the correct length
-            if window == 'array':
-                nfft = (losc.size if fftlength is None else
-                        int(fftlength * losc.sample_rate.value))
-                _window = signal.get_window('hamming', nfft)
-            else:
-                _window = window
+        with pytest.warns(DeprecationWarning):
+            psd = noisy_sinusoid.psd(fftlength=fftlength, overlap=overlap,
+                                     method="{0}-{0}".format(library, method))
 
-            # generate PSD
-            return losc.psd(fftlength=fftlength, overlap=overlap,
-                            method=method, window=_window)
-
-        try:
-            fs = _psd(.5, .25)
-        except TypeError as exc:
-            # catch pycbc window as array error
-            # FIXME: remove after PyCBC 1.10 is released
-            if str(exc).startswith('unhashable type'):
-                pytest.skip(str(exc))
-            raise
-
-        # and check that the basic parameters are sane
-        assert fs.size == fftlength * losc.sample_rate.value // 2 + 1
-        assert fs.f0 == 0 * units.Hz
-        assert fs.df == units.Hz / fftlength
-        assert fs.name == losc.name
-        assert fs.channel is losc.channel
-        assert fs.unit == losc.unit ** 2 / units.Hz
+        assert isinstance(psd, FrequencySeries)
+        assert psd.unit == noisy_sinusoid.unit ** 2 / "Hz"
+        assert psd.max() == psd.value_at(500)
 
     def test_asd(self, losc):
         fs = losc.asd(1)
         utils.assert_quantity_sub_equal(fs, losc.psd(1) ** (1/2.))
 
     @utils.skip_minimum_version('scipy', '0.16')
-    def test_csd(self, losc):
-        # test all defaults
-        fs = losc.csd(losc)
-        utils.assert_quantity_sub_equal(fs, losc.psd(), exclude=['name'])
+    def test_csd(self, noisy_sinusoid, corrupt_noisy_sinusoid):
+        # test that csd(self) is the same as psd()
+        fs = noisy_sinusoid.csd(noisy_sinusoid)
+        utils.assert_quantity_sub_equal(
+            fs,
+            noisy_sinusoid.psd(),
+            exclude=['name'],
+        )
 
         # test fftlength
-        fs = losc.csd(losc, fftlength=0.5)
-        assert fs.size == 0.5 * losc.sample_rate.value // 2 + 1
+        fs = noisy_sinusoid.csd(corrupt_noisy_sinusoid, fftlength=0.5)
+        assert fs.size == 0.5 * noisy_sinusoid.sample_rate.value // 2 + 1
         assert fs.df == 2 * units.Hertz
-
-        # test overlap
-        losc.csd(losc, fftlength=0.4, overlap=0.2)
+        utils.assert_quantity_sub_equal(
+            fs,
+            noisy_sinusoid.csd(corrupt_noisy_sinusoid, fftlength=0.5,
+                               overlap=0.25),
+        )
 
     @staticmethod
     def _window_helper(series, fftlength, window='hamming'):

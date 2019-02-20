@@ -9,18 +9,42 @@ Signal processing
 In a wide-array of applications, the original data recorded from a digital system must be manipulated in order to extract the greatest amount of information.
 GWpy provides a suite of functions to simplify and extend the excellent digital signal processing suite in :mod:`scipy.signal`.
 
-===============
-Fourier methods
-===============
+===========================
+Spectral density estimation
+===========================
 
-.. toctree::
-   :hidden:
+`Spectral density estimation <https://en.wikipedia.org/wiki/Spectral_density>`_
+is a common way of investigating the frequency-domain content of a time-domain
+signal.
+GWpy provides wrappers of power spectral density (PSD) estimation methods
+from :mod:`scipy.signal` to simplify calculating a
+:class:`~gwpy.frequencyseries.FrequencySeries` from a :class:`TimeSeries`.
 
-   fft
+The :mod:`gwpy.signal.spectral` sub-package provides the following
+PSD estimation averaging methods:
 
-The `TimeSeries` object comes with a number of Fourier methods to calculate a `~gwpy.frequencyseries.FrequencySeries` or `~gwpy.spectrogram.Spectrogram` by calculating and averaging FFTs.
+- ``'bartlett'`` - mean average of non-overlapping periodograms
+- ``'median'`` - median average of overlapping periodograms
+- ``'welch'`` - mean average of overlapping periodograms
 
-See :ref:`gwpy-signal-fft` for more details.
+Each of these can be specified by passing the function name as the
+``method`` keyword argument to any of the relevant :class:`TimeSeries`
+instance methods:
+
+.. autosummary::
+
+    TimeSeries.psd
+    TimeSeries.asd
+    TimeSeries.spectrogram
+    TimeSeries.spectrogram2
+
+e.g, :meth:`TimeSeries.psd`::
+
+   >>> ts = TimeSeries(...)
+   >>> psd = ts.psd(..., method='median', ...)
+
+See :func:`scipy.signal.welch` for more detailed documentation on the PSD
+estimation method used.
 
 =====================
 Time-domain filtering
