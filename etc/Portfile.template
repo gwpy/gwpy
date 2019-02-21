@@ -31,23 +31,24 @@ python.default_version 27
 
 if {${name} ne ${subport}} {
 
-    depends_build-append port:py${python.version}-setuptools
+    depends_build-append    port:py${python.version}-setuptools
 
-    depends_lib-append  port:py${python.version}-six \
-                        port:py${python.version}-dateutil \
-                        port:py${python.version}-numpy \
-                        port:py${python.version}-scipy \
-                        port:py${python.version}-matplotlib \
-                        port:py${python.version}-astropy \
-                        port:py${python.version}-h5py \
-                        port:py${python.version}-lal \
-                        port:py${python.version}-ligo-segments \
-                        port:py${python.version}-tqdm \
-                        port:py${python.version}-gwosc \
-                        port:py${python.version}-dqsegdb2
+    depends_lib-append      port:py${python.version}-astropy \
+                            port:py${python.version}-dateutil \
+                            port:py${python.version}-dqsegdb2 \
+                            port:py${python.version}-gwdatafind \
+                            port:py${python.version}-gwosc \
+                            port:py${python.version}-h5py \
+                            port:py${python.version}-ligo-segments \
+                            port:py${python.version}-ligotimegps \
+                            port:py${python.version}-matplotlib \
+                            port:py${python.version}-numpy \
+                            port:py${python.version}-scipy \
+                            port:py${python.version}-six \
+                            port:py${python.version}-tqdm
 
     if {${python.version} < 34} {
-        depends_lib-append port:py${python.version}-enum34
+        depends_lib-append  port:py${python.version}-enum34
     }
 
     if {${python.version} == 27} {
@@ -60,8 +61,5 @@ if {${name} ne ${subport}} {
             depends_lib-append port:py${python.version}-ldas-tools-framecpp
         }
 
-        variant dqsegdb description {Add DQSEGDB support} {
-            depends_lib-append port:dqsegdb
-        }
     }
 }

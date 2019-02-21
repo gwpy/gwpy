@@ -140,7 +140,7 @@ Identical arguments should be used relative to the :meth:`DataQualityFlag.write`
 JSON
 ====
 
-The |dqsegdb|_ client uses JSON as the intermediate format for returning information during queries.
+The DQSEGDB server uses JSON as the intermediate format for returning information during queries.
 
 Reading
 -------
