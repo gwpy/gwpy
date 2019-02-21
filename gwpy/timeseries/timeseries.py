@@ -58,6 +58,45 @@ def _fft_length_default(dt):
     return int(max(2, numpy.ceil(2048 * dt.decompose().value)))
 
 
+def _discover_gate_points(ts, thresh, window):
+    """Discovers a set of indices where gating windows should be placed
+       based on a given amplitude threshold. Points are clustered within
+       a time window.
+
+    Parameters
+    ----------
+    ts : `~gwpy.timeseries.TimeSeries`
+        input time series that will be compared to the provided threshold
+
+    thresh : `float`
+        amplitude threshold, if the data exceeds this value a gating window
+        will be placed
+
+    window : `float`
+        time duration over which gating points will be clustered
+
+    Returns
+    -------
+    gates : `numpy.ndarray`
+        An array of time series indices where gating windows should be centered
+    """
+    gates = []
+    thresh_idx = numpy.where(ts.value > thresh)[0]
+    thresh_amp = ts.value[thresh_idx]
+    thresh_time = ts.times.value[thresh_idx]
+    sort_idx = numpy.argsort(thresh_amp)[::-1]
+
+    while numpy.any(sort_idx):
+        tip = sort_idx[0]
+        gates.append(tip)
+        remove_idx = [i for i in sort_idx
+                      if (thresh_time[i] < thresh_time[tip] + window)
+                      and (thresh_time[i] > thresh_time[tip] - window)]
+        sort_idx = numpy.array([s for s in sort_idx if s not in remove_idx])
+
+    return thresh_idx[gates]
+
+
 # -- TimeSeries ---------------------------------------------------------------
 
 class TimeSeries(TimeSeriesBase):
@@ -1566,6 +1605,98 @@ class TimeSeries(TimeSeriesBase):
         in_ = self.copy().detrend(detrend)
         out = in_.convolve(tdw, window=window)
         return out * numpy.sqrt(2 * in_.dt.decompose().value)
+
+    def gate(self, tzero=1.0, tpad=0.5, whiten=True,
+             threshold=50., cluster_window=0.5, **whiten_kwargs):
+        """Discovers a set of indices where gating windows should be placed
+           based on a given amplitude threshold. Points are clustered within
+           a time window.
+
+        Parameters
+        ----------
+        tzero : `int`, optional
+            half-width time duration in which the time series is set to zero
+
+        tpad : `int`, optional
+            half-width time duration in which the Planck window is tapered
+
+        whiten : `bool`, optional
+            if True, data will be whitened before gating points are discovered,
+            use of this option is highly recommended
+
+        threshold : `float`, optional
+            amplitude threshold, if the data exceeds this value a gating window
+            will be placed
+
+        cluster_window : `float`, optional
+            time duration over which gating points will be clustered
+
+        **whiten_kwargs
+            other keyword arguments that will be passed to the
+            `TimeSeries.whiten` method if it is being used when discovering
+            gating points
+
+        Returns
+        -------
+        out : `~gwpy.timeseries.TimeSeries`
+            a copy of the original `TimeSeries` that has had gating windows
+            applied
+
+        Examples
+        --------
+
+        Read data into a `TimeSeries`
+        >>> from gwpy.timeseries import TimeSeries
+        >>> data = TimeSeries.get('H1:GDS-CALIB_STRAIN', 1225542623,
+                                   1225542823)
+
+        Apply gating using custom arguments
+        >>> gated = data.gate(tzero=1.0, tpad=1.0, threshold=10.0,
+                              fftlength=4, overlap=2, method='median')
+
+        Plot the original data and the gated data
+        >>> overlay = data.plot(dpi=150, label='Ungated',
+                                color='dodgerblue', zorder=3)
+        >>> ax = overlay.gca()
+        >>> ax.plot(gated, label='Gated', color='orange', zorder=2)
+        >>> ax.set_xlim(1225542713, 1225542733)
+        >>> ax.legend()
+        >>> overlay.show()
+        """
+        # Find points to gate based on a threshold
+        if whiten:
+            gates = _discover_gate_points(self.whiten(**whiten_kwargs),
+                                          threshold, cluster_window)
+        else:
+            gates = _discover_gate_points(self, threshold, cluster_window)
+        out = self.copy()
+
+        # Iterate over list of indices to gate and apply each one
+        for gate in gates:
+            nzero = int(abs(tzero)*self.sample_rate.value)
+            npad = int(abs(tpad)*self.sample_rate.value)
+            half = nzero + npad
+            ntotal = 2*half
+
+            # Set the boundaries for windowed data in the original time series
+            left_idx = max(0, gate - half)
+            right_idx = min(gate + half, len(self.value) - 1)
+
+            # Choose which part of the window will replace the data
+            # This must be done explicitly for edge cases where a window
+            # overlaps index 0 or the end of the time series
+            left_idx_window = half - (gate - left_idx)
+            right_idx_window = half + (right_idx - gate)
+
+            window = 1 - planck(ntotal, nleft=npad, nright=npad)
+            window = window[left_idx_window:right_idx_window]
+            window_timeseries = TimeSeries(numpy.ones_like(self.value),
+                                           dt=self.dt, t0=self.t0)
+            window_timeseries[left_idx:right_idx] = window
+
+            out *= window_timeseries
+
+        return out
 
     def convolve(self, fir, window='hanning'):
         """Convolve this `TimeSeries` with an FIR filter using the
