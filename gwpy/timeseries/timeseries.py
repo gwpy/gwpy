@@ -58,45 +58,6 @@ def _fft_length_default(dt):
     return int(max(2, numpy.ceil(2048 * dt.decompose().value)))
 
 
-def _discover_gate_points(ts, thresh, window):
-    """Discovers a set of indices where gating windows should be placed
-       based on a given amplitude threshold. Points are clustered within
-       a time window.
-
-    Parameters
-    ----------
-    ts : `~gwpy.timeseries.TimeSeries`
-        input time series that will be compared to the provided threshold
-
-    thresh : `float`
-        amplitude threshold, if the data exceeds this value a gating window
-        will be placed
-
-    window : `float`
-        time duration over which gating points will be clustered
-
-    Returns
-    -------
-    gates : `numpy.ndarray`
-        An array of time series indices where gating windows should be centered
-    """
-    gates = []
-    thresh_idx = numpy.where(ts.value > thresh)[0]
-    thresh_amp = ts.value[thresh_idx]
-    thresh_time = ts.times.value[thresh_idx]
-    sort_idx = numpy.argsort(thresh_amp)[::-1]
-
-    while numpy.any(sort_idx):
-        tip = sort_idx[0]
-        gates.append(tip)
-        remove_idx = [i for i in sort_idx
-                      if (thresh_time[i] < thresh_time[tip] + window)
-                      and (thresh_time[i] > thresh_time[tip] - window)]
-        sort_idx = numpy.array([s for s in sort_idx if s not in remove_idx])
-
-    return thresh_idx[gates]
-
-
 # -- TimeSeries ---------------------------------------------------------------
 
 class TimeSeries(TimeSeriesBase):
@@ -1664,20 +1625,17 @@ class TimeSeries(TimeSeriesBase):
         >>> overlay.show()
         """
         # Find points to gate based on a threshold
-        if whiten:
-            gates = _discover_gate_points(self.whiten(**whiten_kwargs),
-                                          threshold, cluster_window)
-        else:
-            gates = _discover_gate_points(self, threshold, cluster_window)
+        data = self.whiten(**whiten_kwargs) if whiten else self
+        gates = signal.find_peaks(data.value, height=threshold,
+                       distance=cluster_window*data.sample_rate.value)[0]
         out = self.copy()
 
         # Iterate over list of indices to gate and apply each one
+        nzero = int(abs(tzero)*self.sample_rate.value)
+        npad = int(abs(tpad)*self.sample_rate.value)
+        half = nzero + npad
+        ntotal = 2*half
         for gate in gates:
-            nzero = int(abs(tzero)*self.sample_rate.value)
-            npad = int(abs(tpad)*self.sample_rate.value)
-            half = nzero + npad
-            ntotal = 2*half
-
             # Set the boundaries for windowed data in the original time series
             left_idx = max(0, gate - half)
             right_idx = min(gate + half, len(self.value) - 1)
@@ -1690,11 +1648,7 @@ class TimeSeries(TimeSeriesBase):
 
             window = 1 - planck(ntotal, nleft=npad, nright=npad)
             window = window[left_idx_window:right_idx_window]
-            window_timeseries = TimeSeries(numpy.ones_like(self.value),
-                                           dt=self.dt, t0=self.t0)
-            window_timeseries[left_idx:right_idx] = window
-
-            out *= window_timeseries
+            out[left_idx:right_idx] *= window
 
         return out
 
