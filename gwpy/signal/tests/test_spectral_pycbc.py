@@ -26,7 +26,7 @@ import pytest
 
 from ..spectral import _pycbc as fft_pycbc
 
-pytest.importorskip('pycbc')
+pytest.importorskip('pycbc.psd')
 
 
 def test_welch(noisy_sinusoid):
