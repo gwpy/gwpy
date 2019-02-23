@@ -42,12 +42,16 @@ from gwpy.timeseries import TimeSeries
 data = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
 
 # Next, we generate the `~TimeSeries.q_transform` of these data:
-qspecgram = data.q_transform()
+qspecgram = data.q_transform(outseg=(1126259462.2, 1126259462.5))
 
-# Now, we can plot the resulting `~gwpy.spectrogram.Spectrogram`, focusing on a
-# specific window around the interesting time
+# .. note::
+#    We can save memory by focusing on a specific window around the
+#    interesting time. The ``outseg`` keyword argument returns a `Spectrogram`
+#    that is only as long as we need it to be.
 
-plot = qspecgram.crop(1126259462.2, 1126259462.5).plot(figsize=[8, 4])
+# Now, we can plot the resulting `~gwpy.spectrogram.Spectrogram`:
+
+plot = qspecgram.plot(figsize=[8, 4])
 ax = plot.gca()
 ax.set_xscale('seconds')
 ax.set_yscale('log')

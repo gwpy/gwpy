@@ -60,7 +60,17 @@ def test_q_scan():
     # test spectrogram output
     assert ts_qspecgram.q == QSPECGRAM.q
     assert ts_qspecgram.shape == QSPECGRAM.shape
+    assert ts_qspecgram.dtype == numpy.dtype('float32')
     nptest.assert_allclose(ts_qspecgram.value, QSPECGRAM.value)
+
+
+def test_unnormalised_q_scan():
+    # scan with norm=False
+    ts_qspecgram = DATA.q_transform(whiten=False, norm=False)
+
+    # test spectrogram output
+    assert ts_qspecgram.q == QSPECGRAM.q
+    assert ts_qspecgram.dtype == numpy.dtype('float64')
 
 
 def test_q_scan_fd():
@@ -74,8 +84,9 @@ def test_q_scan_fd():
     # test that the output is the same
     assert far == FAR
     assert fs_qspecgram.q == QSPECGRAM.q
+    assert fs_qspecgram.dtype == numpy.dtype('float32')
     assert fs_qspecgram.shape == QSPECGRAM.shape
-    nptest.assert_allclose(fs_qspecgram.value, QSPECGRAM.value)
+    nptest.assert_allclose(fs_qspecgram.value, QSPECGRAM.value, rtol=3e-2)
 
 
 def test_qtable():

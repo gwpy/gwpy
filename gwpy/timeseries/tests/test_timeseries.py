@@ -907,15 +907,15 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert isinstance(qgram, EventTable)
         assert qgram.meta['q'] == 45.25483399593904
         assert qgram['energy'].min() >= 5.5**2 / 2
-        nptest.assert_almost_equal(qgram['energy'].max(), 10559.255014979768)
+        nptest.assert_almost_equal(qgram['energy'].max(), 10559.25, decimal=2)
 
     def test_q_transform(self, losc):
         # test simple q-transform
         qspecgram = losc.q_transform(method='scipy-welch', fftlength=2)
         assert isinstance(qspecgram, Spectrogram)
-        assert qspecgram.shape == (4000, 2403)
+        assert qspecgram.shape == (1000, 2403)
         assert qspecgram.q == 5.65685424949238
-        nptest.assert_almost_equal(qspecgram.value.max(), 156.43279233248313)
+        nptest.assert_almost_equal(qspecgram.value.max(), 155.93567, decimal=5)
 
         # test whitening args
         asd = losc.asd(2, 1, method='scipy-welch')
@@ -932,7 +932,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
         with pytest.warns(UserWarning):
             qspecgram = losc.q_transform(method='scipy-welch',
                                          frange=(0, 10000))
-            nptest.assert_almost_equal(qspecgram.yspan[1], 1291.5316316157107)
+            nptest.assert_almost_equal(
+                qspecgram.yspan[1], 1291.5316, decimal=4)
 
         # test other normalisations work (or don't)
         q2 = losc.q_transform(method='scipy-welch', norm='median')
@@ -945,11 +946,11 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_q_transform_logf(self, losc):
         # test q-transform with log frequency spacing
         qspecgram = losc.q_transform(method='scipy-welch', fftlength=2,
-                                     fres=500, logf=True)
+                                     logf=True)
         assert isinstance(qspecgram, Spectrogram)
-        assert qspecgram.shape == (4000, 500)
+        assert qspecgram.shape == (1000, 500)
         assert qspecgram.q == 5.65685424949238
-        nptest.assert_almost_equal(qspecgram.value.max(), 156.43222488296405)
+        nptest.assert_almost_equal(qspecgram.value.max(), 155.93774, decimal=5)
 
     def test_boolean_statetimeseries(self, array):
         comp = array >= 2 * array.unit

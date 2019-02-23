@@ -1840,7 +1840,7 @@ class TimeSeries(TimeSeriesBase):
                     frange=qtransform.DEFAULT_FRANGE,
                     gps=None,
                     search=.5,
-                    tres=.001,
+                    tres="<default>",
                     fres="<default>",
                     logf=False,
                     norm='median',
@@ -1852,6 +1852,12 @@ class TimeSeries(TimeSeriesBase):
                     **asd_kw):
         """Scan a `TimeSeries` using the multi-Q transform and return an
         interpolated high-resolution spectrogram
+
+        By default, this method returns a high-resolution spectrogram in
+        both time and frequency, which can result in a large memory
+        footprint. If you know that you only need a subset of the output
+        for, say, a figure, consider using ``outseg`` and the other
+        keyword arguments to restrict the size of the returned data.
 
         Parameters
         ----------
@@ -1869,7 +1875,8 @@ class TimeSeries(TimeSeriesBase):
             used if `gps` is given
 
         tres : `float`, optional
-            desired time resolution (seconds) of output `Spectrogram`
+            desired time resolution (seconds) of output `Spectrogram`,
+            default is `abs(outseg) / 1000.`
 
         fres : `float`, `int`, `None`, optional
             desired frequency resolution (Hertz) of output `Spectrogram`,
@@ -1892,7 +1899,8 @@ class TimeSeries(TimeSeriesBase):
             maximum allowed fractional mismatch between neighbouring tiles
 
         outseg : `~gwpy.segments.Segment`, optional
-            GPS `[start, stop)` segment for output `Spectrogram`
+            GPS `[start, stop)` segment for output `Spectrogram`,
+            default is the full duration of the input
 
         whiten : `bool`, `~gwpy.frequencyseries.FrequencySeries`, optional
             boolean switch to enable (`True`) or disable (`False`) data
@@ -1927,6 +1935,9 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
+        This method will return a `Spectrogram` of dtype ``float32`` if
+        ``norm`` is given, and ``float64`` otherwise.
+
         To optimize plot rendering with `~matplotlib.axes.Axes.pcolormesh`,
         the output `~gwpy.spectrogram.Spectrogram` can be given a log-sampled
         frequency axis by passing `logf=True` at runtime. The `fres` argument
