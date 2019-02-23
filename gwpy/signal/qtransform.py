@@ -518,7 +518,7 @@ class QGram(object):
 
         Notes
         -----
-        This method will return a `Spectrogram` of dtype ``float32``
+        This method will return a `Spectrogram` of dtype ``float32`` if
         ``norm`` is given, and ``float64`` otherwise.
 
         To optimize plot rendering with `~matplotlib.axes.Axes.pcolormesh`,
