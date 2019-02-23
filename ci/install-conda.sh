@@ -40,7 +40,7 @@ conda config --add channels conda-forge
 conda update --quiet conda
 conda info --all
 
-# install correct versino of python, and gwpy's dependencies only
+# install correct version of python, and gwpy's dependencies only
 conda install --only-deps python=${PYTHON_VERSION} gwpy
 
 # install conda dependencies (based on pip requirements file)
@@ -50,9 +50,11 @@ rm -f conda-reqs.txt  # clean up
 
 # install other conda packages that aren't represented in the requirements file
 conda install --quiet --yes \
+    lscsoft-glue \
     python-lal \
     python-lalframe \
     python-lalsimulation \
+    python-ldas-tools-framecpp \
     python-nds2-client
 
 # install gwpy into this environment

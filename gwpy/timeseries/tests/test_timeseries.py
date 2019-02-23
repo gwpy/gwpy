@@ -496,7 +496,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_psd_deprecated(self, noisy_sinusoid, library, method):
         """Test deprecated average methods for TimeSeries.psd
         """
-        pytest.importorskip("library")
+        pytest.importorskip(library)
 
         fftlength = .5
         overlap = .25
