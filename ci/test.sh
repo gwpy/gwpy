@@ -26,13 +26,7 @@ trap 'set +ex' RETURN
 # get path to python and pip
 PYTHON="python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}"
 PYTHON_PREFIX=$(${PYTHON} -c "import sys; print(sys.prefix)")
-
-# install with sudo on macports
-if [[ "${PYTHON_PREFIX}" =~ "/opt/local/"* ]]; then
-    PIP="sudo -H ${PYTHON} -m pip"
-else
-    PIP="${PYTHON} -m pip"
-fi
+PIP="${PYTHON} -m pip"
 
 # upgrade setuptools in order to understand environment markers
 ${PIP} install "pip>=8.0.0" "setuptools>=20.2.2"

@@ -103,30 +103,6 @@ Step-by-step
    It should take ~5 minutes for the release documentation to actually
    appear on https://gwpy.github.io/docs/
 
-====================================
-Distributing the new release package
-====================================
-
-Package distributions for Debian, RHEL, and Macports, is still done manually:
-
-Debian/RHEL
------------
-
-* Upload the source tarball to software.ligo.org
-* Email daswg+announce@ligo.org to announce the new release and the presence of the tarball on http://software.ligo.org.
-
-Macports
---------
-
-* Generate an updated ``Portfile``
-
-  .. code-block:: bash
-
-     $ python setup.py port
-
-* Open a new Pull Request on https://github.com/macports/macports-ports that
-  replaces the old ``/python/py-gwpy/Portfile`` with this new version.
-
 ==============
 Linked updates
 ==============
@@ -143,3 +119,25 @@ Zenodo
 
 Creating a new release on GitHub will automatically trigger a new DOI on
 https://zenodo.org.
+
+====================================
+Distributing the new release package
+====================================
+
+Package distributions for Conda, Debian, and RHEL are done manually:
+
+Conda
+-----
+
+Once the PyPI upload has completed, the conda-forge bot will automatically
+open a pull request to `conda-forge/gwpy-feedstock
+<https://github.com/conda-forge/gwpy-feedstock.git>`_.
+Just double-check that the dependencies and tests are up-to-date, then
+merge.
+
+Debian/RHEL
+-----------
+
+* Upload the source tarball to software.ligo.org
+* Open a new request to `sccb/requests <https://git.ligo.org/sccb/requests/>`_
+  to announce the new release and request package build and deployment.

@@ -15,7 +15,6 @@ env:
 
     # default operations
     - INSTALL_CMD="python -m pip install ${PIP_FLAGS} ."
-    - MACPORTS_INSTALL_CMD=". ./ci/install-macports.sh"
     - TEST_CMD=". ./ci/test.sh"
 
     # enable slack notifications (I think)
@@ -78,6 +77,9 @@ matrix:
     - python: '3.6'
       stage: Distribution tests
       env: INSTALL_CMD=". ./ci/install-conda.sh"
+    - python: '3.7'
+      stage: Distribution tests
+      env: INSTALL_CMD=". ./ci/install-conda.sh"
     # NOTE: osx doesn't support language: python, so we need to use minimal
     #       and manually specify the PYTHON_VERSION
     - python: '2.7'
@@ -90,33 +92,14 @@ matrix:
       language: minimal
       stage: Distribution tests
       env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.6"
-
-    # macports builds
-    - os: osx
-      osx_image: xcode9.2
+    - python: '3.7'
+      os: osx
       language: minimal
-      sudo: required
-      python: '2.7'
       stage: Distribution tests
-      env: INSTALL_CMD="${MACPORTS_INSTALL_CMD}" PYTHON_VERSION="2.7"
-    - os: osx
-      osx_image: xcode9.2
-      language: minimal
-      sudo: required
-      python: '3.6'
-      stage: Distribution tests
-      env: INSTALL_CMD="${MACPORTS_INSTALL_CMD}" PYTHON_VERSION="3.6"
-    - os: osx
-      osx_image: xcode9.2
-      language: minimal
-      sudo: required
-      python: '3.7'
-      stage: Distribution tests
-      env: INSTALL_CMD="${MACPORTS_INSTALL_CMD}" PYTHON_VERSION="3.7"
+      env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.7"
 
   allow_failures:
     - env: PIP_FLAGS="--upgrade --pre"
-    - env: INSTALL_CMD="${MACPORTS_INSTALL_CMD}" PYTHON_VERSION="3.7"
 
 install:  # install package
   - ${INSTALL_CMD}
@@ -152,7 +135,6 @@ cache:
   pip: true
   ccache: true
   directories:
-    - /opt/local/var/macports/software
     - ${HOME}/miniconda
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
