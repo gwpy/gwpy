@@ -49,6 +49,7 @@ if [ -z ${CONDA_PREFIX} ]; then
     ${PIP} list installed
 else
     conda list --name gwpyci
+fi
 
 # run tests with coverage
 ${PYTHON} -m pytest --pyargs gwpy --cov=gwpy
