@@ -490,7 +490,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert fs.channel is noisy_sinusoid.channel
 
     @pytest.mark.parametrize('library, method', chain(
-        product(['pycbc'], ['welch', 'bartlett', 'median', 'median_mean']),
+        product(['pycbc.psd'], ['welch', 'bartlett', 'median', 'median_mean']),
         product(['lal'], ['welch', 'bartlett', 'median', 'median_mean']),
     ))
     def test_psd_deprecated(self, noisy_sinusoid, library, method):
@@ -504,14 +504,15 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # remove final .25 seconds to stop median-mean complaining
         # (means an even number of overlapping FFT segments)
         if method == "median_mean":
-            losc = losc.crop(end=losc.span[1]-overlap)
+            end = noisy_sinusoid.span[1]
+            noisy_sinusoid = noisy_sinusoid.crop(end=end-overlap)
 
         # get actual method name
         library = library.split('.', 1)[0]
 
         with pytest.warns(DeprecationWarning):
             psd = noisy_sinusoid.psd(fftlength=fftlength, overlap=overlap,
-                                     method="{0}-{0}".format(library, method))
+                                     method="{0}-{1}".format(library, method))
 
         assert isinstance(psd, FrequencySeries)
         assert psd.unit == noisy_sinusoid.unit ** 2 / "Hz"
