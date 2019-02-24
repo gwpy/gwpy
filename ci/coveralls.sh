@@ -23,7 +23,12 @@ trap 'set +ex' RETURN
 # Submit coverage data to coveralls.io
 #
 
-PYTHON="python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}"
+# get path to python and pip
+if [ -z ${CONDA_PREFIX} ]; then
+    PYTHON=$(which "python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}")
+else
+    PYTHON="${CONDA_PREFIX}/bin/python"
+fi
 PYTHON_PREFIX=$(${PYTHON} -c "import sys; print(sys.prefix)")
 PIP="${PYTHON} -m pip"
 

@@ -45,7 +45,10 @@ if grep -q "pytest-cov" requirements-test.txt; then
 fi
 
 # list all packages
-${PIP} list installed
+if [ -z ${CONDA_PREFIX} ]; then
+    ${PIP} list installed
+else
+    conda list --name gwpyci
 
 # run tests with coverage
 ${PYTHON} -m pytest --pyargs gwpy --cov=gwpy

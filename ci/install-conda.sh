@@ -46,6 +46,7 @@ source activate gwpyci
 
 # install conda dependencies (based on pip requirements file)
 python ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
+echo "python=${PYTHON_VERSION}"  >> conda-reqs.txt  # force python version
 conda install --name gwpyci --quiet --yes --file conda-reqs.txt
 rm -f conda-reqs.txt  # clean up
 
