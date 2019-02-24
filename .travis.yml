@@ -79,6 +79,7 @@ matrix:
       env: INSTALL_CMD=". ./ci/install-conda.sh"
     - python: '3.7'
       stage: Distribution tests
+      dist: xenial
       env: INSTALL_CMD=". ./ci/install-conda.sh"
     # NOTE: osx doesn't support language: python, so we need to use minimal
     #       and manually specify the PYTHON_VERSION

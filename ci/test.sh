@@ -23,8 +23,11 @@ trap 'set +ex' RETURN
 # Run the test suite for GWpy on the current system
 #
 
+# re-add miniconda path
+export PATH="${HOME}/miniconda/bin:${PATH}"
+
 # get path to python and pip
-PYTHON="python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}"
+PYTHON=$(which "python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}")
 PYTHON_PREFIX=$(${PYTHON} -c "import sys; print(sys.prefix)")
 PIP="${PYTHON} -m pip"
 
