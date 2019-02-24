@@ -42,7 +42,7 @@ conda info --all
 
 # create environment for tests
 conda create --name gwpyci python=${PYTHON_VERSION} gwpy
-conda activate gwpyci
+source activate gwpyci
 
 # install conda dependencies (based on pip requirements file)
 python ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
