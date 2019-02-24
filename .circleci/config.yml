@@ -1,5 +1,7 @@
 version: 2
 
+# -- templates --------------
+
 run-tests: &run-tests
   name: Test
   command: bash -ex ci/test.sh
@@ -13,6 +15,10 @@ debian-build: &debian-build
         name: Build
         command: bash -ex ci/install-debian.sh
     - run: *run-tests
+    - store_test_results:
+        path: test-reports
+    - store_artifacts:
+        path: test-reports
     - store_artifacts:
         path: "*.deb"
 
@@ -25,8 +31,14 @@ centos-build: &centos-build
         name: Build
         command: bash -ex ci/install-el.sh
     - run: *run-tests
+    - store_test_results:
+        path: test-reports
+    - store_artifacts:
+        path: test-reports
     - store_artifacts:
         path: "*.rpm"
+
+# -- jobs -------------------
 
 jobs:
   sdist:
@@ -41,6 +53,23 @@ jobs:
           root: .
           paths:
             - gwpy-*.tar.*
+
+  flake8:
+    docker:
+      - image: hoto/flake8:latest
+    steps:
+      - checkout
+      - run:
+          name: Lint
+          command: |
+            python -m pip install flake8-junit-report
+            mkdir -p test-reports
+            python -m flake8 --output-file test-reports/flake8.txt
+            python -m junit_conversor test-reports/flake8.txt test-reports/junit.xml
+      - store_test_results:
+          path: test-reports
+      - store_artifacts:
+          path: test-reports
 
   debian:stretch:2.7:
     <<: *debian-build
@@ -63,11 +92,14 @@ jobs:
     environment:
       PYTHON_VERSION: "2.7"
 
+# -- workflow ---------------
+
 workflows:
   version: 2
-  build_and_test:
+  build-and-test:
     jobs:
       - sdist
+      - flake8
       - debian:stretch:2.7:
           requires:
             - sdist

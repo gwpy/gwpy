@@ -48,4 +48,4 @@ else
 fi
 
 # run tests with coverage
-${PYTHON} -m pytest --pyargs gwpy --cov=gwpy
+${PYTHON} -m pytest --pyargs gwpy --cov=gwpy --junitxml=test-reports/junit.xml

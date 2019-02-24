@@ -35,11 +35,6 @@ matrix:
   fast_finish: true
 
   include:
-    # lint
-    - python: '3.6'
-      stage: Basic tests
-      env: INSTALL_CMD="python -m pip install flake8" TEST_CMD="python -m flake8"
-
     # basic test on established, recent python version
     - python: '2.7'
       stage: Basic tests
