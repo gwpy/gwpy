@@ -40,16 +40,17 @@ conda config --add channels conda-forge
 conda update --quiet conda
 conda info --all
 
-# install correct version of python, and gwpy's dependencies only
-conda install --only-deps python=${PYTHON_VERSION} gwpy
+# create environment for tests
+conda create --name gwpyci python=${PYTHON_VERSION} gwpy
+conda activate gwpyci
 
 # install conda dependencies (based on pip requirements file)
 python ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
-conda install --quiet --yes --file conda-reqs.txt
+conda install --name gwpyci --quiet --yes --file conda-reqs.txt
 rm -f conda-reqs.txt  # clean up
 
 # install other conda packages that aren't represented in the requirements file
-conda install --quiet --yes \
+conda install --name gwpyci --quiet --yes \
     lscsoft-glue \
     python-lal \
     python-lalframe \
