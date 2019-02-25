@@ -19,7 +19,7 @@ install:
   - conda create --name gwpy python=%PYTHON_VERSION%
   - activate gwpy
   - python ci\\parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
-  - echo "python =%PYTHON_VERSION%.*" >> conda-reqs.txt
+  - echo "python=%PYTHON_VERSION%.*" >> conda-reqs.txt
   - conda install --yes --file conda-reqs.txt
   # print everything we have
   - conda list
