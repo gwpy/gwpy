@@ -219,6 +219,30 @@ class TestTimeSeries(_TestTimeSeriesBase):
                     comb, array.append(a2, inplace=False),
                     exclude=['channel'])
 
+    @pytest.mark.parametrize('api', [
+        pytest.param(
+            'framecpp',
+            marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
+    ])
+    def test_read_write_gwf_error(self, api, losc):
+        with utils.TemporaryFilename(suffix=".gwf") as tmp:
+            losc.write(tmp, format="gwf.{}".format(api))
+            with pytest.raises(ValueError) as exc:
+                self.TEST_CLASS.read(tmp, "another channel",
+                                     format="gwf.{}".format(api))
+            assert str(exc.value) == (
+                "no Fr{Adc,Proc,Sim}Data structures with the "
+                "name another channel"
+            )
+
+            with pytest.raises(ValueError) as exc:
+                self.TEST_CLASS.read(tmp, losc.name,
+                                     start=losc.span[0]-1, end=losc.span[0],
+                                     format="gwf.{}".format(api))
+            assert str(exc.value).startswith(
+                "Failed to read {0!r} from {1!r}".format(losc.name, tmp)
+            )
+
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
     @pytest.mark.parametrize('channel', [
         None,
