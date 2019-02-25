@@ -26,27 +26,34 @@ trap 'set +ex' RETURN
 PYTHON_VERSION=${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}
 
 # install conda
-if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
-    MINICONDA="Miniconda3-latest-MacOSX-x86_64.sh"
+if [[ "${PYTHON_VERSION}" == "2.7" ]]; then
+    MINICONDA_VERSION="Miniconda2"
 else
-    MINICONDA="Miniconda3-latest-Linux-x86_64.sh"
+    MINICONDA_VERSION="Miniconda3"
 fi
+if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+    MINICONDA="${MINICONDA_VERSION}-latest-MacOSX-x86_64.sh"
+else
+    MINICONDA="${MINICONDA_VERSION}-latest-Linux-x86_64.sh"
+fi
+
 curl https://repo.continuum.io/miniconda/${MINICONDA} -o miniconda.sh
 bash miniconda.sh -b -u -p ${HOME}/miniconda
-export PATH="${HOME}/miniconda/bin:${PATH}"
+source ${HOME}/miniconda/etc/profile.d/conda.sh
 hash -r
+
+# update conda
 conda config --set always_yes yes --set changeps1 no
 conda config --add channels conda-forge
-conda update --quiet conda
+conda update --quiet --update-all
 conda info --all
 
 # create environment for tests
 conda create --name gwpyci python=${PYTHON_VERSION} gwpy
-source activate gwpyci
+conda activate gwpyci
 
 # install conda dependencies (based on pip requirements file)
 python ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
-echo "python=${PYTHON_VERSION}"  >> conda-reqs.txt  # force python version
 conda install --name gwpyci --quiet --yes --file conda-reqs.txt
 rm -f conda-reqs.txt  # clean up
 
