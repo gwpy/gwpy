@@ -47,7 +47,7 @@ FRERR_NO_FRAME_AT_NUM = re.compile(
     r'0 through (?P<nframes>\d+)\Z',
 )
 FRERR_NO_CHANNEL_OF_TYPE = re.compile(
-    r'\ANo Fr(Adc|Proc|Sim)Data structures with the name (?P<channel>\S+)\Z',
+    r'\ANo Fr(Adc|Proc|Sim)Data structures with the name ',
 )
 
 # get frameCPP type mapping
@@ -261,7 +261,7 @@ def _get_frdata(stream, num, name, ctype=None):
             if FRERR_NO_CHANNEL_OF_TYPE.match(str(exc)):
                 continue
             raise
-    raise ValueError("no Fr{Adc,Proc,Sim}Data structures with the "
+    raise ValueError("no Fr{{Adc,Proc,Sim}}Data structures with the "
                      "name {0}".format(name))
 
 
