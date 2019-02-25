@@ -24,11 +24,7 @@ trap 'set +ex' RETURN
 #
 
 # get path to python and pip
-if [ -z ${CONDA_PREFIX} ]; then
-    PYTHON=$(which "python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}")
-else
-    PYTHON="${CONDA_PREFIX}/bin/python"
-fi
+PYTHON=$(which "python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}")
 PYTHON_PREFIX=$(${PYTHON} -c "import sys; print(sys.prefix)")
 PIP="${PYTHON} -m pip"
 
