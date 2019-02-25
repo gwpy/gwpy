@@ -435,11 +435,12 @@ class QTile(QBase):
         if norm:
             norm = norm.lower() if isinstance(norm, string_types) else norm
             if norm in (True, 'median'):
-                return energy / energy.median()
+                narray = energy / energy.median()
             elif norm in ('mean',):
-                return energy / energy.mean()
+                narray = energy / energy.mean()
             else:
                 raise ValueError("Invalid normalisation %r" % norm)
+            return narray.astype("float32", casting="same_kind", copy=False)
         return energy
 
 
@@ -478,14 +479,15 @@ class QGram(object):
                 })
         return peak
 
-    def interpolate(self, tres=.001, fres="<default>",
-                    logf=False, outseg=None):
+    def interpolate(self, tres="<default>", fres="<default>", logf=False,
+                    outseg=None):
         """Interpolate this `QGram` over a regularly-gridded spectrogram
 
         Parameters
         ----------
         tres : `float`, optional
-            desired time resolution (seconds) of output `Spectrogram`
+            desired time resolution (seconds) of output `Spectrogram`,
+            default is `abs(outseg) / 1000.`
 
         fres : `float`, `int`, `None`, optional
             desired frequency resolution (Hertz) of output `Spectrogram`,
@@ -498,7 +500,8 @@ class QGram(object):
             log-sampled frequencies in the output `Spectrogram`
 
         outseg : `~gwpy.segments.Segment`, optional
-            GPS `[start, stop)` segment for output `Spectrogram`
+            GPS `[start, stop)` segment for output `Spectrogram`,
+            default is the full duration of the input
 
         Returns
         -------
@@ -515,6 +518,9 @@ class QGram(object):
 
         Notes
         -----
+        This method will return a `Spectrogram` of dtype ``float32`` if
+        ``norm`` is given, and ``float64`` otherwise.
+
         To optimize plot rendering with `~matplotlib.axes.Axes.pcolormesh`,
         the output `~gwpy.spectrogram.Spectrogram` can be given a log-sampled
         frequency axis by passing `logf=True` at runtime. The `fres` argument
@@ -532,6 +538,8 @@ class QGram(object):
         dtype = self.energies[0].dtype
         # build regular Spectrogram from peak-Q data by interpolating each
         # (Q, frequency) `TimeSeries` to have the same time resolution
+        if tres == "<default>":
+            tres = abs(Segment(outseg)) / 1000.
         xout = numpy.arange(*outseg, step=tres)
         nx = xout.size
         ny = frequencies.size
@@ -544,7 +552,8 @@ class QGram(object):
             xrow = numpy.arange(row.x0.value, (row.x0 + row.duration).value,
                                 row.dx.value)
             interp = InterpolatedUnivariateSpline(xrow, row.value)
-            out[:, i] = interp(xout)
+            out[:, i] = interp(xout).astype(dtype, casting="same_kind",
+                                            copy=False)
         if fres is None:
             return out
         # interpolate the spectrogram to increase its frequency resolution
@@ -555,7 +564,8 @@ class QGram(object):
             if fres == "<default>":
                 fres = .5
             outfreq = numpy.arange(
-                self.plane.frange[0], self.plane.frange[1], fres)
+                self.plane.frange[0], self.plane.frange[1], fres,
+                dtype=dtype)
         else:
             if fres == "<default>":
                 fres = 500
@@ -564,8 +574,11 @@ class QGram(object):
             logfmin = numpy.log10(self.plane.frange[0])
             logfmax = numpy.log10(self.plane.frange[1])
             outfreq = numpy.logspace(logfmin, logfmax, num=int(fres))
-        new = type(out)(interp(xout, outfreq).T,
-                        t0=outseg[0], dt=tres, frequencies=outfreq)
+        new = type(out)(
+            interp(xout, outfreq).T.astype(
+                dtype, casting="same_kind", copy=False),
+            t0=outseg[0], dt=tres, frequencies=outfreq,
+        )
         new.q = self.plane.q
         return new
 
