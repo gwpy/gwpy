@@ -386,5 +386,8 @@ def median_mean(timeseries, segmentlength, noverlap=None,
 
 # register LAL methods without overriding scipy method
 for func in (welch, bartlett, median, median_mean,):
-    fft_registry.register_method(func, name='lal-{}'.format(func.__name__),
-                                 deprecated=True)
+    fft_registry.register_method(
+        func,
+        name='lal-{}'.format(func.__name__),
+        deprecated=True,
+    )

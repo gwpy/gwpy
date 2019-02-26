@@ -79,5 +79,5 @@ def get_method(name):
     try:
         return METHODS[name]
     except KeyError as exc:
-        exc.args = ("no PSD method registered with name {0}".format(name),)
+        exc.args = ("no PSD method registered with name {0!r}".format(name),)
         raise

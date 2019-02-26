@@ -25,7 +25,7 @@ from functools import wraps
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 DEPRECATED_FUNCTION_WARNING = (
-    "this function has been deprecated, and will be "
+    "{0.__module__}.{0.__name__} has been deprecated, and will be "
     "removed in a future release."
 )
 
@@ -63,10 +63,28 @@ class deprecated_property(property):  # pylint: disable=invalid-name
 
 def deprecated_function(func, warning=DEPRECATED_FUNCTION_WARNING):
     """Adds a `DeprecationWarning` to a function
+
+    Parameters
+    ----------
+    func : `callable`
+        the function to decorate with a `DeprecationWarning`
+
+    warning : `str`, optional
+        the warning to present
+
+    Notes
+    -----
+    The final warning message is formatted as ``warning.format(func)``
+    so you can use attribute references to the function itself.
+    See the default message as an example.
     """
     @wraps(func)
     def wrapped_func(*args, **kwargs):
-        warnings.warn(DEPRECATED_FUNCTION_WARNING, DeprecationWarning)
+        warnings.warn(
+            DEPRECATED_FUNCTION_WARNING.format(func),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         return func(*args, **kwargs)
 
     return wrapped_func

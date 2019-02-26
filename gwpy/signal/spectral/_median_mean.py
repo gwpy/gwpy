@@ -34,19 +34,20 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 def median_mean(*args, **kwargs):
     for api_name, api_func in filter(lambda x: x[0].endswith('_median_mean'),
-                                     fft_registry.METHODS['density'].items()):
+                                     fft_registry.METHODS.items()):
         try:
-            return api_func(*args, **kwargs)
+            result = api_func(*args, **kwargs)
         except ImportError:
-            pass
-        finally:
-            # warn about deprecated name match
-            warnings.warn("no FFT method registered as {!r}, used {!r}; "
-                          "in the future this will raise a ValueError.".format(
-                              name, regname),
-                          DeprecationWarning)
+            continue
+        # warn about deprecated name match
+        warnings.warn(
+            "no FFT method registered as 'median_mean', used {!r}; "
+            "in the future this will raise a ValueError.".format(api_name),
+            DeprecationWarning,
+        )
+        return result
     # try and call normally, mainly to raise the standard error
-    return fft_registry.get_method(name, scaling='density')(*args, **kwargs)
+    raise KeyError("no PSD method registered with name 'median-mean'")
 
 
 fft_registry.register_method(median_mean)
