@@ -30,8 +30,6 @@ from __future__ import absolute_import
 import re
 import warnings
 
-import numpy
-
 from ...frequencyseries import FrequencySeries
 from ..window import canonical_name
 from ._utils import scale_timeseries_unit
@@ -70,7 +68,6 @@ def generate_fft_plan(length, level=None, dtype='float64', forward=True):
     plan : `REAL8FFTPlan` or similar
         FFT plan of the relevant data type
     """
-    import lal
     from ...utils.lal import (find_typed_function, to_lal_type_str)
 
     # generate key for caching plan
@@ -110,7 +107,6 @@ def generate_window(length, window=None, dtype='float64'):
     `window` : `REAL8Window` or similar
         time-domain window to use for FFT
     """
-    import lal
     from ...utils.lal import (find_typed_function, to_lal_type_str)
 
     if window is None:
@@ -140,7 +136,6 @@ def generate_window(length, window=None, dtype='float64'):
 def window_from_array(array):
     """Convert a `numpy.ndarray` into a LAL `Window` object
     """
-    import lal
     from ...utils.lal import (find_typed_function)
 
     dtype = array.dtype
@@ -386,5 +381,8 @@ def median_mean(timeseries, segmentlength, noverlap=None,
 
 # register LAL methods without overriding scipy method
 for func in (welch, bartlett, median, median_mean,):
-    fft_registry.register_method(func, name='lal-{}'.format(func.__name__),
-                                 deprecated=True)
+    fft_registry.register_method(
+        func,
+        name='lal-{}'.format(func.__name__),
+        deprecated=True,
+    )

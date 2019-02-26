@@ -19,7 +19,6 @@
 """Unit test for gwpy.types classes
 """
 
-import os
 import pickle
 import warnings
 

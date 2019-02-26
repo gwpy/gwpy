@@ -23,10 +23,10 @@ from six.moves import range
 
 import numpy
 
-from astropy import units
 from astropy.io import registry as io_registry
+from astropy.units import Quantity
 
-from ..types import (Quantity, Array2D)
+from ..types import Array2D
 from ..types.sliceutils import null_slice
 from ..segments import Segment
 from . import FrequencySeries

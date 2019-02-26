@@ -103,7 +103,7 @@ def decorate_registered_reader(
         use the `read_with_selection` decorator
     """
     reader = registry.get_reader(name, data_class)
-    wrapped = (  # nopep8
+    wrapped = (  # noqa
         read_with_columns(  # use ``columns``
         read_with_selection(  # use ``selection``
             reader

@@ -30,7 +30,6 @@ from ...io.hdf5 import (identify_hdf5, with_read_hdf5)
 from ...io.registry import (register_reader, register_identifier)
 from .. import (Table, EventTable)
 from ..filter import (filter_table, parse_column_filters)
-from .utils import read_with_selection
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Nitz <alex.nitz@ligo.org>'

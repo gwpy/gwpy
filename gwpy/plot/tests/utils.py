@@ -23,9 +23,8 @@ from io import BytesIO
 
 import pytest
 
-from matplotlib import (pyplot, rc_context)
+from matplotlib import pyplot
 
-from ..tex import HAS_TEX
 from .. import Plot
 
 

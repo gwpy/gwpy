@@ -176,7 +176,6 @@ class changelog(Command):
             date = datetime.datetime.fromtimestamp(tago.tagged_date)
             tz = tago.tagger_tz_offset
             version = tag.name.strip('v')
-            tagger = tago.tagger
             author = tago.tagger.name
             email = tago.tagger.email
             message = tago.message.split('\n')[0]

@@ -19,7 +19,6 @@
 """Unit tests for gwpy.types.series
 """
 
-import os
 import warnings
 
 import numpy

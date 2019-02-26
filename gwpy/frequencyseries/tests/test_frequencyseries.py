@@ -44,7 +44,7 @@ from .. import FrequencySeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-LIGO_LW_ARRAY = """<?xml version='1.0' encoding='utf-8'?>
+LIGO_LW_ARRAY = r"""<?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
 <LIGO_LW>
   <LIGO_LW Name="psd">
@@ -87,7 +87,7 @@ LIGO_LW_ARRAY = """<?xml version='1.0' encoding='utf-8'?>
     </Array>
   </LIGO_LW>
 </LIGO_LW>
-"""  # nopep8
+"""  # noqa: E501
 
 
 class TestFrequencySeries(_TestSeries):

@@ -37,7 +37,7 @@ import lal
 
 from ..time import to_gps
 # import gwpy.detector.units to register other units now
-from ..detector import units as gwpy_units  # pylint: disable=unused-import
+from ..detector import units as gwpy_units  # noqa: F401
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

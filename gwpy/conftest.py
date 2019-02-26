@@ -26,7 +26,7 @@ import numpy
 from matplotlib import (use, rcParams)
 
 # register custom fixtures for all test modules
-from .testing.fixtures import *
+from .testing.fixtures import *  # noqa: F401,F403
 
 # set random seed to 1 for reproducability
 numpy.random.seed(1)

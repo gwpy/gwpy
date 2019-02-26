@@ -343,6 +343,7 @@ class TestStateVector(_TestTimeSeriesBase):
         array = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
         assert array.unit is units.dimensionless_unscaled
 
+
 # -- StateVectorDict ----------------------------------------------------------
 
 class TestStateVectorDict(_TestTimeSeriesBaseDict):
