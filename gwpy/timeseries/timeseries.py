@@ -1569,9 +1569,9 @@ class TimeSeries(TimeSeriesBase):
 
     def gate(self, tzero=1.0, tpad=0.5, whiten=True,
              threshold=50., cluster_window=0.5, **whiten_kwargs):
-        """Discovers a set of indices where gating windows should be placed
-           based on a given amplitude threshold. Points are clustered within
-           a time window.
+        """Removes high amplitude peaks from data using inverse Planck window.
+        Points will be discovered automatically using a provided threshold
+        and clustered within a provided time window.
 
         Parameters
         ----------
@@ -1608,34 +1608,36 @@ class TimeSeries(TimeSeriesBase):
 
         Read data into a `TimeSeries`
         >>> from gwpy.timeseries import TimeSeries
-        >>> data = TimeSeries.get('H1:GDS-CALIB_STRAIN', 1225542623,
-                                   1225542823)
+        >>> data = TimeSeries.fetch_open_data('H1', 1135148571, 1135148771)
 
         Apply gating using custom arguments
         >>> gated = data.gate(tzero=1.0, tpad=1.0, threshold=10.0,
                               fftlength=4, overlap=2, method='median')
 
-        Plot the original data and the gated data
-        >>> overlay = data.plot(dpi=150, label='Ungated',
-                                color='dodgerblue', zorder=3)
+        Plot the original data and the gated data, whiten both for
+        visualization purposes
+        >>> overlay = data.whiten(4,2,method='median').plot(dpi=150,
+                                  label='Ungated', color='dodgerblue',
+                                  zorder=2)
         >>> ax = overlay.gca()
-        >>> ax.plot(gated, label='Gated', color='orange', zorder=2)
-        >>> ax.set_xlim(1225542713, 1225542733)
+        >>> ax.plot(gated.whiten(4,2,method='median'), label='Gated',
+                    color='orange', zorder=3)
+        >>> ax.set_xlim(1135148661, 1135148681)
         >>> ax.legend()
         >>> overlay.show()
         """
         # Find points to gate based on a threshold
         data = self.whiten(**whiten_kwargs) if whiten else self
-        window_samples = cluster_window*data.sample_rate.value
-        gates = signal.find_peaks(data.value, height=threshold,
+        window_samples = cluster_window * data.sample_rate.value
+        gates = signal.find_peaks(abs(data.value), height=threshold,
                                   distance=window_samples)[0]
         out = self.copy()
 
         # Iterate over list of indices to gate and apply each one
-        nzero = int(abs(tzero)*self.sample_rate.value)
-        npad = int(abs(tpad)*self.sample_rate.value)
+        nzero = int(abs(tzero) * self.sample_rate.value)
+        npad = int(abs(tpad) * self.sample_rate.value)
         half = nzero + npad
-        ntotal = 2*half
+        ntotal = 2 * half
         for gate in gates:
             # Set the boundaries for windowed data in the original time series
             left_idx = max(0, gate - half)
