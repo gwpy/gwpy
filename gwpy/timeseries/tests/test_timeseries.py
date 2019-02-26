@@ -807,6 +807,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_allclose(new_data.value[ind], waveform.value)
         utils.assert_allclose(data.value, numpy.zeros(duration*sample_rate))
 
+    @utils.skip_minimum_version("scipy", "1.1.0")
     def test_gate(self):
         # generate Gaussian noise with std = 0.5
         noise = self.TEST_CLASS(numpy.random.normal(scale=0.5, size=16384*64),
