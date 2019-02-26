@@ -63,11 +63,11 @@ jobs:
           name: Lint
           command: |
             set -ex
-            python -m pip install flake8
+            python -m pip install "flake8>=3.7.0"
             mkdir -p test-reports
             python -m flake8 --output-file test-reports/flake8.txt
       - run:
-          name: Report
+          name: Create flake8 report
           when: always
           command: |
             set -ex
