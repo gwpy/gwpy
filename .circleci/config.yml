@@ -63,9 +63,15 @@ jobs:
           name: Lint
           command: |
             set -ex
-            python -m pip install flake8 flake8-junit-report
+            python -m pip install flake8
             mkdir -p test-reports
             python -m flake8 --output-file test-reports/flake8.txt
+      - run:
+          name: Report
+          when: always
+          command: |
+            set -ex
+            python -m pip install flake8-junit-report
             python -m junit_conversor test-reports/flake8.txt test-reports/junit.xml
       - store_test_results:
           path: test-reports
