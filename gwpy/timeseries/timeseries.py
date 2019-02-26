@@ -1628,10 +1628,9 @@ class TimeSeries(TimeSeriesBase):
         """
         try:
             from scipy.signal import find_peaks
-        except ImportError:
-            raise ImportError("Must have scipy>=1.1.0 to utilize "
-                              "this method.")
-
+        except ImportError as exc:
+            exc.args = ("Must have scipy>=1.1.0 to utilize this method.",)
+            raise
         # Find points to gate based on a threshold
         data = self.whiten(**whiten_kwargs) if whiten else self
         window_samples = cluster_window * data.sample_rate.value
