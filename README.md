@@ -12,7 +12,6 @@ step.
 
 [![PyPI version](https://badge.fury.io/py/gwpy.svg)](http://badge.fury.io/py/gwpy)
 [![Conda version](https://img.shields.io/conda/vn/conda-forge/gwpy.svg)](https://anaconda.org/conda-forge/gwpy/)
-[![Macports version](https://repology.org/badge/version-for-repo/macports/python:gwpy.svg)](https://www.macports.org/ports.php?by=name&substr=py-gwpy)
 
 [![DOI](https://zenodo.org/badge/9979119.svg)](https://zenodo.org/badge/latestdoi/9979119)
 [![License](https://img.shields.io/pypi/l/gwpy.svg)](https://choosealicense.com/licenses/gpl-3.0/)

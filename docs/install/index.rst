@@ -65,21 +65,6 @@ Supported python versions: 2.7,
 instructions on how to add the required yum repositories.
 
 
-.. _gwpy-install-macports:
-
---------
-Macports
---------
-
-.. code-block:: bash
-
-    $ port install py37-gwpy
-
-Supported python versions: 2.7, 3.6+.
-
-
-.. _gwpy-install-requirements:
-
 ============
 Requirements
 ============

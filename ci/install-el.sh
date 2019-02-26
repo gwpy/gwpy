@@ -68,6 +68,7 @@ yum -y -q --nogpgcheck localinstall ${RPM}
 
 # install system-level extras
 yum -y -q install \
+    which \
     python2-pip \
     python2-pytest \
     python2-pytest-cov \

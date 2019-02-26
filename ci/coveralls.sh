@@ -23,15 +23,11 @@ trap 'set +ex' RETURN
 # Submit coverage data to coveralls.io
 #
 
-PYTHON="python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}"
+# get path to python and pip
+PYTHON=$(which "python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}")
 PYTHON_PREFIX=$(${PYTHON} -c "import sys; print(sys.prefix)")
+PIP="${PYTHON} -m pip"
 
-# install coveralls (using sudo on macports)
-if [[ "${PYTHON_PREFIX}" =~ "/opt/local/"* ]]; then
-    PIP="sudo -H ${PYTHON} -m pip"
-else
-    PIP="${PYTHON} -m pip"
-fi
 ${PIP} install --quiet coveralls
 
 # submit coverage results

@@ -24,15 +24,9 @@ trap 'set +ex' RETURN
 #
 
 # get path to python and pip
-PYTHON="python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}"
+PYTHON=$(which "python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}")
 PYTHON_PREFIX=$(${PYTHON} -c "import sys; print(sys.prefix)")
-
-# install with sudo on macports
-if [[ "${PYTHON_PREFIX}" =~ "/opt/local/"* ]]; then
-    PIP="sudo -H ${PYTHON} -m pip"
-else
-    PIP="${PYTHON} -m pip"
-fi
+PIP="${PYTHON} -m pip"
 
 # upgrade setuptools in order to understand environment markers
 ${PIP} install "pip>=8.0.0" "setuptools>=20.2.2"
@@ -47,7 +41,11 @@ if grep -q "pytest-cov" requirements-test.txt; then
 fi
 
 # list all packages
-${PIP} list installed
+if [ -z ${CONDA_PREFIX} ]; then
+    ${PIP} list installed
+else
+    conda list --name gwpyci
+fi
 
 # run tests with coverage
-${PYTHON} -m pytest --pyargs gwpy --cov=gwpy
+${PYTHON} -m pytest --pyargs gwpy --cov=gwpy --junitxml=test-reports/junit.xml

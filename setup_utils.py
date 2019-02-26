@@ -24,7 +24,6 @@ from __future__ import print_function
 import contextlib
 import datetime
 import glob
-import hashlib
 import os
 import re
 import subprocess
@@ -389,109 +388,10 @@ class clean(orig_clean):
                 else:
                     log.info('removing %r' % egg)
                     os.unlink(egg)
-            # remove extra files
-            for filep in ('Portfile',):
-                if os.path.exists(filep) and not self.dry_run:
-                    log.info('removing %r' % filep)
-                    os.unlink(filep)
         orig_clean.run(self)
 
 
 CMDCLASS['clean'] = clean
-
-DEFAULT_PORT_TEMPLATE = os.path.join('etc', 'Portfile.template')
-
-
-class port(Command):
-    """Generate a Macports Portfile for this project from the current build
-    """
-    description = 'generate a Macports Portfile'
-    user_options = [
-        ('tarball=', None, 'the distribution tarball to use'),
-        ('version=', None, 'the X.Y.Z package version'),
-        ('portfile=', None, 'target output file, default: \'Portfile\''),
-        ('template=', None,
-         'Portfile template, default: \'{}\''.format(DEFAULT_PORT_TEMPLATE)),
-    ]
-
-    def initialize_options(self):
-        self.tarball = None
-        self.version = None
-        self.portfile = 'Portfile'
-        self.template = DEFAULT_PORT_TEMPLATE
-        self._template = None
-
-    def finalize_options(self):
-        from jinja2 import Template
-        with open(self.template, 'r') as t:
-            # pylint: disable=attribute-defined-outside-init
-            self._template = Template(t.read())
-        if self.version is None and self.tarball is not None:
-            if self.tarball.endswith('.gz'):
-                stub = os.path.splitext(self.tarball[:-3])[0]
-            else:
-                stub = os.path.splitext(self.tarball)[0]
-            self.version = stub.rsplit('-', 1)[-1]
-        elif self.version is None:
-            self.version = self.distribution.get_version()
-
-    def run(self):
-        with temp_directory() as tmpd:
-            # download dist file
-            if self.tarball is None:
-                self.tarball = self._download(self.distribution.get_name(),
-                                              self.version, tmpd)
-
-            # get checksum digests
-            log.info('reading distribution tarball %r' % self.tarball)
-            with open(self.tarball, 'rb') as fobj:
-                data = fobj.read()
-            log.info('recovered checksums:')
-            checksum = dict()
-            checksum['rmd160'] = self._get_rmd160(self.tarball)
-            checksum['sha256'] = self._get_sha(data)
-            checksum['size'] = os.path.getsize(self.tarball)
-            for key, val in checksum.items():
-                log.info('    %s: %s' % (key, val))
-
-            # write finished portfile to file
-            with open(self.portfile, 'w') as fport:
-                print(self._template.render(
-                    version=self.version, **checksum),
-                    file=fport)
-            log.info('portfile written to %r' % self.portfile)
-
-    @staticmethod
-    def _download(name, version, targetdir):
-        try:
-            from pip._internal.commands.download import DownloadCommand
-        except ImportError:  # pip < 10
-            from pip.commands.download import DownloadCommand
-        dcmd = DownloadCommand()
-        rset = dcmd.run(*dcmd.parse_args([
-            '{}=={}'.format(name, version),
-            '--dest', targetdir, '--no-deps', '--no-binary', ':all:',
-        ]))
-        log.info('downloaded {}'.format(
-            rset.requirements[name].link.url_without_fragment))
-        return os.path.join(
-            targetdir, rset.requirements[name].link.filename)
-
-    @staticmethod
-    def _get_sha(data, algorithm=256):
-        hash_ = getattr(hashlib, 'sha%d' % algorithm)
-        return hash_(data).hexdigest()
-
-    @staticmethod
-    def _get_rmd160(filename):
-        out = subprocess.check_output(['openssl', 'rmd160', filename])
-        if isinstance(out, bytes):
-            out = out.decode('utf-8')
-        return out.splitlines()[0].rsplit(' ', 1)[-1]
-
-
-CMDCLASS['port'] = port
-SETUP_REQUIRES['port'] = SETUP_REQUIRES['sdist'] + ('jinja2',)
 
 
 # -- utility functions --------------------------------------------------------
