@@ -224,7 +224,8 @@ class GravitySpyTable(EventTable):
             'O1': "event_time BETWEEN 1126400000 AND 1137250000",
             'ER10': "event_time BETWEEN 1161907217 AND 1164499217",
             'O2a': "event_time BETWEEN 1164499217 AND 1219276818",
-            'ER13': "event_time BETWEEN 1228838418 AND 1229176818",}
+            'ER13': "event_time BETWEEN 1228838418 AND 1229176818",
+        }
 
         map_ifos_to_url = {
             'H1': "\'H1\'",
@@ -232,7 +233,8 @@ class GravitySpyTable(EventTable):
             'H1L1V1': "\'H1\', \'L1\', \'V1\'",
             'L1': "\'L1\'",
             'L1V1': "\'L1\', \'V1\'",
-            'V1': "\'V1\'",}
+            'V1': "\'V1\'",
+        }
 
         parts = {
             'howmany': howmany,
@@ -242,7 +244,7 @@ class GravitySpyTable(EventTable):
             'database': 'updated_similarity_index_v2d0',
         }
 
-        search = urllib.parse.urlencode(parts) 
+        search = urllib.parse.urlencode(parts)
 
         url = '{}/?{}'.format(base, search)
 
@@ -251,5 +253,5 @@ class GravitySpyTable(EventTable):
                 return GravitySpyTable(json.load(f))
         except HTTPError as exc:
             if exc.code == 500:
-                exc.msg = exc.msg + ', please confirm the gravityspy_id is valid'
+                exc.msg = exc.msg + ', confirm the gravityspy_id is valid'
                 raise
