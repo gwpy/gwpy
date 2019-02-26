@@ -267,7 +267,7 @@ class StateTimeSeries(TimeSeriesBase):
             defines the `known` segments, while the contiguous `True`
             sets defined each of the `active` segments
         """
-        from ..segments import (Segment, SegmentList, DataQualityFlag)
+        from ..segments import DataQualityFlag
 
         # format dtype
         if dtype is None:
@@ -593,7 +593,7 @@ class StateVector(TimeSeriesBase):
             a `dict` of `StateTimeSeries`, one for each given bit
         """
         if bits is None:
-            bits = [b for b in self.bits if b is not None and b is not '']
+            bits = [b for b in self.bits if b not in {None, ''}]
         bindex = []
         for bit in bits:
             try:

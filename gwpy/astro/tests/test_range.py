@@ -19,8 +19,6 @@
 """Unit tests for :mod:`gwpy.astro.range`
 """
 
-import os.path
-
 import pytest
 
 from scipy import __version__ as scipy_version

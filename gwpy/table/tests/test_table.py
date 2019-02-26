@@ -468,7 +468,7 @@ class TestEventTable(TestTable):
     @pytest.mark.parametrize('fmtname', ('Omega', 'cWB'))
     def test_read_write_ascii_error(self, table, fmtname):
         with utils.TemporaryFilename(suffix='.txt') as tmp:
-            with open(tmp, 'w') as f:
+            with open(tmp, 'w'):
                 pass  # write empty file
             # assert reading blank file doesn't work with column name error
             with pytest.raises(InconsistentTableError) as exc:
@@ -584,7 +584,7 @@ class TestEventTable(TestTable):
     def test_fetch_hacr(self):
         table = self.create(100, names=HACR_COLUMNS)
         try:
-            from pymysql import connect
+            from pymysql import connect  # noqa: F401
         except ImportError:
             mockee = 'gwpy.table.io.hacr.connect'
         else:

@@ -24,7 +24,7 @@ DO NOT USE THIS MODULE.
 import warnings
 
 # import things as they were named before
-from .spectral import (
+from .spectral import (  # noqa: F401
     get_default_fft_api,
     _lal as lal,
     _pycbc as pycbc,

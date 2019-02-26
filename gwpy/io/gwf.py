@@ -24,7 +24,6 @@ import six
 from six.moves.urllib.parse import urlparse
 
 from ..time import to_gps
-from ..utils import shell
 from .cache import read_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

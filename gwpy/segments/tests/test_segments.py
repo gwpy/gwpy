@@ -21,10 +21,6 @@
 
 from __future__ import print_function
 
-import os
-import shutil
-import tempfile
-
 import pytest
 
 from ...testing.utils import (assert_segmentlist_equal, TemporaryFilename)
@@ -119,28 +115,6 @@ class TestSegmentList(object):
                 print("2 3", file=tmpf)
             sl = self.TEST_CLASS.read(tmp, format='segwizard')
             assert_segmentlist_equal(sl, [(0, 1), (2, 3)])
-
-    @pytest.mark.parametrize('ext', ('.hdf5', '.h5'))
-    def test_read_write_hdf5(self, segmentlist, ext):
-        with TemporaryFilename(suffix=ext) as fp:
-            # check basic write/read with auto-path discovery
-            segmentlist.write(fp, 'test-segmentlist')
-            sl2 = self.TEST_CLASS.read(fp)
-            assert_segmentlist_equal(sl2, segmentlist)
-            assert isinstance(sl2[0][0], LIGOTimeGPS)
-
-            sl2 = self.TEST_CLASS.read(fp, path='test-segmentlist')
-            assert_segmentlist_equal(sl2, segmentlist)
-
-            # check overwrite kwarg
-            with pytest.raises(IOError):
-                segmentlist.write(fp, 'test-segmentlist')
-            segmentlist.write(fp, 'test-segmentlist', overwrite=True)
-
-            # check gpstype kwarg
-            sl2 = self.TEST_CLASS.read(fp, gpstype=float)
-            assert_segmentlist_equal(sl2, segmentlist)
-
 
     @pytest.mark.parametrize('ext', ('.hdf5', '.h5'))
     def test_read_write_hdf5(self, segmentlist, ext):

@@ -66,7 +66,7 @@ VETO_DEFINER_FILE = """<?xml version='1.0' encoding='utf-8'?>
         </Stream>
     </Table>
 </LIGO_LW>
-"""
+"""  # noqa: E501
 
 
 @pytest.fixture(scope='module')
@@ -205,7 +205,7 @@ def dqsegdb2_query_segments(result, deactivated=False,
         span = SegmentList([Segment(start, end)])
         reflag = re.compile(flag)
         try:
-            actual = [name for name in result if reflag.match(name)][0]
+            actual = list(filter(reflag.match, result))[0]
         except IndexError:
             raise HTTPError('test-url/', 404, 'Not found', None, None)
         return {
@@ -731,7 +731,7 @@ class TestDataQualityDict(object):
         assert name in vdf
         utils.assert_segmentlist_equal(vdf[name].known,
                                        [(100, float('inf'))])
-        assert vdf[name].category is 1
+        assert vdf[name].category == 1
         assert vdf[name].padding == (-1, 2)
 
         # test ifo kwarg

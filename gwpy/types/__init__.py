@@ -23,11 +23,12 @@ we can build specific data representations like the `TimeSeries`.
 """
 
 
-from .array import *
-from .array2d import *
-from .index import *
-from .series import *
-import io
+from .array import Array
+from .array2d import Array2D
+from .index import Index
+from .series import Series
+
+from . import io
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['Array', 'Series', 'Array2D', 'Index']

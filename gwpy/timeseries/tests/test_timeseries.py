@@ -19,7 +19,6 @@
 """Unit test for timeseries module
 """
 
-import importlib
 import os.path
 from itertools import (chain, product)
 from ssl import SSLError
@@ -433,7 +432,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # get using datafind (maybe)
         try:
             ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                     frametype_match='C01\Z')
+                                     frametype_match=r'C01\Z')
         except (ImportError, RuntimeError) as e:
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(ts, losc_16384,
@@ -675,19 +674,24 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_fftgram(self, losc):
         fgram = losc.fftgram(1)
         fs = int(losc.sample_rate.value)
-        f, t, sxx = signal.spectrogram(losc, fs,
-                                         window='hann',
-                                         nperseg=fs,
-                                         mode='complex')
+        f, t, sxx = signal.spectrogram(
+            losc, fs,
+            window='hann',
+            nperseg=fs,
+            mode='complex',
+        )
         utils.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
         utils.assert_array_equal(f, fgram.yindex.value)
         utils.assert_array_equal(sxx.T, fgram)
+
         fgram = losc.fftgram(1, overlap=0.5)
-        f, t, sxx = signal.spectrogram(losc, fs,
-                                         window='hann',
-                                         nperseg=fs,
-                                         noverlap=fs//2,
-                                         mode='complex')
+        f, t, sxx = signal.spectrogram(
+            losc, fs,
+            window='hann',
+            nperseg=fs,
+            noverlap=fs//2,
+            mode='complex',
+        )
         utils.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
         utils.assert_array_equal(f, fgram.yindex.value)
         utils.assert_array_equal(sxx.T, fgram)

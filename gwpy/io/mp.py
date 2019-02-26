@@ -22,13 +22,9 @@ This module provides the `read_multi` method, which enables spreading
 reading multiple files across multiple cores, returning a flattened result.
 """
 
-import sys
 from xml.sax import SAXException
 
-from six import string_types
-
 from astropy.io.registry import (read as io_read)
-from astropy.utils.data import get_readable_fileobj
 
 from .registry import get_read_format
 from .utils import file_list

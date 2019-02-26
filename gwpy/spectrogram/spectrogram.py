@@ -26,7 +26,6 @@ from six import string_types
 import numpy
 
 import scipy
-from scipy import signal
 
 from astropy import units
 from astropy.io import registry as io_registry

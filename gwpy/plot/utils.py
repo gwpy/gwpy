@@ -20,7 +20,6 @@
 """
 
 import itertools
-import re
 
 from matplotlib import rcParams
 

@@ -49,20 +49,19 @@ def new_table(tablename, data=None, **new_kw):
 @pytest.fixture
 def llwtable():
     from glue.ligolw.ligolw import (Document, LIGO_LW)
-    from glue.ligolw import lsctables
 
     # build dummy document with two tables
     xmldoc = Document()
     llw = xmldoc.appendChild(LIGO_LW())
     tables = [new_table('process'), new_table('sngl_ringdown')]
-    names = [t.TableName(t.Name) for t in tables]
-    [llw.appendChild(t) for t in tables]  # add tables to xmldoc
+    for t in tables:
+        llw.appendChild(t)
     return xmldoc
 
 
 @skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
 def test_open_xmldoc(llwtable):
-    from glue.ligolw.ligolw import (Document, LIGO_LW)
+    from glue.ligolw.ligolw import Document
     assert isinstance(io_ligolw.open_xmldoc(tempfile.mktemp()), Document)
 
     with tempfile.TemporaryFile(mode='w') as f:

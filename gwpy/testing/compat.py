@@ -20,6 +20,6 @@
 """
 
 try:
-    from unittest import mock
+    from unittest import mock  # noqa
 except ImportError:  # python < 3
-    import mock
+    import mock  # noqa

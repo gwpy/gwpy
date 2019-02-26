@@ -20,7 +20,6 @@
 """
 
 import os
-import warnings
 from argparse import ArgumentParser
 
 import pytest

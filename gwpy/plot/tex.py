@@ -64,7 +64,7 @@ re_latex_control = re.compile(r'(?<!\\)[%s](?!.*{)'
 
 def float_to_latex(x, format="%.2g"):  # pylint: disable=redefined-builtin
     # pylint: disable=anomalous-backslash-in-string
-    """Convert a floating point number to a latex representation.
+    r"""Convert a floating point number to a latex representation.
 
     In particular, scientific notation is handled gracefully: e -> 10^
 
@@ -111,7 +111,7 @@ def float_to_latex(x, format="%.2g"):  # pylint: disable=redefined-builtin
 
 def label_to_latex(text):
     # pylint: disable=anomalous-backslash-in-string
-    """Convert text into a latex-passable representation.
+    r"""Convert text into a latex-passable representation.
 
     This method just escapes the following reserved LaTeX characters:
     % \ _ ~ &, whilst trying to avoid doubly-escaping already escaped

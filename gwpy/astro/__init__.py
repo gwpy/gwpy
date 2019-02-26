@@ -40,6 +40,11 @@ Each of the above methods has been given default parameters corresponding to
 the standard usage by the LIGO project.
 """
 
-from .range import *
+from .range import (
+    burst_range,
+    burst_range_spectrum,
+    inspiral_range,
+    inspiral_range_psd,
+)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

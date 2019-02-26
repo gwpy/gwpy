@@ -19,7 +19,6 @@
 """Registry for FFT averaging methods
 """
 
-import re
 from collections import OrderedDict
 
 from ...utils.decorators import deprecated_function

@@ -250,7 +250,7 @@ def _str_to_datetime(datestr):
         warnings.simplefilter("error", RuntimeWarning)
         try:
             return dateparser.parse(datestr)
-        except RuntimeWarning as exc:
+        except RuntimeWarning:
             raise ValueError("Cannot parse date string with timezone "
                              "without maya, please install maya")
         except (ValueError, TypeError) as exc:  # improve error reporting

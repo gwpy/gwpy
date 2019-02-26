@@ -19,8 +19,6 @@
 """Extend :mod:`astropy.table` with the `GravitySpyTable`
 """
 
-import os
-
 from ..utils import mp as mp_utils
 from .table import EventTable
 import numpy as np

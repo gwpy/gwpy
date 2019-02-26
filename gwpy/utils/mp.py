@@ -20,7 +20,6 @@
 """
 
 import os
-import sys
 import warnings
 from multiprocessing import (Queue, Process)
 from operator import itemgetter

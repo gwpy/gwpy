@@ -38,7 +38,6 @@ import os
 import os.path
 import re
 import warnings
-from collections import namedtuple
 from functools import wraps
 
 from six.moves.urllib.parse import urlparse
@@ -47,7 +46,7 @@ from gwdatafind import connect
 
 from ..segments import (Segment, SegmentList)
 from ..time import to_gps
-from .cache import (cache_segments, read_cache_entry, _iter_cache, _CacheEntry)
+from .cache import (cache_segments, read_cache_entry, _iter_cache)
 from .gwf import (num_channels, iter_channel_names)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

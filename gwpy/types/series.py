@@ -19,7 +19,6 @@
 """The `Series` is a one-dimensional array with metadata
 """
 
-from numbers import Number
 from warnings import warn
 from math import floor
 
@@ -747,7 +746,7 @@ class Series(Array):
         if type(other) == type(self) and other.unit == self.unit:
             self.value[-N:] = other.value[-N:]
         # otherwise if its just a numpy array
-        elif type(other) is type(self.value) or (
+        elif type(other) is type(self.value) or (  # noqa: E721
                 other.dtype.name.startswith('uint')):
             self.value[-N:] = other[-N:]
         else:

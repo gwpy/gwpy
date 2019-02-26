@@ -74,7 +74,7 @@ class TestGPSMixin(object):
     ])
     def test_unit_error(self, badunit):
         with pytest.raises(ValueError):
-            mix = self.TYPE(unit=badunit)
+            self.TYPE(unit=badunit)
 
     @pytest.mark.parametrize('unit, name', [
         (None, None),

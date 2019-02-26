@@ -25,7 +25,7 @@ This module imports a subset of the useful functions from
 import sys
 from functools import wraps
 
-from astropy.io.registry import (  # pylint: disable=unused-import
+from astropy.io.registry import (  # noqa: F401
     _get_valid_format as get_format,
     get_reader,
     register_identifier as astropy_register_identifier,
@@ -70,6 +70,8 @@ def register_identifier(data_format, data_class, identifier, force=False):
     # pylint: disable=missing-docstring
     return astropy_register_identifier(
         data_format, data_class, identify_with_list(identifier), force=force)
+
+
 register_identifier.__doc__ = astropy_register_identifier.__doc__
 
 

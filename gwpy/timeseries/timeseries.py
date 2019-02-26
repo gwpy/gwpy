@@ -1973,7 +1973,7 @@ class TimeSeries(TimeSeriesBase):
         >>> ax.set_xlim(-.2, .2)
         >>> ax.set_epoch(0)
         >>> plot.show()
-        """  # nopep8
+        """  # noqa: E501
         from ..frequencyseries import FrequencySeries
         # condition data
         if whiten is True:  # generate ASD dynamically

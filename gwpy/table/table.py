@@ -232,7 +232,7 @@ class EventTable(Table):
         -----"""
         return io_read_multi(vstack, cls, source, *args, **kwargs)
 
-    def write(self, target, *args, **kwargs):  # pylint: disable=arguments-differ
+    def write(self, target, *args, **kwargs):
         """Write this table to a file
 
         Parameters

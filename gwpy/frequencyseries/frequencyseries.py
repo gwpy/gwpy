@@ -20,11 +20,9 @@
 """
 
 import warnings
-from copy import deepcopy
 
 import numpy
 from numpy import fft as npfft
-from scipy import signal
 
 from astropy import units
 from astropy.io import registry as io_registry

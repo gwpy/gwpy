@@ -30,8 +30,7 @@ from .. import (
     utils as io_utils,
 )
 
-# not required, just a reminder where the fixture lives:
-from .test_cache import cache
+from .test_cache import cache  # noqa: F401
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -64,14 +63,14 @@ def test_identify_factory():
     assert id_func(None, 'test.blah2x', None) is False
 
 
-def test_file_list_file(cache):
+def test_file_list_file(cache):  # noqa: F811
     # test file -> [file.name]
     with tempfile.NamedTemporaryFile() as f:
         assert io_utils.file_list(f) == [f.name]
 
 
 @skip_missing_dependency("lal")
-def test_file_list_cache(cache):
+def test_file_list_cache(cache):  # noqa: F811
     from lal.utils import CacheEntry
     # test CacheEntry -> [CacheEntry.path]
     lcache = list(map(CacheEntry.from_T050017, cache))
