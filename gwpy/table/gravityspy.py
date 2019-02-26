@@ -119,7 +119,8 @@ class GravitySpyTable(EventTable):
         # Let us check what columns are needed
         cols_for_download = ['url1', 'url2', 'url3', 'url4']
         cols_for_download = [cols_for_download[idx] for idx in duration_idx]
-        cols_for_download_ext = ['ml_label', 'sample_type', 'ifo', 'gravityspy_id']
+        cols_for_download_ext = ['ml_label', 'sample_type',
+                                 'ifo', 'gravityspy_id']
 
         if not training_set:
             images_db['ml_label'] = ''
@@ -219,26 +220,26 @@ class GravitySpyTable(EventTable):
             '/search/similarity_search_restful_API'
 
         map_era_to_url = {
-            'ALL' : "event_time BETWEEN 1126400000 AND 1229176818",
-            'O1' : "event_time BETWEEN 1126400000 AND 1137250000",
-            'ER10' : "event_time BETWEEN 1161907217 AND 1164499217",
-            'O2a' : "event_time BETWEEN 1164499217 AND 1219276818",
-            'ER13' : "event_time BETWEEN 1228838418 AND 1229176818",}
+            'ALL': "event_time BETWEEN 1126400000 AND 1229176818",
+            'O1': "event_time BETWEEN 1126400000 AND 1137250000",
+            'ER10': "event_time BETWEEN 1161907217 AND 1164499217",
+            'O2a': "event_time BETWEEN 1164499217 AND 1219276818",
+            'ER13': "event_time BETWEEN 1228838418 AND 1229176818",}
 
         map_ifos_to_url = {
-            'H1' : "\'H1\'",
-            'H1L1' : "\'H1\', \'L1\'",
-            'H1L1V1' : "\'H1\', \'L1\', \'V1\'",
-            'L1' : "\'L1\'",
-            'L1V1' : "\'L1\', \'V1\'",
-            'V1' : "\'V1\'",}
+            'H1': "\'H1\'",
+            'H1L1': "\'H1\', \'L1\'",
+            'H1L1V1': "\'H1\', \'L1\', \'V1\'",
+            'L1': "\'L1\'",
+            'L1V1': "\'L1\', \'V1\'",
+            'V1': "\'V1\'",}
 
         parts = {
             'howmany': howmany,
             'imageid': gravityspy_id,
-            'era' : map_era_to_url[era],
-            'ifo' : map_ifos_to_url[ifos],
-            'database' : 'updated_similarity_index_v2d0',
+            'era': map_era_to_url[era],
+            'ifo': map_ifos_to_url[ifos],
+            'database': 'updated_similarity_index_v2d0',
         }
 
         search = urllib.parse.urlencode(parts) 
