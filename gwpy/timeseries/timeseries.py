@@ -1635,7 +1635,7 @@ class TimeSeries(TimeSeriesBase):
         data = self.whiten(**whiten_kwargs) if whiten else self
         window_samples = cluster_window * data.sample_rate.value
         gates = find_peaks(abs(data.value), height=threshold,
-                                  distance=window_samples)[0]
+                           distance=window_samples)[0]
         out = self.copy()
 
         # Iterate over list of indices to gate and apply each one
