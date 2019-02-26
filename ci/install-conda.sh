@@ -23,7 +23,7 @@ trap 'set +ex' RETURN
 # Install GWpy and dependencies using Conda
 #
 
-PYTHON_VERSION=${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}
+PYTHON_VERSION=$(echo "${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}" | cut -d. -f-2)
 
 if ! which conda 1> /dev/null; then
     # install conda
@@ -56,7 +56,7 @@ conda update --quiet conda
 conda info --all
 
 # create environment for tests (if needed)
-if [ ! -d ${CONDA_PATH}/envs/gwpyci ]; then
+if [ ! -f ${CONDA_PATH}/envs/gwpyci/conda-meta/history ]; then
     conda create --name gwpyci python=${PYTHON_VERSION} gwpy
 fi
 conda activate gwpyci || source activate gwpyci
@@ -70,12 +70,12 @@ rm -f conda-reqs.txt  # clean up
 
 # install other conda packages that aren't represented in the requirements file
 conda install --name gwpyci --quiet --yes \
-    lscsoft-glue \
     python-lal \
     python-lalframe \
     python-lalsimulation \
     python-ldas-tools-framecpp \
-    python-nds2-client
+    python-nds2-client \
+    root_numpy
 
 # install gwpy into this environment
 ${PYTHON} -m pip install ${PIP_FLAGS} . --ignore-installed --no-deps

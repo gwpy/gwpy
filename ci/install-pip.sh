@@ -23,7 +23,8 @@ trap 'set +ex' RETURN
 # Install GWpy and all optional dependencies with pip
 #
 
-PYTHON=$(which python)
+PYTHON_VERSION=$(echo "${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}" | cut -d. -f-2)
+PYTHON=$(which "python${PYTHON_VERSION}")
 
 # install myriad testing dependencies
 ${PYTHON} -m pip install ${PIP_FLAGS} -r requirements-dev.txt

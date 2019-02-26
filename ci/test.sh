@@ -29,11 +29,12 @@ if [ -n ${CIRCLECI} ] && [ -d /opt/conda/envs ]; then
 fi
 
 # get path to python and pip
-PYTHON=$(which "python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}")
+PYTHON_VERSION=$(echo "${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}" | cut -d. -f-2)
+PYTHON=$(which "python${PYTHON_VERSION}")
 PIP="${PYTHON} -m pip"
 
 # upgrade setuptools in order to understand environment markers
-${PIP} install "pip>=8.0.0" "setuptools>=20.2.2"
+${PIP} install ${PIP_FLAGS} "pip>=8.0.0" "setuptools>=20.2.2"
 
 # install test dependencies
 ${PIP} install ${PIP_FLAGS} -r requirements-test.txt
