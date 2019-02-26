@@ -3,8 +3,7 @@
 # we use python
 language: python
 
-# use container-based builds
-sudo: false
+os: osx
 
 env:
   global:
@@ -35,70 +34,19 @@ matrix:
   fast_finish: true
 
   include:
-    # basic test on established, recent python version
-    - python: '2.7'
-      stage: Basic tests
-    - python: '3.6'
-      stage: Basic tests
-
-    # full tests on other supported python versions
-    - python: '2.7'
-      stage: Full tests
-      env: INSTALL_CMD=". ./ci/install-pip.sh"
-    - python: '3.4'
-      stage: Full tests
-      env: INSTALL_CMD=". ./ci/install-pip.sh"
-    - python: '3.5'
-      stage: Full tests
-      env: INSTALL_CMD=". ./ci/install-pip.sh"
-    - python: '3.6'
-      stage: Full tests
-      env: INSTALL_CMD=". ./ci/install-pip.sh"
-    - python: '3.7'
-      stage: Full tests
-      dist: xenial
-      sudo: required
-      env: INSTALL_CMD=". ./ci/install-pip.sh"
-
-    # test pre-release dependencies
-    - python: '3.6'
-      stage: Full tests
-      env: PIP_FLAGS="--upgrade --pre" INSTALL_CMD=". ./ci/install-pip.sh"
-
     # conda builds
     - python: '2.7'
-      os: linux
       language: minimal
       stage: Distribution tests
       env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="2.7"
     - python: '3.6'
-      os: linux
       language: minimal
       stage: Distribution tests
       env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.6"
     - python: '3.7'
-      os: linux
       language: minimal
       stage: Distribution tests
       env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.7"
-    - python: '2.7'
-      os: osx
-      language: minimal
-      stage: Distribution tests
-      env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="2.7"
-    - python: '3.6'
-      os: osx
-      language: minimal
-      stage: Distribution tests
-      env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.6"
-    - python: '3.7'
-      os: osx
-      language: minimal
-      stage: Distribution tests
-      env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.7"
-
-  allow_failures:
-    - env: PIP_FLAGS="--upgrade --pre"
 
 install:  # install package
   - ${INSTALL_CMD}

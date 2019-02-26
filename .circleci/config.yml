@@ -1,42 +1,105 @@
 version: 2
 
+machine:
+  environment:
+    PIP_FLAGS: "--progress-bar off"
+
 # -- templates --------------
 
-run-tests: &run-tests
-  name: Test
-  command: bash -ex ci/test.sh
-
-debian-build: &debian-build
-  steps:
-    - checkout
-    - attach_workspace:
+aliases:
+  - &attach_workspace
+      attach_workspace:
         at: .
-    - run:
-        name: Build
-        command: bash -ex ci/install-debian.sh
-    - run: *run-tests
-    - store_test_results:
-        path: test-reports
-    - store_artifacts:
-        path: test-reports
-    - store_artifacts:
-        path: "*.deb"
 
-centos-build: &centos-build
-  steps:
-    - checkout
-    - attach_workspace:
-        at: .
-    - run:
-        name: Build
-        command: bash -ex ci/install-el.sh
-    - run: *run-tests
-    - store_test_results:
+  - &store_test_results
+      store_test_results:
         path: test-reports
-    - store_artifacts:
+
+  - &store_test_artifacts
+      store_artifacts:
         path: test-reports
-    - store_artifacts:
-        path: "*.rpm"
+
+  - &run-tests
+      name: Test
+      command: bash -ex ci/test.sh
+
+  - &python-build
+      docker:
+        - image: python
+      steps:
+        - checkout
+        - *attach_workspace
+        - run:
+            name: Install
+            command: python -m pip install gwpy-*.tar.*
+        - run: *run-tests
+        - store_test_results:
+            path: test-reports
+        - store_artifacts:
+            path: test-reports
+
+  - &pip-build
+      docker:
+        - image: python
+      steps:
+        - checkout
+        - restore_cache:
+            key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
+        - run:
+            name: Install
+            command: bash -ex ci/install-pip.sh
+        - run: *run-tests
+        - save_cache:
+            key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
+            paths:
+              - "/usr/local/bin"
+              - "/usr/local/lib"
+        - *store_test_results
+        - *store_test_artifacts
+
+  - &conda-build
+      docker:
+        - image: continuumio/miniconda3
+      steps:
+        - checkout
+        - *attach_workspace
+        - restore_cache:
+            key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
+        - run:
+            name: Install
+            command: bash -ex ci/install-conda.sh
+        - run: *run-tests
+        - save_cache:
+            key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
+            paths:
+              - "/opt/conda/envs/gwpyci/bin"
+              - "/opt/conda/envs/gwpyci/lib"
+        - *store_test_results
+        - *store_test_artifacts
+
+  - &debian-build
+      steps:
+        - checkout
+        - *attach_workspace
+        - run:
+            name: Build
+            command: bash -ex ci/install-debian.sh
+        - run: *run-tests
+        - *store_test_results
+        - *store_test_artifacts
+
+  - &centos-build
+      steps:
+        - checkout
+        - *attach_workspace
+        - run:
+            name: Build
+            command: bash -ex ci/install-el.sh
+        - run: *run-tests
+        - *store_test_results
+        - *store_test_artifacts
+        - store_artifacts:
+            path: "*.rpm"
 
 # -- jobs -------------------
 
@@ -63,7 +126,7 @@ jobs:
           name: Lint
           command: |
             set -ex
-            python -m pip install "flake8>=3.7.0"
+            python -m pip install ${PIP_FLAGS} "flake8>=3.7.0"
             mkdir -p test-reports
             python -m flake8 --output-file test-reports/flake8.txt
       - run:
@@ -71,12 +134,113 @@ jobs:
           when: always
           command: |
             set -ex
-            python -m pip install flake8-junit-report
+            python -m pip install ${PIP_FLAGS} flake8-junit-report
             python -m junit_conversor test-reports/flake8.txt test-reports/junit.xml
-      - store_test_results:
-          path: test-reports
-      - store_artifacts:
-          path: test-reports
+      - *store_test_results
+      - *store_test_artifacts
+
+  # -- python ---------------
+
+  python:2.7:
+    <<: *python-build
+    docker:
+      - image: python:2.7
+    environment:
+      PYTHON_VERSION: "2.7"
+
+  python:3.4:
+    <<: *python-build
+    docker:
+      - image: python:3.4
+    environment:
+      PYTHON_VERSION: "3.4"
+
+  python:3.5:
+    <<: *python-build
+    docker:
+      - image: python:3.5
+    environment:
+      PYTHON_VERSION: "3.5"
+
+  python:3.6:
+    <<: *python-build
+    docker:
+      - image: python:3.6
+    environment:
+      PYTHON_VERSION: "3.6"
+
+  python:3.7:
+    <<: *python-build
+    docker:
+      - image: python:3.7
+    environment:
+      PYTHON_VERSION: "3.7"
+
+  # -- pip ------------------
+
+  pip:2.7:
+    <<: *pip-build
+    docker:
+      - image: python:2.7
+    environment:
+      PYTHON_VERSION: "2.7"
+
+  pip:3.4:
+    <<: *pip-build
+    docker:
+      - image: python:3.4
+    environment:
+      PYTHON_VERSION: "3.4"
+
+  pip:3.5:
+    <<: *pip-build
+    docker:
+      - image: python:3.5
+    environment:
+      PYTHON_VERSION: "3.5"
+
+  pip:3.6:
+    <<: *pip-build
+    docker:
+      - image: python:3.6
+    environment:
+      PYTHON_VERSION: "3.6"
+
+  pip:3.7:
+    <<: *pip-build
+    docker:
+      - image: python:3.7
+    environment:
+      PYTHON_VERSION: "3.7"
+
+  pip:3.7:pre:
+    <<: *pip-build
+    docker:
+      - image: python:3.7
+    environment:
+      PIP_FLAGS: "--progress-bar off --upgrade --pre"
+      PYTHON_VERSION: "3.7"
+
+  # -- conda ----------------
+
+  conda:2.7:
+    <<: *conda-build
+    docker:
+      - image: continuumio/miniconda2
+    environment:
+      PYTHON_VERSION: "2.7"
+
+  conda:3.6:
+    <<: *conda-build
+    environment:
+      PYTHON_VERSION: "3.6"
+
+  conda:3.7:
+    <<: *conda-build
+    environment:
+      PYTHON_VERSION: "3.7"
+
+  # -- debian ---------------
 
   debian:stretch:2.7:
     <<: *debian-build
@@ -91,6 +255,8 @@ jobs:
       - image: ligo/base:stretch
     environment:
       PYTHON_VERSION: "3.5"
+
+  # -- rhel -----------------
 
   el7:2.7:
     <<: *centos-build
@@ -107,6 +273,56 @@ workflows:
     jobs:
       - sdist
       - flake8
+
+      # basic tests with minimal dependencies
+      - python:2.7:
+          requires:
+            - sdist
+      - python:3.4:
+          requires:
+            - sdist
+      - python:3.5:
+          requires:
+            - sdist
+      - python:3.6:
+          requires:
+            - sdist
+      - python:3.7:
+          requires:
+            - sdist
+
+      # full tests with extended dependencies
+      - pip:2.7:
+          requires:
+            - python:2.7
+      - pip:3.4:
+          requires:
+            - python:3.4
+      - pip:3.5:
+          requires:
+            - python:3.5
+      - pip:3.6:
+          requires:
+            - python:3.6
+      - pip:3.7:
+          requires:
+            - python:3.7
+      - pip:3.7:pre:
+          requires:
+            - python:3.7
+
+      # conda tests
+      - conda:2.7:
+          requires:
+            - pip:2.7
+      - conda:3.6:
+          requires:
+            - pip:3.6
+      - conda:3.7:
+          requires:
+            - pip:3.7
+
+      # LDG reference OS tests
       - debian:stretch:2.7:
           requires:
             - sdist

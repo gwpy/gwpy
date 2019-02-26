@@ -115,7 +115,7 @@ class TestPlot(FigureTestBase):
         ax = fig.gca()
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
         image = ax.imshow(array)
-        with pytest.warns(DeprecationWarning):
+        with pytest.deprecated_call():
             cbar = fig.add_colorbar(vmin=2, vmax=4, fraction=0.)
         assert cbar.mappable is image
 
@@ -141,5 +141,5 @@ class TestPlot(FigureTestBase):
     def test_add_state_segments(self, fig):
         fig.gca(xscale='auto-gps')
         segs = SegmentList([Segment(10, 110), Segment(150, 400)])
-        with pytest.warns(DeprecationWarning):
+        with pytest.deprecated_call():
             fig.add_state_segments(segs)

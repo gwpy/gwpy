@@ -193,10 +193,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
                                             exclude=['channel'])
 
             # test dtype - DEPRECATED
-            with pytest.warns(DeprecationWarning):
+            with pytest.deprecated_call():
                 t = read_(dtype='float32')
             assert t.dtype is numpy.dtype('float32')
-            with pytest.warns(DeprecationWarning):
+            with pytest.deprecated_call():
                 t = read_(dtype={array.name: 'float64'})
             assert t.dtype is numpy.dtype('float64')
 
@@ -533,7 +533,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # get actual method name
         library = library.split('.', 1)[0]
 
-        with pytest.warns(DeprecationWarning):
+        with pytest.deprecated_call():
             psd = noisy_sinusoid.psd(fftlength=fftlength, overlap=overlap,
                                      method="{0}-{1}".format(library, method))
 
