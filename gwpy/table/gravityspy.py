@@ -189,7 +189,8 @@ class GravitySpyTable(EventTable):
                 raise x
 
     @classmethod
-    def search(cls, gravityspy_id, howmany=10):
+    def search(cls, gravityspy_id, howmany=10,
+               era='ALL', ifos='H1L1'):
         """perform restful API version of search available here:
         https://gravityspytools.ciera.northwestern.edu/search/
 
@@ -211,18 +212,36 @@ class GravitySpyTable(EventTable):
         from astropy.utils.data import get_readable_fileobj
         import json
         from six.moves.urllib.error import HTTPError
+        from six.moves import urllib
 
         # Need to build the url call for the restful API
         base = 'https://gravityspytools.ciera.northwestern.edu' + \
             '/search/similarity_search_restful_API'
 
+        map_era_to_url = {
+            'ALL' : "event_time BETWEEN 1126400000 AND 1229176818",
+            'O1' : "event_time BETWEEN 1126400000 AND 1137250000",
+            'ER10' : "event_time BETWEEN 1161907217 AND 1164499217",
+            'O2a' : "event_time BETWEEN 1164499217 AND 1219276818",
+            'ER13' : "event_time BETWEEN 1228838418 AND 1229176818",}
+
+        map_ifos_to_url = {
+            'H1' : "\'H1\'",
+            'H1L1' : "\'H1\', \'L1\'",
+            'H1L1V1' : "\'H1\', \'L1\', \'V1\'",
+            'L1' : "\'L1\'",
+            'L1V1' : "\'L1\', \'V1\'",
+            'V1' : "\'V1\'",}
+
         parts = {
             'howmany': howmany,
             'imageid': gravityspy_id,
+            'era' : map_era_to_url[era],
+            'ifo' : map_ifos_to_url[ifos],
+            'database' : 'updated_similarity_index_v2d0',
         }
 
-        search = '&'.join('{}={}'.format(key, value) for
-                          key, value in parts.items())
+        search = urllib.parse.urlencode(parts) 
 
         url = '{}/?{}'.format(base, search)
 
