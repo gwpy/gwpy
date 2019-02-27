@@ -53,4 +53,4 @@ else
 fi
 
 # run tests with coverage
-${PYTHON} -m pytest --pyargs gwpy --cov=gwpy --junitxml=test-reports/junit.xml
+${PYTHON} -m pytest --pyargs gwpy --cov=gwpy --junitxml=test-reports/junit.xml --numprocesses=2
