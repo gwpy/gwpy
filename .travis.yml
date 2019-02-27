@@ -38,14 +38,17 @@ matrix:
     - python: '2.7'
       language: minimal
       stage: Distribution tests
+      name: "conda:2.7"
       env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="2.7"
     - python: '3.6'
       language: minimal
       stage: Distribution tests
+      name: "conda:3.6"
       env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.6"
     - python: '3.7'
       language: minimal
       stage: Distribution tests
+      name: "conda:3.7"
       env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.7"
 
 install:  # install package
@@ -54,8 +57,8 @@ install:  # install package
 script:  # run tests
   - ${TEST_CMD}
 
-after_success:  # submit coverage results
-  - . ./ci/coveralls.sh
+after_success:
+  - bash -ex ci/codecov.sh
 
 before_deploy:
   - git clean -dfX

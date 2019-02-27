@@ -1,15 +1,33 @@
 version: 2
 
-machine:
-  environment:
-    PIP_FLAGS: "--progress-bar off"
-
 # -- templates --------------
 
 aliases:
   - &attach_workspace
       attach_workspace:
         at: .
+
+  - &set_python_environment
+      name: Set Python environment
+      command: |
+        export PIP_FLAGS=${PIP_FLAGS:-"--progress-bar=off"}
+        echo "export PIP_FLAGS=\"${PIP_FLAGS}\"" >> ${BASH_ENV}
+        echo "Set PIP_FLAGS=\"${PIP_FLAGS}\""
+        export PYTHON_VERSION=${CIRCLE_JOB##*:}
+        echo "export PYTHON_VERSION=\"${PYTHON_VERSION}\"" >> ${BASH_ENV}
+        echo "Set PYTHON_VERSION=\"${PYTHON_VERSION}\""
+
+  - &run-tests
+      name: Test
+      command: bash -ex ci/test.sh
+
+  - &codecov
+      name: Submit coverage to codecov
+      command: bash -ex ci/codecov.sh
+
+  - &coveralls
+      name: Submit coverage to coveralls
+      command: bash -ex ci/coveralls.sh
 
   - &store_test_results
       store_test_results:
@@ -19,20 +37,18 @@ aliases:
       store_artifacts:
         path: test-reports
 
-  - &run-tests
-      name: Test
-      command: bash -ex ci/test.sh
-
   - &python-build
       docker:
         - image: python
       steps:
         - checkout
         - *attach_workspace
+        - run: *set_python_environment
         - run:
             name: Install
-            command: python -m pip install gwpy-*.tar.*
+            command: python -m pip install ${PIP_FLAGS} gwpy-*.tar.*
         - run: *run-tests
+        - run: *codecov
         - store_test_results:
             path: test-reports
         - store_artifacts:
@@ -45,10 +61,12 @@ aliases:
         - checkout
         - restore_cache:
             key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
+        - run: *set_python_environment
         - run:
             name: Install
             command: bash -ex ci/install-pip.sh
         - run: *run-tests
+        - run: *codecov
         - save_cache:
             key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
             paths:
@@ -64,16 +82,17 @@ aliases:
         - checkout
         - *attach_workspace
         - restore_cache:
-            key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
+            key: v3-gwpy-{{ .Environment.CIRCLE_JOB }}
+        - run: *set_python_environment
         - run:
             name: Install
             command: bash -ex ci/install-conda.sh
         - run: *run-tests
+        - run: *codecov
         - save_cache:
-            key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
+            key: v3-gwpy-{{ .Environment.CIRCLE_JOB }}
             paths:
-              - "/opt/conda/envs/gwpyci/bin"
-              - "/opt/conda/envs/gwpyci/lib"
+              - "/opt/conda/envs/gwpyci"
         - *store_test_results
         - *store_test_artifacts
 
@@ -81,10 +100,12 @@ aliases:
       steps:
         - checkout
         - *attach_workspace
+        - run: *set_python_environment
         - run:
             name: Build
             command: bash -ex ci/install-debian.sh
         - run: *run-tests
+        - run: *codecov
         - *store_test_results
         - *store_test_artifacts
 
@@ -92,10 +113,12 @@ aliases:
       steps:
         - checkout
         - *attach_workspace
+        - run: *set_python_environment
         - run:
             name: Build
             command: bash -ex ci/install-el.sh
         - run: *run-tests
+        - run: *codecov
         - *store_test_results
         - *store_test_artifacts
         - store_artifacts:
@@ -145,36 +168,26 @@ jobs:
     <<: *python-build
     docker:
       - image: python:2.7
-    environment:
-      PYTHON_VERSION: "2.7"
 
   python:3.4:
     <<: *python-build
     docker:
       - image: python:3.4
-    environment:
-      PYTHON_VERSION: "3.4"
 
   python:3.5:
     <<: *python-build
     docker:
       - image: python:3.5
-    environment:
-      PYTHON_VERSION: "3.5"
 
   python:3.6:
     <<: *python-build
     docker:
       - image: python:3.6
-    environment:
-      PYTHON_VERSION: "3.6"
 
   python:3.7:
     <<: *python-build
     docker:
       - image: python:3.7
-    environment:
-      PYTHON_VERSION: "3.7"
 
   # -- pip ------------------
 
@@ -182,44 +195,33 @@ jobs:
     <<: *pip-build
     docker:
       - image: python:2.7
-    environment:
-      PYTHON_VERSION: "2.7"
 
   pip:3.4:
     <<: *pip-build
     docker:
       - image: python:3.4
-    environment:
-      PYTHON_VERSION: "3.4"
 
   pip:3.5:
     <<: *pip-build
     docker:
       - image: python:3.5
-    environment:
-      PYTHON_VERSION: "3.5"
 
   pip:3.6:
     <<: *pip-build
     docker:
       - image: python:3.6
-    environment:
-      PYTHON_VERSION: "3.6"
 
   pip:3.7:
     <<: *pip-build
     docker:
       - image: python:3.7
-    environment:
-      PYTHON_VERSION: "3.7"
 
-  pip:3.7:pre:
+  pip:pre:3.7:
     <<: *pip-build
     docker:
       - image: python:3.7
     environment:
       PIP_FLAGS: "--progress-bar off --upgrade --pre"
-      PYTHON_VERSION: "3.7"
 
   # -- conda ----------------
 
@@ -227,18 +229,12 @@ jobs:
     <<: *conda-build
     docker:
       - image: continuumio/miniconda2
-    environment:
-      PYTHON_VERSION: "2.7"
 
   conda:3.6:
     <<: *conda-build
-    environment:
-      PYTHON_VERSION: "3.6"
 
   conda:3.7:
     <<: *conda-build
-    environment:
-      PYTHON_VERSION: "3.7"
 
   # -- debian ---------------
 
@@ -247,14 +243,14 @@ jobs:
     docker:
       - image: ligo/base:stretch
     environment:
-      PYTHON_VERSION: "2.7"
+      PIP_FLAGS: " "
 
   debian:stretch:3.5:
     <<: *debian-build
     docker:
       - image: ligo/base:stretch
     environment:
-      PYTHON_VERSION: "3.5"
+      PIP_FLAGS: " "
 
   # -- rhel -----------------
 
@@ -263,7 +259,7 @@ jobs:
     docker:
       - image: ligo/base:el7
     environment:
-      PYTHON_VERSION: "2.7"
+      PIP_FLAGS: " "
 
 # -- workflow ---------------
 
@@ -307,7 +303,7 @@ workflows:
       - pip:3.7:
           requires:
             - python:3.7
-      - pip:3.7:pre:
+      - pip:pre:3.7:
           requires:
             - python:3.7
 
