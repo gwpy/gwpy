@@ -5,6 +5,11 @@ language: python
 
 os: osx
 
+addons:
+  homebrew:
+    taps: caskroom/cask
+    casks: mactex-no-gui
+
 env:
   global:
     # default environment variables
@@ -80,6 +85,7 @@ notifications:
 cache:
   apt: true
   pip: true
+  homebrew: true
   ccache: true
   directories:
     - ${HOME}/miniconda
