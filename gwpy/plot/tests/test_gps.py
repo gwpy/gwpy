@@ -141,7 +141,9 @@ class TestInverseGpsTransform(TestGpsTransform):
 
 
 @pytest.mark.parametrize(
-    'scale', filter(lambda x: x != 'auto-gps', plot_gps.GPS_SCALES))
+    'scale',
+    sorted(filter(lambda x: x != 'auto-gps', plot_gps.GPS_SCALES)),
+)
 def test_gps_scale(scale):
     u = Unit(scale[:-1])
 
