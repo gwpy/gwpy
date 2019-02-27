@@ -1567,6 +1567,99 @@ class TimeSeries(TimeSeriesBase):
         out = in_.convolve(tdw, window=window)
         return out * numpy.sqrt(2 * in_.dt.decompose().value)
 
+    def gate(self, tzero=1.0, tpad=0.5, whiten=True,
+             threshold=50., cluster_window=0.5, **whiten_kwargs):
+        """Removes high amplitude peaks from data using inverse Planck window.
+        Points will be discovered automatically using a provided threshold
+        and clustered within a provided time window.
+
+        Parameters
+        ----------
+        tzero : `int`, optional
+            half-width time duration in which the time series is set to zero
+
+        tpad : `int`, optional
+            half-width time duration in which the Planck window is tapered
+
+        whiten : `bool`, optional
+            if True, data will be whitened before gating points are discovered,
+            use of this option is highly recommended
+
+        threshold : `float`, optional
+            amplitude threshold, if the data exceeds this value a gating window
+            will be placed
+
+        cluster_window : `float`, optional
+            time duration over which gating points will be clustered
+
+        **whiten_kwargs
+            other keyword arguments that will be passed to the
+            `TimeSeries.whiten` method if it is being used when discovering
+            gating points
+
+        Returns
+        -------
+        out : `~gwpy.timeseries.TimeSeries`
+            a copy of the original `TimeSeries` that has had gating windows
+            applied
+
+        Examples
+        --------
+
+        Read data into a `TimeSeries`
+        >>> from gwpy.timeseries import TimeSeries
+        >>> data = TimeSeries.fetch_open_data('H1', 1135148571, 1135148771)
+
+        Apply gating using custom arguments
+        >>> gated = data.gate(tzero=1.0, tpad=1.0, threshold=10.0,
+                              fftlength=4, overlap=2, method='median')
+
+        Plot the original data and the gated data, whiten both for
+        visualization purposes
+        >>> overlay = data.whiten(4,2,method='median').plot(dpi=150,
+                                  label='Ungated', color='dodgerblue',
+                                  zorder=2)
+        >>> ax = overlay.gca()
+        >>> ax.plot(gated.whiten(4,2,method='median'), label='Gated',
+                    color='orange', zorder=3)
+        >>> ax.set_xlim(1135148661, 1135148681)
+        >>> ax.legend()
+        >>> overlay.show()
+        """
+        try:
+            from scipy.signal import find_peaks
+        except ImportError as exc:
+            exc.args = ("Must have scipy>=1.1.0 to utilize this method.",)
+            raise
+        # Find points to gate based on a threshold
+        data = self.whiten(**whiten_kwargs) if whiten else self
+        window_samples = cluster_window * data.sample_rate.value
+        gates = find_peaks(abs(data.value), height=threshold,
+                           distance=window_samples)[0]
+        out = self.copy()
+
+        # Iterate over list of indices to gate and apply each one
+        nzero = int(abs(tzero) * self.sample_rate.value)
+        npad = int(abs(tpad) * self.sample_rate.value)
+        half = nzero + npad
+        ntotal = 2 * half
+        for gate in gates:
+            # Set the boundaries for windowed data in the original time series
+            left_idx = max(0, gate - half)
+            right_idx = min(gate + half, len(self.value) - 1)
+
+            # Choose which part of the window will replace the data
+            # This must be done explicitly for edge cases where a window
+            # overlaps index 0 or the end of the time series
+            left_idx_window = half - (gate - left_idx)
+            right_idx_window = half + (right_idx - gate)
+
+            window = 1 - planck(ntotal, nleft=npad, nright=npad)
+            window = window[left_idx_window:right_idx_window]
+            out[left_idx:right_idx] *= window
+
+        return out
+
     def convolve(self, fir, window='hanning'):
         """Convolve this `TimeSeries` with an FIR filter using the
            overlap-save method

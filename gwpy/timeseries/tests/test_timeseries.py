@@ -836,6 +836,37 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_allclose(new_data.value[ind], waveform.value)
         utils.assert_allclose(data.value, numpy.zeros(duration*sample_rate))
 
+    @utils.skip_minimum_version("scipy", "1.1.0")
+    def test_gate(self):
+        # generate Gaussian noise with std = 0.5
+        noise = self.TEST_CLASS(numpy.random.normal(scale=0.5, size=16384*64),
+                                sample_rate=16384, epoch=-32)
+        # generate a glitch with amplitude 20 at 1000 Hz
+        glitchtime = 0.0
+        glitch = signal.gausspulse(noise.times.value - glitchtime,
+                                   bw=100) * 20
+        data = noise + glitch
+
+        # check that the glitch is at glitchtime as expected
+        tmax = data.times.value[data.argmax()]
+        nptest.assert_almost_equal(tmax, glitchtime)
+
+        # gating method will be called with whiten = False to decouple
+        # whitening method from gating method
+        tzero = 1.0
+        tpad = 1.0
+        threshold = 10.0
+        gated = data.gate(tzero=tzero, tpad=tpad, threshold=threshold,
+                          whiten=False)
+
+        # check that the maximum value is not within the region set to zero
+        tleft = glitchtime - tzero
+        tright = glitchtime + tzero
+        assert not tleft < gated.times.value[gated.argmax()] < tright
+
+        # check that there are no remaining values above the threshold
+        assert gated.max() < threshold
+
     def test_whiten(self):
         # create noise with a glitch in it at 1000 Hz
         noise = self.TEST_CLASS(
