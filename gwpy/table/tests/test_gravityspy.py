@@ -33,7 +33,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 JSON_RESPONSE = {
     "url4": [u"https://panoptes-uploads.zooniverse.org/production/"
-                "subject_location/08895951-ea30-4cf7-9374-135a335afe0e.png"],
+             "subject_location/08895951-ea30-4cf7-9374-135a335afe0e.png"],
     "peak_frequency": [84.4759674072266],
     "links_subjects": [5740011.0],
     "ml_label": [u"Scratchy"],
@@ -43,11 +43,11 @@ JSON_RESPONSE = {
     "searchedzooID": [5740011.0],
     "ifo": [u"H1"],
     "url3": [u"https://panoptes-uploads.zooniverse.org/production/"
-                "subject_location/415dde44-3109-434c-b3ad-b722a879c159.png"],
+             "subject_location/415dde44-3109-434c-b3ad-b722a879c159.png"],
     "url2": [u"https://panoptes-uploads.zooniverse.org/production/"
-                "subject_location/09ebb6f4-e839-466f-80a1-64d79ac4d934.png"],
+             "subject_location/09ebb6f4-e839-466f-80a1-64d79ac4d934.png"],
     "url1": [u"https://panoptes-uploads.zooniverse.org/production/"
-                "subject_location/5e89d817-583c-4646-8e6c-9391bb99ad41.png"],
+             "subject_location/5e89d817-583c-4646-8e6c-9391bb99ad41.png"],
 }
 
 
