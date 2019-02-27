@@ -3,6 +3,7 @@
 more-itertools < 6.0a0 ; python_version < '3'
 pytest >= 3.3.0
 pytest-cov >= 2.4.0
+pytest-xdist
 mock ; python_version < '3'
 freezegun >= 0.2.3
 sqlparse >= 0.2.0
