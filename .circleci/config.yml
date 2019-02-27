@@ -133,12 +133,18 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install dependencies
+          command: |
+            set -ex
+            python -m pip install "setuptools>=20.2.0" "wheel"
+      - run:
           name: Build tarball
-          command: python setup.py --quiet sdist --dist-dir .
+          command: python setup.py --quiet sdist --dist-dir . bdist_wheel --universal --dist-dir .
       - persist_to_workspace:
           root: .
           paths:
             - gwpy-*.tar.*
+            - gwpy-*-none-any.whl
 
   flake8:
     docker:
@@ -261,6 +267,19 @@ jobs:
     environment:
       PIP_FLAGS: " "
 
+  # -- deploy ---------------
+
+  deploy:
+    docker:
+      - image: python
+    steps:
+      - run:
+          name: Twine upload
+          command: |
+            # TWINE_USERNAME and TWINE_PASSWORD are set in repo settings
+            python -m pip install twine
+            python -m twine upload gwpy-*.tar.* gwpy-*-none-any.whl
+
 # -- workflow ---------------
 
 workflows:
@@ -328,3 +347,18 @@ workflows:
       - el7:2.7:
           requires:
             - sdist
+
+      # deploy
+      - deploy:
+          requires:
+            - conda:2.7
+            - conda:3.6
+            - conda:3.7
+            - debian:stretch:2.7
+            - debian:stretch:3.5
+            - el7:2.7
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/

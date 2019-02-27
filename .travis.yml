@@ -63,19 +63,6 @@ after_success:
 before_deploy:
   - git clean -dfX
 
-deploy:
-  - provider: pypi
-    user: duncanmmacleod
-    password: ${PYPI_PASSWD}
-    distributions: sdist bdist_wheel
-    on:
-      condition: -z "${DOCKER_IMAGE}"
-      branch: master
-      tags: true
-      python: '3.6'
-      repo: gwpy/gwpy
-      skip_existing: true
-
 notifications:
   slack:
     secure: jQdoSpwNbUnq0Eo7o6Ko7vuhu58LQdfy8jFKxLUnUjv/GLezK/PPAQCU9SgmyDPh1yD8sb5Xa8UtbNfGtpYdwBAGwZxPHz3oQQAflivFwcF6UP7/NlAB9muSOOnL0QfQyX1I4sIKOkX+gkl+TBciX4v58B8NUU02dDkwDqTLUqQ=
