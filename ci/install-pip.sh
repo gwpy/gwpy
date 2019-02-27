@@ -23,5 +23,10 @@ trap 'set +ex' RETURN
 # Install GWpy and all optional dependencies with pip
 #
 
-python -m pip install ${PIP_FLAGS} -r requirements-dev.txt
-python -m pip install ${PIP_FLAGS} .
+PYTHON=$(which python)
+
+# install myriad testing dependencies
+${PYTHON} -m pip install ${PIP_FLAGS} -r requirements-dev.txt
+
+# install gwpy into this environment
+${PYTHON} -m pip install ${PIP_FLAGS} .

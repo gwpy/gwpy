@@ -23,9 +23,13 @@ trap 'set +ex' RETURN
 # Run the test suite for GWpy on the current system
 #
 
+# reactivate environmennt
+if [ -n ${CIRCLECI} ] && [ -d /opt/conda/envs ]; then
+    conda activate gwpyci || source activate gwpyci
+fi
+
 # get path to python and pip
 PYTHON=$(which "python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}")
-PYTHON_PREFIX=$(${PYTHON} -c "import sys; print(sys.prefix)")
 PIP="${PYTHON} -m pip"
 
 # upgrade setuptools in order to understand environment markers

@@ -50,19 +50,19 @@ def test_median_mean(lal_func, pycbc_func):
     - `KeyError`
     """
     # first call goes to pycbc
-    with pytest.warns(DeprecationWarning) as record:
+    with pytest.deprecated_call() as record:
         fft_median_mean.median_mean(1, 2, 3)
     assert len(record) == 2  # once for pycbc, once for mm
     assert "pycbc_median_mean" in record[-1].message.args[0]
     assert pycbc_func.called_with(1, 2, 3)
 
     # second call goes to lal
-    with pytest.warns(DeprecationWarning) as record:
+    with pytest.deprecated_call() as record:
         fft_median_mean.median_mean(1, 2, 3)
     assert len(record) == 3  # once for pycbc, once for lal, once for mm
     assert "lal_median_mean" in record[-1].message.args[0]
     assert lal_func.called_with(1, 2, 3)
 
     # third call errors
-    with pytest.warns(DeprecationWarning), pytest.raises(KeyError):
+    with pytest.deprecated_call(), pytest.raises(KeyError):
         fft_median_mean.median_mean(1, 2, 3)

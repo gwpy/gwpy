@@ -403,7 +403,7 @@ class TestEventTable(TestTable):
         t2.binned_event_rates(1, 'a', (10, 100), start=0, end=10)
 
     def test_plot(self, table):
-        with pytest.warns(DeprecationWarning):
+        with pytest.deprecated_call():
             plot = table.plot('time', 'frequency', color='snr')
             plot.close()
 

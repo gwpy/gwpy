@@ -63,6 +63,6 @@ def test_multiprocess_with_queues(capsys, nproc, verbose):
 
 
 def test_multiprocess_with_queues_raise():
-    with pytest.warns(DeprecationWarning):
+    with pytest.deprecated_call():
         utils_mp.multiprocess_with_queues(1, sqrt, [1],
                                           raise_exceptions=True)

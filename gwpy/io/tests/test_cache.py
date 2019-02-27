@@ -214,10 +214,10 @@ def test_sieve(cache, segments):
 
 
 def test_file_list():
-    with pytest.warns(DeprecationWarning):
+    with pytest.deprecated_call():
         assert io_cache.file_list("1,2,3") == ["1", "2", "3"]
 
 
 def test_file_name():
-    with pytest.warns(DeprecationWarning):
+    with pytest.deprecated_call():
         assert io_cache.file_name("123") == "123"

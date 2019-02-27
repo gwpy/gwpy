@@ -25,35 +25,45 @@ trap 'set +ex' RETURN
 
 PYTHON_VERSION=${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}
 
-# install conda
-if [[ "${PYTHON_VERSION}" == "2.7" ]]; then
-    MINICONDA_VERSION="Miniconda2"
-else
-    MINICONDA_VERSION="Miniconda3"
+if ! which conda 1> /dev/null; then
+    # install conda
+    if [[ "${PYTHON_VERSION}" == "2.7" ]]; then
+        MINICONDA_VERSION="Miniconda2"
+    else
+        MINICONDA_VERSION="Miniconda3"
+    fi
+    if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+        MINICONDA="${MINICONDA_VERSION}-latest-MacOSX-x86_64.sh"
+    else
+        MINICONDA="${MINICONDA_VERSION}-latest-Linux-x86_64.sh"
+    fi
+    curl https://repo.continuum.io/miniconda/${MINICONDA} -o miniconda.sh
+    bash miniconda.sh -b -u -p ${HOME}/miniconda
+    source ${HOME}/miniconda/etc/profile.d/conda.sh
 fi
-if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
-    MINICONDA="${MINICONDA_VERSION}-latest-MacOSX-x86_64.sh"
-else
-    MINICONDA="${MINICONDA_VERSION}-latest-Linux-x86_64.sh"
-fi
-
-curl https://repo.continuum.io/miniconda/${MINICONDA} -o miniconda.sh
-bash miniconda.sh -b -u -p ${HOME}/miniconda
-source ${HOME}/miniconda/etc/profile.d/conda.sh
 hash -r
 
-# update conda
-conda config --set always_yes yes --set changeps1 no
+CONDA_PYTHON_EXE=${CONDA_PYTHON_EXE:-$(which python)}
+CONDA_PATH=$(${CONDA_PYTHON_EXE} -c "import sys; print(sys.prefix)")
+
+# configure
+conda config --set always_yes yes
 conda config --add channels conda-forge
+
+# update conda
 conda update --quiet conda
+
 conda info --all
 
-# create environment for tests
-conda create --name gwpyci python=${PYTHON_VERSION} gwpy
-conda activate gwpyci
+# create environment for tests (if needed)
+if [ ! -d ${CONDA_PATH}/envs/gwpyci ]; then
+    conda create --name gwpyci python=${PYTHON_VERSION} gwpy
+fi
+conda activate gwpyci || source activate gwpyci
+PYTHON=$(which python)
 
 # install conda dependencies (based on pip requirements file)
-python ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
+${PYTHON} ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
 echo "python =${PYTHON_VERSION}.*" >> conda-reqs.txt
 conda install --name gwpyci --quiet --yes --file conda-reqs.txt
 rm -f conda-reqs.txt  # clean up
@@ -68,4 +78,4 @@ conda install --name gwpyci --quiet --yes \
     python-nds2-client
 
 # install gwpy into this environment
-python -m pip install .
+${PYTHON} -m pip install ${PIP_FLAGS} . --ignore-installed --no-deps
