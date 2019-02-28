@@ -174,6 +174,7 @@ class TestTimeSeriesBase(_TestSeries):
         assert b.dt == 1/128. * units.s
         assert shares_memory(nds_buffer.data, b.value)
 
+    @utils.skip_missing_dependency('nds2')
     def test_from_nds2_buffer_dynamic_scaled(self):
         # build fake buffer for LIGO channel
         nds_buffer = mocks.nds2_buffer(
