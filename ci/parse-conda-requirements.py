@@ -23,11 +23,14 @@ VERSION_OPERATOR = re.compile('[><=!]')
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('filename', help='path of requirments file to parse')
+parser.add_argument('-p', '--python-version',
+                    default='{0.major}.{0.minor}'.format(sys.version_info),
+                    help='python version to use (default: %(default)s)')
 parser.add_argument('-o', '--output', help='path of output file, '
                                            'defaults to stdout')
 args = parser.parse_args()
 
-requirements = []
+requirements = ["python={0.python_version}.*".format(args)]
 for item in pip_req.parse_requirements(args.filename, session='gwpyci'):
     # if environment markers don't pass, skip
     if item.markers and not item.markers.evaluate():
