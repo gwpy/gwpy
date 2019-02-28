@@ -34,6 +34,7 @@ from ....io.utils import file_list
 from ....segments import Segment
 from ....time import LIGOTimeGPS
 from ... import TimeSeries
+from ...core import _dynamic_scaled
 
 from . import channel_dict_kwarg
 
@@ -79,7 +80,7 @@ class _Skip(ValueError):
 
 # -- read ---------------------------------------------------------------------
 
-def read(source, channels, start=None, end=None, scaled=True, type=None,
+def read(source, channels, start=None, end=None, scaled=None, type=None,
          series_class=TimeSeries):
     # pylint: disable=redefined-builtin
     """Read a dict of series from one or more GWF files
@@ -138,7 +139,7 @@ def read(source, channels, start=None, end=None, scaled=True, type=None,
     return out
 
 
-def read_gwf(filename, channels, start=None, end=None, scaled=True,
+def read_gwf(filename, channels, start=None, end=None, scaled=None,
              ctype=None, series_class=TimeSeries):
     """Read a dict of series data from a single GWF file
 
@@ -210,10 +211,11 @@ def read_gwf(filename, channels, start=None, end=None, scaled=True,
 
         # and read all the channels
         for channel in channels:
+            _scaled = _dynamic_scaled(scaled, channel)
             try:
                 new = _read_channel(stream, this, str(channel),
                                     ctype.get(channel, None),
-                                    epoch, start, end, scaled=scaled,
+                                    epoch, start, end, scaled=_scaled,
                                     series_class=series_class)
             except _Skip:  # don't need this frame for this channel
                 continue
