@@ -285,6 +285,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     # -- test remote data access ----------------
 
+    @utils.skip_minimum_version("gwosc", "0.4.0")
     @pytest.mark.parametrize('format', [
         'hdf5',
         pytest.param(  # only frameCPP actually reads units properly
