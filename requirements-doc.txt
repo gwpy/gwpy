@@ -1,7 +1,7 @@
 # requirements for GWpy docs
 sphinx >= 1.7.6
 numpydoc >= 0.8.0
-sphinx-bootstrap-theme >= 0.6
+sphinx_bootstrap_theme >= 0.6
 sphinxcontrib-programoutput
 sphinx-automodapi
 requests

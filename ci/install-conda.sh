@@ -25,26 +25,22 @@ trap 'set +ex' RETURN
 
 PYTHON_VERSION=$(echo "${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}" | cut -d. -f-2)
 
+
 if ! which conda 1> /dev/null; then
-    # install conda
-    if [[ "${PYTHON_VERSION}" == "2.7" ]]; then
-        MINICONDA_VERSION="Miniconda2"
-    else
-        MINICONDA_VERSION="Miniconda3"
+    if test ! -f ${HOME}/miniconda/etc/profile.d/conda.sh; then
+        # install conda
+        [ "$(uname)" == "Darwin" ] && MC_OSNAME="MacOSX" || MC_OSNAME="Linux"
+        MINICONDA="Miniconda${PYTHON_VERSION%%.*}-latest-${MC_OSNAME}-x86_64.sh"
+        curl https://repo.continuum.io/miniconda/${MINICONDA} -o miniconda.sh
+        bash miniconda.sh -b -u -p ${HOME}/miniconda
     fi
-    if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
-        MINICONDA="${MINICONDA_VERSION}-latest-MacOSX-x86_64.sh"
-    else
-        MINICONDA="${MINICONDA_VERSION}-latest-Linux-x86_64.sh"
-    fi
-    curl https://repo.continuum.io/miniconda/${MINICONDA} -o miniconda.sh
-    bash miniconda.sh -b -u -p ${HOME}/miniconda
     source ${HOME}/miniconda/etc/profile.d/conda.sh
+    set -ex  # gets unset by source
 fi
 hash -r
 
-CONDA_PYTHON_EXE=${CONDA_PYTHON_EXE:-$(which python)}
-CONDA_PATH=$(${CONDA_PYTHON_EXE} -c "import sys; print(sys.prefix)")
+# get CONDA base path
+CONDA_PATH=$(conda info --base)
 
 # configure
 conda config --set always_yes yes
@@ -64,7 +60,6 @@ PYTHON=$(which python)
 
 # install conda dependencies (based on pip requirements file)
 ${PYTHON} ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
-echo "python =${PYTHON_VERSION}.*" >> conda-reqs.txt
 conda install --name gwpyci --quiet --yes --file conda-reqs.txt
 rm -f conda-reqs.txt  # clean up
 

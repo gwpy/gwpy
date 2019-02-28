@@ -15,7 +15,7 @@ maya
 pandas ; python_version != '3.4'
 pandas < 0.21 ; python_version == '3.4'
 psycopg2
-pycbc >= 1.13.4 ; sys_platform != 'win32'
+pycbc >= 1.13.4 ; python_version < '3' and sys_platform != 'win32'
 pymysql
 pyRXP
 sqlalchemy
