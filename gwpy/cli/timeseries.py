@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-# Copyright (C) Joseph Areeda (2015)
+# Copyright (C) Joseph Areeda (2015-2019)
 #
 # This file is part of GWpy.
 #
@@ -17,7 +15,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
-#
 
 """The timeseries CLI product
 """

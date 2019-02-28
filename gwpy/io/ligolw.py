@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -30,7 +30,7 @@ from six import string_types
 
 import numpy
 
-from .cache import (file_list, FILE_LIKE)
+from .utils import (file_list, FILE_LIKE)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -452,7 +452,7 @@ def list_tables(source):
     >>> from gwpy.io.ligolw import list_tables
     >>> print(list_tables('H1-LDAS_STRAIN-968654552-10.xml.gz'))
     ['process', 'process_params', 'sngl_burst', 'search_summary', 'segment_definer', 'segment_summary', 'segment']
-    """  # nopep8
+    """  # noqa: E501
     from glue.ligolw.ligolw import (Document, Stream)
     from glue.ligolw.table import Table
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -21,7 +21,6 @@
 
 from __future__ import division
 import operator
-from functools import wraps
 from math import (pi, log10)
 
 from six.moves import reduce

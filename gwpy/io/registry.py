@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -25,7 +25,7 @@ This module imports a subset of the useful functions from
 import sys
 from functools import wraps
 
-from astropy.io.registry import (  # pylint: disable=unused-import
+from astropy.io.registry import (  # noqa: F401
     _get_valid_format as get_format,
     get_reader,
     register_identifier as astropy_register_identifier,
@@ -34,7 +34,7 @@ from astropy.io.registry import (  # pylint: disable=unused-import
 )
 from astropy.utils.data import get_readable_fileobj
 
-from .cache import (file_list, FILE_LIKE)
+from .utils import (file_list, FILE_LIKE)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -70,6 +70,8 @@ def register_identifier(data_format, data_class, identifier, force=False):
     # pylint: disable=missing-docstring
     return astropy_register_identifier(
         data_format, data_class, identify_with_list(identifier), force=force)
+
+
 register_identifier.__doc__ = astropy_register_identifier.__doc__
 
 

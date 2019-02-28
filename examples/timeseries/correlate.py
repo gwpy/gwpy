@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
-# Copyright (C) Duncan Macleod (2013)
+# -*- coding: utf-8 -*-
+# Copyright (C) Alex Urban (2019)
 #
 # This file is part of GWpy.
 #
@@ -70,8 +70,12 @@ plot.close()  # hide
 
 # It's now worth checking out the time-frequency morphology in both channels
 # using :meth:`~TimeSeries.q_transform`:
-qhoft = whoft.q_transform(whiten=False, qrange=(93.1, 93.1))
-plot = qhoft.crop(1172489782.57, 1172489783.57).plot(figsize=[8, 4])
+qhoft = whoft.q_transform(
+    whiten=False,  # already white
+    qrange=(4, 150),  # wider Q-transform range
+    outseg=(1172489782.57, 1172489783.57),  # region of interest
+)
+plot = qhoft.imshow(figsize=[8, 4])
 ax = plot.gca()
 ax.set_xscale('seconds')
 ax.set_yscale('log')
@@ -84,8 +88,12 @@ plot.show()
 plot.close()  # hide
 
 # and the same for the PSL channel:
-qaux = waux.q_transform(whiten=False, qrange=(93.1, 93.1))
-plot = qaux.crop(1172489782.57, 1172489783.57).plot(figsize=[8, 4])
+qaux = waux.q_transform(
+    whiten=False,  # already white
+    qrange=(4, 150),  # wider Q-transform range
+    outseg=(1172489782.57, 1172489783.57),  # region of interest
+)
+plot = qaux.imshow(figsize=[8, 4])
 ax = plot.gca()
 ax.set_xscale('seconds')
 ax.set_yscale('log')

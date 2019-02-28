@@ -3,8 +3,7 @@
 # we use python
 language: python
 
-# use container-based builds
-sudo: false
+os: osx
 
 env:
   global:
@@ -15,7 +14,6 @@ env:
 
     # default operations
     - INSTALL_CMD="python -m pip install ${PIP_FLAGS} ."
-    - MACPORTS_INSTALL_CMD=". ./ci/install-macports.sh"
     - TEST_CMD=". ./ci/test.sh"
 
     # enable slack notifications (I think)
@@ -36,87 +34,22 @@ matrix:
   fast_finish: true
 
   include:
-    # lint
-    - python: '3.6'
-      stage: Basic tests
-      env: INSTALL_CMD="python -m pip install flake8" TEST_CMD="python -m flake8"
-
-    # basic test on established, recent python version
-    - python: '2.7'
-      stage: Basic tests
-    - python: '3.6'
-      stage: Basic tests
-
-    # full tests on other supported python versions
-    - python: '2.7'
-      stage: Full tests
-      env: INSTALL_CMD=". ./ci/install-pip.sh"
-    - python: '3.4'
-      stage: Full tests
-      env: INSTALL_CMD=". ./ci/install-pip.sh"
-    - python: '3.5'
-      stage: Full tests
-      env: INSTALL_CMD=". ./ci/install-pip.sh"
-    - python: '3.6'
-      stage: Full tests
-      env: INSTALL_CMD=". ./ci/install-pip.sh"
-    - python: '3.7'
-      stage: Full tests
-      dist: xenial
-      sudo: required
-      env: INSTALL_CMD=". ./ci/install-pip.sh"
-
-    # test pre-release dependencies
-    - python: '3.6'
-      stage: Full tests
-      env: PIP_FLAGS="--upgrade --pre" INSTALL_CMD=". ./ci/install-pip.sh"
-
     # conda builds
     - python: '2.7'
-      stage: Distribution tests
-      env: INSTALL_CMD=". ./ci/install-conda.sh"
-    - python: '3.6'
-      stage: Distribution tests
-      env: INSTALL_CMD=". ./ci/install-conda.sh"
-    # NOTE: osx doesn't support language: python, so we need to use minimal
-    #       and manually specify the PYTHON_VERSION
-    - python: '2.7'
-      os: osx
       language: minimal
       stage: Distribution tests
+      name: "conda:2.7"
       env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="2.7"
     - python: '3.6'
-      os: osx
       language: minimal
       stage: Distribution tests
+      name: "conda:3.6"
       env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.6"
-
-    # macports builds
-    - os: osx
-      osx_image: xcode9.2
+    - python: '3.7'
       language: minimal
-      sudo: required
-      python: '2.7'
       stage: Distribution tests
-      env: INSTALL_CMD="${MACPORTS_INSTALL_CMD}" PYTHON_VERSION="2.7"
-    - os: osx
-      osx_image: xcode9.2
-      language: minimal
-      sudo: required
-      python: '3.6'
-      stage: Distribution tests
-      env: INSTALL_CMD="${MACPORTS_INSTALL_CMD}" PYTHON_VERSION="3.6"
-    - os: osx
-      osx_image: xcode9.2
-      language: minimal
-      sudo: required
-      python: '3.7'
-      stage: Distribution tests
-      env: INSTALL_CMD="${MACPORTS_INSTALL_CMD}" PYTHON_VERSION="3.7"
-
-  allow_failures:
-    - env: PIP_FLAGS="--upgrade --pre"
-    - env: INSTALL_CMD="${MACPORTS_INSTALL_CMD}" PYTHON_VERSION="3.7"
+      name: "conda:3.7"
+      env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.7"
 
 install:  # install package
   - ${INSTALL_CMD}
@@ -124,23 +57,11 @@ install:  # install package
 script:  # run tests
   - ${TEST_CMD}
 
-after_success:  # submit coverage results
-  - . ./ci/coveralls.sh
+after_success:
+  - bash -ex ci/codecov.sh
 
 before_deploy:
   - git clean -dfX
-
-deploy:
-  - provider: pypi
-    user: duncanmmacleod
-    password: ${PYPI_PASSWD}
-    distributions: sdist bdist_wheel
-    on:
-      condition: -z "${DOCKER_IMAGE}"
-      branch: master
-      tags: true
-      python: '2.7'
-      repo: gwpy/gwpy
 
 notifications:
   slack:
@@ -150,8 +71,5 @@ cache:
   apt: true
   pip: true
   ccache: true
-  directories:
-    - /opt/local/var/macports/software
-    - ${HOME}/miniconda
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log

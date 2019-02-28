@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-# Copyright (C) Joseph Areeda (2015)
+# Copyright (C) Joseph Areeda (2015-2019)
 #
 # This file is part of GWpy.
 #
@@ -17,7 +15,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
-#
 
 """ Spectrogram plots
 """
@@ -144,7 +141,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             specgram = self.get_spectrogram()
 
             # there may be data that can't be processed
-            if specgram:
+            if specgram is not None:  # <-DMM: why is this here?
                 # apply normalisation
                 if args.norm:
                     specgram = specgram.ratio(args.norm)

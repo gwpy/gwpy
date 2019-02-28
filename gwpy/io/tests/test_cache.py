@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -30,7 +30,7 @@ import numpy
 import pytest
 
 from ...segments import (Segment, SegmentList)
-from ...testing.utils import (skip_missing_dependency, TemporaryFilename)
+from ...testing.utils import skip_missing_dependency
 from .. import cache as io_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -142,66 +142,6 @@ def test_is_cache_entry():
         assert io_cache.is_cache_entry(e)
 
 
-def test_file_list(cache):
-
-    # test file -> [file.name]
-    with tempfile.NamedTemporaryFile() as f:
-        assert io_cache.file_list(f) == [f.name]
-
-    try:
-        from lal.utils import CacheEntry
-    except ImportError:
-        pass
-    else:
-        # test CacheEntry -> [CacheEntry.path]
-        lcache = list(map(CacheEntry.from_T050017, cache))
-        assert io_cache.file_list(lcache[0]) == [cache[0]]
-
-        # test cache object -> pfnlist
-        assert io_cache.file_list(lcache) == cache
-
-        # test cache file -> pfnlist()
-        with tempfile.NamedTemporaryFile(suffix='.lcf', mode='w') as f:
-            io_cache.write_cache(lcache, f)
-            f.seek(0)
-            assert io_cache.file_list(f.name) == cache
-
-    # test comma-separated list -> list
-    assert io_cache.file_list('A,B,C,D') == ['A', 'B', 'C', 'D']
-
-    # test list -> list
-    assert io_cache.file_list(['A', 'B', 'C', 'D']) == ['A', 'B', 'C', 'D']
-
-    # otherwise error
-    with pytest.raises(ValueError):
-        io_cache.file_list(1)
-
-
-def test_file_name(cache):
-
-    # check file_name(<str>)
-    assert io_cache.file_name('test.txt') == 'test.txt'
-
-    # check file_name(<file>)
-    with tempfile.NamedTemporaryFile() as f:
-        assert io_cache.file_name(f) == f.name
-
-    # check file_name(<CacheEntry>)
-    try:
-        from lal.utils import CacheEntry
-    except ImportError:
-        pass
-    else:
-        assert io_cache.file_name(
-            CacheEntry.from_T050017(cache[0])) == cache[0]
-
-    # check that anything else fails
-    with pytest.raises(ValueError):
-        io_cache.file_name(1)
-    with pytest.raises(ValueError):
-        io_cache.file_name(['test.txt'])
-
-
 def test_cache_segments(cache, segments):
     """Test :func:`gwpy.io.cache.cache_segments`
     """
@@ -271,3 +211,13 @@ def test_sieve(cache, segments):
 
     segments.coalesce()
     assert io_cache.sieve(cache, segments[0]) == cache[:2]
+
+
+def test_file_list():
+    with pytest.deprecated_call():
+        assert io_cache.file_list("1,2,3") == ["1", "2", "3"]
+
+
+def test_file_name():
+    with pytest.deprecated_call():
+        assert io_cache.file_name("123") == "123"

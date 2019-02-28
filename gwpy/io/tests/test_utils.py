@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -20,13 +20,17 @@
 """
 
 import gzip
-import os.path
 import tempfile
 
-from six import PY2
+import pytest
 
-from ...testing.utils import TemporaryFilename
-from .. import utils as io_utils
+from ...testing.utils import (TemporaryFilename, skip_missing_dependency)
+from .. import (
+    cache as io_cache,
+    utils as io_utils,
+)
+
+from .test_cache import cache  # noqa: F401
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -57,3 +61,67 @@ def test_identify_factory():
     assert id_func(None, 'test.blah', None) is True
     assert id_func(None, 'test.blah2', None) is True
     assert id_func(None, 'test.blah2x', None) is False
+
+
+def test_file_list_file(cache):  # noqa: F811
+    # test file -> [file.name]
+    with tempfile.NamedTemporaryFile() as f:
+        assert io_utils.file_list(f) == [f.name]
+
+
+@skip_missing_dependency("lal")
+def test_file_list_cache(cache):  # noqa: F811
+    from lal.utils import CacheEntry
+    # test CacheEntry -> [CacheEntry.path]
+    lcache = list(map(CacheEntry.from_T050017, cache))
+    assert io_utils.file_list(lcache[0]) == [cache[0]]
+
+    # test cache object -> pfnlist
+    assert io_utils.file_list(lcache) == cache
+
+    # test cache file -> pfnlist()
+    with tempfile.NamedTemporaryFile(suffix='.lcf', mode='w') as f:
+        io_cache.write_cache(lcache, f)
+        f.seek(0)
+        assert io_utils.file_list(f.name) == cache
+
+
+def test_file_list_str():
+    # test comma-separated list -> list
+    assert io_utils.file_list('A,B,C,D') == ['A', 'B', 'C', 'D']
+
+    # test list -> list
+    assert io_utils.file_list(['A', 'B', 'C', 'D']) == ['A', 'B', 'C', 'D']
+
+
+def test_file_list_error():
+    with pytest.raises(ValueError):
+        io_utils.file_list(1)
+
+
+def test_file_path():
+    # check file_path(<str>)
+    assert io_utils.file_path('test.txt') == 'test.txt'
+
+    # check file_path(<file>)
+    with tempfile.NamedTemporaryFile() as f:
+        assert io_utils.file_path(f) == f.name
+
+
+def test_file_path_url():
+    assert io_utils.file_path("file:///test/path.txt") == "/test/path.txt"
+
+
+def test_file_path_errors():
+    # check that anything else fails
+    with pytest.raises(ValueError):
+        io_utils.file_path(1)
+    with pytest.raises(ValueError):
+        io_utils.file_path(['test.txt'])
+
+
+@skip_missing_dependency("lal")
+def test_file_path_cacheentry():
+    from lal.utils import CacheEntry
+    path = "/path/to/A-B-0-1.txt"
+    assert io_utils.file_path(CacheEntry.from_T050017(path)) == path

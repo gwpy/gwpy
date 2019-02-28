@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -19,7 +19,6 @@
 """Unit tests for gwpy.types.series
 """
 
-import os
 import warnings
 
 import numpy

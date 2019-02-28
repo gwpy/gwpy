@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2017)
+# Copyright (C) Duncan Macleod (2017-2019)
 #
 # This file is part of GWpy.
 #
@@ -141,7 +141,7 @@ def parse_column_filter(definition):
     [('snr', <function operator.gt>, 50.), ('snr', <function operator.lt>, 100.)]
     >>> parse_column_filter("channel = "H1:TEST")
     [('channel', <function operator.eq>, 'H1:TEST')]
-    """  # nopep8
+    """  # noqa
     # parse definition into parts (skipping null tokens)
     parts = list(generate_tokens(StringIO(definition.strip()).readline))
     while parts[-1][0] in (token.ENDMARKER, token.NEWLINE):
@@ -180,7 +180,7 @@ def parse_column_filters(*definitions):
     [('snr', <function operator.gt>, 10.), ('frequency', <function operator.lt>, 1000.)]
     >>> parse_column_filters('snr > 10 && frequency < 1000')
     [('snr', <function operator.gt>, 10.), ('frequency', <function operator.lt>, 1000.)]
-    """  # nopep8
+    """  # noqa: E501
     fltrs = []
     for def_ in _flatten(definitions):
         if is_filter_tuple(def_):

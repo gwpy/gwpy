@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -23,5 +23,11 @@ trap 'set +ex' RETURN
 # Install GWpy and all optional dependencies with pip
 #
 
-python -m pip install ${PIP_FLAGS} -r requirements-dev.txt
-python -m pip install ${PIP_FLAGS} .
+PYTHON_VERSION=$(echo "${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}" | cut -d. -f-2)
+PYTHON=$(which "python${PYTHON_VERSION}")
+
+# install myriad testing dependencies
+${PYTHON} -m pip install ${PIP_FLAGS} -r requirements-dev.txt
+
+# install gwpy into this environment
+${PYTHON} -m pip install ${PIP_FLAGS} .

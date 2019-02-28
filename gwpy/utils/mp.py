@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2017)
+# Copyright (C) Duncan Macleod (2017-2019)
 #
 # This file is part of GWpy.
 #
@@ -20,7 +20,6 @@
 """
 
 import os
-import sys
 import warnings
 from multiprocessing import (Queue, Process)
 from operator import itemgetter

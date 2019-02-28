@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -63,6 +63,6 @@ def test_multiprocess_with_queues(capsys, nproc, verbose):
 
 
 def test_multiprocess_with_queues_raise():
-    with pytest.warns(DeprecationWarning):
+    with pytest.deprecated_call():
         utils_mp.multiprocess_with_queues(1, sqrt, [1],
                                           raise_exceptions=True)

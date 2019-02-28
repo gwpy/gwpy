@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
-# Copyright (C) Duncan Macleod (2013)
+# -*- coding: utf-8 -*-
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -63,7 +63,7 @@ plot = specgram.plot(norm='log', cmap='viridis', yscale='log')
 ax = plot.gca()
 ax.set_title('LIGO-Hanford strain data around GW150914')
 ax.set_xlim(1126259462, 1126259463)
-ax.colorbar(label=r'Strain ASD [1/\rtHz]')
+ax.colorbar(label=r'Strain ASD [1/$\sqrt{\mathrm{Hz}}$]')
 plot.show()
 
 # Here we can see the trace of a high-mass binary black hole system,

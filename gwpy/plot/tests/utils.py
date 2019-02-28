@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -23,9 +23,8 @@ from io import BytesIO
 
 import pytest
 
-from matplotlib import (pyplot, rc_context)
+from matplotlib import pyplot
 
-from ..tex import HAS_TEX
 from .. import Plot
 
 

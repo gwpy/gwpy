@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -23,37 +23,54 @@ trap 'set +ex' RETURN
 # Install GWpy and dependencies using Conda
 #
 
-PYTHON_VERSION=${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}
+PYTHON_VERSION=$(echo "${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}" | cut -d. -f-2)
 
-# install conda
-if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
-    MINICONDA="Miniconda3-latest-MacOSX-x86_64.sh"
-else
-    MINICONDA="Miniconda3-latest-Linux-x86_64.sh"
+
+if ! which conda 1> /dev/null; then
+    if test ! -f ${HOME}/miniconda/etc/profile.d/conda.sh; then
+        # install conda
+        [ "$(uname)" == "Darwin" ] && MC_OSNAME="MacOSX" || MC_OSNAME="Linux"
+        MINICONDA="Miniconda${PYTHON_VERSION%%.*}-latest-${MC_OSNAME}-x86_64.sh"
+        curl https://repo.continuum.io/miniconda/${MINICONDA} -o miniconda.sh
+        bash miniconda.sh -b -u -p ${HOME}/miniconda
+    fi
+    source ${HOME}/miniconda/etc/profile.d/conda.sh
+    set -ex  # gets unset by source
 fi
-curl https://repo.continuum.io/miniconda/${MINICONDA} -o miniconda.sh
-bash miniconda.sh -b -u -p ${HOME}/miniconda
-export PATH="${HOME}/miniconda/bin:${PATH}"
 hash -r
-conda config --set always_yes yes --set changeps1 no
+
+# get CONDA base path
+CONDA_PATH=$(conda info --base)
+
+# configure
+conda config --set always_yes yes
 conda config --add channels conda-forge
+
+# update conda
 conda update --quiet conda
+
 conda info --all
 
-# install correct versino of python, and gwpy's dependencies only
-conda install --only-deps python=${PYTHON_VERSION} gwpy
+# create environment for tests (if needed)
+if [ ! -f ${CONDA_PATH}/envs/gwpyci/conda-meta/history ]; then
+    conda create --name gwpyci python=${PYTHON_VERSION} gwpy
+fi
+conda activate gwpyci || source activate gwpyci
+PYTHON=$(which python)
 
 # install conda dependencies (based on pip requirements file)
-python ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
-conda install --quiet --yes --file conda-reqs.txt
+${PYTHON} ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
+conda install --name gwpyci --quiet --yes --file conda-reqs.txt
 rm -f conda-reqs.txt  # clean up
 
 # install other conda packages that aren't represented in the requirements file
-conda install --quiet --yes \
+conda install --name gwpyci --quiet --yes \
     python-lal \
     python-lalframe \
     python-lalsimulation \
-    python-nds2-client
+    python-ldas-tools-framecpp \
+    python-nds2-client \
+    root_numpy
 
 # install gwpy into this environment
-python -m pip install .
+${PYTHON} -m pip install ${PIP_FLAGS} . --ignore-installed --no-deps

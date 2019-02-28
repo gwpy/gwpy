@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013-2016)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -20,7 +20,6 @@
 """
 
 import inspect
-import warnings
 
 import numpy
 
@@ -251,7 +250,7 @@ def _get_column_dtype(llwcol):
 def table_to_ligolw(table, tablename):
     """Convert a `astropy.table.Table` to a :class:`glue.ligolw.table.Table`
     """
-    from glue.ligolw import (lsctables, types)
+    from glue.ligolw import lsctables
 
     # create new LIGO_LW table
     columns = table.columns.keys()

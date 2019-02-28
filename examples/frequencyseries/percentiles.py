@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
-# Copyright (C) Duncan Macleod (2013)
+# -*- coding: utf-8 -*-
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -60,7 +60,7 @@ from gwpy.plot import Plot
 plot = Plot()
 ax = plot.gca(xscale='log', xlim=(10, 1500), xlabel='Frequency [Hz]',
               yscale='log', ylim=(3e-24, 2e-20),
-              ylabel=r'Strain noise [1/\rtHz]')
+              ylabel=r'Strain noise [1/$\sqrt{\mathrm{Hz}}$]')
 ax.plot_mmm(median, low, high, color='gwpy:ligo-hanford')
 ax.set_title('LIGO-Hanford strain noise variation around GW170817',
              fontsize=16)

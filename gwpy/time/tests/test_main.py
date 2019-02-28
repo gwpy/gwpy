@@ -19,7 +19,6 @@
 """Tests for the `gwpy.time` command-line interface
 """
 
-import datetime
 try:
     from unittest import mock
 except ImportError:  # python < 3

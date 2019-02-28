@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -25,6 +25,7 @@ from astropy.io.ascii import core
 
 from ...io import registry
 from .. import (Table, EventTable)
+from .utils import decorate_registered_reader
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -115,6 +116,13 @@ class Cwb(core.BaseReader):
     data_class = CwbData
 
 
-# register ascii.cwb for EventTable
+# register for EventTable
 registry.register_reader(
-    'ascii.cwb', EventTable, registry.get_reader('ascii.cwb', Table))
+    "ascii.cwb",
+    EventTable,
+    registry.get_reader("ascii.cwb", Table),
+)
+decorate_registered_reader(
+    "ascii.cwb",
+    EventTable,
+)

@@ -1,6 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -27,7 +26,7 @@ import numpy
 from matplotlib import (use, rcParams)
 
 # register custom fixtures for all test modules
-from .testing.fixtures import *
+from .testing.fixtures import *  # noqa: F401,F403
 
 # set random seed to 1 for reproducability
 numpy.random.seed(1)

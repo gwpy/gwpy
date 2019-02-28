@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -243,6 +243,7 @@ class SegmentListDict(segmentlistdict):
     {'H2': [Segment(6.0, 15)], 'H1': [Segment(0.0, 9.0)]}
     """
     pass
+
 
 # clean up the namespace
 del segment, segmentlist, segmentlistdict

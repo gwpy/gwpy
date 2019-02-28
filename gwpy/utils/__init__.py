@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -23,6 +23,10 @@ from __future__ import print_function
 
 from sys import stdout
 
-from .misc import *
+from .misc import (
+    gprint,
+    if_not_none,
+    null_context,
+)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

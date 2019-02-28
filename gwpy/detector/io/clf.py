@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2015-)
+# Copyright (C) Duncan Macleod (2015-2019)
 #
-# This file is part of the GWpy python package.
+# This file is part of GWpy.
 #
 # GWpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -74,8 +74,7 @@ from six.moves import configparser
 from numpy import inf
 
 from ...io import registry
-from ...io.utils import identify_factory
-from ...io.cache import (file_list, FILE_LIKE)
+from ...io.utils import (FILE_LIKE, file_list, identify_factory)
 from .. import (Channel, ChannelList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -140,6 +139,10 @@ def read_channel_list_file(*source):
 def write_channel_list_file(channels, fobj):
     """Write a `~gwpy.detector.ChannelList` to a INI-format channel list file
     """
+    if not isinstance(fobj, FILE_LIKE):
+        with open(fobj, "w") as fobj:
+            return write_channel_list_file(channels, fobj)
+
     out = configparser.ConfigParser(dict_type=OrderedDict)
     for channel in channels:
         group = channel.group
@@ -160,14 +163,8 @@ def write_channel_list_file(channels, fobj):
             out.set(group, 'channels', '\n%s' % entry)
         else:
             out.set(group, 'channels', clist + '\n%s' % entry)
-    if isinstance(fobj, FILE_LIKE):
-        close = False
-    else:
-        fobj = open(fobj, 'w')
-        close = True
+
     out.write(fobj)
-    if close:
-        fobj.close()
 
 
 registry.register_reader('ini', ChannelList, read_channel_list_file)

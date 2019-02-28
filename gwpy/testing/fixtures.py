@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -26,9 +26,12 @@ Developer note: **none of the fixtures here should declare autouse=True**.
 
 import pytest
 
+import numpy
+
 from matplotlib import rc_context
 
 from ..plot.tex import HAS_TEX
+from ..timeseries import TimeSeries
 from .utils import TemporaryFilename
 
 
@@ -65,4 +68,38 @@ def usetex(request):
         yield use_
 
 
-# -- other -------------------------------------------------------------------
+# -- various useful mock data series -----------------------------------------
+
+@pytest.fixture
+def noisy_sinusoid():
+    """10s of 2V/rtHz RMS sine wave at 500Hz with 1mV/rtHz white noise (2kHz)
+
+    See :func:`scipy.signal.welch`
+    """
+    # see :func:`scipy.signal.welch`
+    numpy.random.seed(1234)
+
+    # params
+    freq = 500.
+    rate = 2048.
+    size = rate * 10
+
+    # create noisy sinusoid
+    amp = 2 * numpy.sqrt(2)  # 2V RMS sinusoid
+    noise_power = 1e-3 * rate / 2  # mV RMS white noise
+    time = numpy.arange(size) / rate
+    x = amp * numpy.sin(2 * numpy.pi * freq * time)
+    x += numpy.random.normal(scale=numpy.sqrt(noise_power), size=time.shape)
+    return TimeSeries(x, xindex=time, unit='V')
+
+
+@pytest.fixture
+def corrupt_noisy_sinusoid(noisy_sinusoid):
+    """The `noisy_sinusoid` but with 10 samples of corruption in the middle
+
+    See :func:`scipy.signal.welch`
+    """
+    # add corruption in part of the signal
+    size = noisy_sinusoid.size
+    noisy_sinusoid.value[int(size//2):int(size//2)+10] *= 50.
+    return noisy_sinusoid

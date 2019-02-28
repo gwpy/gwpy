@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -20,11 +20,9 @@
 """
 
 import warnings
-from copy import deepcopy
 
 import numpy
 from numpy import fft as npfft
-from scipy import signal
 
 from astropy import units
 from astropy.io import registry as io_registry

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -77,7 +77,7 @@ class TestSegmentAxes(_TestAxes):
         c = ax.plot_flag(flag, known='fancy')
 
     def test_plot_dqflag(self, ax, flag):
-        with pytest.warns(DeprecationWarning):
+        with pytest.deprecated_call():
             ax.plot_dqflag(flag)
         assert ax.collections  # make sure it plotted something
 
@@ -98,7 +98,7 @@ class TestSegmentAxes(_TestAxes):
         assert colls[0].get_label() == 'anything'
 
     def test_plot_dqdict(self, ax, flag):
-        with pytest.warns(DeprecationWarning):
+        with pytest.deprecated_call():
             ax.plot_dqdict(DataQualityDict(a=flag))
 
     def test_plot_segmentlist(self, ax, segments):

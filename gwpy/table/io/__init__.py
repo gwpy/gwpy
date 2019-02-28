@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -19,7 +19,14 @@
 """Input/output methods for tabular data.
 """
 
-from . import (  # pylint: disable=unused-import
+# utils.py provides some decorators, but importantly applies those
+# decorators _automatically_ to the existing registered readers
+# provided by astropy, so this needs to come first.
+from . import utils
+
+# other readers are defined in their own modules, and are responsible
+# for applying the decorators themselves.
+from . import (
     ligolw,  # glue.ligolw XML format
     root,  # generic ROOT stuff
     omicron,  # Omicron ROOT format

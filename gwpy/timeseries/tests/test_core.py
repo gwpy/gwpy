@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -153,7 +153,7 @@ class TestTimeSeriesBase(_TestSeries):
         # convert to TimeSeries
         a = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
 
-        # check everything works
+        # check everything works (including default dynamic scaling)
         assert isinstance(a, self.TEST_CLASS)
         assert not shares_memory(a.value, nds_buffer.data)
         utils.assert_array_equal(a.value, nds_buffer.data * 2 + 1)
@@ -182,7 +182,7 @@ class TestTimeSeriesBase(_TestSeries):
         lalts = array.to_lal()
         a2 = type(array).from_lal(lalts)
         utils.assert_quantity_sub_equal(array, a2, exclude=['name', 'channel'])
-        assert a2.name is ''
+        assert a2.name == ''
 
         # test copy=False
         a2 = type(array).from_lal(lalts, copy=False)

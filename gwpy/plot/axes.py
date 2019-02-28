@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -77,6 +77,24 @@ def xlim_as_gps(func):
                 except TypeError:
                     pass
         return func(self, **kw)
+    return wrapped_func
+
+
+def restore_grid(func):
+    """Wrap ``func`` to preserve the Axes current grid settings.
+    """
+    @wraps(func)
+    def wrapped_func(self, *args, **kwargs):
+        grid = (self.xaxis._gridOnMinor, self.xaxis._gridOnMajor,
+                self.yaxis._gridOnMinor, self.yaxis._gridOnMajor)
+        try:
+            return func(self, *args, **kwargs)
+        finally:
+            # reset grid
+            self.xaxis.grid(grid[0], which="minor")
+            self.xaxis.grid(grid[1], which="major")
+            self.yaxis.grid(grid[2], which="minor")
+            self.yaxis.grid(grid[3], which="major")
     return wrapped_func
 
 
@@ -236,6 +254,7 @@ class Axes(_Axes):
         return self.imshow(array.value.T, origin=origin, aspect=aspect,
                            interpolation=interpolation, **kwargs)
 
+    @restore_grid
     @log_norm
     def pcolormesh(self, *args, **kwargs):
         """Create a pseudocolor plot with a non-regular rectangular grid.
@@ -246,6 +265,11 @@ class Axes(_Axes):
 
         In all other usage, all ``args`` and ``kwargs`` are passed directly
         to :meth:`~matplotlib.axes.Axes.pcolormesh`.
+
+        Notes
+        -----
+        Unlike the upstream :meth:`matplotlib.axes.Axes.pcolormesh`,
+        this method respects the current grid settings.
 
         See Also
         --------

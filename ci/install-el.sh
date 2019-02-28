@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) Duncan Macleod (2017)
+# Copyright (C) Duncan Macleod (2017-2019)
 #
 # This file is part of GWpy.
 #
@@ -68,6 +68,7 @@ yum -y -q --nogpgcheck localinstall ${RPM}
 
 # install system-level extras
 yum -y -q install \
+    which \
     python2-pip \
     python2-pytest \
     python2-pytest-cov \
@@ -77,7 +78,6 @@ yum -y -q install \
     python-beautifulsoup4 \
     python-sqlalchemy \
     python2-PyMySQL \
-    python2-gwdatafind \
     m2crypto \
     glue \
     dqsegdb \

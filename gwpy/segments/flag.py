@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -34,7 +34,7 @@ import operator
 import os
 import re
 import warnings
-from io import StringIO
+from io import BytesIO
 from collections import OrderedDict
 from copy import (copy as shallowcopy, deepcopy)
 from math import (floor, ceil)
@@ -52,6 +52,8 @@ from astropy.utils.data import get_readable_fileobj
 
 from gwosc import timeline
 
+from dqsegdb2.query import query_segments
+
 from ..io.mp import read_multi as io_read_multi
 from ..time import to_gps, LIGOTimeGPS
 from ..utils.misc import if_not_none
@@ -68,8 +70,8 @@ re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
 DEFAULT_SEGMENT_SERVER = os.getenv('DEFAULT_SEGMENT_SERVER',
                                    'https://segments.ligo.org')
 
-# -- utilities ----------------------------------------------------------------
 
+# -- utilities ----------------------------------------------------------------
 
 def _select_query_method(cls, url):
     """Select the correct query method based on the URL
@@ -427,6 +429,9 @@ class DataQualityFlag(object):
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
+        warnings.warn("query_segdb is deprecated and will be removed in a "
+                      "future release", DeprecationWarning)
+
         # parse arguments
         qsegs = _parse_query_segments(args, cls.query_segdb)
 
@@ -473,14 +478,11 @@ class DataQualityFlag(object):
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
         """
-        from dqsegdb import apicalls
-
         # parse arguments
         qsegs = _parse_query_segments(args, cls.query_dqsegdb)
 
         # get server
-        protocol, server = kwargs.pop(
-            'url', DEFAULT_SEGMENT_SERVER).split('://', 1)
+        url = kwargs.pop('url', DEFAULT_SEGMENT_SERVER)
 
         # parse flag
         out = cls(name=flag)
@@ -488,36 +490,26 @@ class DataQualityFlag(object):
             raise ValueError("Cannot parse ifo or tag (name) for flag %r"
                              % flag)
 
-        # other keyword arguments
-        request = kwargs.pop('request', 'metadata,active,known')
-
         # process query
         for start, end in qsegs:
+            # handle infinities
             if float(end) == +inf:
                 end = to_gps('now').seconds
-            if out.version is None:
-                data, versions, _ = apicalls.dqsegdbCascadedQuery(
-                    protocol, server, out.ifo, out.tag, request,
-                    int(start), int(end))
-                data['metadata'] = versions[-1]['metadata']
-            else:
-                try:
-                    data, _ = apicalls.dqsegdbQueryTimes(
-                        protocol, server, out.ifo, out.tag, out.version,
-                        request, int(start), int(end))
-                except HTTPError as exc:
-                    if exc.code == 404:  # if not found, annotate flag name
-                        exc.msg += ' [{0}]'.format(flag)
-                    raise
-            # read from json buffer
+
+            # query
             try:
-                new = cls.read(StringIO(json.dumps(data)), format='json')
-            except TypeError as exc:
-                if 'initial_value must be unicode' in str(exc):  # python2
-                    new = cls.read(StringIO(json.dumps(data).decode('utf-8')),
-                                   format='json')
-                else:
-                    raise
+                data = query_segments(flag, int(start), int(end), host=url)
+            except HTTPError as exc:
+                if exc.code == 404:  # if not found, annotate flag name
+                    exc.msg += ' [{0}]'.format(flag)
+                raise
+
+            # read from json buffer
+            new = cls.read(
+                BytesIO(json.dumps(data).encode('utf-8')),
+                format='json',
+            )
+
             # restrict to query segments
             segl = SegmentList([Segment(start, end)])
             new.known &= segl
@@ -1123,6 +1115,9 @@ class DataQualityDict(OrderedDict):
             An ordered `DataQualityDict` of (name, `DataQualityFlag`)
             pairs.
         """
+        warnings.warn("query_segdb is deprecated and will be removed in a "
+                      "future release", DeprecationWarning)
+
         # parse segments
         qsegs = _parse_query_segments(args, cls.query_segdb)
 

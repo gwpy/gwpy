@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-# Copyright (C) Joseph Areeda (2017)
+# Copyright (C) Joseph Areeda (2017-2019)
 #
 # This file is part of GWpy.
 #
@@ -17,7 +15,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
-#
 
 """ Q-transform plots
 """
@@ -114,7 +111,7 @@ class Qtransform(Spectrogram):
         search = args.search
         # ensure we have enough data for filter settling
         max_plot = max(args.plot)
-        search = max(search, max_plot * 2 + 6)
+        search = max(search, max_plot * 2 + 8)
         args.search = search
         self.log(3, "Search window: {0:.0f} sec, max plot window {1:.0f}".
                  format(search, max_plot))
@@ -187,8 +184,8 @@ class Qtransform(Spectrogram):
             bits.append(('whitened',))
         bits.extend([
             ('f-range', fformat(self.result.yspan)),
-            ('e-range', '{:.3g}, {:.3g}]'.format(self.result.min(),
-                                                 self.result.max())),
+            ('e-range', '[{:.3g}, {:.3g}]'.format(self.result.min(),
+                                                  self.result.max())),
         ])
         return ', '.join([': '.join(bit) for bit in bits])
 
@@ -211,7 +208,7 @@ class Qtransform(Spectrogram):
             # processed and the time resolution needed to create a good
             # image. NB:For each time span specified
             # NB: the timeseries h enough data for the longest plot
-            inseg = outseg.protract(-4) & self.timeseries[0].span
+            inseg = outseg.protract(4) & self.timeseries[0].span
             proc_ts = self.timeseries[0].crop(*inseg)
 
             #  time resolution is calculated to provide about 4 times

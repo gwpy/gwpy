@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -61,6 +61,18 @@ def register_gps_scale(scale_class):
     """
     register_scale(scale_class)
     GPS_SCALES[scale_class.name] = scale_class
+
+
+def _truncate(f, n):
+    """Truncates/pads a float `f` to `n` decimal places without rounding
+
+    From https://stackoverflow.com/a/783927/1307974 (CC-BY-SA)
+    """
+    s = "{}".format(f)
+    if "e" in s or "E" in s:
+        return "{0:.{1}f}".format(f, n)
+    i, p, d = s.partition(".")
+    return ".".join([i, (d+"0"*n)[:n]])
 
 
 # -- base mixin for all GPS manipulations -------------------------------------
@@ -217,15 +229,9 @@ class GPSTransformBase(GPSMixin, Transform):
     def _transform_decimal(cls, value, epoch, scale):
         """Transform to/from GPS using `decimal.Decimal` for precision
         """
-        vdec = Decimal(repr(value))
-        edec = Decimal(repr(epoch))
-        sdec = Decimal(repr(scale))
-
-        # fix rounding errors
-        vdecq = vdec.quantize(edec)
-        if abs(vdec - vdecq) < 1e-6:
-            vdec = vdecq
-
+        vdec = Decimal(_truncate(value, 12))
+        edec = Decimal(_truncate(epoch, 12))
+        sdec = Decimal(_truncate(scale, 12))
         return type(value)(cls._transform(vdec, edec, sdec))
 
 

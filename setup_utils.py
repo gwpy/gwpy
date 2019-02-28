@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2017)
+# Copyright (C) Duncan Macleod (2017-2019)
 #
 # This file is part of GWpy.
 #
@@ -24,8 +24,8 @@ from __future__ import print_function
 import contextlib
 import datetime
 import glob
-import hashlib
 import os
+import re
 import subprocess
 import shutil
 import sys
@@ -35,6 +35,7 @@ from distutils.command.clean import (clean as orig_clean, log, remove_tree)
 from distutils.command.bdist_rpm import bdist_rpm as distutils_bdist_rpm
 from distutils.errors import DistutilsArgError
 from distutils.version import (LooseVersion, StrictVersion)
+from itertools import groupby
 
 from setuptools.command.bdist_rpm import bdist_rpm as _bdist_rpm
 from setuptools.command.sdist import sdist as _sdist
@@ -45,6 +46,7 @@ CMDCLASS = versioneer.get_cmdclass()
 SETUP_REQUIRES = {
     'test': ['pytest_runner'],
 }
+COPYRIGHT_REGEX = re.compile(r"Copyright[\S ]+(?P<years>\d\d\d\d([, \d-]+)?)")
 
 # -- documentation builder ----------------------------------------------------
 
@@ -174,7 +176,6 @@ class changelog(Command):
             date = datetime.datetime.fromtimestamp(tago.tagged_date)
             tz = tago.tagger_tz_offset
             version = tag.name.strip('v')
-            tagger = tago.tagger
             author = tago.tagger.name
             email = tago.tagger.email
             message = tago.message.split('\n')[0]
@@ -386,109 +387,10 @@ class clean(orig_clean):
                 else:
                     log.info('removing %r' % egg)
                     os.unlink(egg)
-            # remove extra files
-            for filep in ('Portfile',):
-                if os.path.exists(filep) and not self.dry_run:
-                    log.info('removing %r' % filep)
-                    os.unlink(filep)
         orig_clean.run(self)
 
 
 CMDCLASS['clean'] = clean
-
-DEFAULT_PORT_TEMPLATE = os.path.join('etc', 'Portfile.template')
-
-
-class port(Command):
-    """Generate a Macports Portfile for this project from the current build
-    """
-    description = 'generate a Macports Portfile'
-    user_options = [
-        ('tarball=', None, 'the distribution tarball to use'),
-        ('version=', None, 'the X.Y.Z package version'),
-        ('portfile=', None, 'target output file, default: \'Portfile\''),
-        ('template=', None,
-         'Portfile template, default: \'{}\''.format(DEFAULT_PORT_TEMPLATE)),
-    ]
-
-    def initialize_options(self):
-        self.tarball = None
-        self.version = None
-        self.portfile = 'Portfile'
-        self.template = DEFAULT_PORT_TEMPLATE
-        self._template = None
-
-    def finalize_options(self):
-        from jinja2 import Template
-        with open(self.template, 'r') as t:
-            # pylint: disable=attribute-defined-outside-init
-            self._template = Template(t.read())
-        if self.version is None and self.tarball is not None:
-            if self.tarball.endswith('.gz'):
-                stub = os.path.splitext(self.tarball[:-3])[0]
-            else:
-                stub = os.path.splitext(self.tarball)[0]
-            self.version = stub.rsplit('-', 1)[-1]
-        elif self.version is None:
-            self.version = self.distribution.get_version()
-
-    def run(self):
-        with temp_directory() as tmpd:
-            # download dist file
-            if self.tarball is None:
-                self.tarball = self._download(self.distribution.get_name(),
-                                              self.version, tmpd)
-
-            # get checksum digests
-            log.info('reading distribution tarball %r' % self.tarball)
-            with open(self.tarball, 'rb') as fobj:
-                data = fobj.read()
-            log.info('recovered checksums:')
-            checksum = dict()
-            checksum['rmd160'] = self._get_rmd160(self.tarball)
-            checksum['sha256'] = self._get_sha(data)
-            checksum['size'] = os.path.getsize(self.tarball)
-            for key, val in checksum.items():
-                log.info('    %s: %s' % (key, val))
-
-            # write finished portfile to file
-            with open(self.portfile, 'w') as fport:
-                print(self._template.render(
-                    version=self.version, **checksum),
-                    file=fport)
-            log.info('portfile written to %r' % self.portfile)
-
-    @staticmethod
-    def _download(name, version, targetdir):
-        try:
-            from pip._internal.commands.download import DownloadCommand
-        except ImportError:  # pip < 10
-            from pip.commands.download import DownloadCommand
-        dcmd = DownloadCommand()
-        rset = dcmd.run(*dcmd.parse_args([
-            '{}=={}'.format(name, version),
-            '--dest', targetdir, '--no-deps', '--no-binary', ':all:',
-        ]))
-        log.info('downloaded {}'.format(
-            rset.requirements[name].link.url_without_fragment))
-        return os.path.join(
-            targetdir, rset.requirements[name].link.filename)
-
-    @staticmethod
-    def _get_sha(data, algorithm=256):
-        hash_ = getattr(hashlib, 'sha%d' % algorithm)
-        return hash_(data).hexdigest()
-
-    @staticmethod
-    def _get_rmd160(filename):
-        out = subprocess.check_output(['openssl', 'rmd160', filename])
-        if isinstance(out, bytes):
-            out = out.decode('utf-8')
-        return out.splitlines()[0].rsplit(' ', 1)[-1]
-
-
-CMDCLASS['port'] = port
-SETUP_REQUIRES['port'] = SETUP_REQUIRES['sdist'] + ('jinja2',)
 
 
 # -- utility functions --------------------------------------------------------
@@ -516,3 +418,74 @@ def get_scripts(scripts_dir='bin'):
     for (dirname, _, filenames) in os.walk(scripts_dir):
         scripts.extend([os.path.join(dirname, fn) for fn in filenames])
     return scripts
+
+
+def _parse_years(years):
+    """Parse string of ints include ranges into a `list` of `int`
+
+    Source: https://stackoverflow.com/a/6405228/1307974
+    """
+    result = []
+    for part in years.split(','):
+        if '-' in part:
+            a, b = part.split('-')
+            a, b = int(a), int(b)
+            result.extend(range(a, b + 1))
+        else:
+            a = int(part)
+            result.append(a)
+    return result
+
+
+def _format_years(years):
+    """Format a list of ints into a string including ranges
+
+    Source: https://stackoverflow.com/a/9471386/1307974
+    """
+    def sub(x):
+        return x[1] - x[0]
+
+    ranges = []
+    for k, iterable in groupby(enumerate(sorted(years)), sub):
+        rng = list(iterable)
+        if len(rng) == 1:
+            s = str(rng[0][1])
+        else:
+            s = "{}-{}".format(rng[0][1], rng[-1][1])
+        ranges.append(s)
+    return ", ".join(ranges)
+
+
+def update_copyright(path, year):
+    """Update a file's copyright statement to include the given year
+    """
+    with open(path, "r") as fobj:
+        text = fobj.read().rstrip()
+    match = COPYRIGHT_REGEX.search(text)
+    x = match.start("years")
+    y = match.end("years")
+    if text[y-1] == " ":  # don't strip trailing whitespace
+        y -= 1
+    yearstr = match.group("years")
+    years = set(_parse_years(yearstr)) | {year}
+    with open(path, "w") as fobj:
+        print(text[:x] + _format_years(years) + text[y:], file=fobj)
+
+
+def update_all_copyright(year):
+    files = subprocess.check_output([
+        "git", "grep", "-l", "-E", r"(\#|\*) Copyright",
+    ]).strip().splitlines()
+    ignore = {
+        "gwpy/utils/sphinx/epydoc.py",
+        "docs/_static/js/copybutton.js",
+    }
+    for path in files:
+        if path.decode() in ignore:
+            continue
+        try:
+            update_copyright(path, year)
+        except AttributeError:
+            raise RuntimeError(
+                "failed to update copyright for {!r}".format(path),
+            )

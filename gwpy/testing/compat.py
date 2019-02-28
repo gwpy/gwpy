@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -20,6 +20,6 @@
 """
 
 try:
-    from unittest import mock
+    from unittest import mock  # noqa
 except ImportError:  # python < 3
-    import mock
+    import mock  # noqa

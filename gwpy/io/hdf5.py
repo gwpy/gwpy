@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -23,7 +23,7 @@ import os.path
 from functools import wraps
 
 # pylint: disable=unused-import
-from astropy.io.misc.hdf5 import is_hdf5 as identify_hdf5
+from astropy.io.misc.hdf5 import is_hdf5 as identify_hdf5  # noqa: F401
 
 import h5py
 

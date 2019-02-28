@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -250,7 +250,7 @@ def _str_to_datetime(datestr):
         warnings.simplefilter("error", RuntimeWarning)
         try:
             return dateparser.parse(datestr)
-        except RuntimeWarning as exc:
+        except RuntimeWarning:
             raise ValueError("Cannot parse date string with timezone "
                              "without maya, please install maya")
         except (ValueError, TypeError) as exc:  # improve error reporting

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) Duncan Macleod (2017)
+# Copyright (C) Duncan Macleod (2017-2019)
 #
 # This file is part of GWpy.
 #
@@ -62,9 +62,7 @@ dpkg --install ${GWPY_DEB} || { \
 }
 
 # install extras
-# NOTE: git is needed for coveralls
 apt-get -yqq install \
-    git \
     ${PY_PREFIX}-pip \
     libkrb5-dev krb5-user \
     dvipng texlive-latex-base texlive-latex-extra \
@@ -80,6 +78,7 @@ apt-get -yqq install \
     ${PY_PREFIX}-lal \
     ${PY_PREFIX}-lalframe \
     ${PY_PREFIX}-lalsimulation \
+    ${PY_PREFIX}-ldas-tools-framecpp \
     ${PY_PREFIX}-nds2-client
 
 # install ROOT for python2 only

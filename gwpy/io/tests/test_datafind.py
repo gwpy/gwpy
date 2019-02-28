@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -30,9 +30,10 @@ from six.moves.http_client import HTTPConnection
 
 import pytest
 
+import gwdatafind
+
 from ...testing.compat import mock
-from ...testing.utils import (skip_missing_dependency, TEST_GWF_FILE,
-                              TemporaryFilename)
+from ...testing.utils import (TEST_GWF_FILE, TemporaryFilename)
 from .. import datafind as io_datafind
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -65,7 +66,6 @@ def teardown_module():
 # -- utilities ----------------------------------------------------------------
 
 def mock_connection(framefile):
-    import gwdatafind
     # create mock up of connection object
     conn = mock.create_autospec(gwdatafind.http.HTTPConnection)
     conn.find_types.return_value = [os.path.basename(framefile).split('-')[1]]
@@ -234,7 +234,6 @@ def test_reconnect():
         assert b.ffldir == a.ffldir
 
 
-@skip_missing_dependency('gwdatafind')
 @mock.patch('gwpy.io.datafind.iter_channel_names',
             return_value=['L1:LDAS-STRAIN', 'H1:LDAS-STRAIN'])
 @mock.patch('gwpy.io.datafind.num_channels', return_value=1)
@@ -281,7 +280,6 @@ def test_find_frametype(reconnect, num_channels, iter_channels, connection):
         assert '[files on tape have not been checked' in str(exc.value)
 
 
-@skip_missing_dependency('gwdatafind')
 @mock.patch('gwpy.io.datafind.iter_channel_names',
             return_value=['L1:LDAS-STRAIN'])
 @mock.patch('gwpy.io.datafind.num_channels', return_value=1)

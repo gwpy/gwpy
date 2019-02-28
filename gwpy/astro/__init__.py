@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -40,6 +40,11 @@ Each of the above methods has been given default parameters corresponding to
 the standard usage by the LIGO project.
 """
 
-from .range import *
+from .range import (
+    burst_range,
+    burst_range_spectrum,
+    inspiral_range,
+    inspiral_range_psd,
+)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

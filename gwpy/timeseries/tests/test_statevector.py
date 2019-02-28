@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -43,17 +43,17 @@ from .test_timeseries import (LOSC_IFO, LOSC_GW150914_SEGMENT,
 
 LOSC_GW150914_DQ_NAME = {
     'hdf5': 'Data quality',
-    'gwf': 'L1:LOSC-DQMASK',
+    'gwf': 'L1:GWOSC-4KHZ_R1_DQMASK',
 }
 LOSC_GW150914_DQ_BITS = {
     'hdf5': [
-        'data present',
-        'passes cbc CAT1 test',
-        'passes cbc CAT2 test',
-        'passes cbc CAT3 test',
-        'passes burst CAT1 test',
-        'passes burst CAT2 test',
-        'passes burst CAT3 test',
+        'Passes DATA test',
+        'Passes CBC_CAT1 test',
+        'Passes CBC_CAT2 test',
+        'Passes CBC_CAT3 test',
+        'Passes BURST_CAT1 test',
+        'Passes BURST_CAT2 test',
+        'Passes BURST_CAT3 test',
     ],
     'gwf': [
         'DATA',
@@ -310,6 +310,7 @@ class TestStateVector(_TestTimeSeriesBase):
 
     # -- data access ----------------------------
 
+    @utils.skip_minimum_version("gwosc", "0.4.0")
     @pytest.mark.parametrize('format', [
         'hdf5',
         pytest.param(  # only frameCPP actually reads units properly
@@ -321,13 +322,16 @@ class TestStateVector(_TestTimeSeriesBase):
                 LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, version=1)
         except LOSC_FETCH_ERROR as e:
             pytest.skip(str(e))
-        utils.assert_quantity_sub_equal(
-            sv,
-            StateVector([127, 127, 127, 127], unit='',
-                        t0=LOSC_GW150914_SEGMENT[0], dt=1,
-                        name=LOSC_GW150914_DQ_NAME[format],
-                        bits=LOSC_GW150914_DQ_BITS[format]),
-            exclude=['channel'])
+        ref = StateVector(
+            [127, 127, 127, 127],
+            unit='',
+            t0=LOSC_GW150914_SEGMENT[0],
+            dt=1,
+            name=LOSC_GW150914_DQ_NAME[format],
+            bits=LOSC_GW150914_DQ_BITS[format],
+        )
+        utils.assert_quantity_sub_equal(sv, ref, exclude=['channel', 'bits'])
+        assert sorted(map(str, sv.bits)) == sorted(map(str, ref.bits))
 
     @utils.skip_missing_dependency('nds2')
     def test_from_nds2_buffer(self):
@@ -342,6 +346,7 @@ class TestStateVector(_TestTimeSeriesBase):
         )
         array = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
         assert array.unit is units.dimensionless_unscaled
+
 
 # -- StateVectorDict ----------------------------------------------------------
 

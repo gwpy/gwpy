@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -568,7 +568,7 @@ def _group_axes_data(inputs, separate=None, flat=False):
         if any(isinstance(x, iterable_types + (dict,)) for x in inputs):
             separate = True
         # if data are of different types, default to separate
-        elif not all(type(x) is type(inputs[0]) for x in inputs):  # nopep8
+        elif not all(type(x) is type(inputs[0]) for x in inputs):  # noqa: E721
             separate = True
 
     # build list of lists

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -19,7 +19,6 @@
 """Unit test for timeseries module
 """
 
-import importlib
 import os.path
 from itertools import (chain, product)
 from ssl import SSLError
@@ -32,7 +31,7 @@ import pytest
 import numpy
 from numpy import testing as nptest
 
-from scipy import signal
+from scipy import (signal, __version__ as scipy_version)
 
 from astropy import units
 
@@ -50,16 +49,17 @@ from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
 
+if scipy_version < '1.2.0':
+    SCIPY_METHODS = ('welch', 'bartlett')
+else:
+    SCIPY_METHODS = ('welch', 'bartlett', 'median')
+
 FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C02'
 FIND_FRAMETYPE = 'L1_HOFT_C02'
 
 LOSC_IFO = 'L1'
 LOSC_GW150914 = 1126259462
 LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
-LOSC_GW150914_DQ_NAME = {
-    'hdf5': 'Data quality',
-    'gwf': 'L1:LOSC-DQMASK',
-}
 LOSC_GW150914_DQ_BITS = {
     'hdf5': [
         'data present',
@@ -189,10 +189,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
                                             exclude=['channel'])
 
             # test dtype - DEPRECATED
-            with pytest.warns(DeprecationWarning):
+            with pytest.deprecated_call():
                 t = read_(dtype='float32')
             assert t.dtype is numpy.dtype('float32')
-            with pytest.warns(DeprecationWarning):
+            with pytest.deprecated_call():
                 t = read_(dtype={array.name: 'float64'})
             assert t.dtype is numpy.dtype('float64')
 
@@ -213,6 +213,30 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 utils.assert_quantity_sub_equal(
                     comb, array.append(a2, inplace=False),
                     exclude=['channel'])
+
+    @pytest.mark.parametrize('api', [
+        pytest.param(
+            'framecpp',
+            marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
+    ])
+    def test_read_write_gwf_error(self, api, losc):
+        with utils.TemporaryFilename(suffix=".gwf") as tmp:
+            losc.write(tmp, format="gwf.{}".format(api))
+            with pytest.raises(ValueError) as exc:
+                self.TEST_CLASS.read(tmp, "another channel",
+                                     format="gwf.{}".format(api))
+            assert str(exc.value) == (
+                "no Fr{Adc,Proc,Sim}Data structures with the "
+                "name another channel"
+            )
+
+            with pytest.raises(ValueError) as exc:
+                self.TEST_CLASS.read(tmp, losc.name,
+                                     start=losc.span[0]-1, end=losc.span[0],
+                                     format="gwf.{}".format(api))
+            assert str(exc.value).startswith(
+                "Failed to read {0!r} from {1!r}".format(losc.name, tmp)
+            )
 
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
     @pytest.mark.parametrize('channel', [
@@ -259,8 +283,37 @@ class TestTimeSeries(_TestTimeSeriesBase):
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['unit', 'name', 'channel', 'x0']})
 
+    @utils.skip_missing_dependency('nds2')
+    def test_from_nds2_buffer_dynamic_scaled(self):
+        # build fake buffer for LIGO channel
+        nds_buffer = mocks.nds2_buffer(
+            'H1:TEST',
+            self.data,
+            1000000000,
+            self.data.shape[0],
+            'm',
+            name='test',
+            slope=2,
+            offset=1,
+        )
+
+        # check scaling defaults to off
+        utils.assert_array_equal(
+            self.TEST_CLASS.from_nds2_buffer(nds_buffer).value,
+            nds_buffer.data,
+        )
+        utils.assert_array_equal(
+            self.TEST_CLASS.from_nds2_buffer(nds_buffer, scaled=False).value,
+            nds_buffer.data,
+        )
+        utils.assert_array_equal(
+            self.TEST_CLASS.from_nds2_buffer(nds_buffer, scaled=True).value,
+            nds_buffer.data * 2 + 1,
+        )
+
     # -- test remote data access ----------------
 
+    @utils.skip_minimum_version("gwosc", "0.4.0")
     @pytest.mark.parametrize('format', [
         'hdf5',
         pytest.param(  # only frameCPP actually reads units properly
@@ -285,17 +338,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
             self.TEST_CLASS.fetch_open_data(LOSC_IFO, 0, 1, format=format)
         assert str(exc.value) == (
             "Cannot find a LOSC dataset for %s covering [0, 1)" % LOSC_IFO)
-
-        # check errors with multiple tags
-        try:
-            with pytest.raises(ValueError) as exc:
-                self.TEST_CLASS.fetch_open_data(
-                    LOSC_IFO, 1187008880, 1187008884)
-            assert str(exc.value).lower().startswith('multiple losc url tags')
-            self.TEST_CLASS.fetch_open_data(LOSC_IFO, 1187008880, 1187008884,
-                                            tag='CLN')
-        except LOSC_FETCH_ERROR:
-            pass
 
     @utils.skip_missing_dependency('nds2')
     @pytest.mark.parametrize('protocol', (1, 2))
@@ -404,7 +446,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # get using datafind (maybe)
         try:
             ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                     frametype_match='C01\Z')
+                                     frametype_match=r'C01\Z')
         except (ImportError, RuntimeError) as e:
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(ts, losc_16384,
@@ -452,21 +494,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         fs = losc.average_fft(fftlength=0.4, overlap=0.2)
 
-    @pytest.mark.parametrize('method', ('welch', 'bartlett'))
-    def test_psd_basic(self, losc, method):
-        # check that basic methods always post a warning telling the user
-        # to be more specific
-        with pytest.warns(UserWarning):
-            fs = losc.psd(1, method=method, window=None)
-
-        # and check that the basic parameters are sane
-        assert fs.size == losc.sample_rate.value // 2 + 1
-        assert fs.f0 == 0 * units.Hz
-        assert fs.df == 1 * units.Hz
-        assert fs.name == losc.name
-        assert fs.channel is losc.channel
-        assert fs.unit == losc.unit ** 2 / units.Hz
-
     def test_psd_default_overlap(self, losc):
         utils.assert_quantity_sub_equal(
             losc.psd(.5, window='hann'),
@@ -486,79 +513,71 @@ class TestTimeSeries(_TestTimeSeriesBase):
         with pytest.warns(UserWarning):
             losc.psd(1, .5, method='lal_median_mean')
 
+    @pytest.mark.parametrize('method', SCIPY_METHODS)
+    def test_psd(self, noisy_sinusoid, method):
+        fftlength = .5
+        overlap = .25
+        fs = noisy_sinusoid.psd(fftlength=fftlength, overlap=overlap)
+        assert fs.unit == noisy_sinusoid.unit ** 2 / "Hz"
+        assert fs.max() == fs.value_at(500)
+        assert fs.size == fftlength * noisy_sinusoid.sample_rate.value // 2 + 1
+        assert fs.f0 == 0 * units.Hz
+        assert fs.df == units.Hz / fftlength
+        assert fs.name == noisy_sinusoid.name
+        assert fs.channel is noisy_sinusoid.channel
+
     @pytest.mark.parametrize('library, method', chain(
-        product(['scipy'], ['welch', 'bartlett']),
         product(['pycbc.psd'], ['welch', 'bartlett', 'median', 'median_mean']),
         product(['lal'], ['welch', 'bartlett', 'median', 'median_mean']),
     ))
-    @pytest.mark.parametrize(
-        'window', (None, 'hann', ('kaiser', 24), 'array'),
-    )
-    def test_psd(self, losc, library, method, window):
-        try:
-            importlib.import_module(library)
-        except ImportError as exc:
-            pytest.skip(str(exc))
+    def test_psd_deprecated(self, noisy_sinusoid, library, method):
+        """Test deprecated average methods for TimeSeries.psd
+        """
+        pytest.importorskip(library)
 
         fftlength = .5
         overlap = .25
 
         # remove final .25 seconds to stop median-mean complaining
         # (means an even number of overlapping FFT segments)
-        if method == 'median_mean':
-            losc = losc.crop(end=losc.span[1]-overlap)
+        if method == "median_mean":
+            end = noisy_sinusoid.span[1]
+            noisy_sinusoid = noisy_sinusoid.crop(end=end-overlap)
 
         # get actual method name
         library = library.split('.', 1)[0]
-        method = '{}_{}'.format(library, method)
 
-        def _psd(fftlength, overlap=None, **kwargs):
-            # create window of the correct length
-            if window == 'array':
-                nfft = (losc.size if fftlength is None else
-                        int(fftlength * losc.sample_rate.value))
-                _window = signal.get_window('hamming', nfft)
-            else:
-                _window = window
+        with pytest.deprecated_call():
+            psd = noisy_sinusoid.psd(fftlength=fftlength, overlap=overlap,
+                                     method="{0}-{1}".format(library, method))
 
-            # generate PSD
-            return losc.psd(fftlength=fftlength, overlap=overlap,
-                            method=method, window=_window)
-
-        try:
-            fs = _psd(.5, .25)
-        except TypeError as exc:
-            # catch pycbc window as array error
-            # FIXME: remove after PyCBC 1.10 is released
-            if str(exc).startswith('unhashable type'):
-                pytest.skip(str(exc))
-            raise
-
-        # and check that the basic parameters are sane
-        assert fs.size == fftlength * losc.sample_rate.value // 2 + 1
-        assert fs.f0 == 0 * units.Hz
-        assert fs.df == units.Hz / fftlength
-        assert fs.name == losc.name
-        assert fs.channel is losc.channel
-        assert fs.unit == losc.unit ** 2 / units.Hz
+        assert isinstance(psd, FrequencySeries)
+        assert psd.unit == noisy_sinusoid.unit ** 2 / "Hz"
+        assert psd.max() == psd.value_at(500)
 
     def test_asd(self, losc):
         fs = losc.asd(1)
         utils.assert_quantity_sub_equal(fs, losc.psd(1) ** (1/2.))
 
     @utils.skip_minimum_version('scipy', '0.16')
-    def test_csd(self, losc):
-        # test all defaults
-        fs = losc.csd(losc)
-        utils.assert_quantity_sub_equal(fs, losc.psd(), exclude=['name'])
+    def test_csd(self, noisy_sinusoid, corrupt_noisy_sinusoid):
+        # test that csd(self) is the same as psd()
+        fs = noisy_sinusoid.csd(noisy_sinusoid)
+        utils.assert_quantity_sub_equal(
+            fs,
+            noisy_sinusoid.psd(),
+            exclude=['name'],
+        )
 
         # test fftlength
-        fs = losc.csd(losc, fftlength=0.5)
-        assert fs.size == 0.5 * losc.sample_rate.value // 2 + 1
+        fs = noisy_sinusoid.csd(corrupt_noisy_sinusoid, fftlength=0.5)
+        assert fs.size == 0.5 * noisy_sinusoid.sample_rate.value // 2 + 1
         assert fs.df == 2 * units.Hertz
-
-        # test overlap
-        losc.csd(losc, fftlength=0.4, overlap=0.2)
+        utils.assert_quantity_sub_equal(
+            fs,
+            noisy_sinusoid.csd(corrupt_noisy_sinusoid, fftlength=0.5,
+                               overlap=0.25),
+        )
 
     @staticmethod
     def _window_helper(series, fftlength, window='hamming'):
@@ -669,19 +688,24 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_fftgram(self, losc):
         fgram = losc.fftgram(1)
         fs = int(losc.sample_rate.value)
-        f, t, sxx = signal.spectrogram(losc, fs,
-                                         window='hann',
-                                         nperseg=fs,
-                                         mode='complex')
+        f, t, sxx = signal.spectrogram(
+            losc, fs,
+            window='hann',
+            nperseg=fs,
+            mode='complex',
+        )
         utils.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
         utils.assert_array_equal(f, fgram.yindex.value)
         utils.assert_array_equal(sxx.T, fgram)
+
         fgram = losc.fftgram(1, overlap=0.5)
-        f, t, sxx = signal.spectrogram(losc, fs,
-                                         window='hann',
-                                         nperseg=fs,
-                                         noverlap=fs//2,
-                                         mode='complex')
+        f, t, sxx = signal.spectrogram(
+            losc, fs,
+            window='hann',
+            nperseg=fs,
+            noverlap=fs//2,
+            mode='complex',
+        )
         utils.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
         utils.assert_array_equal(f, fgram.yindex.value)
         utils.assert_array_equal(sxx.T, fgram)
@@ -826,6 +850,37 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_allclose(new_data.value[ind], waveform.value)
         utils.assert_allclose(data.value, numpy.zeros(duration*sample_rate))
 
+    @utils.skip_minimum_version("scipy", "1.1.0")
+    def test_gate(self):
+        # generate Gaussian noise with std = 0.5
+        noise = self.TEST_CLASS(numpy.random.normal(scale=0.5, size=16384*64),
+                                sample_rate=16384, epoch=-32)
+        # generate a glitch with amplitude 20 at 1000 Hz
+        glitchtime = 0.0
+        glitch = signal.gausspulse(noise.times.value - glitchtime,
+                                   bw=100) * 20
+        data = noise + glitch
+
+        # check that the glitch is at glitchtime as expected
+        tmax = data.times.value[data.argmax()]
+        nptest.assert_almost_equal(tmax, glitchtime)
+
+        # gating method will be called with whiten = False to decouple
+        # whitening method from gating method
+        tzero = 1.0
+        tpad = 1.0
+        threshold = 10.0
+        gated = data.gate(tzero=tzero, tpad=tpad, threshold=threshold,
+                          whiten=False)
+
+        # check that the maximum value is not within the region set to zero
+        tleft = glitchtime - tzero
+        tright = glitchtime + tzero
+        assert not tleft < gated.times.value[gated.argmax()] < tright
+
+        # check that there are no remaining values above the threshold
+        assert gated.max() < threshold
+
     def test_whiten(self):
         # create noise with a glitch in it at 1000 Hz
         noise = self.TEST_CLASS(
@@ -926,15 +981,15 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert isinstance(qgram, EventTable)
         assert qgram.meta['q'] == 45.25483399593904
         assert qgram['energy'].min() >= 5.5**2 / 2
-        nptest.assert_almost_equal(qgram['energy'].max(), 10559.255014979768)
+        nptest.assert_almost_equal(qgram['energy'].max(), 10559.25, decimal=2)
 
     def test_q_transform(self, losc):
         # test simple q-transform
         qspecgram = losc.q_transform(method='scipy-welch', fftlength=2)
         assert isinstance(qspecgram, Spectrogram)
-        assert qspecgram.shape == (4000, 2403)
+        assert qspecgram.shape == (1000, 2403)
         assert qspecgram.q == 5.65685424949238
-        nptest.assert_almost_equal(qspecgram.value.max(), 156.43279233248313)
+        nptest.assert_almost_equal(qspecgram.value.max(), 155.93567, decimal=5)
 
         # test whitening args
         asd = losc.asd(2, 1, method='scipy-welch')
@@ -951,7 +1006,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
         with pytest.warns(UserWarning):
             qspecgram = losc.q_transform(method='scipy-welch',
                                          frange=(0, 10000))
-            nptest.assert_almost_equal(qspecgram.yspan[1], 1291.5316316157107)
+            nptest.assert_almost_equal(
+                qspecgram.yspan[1], 1291.5316, decimal=4)
 
         # test other normalisations work (or don't)
         q2 = losc.q_transform(method='scipy-welch', norm='median')
@@ -964,11 +1020,11 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_q_transform_logf(self, losc):
         # test q-transform with log frequency spacing
         qspecgram = losc.q_transform(method='scipy-welch', fftlength=2,
-                                     fres=500, logf=True)
+                                     logf=True)
         assert isinstance(qspecgram, Spectrogram)
-        assert qspecgram.shape == (4000, 500)
+        assert qspecgram.shape == (1000, 500)
         assert qspecgram.q == 5.65685424949238
-        nptest.assert_almost_equal(qspecgram.value.max(), 156.43222488296405)
+        nptest.assert_almost_equal(qspecgram.value.max(), 155.93774, decimal=5)
 
     def test_boolean_statetimeseries(self, array):
         comp = array >= 2 * array.unit

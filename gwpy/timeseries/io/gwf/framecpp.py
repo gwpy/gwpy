@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -30,10 +30,11 @@ import numpy
 from LDAStools import frameCPP
 
 from ....io import gwf as io_gwf
-from ....io.cache import file_list
+from ....io.utils import file_list
 from ....segments import Segment
 from ....time import LIGOTimeGPS
 from ... import TimeSeries
+from ...core import _dynamic_scaled
 
 from . import channel_dict_kwarg
 
@@ -47,7 +48,7 @@ FRERR_NO_FRAME_AT_NUM = re.compile(
     r'0 through (?P<nframes>\d+)\Z',
 )
 FRERR_NO_CHANNEL_OF_TYPE = re.compile(
-    r'\ANo Fr(Adc|Proc|Sim)Data structures with the name (?P<channel>\S+)\Z',
+    r'\ANo Fr(Adc|Proc|Sim)Data structures with the name ',
 )
 
 # get frameCPP type mapping
@@ -79,7 +80,7 @@ class _Skip(ValueError):
 
 # -- read ---------------------------------------------------------------------
 
-def read(source, channels, start=None, end=None, scaled=True, type=None,
+def read(source, channels, start=None, end=None, scaled=None, type=None,
          series_class=TimeSeries):
     # pylint: disable=redefined-builtin
     """Read a dict of series from one or more GWF files
@@ -138,7 +139,7 @@ def read(source, channels, start=None, end=None, scaled=True, type=None,
     return out
 
 
-def read_gwf(filename, channels, start=None, end=None, scaled=True,
+def read_gwf(filename, channels, start=None, end=None, scaled=None,
              ctype=None, series_class=TimeSeries):
     """Read a dict of series data from a single GWF file
 
@@ -210,10 +211,11 @@ def read_gwf(filename, channels, start=None, end=None, scaled=True,
 
         # and read all the channels
         for channel in channels:
+            _scaled = _dynamic_scaled(scaled, channel)
             try:
                 new = _read_channel(stream, this, str(channel),
                                     ctype.get(channel, None),
-                                    epoch, start, end, scaled=scaled,
+                                    epoch, start, end, scaled=_scaled,
                                     series_class=series_class)
             except _Skip:  # don't need this frame for this channel
                 continue
@@ -243,7 +245,7 @@ def _read_channel(stream, num, name, ctype, epoch, start, end,
     """Read a channel from a specific frame in a stream
     """
     data = _get_frdata(stream, num, name, ctype=ctype)
-    return read_frdata(data, epoch, start, end, name=name,
+    return read_frdata(data, epoch, start, end,
                        scaled=scaled, series_class=series_class)
 
 
@@ -261,7 +263,7 @@ def _get_frdata(stream, num, name, ctype=None):
             if FRERR_NO_CHANNEL_OF_TYPE.match(str(exc)):
                 continue
             raise
-    raise ValueError("no Fr{Adc,Proc,Sim}Data structures with the "
+    raise ValueError("no Fr{{Adc,Proc,Sim}}Data structures with the "
                      "name {0}".format(name))
 
 
@@ -277,7 +279,7 @@ def _need_frame(frame, start, end):
     return True
 
 
-def read_frdata(frdata, epoch, start, end, name=None, scaled=True,
+def read_frdata(frdata, epoch, start, end, scaled=True,
                 series_class=TimeSeries):
     """Read a series from an `FrData` structure
 
@@ -298,10 +300,6 @@ def read_frdata(frdata, epoch, start, end, name=None, scaled=True,
 
     scaled : `bool`, optional
         apply slope and bias calibration to ADC data.
-
-    name : `str`, optional
-        the name of the desired dataset, required to filter out
-        unrelated `FrVect` structures
 
     series_class : `type`, optional
         the `Series` sub-type to return.
@@ -344,7 +342,8 @@ def read_frdata(frdata, epoch, start, end, name=None, scaled=True,
         # related to iterating directly over frdata.data
         try:
             new = read_frvect(frdata.data[j], datastart, start, end,
-                              name=name, series_class=series_class)
+                              name=frdata.GetName(),
+                              series_class=series_class)
         except _Skip:
             continue
 
@@ -365,7 +364,7 @@ def read_frdata(frdata, epoch, start, end, name=None, scaled=True,
     return out
 
 
-def read_frvect(vect, epoch, start, end, series_class=TimeSeries, name=None):
+def read_frvect(vect, epoch, start, end, name=None, series_class=TimeSeries):
     """Read an array from an `FrVect` structure
 
     Parameters
@@ -381,13 +380,30 @@ def read_frvect(vect, epoch, start, end, series_class=TimeSeries, name=None):
 
     epoch : `float`
         the GPS start time of the containing `FrData` structure
+
+    name : `str`, optional
+        the name of the output `series_class`; this is also used
+        to ignore ``FrVect`` structures containing other information
+
+    series_class : `type`, optional
+        the `Series` sub-type to return.
+
+    Returns
+    -------
+    series : `~gwpy.timeseries.TimeSeriesBase`
+        the formatted data series
+
+    Raises
+    ------
+    _Skip
+        if this vect doesn't overlap with the requested
+        ``[start, end)`` interval, or the name doesn't match.
     """
     # only read FrVect with matching name (or no name set)
     #    frame spec allows for arbitrary other FrVects
     #    to hold other information
     if vect.GetName() and name and vect.GetName() != name:
         raise _Skip()
-    name = vect.GetName()
 
     # get array
     arr = vect.GetDataArray()

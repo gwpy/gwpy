@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -20,7 +20,6 @@
 """
 
 import os
-import warnings
 from argparse import ArgumentParser
 
 import pytest
@@ -192,7 +191,11 @@ class _TestCliProduct(object):
             mocker.return_value = conn
             prod.get_data()
 
-        assert prod.timeseries[0] == data[0]
+        utils.assert_quantity_sub_equal(
+            prod.timeseries[0],
+            data[0],
+            exclude=("channel",),
+        )
 
     @pytest.mark.parametrize('ftype, filt', [
         ('highpass', {'highpass': 10}),

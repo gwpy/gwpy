@@ -40,6 +40,8 @@ Requires:       python2-lal >= 6.14.0
 Requires:       python2-ligo-segments >= 1.0.0
 Requires:       python2-tqdm >= 4.10.0
 Requires:       python2-gwosc
+Requires:       python2-dqsegdb2
+Requires:       python2-gwdatafind
 
 %{?python_provide:%python_provide python2-%{srcname}}
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -19,9 +19,7 @@
 """Tests for :mod:`gwpy.segments.segments`
 """
 
-import os
-import shutil
-import tempfile
+from __future__ import print_function
 
 import pytest
 
@@ -100,6 +98,23 @@ class TestSegmentList(object):
             # check gpstype kwarg
             sl2 = self.TEST_CLASS.read(tmp, gpstype=float)
             assert isinstance(sl2[0][0], float)
+
+    def test_read_write_segwizard_strict(self):
+        with TemporaryFilename(suffix='.txt') as tmp:
+            with open(tmp, "w") as tmpf:
+                print("0 0 1 .5", file=tmpf)
+            with pytest.raises(ValueError):
+                self.TEST_CLASS.read(tmp, strict=True, format='segwizard')
+            sl = self.TEST_CLASS.read(tmp, strict=False, format='segwizard')
+            assert_segmentlist_equal(sl, [(0, 1)])
+
+    def test_read_write_segwizard_twocol(self):
+        with TemporaryFilename(suffix='.txt') as tmp:
+            with open(tmp, "w") as tmpf:
+                print("0 1", file=tmpf)
+                print("2 3", file=tmpf)
+            sl = self.TEST_CLASS.read(tmp, format='segwizard')
+            assert_segmentlist_equal(sl, [(0, 1), (2, 3)])
 
     @pytest.mark.parametrize('ext', ('.hdf5', '.h5'))
     def test_read_write_hdf5(self, segmentlist, ext):

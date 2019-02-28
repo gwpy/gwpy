@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2017)
+# Copyright (C) Duncan Macleod (2017-2019)
 #
 # This file is part of GWpy.
 #
@@ -80,8 +80,6 @@ def table_from_gwf(filename, name, columns=None, selection=None):
     selection : `str`, `list` of `str`
         one or more column selection strings to apply, e.g. ``'snr>6'``
     """
-    from LDAStools import frameCPP
-
     # open frame file
     if isinstance(filename, FILE_LIKE):
         filename = filename.name

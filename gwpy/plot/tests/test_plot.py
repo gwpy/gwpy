@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -21,20 +21,14 @@
 
 import os.path
 
-from six.moves import StringIO
-
 import pytest
 
 import numpy
 
-from matplotlib import (pyplot, rc_context)
-
-from astropy.units import Unit
-
 from ...segments import (Segment, SegmentList)
 from ...testing import utils
 from ...types import (Series, Array2D)
-from .. import (Plot, Axes, BodePlot)
+from .. import Plot
 from .utils import FigureTestBase
 
 numpy.random.seed(0)
@@ -121,7 +115,7 @@ class TestPlot(FigureTestBase):
         ax = fig.gca()
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
         image = ax.imshow(array)
-        with pytest.warns(DeprecationWarning):
+        with pytest.deprecated_call():
             cbar = fig.add_colorbar(vmin=2, vmax=4, fraction=0.)
         assert cbar.mappable is image
 
@@ -145,7 +139,7 @@ class TestPlot(FigureTestBase):
             fig.add_segments_bar(segs, location='left')
 
     def test_add_state_segments(self, fig):
-        ax = fig.gca(xscale='auto-gps')
+        fig.gca(xscale='auto-gps')
         segs = SegmentList([Segment(10, 110), Segment(150, 400)])
-        with pytest.warns(DeprecationWarning):
+        with pytest.deprecated_call():
             fig.add_state_segments(segs)

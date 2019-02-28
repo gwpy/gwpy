@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
-
+#
 # GWpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -38,14 +38,15 @@ import os
 import os.path
 import re
 import warnings
-from collections import namedtuple
 from functools import wraps
 
 from six.moves.urllib.parse import urlparse
 
+from gwdatafind import connect
+
 from ..segments import (Segment, SegmentList)
 from ..time import to_gps
-from .cache import (cache_segments, read_cache_entry, _iter_cache, _CacheEntry)
+from .cache import (cache_segments, read_cache_entry, _iter_cache)
 from .gwf import (num_channels, iter_channel_names)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -309,7 +310,6 @@ def on_tape(*files):
 
 def _choose_connection(**datafind_kw):
     if os.getenv('LIGO_DATAFIND_SERVER') or datafind_kw.get('host'):
-        from gwdatafind import connect
         return connect(**datafind_kw)
     if os.getenv('VIRGODATA'):
         return FflConnection()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
-# Copyright (C) Duncan Macleod (2013-2015)
+# -*- coding: utf-8 -*-
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -56,7 +56,7 @@ asdax, rayax = plot.axes
 
 asdax.set_yscale('log')
 asdax.set_ylim(5e-24, 1e-21)
-asdax.set_ylabel(r'[strain/\rtHz]')
+asdax.set_ylabel(r'[strain/$\sqrt{\mathrm{Hz}}$]')
 
 rayax.set_ylim(0, 2)
 rayax.set_ylabel('Rayleigh statistic')

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -93,10 +93,18 @@ class TestAxes(AxesTestBase):
 
     def test_pcolormesh(self, ax):
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
+        ax.grid(True, which="both", axis="both")
         mesh = ax.pcolormesh(array)
         utils.assert_array_equal(mesh.get_array(), array.T.flatten())
         utils.assert_array_equal(mesh.get_paths()[-1].vertices[2],
                                  (array.xspan[1], array.yspan[1]))
+        # check that restore_grid decorator did its job
+        assert all((
+            ax.xaxis._gridOnMajor,
+            ax.xaxis._gridOnMinor,
+            ax.yaxis._gridOnMajor,
+            ax.yaxis._gridOnMinor,
+        ))
 
     def test_hist(self, ax):
         x = numpy.random.random(100) + 1

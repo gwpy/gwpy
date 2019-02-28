@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) Duncan Macleod (2017)
+# Copyright (C) Duncan Macleod (2017-2019)
 #
 # This file is part of GWpy.
 #
@@ -23,19 +23,18 @@ trap 'set +ex' RETURN
 # Run the test suite for GWpy on the current system
 #
 
-# get path to python and pip
-PYTHON="python${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}"
-PYTHON_PREFIX=$(${PYTHON} -c "import sys; print(sys.prefix)")
-
-# install with sudo on macports
-if [[ "${PYTHON_PREFIX}" =~ "/opt/local/"* ]]; then
-    PIP="sudo -H ${PYTHON} -m pip"
-else
-    PIP="${PYTHON} -m pip"
+# reactivate environmennt
+if [ -n ${CIRCLECI} ] && [ -d /opt/conda/envs ]; then
+    conda activate gwpyci || source activate gwpyci
 fi
 
+# get path to python and pip
+PYTHON_VERSION=$(echo "${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}" | cut -d. -f-2)
+PYTHON=$(which "python${PYTHON_VERSION}")
+PIP="${PYTHON} -m pip"
+
 # upgrade setuptools in order to understand environment markers
-${PIP} install "pip>=8.0.0" "setuptools>=20.2.2"
+${PIP} install ${PIP_FLAGS} "pip>=8.0.0" "setuptools>=20.2.2"
 
 # install test dependencies
 ${PIP} install ${PIP_FLAGS} -r requirements-test.txt
@@ -47,7 +46,11 @@ if grep -q "pytest-cov" requirements-test.txt; then
 fi
 
 # list all packages
-${PIP} list installed
+if [ -z ${CONDA_PREFIX} ]; then
+    ${PIP} list installed
+else
+    conda list --name gwpyci
+fi
 
 # run tests with coverage
-${PYTHON} -m pytest --pyargs gwpy --cov=gwpy
+${PYTHON} -m pytest --pyargs gwpy --cov=gwpy --junitxml=test-reports/junit.xml --numprocesses=2

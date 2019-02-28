@@ -1,32 +1,130 @@
 version: 2
 
-run-tests: &run-tests
-  name: Test
-  command: bash -ex ci/test.sh
+# -- templates --------------
 
-debian-build: &debian-build
-  steps:
-    - checkout
-    - attach_workspace:
+aliases:
+  - &attach_workspace
+      attach_workspace:
         at: .
-    - run:
-        name: Build
-        command: bash -ex ci/install-debian.sh
-    - run: *run-tests
-    - store_artifacts:
-        path: "*.deb"
 
-centos-build: &centos-build
-  steps:
-    - checkout
-    - attach_workspace:
-        at: .
-    - run:
-        name: Build
-        command: bash -ex ci/install-el.sh
-    - run: *run-tests
-    - store_artifacts:
-        path: "*.rpm"
+  - &set_python_environment
+      name: Set Python environment
+      command: |
+        export PIP_FLAGS=${PIP_FLAGS:-"--progress-bar=off"}
+        echo "export PIP_FLAGS=\"${PIP_FLAGS}\"" >> ${BASH_ENV}
+        echo "Set PIP_FLAGS=\"${PIP_FLAGS}\""
+        export PYTHON_VERSION=${CIRCLE_JOB##*:}
+        echo "export PYTHON_VERSION=\"${PYTHON_VERSION}\"" >> ${BASH_ENV}
+        echo "Set PYTHON_VERSION=\"${PYTHON_VERSION}\""
+
+  - &run-tests
+      name: Test
+      command: bash -ex ci/test.sh
+
+  - &codecov
+      name: Submit coverage to codecov
+      command: bash -ex ci/codecov.sh
+
+  - &coveralls
+      name: Submit coverage to coveralls
+      command: bash -ex ci/coveralls.sh
+
+  - &store_test_results
+      store_test_results:
+        path: test-reports
+
+  - &store_test_artifacts
+      store_artifacts:
+        path: test-reports
+
+  - &python-build
+      docker:
+        - image: python
+      steps:
+        - checkout
+        - *attach_workspace
+        - run: *set_python_environment
+        - run:
+            name: Install
+            command: python -m pip install ${PIP_FLAGS} gwpy-*.tar.*
+        - run: *run-tests
+        - run: *codecov
+        - store_test_results:
+            path: test-reports
+        - store_artifacts:
+            path: test-reports
+
+  - &pip-build
+      docker:
+        - image: python
+      steps:
+        - checkout
+        - restore_cache:
+            key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
+        - run: *set_python_environment
+        - run:
+            name: Install
+            command: bash -ex ci/install-pip.sh
+        - run: *run-tests
+        - run: *codecov
+        - save_cache:
+            key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
+            paths:
+              - "/usr/local/bin"
+              - "/usr/local/lib"
+        - *store_test_results
+        - *store_test_artifacts
+
+  - &conda-build
+      docker:
+        - image: continuumio/miniconda3
+      steps:
+        - checkout
+        - *attach_workspace
+        - restore_cache:
+            key: v3-gwpy-{{ .Environment.CIRCLE_JOB }}
+        - run: *set_python_environment
+        - run:
+            name: Install
+            command: bash -ex ci/install-conda.sh
+        - run: *run-tests
+        - run: *codecov
+        - save_cache:
+            key: v3-gwpy-{{ .Environment.CIRCLE_JOB }}
+            paths:
+              - "/opt/conda/envs/gwpyci"
+        - *store_test_results
+        - *store_test_artifacts
+
+  - &debian-build
+      steps:
+        - checkout
+        - *attach_workspace
+        - run: *set_python_environment
+        - run:
+            name: Build
+            command: bash -ex ci/install-debian.sh
+        - run: *run-tests
+        - run: *codecov
+        - *store_test_results
+        - *store_test_artifacts
+
+  - &centos-build
+      steps:
+        - checkout
+        - *attach_workspace
+        - run: *set_python_environment
+        - run:
+            name: Build
+            command: bash -ex ci/install-el.sh
+        - run: *run-tests
+        - run: *codecov
+        - *store_test_results
+        - *store_test_artifacts
+        - store_artifacts:
+            path: "*.rpm"
+
+# -- jobs -------------------
 
 jobs:
   sdist:
@@ -35,39 +133,211 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install dependencies
+          command: |
+            set -ex
+            python -m pip install "setuptools>=20.2.0" "wheel"
+      - run:
           name: Build tarball
-          command: python setup.py --quiet sdist --dist-dir .
+          command: python setup.py --quiet sdist --dist-dir . bdist_wheel --universal --dist-dir .
       - persist_to_workspace:
           root: .
           paths:
             - gwpy-*.tar.*
+            - gwpy-*-none-any.whl
+
+  flake8:
+    docker:
+      - image: python
+    steps:
+      - checkout
+      - run:
+          name: Lint
+          command: |
+            set -ex
+            python -m pip install ${PIP_FLAGS} "flake8>=3.7.0"
+            mkdir -p test-reports
+            python -m flake8 --output-file test-reports/flake8.txt
+      - run:
+          name: Create flake8 report
+          when: always
+          command: |
+            set -ex
+            python -m pip install ${PIP_FLAGS} flake8-junit-report
+            python -m junit_conversor test-reports/flake8.txt test-reports/junit.xml
+      - *store_test_results
+      - *store_test_artifacts
+
+  # -- python ---------------
+
+  python:2.7:
+    <<: *python-build
+    docker:
+      - image: python:2.7
+
+  python:3.4:
+    <<: *python-build
+    docker:
+      - image: python:3.4
+
+  python:3.5:
+    <<: *python-build
+    docker:
+      - image: python:3.5
+
+  python:3.6:
+    <<: *python-build
+    docker:
+      - image: python:3.6
+
+  python:3.7:
+    <<: *python-build
+    docker:
+      - image: python:3.7
+
+  # -- pip ------------------
+
+  pip:2.7:
+    <<: *pip-build
+    docker:
+      - image: python:2.7
+
+  pip:3.4:
+    <<: *pip-build
+    docker:
+      - image: python:3.4
+
+  pip:3.5:
+    <<: *pip-build
+    docker:
+      - image: python:3.5
+
+  pip:3.6:
+    <<: *pip-build
+    docker:
+      - image: python:3.6
+
+  pip:3.7:
+    <<: *pip-build
+    docker:
+      - image: python:3.7
+
+  pip:pre:3.7:
+    <<: *pip-build
+    docker:
+      - image: python:3.7
+    environment:
+      PIP_FLAGS: "--progress-bar off --upgrade --pre"
+
+  # -- conda ----------------
+
+  conda:2.7:
+    <<: *conda-build
+    docker:
+      - image: continuumio/miniconda2
+
+  conda:3.6:
+    <<: *conda-build
+
+  conda:3.7:
+    <<: *conda-build
+
+  # -- debian ---------------
 
   debian:stretch:2.7:
     <<: *debian-build
     docker:
       - image: ligo/base:stretch
     environment:
-      PYTHON_VERSION: "2.7"
+      PIP_FLAGS: " "
 
   debian:stretch:3.5:
     <<: *debian-build
     docker:
       - image: ligo/base:stretch
     environment:
-      PYTHON_VERSION: "3.5"
+      PIP_FLAGS: " "
+
+  # -- rhel -----------------
 
   el7:2.7:
     <<: *centos-build
     docker:
       - image: ligo/base:el7
     environment:
-      PYTHON_VERSION: "2.7"
+      PIP_FLAGS: " "
+
+  # -- deploy ---------------
+
+  deploy:
+    docker:
+      - image: python
+    steps:
+      - run:
+          name: Twine upload
+          command: |
+            # TWINE_USERNAME and TWINE_PASSWORD are set in repo settings
+            python -m pip install twine
+            python -m twine upload gwpy-*.tar.* gwpy-*-none-any.whl
+
+# -- workflow ---------------
 
 workflows:
   version: 2
-  build_and_test:
+  build-and-test:
     jobs:
       - sdist
+      - flake8
+
+      # basic tests with minimal dependencies
+      - python:2.7:
+          requires:
+            - sdist
+      - python:3.4:
+          requires:
+            - sdist
+      - python:3.5:
+          requires:
+            - sdist
+      - python:3.6:
+          requires:
+            - sdist
+      - python:3.7:
+          requires:
+            - sdist
+
+      # full tests with extended dependencies
+      - pip:2.7:
+          requires:
+            - python:2.7
+      - pip:3.4:
+          requires:
+            - python:3.4
+      - pip:3.5:
+          requires:
+            - python:3.5
+      - pip:3.6:
+          requires:
+            - python:3.6
+      - pip:3.7:
+          requires:
+            - python:3.7
+      - pip:pre:3.7:
+          requires:
+            - python:3.7
+
+      # conda tests
+      - conda:2.7:
+          requires:
+            - pip:2.7
+      - conda:3.6:
+          requires:
+            - pip:3.6
+      - conda:3.7:
+          requires:
+            - pip:3.7
+
+      # LDG reference OS tests
       - debian:stretch:2.7:
           requires:
             - sdist
@@ -77,3 +347,18 @@ workflows:
       - el7:2.7:
           requires:
             - sdist
+
+      # deploy
+      - deploy:
+          requires:
+            - conda:2.7
+            - conda:3.6
+            - conda:3.7
+            - debian:stretch:2.7
+            - debian:stretch:3.5
+            - el7:2.7
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -55,7 +55,8 @@ BOOL_ENV.update(BOOL_FALSE)
 @mock.patch.dict('os.environ', values=BOOL_ENV)
 @pytest.mark.parametrize(
     'env, result',
-    [(k, True) for k in BOOL_TRUE] + [(k, False) for k in BOOL_FALSE],
+    [(k, True) for k in sorted(BOOL_TRUE)] +
+    [(k, False) for k in sorted(BOOL_FALSE)],
 )
 def test_bool_env(env, result):
     """Test :meth:`gwpy.utils.env.bool_env` _without_ the `default` keyword

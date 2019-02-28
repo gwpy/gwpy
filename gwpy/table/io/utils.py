@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -19,25 +19,49 @@
 """Utilities for Table I/O
 """
 
-from functools import wraps
+import functools
 
+from astropy.io import registry
+
+from .. import EventTable
 from ..filter import filter_table
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+def _safe_wraps(wrapper, func):
+    try:
+        return functools.update_wrapper(wrapper, func)
+    except AttributeError:  # func is partial
+        return wrapper
+
+
+def read_with_columns(func):
+    """Decorate a Table read method to use the ``columns`` keyword
+    """
+    def wrapper(*args, **kwargs):
+        # parse columns argument
+        columns = kwargs.pop("columns", None)
+
+        # read table
+        tab = func(*args, **kwargs)
+
+        # filter on columns
+        if columns is None:
+            return tab
+        return tab[columns]
+
+    return _safe_wraps(wrapper, func)
+
+
 def read_with_selection(func):
     """Decorate a Table read method to apply ``selection`` keyword
     """
-    @wraps(func)
-    def decorated_func(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         """Execute a function, then apply a selection filter
         """
         # parse selection
-        try:
-            selection = kwargs.pop('selection')
-        except KeyError:
-            selection = []
+        selection = kwargs.pop('selection', None) or []
 
         # read table
         tab = func(*args, **kwargs)
@@ -48,4 +72,45 @@ def read_with_selection(func):
 
         return tab
 
-    return decorated_func
+    return _safe_wraps(wrapper, func)
+
+
+# override astropy's readers with decorated versions that accept our
+# "selection" keyword argument,
+# this is bit hacky, and someone should probably come up with something
+# better
+
+def decorate_registered_reader(
+        name,
+        data_class=EventTable,
+        columns=True,
+        selection=True,
+):
+    """Wrap an existing registered reader to use GWpy's input decorators
+
+    Parameters
+    ----------
+    name : `str`
+        the name of the registered format
+
+    data_class : `type`, optional
+        the class for whom the format is registered
+
+    columns : `bool`, optional
+        use the `read_with_columns` decorator
+
+    selection : `bool`, optional
+        use the `read_with_selection` decorator
+    """
+    reader = registry.get_reader(name, data_class)
+    wrapped = (  # noqa
+        read_with_columns(  # use ``columns``
+        read_with_selection(  # use ``selection``
+            reader
+        ))
+    )
+    return registry.register_reader(name, data_class, wrapped, force=True)
+
+
+for row in registry.get_formats(data_class=EventTable, readwrite="Read"):
+    decorate_registered_reader(row["Format"], data_class=EventTable)

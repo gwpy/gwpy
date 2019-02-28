@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -26,7 +26,6 @@ from six import string_types
 import numpy
 
 import scipy
-from scipy import signal
 
 from astropy import units
 from astropy.io import registry as io_registry

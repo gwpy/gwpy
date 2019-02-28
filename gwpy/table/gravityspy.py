@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Scott Coughlin (2017)
+# Copyright (C) Scott Coughlin (2017-2019)
 #
 # This file is part of GWpy.
 #
@@ -18,8 +18,6 @@
 
 """Extend :mod:`astropy.table` with the `GravitySpyTable`
 """
-
-import os
 
 from ..utils import mp as mp_utils
 from .table import EventTable
@@ -70,9 +68,9 @@ class GravitySpyTable(EventTable):
             Specify exactly which durations you want to download
             default is to download all the avaialble GSpy durations.
 
-        kwargs: Optional TrainingSet and LabelledSamples args
+        kwargs: Optional training_set and labelled_samples args
             that will download images in a special way
-            ./"Label"/"SampleType"/"image"
+            ./"ml_label"/"sample_type"/"image"
 
         Returns
         -------
@@ -82,16 +80,16 @@ class GravitySpyTable(EventTable):
         import os
         # back to pandas
         try:
-            imagesDB = self.to_pandas()
+            images_db = self.to_pandas()
         except ImportError as exc:
             exc.args = ('pandas is required to download triggers',)
             raise
 
         # Remove any broken links
-        imagesDB = imagesDB.loc[imagesDB.imgUrl1 != '?']
+        images_db = images_db.loc[images_db.url1 != '']
 
-        TrainingSet = kwargs.pop('TrainingSet', 0)
-        LabelledSamples = kwargs.pop('LabelledSamples', 0)
+        training_set = kwargs.pop('training_set', 0)
+        labelled_samples = kwargs.pop('labelled_samples', 0)
         download_location = kwargs.pop('download_path',
                                        os.path.join('download'))
         duration_values = np.array([0.5, 1.0, 2.0, 4.0])
@@ -104,10 +102,10 @@ class GravitySpyTable(EventTable):
         duration_values = duration_values[duration_idx]
         duration_values = np.array([duration_values]).astype(str)
 
-        # LabelledSamples are only available when requesting the
-        if LabelledSamples:
-            if 'SampleType' not in imagesDB.columns:
-                raise ValueError('You have requested Labelled Samples '
+        # labelled_samples are only available when requesting the
+        if labelled_samples:
+            if 'sample_type' not in images_db.columns:
+                raise ValueError('You have requested ml_labelled Samples '
                                  'for a Table which does not have '
                                  'this column. Did you fetch a '
                                  'trainingset* table?')
@@ -115,40 +113,41 @@ class GravitySpyTable(EventTable):
         # If someone wants labelled samples they are
         # Definitely asking for the training set but
         # may hve forgotten
-        if LabelledSamples and not TrainingSet:
-            TrainingSet = 1
+        if labelled_samples and not training_set:
+            training_set = 1
 
         # Let us check what columns are needed
-        cols_for_download = ['imgUrl1', 'imgUrl2', 'imgUrl3', 'imgUrl4']
+        cols_for_download = ['url1', 'url2', 'url3', 'url4']
         cols_for_download = [cols_for_download[idx] for idx in duration_idx]
-        cols_for_download_ext = ['Label', 'SampleType', 'ifo', 'uniqueID']
+        cols_for_download_ext = ['ml_label', 'sample_type',
+                                 'ifo', 'gravityspy_id']
 
-        if not TrainingSet:
-            imagesDB['Label'] = ''
-        if not LabelledSamples:
-            imagesDB['SampleType'] = ''
+        if not training_set:
+            images_db['ml_label'] = ''
+        if not labelled_samples:
+            images_db['sample_type'] = ''
 
         if not os.path.isdir(download_location):
             os.makedirs(download_location)
 
-        if TrainingSet:
-            for iLabel in imagesDB.Label.unique():
-                if LabelledSamples:
-                    for iType in imagesDB.SampleType.unique():
+        if training_set:
+            for ilabel in images_db.ml_label.unique():
+                if labelled_samples:
+                    for itype in images_db.sample_type.unique():
                         if not os.path.isdir(os.path.join(
                                              download_location,
-                                             iLabel, iType)):
+                                             ilabel, itype)):
                             os.makedirs(os.path.join(download_location,
-                                        iLabel, iType))
+                                        ilabel, itype))
                 else:
                     if not os.path.isdir(os.path.join(download_location,
-                                                      iLabel)):
+                                                      ilabel)):
                         os.makedirs(os.path.join(download_location,
-                                                 iLabel))
+                                                 ilabel))
 
-        images_for_download = imagesDB[cols_for_download]
+        images_for_download = images_db[cols_for_download]
         images = images_for_download.as_matrix().flatten()
-        images_for_download_ext = imagesDB[cols_for_download_ext]
+        images_for_download_ext = images_db[cols_for_download_ext]
         duration = np.atleast_2d(
                                  duration_values.repeat(
                                    len(images_for_download_ext), 0).flatten(
@@ -191,13 +190,14 @@ class GravitySpyTable(EventTable):
                 raise x
 
     @classmethod
-    def search(cls, uniqueID, howmany=10):
+    def search(cls, gravityspy_id, howmany=10,
+               era='ALL', ifos='H1L1', remote_timeout=20):
         """perform restful API version of search available here:
         https://gravityspytools.ciera.northwestern.edu/search/
 
         Parameters
         ----------
-        uniqueID : `str`,
+        gravityspy_id : `str`,
             This is the unique 10 character hash that identifies
             a Gravity Spy Image
 
@@ -213,25 +213,38 @@ class GravitySpyTable(EventTable):
         from astropy.utils.data import get_readable_fileobj
         import json
         from six.moves.urllib.error import HTTPError
+        from six.moves import urllib
 
         # Need to build the url call for the restful API
         base = 'https://gravityspytools.ciera.northwestern.edu' + \
             '/search/similarity_search_restful_API'
 
-        parts = {
-            'howmany': howmany,
-            'imageid': uniqueID,
+        map_era_to_url = {
+            'ALL': "event_time BETWEEN 1126400000 AND 1229176818",
+            'O1': "event_time BETWEEN 1126400000 AND 1137250000",
+            'ER10': "event_time BETWEEN 1161907217 AND 1164499217",
+            'O2a': "event_time BETWEEN 1164499217 AND 1219276818",
+            'ER13': "event_time BETWEEN 1228838418 AND 1229176818",
         }
 
-        search = '&'.join('{}={}'.format(key, value) for
-                          key, value in parts.items())
+        parts = {
+            'howmany': howmany,
+            'imageid': gravityspy_id,
+            'era': map_era_to_url[era],
+            'ifo': "{}".format(", ".join(
+                map(repr, [ifos[i:i+2] for i in range(0, len(ifos), 2)]),
+             )),
+            'database': 'updated_similarity_index_v2d0',
+        }
+
+        search = urllib.parse.urlencode(parts)
 
         url = '{}/?{}'.format(base, search)
 
         try:
-            with get_readable_fileobj(url) as f:
+            with get_readable_fileobj(url, remote_timeout=remote_timeout) as f:
                 return GravitySpyTable(json.load(f))
         except HTTPError as exc:
             if exc.code == 500:
-                exc.msg = exc.msg + ', please confirm the uniqueID is valid'
+                exc.msg += ', confirm the gravityspy_id is valid'
                 raise

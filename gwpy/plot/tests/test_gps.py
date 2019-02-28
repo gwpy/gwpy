@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018)
+# Copyright (C) Duncan Macleod (2018-2019)
 #
 # This file is part of GWpy.
 #
@@ -74,7 +74,7 @@ class TestGPSMixin(object):
     ])
     def test_unit_error(self, badunit):
         with pytest.raises(ValueError):
-            mix = self.TYPE(unit=badunit)
+            self.TYPE(unit=badunit)
 
     @pytest.mark.parametrize('unit, name', [
         (None, None),
@@ -141,7 +141,9 @@ class TestInverseGpsTransform(TestGpsTransform):
 
 
 @pytest.mark.parametrize(
-    'scale', filter(lambda x: x != 'auto-gps', plot_gps.GPS_SCALES))
+    'scale',
+    sorted(filter(lambda x: x != 'auto-gps', plot_gps.GPS_SCALES)),
+)
 def test_gps_scale(scale):
     u = Unit(scale[:-1])
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
 #
@@ -37,7 +37,7 @@ import lal
 
 from ..time import to_gps
 # import gwpy.detector.units to register other units now
-from ..detector import units as gwpy_units  # pylint: disable=unused-import
+from ..detector import units as gwpy_units  # noqa: F401
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

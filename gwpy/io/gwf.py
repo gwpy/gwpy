@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2014-2019)
 #
 # This file is part of GWpy.
-
+#
 # GWpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,6 @@ import six
 from six.moves.urllib.parse import urlparse
 
 from ..time import to_gps
-from ..utils import shell
 from .cache import read_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
