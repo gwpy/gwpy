@@ -191,7 +191,7 @@ class GravitySpyTable(EventTable):
 
     @classmethod
     def search(cls, gravityspy_id, howmany=10,
-               era='ALL', ifos='H1L1'):
+               era='ALL', ifos='H1L1', remote_timeout=20):
         """perform restful API version of search available here:
         https://gravityspytools.ciera.northwestern.edu/search/
 
@@ -242,7 +242,7 @@ class GravitySpyTable(EventTable):
         url = '{}/?{}'.format(base, search)
 
         try:
-            with get_readable_fileobj(url) as f:
+            with get_readable_fileobj(url, remote_timeout=remote_timeout) as f:
                 return GravitySpyTable(json.load(f))
         except HTTPError as exc:
             if exc.code == 500:
