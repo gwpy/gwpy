@@ -72,6 +72,8 @@ _UFUNC_STRING = {
 }
 
 
+# -- utilities ----------------------------------------------------------------
+
 def _format_time(gps):
     if isinstance(gps, gps_types):
         return float(gps)
@@ -79,6 +81,39 @@ def _format_time(gps):
         return gps.gps
     return gps
 
+
+def _dynamic_scaled(scaled, channel):
+    """Determine default for scaled based on channel name
+
+    This is mainly to work around LIGO not correctly recording ADC
+    scaling parameters for most of Advanced LIGO (through 2019).
+
+    Parameters
+    ----------
+    scaled : `bool`, `None`
+        the scaled argument as given by the user
+
+    channel : `str`
+        the name of the channel to be read
+
+    Returns
+    -------
+    scaled : `bool`
+        `False` if channel is from LIGO, otherwise `True`
+
+    Examples
+    --------
+    >>> _dynamic_scaled(None, "H1:channel")
+    False
+    >>> _dynamic_scaled(None, "V1:channel")
+    True
+    """
+    if scaled is not None:
+        return scaled
+    return not str(channel).startswith(("H1", "L1"))
+
+
+# -- TimeSeriesBase------------------------------------------------------------
 
 class TimeSeriesBase(Series):
     """An `Array` with time-domain metadata.
@@ -291,7 +326,7 @@ class TimeSeriesBase(Series):
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, verify=False, pad=None, allow_tape=None,
-              scaled=True, type=None, dtype=None):
+              scaled=None, type=None, dtype=None):
         """Fetch data from NDS
 
         Parameters
@@ -461,7 +496,7 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def find(cls, channel, start, end, frametype=None, pad=None,
-             scaled=True, dtype=None, nproc=1, verbose=False, **readargs):
+             scaled=None, dtype=None, nproc=1, verbose=False, **readargs):
         """Find and read data from frames for a channel
 
         Parameters
@@ -520,7 +555,7 @@ class TimeSeriesBase(Series):
         )[str(channel)]
 
     @classmethod
-    def get(cls, channel, start, end, pad=None, scaled=True,
+    def get(cls, channel, start, end, pad=None, scaled=None,
             dtype=None, verbose=False, allow_tape=None, **kwargs):
         """Get data for this channel from frames or NDS
 
@@ -610,7 +645,7 @@ class TimeSeriesBase(Series):
         return super(TimeSeriesBase, self).plot(method=method, **kwargs)
 
     @classmethod
-    def from_nds2_buffer(cls, buffer_, scaled=True, copy=True, **metadata):
+    def from_nds2_buffer(cls, buffer_, scaled=None, copy=True, **metadata):
         """Construct a new series from an `nds2.buffer` object
 
         **Requires:** |nds2|_
@@ -649,6 +684,7 @@ class TimeSeriesBase(Series):
         metadata.setdefault('name', buffer_.name)
 
         # unwrap data
+        scaled = _dynamic_scaled(scaled, channel.name)
         slope = buffer_.signal_slope
         offset = buffer_.signal_offset
         null_scaling = slope == 1. and offset == 0.
@@ -1016,7 +1052,7 @@ class TimeSeriesBaseDict(OrderedDict):
     @classmethod
     def fetch(cls, channels, start, end, host=None, port=None,
               verify=False, verbose=False, connection=None,
-              pad=None, scaled=True, allow_tape=None, type=None,
+              pad=None, scaled=None, allow_tape=None, type=None,
               dtype=None):
         """Fetch data from NDS for a number of channels.
 
@@ -1149,7 +1185,7 @@ class TimeSeriesBaseDict(OrderedDict):
 
     @classmethod
     def find(cls, channels, start, end, frametype=None,
-             frametype_match=None, pad=None, scaled=True, dtype=None, nproc=1,
+             frametype_match=None, pad=None, scaled=None, dtype=None, nproc=1,
              verbose=False, allow_tape=True, observatory=None, **readargs):
         """Find and read data from frames for a number of channels.
 
@@ -1257,7 +1293,7 @@ class TimeSeriesBaseDict(OrderedDict):
         return out
 
     @classmethod
-    def get(cls, channels, start, end, pad=None, scaled=True,
+    def get(cls, channels, start, end, pad=None, scaled=None,
             dtype=None, verbose=False, allow_tape=None, **kwargs):
         """Retrieve data for multiple channels from frames or NDS
 
@@ -1365,7 +1401,7 @@ class TimeSeriesBaseDict(OrderedDict):
                     for c in channels)
 
     @classmethod
-    def from_nds2_buffers(cls, buffers, scaled=True, copy=True, **metadata):
+    def from_nds2_buffers(cls, buffers, scaled=None, copy=True, **metadata):
         """Construct a new dict from a list of `nds2.buffer` objects
 
         **Requires:** |nds2|_
