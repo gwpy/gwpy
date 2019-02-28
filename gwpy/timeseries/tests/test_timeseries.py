@@ -60,10 +60,6 @@ FIND_FRAMETYPE = 'L1_HOFT_C02'
 LOSC_IFO = 'L1'
 LOSC_GW150914 = 1126259462
 LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
-LOSC_GW150914_DQ_NAME = {
-    'hdf5': 'Data quality',
-    'gwf': 'L1:LOSC-DQMASK',
-}
 LOSC_GW150914_DQ_BITS = {
     'hdf5': [
         'data present',
@@ -289,6 +285,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     # -- test remote data access ----------------
 
+    @utils.skip_minimum_version("gwosc", "0.4.0")
     @pytest.mark.parametrize('format', [
         'hdf5',
         pytest.param(  # only frameCPP actually reads units properly
@@ -313,17 +310,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
             self.TEST_CLASS.fetch_open_data(LOSC_IFO, 0, 1, format=format)
         assert str(exc.value) == (
             "Cannot find a LOSC dataset for %s covering [0, 1)" % LOSC_IFO)
-
-        # check errors with multiple tags
-        try:
-            with pytest.raises(ValueError) as exc:
-                self.TEST_CLASS.fetch_open_data(
-                    LOSC_IFO, 1187008880, 1187008884)
-            assert str(exc.value).lower().startswith('multiple losc url tags')
-            self.TEST_CLASS.fetch_open_data(LOSC_IFO, 1187008880, 1187008884,
-                                            tag='CLN')
-        except LOSC_FETCH_ERROR:
-            pass
 
     @utils.skip_missing_dependency('nds2')
     @pytest.mark.parametrize('protocol', (1, 2))
