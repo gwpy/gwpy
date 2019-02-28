@@ -24,6 +24,7 @@ For more details, see https://losc.ligo.org
 from __future__ import print_function
 
 import os.path
+import re
 from math import ceil
 
 from six.moves.urllib.parse import urlparse
@@ -35,12 +36,16 @@ from astropy.utils.data import get_readable_fileobj
 from gwosc.locate import get_urls
 
 from .. import (StateVector, TimeSeries)
-from ...io import hdf5 as io_hdf5
+from ...io import (gwf as io_gwf, hdf5 as io_hdf5)
 from ...io.cache import file_segment
+from ...io.utils import file_path
 from ...detector.units import parse_unit
 from ...segments import Segment
 from ...time import to_gps
 from ...utils.env import bool_env
+
+DQMASK_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*DQMASK\Z")
+STRAIN_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*STRAIN\Z")
 
 
 # -- utilities ----------------------------------------------------------------
@@ -71,6 +76,9 @@ def _fetch_losc_data_file(url, *args, **kwargs):
         kwargs.setdefault('format', 'gwf')
 
     with _download_file(url, cache, verbose=verbose) as rem:
+        # get channel for GWF if not given
+        if ext == ".gwf" and (not args or args[0] is None):
+            args = (_gwf_channel(rem, cls, kwargs.get("verbose")),)
         if verbose:
             print('Reading data...', end=' ')
         try:
@@ -153,14 +161,10 @@ def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
             if a <= start and b >= end:
                 cache = [url]
                 break
-    if len(cache) and cache[0].endswith('.gwf'):
-        try:
-            args = (kwargs.pop('channel'),)
-        except KeyError:  # no specified channel
-            if cls is StateVector:
-                args = ('{}:LOSC-DQMASK'.format(detector,),)
-            else:
-                args = ('{}:LOSC-STRAIN'.format(detector,),)
+
+    is_gwf = cache[0].endswith('.gwf')
+    if is_gwf and len(cache):
+        args = (kwargs.pop('channel', None),)
     else:
         args = ()
 
@@ -171,6 +175,8 @@ def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
         keep = file_segment(url) & span
         new = _fetch_losc_data_file(url, *args, **kwargs).crop(
             *keep, copy=False)
+        if is_gwf and (not args or args[0] is None):
+            args = (new.name,)
         if out is None:
             out = new.copy()
         else:
@@ -256,6 +262,20 @@ def read_losc_hdf5_state(f, path='quality/simple', start=None, end=None,
         dt = Quantity(dt, xunit)
     return StateVector(nddata, bits=bits, epoch=epoch, name='Data quality',
                        dx=dt, copy=copy).crop(start=start, end=end)
+
+
+def _gwf_channel(path, series_class=TimeSeries, verbose=False):
+    """Find the right channel name for a LOSC GWF file
+    """
+    channels = list(io_gwf.iter_channel_names(file_path(path)))
+    if issubclass(series_class, StateVector):
+        regex = DQMASK_CHANNEL_REGEX
+    else:
+        regex = STRAIN_CHANNEL_REGEX
+    found, = list(filter(regex.match, channels))
+    if verbose:
+        print("Using channel {0!r}".format(found))
+    return found
 
 
 # register
