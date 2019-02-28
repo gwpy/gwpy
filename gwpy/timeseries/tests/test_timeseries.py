@@ -283,6 +283,34 @@ class TestTimeSeries(_TestTimeSeriesBase):
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['unit', 'name', 'channel', 'x0']})
 
+    @utils.skip_missing_dependency('nds2')
+    def test_from_nds2_buffer_dynamic_scaled(self):
+        # build fake buffer for LIGO channel
+        nds_buffer = mocks.nds2_buffer(
+            'H1:TEST',
+            self.data,
+            1000000000,
+            self.data.shape[0],
+            'm',
+            name='test',
+            slope=2,
+            offset=1,
+        )
+
+        # check scaling defaults to off
+        utils.assert_array_equal(
+            self.TEST_CLASS.from_nds2_buffer(nds_buffer).value,
+            nds_buffer.data,
+        )
+        utils.assert_array_equal(
+            self.TEST_CLASS.from_nds2_buffer(nds_buffer, scaled=False).value,
+            nds_buffer.data,
+        )
+        utils.assert_array_equal(
+            self.TEST_CLASS.from_nds2_buffer(nds_buffer, scaled=True).value,
+            nds_buffer.data * 2 + 1,
+        )
+
     # -- test remote data access ----------------
 
     @utils.skip_minimum_version("gwosc", "0.4.0")
