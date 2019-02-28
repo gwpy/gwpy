@@ -71,7 +71,5 @@ cache:
   apt: true
   pip: true
   ccache: true
-  directories:
-    - ${HOME}/miniconda
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
