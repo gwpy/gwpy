@@ -79,7 +79,7 @@ class _Skip(ValueError):
 
 # -- read ---------------------------------------------------------------------
 
-def read(source, channels, start=None, end=None, scaled=True, type=None,
+def read(source, channels, start=None, end=None, scaled=False, type=None,
          series_class=TimeSeries):
     # pylint: disable=redefined-builtin
     """Read a dict of series from one or more GWF files
@@ -138,7 +138,7 @@ def read(source, channels, start=None, end=None, scaled=True, type=None,
     return out
 
 
-def read_gwf(filename, channels, start=None, end=None, scaled=True,
+def read_gwf(filename, channels, start=None, end=None, scaled=False,
              ctype=None, series_class=TimeSeries):
     """Read a dict of series data from a single GWF file
 
@@ -239,7 +239,7 @@ def read_gwf(filename, channels, start=None, end=None, scaled=True,
 
 
 def _read_channel(stream, num, name, ctype, epoch, start, end,
-                  scaled=True, series_class=TimeSeries):
+                  scaled=False, series_class=TimeSeries):
     """Read a channel from a specific frame in a stream
     """
     data = _get_frdata(stream, num, name, ctype=ctype)
@@ -277,7 +277,7 @@ def _need_frame(frame, start, end):
     return True
 
 
-def read_frdata(frdata, epoch, start, end, scaled=True,
+def read_frdata(frdata, epoch, start, end, scaled=False,
                 series_class=TimeSeries):
     """Read a series from an `FrData` structure
 

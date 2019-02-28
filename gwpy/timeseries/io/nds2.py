@@ -89,7 +89,7 @@ def set_parameter(connection, parameter, value, verbose=False):
 
 @io_nds2.open_connection
 def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
-          connection=None, host=None, port=None, pad=None, scaled=True,
+          connection=None, host=None, port=None, pad=None, scaled=False,
           verbose=False, series_class=TimeSeries):
     # host and port keywords are used by the decorator only
     # pylint: disable=unused-argument
