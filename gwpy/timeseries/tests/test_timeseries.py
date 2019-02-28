@@ -60,10 +60,6 @@ FIND_FRAMETYPE = 'L1_HOFT_C02'
 LOSC_IFO = 'L1'
 LOSC_GW150914 = 1126259462
 LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
-LOSC_GW150914_DQ_NAME = {
-    'hdf5': 'Data quality',
-    'gwf': 'L1:LOSC-DQMASK',
-}
 LOSC_GW150914_DQ_BITS = {
     'hdf5': [
         'data present',
@@ -287,8 +283,37 @@ class TestTimeSeries(_TestTimeSeriesBase):
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['unit', 'name', 'channel', 'x0']})
 
+    @utils.skip_missing_dependency('nds2')
+    def test_from_nds2_buffer_dynamic_scaled(self):
+        # build fake buffer for LIGO channel
+        nds_buffer = mocks.nds2_buffer(
+            'H1:TEST',
+            self.data,
+            1000000000,
+            self.data.shape[0],
+            'm',
+            name='test',
+            slope=2,
+            offset=1,
+        )
+
+        # check scaling defaults to off
+        utils.assert_array_equal(
+            self.TEST_CLASS.from_nds2_buffer(nds_buffer).value,
+            nds_buffer.data,
+        )
+        utils.assert_array_equal(
+            self.TEST_CLASS.from_nds2_buffer(nds_buffer, scaled=False).value,
+            nds_buffer.data,
+        )
+        utils.assert_array_equal(
+            self.TEST_CLASS.from_nds2_buffer(nds_buffer, scaled=True).value,
+            nds_buffer.data * 2 + 1,
+        )
+
     # -- test remote data access ----------------
 
+    @utils.skip_minimum_version("gwosc", "0.4.0")
     @pytest.mark.parametrize('format', [
         'hdf5',
         pytest.param(  # only frameCPP actually reads units properly
@@ -313,17 +338,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
             self.TEST_CLASS.fetch_open_data(LOSC_IFO, 0, 1, format=format)
         assert str(exc.value) == (
             "Cannot find a LOSC dataset for %s covering [0, 1)" % LOSC_IFO)
-
-        # check errors with multiple tags
-        try:
-            with pytest.raises(ValueError) as exc:
-                self.TEST_CLASS.fetch_open_data(
-                    LOSC_IFO, 1187008880, 1187008884)
-            assert str(exc.value).lower().startswith('multiple losc url tags')
-            self.TEST_CLASS.fetch_open_data(LOSC_IFO, 1187008880, 1187008884,
-                                            tag='CLN')
-        except LOSC_FETCH_ERROR:
-            pass
 
     @utils.skip_missing_dependency('nds2')
     @pytest.mark.parametrize('protocol', (1, 2))

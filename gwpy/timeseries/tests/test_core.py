@@ -153,7 +153,7 @@ class TestTimeSeriesBase(_TestSeries):
         # convert to TimeSeries
         a = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
 
-        # check everything works
+        # check everything works (including default dynamic scaling)
         assert isinstance(a, self.TEST_CLASS)
         assert not shares_memory(a.value, nds_buffer.data)
         utils.assert_array_equal(a.value, nds_buffer.data * 2 + 1)
