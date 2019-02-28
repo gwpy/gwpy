@@ -249,8 +249,8 @@ def read_losc_hdf5_state(f, path='quality/simple', start=None, end=None,
     dataset = io_hdf5.find_dataset(f, '%s/DQmask' % path)
     maskset = io_hdf5.find_dataset(f, '%s/DQDescriptions' % path)
     # read data
-    nddata = dataset.value
-    bits = [bytes.decode(bytes(b), 'utf-8') for b in maskset.value]
+    nddata = dataset[()]
+    bits = [bytes.decode(bytes(b), 'utf-8') for b in maskset[()]]
     # read metadata
     epoch = dataset.attrs['Xstart']
     try:
@@ -260,7 +260,7 @@ def read_losc_hdf5_state(f, path='quality/simple', start=None, end=None,
     else:
         xunit = parse_unit(dataset.attrs['Xunits'])
         dt = Quantity(dt, xunit)
-    return StateVector(nddata, bits=bits, epoch=epoch, name='Data quality',
+    return StateVector(nddata, bits=bits, t0=epoch, name='Data quality',
                        dx=dt, copy=copy).crop(start=start, end=end)
 
 
