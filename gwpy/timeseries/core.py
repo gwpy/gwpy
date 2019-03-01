@@ -51,6 +51,8 @@ from astropy import units
 from astropy import __version__ as astropy_version
 from astropy.io import registry as io_registry
 
+from gwosc.api import DEFAULT_URL as GWOSC_DEFAULT_HOST
+
 from ..types import Series
 from ..detector import (Channel, ChannelList)
 from ..io import datafind as io_datafind
@@ -378,7 +380,7 @@ class TimeSeriesBase(Series):
     @classmethod
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
                         tag=None, version=None,
-                        format='hdf5', host='https://losc.ligo.org',
+                        format='hdf5', host=GWOSC_DEFAULT_HOST,
                         verbose=False, cache=None, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
