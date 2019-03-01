@@ -145,11 +145,6 @@ def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
     if 'sample_rate' in url_kw:  # format as Hertz
         url_kw['sample_rate'] = Quantity(url_kw['sample_rate'], 'Hz').value
     cache = get_urls(detector, int(start), int(ceil(end)), **url_kw)
-    if kwargs.get('verbose', False):  # get_urls() guarantees len(cache) >= 1
-        host = urlparse(cache[0]).netloc
-        print("Fetched {0} URLs from {1} for [{2} .. {3}))".format(
-            len(cache), host, int(start), int(ceil(end))))
-
     # if event dataset, pick shortest file that covers the request
     # -- this is a bit hacky, and presumes that only an event dataset
     # -- would be produced with overlapping files.
@@ -161,6 +156,10 @@ def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
             if a <= start and b >= end:
                 cache = [url]
                 break
+    if kwargs.get('verbose', False):  # get_urls() guarantees len(cache) >= 1
+        host = urlparse(cache[0]).netloc
+        print("Fetched {0} URLs from {1} for [{2} .. {3}))".format(
+            len(cache), host, int(start), int(ceil(end))))
 
     is_gwf = cache[0].endswith('.gwf')
     if is_gwf and len(cache):
