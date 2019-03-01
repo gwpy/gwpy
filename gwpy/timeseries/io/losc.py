@@ -47,6 +47,15 @@ from ...utils.env import bool_env
 DQMASK_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*DQMASK\Z")
 STRAIN_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*STRAIN\Z")
 
+GWOSC_LOCATE_KWARGS = (
+    'sample_rate',
+    'tag',
+    'version',
+    'host',
+    'format',
+    'dataset',
+)
+
 
 # -- utilities ----------------------------------------------------------------
 
@@ -139,8 +148,7 @@ def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
     })
 
     # find URLs (requires gwopensci)
-    url_kw = {key: kwargs.pop(key) for key in
-              ('sample_rate', 'tag', 'version', 'host', 'format') if
+    url_kw = {key: kwargs.pop(key) for key in GWOSC_LOCATE_KWARGS if
               key in kwargs}
     if 'sample_rate' in url_kw:  # format as Hertz
         url_kw['sample_rate'] = Quantity(url_kw['sample_rate'], 'Hz').value
