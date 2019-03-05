@@ -53,7 +53,7 @@ conda info --all
 
 # create environment for tests (if needed)
 if [ ! -f ${CONDA_PATH}/envs/gwpyci/conda-meta/history ]; then
-    conda create --name gwpyci python=${PYTHON_VERSION} gwpy
+    conda create --name gwpyci python=${PYTHON_VERSION} numpy gwpy
 fi
 conda activate gwpyci || source activate gwpyci
 PYTHON=$(which python)
