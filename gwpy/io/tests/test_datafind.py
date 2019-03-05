@@ -26,7 +26,7 @@ from io import BytesIO
 from itertools import cycle
 
 import six
-from six.moves.http_client import HTTPConnection
+from six.moves.http_client import (HTTPConnection, HTTPException)
 
 import pytest
 
@@ -219,6 +219,27 @@ class TestFflConnection(object):
 
 
 # -- tests --------------------------------------------------------------------
+
+@mock.patch("gwpy.io.datafind.connect", return_value="connection")
+def test_with_connection(connect):
+    func = mock.MagicMock()
+    wrapped_func = io_datafind.with_connection(func)
+
+    wrapped_func(1, host="host")
+    assert func.called_with(1, connection="connection")
+    assert connect.called_with(host="host")
+
+
+@mock.patch("gwpy.io.datafind.connect", return_value="connection")
+@mock.patch("gwpy.io.datafind.reconnect", lambda x: x)
+def test_with_connection_reconnect(connect):
+    func = mock.MagicMock()
+    func.side_effect = [HTTPException, "return"]
+    wrapped_func = io_datafind.with_connection(func)
+
+    assert wrapped_func(1, host="host") == "return"
+    assert func.call_count == 2
+
 
 def test_reconnect():
     a = HTTPConnection('127.0.0.1')
