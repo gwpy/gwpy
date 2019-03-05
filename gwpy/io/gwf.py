@@ -19,11 +19,13 @@
 """I/O utilities for GWF files using the lalframe or frameCPP APIs
 """
 
-import six
+import warnings
 
+import six
 from six.moves.urllib.parse import urlparse
 
-from ..time import to_gps
+from ..segments import (Segment, SegmentList)
+from ..time import (to_gps, LIGOTimeGPS)
 from .cache import read_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -318,3 +320,66 @@ def _iter_channels(framefile):
         typen = typename.lower()
         for name in getattr(toc, 'Get{0}'.format(typename))():
             yield name, typen
+
+
+def data_segments(paths, channel, warn=True):
+    """Returns the segments containing data for a channel
+
+    **Requires:** |LDAStools.frameCPP|_
+
+    A frame is considered to contain data if a valid FrData structure
+    (of any type) exists for the channel in that frame.  No checks
+    are directly made against the underlying FrVect structures.
+
+    Parameters
+    ----------
+    paths : `list` of `str`
+        a list of GWF file paths
+
+    channel : `str`
+        the name to check in each frame
+
+    warn : `bool`, optional
+        emit a `UserWarning` when a channel is not found in a frame
+
+    Returns
+    -------
+    segments : `~gwpy.segments.SegmentList`
+        the list of segments containing data
+    """
+    segments = SegmentList()
+    for path in paths:
+        segments.extend(_gwf_channel_segments(path, channel, warn=warn))
+    return segments.coalesce()
+
+
+def _gwf_channel_segments(path, channel, warn=True):
+    """Yields the segments containing data for ``channel`` in this GWF path
+    """
+    stream = open_gwf(path)
+    # get segments for frames
+    toc = stream.GetTOC()
+    secs = toc.GetGTimeS()
+    nano = toc.GetGTimeN()
+    dur = toc.GetDt()
+
+    readers = [getattr(stream, 'ReadFr{0}Data'.format(type_.title())) for
+               type_ in ("proc", "sim", "adc")]
+
+    # for each segment, try and read the data for this channel
+    for i, (s, ns, dt) in enumerate(zip(secs, nano, dur)):
+        for read in readers:
+            try:
+                read(i, channel)
+            except (IndexError, ValueError):
+                continue
+            readers = [read]  # use this one from now on
+            epoch = LIGOTimeGPS(s, ns)
+            yield Segment(epoch, epoch + dt)
+            break
+        else:  # none of the readers worked for this channel, warn
+            if warn:
+                warnings.warn(
+                    "{0!r} not found in frame {1} of {2}".format(
+                        channel, i, path),
+                )
