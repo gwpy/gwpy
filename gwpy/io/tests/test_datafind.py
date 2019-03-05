@@ -311,6 +311,25 @@ def test_find_best_frametype(reconnect, num_channels, iter_channels,
         'L1:LDAS-STRAIN', 968654552, 968654553) == 'HW100916'
 
 
+def test_find_types(connection):
+    types = ["a", "b", "c"]
+    connection.find_types.return_value = types
+    assert io_datafind.find_types(
+        "X",
+        connection=connection,
+    ) == types
+
+
+def test_find_types_priority(connection):
+    types = ["L1_R", "L1_T", "L1_M"]
+    connection.find_types.return_value = types
+    assert io_datafind.find_types(
+        "X",
+        trend="m-trend",
+        connection=connection,
+    ) == ["L1_M", "L1_R", "L1_T"]
+
+
 def test_on_tape():
     assert io_datafind.on_tape(TEST_GWF_FILE) is False
 
