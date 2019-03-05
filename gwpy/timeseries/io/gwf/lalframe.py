@@ -24,6 +24,7 @@ The frame format is defined in LIGO-T970130 available from dcc.ligo.org.
 from __future__ import (absolute_import, division)
 
 import os.path
+import warnings
 
 from six import string_types
 
@@ -122,9 +123,18 @@ def get_stream_duration(stream):
 
 # -- read ---------------------------------------------------------------------
 
-def read(source, channels, start=None, end=None, series_class=TimeSeries):
+def read(source, channels, start=None, end=None, series_class=TimeSeries,
+         scaled=None):
     """Read data from one or more GWF files using the LALFrame API
     """
+    # scaled must be provided to provide a consistent API with frameCPP
+    if scaled is not None:
+        warnings.warn(
+            "the `scaled` keyword argument is not supported by lalframe, "
+            "if you require ADC scaling, please install "
+            "python-ldas-tools-framecpp",
+        )
+
     stream = open_data_source(source)
 
     # parse times and restrict to available data
