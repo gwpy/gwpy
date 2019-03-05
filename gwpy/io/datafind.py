@@ -40,6 +40,7 @@ import re
 import warnings
 from functools import wraps
 
+from six.moves.http_client import HTTPException
 from six.moves.urllib.parse import urlparse
 
 from gwdatafind import connect
@@ -322,7 +323,11 @@ def with_connection(func):
         if kwargs.get('connection') is None:
             kwargs['connection'] = _choose_connection(host=kwargs.get('host'),
                                                       port=kwargs.get('port'))
-        return func(*args, **kwargs)
+        try:
+            return func(*args, **kwargs)
+        except HTTPException:
+            kwargs['connection'] = reconnect(kwargs['connection'])
+            return func(*args, **kwargs)
     return wrapped
 
 
@@ -623,8 +628,8 @@ def find_latest(observatory, frametype, gpstime=None, allow_tape=False,
     try:
         if gpstime is not None:
             gpstime = int(to_gps(gpstime))
-            path = connection.find_urls(observatory, frametype, gpstime,
-                                        gpstime+1, on_gaps='ignore')[-1]
+            path = find_urls(observatory, frametype, gpstime, gpstime+1,
+                             on_gaps='ignore', connection=connection)[-1]
         else:
             path = connection.find_latest(observatory, frametype,
                                           on_missing='ignore')[-1]
