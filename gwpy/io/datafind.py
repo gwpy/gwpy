@@ -425,7 +425,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     else:
         gpssegment = None
     if gpstime is not None:
-        gpstime = to_gps(gpstime).gpsSeconds
+        gpstime = int(to_gps(gpstime))
 
     # if use gaps post-S5 GPStime, forcibly skip _GRBYYMMDD frametypes at CIT
     if frametype_match is None and gpstime is not None and gpstime > 875232014:
