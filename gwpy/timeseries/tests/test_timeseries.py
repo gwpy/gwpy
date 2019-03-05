@@ -800,6 +800,12 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # FIXME: this test needs to be more robust
         assert l2.sample_rate == 1024 * units.Hz
 
+    def test_resample_noop(self):
+        data = self.TEST_CLASS([1, 2, 3, 4, 5])
+        with pytest.warns(UserWarning):
+            new = data.resample(data.sample_rate)
+            assert data is new
+
     def test_rms(self, losc):
         rms = losc.rms(1.)
         assert rms.sample_rate == 1 * units.Hz

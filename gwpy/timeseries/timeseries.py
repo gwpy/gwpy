@@ -21,6 +21,8 @@
 
 from __future__ import (division, print_function)
 
+import warnings
+
 from six.moves import range
 
 import numpy
@@ -937,6 +939,15 @@ class TimeSeries(TimeSeriesBase):
         if isinstance(rate, units.Quantity):
             rate = rate.value
         factor = (self.sample_rate.value / rate)
+        # NOTE: use math.isclose when python >= 3.5
+        if numpy.isclose(factor, 1., rtol=1e-09, atol=0.):
+            warnings.warn(
+                "resample() rate matches current sample_rate ({}), returning "
+                "input data unmodified; please double-check your "
+                "parameters".format(self.sample_rate),
+                UserWarning,
+            )
+            return self
         # if integer down-sampling, use decimate
         if factor.is_integer():
             if ftype == 'iir':
