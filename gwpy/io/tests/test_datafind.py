@@ -223,6 +223,8 @@ class TestFflConnection(object):
 @mock.patch("gwpy.io.datafind.connect", return_value="connection")
 def test_with_connection(connect):
     func = mock.MagicMock()
+    # https://stackoverflow.com/questions/22204660/python-mock-wrapsf-problems
+    func.__name__ = "func"
     wrapped_func = io_datafind.with_connection(func)
 
     wrapped_func(1, host="host")
@@ -234,6 +236,8 @@ def test_with_connection(connect):
 @mock.patch("gwpy.io.datafind.reconnect", lambda x: x)
 def test_with_connection_reconnect(connect):
     func = mock.MagicMock()
+    # https://stackoverflow.com/questions/22204660/python-mock-wrapsf-problems
+    func.__name__ = "func"
     func.side_effect = [HTTPException, "return"]
     wrapped_func = io_datafind.with_connection(func)
 
