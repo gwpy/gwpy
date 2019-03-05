@@ -1467,22 +1467,22 @@ class DataQualityDict(OrderedDict):
                 else:
                     raise ValueError(msg)
 
+        # parse a table into the target DataQualityDict
+        def _parse_segments(table, listattr):
+            for row in table:
+                for flag in out:
+                    # match row ID to list of IDs found for this flag
+                    if int(row.segment_def_id) in id_[flag]:
+                        getattr(out[flag], listattr).append(
+                            Segment(*map(gpstype, row.segment)),
+                        )
+                        break
+
         # read segment summary table as 'known'
-        for row in segmentsumtable:
-            for flag in out:
-                # match row ID to list of IDs found for this flag
-                if int(row.segment_def_id) in id_[flag]:
-                    out[flag].known.append(
-                        Segment(*map(gpstype, row.segment)))
-                    break
+        _parse_segments(segmentsumtable, "known")
 
         # read segment table as 'active'
-        for row in segmenttable:
-            for flag in out:
-                if int(row.segment_def_id) in id_[flag]:
-                    out[flag].active.append(
-                        Segment(*map(gpstype, row.segment)))
-                    break
+        _parse_segments(segmenttable, "active")
 
         return out
 
