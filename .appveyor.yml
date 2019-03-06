@@ -18,6 +18,7 @@ install:
   - activate gwpy
   - python ci\\parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
   - conda install --yes --file conda-reqs.txt
+  - conda install openssl=1.0.2
   # print everything we have
   - conda list
 build_script:
