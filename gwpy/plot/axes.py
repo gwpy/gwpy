@@ -200,7 +200,7 @@ class Axes(_Axes):
     )
 
     @log_norm
-    def imshow(self, array, **kwargs):
+    def imshow(self, array, *args, **kwargs):
         """Display an image, i.e. data on a 2D regular raster.
 
         If ``array`` is a :class:`~gwpy.types.Array2D` (e.g. a
@@ -220,8 +220,8 @@ class Axes(_Axes):
         array : array-like or PIL image
             The image data.
 
-        **kwargs
-            All keywords are passed to the inherited
+        *args, **kwargs
+            All arguments and keywords are passed to the inherited
             :meth:`~matplotlib.axes.Axes.imshow` method.
 
         See Also
@@ -230,9 +230,9 @@ class Axes(_Axes):
             for details of the image rendering
         """
         if isinstance(array, Array2D):
-            return self._imshow_array2d(array, **kwargs)
+            return self._imshow_array2d(array, *args, **kwargs)
 
-        image = super(Axes, self).imshow(array, **kwargs)
+        image = super(Axes, self).imshow(array, *args, **kwargs)
         self.autoscale(enable=None, axis='both', tight=None)
         return image
 
@@ -279,13 +279,13 @@ class Axes(_Axes):
             return self._pcolormesh_array2d(*args, **kwargs)
         return super(Axes, self).pcolormesh(*args, **kwargs)
 
-    def _pcolormesh_array2d(self, array, **kwargs):
+    def _pcolormesh_array2d(self, array, *args, **kwargs):
         """Render an `~gwpy.types.Array2D` using `Axes.pcolormesh`
         """
         x = numpy.concatenate((array.xindex.value, array.xspan[-1:]))
         y = numpy.concatenate((array.yindex.value, array.yspan[-1:]))
         xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
-        return self.pcolormesh(xcoord, ycoord, array.value.T, **kwargs)
+        return self.pcolormesh(xcoord, ycoord, array.value.T, *args, **kwargs)
 
     def hist(self, x, *args, **kwargs):
         x = numpy.asarray(x)
