@@ -571,11 +571,20 @@ class PlotArgsProcessor(_process_plot_var_args):
     def _grab_next_args(self, *args, **kwargs):
         """Find `Series` data in `plot()` args and unwrap
         """
-        newargs = type(args)()
-        for arg in args:
-            if isinstance(arg, Series) and arg.ndim == 1:
-                newargs += (arg.xindex.value, arg.value)
+        while args:
+            # strip first argument
+            this, args = args[:1], args[1:]
+            # it its a 1-D Series, then parse it as (xindex, value)
+            if isinstance(this[0], Series) and this[0].ndim == 1:
+                this = (this[0].xindex.value, this[0].value)
+            # otherwise treat as normal (must be a second argument)
             else:
-                newargs += (arg,)
-        return super(PlotArgsProcessor, self)._grab_next_args(
-            *newargs, **kwargs)
+                this += args[:1]
+                args = args[1:]
+            # allow colour specs
+            if args and isinstance(args[0], str):
+                this += args[0],
+                args = args[1:]
+            # use yield from with python3
+            for item in self._plot_args(this, kwargs):
+                yield item
