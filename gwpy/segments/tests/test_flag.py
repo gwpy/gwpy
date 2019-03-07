@@ -514,9 +514,9 @@ class TestDataQualityFlag(object):
             f2 = self.TEST_CLASS.read(fp, path="test", format="hdf5")
             utils.assert_flag_equal(f2, flag)
 
-            h5f = h5py.File(fp, "r")
-            f2 = self.TEST_CLASS.read(h5f["test"])
-            utils.assert_flag_equal(f2, flag)
+            with h5py.File(fp, "r") as h5f:
+                f2 = self.TEST_CLASS.read(h5f["test"])
+                utils.assert_flag_equal(f2, flag)
 
     @utils.skip_missing_dependency('glue.ligolw.lsctables')
     def test_write_ligolw_attrs(self, flag):

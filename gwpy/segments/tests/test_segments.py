@@ -131,10 +131,9 @@ class TestSegmentList(object):
             assert_segmentlist_equal(sl2, segmentlist)
 
             # check we can read directly from the h5 object
-            h5f = h5py.File(fp)
-            sl2 = self.TEST_CLASS.read(h5f["test-segmentlist"])
-            assert_segmentlist_equal(sl2, segmentlist)
-            h5f.close()
+            with h5py.File(fp, "r") as h5f:
+                sl2 = self.TEST_CLASS.read(h5f["test-segmentlist"])
+                assert_segmentlist_equal(sl2, segmentlist)
 
             # check overwrite kwarg
             with pytest.raises(IOError):
