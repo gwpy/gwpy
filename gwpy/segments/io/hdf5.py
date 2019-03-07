@@ -28,6 +28,8 @@ import warnings
 
 import numpy
 
+import h5py
+
 from astropy.table import Table
 from astropy.units import (UnitBase, Quantity)
 
@@ -79,14 +81,21 @@ def find_flag_groups(h5group, strict=True):
 def read_hdf5_flag(h5f, path=None, gpstype=LIGOTimeGPS):
     """Read a `DataQualityFlag` object from an HDF5 file or group.
     """
-    # verify path is given
-    if path is None:
-        raise ValueError("Please specify the HDF5 path via the "
-                         "``path=`` keyword argument")
+    if (  # if this is the right object to start with, use it
+            isinstance(h5f, h5py.Group) and
+            "active" in h5f and
+            "known" in h5f
+    ):
+        dataset = h5f
+    elif path is not None:
+        dataset = h5f[path]
+    else:
+        raise ValueError(
+            "please pass a valid HDF5 Group, or specify the HDF5 Group "
+            "path via the ``path=`` keyword argument",
+        )
 
-    # get default path as only child of file
-    dataset = h5f[path]
-
+    # read dataset
     active = SegmentList.read(dataset['active'], format='hdf5',
                               gpstype=gpstype)
     try:
