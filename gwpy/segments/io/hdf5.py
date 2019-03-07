@@ -93,9 +93,11 @@ def _find_flag_groups(h5f):
     """Return all groups in `h5f` that look like flags
     """
     flag_groups = []
+
     def _find(name, obj):
         if _is_flag_group(obj):
             flag_groups.append(name)
+
     h5f.visititems(_find)
     return flag_groups
 
@@ -109,7 +111,7 @@ def _get_flag_group(h5f, path):
 
     # if the user gave us the group directly, use it
     if _is_flag_group(h5f):
-       return h5f
+        return h5f
 
     # otherwise try and find a single group that matches
     try:

@@ -523,7 +523,6 @@ class TestDataQualityFlag(object):
             f2 = self.TEST_CLASS.read(fp)
             utils.assert_flag_equal(f2, flag)
 
-
     @utils.skip_missing_dependency('glue.ligolw.lsctables')
     def test_write_ligolw_attrs(self, flag):
         from gwpy.io.ligolw import read_table
