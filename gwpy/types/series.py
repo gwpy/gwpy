@@ -160,6 +160,91 @@ class Series(Array):
 
     # -- series properties ----------------------
 
+    def _update_index(self, axis, key, value):
+        """Update the current axis index based on a given key or value
+
+        This is an internal method designed to set the origin or step for
+        an index, whilst updating existing Index arrays as appropriate
+
+        Examples
+        --------
+        >>> self._update_index("x0", 0)
+        >>> self._update_index("dx", 0)
+
+        To actually set an index array, use `_set_index`
+        """
+        # delete current value if given None
+        if value is None:
+            return delattr(self, key)
+
+        _key = "_{}".format(key)
+        index = "{[0]}index".format(axis)
+        unit = "{[0]}unit".format(axis)
+
+        # convert float to Quantity
+        if not isinstance(value, Quantity):
+            try:
+                value = Quantity(value, getattr(self, unit))
+            except TypeError:
+                value = Quantity(float(value), getattr(self, unit))
+
+        # if value is changing, delete current index
+        try:
+            curr = getattr(self, _key)
+        except AttributeError:
+            delattr(self, index)
+        else:
+            if (
+                    value is None or
+                    getattr(self, key) is None or
+                    not value.unit.is_equivalent(curr.unit) or
+                    value != curr
+            ):
+                delattr(self, index)
+
+        # set new value
+        setattr(self, _key, value)
+        return value
+
+    def _set_index(self, key, index):
+        """Set a new index array for this series
+        """
+        axis = key[0]
+        origin = "{}0".format(axis)
+        delta = "d{}".format(axis)
+        if index is None:
+            return delattr(self, key)
+        if not isinstance(index, Index):
+            try:
+                unit = index.unit
+            except AttributeError:
+                unit = getattr(self, "_default_{}unit".format(axis))
+            index = Index(index, unit=unit, copy=False)
+        setattr(self, origin, index[0])
+        if index.regular:
+            setattr(self, delta, index[1] - index[0])
+        else:
+            delattr(self, delta)
+        setattr(self, "_{}".format(key), index)
+
+    def _index_span(self, axis):
+        from ..segments import Segment
+        axisidx = ("x", "y", "z").index(axis)
+        unit = getattr(self, "{}unit".format(axis))
+        try:
+            delta = getattr(self, "d{}".format(axis)).to(unit).value
+        except AttributeError:  # irregular xindex
+            index = getattr(self, "{}index".format(axis))
+            try:
+                delta = index.value[-1] - index.value[-2]
+            except IndexError:
+                raise ValueError("Cannot determine x-axis stride (dx)"
+                                 "from a single data point")
+            return Segment(index.value[0], index.value[-1] + delta)
+        else:
+            origin = getattr(self, "{}0".format(axis)).to(unit).value
+            return Segment(origin, origin + self.shape[axisidx] * delta)
+
     # x0
     @property
     def x0(self):
@@ -175,23 +260,7 @@ class Series(Array):
 
     @x0.setter
     def x0(self, value):
-        if value is None:
-            del self.x0
-            return
-        if not isinstance(value, Quantity):
-            try:
-                value = Quantity(value, self.xunit)
-            except TypeError:
-                value = Quantity(float(value), self.xunit)
-        # if setting new x0, delete xindex
-        try:
-            x0 = self._x0
-        except AttributeError:
-            del self.xindex
-        else:
-            if value is None or self.x0 is None or value != x0:
-                del self.xindex
-        self._x0 = value
+        self._update_index("x", "x0", value)
 
     @x0.deleter
     def x0(self):
@@ -223,22 +292,7 @@ class Series(Array):
 
     @dx.setter
     def dx(self, value):
-        # delete if None
-        if value is None:
-            del self.dx
-            return
-        # convert float to Quantity
-        if not isinstance(value, Quantity):
-            value = Quantity(value, self.xunit)
-        # if value is changing, delete xindex
-        try:
-            dx = self._dx
-        except AttributeError:
-            del self.xindex
-        else:
-            if value is None or self.dx is None or value != dx:
-                del self.xindex
-        self._dx = value
+        self._update_index("x", "dx", value)
 
     @dx.deleter
     def dx(self):
@@ -257,28 +311,12 @@ class Series(Array):
         try:
             return self._xindex
         except AttributeError:
-            # create regular index on-the-fly
-            self._xindex = Index(
-                self.x0 + (numpy.arange(self.shape[0]) * self.dx), copy=False)
+            self._xindex = Index.define(self.x0, self.dx, self.shape[0])
             return self._xindex
 
     @xindex.setter
     def xindex(self, index):
-        if index is None:
-            del self.xindex
-            return
-        if not isinstance(index, Index):
-            try:
-                unit = index.unit
-            except AttributeError:
-                unit = self._default_xunit
-            index = Index(index, unit=unit, copy=False)
-        self.x0 = index[0]
-        if index.regular:
-            self.dx = index[1] - index[0]
-        else:
-            del self.dx
-        self._xindex = index
+        self._set_index("xindex", index)
 
     @xindex.deleter
     def xindex(self):
@@ -317,19 +355,7 @@ class Series(Array):
 
         :type: `~gwpy.segments.Segment`
         """
-        from ..segments import Segment
-        try:
-            dx = self.dx.to(self.xunit).value
-        except AttributeError:  # irregular xindex
-            try:
-                dx = self.xindex.value[-1] - self.xindex.value[-2]
-            except IndexError:
-                raise ValueError("Cannot determine x-axis stride (dx)"
-                                 "from a single data point")
-            return Segment(self.xindex.value[0], self.xindex.value[-1] + dx)
-        else:
-            x0 = self.x0.to(self.xunit).value
-            return Segment(x0, x0+self.shape[0]*dx)
+        return self._index_span("x")
 
     # -- series i/o -----------------------------
 

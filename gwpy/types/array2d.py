@@ -201,23 +201,7 @@ class Array2D(Series):
 
     @y0.setter
     def y0(self, value):
-        if value is None:
-            del self.y0
-            return
-        if not isinstance(value, Quantity):
-            try:
-                value = Quantity(value, self.yunit)
-            except TypeError:
-                value = Quantity(float(value), self.yunit)
-        # if setting new y0, delete yindex
-        try:
-            y0 = self._y0
-        except AttributeError:
-            del self.yindex
-        else:
-            if value is None or self.y0 is None or value != y0:
-                del self.yindex
-        self._y0 = value
+        self._update_index("y", "y0", value)
 
     @y0.deleter
     def y0(self):
@@ -250,22 +234,7 @@ class Array2D(Series):
 
     @dy.setter
     def dy(self, value):
-        # delete if None
-        if value is None:
-            del self.dy
-            return
-        # convert float to Quantity
-        if not isinstance(value, Quantity):
-            value = Quantity(value).to(self.yunit)
-        # if value is changing, delete yindex
-        try:
-            dy = self._dy
-        except AttributeError:
-            del self.yindex
-        else:
-            if value is None or self.dy is None or value != dy:
-                del self.yindex
-        self._dy = value
+        self._update_index("y", "dy", value)
 
     @dy.deleter
     def dy(self):
@@ -298,28 +267,12 @@ class Array2D(Series):
         try:
             return self._yindex
         except AttributeError:
-            # create regular index on-the-fly
-            self._yindex = Index(
-                self.y0 + (numpy.arange(self.shape[1]) * self.dy), copy=False)
+            self._yindex = Index.define(self.y0, self.dy, self.shape[1])
             return self._yindex
 
     @yindex.setter
     def yindex(self, index):
-        if index is None:
-            del self.yindex
-            return
-        if not isinstance(index, Index):
-            try:
-                unit = index.unit
-            except AttributeError:
-                unit = self._default_yunit
-            index = Index(index, unit=unit, copy=False)
-        self.y0 = index[0]
-        if index.regular:
-            self.dy = index[1] - index[0]
-        else:
-            del self.dy
-        self._yindex = index
+        self._set_index("yindex", index)
 
     @yindex.deleter
     def yindex(self):
@@ -334,19 +287,7 @@ class Array2D(Series):
 
         :type: `~gwpy.segments.Segment`
         """
-        from ..segments import Segment
-        try:
-            dy = self.dy.to(self.yunit).value
-        except AttributeError:  # irregular yindex
-            try:
-                dy = self.yindex.value[-1] - self.yindex.value[-2]
-            except IndexError:
-                raise ValueError("Cannot determine y-axis stride (dy)"
-                                 "from a single data point")
-            return Segment(self.yindex.value[0], self.yindex.value[-1] + dy)
-        else:
-            y0 = self.y0.to(self.yunit).value
-            return Segment(y0, y0+self.shape[1]*dy)
+        return self._index_span("y")
 
     @property
     def T(self):
