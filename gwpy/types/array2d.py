@@ -21,8 +21,6 @@
 
 from warnings import warn
 
-import numpy
-
 from matplotlib import __version__ as mpl_version
 
 from astropy.units import (Unit, Quantity)
