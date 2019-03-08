@@ -25,6 +25,7 @@ Peter Shawhan.
 import datetime
 import warnings
 from decimal import Decimal
+from numbers import Number
 
 from six import string_types
 
@@ -134,29 +135,33 @@ def to_gps(t, *args, **kwargs):
     >>> to_gps(Time(57754, format='mjd'))
     LIGOTimeGPS(1167264018, 0)
     """
-    # if input is a string of a float, get back to float quickly
-    if isinstance(t, string_types):
-        try:
-            t = float(t)
-        except (TypeError, ValueError):
-            pass
-
     # -- convert input to Time, or something we can pass to LIGOTimeGPS
 
-    if isinstance(t, string_types):  # str -> datetime.datetime
-        t = _str_to_datetime(t)
+    if isinstance(t, string_types):
+        try:  # if str represents a number, leave it for LIGOTimeGPS to handle
+            float(t)
+        except ValueError:  # str -> datetime.datetime
+            t = _str_to_datetime(t)
 
-    if isinstance(t, (tuple, list)):  # tuple -> datetime.datetime
+    # tuple -> datetime.datetime
+    if isinstance(t, (tuple, list)):
         t = datetime.datetime(*t)
 
-    if isinstance(t, datetime.date):  # datetime.datetime -> Time
+    # datetime.datetime -> Time
+    if isinstance(t, datetime.date):
         t = _datetime_to_time(t)
 
-    if isinstance(t, Quantity):  # Quantity -> float
+    # Quantity -> float
+    if isinstance(t, Quantity):
         t = t.to('second').value
 
-    if isinstance(t, Decimal):  # Decimal -> str
+    # Number/Decimal -> str
+    if isinstance(t, Decimal):
         t = str(t)
+    if isinstance(t, Number):
+        # note, on python < 3, str(<float>) isn't very good, so we use repr
+        # for python > 3 we can just use str for both Decimal and Number
+        t = repr(t)
 
     # -- convert to LIGOTimeGPS
 

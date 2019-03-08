@@ -76,6 +76,7 @@ def _test_with_errors(func, in_, out):
 
 @pytest.mark.parametrize('in_, out', [
     (1126259462, int(GW150914)),
+    (1235635623.7500002, LIGOTimeGPS(1235635623, 750000200)),
     (LIGOTimeGPS(1126259462, 391000000), GW150914),
     ('0', 0),
     ('Jan 1 2017', 1167264018),
