@@ -896,39 +896,49 @@ class Series(Array):
         `Series` span, warnings will be printed and the limits will
         be restricted to the :attr:`~Series.xspan`
         """
+        x0, x1 = self.xspan
+        xtype = type(x0)
+        if isinstance(start, Quantity):
+            start = start.to(self.xunit).value
+        if isinstance(end, Quantity):
+            end = end.to(self.xunit).value
+
         # pin early starts to time-series start
-        if start == self.xspan[0]:
+        if start == x0:
             start = None
-        elif start is not None and start < self.xspan[0]:
+        elif start is not None and xtype(start) < x0:
             warn('%s.crop given start smaller than current start, '
                  'crop will begin when the Series actually starts.'
                  % type(self).__name__)
             start = None
+
         # pin late ends to time-series end
-        if end == self.xspan[1]:
+        if end == x1:
             end = None
-        if end is not None and end > self.xspan[1]:
+        if end is not None and xtype(end) > x1:
             warn('%s.crop given end larger than current end, '
                  'crop will end when the Series actually ends.'
                  % type(self).__name__)
             end = None
+
         # find start index
         if start is None:
             idx0 = None
         else:
-            idx0 = int(float(start - self.xspan[0]) // self.dx.value)
+            idx0 = int((xtype(start) - x0) // self.dx.value)
+
         # find end index
         if end is None:
             idx1 = None
         else:
-            idx1 = int(float(end - self.xspan[0]) // self.dx.value)
+            idx1 = int((xtype(end) - x0) // self.dx.value)
             if idx1 >= self.size:
                 idx1 = None
+
         # crop
         if copy:
             return self[idx0:idx1].copy()
-        else:
-            return self[idx0:idx1]
+        return self[idx0:idx1]
 
     def pad(self, pad_width, **kwargs):
         """Pad this series to a new size

@@ -289,7 +289,7 @@ class FrequencySeries(Series):
         """
         f0 = self.f0.decompose().value
         N = (self.size - 1) * (self.df.decompose().value / df) + 1
-        fsamples = numpy.arange(0, numpy.rint(N)) * df + f0
+        fsamples = numpy.arange(0, numpy.rint(N), dtype=self.dtype) * df + f0
         out = type(self)(numpy.interp(fsamples, self.frequencies.value,
                                       self.value))
         out.__array_finalize__(self)

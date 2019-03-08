@@ -258,7 +258,8 @@ class TimeSeriesBase(Series):
 
         :type: `~astropy.units.Quantity` scalar
         """
-        return units.Quantity(self.span[1] - self.span[0], self.xunit)
+        return units.Quantity(self.span[1] - self.span[0], self.xunit,
+                              dtype=float)
 
     # -- TimeSeries accessors -------------------
 
@@ -711,7 +712,7 @@ class TimeSeriesBase(Series):
             unit = None
         channel = Channel(lalts.name, sample_rate=1/lalts.deltaT, unit=unit,
                           dtype=lalts.data.data.dtype)
-        out = cls(lalts.data.data, channel=channel, t0=float(lalts.epoch),
+        out = cls(lalts.data.data, channel=channel, t0=lalts.epoch,
                   dt=lalts.deltaT, unit=unit, name=lalts.name, copy=False)
         if copy:
             return out.copy()

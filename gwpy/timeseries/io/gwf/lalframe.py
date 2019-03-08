@@ -149,7 +149,7 @@ def read(source, channels, start=None, end=None, series_class=TimeSeries,
         offset = float(start - epoch)
         duration = streamdur - offset
     else:
-        end = min(epoch + streamdur, end)
+        end = min(epoch + streamdur, lalutils.to_lal_ligotimegps(end))
         duration = float(end - start)
 
     # read data
