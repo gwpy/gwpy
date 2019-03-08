@@ -508,6 +508,21 @@ class TestDataQualityFlag(object):
                 _read_write(autoidentify=True)
             _read_write(autoidentify=True, write_kw={'overwrite': True})
 
+    def test_read_write_hdf5(self, flag):
+        with utils.TemporaryFilename(suffix=".h5") as fp:
+            flag.write(fp, path="test")
+            f2 = self.TEST_CLASS.read(fp, path="test", format="hdf5")
+            utils.assert_flag_equal(f2, flag)
+
+            # test direct access from dataset
+            with h5py.File(fp, "r") as h5f:
+                f2 = self.TEST_CLASS.read(h5f["test"])
+                utils.assert_flag_equal(f2, flag)
+
+            # test auto-discover of single dataset
+            f2 = self.TEST_CLASS.read(fp)
+            utils.assert_flag_equal(f2, flag)
+
     @utils.skip_missing_dependency('glue.ligolw.lsctables')
     def test_write_ligolw_attrs(self, flag):
         from gwpy.io.ligolw import read_table

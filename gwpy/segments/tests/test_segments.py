@@ -23,6 +23,8 @@ from __future__ import print_function
 
 import pytest
 
+import h5py
+
 from ...testing.utils import (assert_segmentlist_equal, TemporaryFilename)
 from ...time import LIGOTimeGPS
 from .. import (Segment, SegmentList)
@@ -127,6 +129,11 @@ class TestSegmentList(object):
 
             sl2 = self.TEST_CLASS.read(fp, path='test-segmentlist')
             assert_segmentlist_equal(sl2, segmentlist)
+
+            # check we can read directly from the h5 object
+            with h5py.File(fp, "r") as h5f:
+                sl2 = self.TEST_CLASS.read(h5f["test-segmentlist"])
+                assert_segmentlist_equal(sl2, segmentlist)
 
             # check overwrite kwarg
             with pytest.raises(IOError):
