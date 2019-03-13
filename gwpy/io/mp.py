@@ -64,10 +64,13 @@ def read_multi(flatten, cls, source, *args, **kwargs):
         files = file_list(source)
     except ValueError:  # otherwise treat as single file
         files = [source]
+        path = None  # to pass to get_read_format()
+    else:
+        path = files[0] if files else None
 
     # determine input format (so we don't have to do it multiple times)
     if kwargs.get('format', None) is None:
-        kwargs['format'] = get_read_format(cls, files[0], args, kwargs)
+        kwargs['format'] = get_read_format(cls, path, (source,) + args, kwargs)
 
     # calculate maximum number of processes
     nproc = min(kwargs.pop('nproc', 1), len(files))

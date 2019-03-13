@@ -24,8 +24,9 @@ from six.moves.urllib.parse import urljoin
 import pytest
 
 from ...testing.utils import (TEST_GWF_FILE, skip_missing_dependency,
-                              TemporaryFilename)
+                              TemporaryFilename, assert_segmentlist_equal)
 from .. import gwf as io_gwf
+from ..cache import file_segment
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -89,3 +90,16 @@ def test_get_channel_type():
 def test_channel_in_frame():
     assert io_gwf.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE) is True
     assert io_gwf.channel_in_frame('X1:NOT-IN_FRAME', TEST_GWF_FILE) is False
+
+
+@skip_missing_dependency("LDAStools.frameCPP")
+def test_data_segments():
+    assert_segmentlist_equal(
+        io_gwf.data_segments([TEST_GWF_FILE], "L1:LDAS-STRAIN"),
+        [file_segment(TEST_GWF_FILE)],
+    )
+    with pytest.warns(UserWarning):
+        assert_segmentlist_equal(
+            io_gwf.data_segments([TEST_GWF_FILE], "X1:BAD-NAME", warn=True),
+            [],
+        )

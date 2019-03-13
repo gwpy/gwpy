@@ -238,6 +238,24 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 "Failed to read {0!r} from {1!r}".format(losc.name, tmp)
             )
 
+    @utils.skip_missing_dependency('lalframe')
+    def test_read_gwf_scaled_lalframe(self):
+        with pytest.warns(None) as record:
+            data = self.TEST_CLASS.read(
+                utils.TEST_GWF_FILE,
+                "L1:LDAS-STRAIN",
+                format="gwf.lalframe",
+            )
+        assert not record.list  # no warning
+        with pytest.warns(UserWarning):
+            data2 = self.TEST_CLASS.read(
+                utils.TEST_GWF_FILE,
+                "L1:LDAS-STRAIN",
+                format="gwf.lalframe",
+                scaled=True,
+            )
+        utils.assert_quantity_sub_equal(data, data2)
+
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
     @pytest.mark.parametrize('channel', [
         None,
@@ -781,6 +799,12 @@ class TestTimeSeries(_TestTimeSeriesBase):
         l2 = losc.resample(1024, ftype='iir')
         # FIXME: this test needs to be more robust
         assert l2.sample_rate == 1024 * units.Hz
+
+    def test_resample_noop(self):
+        data = self.TEST_CLASS([1, 2, 3, 4, 5])
+        with pytest.warns(UserWarning):
+            new = data.resample(data.sample_rate)
+            assert data is new
 
     def test_rms(self, losc):
         rms = losc.rms(1.)

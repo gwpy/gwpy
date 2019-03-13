@@ -27,6 +27,43 @@ from astropy.units import Quantity
 class Index(Quantity):
     """1-D `~astropy.units.Quantity` array for indexing a `Series`
     """
+    @classmethod
+    def define(cls, start, step, num, dtype=None):
+        """Define a new `Index`.
+
+        The output is basically::
+
+            start + numpy.arange(num) * step
+
+        Parameters
+        ----------
+        start : `Number`
+            The starting value of the index.
+
+        step : `Number`
+            The step size of the index.
+
+        num : `int`
+            The size of the index (number of samples).
+
+        dtype : `numpy.dtype`, `None`, optional
+            The desired dtype of the index, if not given, defaults
+            to the higher-precision dtype from ``start`` and ``step``.
+
+        Returns
+        -------
+        index : `Index`
+            A new `Index` created from the given parameters.
+        """
+        if dtype is None:
+            dtype = max(
+                numpy.array(start, subok=True, copy=False).dtype,
+                numpy.array(step, subok=True, copy=False).dtype,
+            )
+        start = start.astype(dtype, copy=False)
+        step = step.astype(dtype, copy=False)
+        return cls(start + numpy.arange(num, dtype=dtype) * step, copy=False)
+
     @property
     def regular(self):
         """`True` if this index is linearly increasing

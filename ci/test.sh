@@ -25,7 +25,7 @@ trap 'set +ex' RETURN
 
 # reactivate environmennt
 if [ -n ${CIRCLECI} ] && [ -d /opt/conda/envs ]; then
-    conda activate gwpyci || source activate gwpyci
+    conda activate gwpyci || { source activate gwpyci; set -ex; }
 fi
 
 # get path to python and pip

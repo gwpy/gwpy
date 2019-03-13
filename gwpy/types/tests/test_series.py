@@ -111,6 +111,12 @@ class TestSeries(_TestArray):
         assert series.x0 == units.Quantity(1, 'Mpc')
         assert series.xspan == (x[0], x[-1] + x[-1] - x[-2])
 
+    def test_xindex_dtype(self):
+        x0 = numpy.longdouble(100)
+        dx = numpy.float32(1e-4)
+        series = self.create(x0=x0, dx=dx)
+        assert series.xindex.dtype is x0.dtype
+
     def test_xunit(self, unit=None):
         if unit is None:
             unit = self.TEST_CLASS._default_xunit

@@ -82,7 +82,7 @@ aliases:
         - checkout
         - *attach_workspace
         - restore_cache:
-            key: v3-gwpy-{{ .Environment.CIRCLE_JOB }}
+            key: v4-gwpy-{{ .Environment.CIRCLE_JOB }}
         - run: *set_python_environment
         - run:
             name: Install
@@ -90,7 +90,7 @@ aliases:
         - run: *run-tests
         - run: *codecov
         - save_cache:
-            key: v3-gwpy-{{ .Environment.CIRCLE_JOB }}
+            key: v4-gwpy-{{ .Environment.CIRCLE_JOB }}
             paths:
               - "/opt/conda/envs/gwpyci"
         - *store_test_results
@@ -286,13 +286,21 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-      - sdist
+      # sdist includes filters because the deploy job requires it
+      # https://circleci.com/docs/2.0/workflows/#executing-workflows-for-a-git-tag
+      - sdist:
+          filters:
+            tags:
+              only: /^v.*/
       - flake8
 
       # basic tests with minimal dependencies
       - python:2.7:
           requires:
             - sdist
+          filters:
+            tags:
+              only: /^v.*/
       - python:3.4:
           requires:
             - sdist
@@ -305,6 +313,9 @@ workflows:
       - python:3.7:
           requires:
             - sdist
+          filters:
+            tags:
+              only: /^v.*/
 
       # full tests with extended dependencies
       - pip:2.7:
@@ -341,24 +352,33 @@ workflows:
       - debian:stretch:2.7:
           requires:
             - sdist
+          filters:
+            tags:
+              only: /^v.*/
       - debian:stretch:3.5:
           requires:
             - sdist
+          filters:
+            tags:
+              only: /^v.*/
       - el7:2.7:
           requires:
             - sdist
+          filters:
+            tags:
+              only: /^v.*/
 
       # deploy
       - deploy:
           requires:
-            - conda:2.7
-            - conda:3.6
-            - conda:3.7
+            - sdist
+            - python:2.7
+            - python:3.7
             - debian:stretch:2.7
             - debian:stretch:3.5
             - el7:2.7
           filters:
             tags:
-              only: /.*/
+              only: /^v.*/
             branches:
               ignore: /.*/

@@ -218,9 +218,9 @@ def register_gwf_api(library):
         # -- from here read data
 
         if start:
-            start = float(to_gps(start))
+            start = to_gps(start)
         if end:
-            end = float(to_gps(end))
+            end = to_gps(end)
 
         # parse output format kwargs -- DEPRECATED
         if resample is not None:

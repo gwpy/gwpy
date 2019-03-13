@@ -28,6 +28,8 @@ import warnings
 
 import numpy
 
+import h5py
+
 from astropy.table import Table
 from astropy.units import (UnitBase, Quantity)
 
@@ -75,18 +77,65 @@ def find_flag_groups(h5group, strict=True):
 
 # -- read ---------------------------------------------------------------------
 
+
+def _is_flag_group(obj):
+    """Returns `True` if `obj` is an `h5py.Group` that looks like
+    if contains a flag
+    """
+    return (
+        isinstance(obj, h5py.Group) and
+        isinstance(obj.get("active"), h5py.Dataset) and
+        isinstance(obj.get("known"), h5py.Dataset)
+    )
+
+
+def _find_flag_groups(h5f):
+    """Return all groups in `h5f` that look like flags
+    """
+    flag_groups = []
+
+    def _find(name, obj):
+        if _is_flag_group(obj):
+            flag_groups.append(name)
+
+    h5f.visititems(_find)
+    return flag_groups
+
+
+def _get_flag_group(h5f, path):
+    """Determine the group to use in order to read a flag
+    """
+    # if user chose the path, just use it
+    if path:
+        return h5f[path]
+
+    # if the user gave us the group directly, use it
+    if _is_flag_group(h5f):
+        return h5f
+
+    # otherwise try and find a single group that matches
+    try:
+        path, = _find_flag_groups(h5f)
+    except ValueError:
+        pass
+    else:
+        return h5f[path]
+
+    # if not exactly 1 valid group in the file, complain
+    raise ValueError(
+        "please pass a valid HDF5 Group, or specify the HDF5 Group "
+        "path via the ``path=`` keyword argument",
+    )
+
+
 @io_hdf5.with_read_hdf5
 def read_hdf5_flag(h5f, path=None, gpstype=LIGOTimeGPS):
     """Read a `DataQualityFlag` object from an HDF5 file or group.
     """
-    # verify path is given
-    if path is None:
-        raise ValueError("Please specify the HDF5 path via the "
-                         "``path=`` keyword argument")
+    # extract correct group
+    dataset = _get_flag_group(h5f, path)
 
-    # get default path as only child of file
-    dataset = h5f[path]
-
+    # read dataset
     active = SegmentList.read(dataset['active'], format='hdf5',
                               gpstype=gpstype)
     try:

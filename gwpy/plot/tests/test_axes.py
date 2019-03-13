@@ -41,13 +41,40 @@ class TestAxes(AxesTestBase):
 
     def test_plot(self, ax):
         series = Series(range(10), dx=.1)
-        line, = ax.plot(series, 'r--')
+        lines = ax.plot(
+            series,
+            series * 2, 'k--',
+            series.xindex, series, 'b-',
+            [1, 2, 3], [4, 5, 6],
+        )
 
+        # check line 1 maps the series with default params
+        line = lines[0]
         linex, liney = line.get_data()
         utils.assert_array_equal(linex, series.xindex.value)
         utils.assert_array_equal(liney, series.value)
-        assert line.get_color() == 'r'
+
+        # check line 2 maps 2*series with specific params
+        line = lines[1]
+        linex, liney = line.get_data()
+        utils.assert_array_equal(linex, series.xindex.value)
+        utils.assert_array_equal(liney, series.value * 2)
+        assert line.get_color() == 'k'
         assert line.get_linestyle() == '--'
+
+        # check line 3
+        line = lines[2]
+        linex, liney = line.get_data()
+        utils.assert_array_equal(linex, series.xindex.value)
+        utils.assert_array_equal(liney, series.value)
+        assert line.get_color() == 'b'
+        assert line.get_linestyle() == '-'
+
+        # check line 4
+        line = lines[3]
+        linex, liney = line.get_data()
+        utils.assert_array_equal(linex, [1, 2, 3])
+        utils.assert_array_equal(liney, [4, 5, 6])
 
     @pytest.mark.parametrize('c_sort', (False, True))
     def test_scatter(self, ax, c_sort):
