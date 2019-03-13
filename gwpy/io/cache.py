@@ -79,7 +79,7 @@ class _CacheEntry(namedtuple(
 
         try:  # Virgo FFL format includes GPS start time in second place
             start = gpstype(b)
-        except (ValueError, RuntimeError):  # LAL format
+        except (RuntimeError, TypeError, ValueError):  # LAL format
             start = gpstype(c)
             end = start + float(d)
             return cls(a, b, Segment(start, end), e)
