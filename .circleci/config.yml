@@ -286,7 +286,12 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-      - sdist
+      # sdist includes filters because the deploy job requires it
+      # https://circleci.com/docs/2.0/workflows/#executing-workflows-for-a-git-tag
+      - sdist:
+          filters:
+            tags:
+              only: /^v.*/
       - flake8
 
       # basic tests with minimal dependencies
@@ -351,14 +356,9 @@ workflows:
       # deploy
       - deploy:
           requires:
-            - conda:2.7
-            - conda:3.6
-            - conda:3.7
-            - debian:stretch:2.7
-            - debian:stretch:3.5
-            - el7:2.7
+            - sdist
           filters:
             tags:
-              only: /.*/
+              only: /^v.*/
             branches:
               ignore: /.*/
