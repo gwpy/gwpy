@@ -23,11 +23,12 @@ and associated metadata for those files, designed to make identifying
 relevant data, and sieving large file lists, easier for the user.
 """
 
-from __future__ import division
+from __future__ import (division, print_function)
 
 import os.path
 import warnings
 from collections import (namedtuple, OrderedDict)
+from pathlib import Path
 
 from six import string_types
 
@@ -51,6 +52,47 @@ else:
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+def _preformat_entry(entry):
+    path = file_path(entry)
+    obs, tag, seg = filename_metadata(path)
+    start, end = seg
+    if start.is_integer():
+        start = int(start)
+    if end.is_integer():
+        end = int(end)
+    return path, obs, tag, type(seg)(start, end)
+
+
+def _format_entry_lal(entry):
+    path, obs, tag, seg = _preformat_entry(entry)
+    return "{} {} {} {} {}".format(obs, tag, seg[0], abs(seg), path)
+
+
+def _parse_entry_lal(line, gpstype=LIGOTimeGPS):
+    from ..segments import Segment
+    obs, desc, start, dur, path = map(str, line)
+    start = gpstype(start)
+    end = start + float(dur)
+    return _CacheEntry(obs, desc, Segment(start, end), path)
+
+
+def _format_entry_ffl(entry):
+    path, obs, tag, seg = _preformat_entry(entry)
+    return "{} {} {} 0 0".format(path, seg[0], abs(seg))
+
+
+def _parse_entry_ffl(line, gpstype=LIGOTimeGPS):
+    from ..segments import Segment
+    path, start, dur, _, _ = map(str, line)
+    start = gpstype(start)
+    end = start + float(dur)
+    try:
+        observatory, description = Path(path).name.split('-', 2)[:2]
+    except ValueError:
+        return _CacheEntry(None, None, Segment(start, end), path)
+    return _CacheEntry(observatory, description, Segment(start, end), path)
+
+
 class _CacheEntry(namedtuple(
         '_CacheEntry', ['observatory', 'description', 'segment', 'path'])):
     """Quick version of lal.utils.CacheEntry for internal purposes only
@@ -62,36 +104,27 @@ class _CacheEntry(namedtuple(
 
     @classmethod
     def parse(cls, line, gpstype=LIGOTimeGPS):
-        from ..segments import Segment
 
+        # format line string
         if isinstance(line, bytes):
             line = line.decode('utf-8')
+        parts = line.strip().split()
 
-        # determine format
+        # if single entry, parse filename
+        if len(parts) == 1:
+            path = parts[0]
+            return cls(*filename_metadata(path) + (path,))
+
         try:
-            # NOTE: cast to `str` here to avoid unicode on python2.7
-            #       which lal.LIGOTimeGPS doesn't like
-            a, b, c, d, e = map(str, line.strip().split())
-        except ValueError as exc:
+            return _parse_entry_ffl(parts)
+        except (RuntimeError, TypeError, ValueError) as exc:
+            try:
+                return _parse_entry_lal(parts)
+            except ValueError:
+                pass
             exc.args = ("Cannot identify format for cache entry {!r}".format(
-                line.rstrip()),)
+                line.strip()),)
             raise
-
-        try:  # Virgo FFL format includes GPS start time in second place
-            start = gpstype(b)
-        except (RuntimeError, TypeError, ValueError):  # LAL format
-            start = gpstype(c)
-            end = start + float(d)
-            return cls(a, b, Segment(start, end), e)
-        path = a
-        start = float(b)
-        end = start + float(c)
-        try:
-            observatory, description = os.path.splitext(
-                os.path.basename(path))[0].split('-', 2)[:2]
-        except ValueError:
-            return cls(None, None, Segment(start, end), path)
-        return cls(observatory, description, Segment(start, end), path)
 
 
 # -- cache I/O ----------------------------------------------------------------
@@ -141,10 +174,6 @@ def read_cache(cachefile, coltype=LIGOTimeGPS, sort=None, segment=None):
     -------
     paths : `list` of `str`
         A list of file paths as read from the cache file.
-
-    Notes
-    -----
-    This method requires |lal|_.
     """
     # open file
     if not isinstance(cachefile, FILE_LIKE):
@@ -153,16 +182,16 @@ def read_cache(cachefile, coltype=LIGOTimeGPS, sort=None, segment=None):
                               segment=segment)
 
     # read file
-    cache = list(_iter_cache(cachefile, gpstype=coltype))
+    cache = [x.path for x in _iter_cache(cachefile, gpstype=coltype)]
 
-    # sort and sieve
-    if sort:
-        cache.sort(key=sort)
+    # sieve and sort
     if segment:
         cache = sieve(cache, segment=segment)
+    if sort:
+        cache.sort(key=sort)
 
     # read simple paths
-    return [x.path for x in cache]
+    return cache
 
 
 def read_cache_entry(line):
@@ -193,29 +222,44 @@ def open_cache(*args, **kwargs):  # pragma: no cover
     return read_cache(*args, **kwargs)
 
 
-def write_cache(cache, fobj):
+def write_cache(cache, fobj, format=None):
     """Write a `list` of cache entries to a file
 
     Parameters
     ----------
-    cache : `list` of :class:`lal.utils.CacheEntry`
-        The cache to write
+    cache : `list` of `str`
+        The list of file paths to write
 
     fobj : `file`, `str`
         The open file object, or file path to write to.
+
+    format : `str`, optional
+        The format to write to, one of
+
+        - `None` : format each entry using `str`
+        - ``'lal'`` : write a LAL-format cache
+        - ``'ffl'`` : write an FFL-format cache
     """
     # open file
     if isinstance(fobj, string_types):
         with open(fobj, 'w') as fobj2:
-            return write_cache(cache, fobj2)
+            return write_cache(cache, fobj2, format=format)
+
+    if format is None:
+        formatter = str
+    elif format.lower() == "lal":
+        formatter = _format_entry_lal
+    elif format.lower() == "ffl":
+        formatter = _format_entry_ffl
+    else:
+        raise ValueError("Unrecognised cache format {!r}".format(format))
 
     # write file
-    for entry in cache:
-        line = '{0}\n'.format(entry)
+    for line in map(formatter, cache):
         try:
-            fobj.write(line)
-        except TypeError:  # python3 'wb' mode
-            fobj.write(line.encode('utf-8'))
+            print(line, file=fobj)
+        except TypeError:  # bytes-mode
+            fobj.write("{}\n".format(line).encode("utf-8"))
 
 
 def is_cache(cache):
@@ -274,6 +318,65 @@ def is_cache_entry(path):
 
 # -- cache manipulation -------------------------------------------------------
 
+def filename_metadata(filename):
+    """Return metadata parsed from a filename following LIGO-T050017
+
+    This method is lenient with regards to integers in the GPS start time of
+    the file, as opposed to `gwdatafind.utils.filename_metadata`, which is
+    strict.
+
+    Parameters
+    ----------
+    filename : `str`
+        the path name of a file
+
+    Returns
+    -------
+    obs : `str`
+        the observatory metadata
+
+    tag : `str`
+        the file tag
+
+    segment : `gwpy.segments.Segment`
+        the GPS ``[float, float)`` interval for this file
+
+    Notes
+    -----
+    `LIGO-T050017 <https://dcc.ligo.org/LIGO-T050017>`__ declares a
+    file naming convention that includes documenting the GPS start integer
+    and integer duration of a file, see that document for more details.
+
+    Examples
+    --------
+    >>> from gwpy.io.cache import filename_metadata
+    >>> filename_metadata("A-B-0-1.txt")
+    ('A', 'B', Segment(0, 1))
+    >>> filename_metadata("A-B-0.456-1.345.txt")
+    ("A", "B", Segment(0.456, 1.801))
+    """
+    from ..segments import Segment
+    name = Path(filename).name
+    try:
+        obs, desc, start, dur = name.split('-')
+    except ValueError as exc:
+        exc.args = ('Failed to parse {!r} as LIGO-T050017-compatible '
+                    'filename'.format(name),)
+        raise
+    start = float(start)
+    dur = dur.rsplit('.', 1)[0]
+    while True:  # recursively remove extension components
+        try:
+            dur = float(dur)
+        except ValueError:
+            if '.' not in dur:
+                raise
+            dur = dur.rsplit('.', 1)[0]
+        else:
+            break
+    return obs, desc, Segment(start, start+dur)
+
+
 def file_segment(filename):
     """Return the data segment for a filename following T050017
 
@@ -297,16 +400,7 @@ def file_segment(filename):
     try:  # CacheEntry
         return Segment(filename.segment)
     except AttributeError:  # file path (str)
-        base = os.path.basename(filename)
-        try:
-            _, _, start, end = base.split('-')
-        except ValueError as exc:
-            exc.args = ('Failed to parse {0!r} as LIGO-T050017-compatible '
-                        'filename'.format(base),)
-            raise
-        start = float(start)
-        end = float(end.split('.')[0])
-        return Segment(start, start+end)
+        return filename_metadata(filename)[2]
 
 
 def cache_segments(*caches):
