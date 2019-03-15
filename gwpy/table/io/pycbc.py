@@ -79,12 +79,12 @@ def table_from_file(source, ifo=None, columns=None, selection=None,
     # parse default columns
     if columns is None:
         columns = list(_get_columns(source))
-    readcols = list(columns)
+    readcols = set(columns)
 
     # parse selections
     selection = parse_column_filters(selection or [])
     if selection:
-        readcols.extend(list(zip(*selection))[0])
+        readcols.update(list(zip(*selection))[0])
 
     # set up meta dict
     meta = {'ifo': ifo}
