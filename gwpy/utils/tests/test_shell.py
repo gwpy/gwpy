@@ -31,8 +31,8 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 def test_shell_call():
     out, err = shell.call(["echo", "This works"])
-    assert out == 'This works\n'
-    assert err == ''
+    assert out.rstrip() == 'This works'
+    assert err.rstrip() == ''
 
     shell.call("echo 'This works'")
 

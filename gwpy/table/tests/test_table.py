@@ -577,6 +577,20 @@ class TestEventTable(TestTable):
                 t2,
                 filter_table(table, 'snr>.5')[("a", "b", "mass1")],
             )
+
+            # regression test: gwpy/gwpy#1081
+            t2 = self.TABLE.read(
+                fp,
+                format='hdf5.pycbc_live',
+                ifo='X1',
+                selection='snr>.5',
+                columns=("a", "b", "snr"),
+            )
+            utils.assert_table_equal(
+                t2,
+                filter_table(table, 'snr>.5')[("a", "b", "snr")],
+            )
+
         finally:
             if os.path.isdir(os.path.dirname(fp)):
                 shutil.rmtree(os.path.dirname(fp))
