@@ -47,7 +47,7 @@ Reading/writing tables
 .. toctree::
    :maxdepth: 2
 
-   io.rst
+   io
 
 ============
 Using tables
