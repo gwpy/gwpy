@@ -22,7 +22,10 @@
 import itertools
 import importlib
 import warnings
-from collections import (KeysView, ValuesView)
+try:
+    from collections.abc import (KeysView, ValuesView)
+except ImportError:  # python < 3.3
+    from collections import (KeysView, ValuesView)
 
 from six.moves import zip_longest
 
