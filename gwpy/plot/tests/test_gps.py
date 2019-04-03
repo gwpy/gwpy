@@ -196,4 +196,4 @@ def test_gps_formatting():
                  "0", "0.1", "0.2", "0.3", "0.4", "0.5"]
         assert [x.get_text() for x in ax.get_xticklabels()] == ticks
     finally:
-        fig.close()
+        pyplot.close(fig)
