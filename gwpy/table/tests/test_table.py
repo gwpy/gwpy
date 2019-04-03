@@ -23,8 +23,10 @@ import os.path
 import shutil
 import tempfile
 from io import BytesIO
+from ssl import SSLError
 
 from six import PY2
+from six.moves.urllib.error import URLError
 
 import pytest
 
@@ -623,3 +625,24 @@ class TestEventTable(TestTable):
             utils.assert_table_equal(
                 filter_table(table, 'freq_central>500')['gps_start', 'snr'],
                 t2)
+
+    def test_fetch_open_data(self):
+        try:
+            table = self.TABLE.fetch_open_data("GWTC-1-confident")
+        except (URLError, SSLError) as exc:
+            pytest.skip(str(exc))
+        assert len(table)
+        assert {"L_peak", "distance", "mass1"}.intersection(table.colnames)
+        assert table["distance"].unit == "Mpc"
+
+    def test_fetch_open_data_kwargs(self):
+        try:
+            table = self.TABLE.fetch_open_data(
+                "GWTC-1-confident",
+                selection="mass1 < 5",
+                columns=["name", "mass1", "mass2", "distance"])
+        except (URLError, SSLError) as exc:
+            pytest.skip(str(exc))
+        assert len(table) == 1
+        assert table[0]["name"] == "GW170817"
+        assert set(table.colnames) == {"name", "mass1", "mass2", "distance"}

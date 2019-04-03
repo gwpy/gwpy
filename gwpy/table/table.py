@@ -28,9 +28,10 @@ from six import string_types
 
 import numpy
 
+from gwosc.api import DEFAULT_URL as DEFAULT_GWOSC_URL
+
 from astropy.table import (Table, Column, vstack)
 from astropy.io import registry
-from astropy.units import Quantity
 
 from ..io.mp import read_multi as io_read_multi
 from ..time import gps_types
@@ -161,18 +162,26 @@ class EventTable(Table):
 
         So, its not foolproof.
         """
-        if 'time' in self.columns:
-            return 'time'
+        tcols = [
+            "time",  # standard
+            "tc",  # GWOSC catalogues
+            "peakGPS",  # gravityspy
+        ]
+        for col in tcols:
+            if col in self.columns:
+                return col
         try:
             time, = [name for name in self.columns if
                      isinstance(self[name][0], gps_types)]
-        except (ValueError, IndexError) as exc:
-            msg = ('cannot identify time column for table, no column '
-                   'named \'time\' and none with GPS dtypes')
-            if isinstance(exc, IndexError):
-                raise ValueError(msg)
-            exc.args = (msg,)
-            raise
+        except (ValueError, IndexError):
+            msg = (
+                "cannot identify time column for table, no column "
+                "named {0}, or {1!r}, and none with GPS dtypes".format(
+                    ", ".join(map(repr, tcols[:-1])),
+                    tcols[-1],
+                )
+            )
+            raise ValueError(msg)
         return time
 
     # -- i/o ------------------------------------
@@ -326,6 +335,36 @@ class EventTable(Table):
         from .io.fetch import get_fetcher
         fetcher = get_fetcher(format_, cls)
         return fetcher(*args, **kwargs)
+
+    @classmethod
+    def fetch_open_data(cls, catalog, columns=None, selection=None,
+                        host=DEFAULT_GWOSC_URL, **kwargs):
+        """Fetch events from an open-data catalogue hosted by GWOSC.
+
+        Parameters
+        ----------
+        catalog : `str`
+            the name of the catalog to fetch, e.g. ``'GWTC-1-confident'``
+
+        columns : `list` of `str`, optional
+            the list of column names to read
+
+        selection : `str`, or `list` of `str`, optional
+            one or more column filters with which to downselect the
+            returned events as they as read, e.g. ``'mass1 < 30'``;
+            multiple selections should be connected by ' && ', or given as
+            a `list`, e.g. ``'mchirp < 3 && distance < 500'`` or
+            ``['mchirp < 3', 'distance < 500']``
+
+        host : `str`, optional
+            the open-data host to use
+        """
+        from .io.losc import fetch_catalog
+        tab = fetch_catalog(catalog, columns=columns, selection=selection,
+                            host=host, **kwargs)
+        if type(tab) is cls:  # don't copy unless we need to
+            return tab
+        return cls(tab)
 
     # -- ligolw compatibility -------------------
 
@@ -588,7 +627,7 @@ class EventTable(Table):
             name = col.name
             if rcParams['text.usetex']:
                 name = r'\texttt{{{0}}}'.format(label_to_latex(col.name))
-            if isinstance(col, Quantity):
+            if col.unit is not None:
                 name += ' [{0}]'.format(col.unit.to_string('latex_inline'))
             axis.set_label_text(name)
             axis.isDefault_label = True

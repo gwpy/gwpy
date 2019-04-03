@@ -101,14 +101,26 @@ for i, line in enumerate(lines):
     # code
     else:
         if not incode:  # restart code block
-            code = []
-            code.extend(('', '.. plot::', '   :include-source:'))
-            if reset:
-                code.append('   :context: reset')
-                reset = False
+            options = [
+                ":include-source:",
+            ]
+            try:
+                line, opts = line.split('#', 1)
+            except ValueError:
+                pass
             else:
-                code.append('   :context:')
+                options.extend(x.strip() for x in opts.split(","))
+            hasctx = any(":context:" in opt for opt in options)
+            if not hasctx and reset:
+                options.append(":context: reset")
+            elif not hasctx:
+                options.append(":context:")
+            code = [
+                '',
+                '.. plot::',
+            ] + ["   {}".format(opt) for opt in options]
             code.append('')
+            reset = False  # only reset first code block
         code.append('   %s' % line)
         incode = True
 

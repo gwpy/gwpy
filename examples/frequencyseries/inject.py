@@ -58,16 +58,14 @@ from gwpy.plot import Plot
 plot = Plot(numpy.abs(noisefd), numpy.abs(injfd), separate=True,
             sharex=True, sharey=True, xscale='log', yscale='log')
 plot.show()
-plot.close()  # hide
 
 # Finally, for completeness we can visualize the effect before and after
 # injection back in the time domain:
 
-inj = injfd.ifft()
+inj = injfd.ifft()  # :context: close-figs
 plot = Plot(noise, inj, separate=True, sharex=True, sharey=True,
             figsize=(12, 6))
 plot.show()
-plot.close()  # hide
 
 # We can see why sinusoids are easier to inject in the frequency domain:
 # they only require adding at a single frequency.

@@ -6,39 +6,37 @@
 Tabular data
 ############
 
-Alongside the :ref:`timeseries <gwpy-timeseries>` data produced continuously at the
-laboratories, a number of different sets of tabular data are generated, typically
-recording significant noise transients (glitches) or gravitational-wave events found
-in the data.
+Significant events discovered in data from gravitational-wave observatories are
+stored in tabular datasets, typically describing astrophysical events, or
+noise transients (glitches).
 
-============================
-The `Table` and `EventTable`
-============================
+================
+The `EventTable`
+================
 
-GWpy provides two classes for handling tabular data.
+GWpy extends the (excellent) :ref:`astropy-table` from `astropy` by providing
+the :class:`EventTable`.
 
-.. autosummary::
-   :nosignatures:
-
-   gwpy.table.Table
-   gwpy.table.EventTable
-
-.. note::
-
-   The `Table` is just an import of the
-   :mod:`astropy.table.Table <astropy.table>`, provided for
-   import convenience, see the Astropy documentation for full details on
-   that (excellent) object).
-
-The `EventTable` extends the functionality of the regular
-`~astropy.table.Table` with multi-file input routines, and utilities for
+This object extends the functionality of the regular `~astropy.table.Table`
+with enhanced I/O to support gravitational-wave data, and utilities for
 processing and plotting tables of events that contain GPS timestamps.
 
-See the :any:`astropy-table` documentation for examples of how to create custom tables, and much more.
-The only thing to change if you want to use the `EventTable` instead of the basic `Table` is the import::
+See the :any:`astropy-table` documentation for examples of how to create
+custom tables, and much more.
+The only thing to change if you want to use the `EventTable` instead of
+the basic `Table` is the import::
 
     >>> from gwpy.table import EventTable
 
+
+============================
+Downloading GWOSC catalogues
+============================
+
+.. toctree::
+   :maxdepth: 2
+
+   gwosc
 
 ======================
 Reading/writing tables
@@ -47,7 +45,7 @@ Reading/writing tables
 .. toctree::
    :maxdepth: 2
 
-   io.rst
+   io
 
 ============
 Using tables
