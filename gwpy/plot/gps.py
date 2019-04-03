@@ -204,11 +204,10 @@ class GPSTransformBase(GPSMixin, Transform):
         values = numpy.asarray(values)
 
         # handle simple or data transformations with floats
-        if any([
-                epoch == 0,  # no large additions
-                scale == 1,  # no multiplications
-                self._parents,  # part of composite transform (from draw())
-        ]):
+        if self._parents or (  # part of composite transform (from draw())
+                epoch == 0 and  # no large additions
+                scale == 1  # no multiplications
+        ):
             return self._transform(values, float(epoch), float(scale))
 
         # otherwise do things carefully (and slowly) with Decimals
