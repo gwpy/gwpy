@@ -9,6 +9,7 @@ environment:
 install:
   # configure conda
   - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+  - "%MINICONDA%\\Scripts\\activate.bat %MINICONDA%"
   - conda config --set always_yes yes --set changeps1 no
   - conda config --add channels conda-forge
   - conda update --quiet conda pip
@@ -29,5 +30,5 @@ after_test:
   - "set _PYV=%PYTHON_VERSION:.=%"
   - python -m pip install codecov
   - python -m codecov --flags Windows python%_PYV% conda
-on_finish:
+on_success:
   - ps: (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\junit.xml))
