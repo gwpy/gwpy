@@ -29,6 +29,7 @@ import os
 import re
 import subprocess
 import sys
+from collections import OrderedDict
 
 from six.moves import input
 
@@ -176,6 +177,18 @@ def parse_keytab(keytab):
     ----------
     keytab : `str`
         path to keytab file
+
+    Returns
+    -------
+    creds : `list` of `tuple`
+        the (unique) list of `(username, realm, kvno)` as read from the
+        keytab file
+
+    Examples
+    --------
+    >>> from gwpy.io.kerberos import parse_keytab
+    >>> print(parse_keytab("creds.keytab"))
+    [('albert.einstein', 'LIGO.ORG', 1)]
     """
     try:
         out = subprocess.check_output(['klist', '-k', keytab],
@@ -189,11 +202,12 @@ def parse_keytab(keytab):
         if isinstance(line, bytes):
             line = line.decode('utf-8')
         try:
-            num, principal, = re.split(r'\s+', line.strip(' '), 1)
+            kvno, principal, = re.split(r'\s+', line.strip(' '), 1)
         except ValueError:
             continue
         else:
-            if not num.isdigit():
+            if not kvno.isdigit():
                 continue
-            principals.append(principal.split('@'))
-    return principals
+            principals.append(tuple(principal.split('@')) + (int(kvno),))
+    # return unique, ordered list
+    return list(OrderedDict.fromkeys(principals).keys())
