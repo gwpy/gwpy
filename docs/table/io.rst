@@ -156,8 +156,8 @@ To replace an existing table of the given type in an existing file, while preser
 .. note::
 
    The |python-ligo-lw| library reads and writes files using an updated
-   version of the format compared to :mod:`glue.ligolw` used to. GWpy
-   should support both format versions natively when _reading_, but
+   version of the ``LIGO_LW`` format compared to :mod:`glue.ligolw` used to.
+   GWpy should support both format versions natively when _reading_, but
    when _writing_ you may need to explicitly pass the
    ``ilwdchar_compat=True`` keyword in order to write using the old
    format::
