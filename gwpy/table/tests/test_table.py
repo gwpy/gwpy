@@ -30,6 +30,9 @@ from six.moves.urllib.error import URLError
 
 import pytest
 
+import numpy
+from numpy.testing import assert_array_equal
+
 import sqlparse
 
 from numpy import (random, isclose, dtype, asarray)
@@ -117,7 +120,34 @@ class TestTable(object):
     def table(cls):
         return cls.create(100, ['time', 'snr', 'frequency'])
 
+    @staticmethod
+    @pytest.fixture()
+    def llwtable():
+        from ligo.lw.lsctables import (New, SnglBurstTable)
+        llwtab = New(SnglBurstTable, columns=["peak_frequency", "snr"])
+        for i in range(10):
+            row = llwtab.RowType()
+            row.peak_frequency = float(i)
+            row.snr = float(i)
+            llwtab.append(row)
+        return llwtab
+
     # -- test I/O -------------------------------
+
+    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    def test_ligolw(self, llwtable):
+        tab = self.TABLE(llwtable)
+        assert set(tab.colnames) == {"peak_frequency", "snr"}
+        assert_array_equal(tab["snr"], llwtable.getColumnByName("snr"))
+
+    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    def test_ligolw_rename(self, llwtable):
+        tab = self.TABLE(llwtable, rename={"peak_frequency": "frequency"})
+        assert set(tab.colnames) == {"frequency", "snr"}
+        assert_array_equal(
+            tab["frequency"],
+            llwtable.getColumnByName("peak_frequency"),
+        )
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
     @pytest.mark.parametrize('ext', ['xml', 'xml.gz'])
@@ -206,6 +236,52 @@ class TestTable(object):
                 _read()
             assert str(exc.value) == ('document must contain exactly '
                                       'one sngl_burst table')
+
+    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    def test_read_write_ligolw_ilwdchar_compat(self):
+        from glue.ligolw.ilwd import get_ilwdchar_class
+        from glue.ligolw.lsctables import SnglBurstTable
+
+        eid_type = get_ilwdchar_class("sngl_burst", "event_id")
+
+        table = self.create(
+            100,
+            ["peak", "snr", "central_freq", "event_id"],
+            ["f8", "f4", "f4", "i8"],
+        )
+        with tempfile.NamedTemporaryFile(suffix=".xml") as tmp:
+            # write table with ilwdchar_compat=True
+            table.write(tmp, format="ligolw", tablename="sngl_burst",
+                        ilwdchar_compat=True)
+
+            # read raw ligolw and check type is correct
+            llw = io_ligolw.read_table(tmp, tablename="sngl_burst",
+                                       ilwdchar_compat=True)
+            assert type(llw.getColumnByName("event_id")[0]) is eid_type
+
+            # reset IDs to 0
+            SnglBurstTable.reset_next_id()
+
+            # read without explicit use of ilwdchar_compat
+            t2 = self.TABLE.read(tmp, columns=table.colnames)
+            assert type(t2[0]["event_id"]) is eid_type
+
+            # read again with explicit use of ilwdchar_compat
+            SnglBurstTable.reset_next_id()
+            utils.assert_table_equal(
+                self.TABLE.read(tmp, columns=table.colnames,
+                                ilwdchar_compat=True),
+                t2,
+            )
+
+            # and check that ilwdchar_compat=True, use_numpy_dtypes=True works
+            SnglBurstTable.reset_next_id()
+            utils.assert_table_equal(
+                self.TABLE.read(tmp, columns=table.colnames,
+                                ilwdchar_compat=True, use_numpy_dtypes=True),
+                table,
+                almost_equal=True,
+            )
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
     def test_read_write_ligolw_property_columns(self):
