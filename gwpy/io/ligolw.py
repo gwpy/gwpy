@@ -207,23 +207,19 @@ def build_content_handler(parent, filter_func):
 # -- reading ------------------------------------------------------------------
 
 @ilwdchar_compat
-def read_ligolw(source, contenthandler=LIGOLWContentHandler, verbose=False,
-                non_lsc_tables_ok=True):
+def read_ligolw(source, contenthandler=LIGOLWContentHandler, **kwargs):
     """Read one or more LIGO_LW format files
 
     Parameters
     ----------
-    source : `str`, `file`, `list`
-        one or more open files or file paths to read
+    source : `str`, `file`
+        the open file or file path to read
 
     contenthandler : `~xml.sax.handler.ContentHandler`, optional
         content handler used to parse document
 
     verbose : `bool`, optional
         be verbose when reading files, default: `False`
-
-    non_lsc_tables_ok : `bool`, optional
-        if `False` error on unrecognised tables in documents, default: `True`
 
     Returns
     -------
@@ -233,7 +229,7 @@ def read_ligolw(source, contenthandler=LIGOLWContentHandler, verbose=False,
     from ligo.lw.ligolw import Document
     from ligo.lw import types
     from ligo.lw.lsctables import use_in
-    from ligo.lw.utils.ligolw_add import ligolw_add
+    from ligo.lw.utils import (load_url, ligolw_add)
 
     # mock ToPyType to link to numpy dtypes
     topytype = types.ToPyType.copy()
@@ -244,10 +240,20 @@ def read_ligolw(source, contenthandler=LIGOLWContentHandler, verbose=False,
     contenthandler = use_in(contenthandler)
 
     # read one or more files into a single Document
+    source = file_list(source)
     try:
-        return ligolw_add(Document(), file_list(source),
-                          contenthandler=contenthandler, verbose=verbose,
-                          non_lsc_tables_ok=non_lsc_tables_ok)
+        if len(source) == 1:
+            return load_url(
+                source[0],
+                contenthandler=contenthandler,
+                **kwargs
+            )
+        return ligolw_add.ligolw_add(
+            Document(),
+            source,
+            contenthandler=contenthandler,
+            **kwargs
+        )
     except LigolwElementError as exc:
         # failed to read with ligo.lw,
         # try again with glue.ligolw (ilwdchar_compat)
@@ -257,10 +263,9 @@ def read_ligolw(source, contenthandler=LIGOLWContentHandler, verbose=False,
                     source,
                     contenthandler=contenthandler,
                     verbose=verbose,
-                    non_lsc_tables_ok=non_lsc_tables_ok,
                     ilwdchar_compat=True,
                 )
-            except Exception:  # if fails for any reason, us original error
+            except Exception:  # if fails for any reason, use original error
                 pass
         raise
     finally:  # replace ToPyType
@@ -285,7 +290,6 @@ def with_read_ligolw(func=None, contenthandler=None):
                     'contenthandler': kwargs.pop('contenthandler',
                                                  contenthandler),
                     'verbose': kwargs.pop('verbose', False),
-                    'non_lsc_tables_ok': kwargs.pop('non_lsc_tables_ok', True),
                 }
                 return func_(read_ligolw(source, **read_kw), *args, **kwargs)
             return func_(source, *args, **kwargs)
