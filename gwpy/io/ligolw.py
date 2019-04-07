@@ -262,8 +262,8 @@ def read_ligolw(source, contenthandler=LIGOLWContentHandler, **kwargs):
                 return read_ligolw(
                     source,
                     contenthandler=contenthandler,
-                    verbose=verbose,
                     ilwdchar_compat=True,
+                    **kwargs
                 )
             except Exception:  # if fails for any reason, use original error
                 pass

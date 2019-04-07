@@ -30,12 +30,10 @@ from six.moves.urllib.error import URLError
 
 import pytest
 
-import numpy
-from numpy.testing import assert_array_equal
-
 import sqlparse
 
 from numpy import (random, isclose, dtype, asarray)
+from numpy.testing import assert_array_equal
 
 import h5py
 
