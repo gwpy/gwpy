@@ -61,7 +61,14 @@ except ImportError:
 else:
     from ligo.lw.ilwd import ilwdchar
     from ligo.lw._ilwd import ilwdchar as _ilwdchar
-    ilwdchar_types = (ilwdchar, _ilwdchar)
+    from glue.ligolw.ilwd import ilwdchar as glue_ilwdchar
+    from glue.ligolw._ilwd import ilwdchar as _glue_ilwdchar
+    ilwdchar_types = (
+        ilwdchar,
+        _ilwdchar,
+        glue_ilwdchar,
+        _glue_ilwdchar,
+    )
     NUMPY_TYPE_MAP[ilwdchar_types] = numpy.int_
     NUMPY_TYPE_MAP[LIGOTimeGPS] = numpy.float_
 
