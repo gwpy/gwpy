@@ -90,10 +90,7 @@ def _get_property_columns(tabletype, columns):
     # build list of real column names for fancy properties
     extracols = {}
     for key in columns:
-        try:
-            prop = rowvars[key]
-        except KeyError:
-            continue
+        prop = rowvars[key]
         if isinstance(prop, GpsProperty):
             extracols[key] = (prop.s_name, prop.ns_name)
     return extracols
