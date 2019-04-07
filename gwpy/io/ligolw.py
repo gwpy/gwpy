@@ -27,6 +27,7 @@ import re
 from contextlib import contextmanager
 from functools import wraps
 from importlib import import_module
+from numbers import Integral
 
 # note: because the "future" module provides a builtins namespace,
 # we need to do this the other way around compared to normal
@@ -657,7 +658,7 @@ def _to_ilwd(value, tablename, colname):
                          "{1!r}".format(value, colname))
     if isinstance(value, IlwdChar):
         return value
-    if isinstance(value, int):
+    if isinstance(value, Integral):
         return get_ilwdchar_class(tablename, colname)(value)
     return ilwdchar(value)
 
