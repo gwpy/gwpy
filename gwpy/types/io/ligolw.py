@@ -29,7 +29,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def series_contenthandler():
     """Build a `~xml.sax.handlers.ContentHandler` to read a LIGO_LW <Array>
     """
-    from glue.ligolw import (
+    from ligo.lw import (
         ligolw,
         array as ligolw_array,
         param as ligolw_param
@@ -50,7 +50,7 @@ def read_series(source, name, match=None):
 
     Parameters
     ----------
-    source : `file`, `str`, :class:`~glue.ligolw.ligolw.Document`
+    source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`
         file path or open LIGO_LW-format XML file
 
     name : `str`
@@ -61,8 +61,8 @@ def read_series(source, name, match=None):
         this is useful if a single file contains multiple `LIGO_LW` elements
         with the same name
     """
-    from glue.ligolw.ligolw import (LIGO_LW, Time, Array, Dim)
-    from glue.ligolw.param import get_param
+    from ligo.lw.ligolw import (LIGO_LW, Time, Array, Dim)
+    from ligo.lw.param import get_param
 
     # read document
     xmldoc = read_ligolw(source, contenthandler=series_contenthandler())

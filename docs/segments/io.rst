@@ -21,11 +21,11 @@ The :meth:`read` and :meth:`write` methods take different arguments and keywords
 ``LIGO_LW`` XML
 ===============
 
-**Additional dependencies:** :mod:`glue.ligolw`
+**Additional dependencies:** |python-ligo-lw|_
 
 The LIGO Scientific Collaboration uses a custom scheme of XML in which to
-store tabular data, called the ``LIGO_LW`` scheme.
-Complementing the scheme is a python library - :mod:`glue.ligolw` - which
+store tabular data, called ``LIGO_LW``.
+Complementing the scheme is a python library - |python-ligo-lw|_ - which
 allows users to read and write all of the different types of tabular data
 produced by gravitational-wave searches.
 
@@ -81,6 +81,18 @@ To replace the segment tables in an existing file, while preserving other tables
 Extra attributes can be written to the tables via the ``attrs={}`` keyword, all attributes are set for all three of the segment-related tables::
 
     >>> f.write('new-table.xml', append=True, overwrite=True, attrs={'process_id': 0})
+
+.. note::
+
+   The |python-ligo-lw| library reads and writes files using an updated
+   version of the ``LIGO_LW`` format compared to :mod:`glue.ligolw` used to.
+   GWpy should support both format versions natively when _reading_, but
+   when _writing_ you may need to explicitly pass the
+   ``ilwdchar_compat=True`` keyword in order to write using the old
+   format::
+
+       >>> f.write('new-table.xml', ilwdchar_compat=True)
+
 
 `DataQualityDict`
 -----------------

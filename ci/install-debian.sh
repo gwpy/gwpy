@@ -79,7 +79,8 @@ apt-get -yqq install \
     ${PY_PREFIX}-lalframe \
     ${PY_PREFIX}-lalsimulation \
     ${PY_PREFIX}-ldas-tools-framecpp \
-    ${PY_PREFIX}-nds2-client
+    ${PY_PREFIX}-nds2-client \
+    ${PY_PREFIX}-ligo-lw
 
 # install ROOT for python2 only
 if [ "${PY_PREFIX}" == "python" ]; then

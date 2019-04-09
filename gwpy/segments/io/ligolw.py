@@ -35,9 +35,9 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def segment_content_handler():
     """Build a `~xml.sax.handlers.ContentHandler` to read segment XML tables
     """
-    from glue.ligolw.lsctables import (SegmentTable, SegmentDefTable,
-                                       SegmentSumTable)
-    from glue.ligolw.ligolw import PartialLIGOLWContentHandler
+    from ligo.lw.lsctables import (SegmentTable, SegmentDefTable,
+                                   SegmentSumTable)
+    from ligo.lw.ligolw import PartialLIGOLWContentHandler
 
     def _filter(name, attrs):
         return reduce(
@@ -55,7 +55,7 @@ def read_ligolw_dict(source, names=None, coalesce=False, **kwargs):
 
     Parameters
     ----------
-    source : `file`, `str`, :class:`~glue.ligolw.ligolw.Document`, `list`
+    source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
         one (or more) open files or file paths, or LIGO_LW `Document` objects
 
     names : `list`, `None`, optional
@@ -76,20 +76,15 @@ def read_ligolw_dict(source, names=None, coalesce=False, **kwargs):
         and ``known`` segments seeded from the XML tables in the given
         file ``fp``.
     """
-    from glue.ligolw.lsctables import (SegmentTable, SegmentDefTable,
-                                       SegmentSumTable)
-
-    # read file(s)
     xmldoc = read_ligolw(source, contenthandler=segment_content_handler())
 
-    # extract tables
-    tables = [table_.get_table(xmldoc) for
-              table_ in (SegmentDefTable, SegmentSumTable, SegmentTable)]
-
     # parse tables
-    with patch_ligotimegps():
-        out = DataQualityDict.from_ligolw_tables(*tables, names=names,
-                                                 **kwargs)
+    with patch_ligotimegps(type(xmldoc.childNodes[0]).__module__):
+        out = DataQualityDict.from_ligolw_tables(
+            *xmldoc.childNodes,
+            names=names,
+            **kwargs
+        )
 
     # coalesce
     if coalesce:
@@ -108,7 +103,7 @@ def read_ligolw_flag(source, name=None, **kwargs):
 
 # -- write --------------------------------------------------------------------
 
-def write_ligolw(flags, target, attrs=None, **kwargs):
+def write_ligolw(flags, target, attrs=None, ilwdchar_compat=None, **kwargs):
     """Write this `DataQualityFlag` to the given LIGO_LW Document
 
     Parameters
@@ -116,7 +111,7 @@ def write_ligolw(flags, target, attrs=None, **kwargs):
     flags : `DataQualityFlag`, `DataQualityDict`
         `gwpy.segments` object to write
 
-    target : `str`, `file`, :class:`~glue.ligolw.ligolw.Document`
+    target : `str`, `file`, :class:`~ligo.lw.ligolw.Document`
         the file or document to write into
 
     attrs : `dict`, optional
@@ -132,8 +127,12 @@ def write_ligolw(flags, target, attrs=None, **kwargs):
     """
     if isinstance(flags, DataQualityFlag):
         flags = DataQualityDict({flags.name: flags})
-    return write_tables(target, flags.to_ligolw_tables(**attrs or dict()),
-                        **kwargs)
+    return write_tables(
+        target,
+        flags.to_ligolw_tables(ilwdchar_compat=ilwdchar_compat,
+                               **attrs or dict()),
+        **kwargs
+    )
 
 
 # -- register -----------------------------------------------------------------

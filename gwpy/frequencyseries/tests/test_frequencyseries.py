@@ -238,7 +238,7 @@ class TestFrequencySeries(_TestSeries):
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['name', 'channel', 'unit', 'epoch']})
 
-    @utils.skip_missing_dependency('glue.ligolw.utils.ligolw_add')
+    @utils.skip_missing_dependency('ligo.lw.utils.ligolw_add')
     def test_read_ligolw(self):
         with tempfile.NamedTemporaryFile(mode='w+') as fobj:
             fobj.write(LIGO_LW_ARRAY)

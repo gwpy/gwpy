@@ -31,9 +31,10 @@ from .. import ligolw as io_ligolw
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+@io_ligolw.ilwdchar_compat
 def new_table(tablename, data=None, **new_kw):
-    from glue.ligolw import lsctables
-    from glue.ligolw.table import Table
+    from ligo.lw import lsctables
+    from ligo.lw.table import Table
 
     table = lsctables.New(lsctables.TableByName[Table.TableName(tablename)],
                           **new_kw)
@@ -45,10 +46,24 @@ def new_table(tablename, data=None, **new_kw):
     return table
 
 
-@skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+@pytest.mark.parametrize("ilwdchar_compat", [
+    pytest.param(False, marks=skip_missing_dependency("ligo.lw.lsctables")),
+    pytest.param(True, marks=skip_missing_dependency("glue.ligolw.lsctables")),
+])
+def test_ilwdchar_compat(ilwdchar_compat):
+    if ilwdchar_compat:
+        from glue.ligolw.table import Table
+    else:
+        from ligo.lw.table import Table
+    # test that our new_table function actually returns properly
+    tab = new_table("sngl_burst", ilwdchar_compat=ilwdchar_compat)
+    assert isinstance(tab, Table)
+
+
+@skip_missing_dependency('ligo.lw.lsctables')  # check for LAL
 @pytest.fixture
 def llwtable():
-    from glue.ligolw.ligolw import (Document, LIGO_LW)
+    from ligo.lw.ligolw import (Document, LIGO_LW)
 
     # build dummy document with two tables
     xmldoc = Document()
@@ -59,9 +74,9 @@ def llwtable():
     return xmldoc
 
 
-@skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+@skip_missing_dependency('ligo.lw.lsctables')  # check for LAL
 def test_open_xmldoc(llwtable):
-    from glue.ligolw.ligolw import Document
+    from ligo.lw.ligolw import Document
     assert isinstance(io_ligolw.open_xmldoc(tempfile.mktemp()), Document)
 
     with tempfile.TemporaryFile(mode='w') as f:
@@ -70,9 +85,9 @@ def test_open_xmldoc(llwtable):
         assert isinstance(io_ligolw.open_xmldoc(f), Document)
 
 
-@skip_missing_dependency('glue.ligolw')
+@skip_missing_dependency('ligo.lw')
 def test_get_ligolw_element():
-    from glue.ligolw.ligolw import (Document, LIGO_LW)
+    from ligo.lw.ligolw import (Document, LIGO_LW)
     xmldoc = Document()
     llw = xmldoc.appendChild(LIGO_LW())
     assert io_ligolw.get_ligolw_element(llw) is llw
@@ -81,7 +96,7 @@ def test_get_ligolw_element():
         io_ligolw.get_ligolw_element(Document())
 
 
-@skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+@skip_missing_dependency('ligo.lw.lsctables')  # check for LAL
 def test_list_tables(llwtable):
     names = [t.TableName(t.Name) for t in llwtable.childNodes[0].childNodes]
 
@@ -95,7 +110,21 @@ def test_list_tables(llwtable):
         assert io_ligolw.list_tables(f) == names
 
 
-@skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+@skip_missing_dependency('ligo.lw.lsctables')  # check for LAL
+@pytest.mark.parametrize('value, name, result', [
+    (None, 'peak_time', None),
+    (1.0, 'peak_time', numpy.int32(1)),
+    (1, 'process_id', 1),
+    (1.0, 'invalidname', 1.0),
+])
+def test_to_table_type(value, name, result):
+    from ligo.lw.lsctables import SnglBurstTable
+    out = io_ligolw.to_table_type(value, SnglBurstTable, name)
+    assert isinstance(out, type(result))
+    assert out == result
+
+
+@skip_missing_dependency('glue.ligolw.lsctables')
 @pytest.mark.parametrize('value, name, result', [
     (None, 'peak_time', None),
     (1.0, 'peak_time', numpy.int32(1)),
@@ -103,7 +132,7 @@ def test_list_tables(llwtable):
     (1.0, 'invalidname', 1.0),
     ('process:process_id:100', 'process_id', 'process:process_id:100'),
 ])
-def test_to_table_type(value, name, result):
+def test_to_table_type_glue_ligolw(value, name, result):
     from glue.ligolw.lsctables import SnglBurstTable
     from glue.ligolw.ilwd import ilwdchar
     from glue.ligolw._ilwd import ilwdchar as IlwdChar
@@ -114,18 +143,7 @@ def test_to_table_type(value, name, result):
     assert out == result
 
 
-@skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
-def test_to_table_type_ilwd():
-    from glue.ligolw.ilwd import ilwdchar
-    from glue.ligolw.lsctables import SnglBurstTable
-    ilwd = ilwdchar('process:process_id:0')
-    with pytest.raises(ValueError) as exc:
-        io_ligolw.to_table_type(ilwd, SnglBurstTable, 'event_id')
-    assert str(exc.value) == ('ilwdchar \'process:process_id:0\' doesn\'t '
-                              'match column \'event_id\'')
-
-
-@skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+@skip_missing_dependency('ligo.lw.lsctables')  # check for LAL
 def test_write_tables_to_document(llwtable):
     # create new table
     def _new():
@@ -151,7 +169,7 @@ def test_write_tables_to_document(llwtable):
     assert len(llw.childNodes[-1]) == 3
 
 
-@skip_missing_dependency('glue.ligolw.lsctables')  # check for LAL
+@skip_missing_dependency('ligo.lw.lsctables')  # check for LAL
 def test_write_tables():
     stab = new_table(
         'segment',
