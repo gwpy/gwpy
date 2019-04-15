@@ -21,7 +21,6 @@
 
 import os
 import subprocess
-import sys
 
 import pytest
 
@@ -99,7 +98,6 @@ def test_kinit_up(popen, getpass, input_, which, _, capsys):
     )
     getpass.assert_called_with(
         prompt="Password for rainer.weiss@LIGO.ORG: ",
-        stream=sys.stdout,
     )
     popen.assert_called_with(
         ['/bin/kinit', 'rainer.weiss@LIGO.ORG'],
