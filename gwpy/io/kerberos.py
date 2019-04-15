@@ -39,6 +39,11 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 __all__ = ['kinit']
 
+try:
+    _IPYTHON = __IPYTHON__
+except NameError:
+    _IPYTHON = False
+
 
 class KerberosError(RuntimeError):
     """Kerberos (krb5) operation failed
@@ -127,7 +132,9 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
                 keytab = None
 
     # refuse to prompt if we can't get an answer
-    if not sys.stdout.isatty() and (
+    # note: jupyter streams are not recognised as interactive
+    #       (isatty() returns False) so we have a special case here
+    if not sys.stdout.isatty() and not _IPYTHON and (
             username is None or
             (not keytab and password is None)
     ):
