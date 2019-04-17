@@ -92,5 +92,5 @@ Authenticated collaborators also have access to the thousands of auxiliary chann
 
 will return one hour of data from the vertical-ground-motion seismometer located near the ITMY vacuum enclosure at LIGO Livingston.
 
-The `TimeSeries.get` method tries direct file access (using :mod:`glue.datafind` for file discovery) first, then falls back to using the Network Data Server (NDS2) for remote access.
+The `TimeSeries.get` method tries direct file access (using |gwdatafind|_ for file discovery) first, then falls back to using the Network Data Server (NDS2) for remote access.
 If you want to manually use NDS2 for remote access you can instead use the `TimeSeries.fetch` method.

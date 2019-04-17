@@ -312,6 +312,7 @@ intersphinx_mapping = {
     'root_numpy': ('http://scikit-hep.org/root_numpy/', None),
     'h5py': ('http://docs.h5py.org/en/latest/', None),
     'dateutil': ('https://dateutil.readthedocs.io/en/stable/', None),
+    'gwdatafind': ('https://gwdatafind.readthedocs.io/en/stable/', None),
 }
 
 

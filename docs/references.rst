@@ -9,6 +9,9 @@
 .. |dqsegdb2| replace:: `dqsegdb2`
 .. _dqsegdb2: https://dqsegdb2.readthedocs.io
 
+.. |gwdatafind| replace:: `gwdatafind`
+.. _gwdatafind: https://gwdatafind.readthedocs.io
+
 .. |gwosc-mod| replace:: `gwosc`
 .. _gwosc-mod: https://gwosc.readthedocs.io
 
