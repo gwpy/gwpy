@@ -29,13 +29,24 @@ METADATA = {
     'author': 'sectionauthor',
 }
 
+_context = "reset"
+
 
 def postprocess_code(code):
+    global _context
+
     if any('plot.show()' in line for line in code):
-        code.insert(2, '   :context: close-figs:')
+        ctx = "close-figs"
     else:
         code.insert(2, '   :nofigs:')
+        ctx = ""
+
+    code.insert(2, '   :context: {}'.format(_context).rstrip())
     code.append('')
+
+    # set context for the next code block
+    _context = ctx
+
     return code
 
 
@@ -83,9 +94,9 @@ for i, line in enumerate(lines):
         continue
 
     # find block docs
-    if line.startswith('"""'):
+    if '"""' in line:
         indoc = not indoc
-    line = line.strip('"')
+        line = line.strip('"')
 
     # skip empty lines not in a block quote
     if not line and not indoc:
@@ -115,26 +126,12 @@ for i, line in enumerate(lines):
     # code
     else:
         if not incode:  # restart code block
-            options = [
-                ":include-source:",
-            ]
-            try:
-                line, opts = line.split('#', 1)
-            except ValueError:
-                pass
-            else:
-                options.extend(x.strip() for x in opts.split(","))
-            hasctx = any(":context:" in opt for opt in options)
-            if not hasctx and reset:
-                options.append(":context: reset")
-            elif not hasctx:
-                options.append(":context:")
             code = [
                 '',
                 '.. plot::',
-            ] + ["   {}".format(opt) for opt in options]
-            code.append('')
-            reset = False  # only reset first code block
+                '   :include-source:',
+                '',
+            ]
         code.append('   %s' % line)
         incode = True
 

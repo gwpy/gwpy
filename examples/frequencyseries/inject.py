@@ -62,7 +62,7 @@ plot.show()
 # Finally, for completeness we can visualize the effect before and after
 # injection back in the time domain:
 
-inj = injfd.ifft()  # :context: close-figs
+inj = injfd.ifft()
 plot = Plot(noise, inj, separate=True, sharex=True, sharey=True,
             figsize=(12, 6))
 plot.show()
