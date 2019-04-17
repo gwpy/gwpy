@@ -103,7 +103,10 @@ copyright = u'2013, Duncan Macleod'
 # built documents.
 #
 # The short X.Y version.
-version = GWPY_VERSION['version'].split('+')[0]
+if '+' in GWPY_VERSION["version"]:
+    version = "dev"
+else:
+    version = GWPY_VERSION["version"]
 # The full version, including alpha/beta/rc tags.
 release = GWPY_VERSION['version']
 
