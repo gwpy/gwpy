@@ -71,21 +71,26 @@ Requirements
 
 GWpy has the following strict requirements:
 
-- `Python <https://python.org>`__ 2.7, or 3.4 or greater
-- |astropy|_ `>= 1.1.1`
-- |dateutil|_
-- |dqsegdb2|_
-- |enum34|_ (Python 2.7 only)
-- |gwdatafind|_
-- |gwosc| `>= 0.3.1`
-- |h5py|_ `>= 1.3.0`
-- |ligo-segments|_ `>= 1.0.0`
-- |ligotimegps|_ `>= 1.2.1`
-- |matplotlib|_ `>= 1.2.0`
-- |numpy|_ `>= 1.7.1`
-- |scipy|_ `>= 0.12.1`
-- |six|_ `>= 1.5.0`
-- |tqdm|_ `>= 4.10.0`
+.. table:: Requirements for GWpy
+   :align: left
+
+   ==================  ===========================
+   Name                Constraints
+   ==================  ===========================
+   |astropy|_          ``>=1.1.1``
+   |dqsegdb2|_
+   |gwdatafind|_
+   |gwosc-mod|_        ``>=0.4.0``
+   |h5py|_             ``>=1.3``
+   |ligo-segments|_    ``>=1.0.0``
+   |ligotimegps|_      ``>=1.2.1``
+   |matplotlib|_       ``!=2.1.0,!=2.1.1,>=1.2.0``
+   |numpy|_            ``>=1.7.1``
+   |dateutil|_
+   |scipy|_            ``>=0.12.1``
+   |six|_              ``>=1.5``
+   |tqdm|_             ``>=4.10.0``
+   ==================  ===========================
 
 All of these will be installed using any of the above install methods.
 

@@ -183,9 +183,8 @@ To replace an existing dataset in an existing file, while preserving other data,
 HDF5 (GWOSC)
 ============
 
-The `Gravitational Wave Open Science Center (GWOSC)
-<https://www.gw-openscience.org>` write data in HDF5 using a custom schema
-that is incompatible with the `format='hdf5'`.
+|GWOSC|_ write data in HDF5 using a custom schema that is incompatible
+with `format='hdf5'`.
 
 -------
 Reading

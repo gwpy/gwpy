@@ -21,10 +21,10 @@
 
 Confident detection of gravitational-wave signals is critically dependent
 on understanding the quality of the data searched.
-Alongside the strain *h(t)* data, the GW Open Science Center (GWOSC) also
+Alongside the strain *h(t)* data, |GWOSC|_ also
 releases a *Data Quality* :ref:`state vector <gwpy-statevector>`.
 We can use this to check on the quality of the data from the LIGO Livingston
-detector around `GW170817 <https://losc.ligo.org/events/GW170817/>`__.
+detector around GW170817.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
