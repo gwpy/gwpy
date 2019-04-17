@@ -182,7 +182,7 @@ numpydoc_use_blockquotes = True
 numpydoc_use_plots = True
 
 # update the plot detection to include .show() calls
-parts = re.split('[\(\)|]', docscrape_sphinx.IMPORT_MATPLOTLIB_RE)[1:-1]
+parts = re.split(r'[\(\)|]', docscrape_sphinx.IMPORT_MATPLOTLIB_RE)[1:-1]
 parts.extend(('fig.show()', 'plot.show()'))
 docscrape_sphinx.IMPORT_MATPLOTLIB_RE = r'\b({})\b'.format('|'.join(parts))
 
