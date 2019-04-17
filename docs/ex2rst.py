@@ -32,7 +32,7 @@ METADATA = {
 
 def postprocess_code(code):
     if any('plot.show()' in line for line in code):
-        code.insert(2, '   :close-figs:')
+        code.insert(2, '   :context: close-figs:')
     else:
         code.insert(2, '   :nofigs:')
     code.append('')
