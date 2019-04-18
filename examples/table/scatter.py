@@ -51,5 +51,5 @@ events.add_column(events["mass1"] + events["mass2"], name="mtotal")
 
 # and now can make a new scatter plot:
 
-plot = events.scatter("distance", "mtotal")  # :context: close-figs
+plot = events.scatter("distance", "mtotal")
 plot.show()

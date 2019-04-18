@@ -103,7 +103,10 @@ copyright = u'2013, Duncan Macleod'
 # built documents.
 #
 # The short X.Y version.
-version = GWPY_VERSION['version'].split('+')[0]
+if '+' in GWPY_VERSION["version"]:
+    version = "dev"
+else:
+    version = GWPY_VERSION["version"]
 # The full version, including alpha/beta/rc tags.
 release = GWPY_VERSION['version']
 
@@ -182,7 +185,7 @@ numpydoc_use_blockquotes = True
 numpydoc_use_plots = True
 
 # update the plot detection to include .show() calls
-parts = re.split('[\(\)|]', docscrape_sphinx.IMPORT_MATPLOTLIB_RE)[1:-1]
+parts = re.split(r'[\(\)|]', docscrape_sphinx.IMPORT_MATPLOTLIB_RE)[1:-1]
 parts.extend(('fig.show()', 'plot.show()'))
 docscrape_sphinx.IMPORT_MATPLOTLIB_RE = r'\b({})\b'.format('|'.join(parts))
 
@@ -303,15 +306,21 @@ htmlhelp_basename = 'GWpydoc'
 
 # Intersphinx
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
-    'matplotlib': ('http://matplotlib.org/', None),
     'astropy': ('http://docs.astropy.org/en/stable/', None),
-    'pycbc': ('http://pycbc.org/pycbc/latest/html/', None),
-    'root_numpy': ('http://scikit-hep.org/root_numpy/', None),
-    'h5py': ('http://docs.h5py.org/en/latest/', None),
     'dateutil': ('https://dateutil.readthedocs.io/en/stable/', None),
+    'dqsegdb2': ('https://dqsegdb2.readthedocs.io/en/stable/', None),
+    'glue': ('https://docs.ligo.org/lscsoft/glue/', None),
+    'gwdatafind': ('https://gwdatafind.readthedocs.io/en/stable/', None),
+    'gwosc': ('https://gwosc.readthedocs.io/en/stable/', None),
+    'h5py': ('http://docs.h5py.org/en/latest/', None),
+    'ligo-segments': ('https://docs.ligo.org/lscsoft/ligo-segments/', None),
+    'ligolw': ('https://docs.ligo.org/kipp.cannon/python-ligo-lw/', None),
+    'matplotlib': ('http://matplotlib.org/', None),
+    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
+    'pycbc': ('http://pycbc.org/pycbc/latest/html/', None),
+    'python': ('https://docs.python.org/3/', None),
+    'root_numpy': ('http://scikit-hep.org/root_numpy/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
 }
 
 

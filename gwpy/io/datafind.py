@@ -249,7 +249,7 @@ def reconnect(connection):
 
     Returns
     -------
-    newconn : :class:`~gwdatafind.http.HTTPConnection`
+    newconn : :class:`~gwdatafind.http.HTTPConnection` or `FflConnection`
         the new open connection to the same `host:port` server
     """
     if isinstance(connection, FflConnection):
@@ -318,6 +318,12 @@ def _choose_connection(**datafind_kw):
 
 
 def with_connection(func):
+    """Decorate a function to open a new datafind connection if required
+
+    This method will inspect the ``connection`` keyword, and if `None`
+    (or missing), will use the ``host`` and ``port`` keywords to open
+    a new connection and pass it as ``connection=<new>`` to ``func``.
+    """
     @wraps(func)
     def wrapped(*args, **kwargs):
         if kwargs.get('connection') is None:
@@ -608,6 +614,14 @@ def find_best_frametype(channel, start, end,
 @with_connection
 def find_types(observatory, match=None, trend=None,
                connection=None, **connection_kw):
+    """Find the available data types for a given observatory.
+
+    See also
+    --------
+    gwdatafind.http.HTTPConnection.find_types
+    FflConnection.find_types
+        for details on the underlying method(s)
+    """
     return sorted(connection.find_types(observatory, match=match),
                   key=lambda x: _type_priority(observatory, x, trend=trend))
 
@@ -615,6 +629,14 @@ def find_types(observatory, match=None, trend=None,
 @with_connection
 def find_urls(observatory, frametype, start, end, on_gaps='error',
               connection=None, **connection_kw):
+    """Find the URLs of files of a given data type in a GPS interval.
+
+    See also
+    --------
+    gwdatafind.http.HTTPConnection.find_urls
+    FflConnection.find_urls
+        for details on the underlying method(s)
+    """
     return connection.find_urls(observatory, frametype, start, end,
                                 on_gaps=on_gaps)
 
@@ -622,7 +644,13 @@ def find_urls(observatory, frametype, start, end, on_gaps='error',
 @with_connection
 def find_latest(observatory, frametype, gpstime=None, allow_tape=False,
                 connection=None, **connection_kw):
-    """Find the latest framepath for a given frametype
+    """Find the path of the latest file of a given data type.
+
+    See also
+    --------
+    gwdatafind.http.HTTPConnection.find_latest
+    FflConnection.find_latest
+        for details on the underlying method(s)
     """
     observatory = observatory[0]
     try:

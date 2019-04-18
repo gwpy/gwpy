@@ -36,7 +36,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.timeseries'
 
 # First, we need to download the `TimeSeries` record for the H1 strain
-# measurement from `LOSC <//losc.ligo.org>`_:
+# measurement from |GWOSC|_:
 
 from gwpy.timeseries import TimeSeries
 data = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
