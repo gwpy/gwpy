@@ -73,6 +73,7 @@ GWpy has the following strict requirements:
 
 .. table:: Requirements for GWpy
    :align: left
+   :name: requirements-table
 
    ==================  ===========================
    Name                Constraints

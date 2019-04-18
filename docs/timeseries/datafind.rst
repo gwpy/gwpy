@@ -93,24 +93,28 @@ given ``gwf`` file.
 The following table is an incomplete, but probably OK, reference to which
 dataset (``frametype``) you want to use for file-based data access:
 
-========================  =====================================================
-Dataset (frametype)       Description
-========================  =====================================================
-``H1_R``                  All auxiliary channels, stored at the native sampling
-                          rate
-``H1_T``                  Second trends of all channels, including
-                          ``.mean``, ``.min``, and ``.max``
-``H1_M``                  Minute trends of all channels, including
-                          ``.mean``, ``.min``, and ``.max``
-``H1_HOFT_C00``           Strain *h(t)* and metadata generated using the
-                          real-time calibration pipeline
-``H1_HOFT_CXY``           Strain *h(t)* and metadata generated using the
-                          off-line calibration pipeline at version ``XY``
-``H1_GWOSC_O2_4KHZ_R1``   4k Hz Strain *h(t)* and metadata as released by
-                          |GWOSC|_ for the O2 data release
-``H1_GWOSC_O2_16KHZ_R1``  16k Hz Strain *h(t)* and metadata as released by
-                          |GWOSC|_ for the O2 data release
-========================  =====================================================
+.. table:: Datasets available with |gwdatafind|_
+   :align: left
+   :name: gwdatafind-datasets
+
+   ========================  =====================================================
+   Dataset (frametype)       Description
+   ========================  =====================================================
+   ``H1_R``                  All auxiliary channels, stored at the native sampling
+                             rate
+   ``H1_T``                  Second trends of all channels, including
+                             ``.mean``, ``.min``, and ``.max``
+   ``H1_M``                  Minute trends of all channels, including
+                             ``.mean``, ``.min``, and ``.max``
+   ``H1_HOFT_C00``           Strain *h(t)* and metadata generated using the
+                             real-time calibration pipeline
+   ``H1_HOFT_CXY``           Strain *h(t)* and metadata generated using the
+                             off-line calibration pipeline at version ``XY``
+   ``H1_GWOSC_O2_4KHZ_R1``   4k Hz Strain *h(t)* and metadata as released by
+                             |GWOSC|_ for the O2 data release
+   ``H1_GWOSC_O2_16KHZ_R1``  16k Hz Strain *h(t)* and metadata as released by
+                             |GWOSC|_ for the O2 data release
+   ========================  =====================================================
 
 The above datasets refer to the ``H1`` (LIGO-Hanford) instrument, the same are
 available for LIGO-Livingston by substituting the ``L1`` prefix.

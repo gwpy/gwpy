@@ -88,15 +88,19 @@ The ``start`` and ``end`` keyword arguments can be used to downselect data to a 
 
 Additionally, the following keyword arguments can be used:
 
-============  =======  =======  ==========================================
-Keyword       Type     Default  Usage
-============  =======  =======  ==========================================
-``scaled``    `bool`   `True`   Apply ADC calibration when reading
-``type``      `str`    `None`   `dict` of channel types
-                                (``'ADC'``, ``'Proc'``, or ``'Sim'``) for
-                                each channel to be read. This option
-                                optimises the reading operation.
-============  =======  =======  ==========================================
+.. table:: Keyword arguments for `TimeSeries.read`
+   :align: left
+   :name: timeseries-read-kwargs
+
+   ============  =======  =======  ==========================================
+   Keyword       Type     Default  Usage
+   ============  =======  =======  ==========================================
+   ``scaled``    `bool`   `True`   Apply ADC calibration when reading
+   ``type``      `str`    `None`   `dict` of channel types
+                                   (``'ADC'``, ``'Proc'``, or ``'Sim'``) for
+                                   each channel to be read. This option
+                                   optimises the reading operation.
+   ============  =======  =======  ==========================================
 
 Reading multiple channels
 -------------------------

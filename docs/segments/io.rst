@@ -31,13 +31,17 @@ produced by gravitational-wave searches.
 
 Segments are stored in ``LIGO_LW`` format using a trio of tables:
 
-===================  ==========================================================
-Table name           Contents
-===================  ==========================================================
-``segment_definer``  Definitions for each flag, including names and versions
-``segment_summary``  Known segments for each flag
-``segment``          Active segments for each flag
-===================  ==========================================================
+.. table:: ``LIGO_LW`` XML tables for segment storage
+   :align: left
+   :name: ligolw-segment-tables
+
+   ===================  ==========================================================
+   Table name           Contents
+   ===================  ==========================================================
+   ``segment_definer``  Definitions for each flag, including names and versions
+   ``segment_summary``  Known segments for each flag
+   ``segment``          Active segments for each flag
+   ===================  ==========================================================
 
 Reading
 -------
