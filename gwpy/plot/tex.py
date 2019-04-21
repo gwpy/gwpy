@@ -29,9 +29,9 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # -- tex configuration --------------------------------------------------------
 
-MACROS = [
-    r'\def\rtHz{\ensuremath{\sqrt{\mathrm{Hz}}}}',  # \sqrt{Hz} label
-]
+MACROS = (
+    r'\def\rtHz{\ensuremath{\sqrt{\mathrm{Hz}}}}'  # \sqrt{Hz} label
+)
 
 
 def has_tex():

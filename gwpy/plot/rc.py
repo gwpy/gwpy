@@ -76,7 +76,7 @@ GWPY_TEX_RCPARAMS = RcParams(**{
     # use latex styling
     'text.usetex': True,
     'text.latex.preamble': (
-        rcParams.get('text.latex.preamble', []) + tex.MACROS),
+        rcParams.get('text.latex.preamble', '') + tex.MACROS),
     # use bigger font for labels (since the font is good)
     'font.family': ['serif'],
     'font.size': 16,
