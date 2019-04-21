@@ -31,6 +31,7 @@ Depends: ${misc:Depends},
          python-ligo-segments (>= 1.0.0),
          python-matplotlib (>= 1.2.0),
          python-numpy (>= 1.7.1),
+         python-pathlib,
          python-scipy (>= 0.12.1),
          python-six (>= 1.5),
          python-tqdm (>= 4.10.0)

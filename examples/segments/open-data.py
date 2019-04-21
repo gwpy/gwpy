@@ -19,8 +19,9 @@
 
 """Plotting observing segments for O1
 
-The data from the full Observing Run 1 (O1) have been released through the
-`LIGO Open Science Center <https://losc.ligo.org/detector_status/>`__ (LOSC).
+The data from the full
+`Observing Run 1 (O1) <https://www.gw-openscience.org/O1/>`__
+have been released by |GWOSC|_.
 
 This example demonstrates how to download segment information into a
 :class:`~gwpy.segments.DataQualityFlag`, and then plot them.

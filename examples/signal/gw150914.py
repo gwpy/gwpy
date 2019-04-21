@@ -32,7 +32,7 @@ well as notch out fixed frequencies polluted by known artefacts.
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.timeseries'
 
-# First we download the raw strain data from the LOSC public archive:
+# First we download the raw strain data from the GWOSC public archive:
 
 from gwpy.timeseries import TimeSeries
 hdata = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)

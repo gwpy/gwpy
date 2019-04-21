@@ -408,7 +408,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.gwpy')
             assert 'no data received' in str(exc)
 
-    @utils.skip_missing_dependency('glue.datafind')
     @utils.skip_missing_dependency('LDAStools.frameCPP')
     @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
                         reason='No LIGO datafind server configured '
@@ -428,7 +427,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
             self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
                                  frametype=FIND_FRAMETYPE, observatory='X')
 
-    @utils.skip_missing_dependency('glue.datafind')
     @utils.skip_missing_dependency('LDAStools.frameCPP')
     @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
                         reason='No LIGO datafind server configured '
@@ -450,7 +448,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
             raise
         assert ft in expected
 
-    @utils.skip_missing_dependency('glue.datafind')
     @utils.skip_missing_dependency('LDAStools.frameCPP')
     @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
                         reason='No LIGO datafind server configured '

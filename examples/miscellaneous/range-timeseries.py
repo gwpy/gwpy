@@ -31,7 +31,8 @@ can plot the variation over time by looping over a power spectral density
 """
 
 # First, we need to load some data, for this we can use the
-# `LOSC <https://losc.ligo.org>`_ public data around the GW150914 event:
+# `public data <https://www.gw-openscience.org/catalog/>`__
+# around the GW150914 event:
 
 from gwpy.timeseries import TimeSeries
 h1 = TimeSeries.fetch_open_data('H1', 1126257414, 1126261510)

@@ -1,13 +1,31 @@
 .. -- Dependencies ------------------------------
 
-.. |six| replace:: `six`
-.. _six: https://six.readthedocs.io/
+.. |astropy| replace:: `astropy`
+.. _astropy: http://www.astropy.org/
 
 .. |dateutil| replace:: `dateutil`
-.. _dateutil: https://pypi.python.org/pypi/python-dateutil/
+.. _dateutil: https://dateutil.readthedocs.io
 
-.. |enum34| replace:: `enum34`
-.. _enum34: https://bitbucket.org/stoneleaf/enum34
+.. |dqsegdb2| replace:: `dqsegdb2`
+.. _dqsegdb2: https://dqsegdb2.readthedocs.io
+
+.. |gwdatafind| replace:: `gwdatafind`
+.. _gwdatafind: https://gwdatafind.readthedocs.io
+
+.. |gwosc-mod| replace:: `gwosc`
+.. _gwosc-mod: https://gwosc.readthedocs.io
+
+.. |h5py| replace:: `h5py`
+.. _h5py: http://docs.h5py.org/en/latest/
+
+.. |ligo-segments| replace:: `ligo-segments`
+.. _ligo-segments: https://lscsoft.docs.ligo.org/ligo-segments/
+
+.. |ligotimegps| replace:: `ligotimegps`
+.. _ligotimegps: https://github.com/gwpy/ligotimegps/
+
+.. |matplotlib| replace:: `matplotlib`
+.. _matplotlib: https://matplotlib.org/
 
 .. |numpy| replace:: `numpy`
 .. _numpy: http://numpy.org/
@@ -15,29 +33,11 @@
 .. |scipy| replace:: `scipy`
 .. _scipy: http://www.scipy.org/
 
-.. |astropy| replace:: `astropy`
-.. _astropy: http://www.astropy.org/
-
-.. |gwosc| replace:: `gwosc`
-.. _gwosc: http://gwosc.readthedocs.io/en/stable/
-
-.. |dqsegdb2| replace:: `dqsegdb2`
-.. _dqsegdb2: https://dqsegdb2.readthedocs.io
-
-.. |h5py| replace:: `h5py`
-.. _h5py: http://docs.h5py.org/en/latest/
-
-.. |matplotlib| replace:: `matplotlib`
-.. _matplotlib: https://matplotlib.org/
-
-.. |ligo-segments| replace:: `ligo-segments`
-.. _ligo-segments: https://lscsoft.docs.ligo.org/ligo-segments/
+.. |six| replace:: `six`
+.. _six: https://six.readthedocs.io/
 
 .. |tqdm| replace:: `tqdm`
 .. _tqdm: https://github.com/tqdm/tqdm
-
-.. |ligotimegps| replace:: `ligotimegps`
-.. _ligotimegps: https://github.com/gwpy/ligotimegps/
 
 .. -- Extra software ----------------------------
 
@@ -62,6 +62,9 @@
 .. |numpydoc| replace:: `numpydoc`
 .. _numpydoc: https://numpydoc.readthedocs.io/
 
+.. |python-ligo-lw| replace:: `python-ligo-lw`
+.. _python-ligo-lw: https://git.ligo.org/kipp.cannon/python-ligo-lw
+
 .. |pycbc| replace:: `pycbc`
 .. _pycbc: https://pycbc.org/
 
@@ -81,6 +84,9 @@
 .. _sphinx-automodapi: http://sphinx-automodapi.readthedocs.io/
 
 .. -- Other references --------------------------
+
+.. |GWOSC| replace:: The Gravitational-Wave Open Science Centre (GWOSC)
+.. _GWOSC: https://www.gw-openscience.org/
 
 .. |LIGO-T050017| replace:: LIGO-T050017
 .. _LIGO-T050017: https://dcc.ligo.org/LIGO-T050017/public
