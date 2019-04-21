@@ -29,6 +29,12 @@ from ..utils.env import bool_env
 # record matplotlib's original rcParams
 MPL_RCPARAMS = rc_params()
 
+# record the LaTeX preamble
+try:
+    PREAMBLE = rcParams.get('text.latex.preamble', []) + tex.MACROS
+except TypeError:
+    PREAMBLE = rcParams.get('text.latex.preamble', '') + '\n'.join(tex.MACROS)
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # -- custom rc ----------------------------------------------------------------
@@ -75,8 +81,7 @@ except KeyError:  # matplotlib < 1.5
 GWPY_TEX_RCPARAMS = RcParams(**{
     # use latex styling
     'text.usetex': True,
-    'text.latex.preamble': (
-        rcParams.get('text.latex.preamble', []) + tex.MACROS),
+    'text.latex.preamble': PREAMBLE,
     # use bigger font for labels (since the font is good)
     'font.family': ['serif'],
     'font.size': 16,

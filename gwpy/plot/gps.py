@@ -24,12 +24,12 @@ from __future__ import division
 from decimal import Decimal
 from math import isinf
 from numbers import Number
+from inspect import getdoc
 
 import numpy
 
 from matplotlib import (ticker, docstring)
-from matplotlib.scale import (register_scale, LinearScale,
-                              get_scale_docs, get_scale_names)
+from matplotlib.scale import (register_scale, LinearScale, get_scale_names)
 from matplotlib.transforms import Transform
 
 from astropy import units
@@ -486,4 +486,4 @@ for _unit in TIME_UNITS:
 # update the docstring for matplotlib scale methods
 docstring.interpd.update(
     scale=' | '.join([repr(x) for x in get_scale_names()]),
-    scale_docs=get_scale_docs().rstrip())
+    scale_docs=getdoc(LinearScale.__init__))
