@@ -21,6 +21,8 @@
 
 from __future__ import division
 
+import textwrap
+
 from decimal import Decimal
 from math import isinf
 from numbers import Number
@@ -29,8 +31,9 @@ from inspect import getdoc
 import numpy
 
 from matplotlib import (ticker, docstring)
-from matplotlib.scale import (register_scale, LinearScale, get_scale_names)
 from matplotlib.transforms import Transform
+from matplotlib.scale import (_scale_mapping, register_scale,
+                              LinearScale, get_scale_names)
 
 from astropy import units
 
@@ -474,6 +477,8 @@ def _gps_scale_factory(unit):
                                  unit.names[0]))
 
         def __init__(self, axis, epoch=None):
+            """
+            """
             super(FixedGPSScale, self).__init__(axis, epoch=epoch, unit=unit)
     return FixedGPSScale
 
@@ -483,7 +488,18 @@ for _unit in TIME_UNITS:
         break
     register_gps_scale(_gps_scale_factory(_unit))
 
+# collect all scale docstrings
+docs = []
+for name in get_scale_names():
+    scale_class = _scale_mapping[name]
+    docs.extend([
+        f"    {name!r}",
+        "",
+        textwrap.indent(getdoc(scale_class.__init__), " " * 8),
+        ""
+    ])
+
 # update the docstring for matplotlib scale methods
 docstring.interpd.update(
     scale=' | '.join([repr(x) for x in get_scale_names()]),
-    scale_docs=getdoc(LinearScale.__init__))
+    scale_docs="\n".join(docs).rstrip())
