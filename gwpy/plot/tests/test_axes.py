@@ -202,7 +202,7 @@ class TestAxes(AxesTestBase):
         else:
             cbar = ax.colorbar(vmin=2, vmax=4, **cb_kw)
         assert cbar.mappable is mesh
-        assert cbar.get_clim() == (2., 4.)
+        assert cbar.mappable.get_clim() == (2., 4.)
 
     def test_legend(self, ax):
         ax.plot(numpy.arange(5), label='test')

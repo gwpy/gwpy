@@ -109,7 +109,7 @@ class TestPlot(FigureTestBase):
         image = ax.imshow(array)
         cbar = fig.colorbar(vmin=2, vmax=4, fraction=0.)
         assert cbar.mappable is image
-        assert cbar.get_clim() == (2., 4.)
+        assert cbar.mappable.get_clim() == (2., 4.)
 
     def test_add_colorbar(self, fig):
         ax = fig.gca()

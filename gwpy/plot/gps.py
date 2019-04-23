@@ -28,9 +28,12 @@ from numbers import Number
 import numpy
 
 from matplotlib import (ticker, docstring)
-from matplotlib.scale import (register_scale, LinearScale,
-                              get_scale_docs, get_scale_names)
+from matplotlib.scale import (register_scale, LinearScale, get_scale_names)
 from matplotlib.transforms import Transform
+try:
+    from matplotlib.scale import _get_scale_docs as get_scale_docs
+except ImportError:  # matplotlib < 3.1
+    from matplotlib.scale import get_scale_docs
 
 from astropy import units
 
@@ -474,6 +477,8 @@ def _gps_scale_factory(unit):
                                  unit.names[0]))
 
         def __init__(self, axis, epoch=None):
+            """
+            """
             super(FixedGPSScale, self).__init__(axis, epoch=epoch, unit=unit)
     return FixedGPSScale
 
@@ -486,4 +491,5 @@ for _unit in TIME_UNITS:
 # update the docstring for matplotlib scale methods
 docstring.interpd.update(
     scale=' | '.join([repr(x) for x in get_scale_names()]),
-    scale_docs=get_scale_docs().rstrip())
+    scale_docs=get_scale_docs().rstrip(),
+)
