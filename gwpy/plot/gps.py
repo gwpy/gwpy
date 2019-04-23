@@ -21,19 +21,19 @@
 
 from __future__ import division
 
-import textwrap
-
 from decimal import Decimal
 from math import isinf
 from numbers import Number
-from inspect import getdoc
 
 import numpy
 
 from matplotlib import (ticker, docstring)
+from matplotlib.scale import (register_scale, LinearScale, get_scale_names)
 from matplotlib.transforms import Transform
-from matplotlib.scale import (_scale_mapping, register_scale,
-                              LinearScale, get_scale_names)
+try:
+    from matplotlib.scale import _get_scale_docs as get_scale_docs
+except ImportError:  # matplotlib < 3.1
+    from matplotlib.scale import get_scale_docs
 
 from astropy import units
 
@@ -488,18 +488,8 @@ for _unit in TIME_UNITS:
         break
     register_gps_scale(_gps_scale_factory(_unit))
 
-# collect all scale docstrings
-docs = []
-for name in get_scale_names():
-    scale_class = _scale_mapping[name]
-    docs.extend([
-        f"    {name!r}",
-        "",
-        textwrap.indent(getdoc(scale_class.__init__), " " * 8),
-        ""
-    ])
-
 # update the docstring for matplotlib scale methods
 docstring.interpd.update(
     scale=' | '.join([repr(x) for x in get_scale_names()]),
-    scale_docs="\n".join(docs).rstrip())
+    scale_docs=get_scale_docs().rstrip(),
+)
