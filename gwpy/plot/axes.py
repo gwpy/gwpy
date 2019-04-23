@@ -137,12 +137,12 @@ class Axes(_Axes):
     def _fmt_xdata(self, x):
         if self.get_xscale() in GPS_SCALES:
             return str(LIGOTimeGPS(x))
-        raise TypeError  # fall back to default
+        return self.xaxis.get_major_formatter().format_data_short(x)
 
     def _fmt_ydata(self, y):
         if self.get_yscale() in GPS_SCALES:
             return str(LIGOTimeGPS(y))
-        raise TypeError  # fall back to default
+        return self.yaxis.get_major_formatter().format_data_short(y)
 
     set_xlim = xlim_as_gps(_Axes.set_xlim)
 
