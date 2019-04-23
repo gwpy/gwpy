@@ -567,9 +567,10 @@ register_projection(Axes)
 class PlotArgsProcessor(_process_plot_var_args):
     """This class controls how ax.plot() works
     """
-    def _grab_next_args(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
         """Find `Series` data in `plot()` args and unwrap
         """
+        newargs = []
         while args:
             # strip first argument
             this, args = args[:1], args[1:]
@@ -584,6 +585,6 @@ class PlotArgsProcessor(_process_plot_var_args):
             if args and isinstance(args[0], str):
                 this += args[0],
                 args = args[1:]
-            # use yield from with python3
-            for item in self._plot_args(this, kwargs):
-                yield item
+            newargs.extend(this)
+
+        return super(PlotArgsProcessor, self).__call__(*newargs, **kwargs)
