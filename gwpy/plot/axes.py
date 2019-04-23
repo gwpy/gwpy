@@ -30,7 +30,6 @@ from astropy.time import Time
 from matplotlib import (__version__ as mpl_version, rcParams)
 from matplotlib.artist import allow_rasterization
 from matplotlib.axes import Axes as _Axes
-from matplotlib.cbook import iterable
 from matplotlib.collections import PolyCollection
 from matplotlib.projections import register_projection
 try:
@@ -65,7 +64,7 @@ def xlim_as_gps(func):
     """
     @wraps(func)
     def wrapped_func(self, left=None, right=None, **kw):
-        if right is None and iterable(left):
+        if right is None and numpy.iterable(left):
             left, right = left
         kw['left'] = left
         kw['right'] = right
@@ -297,7 +296,7 @@ class Axes(_Axes):
 
         # calculate log-spaced bins on-the-fly
         if (kwargs.pop('logbins', False) and
-                not iterable(kwargs.get('bins', None))):
+                not numpy.iterable(kwargs.get('bins', None))):
             nbins = kwargs.get('bins', None) or rcParams.get('hist.bins', 30)
             # get range
             hrange = kwargs.pop('range', None)
