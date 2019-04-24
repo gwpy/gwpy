@@ -30,7 +30,6 @@ from astropy.time import Time
 from matplotlib import (__version__ as mpl_version, rcParams)
 from matplotlib.artist import allow_rasterization
 from matplotlib.axes import Axes as _Axes
-from matplotlib.cbook import iterable
 from matplotlib.collections import PolyCollection
 from matplotlib.projections import register_projection
 try:
@@ -65,7 +64,7 @@ def xlim_as_gps(func):
     """
     @wraps(func)
     def wrapped_func(self, left=None, right=None, **kw):
-        if right is None and iterable(left):
+        if right is None and numpy.iterable(left):
             left, right = left
         kw['left'] = left
         kw['right'] = right
@@ -138,12 +137,12 @@ class Axes(_Axes):
     def _fmt_xdata(self, x):
         if self.get_xscale() in GPS_SCALES:
             return str(LIGOTimeGPS(x))
-        raise TypeError  # fall back to default
+        return self.xaxis.get_major_formatter().format_data_short(x)
 
     def _fmt_ydata(self, y):
         if self.get_yscale() in GPS_SCALES:
             return str(LIGOTimeGPS(y))
-        raise TypeError  # fall back to default
+        return self.yaxis.get_major_formatter().format_data_short(y)
 
     set_xlim = xlim_as_gps(_Axes.set_xlim)
 
@@ -297,7 +296,7 @@ class Axes(_Axes):
 
         # calculate log-spaced bins on-the-fly
         if (kwargs.pop('logbins', False) and
-                not iterable(kwargs.get('bins', None))):
+                not numpy.iterable(kwargs.get('bins', None))):
             nbins = kwargs.get('bins', None) or rcParams.get('hist.bins', 30)
             # get range
             hrange = kwargs.pop('range', None)
@@ -568,9 +567,10 @@ register_projection(Axes)
 class PlotArgsProcessor(_process_plot_var_args):
     """This class controls how ax.plot() works
     """
-    def _grab_next_args(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
         """Find `Series` data in `plot()` args and unwrap
         """
+        newargs = []
         while args:
             # strip first argument
             this, args = args[:1], args[1:]
@@ -585,6 +585,6 @@ class PlotArgsProcessor(_process_plot_var_args):
             if args and isinstance(args[0], str):
                 this += args[0],
                 args = args[1:]
-            # use yield from with python3
-            for item in self._plot_args(this, kwargs):
-                yield item
+            newargs.extend(this)
+
+        return super(PlotArgsProcessor, self).__call__(*newargs, **kwargs)
