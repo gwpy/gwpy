@@ -183,3 +183,17 @@ def test_auto_gps_scale(scale, unit):
     transform = xscale.get_transform()
     assert transform.unit.name == unit
     pyplot.close(fig)
+
+
+def test_gps_formatting():
+    fig = pyplot.figure()
+    try:
+        ax = fig.gca()
+        ax.set_xscale('seconds', epoch=1238040211.67)
+        ax.set_xlim(1238040211.17, 1238040212.17)
+        fig.canvas.draw()
+        ticks = ["-0.5", "-0.4", "-0.3", "-0.2", "-0.1",
+                 "0", "0.1", "0.2", "0.3", "0.4", "0.5"]
+        assert [x.get_text() for x in ax.get_xticklabels()] == ticks
+    finally:
+        pyplot.close(fig)

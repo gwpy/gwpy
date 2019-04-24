@@ -110,12 +110,16 @@ Plotting a `StateVector`
 A `StateVector` can be trivially plotted in two ways, specified by the
 ``format`` keyword argument of the :meth:`~StateVector.plot` method:
 
-================  =============================================================
-Format            Description
-================  =============================================================
-``'segments'``    A bit-wise representation of each bit in the vector (default)
-``'timeseries'``  A standard time-series representation
-================  =============================================================
+.. table:: Keyword arguments for `StateVector.plot`
+   :align: left
+   :name: statevector-plot-kwargs
+
+   ================  =============================================================
+   Format            Description
+   ================  =============================================================
+   ``'segments'``    A bit-wise representation of each bit in the vector (default)
+   ``'timeseries'``  A standard time-series representation
+   ================  =============================================================
 
 .. plot::
    :include-source:

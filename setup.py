@@ -49,10 +49,10 @@ setup_requires = get_setup_requires()
 
 # runtime dependencies
 install_requires = [
-    'astropy >= 1.1.1, < 3.0.0 ; python_version < \'3\'',
-    'astropy >= 1.1.1 ; python_version >= \'3\'',
+    'astropy >= 1.1.1, < 3.0.0 ; python_version < \'3.5\'',
+    'astropy >= 1.1.1 ; python_version >= \'3.5\'',
     'dqsegdb2',
-    'enum34 ; python_version < \'3\'',
+    'enum34 ; python_version < \'3.4\'',
     'gwdatafind',
     'gwosc >= 0.4.0',
     'h5py >= 1.3',
@@ -60,6 +60,7 @@ install_requires = [
     'ligotimegps >= 1.2.1',
     'matplotlib >= 1.2.0, != 2.1.0, != 2.1.1',
     'numpy >= 1.7.1',
+    'pathlib ; python_version < \'3.4\'',
     'python-dateutil',
     'scipy >= 0.12.1',
     'six >= 1.5',

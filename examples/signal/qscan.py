@@ -36,7 +36,7 @@ __author__ = "Alex Urban <alexander.urban@ligo.org>"
 __currentmodule__ = 'gwpy.timeseries'
 
 # First, we need to download the `TimeSeries` record of L1 strain measurements
-# from `GWOSC <http://gw-openscience.org>`_:
+# from |GWOSC|_:
 
 from gwosc import datasets
 from gwpy.timeseries import TimeSeries

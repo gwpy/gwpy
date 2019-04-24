@@ -172,8 +172,12 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             args.ymax = self.result.yspan[1]
 
         specgram = self.result.crop(
-            args.xmin, min(args.xmax, self.result.xspan[1]),
-        ).crop_frequencies(args.ymin, args.ymax)
+            args.xmin, min(args.xmax, self.result.xspan[1])
+        )
+
+        # y axis cannot be cropped if non-linear
+        ax = self.plot.gca()
+        ax.set_ylim(args.ymin, args.ymax)
 
         # auto scale colours
         if args.norm:

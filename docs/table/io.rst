@@ -45,15 +45,17 @@ but is **not** backported to for use with :meth:`Table.read`.
 ``LIGO_LW`` XML
 ===============
 
-**Additional dependencies:** :mod:`glue.ligolw`
+**Additional dependencies:** |python-ligo-lw|_
 
 The LIGO Scientific Collaboration uses a custom scheme of XML in which to
 store tabular data, called ``LIGO_LW``.
-Complementing the scheme is a python library - :mod:`glue.ligolw` - which
+Complementing the scheme is a python library - |python-ligo-lw|_ - which
 allows users to read and write all of the different types of tabular data
 produced by gravitational-wave searches.
 
-Reading and writing tables in ``LIGO_LW`` XML format is supported with ``format='ligolw', tablename=<tablename>'`` where ``<tablename>`` can be any of the supported LSC table names (see :mod:`glue.ligolw.lsctables`).
+Reading and writing tables in ``LIGO_LW`` XML format is supported with
+``format='ligolw', tablename=<tablename>'`` where ``<tablename>`` can be
+any of the supported LSC table names (see :mod:`ligo.lw.lsctables`).
 
 Reading
 -------
@@ -150,6 +152,18 @@ To write a table to an existing file, use ``append=True``::
 To replace an existing table of the given type in an existing file, while preserving other tables, use *both* ``append=True`` and ``overwrite=True``::
 
     >>> t.write('new-table.xml', format='ligolw', tablename='sngl_burst', append=True, overwrite=True)
+
+.. note::
+
+   The |python-ligo-lw| library reads and writes files using an updated
+   version of the ``LIGO_LW`` format compared to :mod:`glue.ligolw` used to.
+   GWpy should support both format versions natively when _reading_, but
+   when _writing_ you may need to explicitly pass the
+   ``ilwdchar_compat=True`` keyword in order to write using the old
+   format::
+
+       >>> t.write('new-table.xml', format='ligolw', tablename='sngl_burst',
+       ...         ilwdchar_compat=True)
 
 
 .. _gwpy-table-io-ascii-cwb:

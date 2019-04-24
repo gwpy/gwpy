@@ -21,7 +21,6 @@
 
 import os
 import subprocess
-import sys
 
 import pytest
 
@@ -35,6 +34,7 @@ KLIST = b"""Keytab name: FILE:/test.keytab
 KVNO Principal
 ---- -------------------------------
    1 albert.einstein@LIGO.ORG
+   2 ronald.drever@LIGO.ORG
    2 ronald.drever@LIGO.ORG"""
 
 # mock os.environ
@@ -63,8 +63,8 @@ def test_parse_keytab(check_output):
     """
     # assert principals get extracted correctly
     principals = io_kerberos.parse_keytab('test.keytab')
-    assert principals == [['albert.einstein', 'LIGO.ORG'],
-                          ['ronald.drever', 'LIGO.ORG']]
+    assert principals == [('albert.einstein', 'LIGO.ORG', 1),
+                          ('ronald.drever', 'LIGO.ORG', 2)]
 
     # assert klist fail gets raise appropriately
     check_output.side_effect = [
@@ -98,7 +98,6 @@ def test_kinit_up(popen, getpass, input_, which, _, capsys):
     )
     getpass.assert_called_with(
         prompt="Password for rainer.weiss@LIGO.ORG: ",
-        stream=sys.stdout,
     )
     popen.assert_called_with(
         ['/bin/kinit', 'rainer.weiss@LIGO.ORG'],

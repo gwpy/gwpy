@@ -65,7 +65,7 @@ Reading/writing time-domain data
    :maxdepth: 2
 
    remote-access
-   ldg
+   datafind
    io
 
 =========================

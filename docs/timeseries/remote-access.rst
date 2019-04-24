@@ -9,14 +9,18 @@ Remote data access
 The LIGO Laboratory archives instrumental data in GWF files hosted on the LIGO Data Grid (see :ref:`gwpy-timeseries-datafind` for more details), however, remote access tools have been developed to simplify loading data.
 GWpy provides two methods for remote data access, one for public data releases, and another for authenticated access to the complete data archive:
 
-==================================  ===========  =========================
-Method                              Restricted?  Description
-==================================  ===========  =========================
-:meth:`TimeSeries.fetch_open_data`  public       Fetch data from LIGO Open
-                                                 Science Center (LOSC)
-:meth:`TimeSeries.get`              LIGO.ORG     Fetch data via local disk
-                                                 or NDS2
-==================================  ===========  =========================
+.. table:: Methods for remote `TimeSeries` data access in GWpy
+   :align: left
+   :name: timeseries-remote-access-methods
+
+   ==================================  ===========  =========================
+   Method                              Restricted?  Description
+   ==================================  ===========  =========================
+   :meth:`TimeSeries.fetch_open_data`  public       Fetch data from LIGO Open
+                                                    Science Center (LOSC)
+   :meth:`TimeSeries.get`              LIGO.ORG     Fetch data via local disk
+                                                    or NDS2
+   ==================================  ===========  =========================
 
 .. _gwpy-timeseries-remote-public:
 
@@ -92,5 +96,5 @@ Authenticated collaborators also have access to the thousands of auxiliary chann
 
 will return one hour of data from the vertical-ground-motion seismometer located near the ITMY vacuum enclosure at LIGO Livingston.
 
-The `TimeSeries.get` method tries direct file access (using :mod:`glue.datafind` for file discovery) first, then falls back to using the Network Data Server (NDS2) for remote access.
+The `TimeSeries.get` method tries direct file access (using |gwdatafind|_ for file discovery) first, then falls back to using the Network Data Server (NDS2) for remote access.
 If you want to manually use NDS2 for remote access you can instead use the `TimeSeries.fetch` method.

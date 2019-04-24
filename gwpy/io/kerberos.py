@@ -29,6 +29,7 @@ import os
 import re
 import subprocess
 import sys
+from collections import OrderedDict
 
 from six.moves import input
 
@@ -37,6 +38,11 @@ from ..utils.shell import which
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 __all__ = ['kinit']
+
+try:
+    _IPYTHON = __IPYTHON__
+except NameError:
+    _IPYTHON = False
 
 
 class KerberosError(RuntimeError):
@@ -81,23 +87,23 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
 
     Notes
     -----
-    If a keytab is given, or is read from the KRB5_KTNAME environment
+    If a keytab is given, or is read from the ``KRB5_KTNAME`` environment
     variable, this will be used to guess the username and realm, if it
-    contains only a single credential
+    contains only a single credential.
 
     Examples
     --------
     Example 1: standard user input, with password prompt::
 
-        >>> kinit('albert.einstein')
-        Password for albert.einstein@LIGO.ORG:
-        Kerberos ticket generated for albert.einstein@LIGO.ORG
+    >>> kinit('albert.einstein')
+    Password for albert.einstein@LIGO.ORG:
+    Kerberos ticket generated for albert.einstein@LIGO.ORG
 
     Example 2: extract username and realm from keytab, and use that
     in authentication::
 
-        >>> kinit(keytab='~/.kerberos/ligo.org.keytab')
-        Kerberos ticket generated for albert.einstein@LIGO.ORG
+    >>> kinit(keytab='~/.kerberos/ligo.org.keytab', verbose=True)
+    Kerberos ticket generated for albert.einstein@LIGO.ORG
     """
     # get kinit path
     if exe is None:
@@ -126,7 +132,9 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
                 keytab = None
 
     # refuse to prompt if we can't get an answer
-    if not sys.stdout.isatty() and (
+    # note: jupyter streams are not recognised as interactive
+    #       (isatty() returns False) so we have a special case here
+    if not sys.stdout.isatty() and not _IPYTHON and (
             username is None or
             (not keytab and password is None)
     ):
@@ -138,12 +146,13 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
     if realm is None:
         realm = 'LIGO.ORG'
     if username is None:
+        verbose = True
         username = input("Please provide username for the {} kerberos "
                          "realm: ".format(realm))
     identity = '{}@{}'.format(username, realm)
     if not keytab and password is None:
-        password = getpass.getpass(prompt="Password for {}: ".format(identity),
-                                   stream=sys.stdout)
+        verbose = True
+        password = getpass.getpass(prompt="Password for {}: ".format(identity))
 
     # format kinit command
     if keytab:
@@ -176,6 +185,18 @@ def parse_keytab(keytab):
     ----------
     keytab : `str`
         path to keytab file
+
+    Returns
+    -------
+    creds : `list` of `tuple`
+        the (unique) list of `(username, realm, kvno)` as read from the
+        keytab file
+
+    Examples
+    --------
+    >>> from gwpy.io.kerberos import parse_keytab
+    >>> print(parse_keytab("creds.keytab"))
+    [('albert.einstein', 'LIGO.ORG', 1)]
     """
     try:
         out = subprocess.check_output(['klist', '-k', keytab],
@@ -189,11 +210,12 @@ def parse_keytab(keytab):
         if isinstance(line, bytes):
             line = line.decode('utf-8')
         try:
-            num, principal, = re.split(r'\s+', line.strip(' '), 1)
+            kvno, principal, = re.split(r'\s+', line.strip(' '), 1)
         except ValueError:
             continue
         else:
-            if not num.isdigit():
+            if not kvno.isdigit():
                 continue
-            principals.append(principal.split('@'))
-    return principals
+            principals.append(tuple(principal.split('@')) + (int(kvno),))
+    # return unique, ordered list
+    return list(OrderedDict.fromkeys(principals).keys())

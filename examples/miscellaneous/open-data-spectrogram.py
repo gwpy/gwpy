@@ -23,11 +23,11 @@ In order to study interferometer performance, it is common in LIGO to plot
 all of the data for a day, in order to determine trends, and see data-quality
 issues.
 
-This is done for the LIGO-Virgo detector network, with up-to-date plots
-`available from the LIGO Open Science Center
-<https://losc.ligo.org/detector_status/>`__ (LOSC).
+This is done for the LIGO-Virgo detector network, with
+`up-to-date plots <https://www.gw-openscience.org/detector_status/>`__
+available from |GWOSC|.
 
-This example demonstrates how to download data segments from LOSC, then
+This example demonstrates how to download data segments from GWOSC, then
 use those to build a day-timescale spectrogram plot of LIGO-Hanford strain
 data.
 """
@@ -39,10 +39,10 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 # Getting the segments
 # --------------------
 #
-# First, we need to fetch the Open Data timeline segments from LOSC.
+# First, we need to fetch the Open Data timeline segments from GWOSC.
 # To do that we can call the :meth:`DataQualityFlag.fetch_open_data` method
 # using ``'H1_DATA'`` as the flag (for an explanation of what this means,
-# read up on `The S6 Data Release <https://losc.ligo.org/S6/>`__).
+# read up on `The S6 Data Release <https://www.gw-openscience.org/S6/>`__).
 
 from gwpy.segments import DataQualityFlag
 h1segs = DataQualityFlag.fetch_open_data('H1_DATA',

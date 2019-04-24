@@ -88,6 +88,7 @@ yum -y -q install \
     python2-ldas-tools-framecpp \
     python2-lalframe \
     python2-lalsimulation \
+    python-ligo-lw \
     texlive-dvipng-bin texlive-latex-bin-bin \
     texlive-type1cm texlive-collection-fontsrecommended
 

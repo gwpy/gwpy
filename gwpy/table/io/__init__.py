@@ -27,7 +27,7 @@ from . import utils
 # other readers are defined in their own modules, and are responsible
 # for applying the decorators themselves.
 from . import (
-    ligolw,  # glue.ligolw XML format
+    ligolw,  # ligo.lw XML format
     root,  # generic ROOT stuff
     omicron,  # Omicron ROOT format
     omega,  # Omega ASCII format

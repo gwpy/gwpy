@@ -552,7 +552,7 @@ class DataQualityFlag(object):
         --------
         >>> from gwpy.segments import DataQualityFlag
         >>> print(DataQualityFlag.fetch_open_data('H1_DATA', 'Jan 1 2010',
-        ...                                       'Jan 2 2010'))"
+        ...                                       'Jan 2 2010'))
         <DataQualityFlag('H1:DATA',
                          known=[[946339215 ... 946425615)],
                          active=[[946340946 ... 946351800)
@@ -640,7 +640,7 @@ class DataQualityFlag(object):
 
         Parameters
         ----------
-        veto : :class:`~glue.ligolw.lsctables.VetoDef`
+        veto : :class:`~ligo.lw.lsctables.VetoDef`
             veto definition to convert from
         """
         name = '%s:%s' % (veto.ifo, veto.name)
@@ -1406,13 +1406,13 @@ class DataQualityDict(OrderedDict):
 
         Parameters
         ----------
-        segmentdeftable : :class:`~glue.ligolw.lsctables.SegmentDefTable`
+        segmentdeftable : :class:`~ligo.lw.lsctables.SegmentDefTable`
             the ``segment_definer`` table to read
 
-        segmentsumtable : :class:`~glue.ligolw.lsctables.SegmentSumTable`
+        segmentsumtable : :class:`~ligo.lw.lsctables.SegmentSumTable`
             the ``segment_summary`` table to read
 
-        segmenttable : :class:`~glue.ligolw.lsctables.SegmentTable`
+        segmenttable : :class:`~ligo.lw.lsctables.SegmentTable`
             the ``segment`` table to read
 
         names : `list` of `str`, optional
@@ -1443,7 +1443,7 @@ class DataQualityDict(OrderedDict):
 
         # read segment definers and generate DataQualityFlag object
         for row in segmentdeftable:
-            ifos = row.get_ifos()
+            ifos = sorted(row.instruments)
             ifo = ''.join(ifos) if ifos else None
             tag = row.name
             version = row.version
@@ -1451,10 +1451,11 @@ class DataQualityDict(OrderedDict):
                              k is not None])
             if names is None or name in names:
                 out[name] = DataQualityFlag(name)
+                thisid = int(row.segment_def_id)
                 try:
-                    id_[name].append(row.segment_def_id)
+                    id_[name].append(thisid)
                 except (AttributeError, KeyError):
-                    id_[name] = [row.segment_def_id]
+                    id_[name] = [thisid]
 
         # verify all requested flags were found
         for flag in names or []:
@@ -1466,52 +1467,71 @@ class DataQualityDict(OrderedDict):
                 else:
                     raise ValueError(msg)
 
+        # parse a table into the target DataQualityDict
+        def _parse_segments(table, listattr):
+            for row in table:
+                for flag in out:
+                    # match row ID to list of IDs found for this flag
+                    if int(row.segment_def_id) in id_[flag]:
+                        getattr(out[flag], listattr).append(
+                            Segment(*map(gpstype, row.segment)),
+                        )
+                        break
+
         # read segment summary table as 'known'
-        for row in segmentsumtable:
-            for flag in out:
-                # match row ID to list of IDs found for this flag
-                if row.segment_def_id in id_[flag]:
-                    out[flag].known.append(
-                        Segment(*map(gpstype, row.segment)))
-                    break
+        _parse_segments(segmentsumtable, "known")
 
         # read segment table as 'active'
-        for row in segmenttable:
-            for flag in out:
-                if row.segment_def_id in id_[flag]:
-                    out[flag].active.append(
-                        Segment(*map(gpstype, row.segment)))
-                    break
+        _parse_segments(segmenttable, "active")
 
         return out
 
-    def to_ligolw_tables(self, **attrs):
+    def to_ligolw_tables(self, ilwdchar_compat=None, **attrs):
         """Convert this `DataQualityDict` into a trio of LIGO_LW segment tables
 
         Parameters
         ----------
+        ilwdchar_compat : `bool`, optional
+            whether to write in the old format, compatible with
+            ILWD characters (`True`), or to use the new format (`False`);
+            the current default is `True` to maintain backwards
+            compatibility, but this will change for gwpy-1.0.0.
+
         **attrs
             other attributes to add to all rows in all tables
             (e.g. ``'process_id'``)
 
         Returns
         -------
-        segmentdeftable : :class:`~glue.ligolw.lsctables.SegmentDefTable`
+        segmentdeftable : :class:`~ligo.lw.lsctables.SegmentDefTable`
             the ``segment_definer`` table
 
-        segmentsumtable : :class:`~glue.ligolw.lsctables.SegmentSumTable`
+        segmentsumtable : :class:`~ligo.lw.lsctables.SegmentSumTable`
             the ``segment_summary`` table
 
-        segmenttable : :class:`~glue.ligolw.lsctables.SegmentTable`
+        segmenttable : :class:`~ligo.lw.lsctables.SegmentTable`
             the ``segment`` table
         """
-        from glue.ligolw.lsctables import (SegmentTable, SegmentSumTable,
-                                           SegmentDefTable, New as new_table)
+        if ilwdchar_compat is None:
+            warnings.warn("ilwdchar_compat currently defaults to `True`, "
+                          "but this will change to `False` in the future, to "
+                          "maintain compatibility in future releases, "
+                          "manually specify `ilwdchar_compat=True`",
+                          PendingDeprecationWarning)
+            ilwdchar_compat = True
+
+        if ilwdchar_compat:
+            from glue.ligolw import lsctables
+        else:
+            from ligo.lw import lsctables
         from ..io.ligolw import to_table_type as to_ligolw_table_type
 
-        segdeftab = new_table(SegmentDefTable)
-        segsumtab = new_table(SegmentSumTable)
-        segtab = new_table(SegmentTable)
+        SegmentDefTable = lsctables.SegmentDefTable
+        SegmentSumTable = lsctables.SegmentSumTable
+        SegmentTable = lsctables.SegmentTable
+        segdeftab = lsctables.New(SegmentDefTable)
+        segsumtab = lsctables.New(SegmentSumTable)
+        segtab = lsctables.New(SegmentTable)
 
         def _write_attrs(table, row):
             for key, val in attrs.items():
@@ -1523,7 +1543,7 @@ class DataQualityDict(OrderedDict):
             segdef = segdeftab.RowType()
             for col in segdeftab.columnnames:  # default all columns to None
                 setattr(segdef, col, None)
-            segdef.set_ifos([flag.ifo])
+            segdef.instruments = {flag.ifo}
             segdef.name = flag.tag
             segdef.version = flag.version
             segdef.comment = flag.description
@@ -1538,7 +1558,7 @@ class DataQualityDict(OrderedDict):
                 for col in segsumtab.columnnames:  # default columns to None
                     setattr(segsum, col, None)
                 segsum.segment_def_id = segdef.segment_def_id
-                segsum.set(map(LIGOTimeGPS, vseg))
+                segsum.segment = map(LIGOTimeGPS, vseg)
                 segsum.comment = None
                 segsum.segment_sum_id = SegmentSumTable.get_next_id()
                 _write_attrs(segsumtab, segsum)
@@ -1550,7 +1570,7 @@ class DataQualityDict(OrderedDict):
                 for col in segtab.columnnames:  # default all columns to None
                     setattr(seg, col, None)
                 seg.segment_def_id = segdef.segment_def_id
-                seg.set(map(LIGOTimeGPS, aseg))
+                seg.segment = map(LIGOTimeGPS, aseg)
                 seg.segment_id = SegmentTable.get_next_id()
                 _write_attrs(segtab, seg)
                 segtab.append(seg)

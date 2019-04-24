@@ -6,7 +6,7 @@ checks:
       threshold: 8
   file-lines:
     config:
-      threshold: 500
+      threshold: 1000
 
 plugins:
   duplication:
