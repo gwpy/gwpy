@@ -8,7 +8,7 @@ Custom legends in GWpy
 
 GWpy overrides the default :class:`~matplotlib.axes.Axes` class with one that
 uses a different default legend handler for line plots.
-This means that, by default, a lines in a legend will be thicker than on a
+This means that, by default, lines in a legend will be thicker than on a
 standard matplotlib figure:
 
 .. plot::
