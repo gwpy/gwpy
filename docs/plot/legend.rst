@@ -37,7 +37,8 @@ This can be disabled by passing an empty ``handler_map`` to the
    >>> fig.show()
 
 Similarly, you can implement your own custom legend handler and overwrite
-things yourself, below is a simple example, but for more details see
+things yourself.
+Below is a simple example, but for more details see
 :ref:`matplotlib:sphx_glr_tutorials_intermediate_legend_guide.py`:
 
 .. plot::
