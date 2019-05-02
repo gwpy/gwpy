@@ -31,9 +31,9 @@ at ``datafind.ligo.org:443`` to query for files archived under
 
 .. _gwpy-timeseries-datafind-discovery:
 
-==================================================
+===================================================
 Auto-discovery of data using :meth:`TimeSeries.get`
-==================================================
+===================================================
 
 **Additional dependencies:** |LDAStools.frameCPP|_
 

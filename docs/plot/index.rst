@@ -84,7 +84,7 @@ However, `separate=True` can be given to show each dataset on a separate
 
 .. plot::
    :include-source:
-   :context:
+   :context: close-figs
 
    >>> plot = Plot(hdata, ldata, figsize=(12, 6), separate=True, sharex=True)
    >>> plot.show()
@@ -104,6 +104,7 @@ Plot customisation
 
    gps
    colorbars
+   legend
 
 =================
 Plot applications

@@ -19,6 +19,7 @@
 """Extension of `~matplotlib.axes.Axes` for gwpy
 """
 
+import warnings
 from functools import wraps
 from math import log
 from numbers import Number
@@ -30,6 +31,7 @@ from astropy.time import Time
 from matplotlib import (__version__ as mpl_version, rcParams)
 from matplotlib.artist import allow_rasterization
 from matplotlib.axes import Axes as _Axes
+from matplotlib.lines import Line2D
 from matplotlib.collections import PolyCollection
 from matplotlib.projections import register_projection
 try:
@@ -38,6 +40,7 @@ except ImportError:  # matplotlib-1.x
     from matplotlib.axes import _process_plot_var_args
 
 from . import (Plot, colorbar as gcbar)
+from .legend import HandlerLine2D
 from .colors import format_norm
 from ..time import (LIGOTimeGPS, to_gps)
 from ..types import (Series, Array2D)
@@ -494,21 +497,34 @@ class Axes(_Axes):
     # -- overloaded auxiliary methods -----------
 
     def legend(self, *args, **kwargs):
-        alpha = kwargs.pop("alpha", 0.8)
-        linewidth = kwargs.pop("linewidth", 8)
+        # handle deprecated keywords
+        linewidth = kwargs.pop("linewidth", None)
+        if linewidth:
+            warnings.warn(
+                "the linewidth keyword to gwpy.plot.Axes.legend has been "
+                "deprecated and will be removed in a future release; "
+                "please update your code to use a custom legend handler, "
+                "e.g. gwpy.plot.legend.HandlerLine2D.",
+                DeprecationWarning,
+            )
+        alpha = kwargs.pop("alpha", None)
+        if alpha:
+            if mpl_version >= "1.3.0":  # matplotlib >= 1.3.0
+                kwargs.setdefault("framealpha", alpha)
+            warnings.warn(
+                "the alpha keyword to gwpy.plot.Axes.legend has been "
+                "deprecated and will be removed in a future release; "
+                "use framealpha instead.",
+                DeprecationWarning,
+            )
 
-        # make legend
-        legend = super(Axes, self).legend(*args, **kwargs)
+        # build custom handler
+        handler_map = kwargs.setdefault("handler_map", dict())
+        if isinstance(handler_map, dict):
+            handler_map.setdefault(Line2D, HandlerLine2D(linewidth or 6))
 
-        # update alpha and linewidth for legend elements
-        if legend is not None:
-            lframe = legend.get_frame()
-            lframe.set_alpha(alpha)
-            lframe.set_linewidth(rcParams['axes.linewidth'])
-            for line in legend.get_lines():
-                line.set_linewidth(linewidth)
-
-        return legend
+        # create legend
+        return super(Axes, self).legend(*args, **kwargs)
 
     legend.__doc__ = _Axes.legend.__doc__
 

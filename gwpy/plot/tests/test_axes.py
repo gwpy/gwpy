@@ -206,12 +206,30 @@ class TestAxes(AxesTestBase):
 
     def test_legend(self, ax):
         ax.plot(numpy.arange(5), label='test')
-        leg = ax.legend(alpha=.5, linewidth=10.)
+        leg = ax.legend()
         lframe = leg.get_frame()
-        assert lframe.get_alpha() == .5
-        assert lframe.get_linewidth() == rcParams['axes.linewidth']
+        assert lframe.get_linewidth() == rcParams['patch.linewidth']
         for line in leg.get_lines():
-            assert line.get_linewidth() == 10.
+            assert line.get_linewidth() == 6.
+
+    def test_legend_no_handler_map(self, ax):
+        ax.plot(numpy.arange(5), label='test')
+        leg = ax.legend(handler_map=None)
+        for line in leg.get_lines():
+            assert line.get_linewidth() == rcParams["lines.linewidth"]
+
+    def test_legend_deprecated_linewidth(self, ax):
+        ax.plot(numpy.arange(5), label='test')
+        with pytest.deprecated_call():
+            leg = ax.legend(linewidth=4)
+        assert leg.get_lines()[0].get_linewidth() == 4.
+
+    def test_legend_deprecated_alpha(self, ax):
+        ax.plot(numpy.arange(5), label='test')
+        with pytest.deprecated_call():
+            leg = ax.legend(alpha=.1)
+        if mpl_version >= "1.3.0":
+            assert leg.get_frame().get_alpha() == .1
 
     def test_plot_mmm(self, ax):
         mean_ = Series(numpy.random.random(10))
