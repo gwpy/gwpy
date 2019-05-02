@@ -57,7 +57,7 @@ HAS_TEX = has_tex()
 
 # -- tex formatting -----------------------------------------------------------
 
-LATEX_CONTROL_CHARS = ["%", "\\", "_", "~", "&"]
+LATEX_CONTROL_CHARS = ["%", "\\", "_", "~", "&", "#"]
 re_latex_control = re.compile(r'(?<!\\)[%s](?!.*{)'
                               % ''.join(LATEX_CONTROL_CHARS))
 

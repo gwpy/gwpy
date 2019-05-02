@@ -936,6 +936,8 @@ class DataQualityFlag(object):
             If the input ``name`` cannot be parsed into
             {ifo}:{tag}:{version} format.
         """
+        if isinstance(name, bytes):
+            name = name.decode('utf-8')
         if name is None:
             self.ifo = None
             self.tag = None
