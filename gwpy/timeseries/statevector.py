@@ -34,7 +34,7 @@ from six.moves import range
 
 import numpy
 
-from astropy import (units, __version__ as astropy_version)
+from astropy import units
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
@@ -198,10 +198,12 @@ class StateTimeSeries(TimeSeriesBase):
 
     # -- math handling (always boolean) ---------
 
-    if astropy_version >= '2.0.0':  # remove _if_ when we pin astropy >= 2.0.0
-        def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-            return super(StateTimeSeries, self).__array_ufunc__(
-                ufunc, method, *inputs, **kwargs).view(bool)
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        out = super(StateTimeSeries, self).__array_ufunc__(
+            ufunc, method, *inputs, **kwargs)
+        if out.ndim:
+            return out.view(bool)
+        return out
 
     def __array_wrap__(self, obj, context=None):
         return super(StateTimeSeries, self).__array_wrap__(
