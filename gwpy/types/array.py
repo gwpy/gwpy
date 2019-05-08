@@ -394,6 +394,15 @@ class Array(Quantity):
 
     # -- array methods --------------------------
 
+    def __array_ufunc__(self, function, method, *inputs, **kwargs):
+        out = super(Array, self).__array_ufunc__(function, method,
+                                                 *inputs, **kwargs)
+        # if a ufunc returns a scalar, return a Quantity
+        if not out.ndim:
+            return Quantity(out, copy=False)
+        # otherwise return an array
+        return out
+
     def abs(self, axis=None, **kwargs):
         return self._wrap_function(numpy.abs, axis, **kwargs)
     abs.__doc__ = numpy.abs.__doc__
