@@ -107,7 +107,7 @@ def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
         # values replaced by a 'sensible' default for that dtype
         cols[name] = [
             _mask_replace(x, dtype) if mask[name][i] else x for
-             i, x in enumerate(col)
+            i, x in enumerate(col)
         ]
 
     # convert to columns
