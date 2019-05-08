@@ -36,7 +36,7 @@ pushd build
 apt-get -yqq update
 
 # install basic build dependencies
-apt-get -yqq install dpkg-dev devscripts
+apt-get -yqq install dpkg-dev devscripts lintian
 
 # unwrap tarball into build path
 tar -xf ../*.tar.* --strip-components=1
@@ -48,6 +48,9 @@ mk-build-deps --tool "apt-get -y" --install --remove
 dpkg-buildpackage -us -uc -b
 
 popd
+
+# lint the result
+lintian gwpy_*.changes
 
 # -- install ------------------------------------
 
