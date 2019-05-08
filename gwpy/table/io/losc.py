@@ -127,4 +127,7 @@ def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
         unit = _parse_unit(parameter)
         tab[name].unit = unit
 
+    # add an index on the event name
+    tab.add_index('name')
+
     return tab

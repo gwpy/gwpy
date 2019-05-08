@@ -7,6 +7,13 @@
 Querying for catalogue events
 #############################
 
+
+.. _gwpy-table-gwosc-query:
+
+==============
+Simple queries
+==============
+
 The :class:`EventTable` class comes with a :meth:`~EventTable.fetch_open_data`
 method that queries the Gravitational-Wave Open Science Center (GWOSC) database
 for events and their parameters associated with one of the catalogue event
@@ -64,6 +71,12 @@ The full list of available columns can be queried as follows::
            tc float64
       utctime   str10
 
+.. _gwpy-table-gwosc-filter:
+
+================
+Filtered queries
+================
+
 The columns returned can be selected using the ``column`` keyword,
 and mathematical selection filters can be applied on-the-fly
 using the ``selection`` keyword::
@@ -83,3 +96,23 @@ For more information on filtering, see :ref:`gwpy-table-filter`.
 
 For some examples of visualising the catalogues, see
 :ref:`gwpy-example-table-scatter` and :ref:`gwpy-example-table-histogram`.
+
+.. _gwpy-table-gwosc-index:
+
+======================
+Indexing by event name
+======================
+
+The `EventTable` returned by :meth:`~EventTable.fetch_open_data` includes an
+index based on the ``'name'`` column, so you can directly access rows in the
+table based on their name::
+
+   >>> t = EventTable.fetch_open_data(
+   ...     "GWTC-1-confident",
+   ...     columns=["name", "utctime", "mass1", "mass2", "distance"],
+   ... )
+   >>> print(t.loc["GW170817"])
+     name    utctime    mass1   mass2  distance
+                       solMass solMass   Mpc
+   -------- ---------- ------- ------- --------
+   GW170817 12:41:04.4    1.46    1.27     40.0

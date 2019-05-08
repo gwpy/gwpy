@@ -713,8 +713,9 @@ class TestEventTable(TestTable):
         assert {"L_peak", "distance", "mass1"}.intersection(table.colnames)
         # check unit parsing worked
         assert table["distance"].unit == "Mpc"
-        # check that masking worked
-        assert isinstance(table["snr_pycbc"][9], MaskedConstant)
+        # check that masking worked (needs table to be sorted)
+        gw170818 = table.loc["GW170818"]
+        assert isinstance(gw170818["snr_pycbc"], MaskedConstant)
 
     def test_fetch_open_data_kwargs(self):
         try:
