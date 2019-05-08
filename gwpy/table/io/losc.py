@@ -19,6 +19,10 @@
 """Fetch and parse an event catalog from GWOSC.
 """
 
+import numbers
+from collections import OrderedDict
+
+import numpy
 
 from astropy import constants
 from astropy import units
@@ -32,10 +36,24 @@ from .utils import (
     read_with_selection,
 )
 
-# handle custom GWOSC units
+#: custom GWOSC unit mapping
 UNITS = {
     "M_sun X c^2": units.M_sun * constants.c ** 2,
 }
+
+#: set of values corresponding to 'missing' or 'null' data
+MISSING_DATA = {
+    "NA",
+}
+
+#: values to fill missing data, based on dtype
+_FILL_VALUE = OrderedDict([
+    (str, str()),
+    (bytes, bytes()),
+    (numbers.Integral, int()),
+    (numbers.Number, numpy.nan),
+])
+
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -50,6 +68,18 @@ def _parse_unit(parameter):
     return unit
 
 
+def _mask_replace(value, dtype):
+    """Replace `value` with the default for the given `dtype`
+
+    If not default is set for the ``dtype``, just return the
+    value unchanged.
+    """
+    for type_, replacement in _FILL_VALUE.items():
+        if issubclass(dtype, type_):
+            return replacement
+    return value
+
+
 @read_with_columns
 @read_with_selection
 def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
@@ -57,22 +87,43 @@ def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
     data = catalog["data"]
     parameters = catalog["parameters"]
 
-    # unpack the catalogue data
-    rows = []
-    for event, plist in data.items():
-        rows.append([event] + [plist[p]["best"] for p in parameters])
+    # unpack the catalogue data into a dict of columns
     names = ["name"] + list(parameters.keys())
+    cols = {n: [] for n in names}
+    for event, plist in data.items():
+        cols["name"].append(event)
+        for n in names[1:]:
+            cols[n].append(plist[n]["best"])
+
+    # rebuild the columns by replacing the masked values
+    mask = {}
+    for name, col in cols.items():
+        # find masked indices
+        mask[name] = [v in MISSING_DATA for v in col]
+        # find unmasked values and use that to get the dtype
+        values = [x for i, x in enumerate(col) if not mask[name][i]]
+        dtype = numpy.array(values).dtype.type
+        # replace the column with a new version that has the masked
+        # values replaced by a 'sensible' default for that dtype
+        cols[name] = [
+            _mask_replace(x, dtype) if mask[name][i] else x for
+             i, x in enumerate(col)
+        ]
+
+    # convert to columns
     tab = EventTable(
-        rows=rows,
-        names=names,
+        cols,
         meta={
             "catalog": catalog,
             "host": host,
         },
+        masked=True,
     )
 
-    # add units
+    # add column metadata
     for name, parameter in parameters.items():
+        tab[name].mask = mask[name]
+        tab[name].description = parameter["name_en"]
         unit = _parse_unit(parameter)
         tab[name].unit = unit
 

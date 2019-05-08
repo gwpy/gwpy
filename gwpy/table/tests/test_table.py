@@ -34,6 +34,7 @@ import sqlparse
 
 from numpy import (random, isclose, dtype, asarray)
 from numpy.testing import assert_array_equal
+from numpy.ma.core import MaskedConstant
 
 import h5py
 
@@ -710,7 +711,10 @@ class TestEventTable(TestTable):
             pytest.skip(str(exc))
         assert len(table)
         assert {"L_peak", "distance", "mass1"}.intersection(table.colnames)
+        # check unit parsing worked
         assert table["distance"].unit == "Mpc"
+        # check that masking worked
+        assert isinstance(table["snr_pycbc"][9], MaskedConstant)
 
     def test_fetch_open_data_kwargs(self):
         try:

@@ -37,18 +37,10 @@ class GravitySpyTable(EventTable):
     - WDNN
     - Karoo GP
 
-    This differs from the basic `~astropy.table.Table` in two ways
-
-    - GW-specific file formats are registered to use with
-      `GravitySpyTable.fetch`
-    - columns of this table are of the `EventColumn` type, which provides
-      methods for filtering based on a `~gwpy.segments.SegmentList` (not
-      specifically time segments)
-
     See also
     --------
     astropy.table.Table
-        for details on parameters for creating an `GravitySpyTable`
+        for details on parameters for creating a `GravitySpyTable`
     """
 
     # -- i/o ------------------------------------
