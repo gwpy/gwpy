@@ -49,6 +49,11 @@ from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
 
+SKIP_FRAMECPP = utils.skip_missing_dependency('LDAStools.frameCPP')
+SKIP_LAL = utils.skip_missing_dependency('lal')
+SKIP_LALFRAME = utils.skip_missing_dependency('lalframe')
+SKIP_PYCBC_PSD = utils.skip_missing_dependency('pycbc.psd')
+
 if scipy_version < '1.2.0':
     SCIPY_METHODS = ('welch', 'bartlett')
 else:
@@ -137,12 +142,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.mark.parametrize('api', [
         None,
-        pytest.param(
-            'lalframe',
-            marks=utils.skip_missing_dependency('lalframe')),
-        pytest.param(
-            'framecpp',
-            marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
+        pytest.param('lalframe', marks=SKIP_LALFRAME),
+        pytest.param('framecpp', marks=SKIP_FRAMECPP),
     ])
     def test_read_write_gwf(self, api):
         array = self.create(name='TEST')
@@ -215,9 +216,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                     exclude=['channel'])
 
     @pytest.mark.parametrize('api', [
-        pytest.param(
-            'framecpp',
-            marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
+        pytest.param('framecpp', marks=SKIP_FRAMECPP),
     ])
     def test_read_write_gwf_error(self, api, losc):
         with utils.TemporaryFilename(suffix=".gwf") as tmp:
@@ -238,7 +237,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 "Failed to read {0!r} from {1!r}".format(losc.name, tmp)
             )
 
-    @utils.skip_missing_dependency('lalframe')
+    @SKIP_LALFRAME
     def test_read_gwf_scaled_lalframe(self):
         with pytest.warns(None) as record:
             data = self.TEST_CLASS.read(
@@ -334,8 +333,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @utils.skip_minimum_version("gwosc", "0.4.0")
     @pytest.mark.parametrize('format', [
         'hdf5',
-        pytest.param(  # only frameCPP actually reads units properly
-            'gwf', marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
+        pytest.param('gwf', marks=SKIP_FRAMECPP),
     ])
     def test_fetch_open_data(self, losc, format):
         try:
@@ -408,7 +406,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.gwpy')
             assert 'no data received' in str(exc)
 
-    @utils.skip_missing_dependency('LDAStools.frameCPP')
+    @SKIP_FRAMECPP
     @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
                         reason='No LIGO datafind server configured '
                                'on this host')
@@ -427,7 +425,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
                                  frametype=FIND_FRAMETYPE, observatory='X')
 
-    @utils.skip_missing_dependency('LDAStools.frameCPP')
+    @SKIP_FRAMECPP
     @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
                         reason='No LIGO datafind server configured '
                                'on this host')
@@ -448,7 +446,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             raise
         assert ft in expected
 
-    @utils.skip_missing_dependency('LDAStools.frameCPP')
+    @SKIP_FRAMECPP
     @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
                         reason='No LIGO datafind server configured '
                                'on this host')
@@ -515,16 +513,18 @@ class TestTimeSeries(_TestTimeSeriesBase):
             losc.psd(.5, .25, window='hann'),
         )
 
-    @utils.skip_missing_dependency('lal')
+    @SKIP_LAL
     def test_psd_lal_median_mean(self, losc):
         # check that warnings and errors get raised in the right place
         # for a median-mean PSD with the wrong data size or parameters
 
         # single segment should raise error
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError), pytest.deprecated_call():
             losc.psd(abs(losc.span), method='lal_median_mean')
 
         # odd number of segments should warn
+        # pytest hides the second DeprecationWarning that should have been
+        # triggered here, for some reason
         with pytest.warns(UserWarning):
             losc.psd(1, .5, method='lal_median_mean')
 
@@ -600,9 +600,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
         return signal.get_window(window, nfft)
 
     @pytest.mark.parametrize('method', [
-        'scipy-welch', 'scipy-bartlett',
-        'lal-welch', 'lal-bartlett', 'lal-median',
-        'pycbc-welch', 'pycbc-bartlett', 'pycbc-median',
+        'scipy-welch',
+        'scipy-bartlett',
+        pytest.param('lal-welch', marks=SKIP_LAL),
+        pytest.param('lal-bartlett', marks=SKIP_LAL),
+        pytest.param('lal-median', marks=SKIP_LAL),
+        pytest.param('pycbc-welch', marks=SKIP_PYCBC_PSD),
+        pytest.param('pycbc-bartlett', marks=SKIP_PYCBC_PSD),
+        pytest.param('pycbc-median', marks=SKIP_PYCBC_PSD),
     ])
     @pytest.mark.parametrize(
         'window', (None, 'hann', ('kaiser', 24), 'array'),
@@ -611,13 +616,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # generate window for 'array'
         win = self._window_helper(losc, 1) if window == 'array' else window
 
+        if method.startswith(("lal", "pycbc")):
+            ctx = pytest.deprecated_call
+        else:
+            ctx = null_context
+
         # generate spectrogram
-        try:
+        with ctx():
             sg = losc.spectrogram(1, method=method, window=win)
-        except ImportError as exc:
-            if method.startswith(('lal', 'pycbc')):
-                pytest.skip(str(exc))
-            raise
 
         # validate
         assert isinstance(sg, Spectrogram)
@@ -634,49 +640,48 @@ class TestTimeSeries(_TestTimeSeriesBase):
         n = int(losc.sample_rate.value)
         if window == 'hann' and not method.endswith('bartlett'):
             n *= 1.5  # default is 50% overlap
-        psd = losc[:int(n)].psd(fftlength=1, method=method, window=win)
+        with ctx():
+            psd = losc[:int(n)].psd(fftlength=1, method=method, window=win)
         # FIXME: epoch should not be excluded here (probably)
-        print(psd)
-        print(sg[0])
         utils.assert_quantity_sub_equal(sg[0], psd, exclude=['epoch'],
                                         almost_equal=True)
 
-        # test fftlength
-        win2 = self._window_helper(losc, .5) if window == 'array' else window
-        sg = losc.spectrogram(1, fftlength=0.5, window=win2)
+    def test_spectrogram_fftlength(self, losc):
+        sg = losc.spectrogram(1, fftlength=0.5)
         assert sg.shape == (abs(losc.span),
                             0.5 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 2 * units.Hertz
         assert sg.dt == 1 * units.second
 
-        # test auto-overlap
-        if window == 'hann':
-            sg2 = losc.spectrogram(1, fftlength=0.5, overlap=.25,
-                                   window='hann')
-            utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
+    def test_spectrogram_overlap(self, losc):
+        sg = losc.spectrogram(1, fftlength=0.5, window="hann")
+        sg2 = losc.spectrogram(1, fftlength=0.5, window="hann", overlap=.25)
+        utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
-        # test multiprocessing
-        sg2 = losc.spectrogram(1, fftlength=0.5, nproc=2, window=win)
+    def test_spectrogram_multiprocessing(self, losc):
+        sg = losc.spectrogram(1, fftlength=0.5)
+        sg2 = losc.spectrogram(1, fftlength=0.5, nproc=2)
         utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
     @pytest.mark.parametrize('library', [
-        pytest.param('lal', marks=utils.skip_missing_dependency('lal')),
-        pytest.param('pycbc',
-                     marks=utils.skip_missing_dependency('pycbc.psd')),
+        pytest.param('lal', marks=SKIP_LAL),
+        pytest.param('pycbc', marks=SKIP_PYCBC_PSD),
     ])
     def test_spectrogram_median_mean(self, losc, library):
         method = '{0}-median-mean'.format(library)
-        # median-mean will fail on pycbc, and warn on LAL, if not given
-        # the correct data for an even number of FFTs
 
+        # median-mean warn on LAL if not given the correct data for an
+        # even number of FFTs.
+        # pytest only asserts a single warning, and UserWarning will take
+        # precedence apparently, so check that for lal
         if library == 'lal':
-            with pytest.warns(UserWarning):
-                sg = losc.spectrogram(1.5, fftlength=.5, overlap=0,
-                                      method=method)
+            warn_ctx = pytest.warns(UserWarning)
         else:
+            warn_ctx = pytest.deprecated_call()
+
+        with warn_ctx:
             sg = losc.spectrogram(1.5, fftlength=.5, overlap=0, method=method)
 
-        # but should still work
         assert sg.dt == 1.5 * units.second
         assert sg.df == 2 * units.Hertz
 
@@ -1085,7 +1090,7 @@ class TestTimeSeriesDict(_TestTimeSeriesBaseDict):
     TEST_CLASS = TimeSeriesDict
     ENTRY_CLASS = TimeSeries
 
-    @utils.skip_missing_dependency('LDAStools.frameCPP')
+    @SKIP_FRAMECPP
     def test_read_write_gwf(self, instance):
         with utils.TemporaryFilename(suffix='.gwf') as tmp:
             instance.write(tmp)

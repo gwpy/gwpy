@@ -564,26 +564,30 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(result.active, RESULT.active)
 
     def test_query_segdb(self):
-        result = query_segdb(self.TEST_CLASS.query_segdb,
-                             QUERY_FLAGS[0], 0, 10)
+        with pytest.deprecated_call():
+            result = query_segdb(self.TEST_CLASS.query_segdb,
+                                 QUERY_FLAGS[0], 0, 10)
         RESULT = QUERY_RESULT[QUERY_FLAGS[0]]
 
         assert isinstance(result, self.TEST_CLASS)
         utils.assert_segmentlist_equal(result.known, RESULT.known)
         utils.assert_segmentlist_equal(result.active, RESULT.active)
 
-        result2 = query_segdb(self.TEST_CLASS.query_segdb,
-                              QUERY_FLAGS[0], (0, 10))
+        with pytest.deprecated_call():
+            result2 = query_segdb(self.TEST_CLASS.query_segdb,
+                                  QUERY_FLAGS[0], (0, 10))
         utils.assert_flag_equal(result, result2)
 
-        result2 = query_segdb(self.TEST_CLASS.query_segdb,
-                              QUERY_FLAGS[0], SegmentList([(0, 10)]))
+        with pytest.deprecated_call():
+            result2 = query_segdb(self.TEST_CLASS.query_segdb,
+                                  QUERY_FLAGS[0], SegmentList([(0, 10)]))
         utils.assert_flag_equal(result, result2)
 
-        with pytest.raises(ValueError):
-            self.TEST_CLASS.query_segdb(QUERY_FLAGS[0], 1, 2, 3)
-        with pytest.raises(ValueError):
-            self.TEST_CLASS.query_segdb(QUERY_FLAGS[0], (1, 2, 3))
+        with pytest.deprecated_call():
+            with pytest.raises(ValueError):
+                self.TEST_CLASS.query_segdb(QUERY_FLAGS[0], 1, 2, 3)
+            with pytest.raises(ValueError):
+                self.TEST_CLASS.query_segdb(QUERY_FLAGS[0], (1, 2, 3))
 
     @pytest.mark.parametrize('name, flag', [
         (QUERY_FLAGS[0], QUERY_FLAGS[0]),  # regular query
@@ -918,7 +922,9 @@ class TestDataQualityDict(object):
             self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS, 0, 10, on_error='blah')
 
     def test_query_segdb(self):
-        result = query_segdb(self.TEST_CLASS.query_segdb, QUERY_FLAGS, 0, 10)
+        with pytest.deprecated_call():
+            result = query_segdb(self.TEST_CLASS.query_segdb,
+                                 QUERY_FLAGS, 0, 10)
         assert isinstance(result, self.TEST_CLASS)
         utils.assert_dict_equal(result, QUERY_RESULT, utils.assert_flag_equal)
 
