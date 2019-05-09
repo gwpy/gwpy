@@ -182,15 +182,14 @@ class changelog(Command):
             build = 1
         else:
             repo = git.Repo()
-            config = repo.config_reader()
+            commit = repo.head.commit
+            date = commit.authored_datetime
+            tz = commit.author_tz_offset
             version = str(tag)
-            build = 1000
-            author = config.get_value("user", "name", default="user")
-            email = config.get_value("user", "email",
-                                     default="<user@email.com>")
+            author = commit.author.name
+            email = commit.author.email
             message = 'Test build'
-            date = datetime.datetime.now()
-            tz = 0
+            build = 1000
         name = self.distribution.get_name()
         if self.format == 'rpm':
             formatter = self._format_entry_rpm
