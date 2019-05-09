@@ -80,6 +80,25 @@ def _mask_replace(value, dtype):
     return value
 
 
+def _mask_column(col):
+    """Find and replace missing data in a column
+
+    Returns the new data, and the mask as `list`
+    """
+    # find masked indices
+    mask = [v in MISSING_DATA for v in col]
+
+    # find common dtype of unmasked values
+    dtype = numpy.array(x for i, x in enumerate(col) if not mask[i]).dtype.type
+
+    # replace the column with a new version that has the masked
+    # values replaced by a 'sensible' default for the relevant dtype
+    return (
+        [_mask_replace(x, dtype) if mask[i] else x for i, x in enumerate(col)],
+        mask,
+    )
+
+
 @read_with_columns
 @read_with_selection
 def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
@@ -98,17 +117,7 @@ def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
     # rebuild the columns by replacing the masked values
     mask = {}
     for name, col in cols.items():
-        # find masked indices
-        mask[name] = [v in MISSING_DATA for v in col]
-        # find unmasked values and use that to get the dtype
-        values = [x for i, x in enumerate(col) if not mask[name][i]]
-        dtype = numpy.array(values).dtype.type
-        # replace the column with a new version that has the masked
-        # values replaced by a 'sensible' default for that dtype
-        cols[name] = [
-            _mask_replace(x, dtype) if mask[name][i] else x for
-            i, x in enumerate(col)
-        ]
+        cols[name], mask[name] = _mask_column(col)
 
     # convert to columns
     tab = EventTable(
