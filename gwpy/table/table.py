@@ -109,6 +109,11 @@ def _rates_preprocess(func):
 class EventColumn(Column):
     """Custom `Column` that allows filtering with segments
     """
+    def __new__(cls, *args, **kwargs):
+        warnings.warn("the EventColumn is deprecated, and will be removed in "
+                      "a future gwpy release", DeprecationWarning)
+        super(EventColumn, cls).__new__(*args, **kwargs)
+
     def in_segmentlist(self, segmentlist):
         """Return the index of values lying inside the given segmentlist
 
@@ -133,23 +138,17 @@ class EventColumn(Column):
 
 @inherit_io_registrations
 class EventTable(Table):
-    """A container for a table of events
+    """A container for a table of events.
 
-    This differs from the basic `~astropy.table.Table` in two ways
-
-    - GW-specific file formats are registered to use with
-      `EventTable.read` and `EventTable.write`
-    - columns of this table are of the `EventColumn` type, which provides
-      methods for filtering based on a `~gwpy.segments.SegmentList` (not
-      specifically time segments)
+    This object expands the default :class:`~astropy.table.Table`
+    with extra read/write formats, and methods to perform filtering,
+    rate calculations, and visualisation.
 
     See also
     --------
     astropy.table.Table
         for details on parameters for creating an `EventTable`
     """
-    Column = EventColumn
-
     # -- utilities ------------------------------
 
     def _get_time_column(self):
