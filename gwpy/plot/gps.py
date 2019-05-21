@@ -22,7 +22,6 @@
 from __future__ import division
 
 from decimal import Decimal
-from math import isinf
 from numbers import Number
 
 import numpy
@@ -409,10 +408,22 @@ class GPSScale(GPSMixin, LinearScale):
         axis.set_minor_locator(GPSAutoMinorLocator())
         axis.set_minor_formatter(ticker.NullFormatter())
 
+    @staticmethod
+    def _lim(axis):
+        # if autoscaling and datalim is set, use it
+        autoscale_on_var = "get_autoscale{}_on".format(axis.axis_name)
+        dlim = tuple(axis.get_data_interval())
+        if (
+                getattr(axis.axes, autoscale_on_var)() and
+                not numpy.isinf(dlim).any()
+        ):
+            return dlim
+        # otherwise use the view lim
+        return tuple(axis.get_view_interval())
+
     def _auto_epoch(self, axis):
-        epoch = round(max(
-            x for x in (axis.get_data_interval()[0],
-                        axis.get_view_interval()[0]) if not isinf(x)))
+        # use the lower data/view limit as the epoch
+        epoch = round(self._lim(axis)[0])
 
         # round epoch in successive units for large scales
         unit = self.get_unit()
@@ -427,9 +438,8 @@ class GPSScale(GPSMixin, LinearScale):
                 date = date.replace(**{fields[i]: 0})
         return int(to_gps(date))
 
-    @staticmethod
-    def _auto_unit(axis):
-        vmin, vmax = sorted(axis.get_view_interval())
+    def _auto_unit(self, axis):
+        vmin, vmax = self._lim(axis)
         duration = vmax - vmin
         for scale in TIME_UNITS[::-1]:
             base = scale.decompose().scale
