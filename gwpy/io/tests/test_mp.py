@@ -19,7 +19,6 @@
 """Unit tests for :mod:`gwpy.io.mp`
 """
 
-from io import BytesIO
 from tempfile import NamedTemporaryFile
 
 import pytest
