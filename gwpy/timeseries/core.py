@@ -304,6 +304,11 @@ class TimeSeriesBase(Series):
             value with which to fill gaps in the source data,
             by default gaps will result in a `ValueError`.
 
+        Raises
+        ------
+        IndexError
+            if ``source`` is an empty list
+
         Notes
         -----"""
         from .io.core import read as timeseries_reader

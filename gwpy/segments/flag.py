@@ -613,6 +613,11 @@ class DataQualityFlag(object):
             formatted `DataQualityFlag` containing the active and known
             segments read from file.
 
+        Raises
+        ------
+        IndexError
+            if ``source`` is an empty list
+
         Notes
         -----"""
         if 'flag' in kwargs:  # pragma: no cover
