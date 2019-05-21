@@ -53,7 +53,7 @@ def tmp2():
 def test_read_multi_single(tmp1):
     """Check that serial processing works with `mp.read_multi`
     """
-    tab = io_mp.read_multi(vstack, Table, tmp1, verbose=True)
+    tab = io_mp.read_multi(vstack, Table, tmp1.name, verbose=True)
     assert tab.colnames == ["a", "b", "c"]
     assert list(tab[0]) == [1, 2, 3]
 
@@ -62,15 +62,15 @@ def test_read_multi_list_of_one(tmp1):
     """Check that a list of one is the same as just passing the element
     """
     assert_table_equal(
-        io_mp.read_multi(vstack, Table, tmp1),
-        io_mp.read_multi(vstack, Table, [tmp1]),
+        io_mp.read_multi(vstack, Table, tmp1.name),
+        io_mp.read_multi(vstack, Table, [tmp1.name]),
     )
 
 
 def test_read_multi_nproc(tmp1, tmp2):
     """Check that simple multiprocessing works with `mp.read_multi`
     """
-    tab = io_mp.read_multi(vstack, Table, [tmp1, tmp2], nproc=2)
+    tab = io_mp.read_multi(vstack, Table, [tmp1.name, tmp2.name], nproc=2)
     assert tab.colnames == ["a", "b", "c"]
     assert list(tab["a"]) == [1, 4, 7, 10]
 
@@ -78,7 +78,7 @@ def test_read_multi_nproc(tmp1, tmp2):
 def test_read_multi_order_preservation(tmp1, tmp2):
     """Check that input order is preserved in `mp.read_multi`
     """
-    tab = io_mp.read_multi(vstack, Table, [tmp2, tmp1], nproc=2)
+    tab = io_mp.read_multi(vstack, Table, [tmp2.name, tmp1.name], nproc=2)
     assert tab.colnames == ["a", "b", "c"]
     assert list(tab["a"]) == [7, 10, 1, 4]
 
@@ -104,13 +104,13 @@ def test_read_multi_error_propagation_serial():
     """Check that errors get raised in-place during serial reads
     """
     with NamedTemporaryFile() as tmp, pytest.raises(ValueError):
-        io_mp.read_multi(vstack, Table, [tmp, tmp], format="ascii.csv",
-                         nproc=1)
+        io_mp.read_multi(vstack, Table, [tmp.name, tmp.name],
+                         format="ascii.csv", nproc=1)
 
 
 def test_read_multi_error_propagation_multi():
     """Check that errors get propagated back up the stack during multi reads
     """
     with NamedTemporaryFile() as tmp, pytest.raises(ValueError):
-        io_mp.read_multi(vstack, Table, [tmp, tmp], format="ascii.csv",
-                         nproc=2)
+        io_mp.read_multi(vstack, Table, [tmp.name, tmp.name],
+                         format="ascii.csv", nproc=2)
