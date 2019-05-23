@@ -158,6 +158,11 @@ class FrequencySeries(Series):
         **kwargs
             Other keywords are (in general) specific to the given ``format``.
 
+        Raises
+        ------
+        IndexError
+            if ``source`` is an empty list
+
         Notes
         -----"""
         return io_registry.read(cls, source, *args, **kwargs)

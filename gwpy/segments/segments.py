@@ -174,6 +174,11 @@ class SegmentList(segmentlist):
         segmentlist : `SegmentList`
             `SegmentList` active and known segments read from file.
 
+        Raises
+        ------
+        IndexError
+            if ``source`` is an empty list
+
         Notes
         -----"""
         def combiner(listofseglists):

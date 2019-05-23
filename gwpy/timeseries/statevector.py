@@ -659,6 +659,11 @@ class StateVector(TimeSeriesBase):
             value with which to fill gaps in the source data, only used if
             gap is not given, or `gap='pad'` is given
 
+        Raises
+        ------
+        IndexError
+            if ``source`` is an empty list
+
         Examples
         --------
         To read the S6 state vector, with names for all the bits::

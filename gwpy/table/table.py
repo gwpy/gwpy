@@ -235,6 +235,8 @@ class EventTable(Table):
         ------
         astropy.io.registry.IORegistryError
             if the `format` cannot be automatically identified
+        IndexError
+            if ``source`` is an empty list
 
         Notes
         -----"""

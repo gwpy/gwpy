@@ -68,6 +68,12 @@ def read_multi(flatten, cls, source, *args, **kwargs):
     else:
         path = files[0] if files else None
 
+    # raise IndexError early when reading from empty cache
+    if not files:
+        raise IndexError(
+            "cannot read {} from empty source list".format(cls.__name__),
+        )
+
     # determine input format (so we don't have to do it multiple times)
     if kwargs.get('format', None) is None:
         kwargs['format'] = get_read_format(cls, path, (source,) + args, kwargs)

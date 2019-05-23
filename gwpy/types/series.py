@@ -392,6 +392,11 @@ class Series(Array):
         -------
         data : `Series`
 
+        Raises
+        ------
+        IndexError
+            if ``source`` is an empty list
+
         Notes
         -----"""
         return io_registry.read(cls, source, *args, **kwargs)
