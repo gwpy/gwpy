@@ -30,5 +30,5 @@ after_test:
   - "set _PYV=%PYTHON_VERSION:.=%"
   - python -m pip install codecov
   - python -m codecov --flags Windows python%_PYV% conda
-on_success:
+on_finish:
   - ps: (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\junit.xml))
