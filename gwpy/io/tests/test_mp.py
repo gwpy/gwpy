@@ -104,13 +104,13 @@ def test_read_multi_not_a_file():
     pytest.param(1, id="serial"),
     pytest.param(2, id="multi"),
 ))
-def test_read_multi_error_propagation(nproc):
+def test_read_multi_error_propagation(tmp1, tmp2, nproc):
     """Check that errors get raised in-place during reads
     """
-    with NamedTemporaryFile() as tmp, pytest.raises(ValueError):
-        # write nonsense into the file
-        tmp.write(b"blahblahblah\n1,2,3,4blah")
-        tmp.seek(0)
-        # try and read it
-        io_mp.read_multi(vstack, Table, [tmp.name, tmp.name],
+    # write nonsense into the file
+    tmp1.write(b"blahblahblah\n1,2,3,4blah")
+    tmp1.seek(0)
+    # try and read it
+    with pytest.raises(ValueError):
+        io_mp.read_multi(vstack, Table, [tmp1.name, tmp2.name],
                          format="ascii.csv", nproc=nproc)
