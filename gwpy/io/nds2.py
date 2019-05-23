@@ -445,7 +445,7 @@ def find_channels(channels, connection=None, host=None, port=None,
     """
     # set epoch
     if not isinstance(epoch, tuple):
-        epoch = (epoch or 'All',)
+        epoch = (epoch or 'ALL',)
     connection.set_epoch(*epoch)
 
     # format sample_rate as tuple for find_channels call
