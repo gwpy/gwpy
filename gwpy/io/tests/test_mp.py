@@ -100,17 +100,17 @@ def test_read_multi_not_a_file():
         io_mp.read_multi(vstack, Table, None, format="ascii.csv", nproc=1)
 
 
-def test_read_multi_error_propagation_serial():
-    """Check that errors get raised in-place during serial reads
+@pytest.mark.parametrize("nproc", (
+    pytest.param(1, id="serial"),
+    pytest.param(2, id="multi"),
+))
+def test_read_multi_error_propagation(nproc):
+    """Check that errors get raised in-place during reads
     """
     with NamedTemporaryFile() as tmp, pytest.raises(ValueError):
+        # write nonsense into the file
+        tmp.write(b"blahblahblah\n1,2,3,4blah")
+        tmp.seek(0)
+        # try and read it
         io_mp.read_multi(vstack, Table, [tmp.name, tmp.name],
-                         format="ascii.csv", nproc=1)
-
-
-def test_read_multi_error_propagation_multi():
-    """Check that errors get propagated back up the stack during multi reads
-    """
-    with NamedTemporaryFile() as tmp, pytest.raises(ValueError):
-        io_mp.read_multi(vstack, Table, [tmp.name, tmp.name],
-                         format="ascii.csv", nproc=2)
+                         format="ascii.csv", nproc=nproc)
