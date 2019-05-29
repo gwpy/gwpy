@@ -90,7 +90,7 @@ class FrequencySeries(Series):
        ~FrequencySeries.zpk
     """
     _default_xunit = units.Unit('Hz')
-    _print_slots = ['f0', 'df', 'epoch', 'name', 'channel', '_frequencies']
+    _print_slots = ['f0', 'df', 'epoch', 'name', 'channel']
 
     def __new__(cls, data, unit=None, f0=None, df=None, frequencies=None,
                 name=None, epoch=None, channel=None, **kwargs):
