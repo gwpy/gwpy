@@ -30,7 +30,7 @@ the errors and assumptions that seasoned contributors have glossed over.
 
 Note: This disclaimer was originally written by
 [Adrienne Lowe](https://github.com/adriennefriend) for a
-[PyCon talk](https://www.youtube.com/watch?v=6Uj746j9Heo), and was adapted by
+[PyCon talk](https://www.youtube.com/watch?v=6Uj746j9Heo), and was adapted for
 GWpy based on its use in the [Astropy](https://github.com/astropy/astropy/)
 contributing guide.
 
@@ -40,7 +40,7 @@ Contributions to GWpy are made via pull requests from GitHub users' forks of the
 The basic idea is to use the `master` branch of your fork as a way of updating your fork with other people's changes that have been merged into the main repo, and then  working on a dedicated _feature branch_ for each piece of work:
 
 - create the fork (if needed) by clicking _Fork_ in the upper-right corner of <https://github.com/gwpy/gwpy/> - this only needs to be done once, ever
-- clone the fork (replace `<username>`) with your GitHub username):
+- clone the fork (replace `<username>` with your GitHub username):
 
   ```bash
   git clone https://github.com/<username>/gwpy.git gwpy-fork
@@ -100,8 +100,9 @@ python -m flake8
 ### Testing
 
 GWpy has a fairly complete test suite, covering over 90% of the codebase.
-All tests should be written to be executed with
-[`pytest`](https://docs.pytest.org/en/latest/), and should cover all lines of
+All code contributions should be accompanied by (unit) tests to be executed with
+[`pytest`](https://docs.pytest.org/en/latest/), and should cover
+all new or modified lines.
 
 You can run the test suite locally from the root of the repository via:
 
