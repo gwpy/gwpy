@@ -144,6 +144,25 @@ class SegmentList(segmentlist):
         return self
     coalesce.__doc__ = segmentlist.coalesce.__doc__
 
+    def to_table(self):
+        """Convert this `SegmentList` to a `~gwpy.table.Table`
+
+        The resulting `Table` has four columns: `index`, `start`, `end`, and
+        `duration`, corresponding to the zero-counted list index, GPS start
+        and end times, and total duration in seconds, respectively.
+
+        This method exists mainly to provide a way to write `SegmentList`
+        objects in comma-separated value (CSV) format, via the
+        :meth:`~gwpy.table.Table.write` method.
+        """
+        from ..table import Table
+        return Table([
+            list(range(len(self))),
+            [seg[0] for seg in self],
+            [seg[1] for seg in self],
+            [abs(seg) for seg in self],
+        ], names=('index', 'start', 'end', 'duration'))
+
     # -- i/o ------------------------------------
 
     @classmethod
