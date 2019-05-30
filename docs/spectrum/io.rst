@@ -132,7 +132,7 @@ element to use:
 For example::
 
    >>> data = FrequencySeries.read("psd.xml.gz", name="H1")
-   >>> data = FrequencySeries.read("psd.xml.gz", epoch=1241492407, f0=0, instrument=H1")
+   >>> data = FrequencySeries.read("psd.xml.gz", epoch=1241492407, f0=0, instrument="H1")
 
 Writing
 -------
