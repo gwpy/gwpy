@@ -8,69 +8,65 @@ This page describes the steps required to author a release of GWpy.
 
 Notes:
 
-* gwpy uses the `git flow <https://github.com/nvie/gitflow>`__ branching model
-  for releases
-* all release numbers must follow `Semantic Versioning 2 <segmver.org>`__ and
-  include major, minor, and patch numbers, e.g. ``1.0.0`` rather than
+* gwpy uses the
+  `stable mainline <https://www.bitsnbites.eu/a-stable-mainline-branching-model-for-git/>`_
+  branching model for releases
+* all release numbers must follow `Semantic Versioning 2 <segmver.org>`_ and
+  include major, minor, and patch numbers, e.g. ``X.Y.Z`` rather than
   ``1.0`` or just ``1``
 
 ============
 Step-by-step
 ============
 
-#. **Create a release branch using git flow**
+#. **If this is a major, or minor release (as opposed to a bug-fix release), create a release branch**:
 
    .. code-block:: bash
 
-      $ git flow release start 1.0.0
+      git checkout -b release/vX.Y
 
-#. **Update the copyright:**
-
-   .. code-block:: bash
-
-      $ python -c "from setup_utils import update_all_copyright; update_all_copyright($(date +%Y))"
-      $ git commit -S . -m "Updated copyright for release"
-
-#. **``publish`` the release branch**, allowing CI to run, and others to contribute:
+   **Or, if this is a bug-fix release, just check out that branch**:
 
    .. code-block:: bash
 
-      $ git flow release publish 1.0.0
+      git checkout release/vX.Y
+
+#. **Bump versions and add changelog entries in OS packaging files:**
+
+   - `/debian/changelog`
+   - `/gwosc.spec`
+
+   and then **commit those**
+
+#. **Update the copyright**:
+
+   .. code-block:: bash
+
+      python -c "from setup_utils import update_all_copyright; update_all_copyright($(date +%Y))"
+      git commit -S -m "Updated copyright for release" .
+
+#. **Publish the release**, allowing CI to run, and others to see it:
+
+   .. code-block:: bash
+
+      git push -u origin release/vX.Y
 
 #. **Wait patiently for the continuous integration to finish**
 
 #. **Announce the release** and ask for final contributions
 
-#. **Finalise the release and push**
+#. **Finalise the release and push**:
 
    .. code-block:: bash
 
-      $ git flow release finish 1.0.0
-      $ git push origin master
-      $ git push origin --tags
-
-   .. note::
-
-      The ``git flow release finish`` command will open two prompts, one
-      to merge the release branch into `master`, just leave that as is. The
-      second prompt is the tag message, please complete this to include the
-      release notes for this release.
-
-   .. note::
-
-      If ypu want to GPG sign the merge commit and the tag:
-
-      .. code-block:: bash
-
-          $ git commit --amend --gpg-sign  # sign merge commit
-          $ git tag --sign v1.0.0 --force  # regenerate tag
-
+      git tag --sign vX.Y.Z
+      git push --signed=if-asked origin vX.Y.Z
 
 #. **Draft a release on GitHub**
 
    * Go to https://github.com/gwpy/gwpy/releases/new
-   * Use ``v1.0.0`` as the *Tag version*
-   * Use 1.0.0 as the *Release title*
+   * Use ``vX.Y.Z`` as the *Tag version*
+   * Use X.Y.Z as the *Release title*
    * Copy the tag message into the text box to serve as release notes
 
 #. **Publish the release documentation**
@@ -79,16 +75,16 @@ Step-by-step
 
    .. code-block:: bash
 
-      $ cd /home/duncan.macleod/gwpy-nightly-build/
-      $ bash release-build.sh 1.0.0
+      cd /home/duncan.macleod/gwpy-nightly-build/
+      bash release-build.sh X.Y.Z
 
-   Once that is complete (~20 minutes), a few manual updates must be made
+   Once that is complete (~20 minutes), a few manual updates must be made:
 
    .. code-block:: bash
 
-      $ cd /home/duncan.macleod/gwpy-nightly-build/gwpy.github.io/docs
-      $ unlink stable && ln -s 1.0.0 stable
-      $ sed -i 's/0.9.9/1.0.0/g' index.html
+      cd /home/duncan.macleod/gwpy-nightly-build/gwpy.github.io/docs
+      unlink stable && ln -s X.Y.Z stable
+      sed -i 's/0.9.9/X.Y.Z/g' index.html
 
    The final command should be modified to replace the previous release ID
    with the current one.
@@ -97,8 +93,8 @@ Step-by-step
 
    .. code-block:: bash
 
-      $ git commit --gpg-sign --message="1.0.0: release docs"
-      $ git push  # <- this step needs an SSH key
+      git commit --gpg-sign --message="X.Y.Z: release docs"
+      git push --signed=if-asked  # <- this step needs an SSH key
 
    It should take ~5 minutes for the release documentation to actually
    appear on https://gwpy.github.io/docs/
@@ -106,13 +102,6 @@ Step-by-step
 ==============
 Linked updates
 ==============
-
-PyPI
-----
-
-Finishing the release and pushing the tags to ``origin`` will trigger a new
-CI run on https://travis-ci.org, which will automatically deploy the new
-release tarball to https://pypi.python.org and publish the release there.
 
 Zenodo
 ------
@@ -124,7 +113,19 @@ https://zenodo.org.
 Distributing the new release package
 ====================================
 
-Package distributions for Conda, Debian, and RHEL are done manually:
+Package distributions for PyPI, Conda, Debian, and RHEL are done manually:
+
+PyPI
+----
+
+To create a new release on PyPI:
+
+.. code-block:: bash
+
+   rm -rf dist/
+   python setup.py sdist bdist_wheel
+   gpg --armor --detach-sign dist/gwpy-*.tar.gz
+   twine upload dist/gwpy-*
 
 Conda
 -----
