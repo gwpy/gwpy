@@ -25,9 +25,10 @@ import pytest
 
 import h5py
 
-from ...testing.utils import (assert_array_equal, assert_segmentlist_equal,
-                              TemporaryFilename)
-from ...table import Table
+from astropy.table import Table
+
+from ...testing.utils import (
+    assert_segmentlist_equal, assert_table_equal, TemporaryFilename)
 from ...time import LIGOTimeGPS
 from .. import (Segment, SegmentList)
 
@@ -86,12 +87,18 @@ class TestSegmentList(object):
 
     def test_to_table(self, segmentlist):
         segtable = segmentlist.to_table()
-        assert isinstance(segtable, Table)
-        assert_array_equal(segtable['index'], list(range(len(segmentlist))))
-        assert_array_equal(segtable['start'], [seg[0] for seg in segmentlist])
-        assert_array_equal(segtable['end'], [seg[1] for seg in segmentlist])
-        assert_array_equal(
-            segtable['duration'], [abs(seg) for seg in segmentlist])
+        assert_table_equal(
+            segtable,
+            Table(
+                rows=[
+                    (0, 1, 2, 1),
+                    (1, 3, 4, 1),
+                    (2, 4, 6, 2),
+                    (3, 8, 10, 2),
+                ],
+                names=('index', 'start', 'end', 'duration'),
+            ),
+        )
 
     # -- test I/O -------------------------------
 
