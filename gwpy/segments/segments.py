@@ -23,6 +23,7 @@ configuration.
 """
 
 from astropy.io import registry as io_registry
+from astropy.table import Table
 
 from ligo.segments import (segment, segmentlist, segmentlistdict)
 
@@ -143,6 +144,22 @@ class SegmentList(segmentlist):
             self[i] = Segment(seg[0], seg[1])
         return self
     coalesce.__doc__ = segmentlist.coalesce.__doc__
+
+    def to_table(self):
+        """Convert this `SegmentList` to a `~astropy.table.Table`
+
+        The resulting `Table` has four columns: `index`, `start`, `end`, and
+        `duration`, corresponding to the zero-counted list index, GPS start
+        and end times, and total duration in seconds, respectively.
+
+        This method exists mainly to provide a way to write `SegmentList`
+        objects in comma-separated value (CSV) format, via the
+        :meth:`~astropy.table.Table.write` method.
+        """
+        return Table(
+            rows=[(i, s[0], s[1], abs(s)) for i, s in enumerate(self)],
+            names=('index', 'start', 'end', 'duration'),
+        )
 
     # -- i/o ------------------------------------
 
