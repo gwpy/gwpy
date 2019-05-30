@@ -156,12 +156,10 @@ class SegmentList(segmentlist):
         objects in comma-separated value (CSV) format, via the
         :meth:`~astropy.table.Table.write` method.
         """
-        return Table([
-            list(range(len(self))),
-            [seg[0] for seg in self],
-            [seg[1] for seg in self],
-            [abs(seg) for seg in self],
-        ], names=('index', 'start', 'end', 'duration'))
+        return Table(
+            rows=[(i, s[0], s[1], abs(s)) for i, s in enumerate(self)],
+            names=('index', 'start', 'end', 'duration'),
+        )
 
     # -- i/o ------------------------------------
 
