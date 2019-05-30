@@ -86,18 +86,56 @@ To replace an dataset in an existing file, while preserving other data, use *bot
 ``LIGO_LW`` XML
 ===============
 
-**Additional dependencies:** :mod:`glue.ligolw`
+**Additional dependencies:** :mod:`python-ligo-lw`
 
-Alongside storing :ref:`tabular data <gwpy-table-io-ligolw>`, the ``LIGO_LW`` XML format allows storing array data.
+Alongside storing :ref:`tabular data <gwpy-table-io-ligolw>`, the ``LIGO_LW``
+XML format allows storing array data.
+These arrays are stored in ``<LIGO_LW>`` elements, which describe the metadata
+for an array (name, GPS epoch, instrument, etc.), which contain an
+``<Array>`` element that contains the actual data values.
+
+.. note::
+
+   For more information on the format and the parsing library,
+   see :mod:`ligo.lw.array`.
 
 Reading
 -------
 
-A `FrequencySeries` can be read from LIGO_LW XML by passing the file path and the ``Name`` of the containing ``<LIGO_LW>`` element:
+To read a `FrequencySeries` from a ``LIGO_LW`` XML file::
 
-   >>> data = FrequencySeries.read('data.xml', 'psd')
+   >>> data = FrequencySeries.read('data.xml')
+
+If the file contains multiple ``<Array>`` elements,
+you will have to provide additional keyword arguments to select which
+element to use:
+
+.. table:: Keyword arguments for `FrequencySeries.read` with ``LIGO_LW`` format
+   :align: left
+   :name: frequencyseries-read-ligolw-kwargs
+
+   +------------------+-------+---------+--------------------------------------------+
+   | Keyword          | Type  | Default | Usage                                      |
+   +==================+=======+=========+============================================+
+   | ``name``         | `str` | `None`  | ``Name`` of ``<Array>`` element to read    |
+   +------------------+-------+---------+--------------------------------------------+
+   | ``epoch``        | `int` | `None`  | GPS value of the ``<Time>`` element that   |
+   |                  |       |         | is the *sibling* of the desired            |
+   |                  |       |         | ``<Array>``                                |
+   +------------------+-------+---------+--------------------------------------------+
+   | ``<Param Name>`` |       |         | Other kwargs can be given as the ``Name``  |
+   |                  |       |         | of a ``<Param>`` element that is the       |
+   |                  |       |         | *sibling* of the desired ``<Array>``,      |
+   |                  |       |         | and its value                              |
+   +------------------+-------+---------+--------------------------------------------+
+
+For example::
+
+   >>> data = FrequencySeries.read("psd.xml.gz", name="H1")
+   >>> data = FrequencySeries.read("psd.xml.gz", epoch=1241492407, f0=0, instrument="H1")
 
 Writing
 -------
 
-Writing `FrequencySeries` to LIGO_LW XML files is not supported.
+Writing `FrequencySeries` to ``LIGO_LW`` XML files is not supported, but a
+contribution that implements this would be welcomed.

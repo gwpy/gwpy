@@ -19,7 +19,6 @@
 """Unit test for frequencyseries module
 """
 
-import tempfile
 from io import BytesIO
 
 import pytest
@@ -47,11 +46,11 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 LIGO_LW_ARRAY = r"""<?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
 <LIGO_LW>
-  <LIGO_LW Name="psd">
+  <LIGO_LW Name="REAL8FrequencySeries">
     <Time Type="GPS" Name="epoch">1000000000</Time>
     <Param Type="lstring" Name="channel:param">X1:TEST-CHANNEL_1</Param>
-    <Array Type="real_8" Name="PSD:array" Unit="Hz^-1">
-      <Dim Start="0" Scale="1" Name="Frequency" Unit="Hz">10</Dim>
+    <Array Type="real_8" Name="PSD1:array" Unit="Hz^-1">
+      <Dim Start="0" Scale="1" Name="Frequency" Unit="Hz">5</Dim>
       <Dim Name="Frequency,Real">2</Dim>
       <Stream Delimiter=" " Type="Local">
         0 1
@@ -59,30 +58,35 @@ LIGO_LW_ARRAY = r"""<?xml version='1.0' encoding='utf-8'?>
         2 3
         3 4
         4 5
-        5 6
-        6 7
-        7 8
-        8 9
-        9 10
       </Stream>
     </Array>
   </LIGO_LW>
-  <LIGO_LW Name="psd">
+  <LIGO_LW Name="REAL8FrequencySeries">
     <Param Type="lstring" Name="channel:param">X1:TEST-CHANNEL_2</Param>
-    <Array Type="real_8" Name="PSD:array" Unit="Hz^-1">
-      <Dim Start="0" Scale="1" Name="Frequency" Unit="Hz">10</Dim>
-      <Dim Name="Frequency,Real">2</Dim>
+    <Param Type="real_8" Name="f0:param" Unit="s^-1">0</Param>
+    <Array Type="real_8" Name="PSD2:array" Unit="s m^2">
+      <Dim Start="0" Scale="1" Name="Frequency" Unit="s^-1">5</Dim>
+      <Dim Name="Real">1</Dim>
       <Stream Delimiter=" " Type="Local">
-        0 10
-        1 20
-        2 30
-        3 40
-        4 50
-        5 60
-        6 70
-        7 80
-        8 90
-        9 10
+        10
+        20
+        30
+        40
+        50
+      </Stream>
+    </Array>
+  </LIGO_LW>
+  <LIGO_LW Name="REAL8FrequencySeries">
+    <Time Type="GPS" Name="epoch">1000000001</Time>
+    <Array Type="real_8" Name="PSD2:array" Unit="s m^2">
+      <Dim Start="0" Scale="1" Name="Frequency" Unit="s^-1">5</Dim>
+      <Dim Name="Frequency,Real">3</Dim>
+      <Stream Delimiter=" " Type="Local">
+        0 10 1
+        1 20 2
+        2 30 3
+        3 40 4
+        4 50 5
       </Stream>
     </Array>
   </LIGO_LW>
@@ -238,28 +242,60 @@ class TestFrequencySeries(_TestSeries):
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['name', 'channel', 'unit', 'epoch']})
 
-    @utils.skip_missing_dependency('ligo.lw.utils.ligolw_add')
-    def test_read_ligolw(self):
-        with tempfile.NamedTemporaryFile(mode='w+') as fobj:
+    @staticmethod
+    @pytest.fixture
+    def ligolw(tmpfile):
+        with open(tmpfile, 'w+') as fobj:
             fobj.write(LIGO_LW_ARRAY)
-            array = FrequencySeries.read(
-                fobj, 'psd', match={'channel': 'X1:TEST-CHANNEL_1'})
-            utils.assert_array_equal(array, list(range(1, 11)) / units.Hz)
-            utils.assert_array_equal(array.frequencies,
-                                     list(range(10)) * units.Hz)
-            assert numpy.isclose(array.epoch.gps, 1000000000)  # precision gah!
-            assert array.unit == units.Hz ** -1
+        return tmpfile
 
-            array2 = FrequencySeries.read(
-                fobj, 'psd', match={'channel': 'X1:TEST-CHANNEL_2'})
-            assert array2.epoch is None
+    @utils.skip_missing_dependency('lal')
+    @utils.skip_missing_dependency('ligo.lw')
+    def test_read_ligolw(self, ligolw):
+        array = FrequencySeries.read(ligolw, 'PSD1')
+        utils.assert_array_equal(
+            array,
+            [1, 2, 3, 4, 5] / units.Hz,
+        )
+        utils.assert_array_equal(
+            array.frequencies,
+            [0, 1, 2, 3, 4] * units.Hz,
+        )
+        assert numpy.isclose(array.epoch.gps, 1000000000)  # precision gah!
+        assert array.unit == units.Hz ** -1
 
-            # assert errors
-            with pytest.raises(ValueError):
-                FrequencySeries.read(fobj, 'blah')
-            with pytest.raises(ValueError):
-                FrequencySeries.read(fobj, 'psd')
-            with pytest.raises(ValueError):
-                FrequencySeries.read(
-                    fobj, 'psd',
-                    match={'channel': 'X1:TEST-CHANNEL_1', 'blah': 'blah'})
+    @utils.skip_missing_dependency('lal')
+    @utils.skip_missing_dependency('ligo.lw')
+    def test_read_ligolw_params(self, ligolw):
+        array = FrequencySeries.read(
+            ligolw,
+            channel="X1:TEST-CHANNEL_2",
+        )
+        assert list(array.value) == [10, 20, 30, 40, 50]
+        assert array.epoch is None
+
+    @utils.skip_missing_dependency('ligo.lw')
+    def test_read_ligolw_errors(self, ligolw):
+        # assert errors
+        with pytest.raises(ValueError):  # multiple <Array> hits
+            FrequencySeries.read(ligolw)
+        with pytest.raises(ValueError):  # multiple <Array> hits
+            FrequencySeries.read(ligolw, "PSD2")
+        with pytest.raises(ValueError):  # no hits
+            FrequencySeries.read(ligolw, "blah")
+        with pytest.raises(ValueError):  # wrong epoch
+            FrequencySeries.read(ligolw, epoch=0)
+        with pytest.raises(ValueError):  # <Param>s don't match
+            FrequencySeries.read(
+                ligolw,
+                "PSD1",
+                f0=0,
+            )
+        with pytest.raises(ValueError):  # no <Param>
+            FrequencySeries.read(
+                ligolw,
+                "PSD2",
+                blah="blah",
+            )
+        with pytest.raises(ValueError):  # wrong dimensionality
+            FrequencySeries.read(ligolw, epoch=1000000001)
