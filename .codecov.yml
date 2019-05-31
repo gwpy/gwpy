@@ -11,3 +11,5 @@ coverage:
       default:
         target: 90
 
+fixes:
+  - "::gwpy/"
