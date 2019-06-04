@@ -32,7 +32,7 @@ import numpy
 from astropy import units
 from astropy.io import registry as io_registry
 
-from ..io import (datafind, nds2 as io_nds2)
+from ..io import nds2 as io_nds2
 from ..time import to_gps
 from ..utils.misc import if_not_none
 from .units import parse_unit
@@ -588,6 +588,7 @@ class Channel(object):
             the first matching frametype containing the this channel
             (`return_all=False`, or a `list` of all matches
         """
+        from ..io import datafind
         return datafind.find_frametype(
             self, gpstime=gpstime, frametype_match=frametype_match,
             host=host, port=port, return_all=return_all,
