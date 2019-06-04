@@ -40,7 +40,8 @@ import numpy
 
 from astropy.io.registry import (get_reader, get_writer)
 
-from ....segments import Segment
+from ligo.segments import segment as LigoSegment
+
 from ....time import to_gps
 from ....io.gwf import identify_gwf
 from ....io import cache as io_cache
@@ -251,7 +252,7 @@ def register_gwf_api(library):
         # separate cache into contiguous segments
         if io_cache.is_cache(source):
             if start is not None and end is not None:
-                source = io_cache.sieve(source, segment=Segment(start, end))
+                source = io_cache.sieve(source, segment=LigoSegment(start, end))
             source = list(io_cache.find_contiguous(source))
         # convert everything else into a list if needed
         if not isinstance(source, (list, tuple)):

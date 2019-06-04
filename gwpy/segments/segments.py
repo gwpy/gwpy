@@ -23,7 +23,6 @@ configuration.
 """
 
 from astropy.io import registry as io_registry
-from astropy.table import Table
 
 from ligo.segments import (segment, segmentlist, segmentlistdict)
 
@@ -156,6 +155,7 @@ class SegmentList(segmentlist):
         objects in comma-separated value (CSV) format, via the
         :meth:`~astropy.table.Table.write` method.
         """
+        from astropy.table import Table
         return Table(
             rows=[(i, s[0], s[1], abs(s)) for i, s in enumerate(self)],
             names=('index', 'start', 'end', 'duration'),

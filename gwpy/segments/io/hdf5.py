@@ -28,9 +28,6 @@ import warnings
 
 import numpy
 
-import h5py
-
-from astropy.table import Table
 from astropy.units import (UnitBase, Quantity)
 
 from ...io import hdf5 as io_hdf5
@@ -82,6 +79,7 @@ def _is_flag_group(obj):
     """Returns `True` if `obj` is an `h5py.Group` that looks like
     if contains a flag
     """
+    import h5py
     return (
         isinstance(obj, h5py.Group) and
         isinstance(obj.get("active"), h5py.Dataset) and
@@ -155,6 +153,8 @@ def read_hdf5_flag(h5f, path=None, gpstype=LIGOTimeGPS):
 def read_hdf5_segmentlist(h5f, path=None, gpstype=LIGOTimeGPS, **kwargs):
     """Read a `SegmentList` object from an HDF5 file or group.
     """
+    from astropy.table import Table
+
     # find dataset
     dataset = io_hdf5.find_dataset(h5f, path=path)
 
@@ -322,6 +322,8 @@ def write_hdf5_segmentlist(seglist, output, path=None, **kwargs):
     if path is None:
         raise ValueError("Please specify the HDF5 path via the "
                          "``path=`` keyword argument")
+
+    from astropy.table import Table
 
     # convert segmentlist to Table
     data = numpy.zeros((len(seglist), 4), dtype=int)

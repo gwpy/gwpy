@@ -21,7 +21,6 @@
 
 from matplotlib import (rcParams, rc_params, RcParams,
                         __version__ as mpl_version)
-from matplotlib.figure import SubplotParams
 
 from . import tex
 from ..utils.env import bool_env
@@ -168,6 +167,8 @@ def get_subplot_params(figsize):
     params : `~matplotlib.figure.SubplotParams`
         formatted set of subplot parameters
     """
+    from matplotlib.figure import SubplotParams
+
     width, height, = figsize
     try:
         left, right = SUBPLOT_WIDTH[width]
