@@ -146,7 +146,7 @@ class DataQualityFlag(object):
                  category=None, description=None, isgood=True, padding=None):
         """Define a new DataQualityFlag.
         """
-        self.name = name
+        self.name = str(name)
         self.known = known
         self.active = active
         self.label = label
