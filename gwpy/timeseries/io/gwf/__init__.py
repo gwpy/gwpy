@@ -252,7 +252,10 @@ def register_gwf_api(library):
         # separate cache into contiguous segments
         if io_cache.is_cache(source):
             if start is not None and end is not None:
-                source = io_cache.sieve(source, segment=LigoSegment(start, end))
+                source = io_cache.sieve(
+                    source,
+                    segment=LigoSegment(start, end),
+                )
             source = list(io_cache.find_contiguous(source))
         # convert everything else into a list if needed
         if not isinstance(source, (list, tuple)):
