@@ -43,9 +43,10 @@ from functools import wraps
 from six.moves.http_client import HTTPException
 from six.moves.urllib.parse import urlparse
 
-from gwdatafind import connect
-
-from ..segments import (Segment, SegmentList)
+from ligo.segments import (
+    segment as LigoSegment,
+    segmentlist as LigoSegmentList,
+)
 from ..time import to_gps
 from .cache import (cache_segments, read_cache_entry, _iter_cache)
 from .gwf import (num_channels, iter_channel_names)
@@ -193,12 +194,12 @@ class FflConnection(object):
                   match=None, on_gaps='warn'):
         """Find all files of the given type in the [start, end) GPS interval.
         """
-        span = Segment(gpsstart, gpsend)
+        span = LigoSegment(gpsstart, gpsend)
         cache = [e for e in self._read_ffl_cache(site, frametype) if
                  e.observatory == site and e.description == frametype and
                  e.segment.intersects(span)]
         urls = [e.path for e in cache]
-        missing = SegmentList([span]) - cache_segments(cache)
+        missing = LigoSegmentList([span]) - cache_segments(cache)
 
         if match:
             match = re.compile(match)
@@ -311,6 +312,7 @@ def on_tape(*files):
 
 def _choose_connection(**datafind_kw):
     if os.getenv('LIGO_DATAFIND_SERVER') or datafind_kw.get('host'):
+        from gwdatafind import connect
         return connect(**datafind_kw)
     if os.getenv('VIRGODATA'):
         return FflConnection()
@@ -425,8 +427,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
 
     # format GPS time(s)
     if isinstance(gpstime, (list, tuple)):
-        from ..segments import Segment
-        gpssegment = Segment(*gpstime)
+        gpssegment = LigoSegment(*gpstime)
         gpstime = gpssegment[0]
     else:
         gpssegment = None

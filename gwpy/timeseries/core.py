@@ -55,7 +55,6 @@ from gwosc.api import DEFAULT_URL as GWOSC_DEFAULT_HOST
 
 from ..types import Series
 from ..detector import (Channel, ChannelList)
-from ..io import datafind as io_datafind
 from ..segments import SegmentList
 from ..time import (Time, LIGOTimeGPS, gps_types, to_gps)
 from ..utils import gprint
@@ -1244,6 +1243,8 @@ class TimeSeriesBaseDict(OrderedDict):
         **readargs
             any other keyword arguments to be passed to `.read()`
         """
+        from ..io import datafind as io_datafind
+
         start = to_gps(start)
         end = to_gps(end)
 

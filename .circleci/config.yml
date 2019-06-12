@@ -82,7 +82,7 @@ aliases:
         - checkout
         - *attach_workspace
         - restore_cache:
-            key: v5-gwpy-{{ .Environment.CIRCLE_JOB }}
+            key: v6-gwpy-{{ .Environment.CIRCLE_JOB }}
         - run: *set_python_environment
         - run:
             name: Install
@@ -90,7 +90,7 @@ aliases:
         - run: *run-tests
         - run: *codecov
         - save_cache:
-            key: v5-gwpy-{{ .Environment.CIRCLE_JOB }}
+            key: v6-gwpy-{{ .Environment.CIRCLE_JOB }}
             paths:
               - "/opt/conda/envs/gwpyci"
         - *store_test_results

@@ -28,18 +28,10 @@ and frequency-domain data produced by the `LIGO <http://www.ligo.org>`_ and
 with easy-to-follow tutorials at each step.
 """
 
-import warnings
-
 from ._version import get_versions
-
 from . import (
     plot,  # registers gwpy.plot.Axes as default rectilinear axes
 )
-
-# filter out some annoying, but harmless warnings
-warnings.filterwarnings("ignore", "Module (.*) was already import from")
-warnings.filterwarnings("ignore", "The oldnumeric module",
-                        DeprecationWarning)
 
 # set package metadata
 __version__ = get_versions()['version']

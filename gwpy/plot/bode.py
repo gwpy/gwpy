@@ -23,15 +23,11 @@ from math import pi
 
 import numpy
 
-from scipy import signal
-
 from matplotlib.ticker import MaxNLocator
 
 from astropy.units import Quantity
 
 from . import Plot
-from ..frequencyseries import FrequencySeries
-from ..signal.filter_design import parse_filter
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['BodePlot']
@@ -93,8 +89,10 @@ class BodePlot(Plot):
         phase of the input transfer function(s) respectively.
     """
     def __init__(self, *filters, **kwargs):
-        """Initialise a new TimeSeriesPlot
+        """Initialise a new `BodePlot`
         """
+        from ..frequencyseries import FrequencySeries
+
         dB = kwargs.pop('dB', True)
         frequencies = kwargs.pop('frequencies', None)
 
@@ -196,6 +194,18 @@ class BodePlot(Plot):
         mag, phase : `tuple` of `lines <matplotlib.lines.Line2D>`
             the lines drawn for the magnitude and phase of the filter.
         """
+        try:
+            from scipy.signal import (lti, dlti)
+        except ImportError as exc:  # scipy < 0.18.0
+            exc.args = (
+                "scipy >= 0.18.0 is required to use {}.add_filter: {}".format(
+                    type(self).__name__,
+                    str(exc),
+                ),
+            )
+            raise
+        from gwpy.signal.filter_design import parse_filter
+
         if not analog:
             if not sample_rate:
                 raise ValueError("Must give sample_rate frequency to display "
@@ -209,12 +219,12 @@ class BodePlot(Plot):
         # parse filter (without digital conversions)
         _, fcomp = parse_filter(filter_, analog=False)
         if analog:
-            lti = signal.lti(*fcomp)
+            _lti = lti(*fcomp)
         else:
-            lti = signal.dlti(*fcomp, dt=dt)
+            _lti = dlti(*fcomp, dt=dt)
 
         # calculate frequency response
-        w, mag, phase = lti.bode(w=frequencies)
+        w, mag, phase = _lti.bode(w=frequencies)
 
         # convert from decibels
         if not dB:

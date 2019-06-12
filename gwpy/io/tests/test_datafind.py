@@ -220,7 +220,7 @@ class TestFflConnection(object):
 
 # -- tests --------------------------------------------------------------------
 
-@mock.patch("gwpy.io.datafind.connect", return_value="connection")
+@mock.patch("gwdatafind.ui.connect", return_value="connection")
 def test_with_connection(connect):
     func = mock.MagicMock()
     # https://stackoverflow.com/questions/22204660/python-mock-wrapsf-problems
@@ -232,7 +232,7 @@ def test_with_connection(connect):
     assert connect.called_with(host="host")
 
 
-@mock.patch("gwpy.io.datafind.connect", return_value="connection")
+@mock.patch("gwdatafind.ui.connect", return_value="connection")
 @mock.patch("gwpy.io.datafind.reconnect", lambda x: x)
 def test_with_connection_reconnect(connect):
     func = mock.MagicMock()

@@ -25,6 +25,7 @@ from numpy import testing as nptest
 from scipy import signal
 
 from ...frequencyseries import FrequencySeries
+from ...testing.utils import skip_minimum_version
 from .. import BodePlot
 from .utils import FigureTestBase
 
@@ -50,6 +51,7 @@ class TestBodePlot(FigureTestBase):
         assert paxes.get_yscale() == 'linear'
         assert paxes.get_ylabel() == 'Phase [deg]'
 
+    @skip_minimum_version("scipy", "0.18.0")
     def test_add_filter(self, fig):
         lm, lp = fig.add_filter(ZPK, analog=True)
         assert lm is fig.maxes.get_lines()[-1]
@@ -59,6 +61,7 @@ class TestBodePlot(FigureTestBase):
         nptest.assert_array_equal(lp.get_xdata(), FREQUENCIES)
         nptest.assert_array_almost_equal(lp.get_ydata(), PHASE)
 
+    @skip_minimum_version("scipy", "0.18.0")
     def test_init_with_filter(self):
         fig = self.FIGURE_CLASS(ZPK, analog=True, title='ZPK')
         lm = fig.maxes.get_lines()[0]

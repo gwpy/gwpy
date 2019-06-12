@@ -40,11 +40,10 @@ except ImportError:  # matplotlib-1.x
     from matplotlib.axes import _process_plot_var_args
 
 from . import (Plot, colorbar as gcbar)
-from .legend import HandlerLine2D
 from .colors import format_norm
-from ..time import (LIGOTimeGPS, to_gps)
-from ..types import (Series, Array2D)
 from .gps import GPS_SCALES
+from .legend import HandlerLine2D
+from ..time import (LIGOTimeGPS, to_gps)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -231,7 +230,7 @@ class Axes(_Axes):
         matplotlib.axes.Axes.imshow
             for details of the image rendering
         """
-        if isinstance(array, Array2D):
+        if hasattr(array, "yspan"):  # Array2D
             return self._imshow_array2d(array, *args, **kwargs)
 
         image = super(Axes, self).imshow(array, *args, **kwargs)
@@ -277,7 +276,7 @@ class Axes(_Axes):
         --------
         matplotlib.axes.Axes.pcolormesh
         """
-        if len(args) == 1 and isinstance(args[0], Array2D):
+        if len(args) == 1 and hasattr(args[0], "yindex"):  # Array2D
             return self._pcolormesh_array2d(*args, **kwargs)
         return super(Axes, self).pcolormesh(*args, **kwargs)
 
@@ -591,7 +590,7 @@ class PlotArgsProcessor(_process_plot_var_args):
             # strip first argument
             this, args = args[:1], args[1:]
             # it its a 1-D Series, then parse it as (xindex, value)
-            if isinstance(this[0], Series) and this[0].ndim == 1:
+            if hasattr(this[0], "xindex") and this[0].ndim == 1:
                 this = (this[0].xindex.value, this[0].value)
             # otherwise treat as normal (must be a second argument)
             else:

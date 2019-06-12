@@ -29,7 +29,6 @@ from astropy.io import registry as io_registry
 
 from ..types import Series
 from ..detector import Channel
-from ._fdcommon import fdfilter
 
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
@@ -336,6 +335,7 @@ class FrequencySeries(Series):
         ValueError
             if ``filt`` arguments cannot be interpreted properly
         """
+        from ._fdcommon import fdfilter
         return fdfilter(self, *filt, **kwargs)
 
     def filterba(self, *args, **kwargs):
