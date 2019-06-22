@@ -9,4 +9,5 @@ Miscellaneous examples
    :numbered:
 
    range-timeseries
+   range-spectrogram
    open-data-spectrogram
