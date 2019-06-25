@@ -23,8 +23,8 @@ One standard figure-of-merit for the sensitivity of a gravitational-wave
 detector is the distance to which a binary neutron star (BNS) inspiral
 with two 1.4 solar mass components would be detected with a signal-to-noise
 ratio (SNR) of 8. We can estimate this using
-:meth:`gwpy.timeseries.TimeSeries.range_timeseries` directly from the strain
-readout for a detector.
+:func:`gwpy.astro.range_timeseries` directly from the strain readout for
+a detector.
 """
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

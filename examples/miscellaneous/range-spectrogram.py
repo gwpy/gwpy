@@ -23,7 +23,7 @@ We have seen how the binary neutron star (BNS) inspiral range of a
 gravitational-wave detector can be measured directly from the strain
 readout. In this example, we will estimate the average spectral
 contribution to BNS range from the strain record surrounding GW170817
-using :meth:`gwpy.timeseries.TimeSeries.range_spectrogram`.
+using :func:`gwpy.astro.range_spectrogram`.
 """
 
 __author__ = 'Alex Urban <alexander.urban@ligo.org>'
