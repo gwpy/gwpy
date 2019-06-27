@@ -516,7 +516,7 @@ def range_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
     for psd in hoft:
         out.append(range_func(psd[frange], **rangekwargs).value)
     # finalise output
-    out = type(hoft)(out)
+    out = Spectrogram(out)
     out.__array_finalize__(hoft)
     out.f0 = fmin
     out.override_unit('Mpc' if 'energy' in rangekwargs
