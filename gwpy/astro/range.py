@@ -28,6 +28,9 @@ from scipy import integrate
 
 from astropy import (units, constants)
 
+from ..timeseries import TimeSeries
+from ..spectrogram import Spectrogram
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
@@ -288,7 +291,7 @@ def burst_range(psd, snr=8, energy=1e-2, fmin=100, fmax=500):
     return r.to('Mpc')
 
 
-def range_timeseries(hoft, stride, fftlength=None, overlap=None,
+def range_timeseries(hoft, stride=None, fftlength=None, overlap=None,
                      window='hann', method=DEFAULT_FFT_METHOD, nproc=1,
                      **rangekwargs):
     """Measure timeseries trends of astrophysical detector range (Mpc)
@@ -296,11 +299,12 @@ def range_timeseries(hoft, stride, fftlength=None, overlap=None,
 
     Parameters
     ----------
-    hoft : `~gwpy.timeseries.TimeSeries`
+    hoft : `~gwpy.timeseries.TimeSeries` or `~gwpy.spectrogram.Spectrogram`
         record of gravitational-wave strain output from a detector
 
-    stride : `float`
-        desired step size (seconds) of range timeseries
+    stride : `float`, optional
+        desired step size (seconds) of range timeseries, required if
+        `hoft` is an instance of `TimeSeries`
 
     fftlength : `float`, optional
         number of seconds in a single FFT
@@ -355,20 +359,21 @@ def range_timeseries(hoft, stride, fftlength=None, overlap=None,
     range_func = (burst_range if 'energy' in rangekwargs
                   else inspiral_range)
     # compute average spectrogram
-    specgram = hoft.spectrogram(
-        stride, fftlength=fftlength, overlap=overlap, window=window,
-        method=method, nproc=nproc)
+    if not isinstance(hoft, Spectrogram):
+        hoft = hoft.spectrogram(
+            stride, fftlength=fftlength, overlap=overlap, window=window,
+            method=method, nproc=nproc)
     # loop over time bins
-    for psd in specgram:
+    for psd in hoft:
         out.append(range_func(psd, **rangekwargs).value)
     # finalise output
-    out = type(hoft)(out)
-    out.__array_finalize__(specgram)
+    out = TimeSeries(out)
+    out.__array_finalize__(hoft)
     out.override_unit('Mpc')
     return out
 
 
-def range_spectrogram(hoft, stride, fftlength=None, overlap=None,
+def range_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
                       window='hann', method=DEFAULT_FFT_METHOD, nproc=1,
                       **rangekwargs):
     """Calculate the average range or range power spectrogram (Mpc or
@@ -376,11 +381,12 @@ def range_spectrogram(hoft, stride, fftlength=None, overlap=None,
 
     Parameters
     ----------
-    hoft : `~gwpy.timeseries.TimeSeries`
+    hoft : `~gwpy.timeseries.TimeSeries`  or `~gwpy.spectrogram.Spectrogram`
         record of gravitational-wave strain output from a detector
 
-    stride : `float`
-        number of seconds in a single PSD (i.e., step size of spectrogram)
+    stride : `float`, optional
+        number of seconds in a single PSD (i.e., step size of spectrogram),
+        required if `hoft` is an instance of `TimeSeries`
 
     fftlength : `float`, optional
         number of seconds in a single FFT
@@ -415,7 +421,7 @@ def range_spectrogram(hoft, stride, fftlength=None, overlap=None,
 
     Returns
     -------
-    outspec : `~gwpy.spectrogram.Spectrogram`
+    out : `~gwpy.spectrogram.Spectrogram`
         time-frequency spectrogram of astrophysical range
 
     Notes
@@ -441,32 +447,33 @@ def range_spectrogram(hoft, stride, fftlength=None, overlap=None,
     range_timeseries
         for `TimeSeries` trends of the astrophysical range
     """
-    outspec = []
+    out = []
     rangekwargs = rangekwargs or {'mass1': 1.4, 'mass2': 1.4}
     range_func = (burst_range_spectrum if 'energy' in rangekwargs
                   else inspiral_range_psd)
     # compute average spectrogram
-    specgram = hoft.spectrogram(
-        stride, fftlength=fftlength, overlap=overlap, window=window,
-        method=method, nproc=nproc)
+    if not isinstance(hoft, Spectrogram):
+        hoft = hoft.spectrogram(
+            stride, fftlength=fftlength, overlap=overlap, window=window,
+            method=method, nproc=nproc)
     # set frequency limits
-    f = specgram.frequencies.to('Hz')
+    f = hoft.frequencies.to('Hz')
     fmin = units.Quantity(
-        rangekwargs.pop('fmin', specgram.df),
+        rangekwargs.pop('fmin', hoft.df),
         'Hz',
     )
     fmax = units.Quantity(
-        rangekwargs.pop('fmax', hoft.sample_rate/2),
+        rangekwargs.pop('fmax', f[-1]),
         'Hz',
     )
     frange = (f >= fmin) & (f < fmax)
     # loop over time bins
-    for psd in specgram:
-        outspec.append(range_func(psd[frange], **rangekwargs).value)
+    for psd in hoft:
+        out.append(range_func(psd[frange], **rangekwargs).value)
     # finalise output
-    outspec = type(specgram)(outspec)
-    outspec.__array_finalize__(specgram)
-    outspec.f0 = fmin
-    outspec.override_unit('Mpc' if 'energy' in rangekwargs
-                          else 'Mpc^2 / Hz')
-    return outspec
+    out = type(hoft)(out)
+    out.__array_finalize__(hoft)
+    out.f0 = fmin
+    out.override_unit('Mpc' if 'energy' in rangekwargs
+                      else 'Mpc^2 / Hz')
+    return out
