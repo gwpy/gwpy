@@ -37,8 +37,7 @@ __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 DEFAULT_FFT_METHOD = "welch"
 
 
-def _get_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
-                     window='hann', method=DEFAULT_FFT_METHOD, nproc=1):
+def _get_spectrogram(hoft, **kwargs):
     """Check that the input is a spectrogram, or compute one if compatible
 
     Parameters
@@ -46,29 +45,9 @@ def _get_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
     hoft : `~gwpy.timeseries.TimeSeries` or `~gwpy.spectrogram.Spectrogram`
         record of gravitational-wave strain output from a detector
 
-    stride : `float`, optional
-        desired step size (seconds) of range timeseries, required if
-        `hoft` is an instance of `TimeSeries`
-
-    fftlength : `float`, optional
-        number of seconds in a single FFT
-
-    overlap : `float`, optional
-        number of seconds of overlap between FFTs, defaults to the
-        recommended overlap for the given window (if given), or 0
-
-    window : `str`, `numpy.ndarray`, optional
-        window function to apply to timeseries prior to FFT, see
-        :func:`scipy.signal.get_window` for details on acceptable
-        formats
-
-    method : `str`, optional
-        FFT-averaging method, see
-        :meth:`~gwpy.timeseries.TimeSeries.spectrogram` for
-        more details
-
-    nproc : `int`, optional
-        number of CPUs to use in parallel processing of FFTs, default: 1
+    **kwargs : `dict`, optional
+        additional keyword arguments to
+        `~gwpy.timeseries.TimeSeries.spectrogram`
 
     Returns
     -------
@@ -77,9 +56,7 @@ def _get_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
     """
     if not isinstance(hoft, Spectrogram):
         try:
-            hoft = hoft.spectrogram(
-                stride, fftlength=fftlength, overlap=overlap,
-                window=window, method=method, nproc=nproc)
+            hoft = hoft.spectrogram(**kwargs)
         except (AttributeError, TypeError):
             msg = ('Could not produce a spectrogram from the input, please '
                    'pass an instance of gwpy.timeseries.TimeSeries or '
@@ -409,8 +386,9 @@ def range_timeseries(hoft, stride=None, fftlength=None, overlap=None,
     rangekwargs = rangekwargs or {'mass1': 1.4, 'mass2': 1.4}
     range_func = (burst_range if 'energy' in rangekwargs
                   else inspiral_range)
-    hoft = _get_spectrogram(hoft, stride, fftlength=fftlength, overlap=overlap,
-                            window=window, method=method, nproc=nproc)
+    hoft = _get_spectrogram(
+        hoft, stride=stride, fftlength=fftlength, overlap=overlap,
+        window=window, method=method, nproc=nproc)
     # loop over time bins
     for psd in hoft:
         out.append(range_func(psd, **rangekwargs).value)
@@ -499,8 +477,9 @@ def range_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
     rangekwargs = rangekwargs or {'mass1': 1.4, 'mass2': 1.4}
     range_func = (burst_range_spectrum if 'energy' in rangekwargs
                   else inspiral_range_psd)
-    hoft = _get_spectrogram(hoft, stride, fftlength=fftlength, overlap=overlap,
-                            window=window, method=method, nproc=nproc)
+    hoft = _get_spectrogram(
+        hoft, stride=stride, fftlength=fftlength, overlap=overlap,
+        window=window, method=method, nproc=nproc)
     # set frequency limits
     f = hoft.frequencies.to('Hz')
     fmin = units.Quantity(
