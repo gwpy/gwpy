@@ -154,6 +154,6 @@ def test_range_spectrogram(hoft, rangekwargs, outunit):
 ])
 def test_range_incompatible_input(range_func):
     with pytest.raises(TypeError) as exc:
-        spec = range_func(2, 0.5)
+        range_func(2, 0.5)
     assert str(exc.value).startswith(
         'Could not produce a spectrogram from the input')

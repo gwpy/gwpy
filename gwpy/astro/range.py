@@ -409,7 +409,7 @@ def range_timeseries(hoft, stride=None, fftlength=None, overlap=None,
     rangekwargs = rangekwargs or {'mass1': 1.4, 'mass2': 1.4}
     range_func = (burst_range if 'energy' in rangekwargs
                   else inspiral_range)
-    hoft = _get_spectrogram(stride, fftlength=fftlength, overlap=overlap,
+    hoft = _get_spectrogram(hoft, stride, fftlength=fftlength, overlap=overlap,
                             window=window, method=method, nproc=nproc)
     # loop over time bins
     for psd in hoft:
@@ -499,7 +499,7 @@ def range_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
     rangekwargs = rangekwargs or {'mass1': 1.4, 'mass2': 1.4}
     range_func = (burst_range_spectrum if 'energy' in rangekwargs
                   else inspiral_range_psd)
-    hoft = _get_spectrogram(stride, fftlength=fftlength, overlap=overlap,
+    hoft = _get_spectrogram(hoft, stride, fftlength=fftlength, overlap=overlap,
                             window=window, method=method, nproc=nproc)
     # set frequency limits
     f = hoft.frequencies.to('Hz')
