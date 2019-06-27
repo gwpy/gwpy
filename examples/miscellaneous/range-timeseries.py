@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Measuring the inspiral range of gravitational-wave detectors
+"""Generating an inspiral range timeseries
 
 One standard figure-of-merit for the sensitivity of a gravitational-wave
 detector is the distance to which a binary neutron star (BNS) inspiral
