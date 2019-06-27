@@ -361,8 +361,8 @@ def range_timeseries(hoft, stride=None, fftlength=None, overlap=None,
     # compute average spectrogram
     if not isinstance(hoft, Spectrogram):
         hoft = hoft.spectrogram(
-            stride, fftlength=fftlength, overlap=overlap, window=window,
-            method=method, nproc=nproc)
+            stride, fftlength=fftlength, overlap=overlap,
+            window=window, method=method, nproc=nproc)
     # loop over time bins
     for psd in hoft:
         out.append(range_func(psd, **rangekwargs).value)
@@ -454,8 +454,8 @@ def range_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
     # compute average spectrogram
     if not isinstance(hoft, Spectrogram):
         hoft = hoft.spectrogram(
-            stride, fftlength=fftlength, overlap=overlap, window=window,
-            method=method, nproc=nproc)
+            stride, fftlength=fftlength, overlap=overlap,
+            window=window, method=method, nproc=nproc)
     # set frequency limits
     f = hoft.frequencies.to('Hz')
     fmin = units.Quantity(
