@@ -32,6 +32,7 @@ from ...frequencyseries import FrequencySeries
 from ...spectrogram import Spectrogram
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
 # -- test results -------------------------------------------------------------
 
@@ -120,8 +121,8 @@ def test_burst_range_spectrum(psd):
 
 
 @pytest.mark.parametrize('rangekwargs', [
-    ({'mass1': 1.4, 'mass2': 1.4}),
-    ({'energy': 1e-2}),
+    {'mass1': 1.4, 'mass2': 1.4},
+    {'energy': 1e-2},
 ])
 def test_range_timeseries(hoft, rangekwargs):
     trends = astro.range_timeseries(
@@ -145,3 +146,14 @@ def test_range_spectrogram(hoft, rangekwargs, outunit):
     assert spec.f0 == spec.df
     assert spec.dt == 0.5 * units.second
     assert spec.df == 4 * units.Hertz
+
+
+@pytest.mark.parametrize('range_func', [
+    astro.range_timeseries,
+    astro.range_spectrogram,
+])
+def test_range_incompatible_input(range_func):
+    with pytest.raises(TypeError) as exc:
+        spec = range_func(2, 0.5)
+    assert str(exc.value).startswith(
+        'Could not produce a spectrogram from the input')
