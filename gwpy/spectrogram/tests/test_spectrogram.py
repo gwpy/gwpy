@@ -186,8 +186,9 @@ class TestSpectrogram(_TestArray2D):
         utils.test_read_write(array, 'hdf5', write_kw={'overwrite': True})
 
     def test_percentile(self):
-        array = self.create(name='Test')
+        array = self.create(name='Test', unit='m')
         a2 = array.percentile(50)
         utils.assert_quantity_sub_equal(array.median(axis=0), a2,
                                         exclude=('name',))
         assert a2.name == 'Test: 50th percentile'
+        assert a2.unit == array.unit

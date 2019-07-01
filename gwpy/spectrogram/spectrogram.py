@@ -418,10 +418,10 @@ class Spectrogram(Array2D):
             name = '{}: {} percentile'.format(self.name, _ordinal(percentile))
         else:
             name = None
-        return FrequencySeries(out, epoch=self.epoch, channel=self.channel,
-                               name=name, f0=self.f0, df=self.df,
-                               frequencies=(hasattr(self, '_frequencies') and
-                                            self.frequencies or None))
+        return FrequencySeries(
+            out, epoch=self.epoch, channel=self.channel, name=name,
+            f0=self.f0, df=self.df, unit=self.unit, frequencies=(
+                hasattr(self, '_frequencies') and self.frequencies or None))
 
     def zpk(self, zeros, poles, gain, analog=True):
         """Filter this `Spectrogram` by applying a zero-pole-gain filter
