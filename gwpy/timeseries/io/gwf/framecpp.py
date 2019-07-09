@@ -30,6 +30,7 @@ import numpy
 from LDAStools import frameCPP
 
 from ....io import gwf as io_gwf
+from ....io import _framecpp as io_framecpp
 from ....io.utils import file_list
 from ....segments import Segment
 from ....time import LIGOTimeGPS
@@ -50,26 +51,6 @@ FRERR_NO_FRAME_AT_NUM = re.compile(
 FRERR_NO_CHANNEL_OF_TYPE = re.compile(
     r'\ANo Fr(Adc|Proc|Sim)Data structures with the name ',
 )
-
-# get frameCPP type mapping
-NUMPY_TYPE_FROM_FRVECT = {
-    frameCPP.FrVect.FR_VECT_C: numpy.int8,
-    frameCPP.FrVect.FR_VECT_2S: numpy.int16,
-    frameCPP.FrVect.FR_VECT_4S: numpy.int32,
-    frameCPP.FrVect.FR_VECT_8S: numpy.int64,
-    frameCPP.FrVect.FR_VECT_4R: numpy.float32,
-    frameCPP.FrVect.FR_VECT_8R: numpy.float64,
-    frameCPP.FrVect.FR_VECT_8C: numpy.complex64,
-    frameCPP.FrVect.FR_VECT_16C: numpy.complex128,
-    frameCPP.FrVect.FR_VECT_STRING: numpy.string_,
-    frameCPP.FrVect.FR_VECT_1U: numpy.uint8,
-    frameCPP.FrVect.FR_VECT_2U: numpy.uint16,
-    frameCPP.FrVect.FR_VECT_4U: numpy.uint32,
-    frameCPP.FrVect.FR_VECT_8U: numpy.uint64,
-}
-
-FRVECT_TYPE_FROM_NUMPY = dict(
-    (v, k) for k, v in NUMPY_TYPE_FROM_FRVECT.items())
 
 
 class _Skip(ValueError):
@@ -454,50 +435,89 @@ def read_frvect(vect, epoch, start, end, name=None, series_class=TimeSeries):
 # -- write --------------------------------------------------------------------
 
 def write(tsdict, outfile, start=None, end=None, name='gwpy', run=0,
-          compression=257, compression_level=6):
+          compression='GZIP', compression_level=None):
     """Write data to a GWF file using the frameCPP API
+
+    Parameters
+    ----------
+    tsdict : `TimeSeriesDict`
+        dict of data to write
+
+    outfile : `str`
+        the file name of the target output file
+
+    start : `float`, optional
+        the GPS start time of the file
+
+    end : `float`, optional
+        the GPS end time of the file
+
+    name : `str`, optional
+        the name of each frame
+
+    run : `int`, optional
+        the FrameH run number
+
+    compression : `int`, `str`, optional
+        name of compresion algorithm to use, or its endian-appropriate
+        ID, choose from
+
+        - ``'RAW'``
+        - ``'GZIP'``
+        - ``'DIFF_GZIP'``
+        - ``'ZERO_SUPPRESS_WORD_2'``
+        - ``'ZERO_SUPPRESS_WORD_4'``
+        - ``'ZERO_SUPPRESS_WORD_8'``
+        - ``'ZERO_SUPPRESS_OTHERWISE_GZIP'``
+
+    compression_level : `int`, optional
+        compression level for given method, default is ``6`` for GZIP-based
+        methods, otherwise ``0``
     """
+    from ....io._framecpp import DetectorLocation
+
     # set frame header metadata
-    if not start:
-        starts = {LIGOTimeGPS(tsdict[key].x0.value) for key in tsdict}
-        if len(starts) != 1:
-            raise RuntimeError("Cannot write multiple TimeSeries to a single "
-                               "frame with different start times, "
-                               "please write into different frames")
-        start = list(starts)[0]
-    if not end:
-        ends = {tsdict[key].span[1] for key in tsdict}
-        if len(ends) != 1:
-            raise RuntimeError("Cannot write multiple TimeSeries to a single "
-                               "frame with different end times, "
-                               "please write into different frames")
-        end = list(ends)[0]
+    if not start or not end:
+        starts, ends = zip(*(ts.span for ts in tsdict.values()))
+        start = LIGOTimeGPS(start or min(starts))
+        end = LIGOTimeGPS(end or max(ends))
     duration = end - start
-    start = LIGOTimeGPS(start)
     ifos = {ts.channel.ifo for ts in tsdict.values() if
             ts.channel and ts.channel.ifo and
-            hasattr(frameCPP, 'DETECTOR_LOCATION_{0}'.format(ts.channel.ifo))}
+            ts.channel.ifo in DetectorLocation}
 
     # create frame
-    frame = io_gwf.create_frame(time=start, duration=duration, name=name,
-                                run=run, ifos=ifos)
+    frame = io_gwf.create_frame(
+        time=start,
+        duration=duration,
+        name=name,
+        run=run,
+        ifos=ifos,
+    )
 
     # append channels
     for i, key in enumerate(tsdict):
         try:
             # pylint: disable=protected-access
-            ctype = tsdict[key].channel._ctype or 'proc'
+            ctype = tsdict[key].channel._ctype.lower() or 'proc'
         except AttributeError:
             ctype = 'proc'
-        append_to_frame(frame, tsdict[key].crop(start, end),
-                        type=ctype, channelid=i)
+        if ctype == 'adc':
+            kw = {"channelid": i}
+        else:
+            kw = {}
+        _append_to_frame(frame, tsdict[key].crop(start, end), type=ctype, **kw)
 
     # write frame to file
-    io_gwf.write_frames(outfile, [frame], compression=compression,
-                        compression_level=compression_level)
+    io_gwf.write_frames(
+        outfile,
+        [frame],
+        compression=compression,
+        compression_level=compression_level,
+    )
 
 
-def append_to_frame(frame, timeseries, type='proc', channelid=0):
+def _append_to_frame(frame, timeseries, type='proc', **kwargs):
     # pylint: disable=redefined-builtin
     """Append data from a `TimeSeries` to a `~frameCPP.FrameH`
 
@@ -512,85 +532,36 @@ def append_to_frame(frame, timeseries, type='proc', channelid=0):
     type : `str`
         the type of the channel, one of 'adc', 'proc', 'sim'
 
-    channelid : `int`, optional
-        the ID of the channel within the group (only used for ADC channels)
-    """
-    if timeseries.channel:
-        channel = str(timeseries.channel)
-    else:
-        channel = str(timeseries.name)
+    **kwargs
+        other keyword arguments are passed to the relevant
+        `create_xxx` function
 
-    offset = float(LIGOTimeGPS(timeseries.t0.value) -
-                   LIGOTimeGPS(*frame.GetGTime()))
+    See also
+    --------
+    gwpy.io.gwf.create_fradcdata
+    gwpy.io.gwf.create_frprocdata
+    gwpy.io.gwf_create_frsimdata
+        for details of the data structure creation, and associated available
+        arguments
+    """
+    epoch = LIGOTimeGPS(*frame.GetGTime())
 
     # create the data container
     if type.lower() == 'adc':
-        frdata = frameCPP.FrAdcData(
-            channel,
-            0,  # channel group
-            channelid,  # channel number in group
-            16,  # number of bits in ADC
-            timeseries.sample_rate.value,  # sample rate
-        )
-        frdata.SetTimeOffset(offset)
+        create = io_gwf.create_fradcdata
         append = frame.AppendFrAdcData
     elif type.lower() == 'proc':
-        frdata = frameCPP.FrProcData(
-            channel,  # channel name
-            str(timeseries.name),  # comment
-            frameCPP.FrProcData.TIME_SERIES,  # ID as time-series
-            frameCPP.FrProcData.UNKNOWN_SUB_TYPE,  # empty sub-type (fseries)
-            offset,  # offset of first sample relative to frame start
-            abs(timeseries.span),  # duration of data
-            0.,  # heterodyne frequency
-            0.,  # phase of heterodyne
-            0.,  # frequency range
-            0.,  # resolution bandwidth
-        )
+        create = io_gwf.create_frprocdata
         append = frame.AppendFrProcData
     elif type.lower() == 'sim':
-        frdata = frameCPP.FrSimData(
-            str(timeseries.channel),  # channel name
-            str(timeseries.name),  # comment
-            timeseries.sample_rate.value,  # sample rate
-            offset,  # time offset of first sample
-            0.,  # heterodyne frequency
-            0.,  # phase of heterodyne
-        )
+        create = io_gwf.create_frsimdata
         append = frame.AppendFrSimData
     else:
         raise RuntimeError("Invalid channel type {!r}, please select one of "
                            "'adc, 'proc', or 'sim'".format(type))
+    frdata = create(timeseries, frame_epoch=epoch, **kwargs)
+
     # append an FrVect
-    frdata.AppendData(create_frvect(timeseries))
+    frdata.AppendData(io_gwf.create_frvect(timeseries))
     append(frdata)
-
-
-def create_frvect(timeseries):
-    """Create a `~frameCPP.FrVect` from a `TimeSeries`
-
-    This method is primarily designed to make writing data to GWF files a
-    bit easier.
-
-    Parameters
-    ----------
-    timeseries : `TimeSeries`
-        the input `TimeSeries`
-
-    Returns
-    -------
-    frvect : `~frameCPP.FrVect`
-        the output `FrVect`
-    """
-    # create timing dimension
-    dims = frameCPP.Dimension(
-        timeseries.size, timeseries.dx.value,
-        str(timeseries.dx.unit), 0)
-    # create FrVect
-    vect = frameCPP.FrVect(
-        timeseries.name or '', FRVECT_TYPE_FROM_NUMPY[timeseries.dtype.type],
-        1, dims, str(timeseries.unit))
-    # populate FrVect and return
-    vect.GetDataArray()[:] = numpy.require(timeseries.value,
-                                           requirements=['C'])
-    return vect
+    return frdata

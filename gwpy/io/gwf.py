@@ -24,6 +24,8 @@ import warnings
 import six
 from six.moves.urllib.parse import urlparse
 
+import numpy
+
 from ..segments import (Segment, SegmentList)
 from ..time import (to_gps, LIGOTimeGPS)
 from .cache import read_cache
@@ -96,7 +98,7 @@ def open_gwf(filename, mode='r'):
     return frameCPP.OFrameFStream(str(filename))
 
 
-def write_frames(filename, frames, compression=257, compression_level=6):
+def write_frames(filename, frames, compression='GZIP', compression_level=None):
     """Write a list of frame objects to a file
 
     **Requires:** |LDAStools.frameCPP|_
@@ -109,13 +111,30 @@ def write_frames(filename, frames, compression=257, compression_level=6):
     frames : `list` of `LDAStools.frameCPP.FrameH`
         list of frames to write into file
 
-    compression : `int`, optional
-        enum value for compression scheme, default is ``GZIP``
+    compression : `int`, `str`, optional
+        name of compresion algorithm to use, or its endian-appropriate
+        ID, choose from
+
+        - ``'RAW'``
+        - ``'GZIP'``
+        - ``'DIFF_GZIP'``
+        - ``'ZERO_SUPPRESS_WORD_2'``
+        - ``'ZERO_SUPPRESS_WORD_4'``
+        - ``'ZERO_SUPPRESS_WORD_8'``
+        - ``'ZERO_SUPPRESS_OTHERWISE_GZIP'``
 
     compression_level : `int`, optional
-        compression level for given scheme
+        compression level for given method, default is ``6`` for GZIP-based
+        methods, otherwise ``0``
     """
     from LDAStools import frameCPP
+    from ._framecpp import (Compression, DefaultCompressionLevel)
+
+    # handle compression arguments
+    if not isinstance(compression, int):
+        compression = Compression[compression]
+    if compression_level is None:
+        compression_level = DefaultCompressionLevel[compression.name]
 
     # open stream
     stream = open_gwf(filename, 'w')
@@ -124,7 +143,7 @@ def write_frames(filename, frames, compression=257, compression_level=6):
     if isinstance(frames, frameCPP.FrameH):
         frames = [frames]
     for frame in frames:
-        stream.WriteFrame(frame, compression, compression_level)
+        stream.WriteFrame(frame, int(compression), int(compression_level))
     # stream auto-closes (apparently)
 
 
@@ -158,6 +177,7 @@ def create_frame(time=0, duration=None, name='gwpy', run=-1, ifos=None):
         the newly created frame header
     """
     from LDAStools import frameCPP
+    from ._framecpp import DetectorLocation
 
     # create frame
     frame = frameCPP.FrameH()
@@ -171,14 +191,236 @@ def create_frame(time=0, duration=None, name='gwpy', run=-1, ifos=None):
 
     # add FrDetectors
     for prefix in ifos or []:
-        idx = getattr(frameCPP, 'DETECTOR_LOCATION_%s' % prefix)
-        frame.AppendFrDetector(frameCPP.GetDetector(idx, gps))
+        frame.AppendFrDetector(
+            frameCPP.GetDetector(DetectorLocation[prefix], gps),
+        )
 
     # add descriptions
     frame.SetName(name)
     frame.SetRun(run)
 
     return frame
+
+
+def create_fradcdata(series, frame_epoch=0,
+                     channelgroup=0, channelid=0, nbits=16):
+    """Create a `~frameCPP.FrAdcData` from a `~gwpy.types.Series`
+
+    .. note::
+
+       Currently this method is restricted to 1-dimensional arrays.
+
+    Parameters
+    ----------
+    series : `~gwpy.types.Series`
+        the input data array to store
+
+    frame_epoch : `float`, `int`, optional
+        the GPS start epoch of the `Frame` that will contain this
+        data structure
+
+    Returns
+    -------
+    frdata : `~frameCPP.FrAdcData`
+        the newly created data structure
+
+    Notes
+    -----
+    See Table 10 (§4.3.2.4) of LIGO-T970130 for more details
+    """
+    from LDAStools import frameCPP
+
+    # assert correct type
+    if not series.xunit.is_equivalent('s') or series.ndim != 1:
+        raise TypeError("only 1-dimensional timeseries data can be "
+                        "written as FrAdcData")
+
+    frdata = frameCPP.FrAdcData(
+        str(series.channel or series.name),
+        channelgroup,
+        channelid,
+        nbits,
+        (1 / series.dx.to('s')).value
+    )
+    frdata.SetTimeOffset(
+        float(LIGOTimeGPS(series.x0.value) - LIGOTimeGPS(frame_epoch)),
+    )
+    return frdata
+
+
+def create_frprocdata(series, frame_epoch=0, comment=None,
+                      type=None, subtype=None, trange=None,
+                      fshift=0, phase=0, frange=None, bandwidth=0):
+    """Create a `~frameCPP.FrAdcData` from a `~gwpy.types.Series`
+
+    .. note::
+
+       Currently this method is restricted to 1-dimensional arrays.
+
+    Parameters
+    ----------
+    series : `~gwpy.types.Series`
+        the input data array to store
+
+    frame_epoch : `float`, `int`, optional
+        the GPS start epoch of the `Frame` that will contain this
+        data structure
+
+    comment : `str`, optional
+        comment
+
+    type : `int`, `str`, optional
+        type of data object
+
+    subtype : `int`, `str`, optional
+        subtype for f-Series
+
+    trange : `float`, optional
+        duration of sampled data
+
+    fshift : `float`, optional
+        frequency in the original data that corresponds to 0 Hz in the
+        heterodyned series
+
+    phase : `float`, optional
+        phase of the heterodyning signal at start of dataset
+
+    frange : `float`, optional
+        frequency range
+
+    bandwidth : `float, optional
+        reoslution bandwidth
+
+    Returns
+    -------
+    frdata : `~frameCPP.FrAdcData`
+        the newly created data structure
+
+    Notes
+    -----
+    See Table 17 (§4.3.2.11) of LIGO-T970130 for more details
+    """
+    from LDAStools import frameCPP
+
+    # format auxiliary data
+    if trange is None and series.xunit.is_equivalent('s'):
+        trange = abs(series.xspan)
+    else:
+        trange = 0
+    if frange is None and series.xunit.is_equivalent('Hz'):  # FrequencySeries
+        frange = abs(series.xspan)
+    elif (
+            frange is None and
+            series.ndim == 2 and
+            series.yunit.is_equivalent('Hz')
+    ):  # Spectrogram
+        frange = abs(series.yspan)
+    else:
+        frange = 0
+
+    return frameCPP.FrProcData(
+        str(series.channel or series.name),
+        str(comment or series.name),
+        _get_frprocdata_type(series, type),
+        _get_frprocdata_subtype(series, subtype),
+        float(LIGOTimeGPS(series.x0.value) - LIGOTimeGPS(frame_epoch)),
+        trange,
+        fshift,
+        phase,
+        frange,
+        bandwidth,
+    )
+
+
+def create_frsimdata(series, frame_epoch=0, comment=None, fshift=0, phase=0):
+    """Create a `~frameCPP.FrAdcData` from a `~gwpy.types.Series`
+
+    .. note::
+
+       Currently this method is restricted to 1-dimensional arrays.
+
+    Parameters
+    ----------
+    series : `~gwpy.types.Series`
+        the input data array to store
+
+    frame_epoch : `float`, `int`, optional
+        the GPS start epoch of the `Frame` that will contain this
+        data structure
+
+    fshift : `float`, optional
+        frequency in the original data that corresponds to 0 Hz in the
+        heterodyned series
+
+    phase : `float`, optional
+        phase of the heterodyning signal at start of dataset
+
+    Returns
+    -------
+    frdata : `~frameCPP.FrSimData`
+        the newly created data structure
+
+    Notes
+    -----
+    See Table 20 (§4.3.2.14) of LIGO-T970130 for more details
+    """
+    from LDAStools import frameCPP
+
+    # assert correct type
+    if not series.xunit.is_equivalent('s'):
+        raise TypeError("only timeseries data can be written as FrSimData")
+
+    return frameCPP.FrSimData(
+        str(series.channel or series.name),
+        str(comment or series.name),
+        (1 / series.dx.to('s')).value,
+        float(LIGOTimeGPS(series.x0.value) - LIGOTimeGPS(frame_epoch)),
+        fshift,
+        phase,
+    )
+
+
+def create_frvect(series):
+    """Create a `~frameCPP.FrVect` from a `~gwpy.types.Series`
+
+    .. note::
+
+       Currently this method is restricted to 1-dimensional arrays.
+
+    Parameters
+    ----------
+    series : `~gwpy.types.Series`
+        the input data array to store
+
+    Returns
+    -------
+    frvect : `~frameCPP.FrVect`
+        the newly created data vector
+    """
+    from LDAStools import frameCPP
+    from ._framecpp import FrVectType
+
+    # create dimensions
+    dims = frameCPP.Dimension(
+        series.shape[0],  # num elements
+        series.dx.value,  # step size
+        str(series.dx.unit),  # unit
+        0,  # starting value
+    )
+
+    # create FrVect
+    vect = frameCPP.FrVect(
+        series.name or '',  # name
+        int(FrVectType.find(series.dtype)),  # data type enum
+        series.ndim,  # num dimensions
+        dims,  # dimension object
+        str(series.unit),  # unit
+    )
+
+    # populate FrVect
+    vect.GetDataArray()[:] = numpy.require(series.value, requirements=['C'])
+
+    return vect
 
 
 # -- utilities ----------------------------------------------------------------
@@ -383,3 +625,41 @@ def _gwf_channel_segments(path, channel, warn=True):
                     "{0!r} not found in frame {1} of {2}".format(
                         channel, i, path),
                 )
+
+
+def _get_frprocdata_type(series, type_):
+    from ._framecpp import FrProcDataType
+
+    if isinstance(type_, int):
+        return type_
+    elif type_ is not None:
+        return FrProcDataType[str(type_).upper()]
+
+    if series.ndim == 1 and series.xunit.is_equivalent("s"):
+        return FrProcDataType.TIME_SERIES
+    if series.ndim == 1 and series.xunit.is_equivalent("Hz"):
+        return FrProcDataType.FREQUENCY_SERIES
+    if series.ndim == 1:
+        return FrProcDataType.OTHER_1D_SERIES_DATA
+    if (
+            series.ndim == 2 and
+            series.xunit.is_equivalent("s") and
+            series.yunit.is_equivalent("Hz")
+    ):
+        return FrProcDataType.TIME_FREQUENCY
+    if series.ndim > 2:
+        return FrProcDataType.MULTI_DIMENSIONAL
+    return FrProcDataType.UNKNOWN
+
+
+def _get_frprocdata_subtype(series, subtype):
+    from ._framecpp import FrProcDataSubType
+
+    if isinstance(subtype, int):
+        return subtype
+    elif subtype is not None:
+        return FrProcDataSubType[str(subtype).upper()]
+
+    if series.unit == 'coherence':
+        return FrProcDataSubType.COHERENCE
+    return FrProcDataSubType.UNKNOWN
