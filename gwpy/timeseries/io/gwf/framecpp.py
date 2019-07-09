@@ -27,7 +27,7 @@ from math import ceil
 
 import numpy
 
-from LDAStools import frameCPP
+from LDAStools import frameCPP  # noqa: F401
 
 from ....io import gwf as io_gwf
 from ....io import _framecpp as io_framecpp
@@ -474,8 +474,6 @@ def write(tsdict, outfile, start=None, end=None, name='gwpy', run=0,
         compression level for given method, default is ``6`` for GZIP-based
         methods, otherwise ``0``
     """
-    from ....io._framecpp import DetectorLocation
-
     # set frame header metadata
     if not start or not end:
         starts, ends = zip(*(ts.span for ts in tsdict.values()))
@@ -484,7 +482,7 @@ def write(tsdict, outfile, start=None, end=None, name='gwpy', run=0,
     duration = end - start
     ifos = {ts.channel.ifo for ts in tsdict.values() if
             ts.channel and ts.channel.ifo and
-            ts.channel.ifo in DetectorLocation}
+            ts.channel.ifo in io_framecpp.DetectorLocation}
 
     # create frame
     frame = io_gwf.create_frame(
