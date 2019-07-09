@@ -404,7 +404,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             mock_connection.return_value = nds_connection
             with pytest.raises(RuntimeError) as exc:
                 self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.gwpy')
-            assert 'no data received' in str(exc)
+            assert 'no data received' in str(exc.value)
 
     @SKIP_FRAMECPP
     @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
