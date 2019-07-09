@@ -248,6 +248,20 @@ def create_fradcdata(series, frame_epoch=0,
     return frdata
 
 
+def _get_series_trange(series):
+    if series.xunit.is_equivalent('s'):
+        return abs(series.xspan)
+    return 0
+
+
+def _get_series_frange(series):
+    if series.xunit.is_equivalent('Hz'):  # FrequencySeries
+        return abs(series.xspan)
+    elif series.ndim == 2 and series.yunit.is_equivalent('Hz'):  # Spectrogram
+        return abs(series.yspan)
+    return 0
+
+
 def create_frprocdata(series, frame_epoch=0, comment=None,
                       type=None, subtype=None, trange=None,
                       fshift=0, phase=0, frange=None, bandwidth=0):
@@ -303,20 +317,10 @@ def create_frprocdata(series, frame_epoch=0, comment=None,
     from LDAStools import frameCPP
 
     # format auxiliary data
-    if trange is None and series.xunit.is_equivalent('s'):
-        trange = abs(series.xspan)
-    else:
-        trange = 0
-    if frange is None and series.xunit.is_equivalent('Hz'):  # FrequencySeries
-        frange = abs(series.xspan)
-    elif (
-            frange is None and
-            series.ndim == 2 and
-            series.yunit.is_equivalent('Hz')
-    ):  # Spectrogram
-        frange = abs(series.yspan)
-    else:
-        frange = 0
+    if trange is None:
+        trange = _get_series_trange(series)
+    if frange is None:
+        frange = _get_series_frange(series)
 
     return frameCPP.FrProcData(
         str(series.channel or series.name),
@@ -627,38 +631,43 @@ def _gwf_channel_segments(path, channel, warn=True):
                 )
 
 
+def _get_type(type_, enum):
+    if isinstance(type_, int):
+        return type_
+    return enum[str(type_).upper()]
+
+
 def _get_frprocdata_type(series, type_):
     from ._framecpp import FrProcDataType
 
-    if isinstance(type_, int):
-        return type_
-    elif type_ is not None:
-        return FrProcDataType[str(type_).upper()]
+    if type_ is not None:  # format user value
+        return _get_type(type_, FrProcDataType)
 
     if series.ndim == 1 and series.xunit.is_equivalent("s"):
-        return FrProcDataType.TIME_SERIES
-    if series.ndim == 1 and series.xunit.is_equivalent("Hz"):
-        return FrProcDataType.FREQUENCY_SERIES
-    if series.ndim == 1:
-        return FrProcDataType.OTHER_1D_SERIES_DATA
-    if (
+        type_ = FrProcDataType.TIME_SERIES
+    elif series.ndim == 1 and series.xunit.is_equivalent("Hz"):
+        type_ = FrProcDataType.FREQUENCY_SERIES
+    elif series.ndim == 1:
+        type_ = FrProcDataType.OTHER_1D_SERIES_DATA
+    elif (
             series.ndim == 2 and
             series.xunit.is_equivalent("s") and
             series.yunit.is_equivalent("Hz")
     ):
-        return FrProcDataType.TIME_FREQUENCY
-    if series.ndim > 2:
-        return FrProcDataType.MULTI_DIMENSIONAL
-    return FrProcDataType.UNKNOWN
+        type_ = FrProcDataType.TIME_FREQUENCY
+    elif series.ndim > 2:
+        type_ = FrProcDataType.MULTI_DIMENSIONAL
+    else:
+        type_ = FrProcDataType.UNKNOWN
+
+    return type_
 
 
 def _get_frprocdata_subtype(series, subtype):
     from ._framecpp import FrProcDataSubType
 
-    if isinstance(subtype, int):
-        return subtype
-    elif subtype is not None:
-        return FrProcDataSubType[str(subtype).upper()]
+    if subtype is not None:  # format user value
+        return _get_type(subtype, FrProcDataSubType)
 
     if series.unit == 'coherence':
         return FrProcDataSubType.COHERENCE
