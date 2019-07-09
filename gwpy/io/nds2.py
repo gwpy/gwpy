@@ -32,9 +32,8 @@ from functools import wraps
 
 from six.moves import reduce
 
-import numpy
-
 from ..time import to_gps
+from ..utils.enum import NumpyTypeEnum
 from .kerberos import kinit
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -99,12 +98,12 @@ class Nds2ChannelType(Nds2Enum):
         """Returns the NDS2 channel type corresponding to the given name
         """
         try:
-            return cls._member_map_[name]
-        except KeyError:
-            for ctype in cls._member_map_.values():
-                if ctype.name == name:
-                    return ctype
-            raise ValueError('%s is not a valid %s' % (name, cls.__name__))
+            return cls(name)
+        except ValueError as exc:
+            try:
+                return cls[str(name).replace('-', '').upper()]
+            except KeyError:
+                raise exc
 
     UNKNOWN = 0
     ONLINE = 1
@@ -116,44 +115,9 @@ class Nds2ChannelType(Nds2Enum):
     STATIC = 64
 
 
-NUMPY_DTYPE = {
-    1: numpy.int16,
-    2: numpy.int32,
-    4: numpy.int64,
-    8: numpy.float32,  # pylint: disable=no-member
-    16: numpy.float64,  # pylint: disable=no-member
-    32: numpy.complex64,  # pylint: disable=no-member
-    64: numpy.uint32,  # pylint: disable=no-member
-}
-
-
-class Nds2DataType(Nds2Enum):
+class Nds2DataType(Nds2Enum, NumpyTypeEnum):
     """`~enum.Enum` of NDS2 data types
     """
-    @property
-    def numpy_dtype(self):
-        """The `numpy` type corresponding to this NDS2 type"""
-        return NUMPY_DTYPE[self.value]
-
-    @classmethod
-    def find(cls, dtype):
-        """Returns the NDS2 type corresponding to the given python type
-        """
-        try:
-            return cls._member_map_[dtype]
-        except KeyError:
-            try:
-                dtype = numpy.dtype(dtype).type
-            except TypeError:
-                for ndstype in cls._member_map_.values():
-                    if ndstype.value is dtype:
-                        return ndstype
-            else:
-                for ndstype in cls._member_map_.values():
-                    if ndstype.value and ndstype.numpy_dtype is dtype:
-                        return ndstype
-            raise ValueError('%s is not a valid %s' % (dtype, cls.__name__))
-
     UNKNOWN = 0
     INT16 = 1
     INT32 = 2

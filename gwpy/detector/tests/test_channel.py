@@ -178,7 +178,7 @@ class TestChannel(object):
         if type_ == 'RAISE':  # check invalid raises correct exception
             with pytest.raises(ValueError) as exc:
                 c = self.TEST_CLASS('', type=arg)
-            assert str(exc.value) == '%s is not a valid Nds2ChannelType' % arg
+            assert str(exc.value) == '%r is not a valid Nds2ChannelType' % arg
         else:
             c = self.TEST_CLASS('', type=arg)
             assert getattr(c, 'type') == type_
