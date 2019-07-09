@@ -20,6 +20,7 @@
 """
 
 import json
+import sys
 
 import pytest
 
@@ -168,6 +169,8 @@ class TestChannel(object):
         new = self.TEST_CLASS('test', model=arg)
         assert new.model == model
 
+    @pytest.mark.xfail(sys.version_info < (3, 4),
+                       reason="enum34 error messages don't match python34")
     @pytest.mark.parametrize('arg, type_, ndstype', [
         (None, None, None),
         ('m-trend', 'm-trend', 16),

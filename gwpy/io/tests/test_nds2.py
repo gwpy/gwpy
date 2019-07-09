@@ -20,6 +20,7 @@
 """
 
 import os
+import sys
 
 import pytest
 
@@ -40,6 +41,8 @@ class _TestNds2Enum(object):
     def test_any(self):
         assert self.TEST_CLASS.any() == 2 ** (len(self.TEST_CLASS) - 1) - 1
 
+    @pytest.mark.xfail(sys.version_info < (3, 4),
+                       reason="enum34 error messages don't match python34")
     def test_find_errors(self):
         """Test error raising for :meth:`gwpy.io.nds2.Nds2ChannelType.find`
         """

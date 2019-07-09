@@ -19,6 +19,8 @@
 """Tests for :mod:`gwpy.utils.enum`
 """
 
+import sys
+
 import pytest
 
 import numpy
@@ -65,6 +67,8 @@ class TestNumpyTypeEnum(object):
             self.TEST_CLASS.INT16.value
         ) is self.TEST_CLASS.INT16
 
+    @pytest.mark.xfail(sys.version_info < (3, 4),
+                       reason="enum34 error messages don't match python34")
     def test_find_errors(self):
         """Test :meth:`NumpyTypeEnum.find` method error handling
         """
