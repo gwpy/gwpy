@@ -63,8 +63,12 @@ out, err = pfind.communicate()
 if pfind.returncode:
     if isinstance(out, bytes):
         out = out.decode('utf-8')
-    missing = [pkg.split('[', 1)[0].lower() for
-               pkg in json.loads(out)['packages']]
+    try:
+        missing = [pkg.split('[', 1)[0].lower() for
+                   pkg in json.loads(out)['packages']]
+    except json.JSONDecodeError:
+        print("failed to parse:\n{!r}".format(out), file=sys.stderr)
+        raise
     requirements = [
         req for req in requirements if
         VERSION_OPERATOR.split(req)[0].strip().lower() not in missing]
