@@ -69,8 +69,9 @@ conda install --name gwpyci --yes \
     python-lalframe \
     python-lalsimulation \
     python-ldas-tools-framecpp \
-    python-nds2-client \
-    root_numpy
+    python-nds2-client
+# try and install root_numpy, but don't try too hard, incompatibility is easy
+conda install --name gwpyci --yes root_numpy || true
 
 # install gwpy into this environment
 ${PYTHON} -m pip install ${PIP_FLAGS} . --ignore-installed --no-deps
