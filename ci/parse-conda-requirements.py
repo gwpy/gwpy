@@ -13,11 +13,14 @@ import re
 import subprocess
 import sys
 import tempfile
+from distutils.spawn import find_executable
 
 try:
     from pip._internal import req as pip_req
 except ImportError:  # pip < 10.0.0
     from pip import req as pip_req
+
+CONDA = find_executable("conda") or os.environ.get("CONDA_EXE", "conda")
 
 VERSION_OPERATOR = re.compile('[><=!]')
 
@@ -54,7 +57,7 @@ with open(tmp, 'w') as reqfile:
         print(req, file=reqfile)
 
 # find all packages with conda
-cmd = ['conda', 'install', '--quiet', '--dry-run', '--file', tmp, '--json']
+cmd = [CONDA, 'install', '--quiet', '--dry-run', '--file', tmp, '--json']
 pfind = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 out, err = pfind.communicate()
 
