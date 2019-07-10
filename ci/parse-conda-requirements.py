@@ -54,9 +54,8 @@ with open(tmp, 'w') as reqfile:
         print(req, file=reqfile)
 
 # find all packages with conda
-pfind = subprocess.Popen(
-    ['conda', 'install', '--quiet', '--dry-run', '--file', tmp, '--json'],
-    stdout=subprocess.PIPE)
+cmd = ['conda', 'install', '--quiet', '--dry-run', '--file', tmp, '--json']
+pfind = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 out, err = pfind.communicate()
 
 # conda search failed, which means one or more packages are missing
@@ -67,7 +66,8 @@ if pfind.returncode:
         missing = [pkg.split('[', 1)[0].lower() for
                    pkg in json.loads(out)['packages']]
     except json.JSONDecodeError:
-        print("failed to parse:\n{!r}".format(out), file=sys.stderr)
+        # run it all again so that it fails out in the open
+        subprocess.check_call(cmd)
         raise
     requirements = [
         req for req in requirements if
