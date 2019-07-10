@@ -83,7 +83,7 @@ def mock_hacr_connection(table, start, stop):
                 str, list(cursor._query.get_sublists())[0].get_identifiers()))
             selections = list(map(
                 str, list(cursor._query.get_sublists())[2].get_sublists()))
-            return filter_table(table, selections[3:])[columns]
+            return map(tuple, filter_table(table, selections[3:])[columns])
 
     cursor.fetchall = fetchall
 
@@ -398,8 +398,10 @@ class TestEventTable(TestTable):
         # check compounding works
         loud = table.filter('snr > 100')
         lowfloud = table.filter('frequency < 100', 'snr > 100')
-        brute = type(table)(rows=[row for row in lowf if row in loud],
-                            names=table.dtype.names)
+        brute = type(table)(
+            rows=[tuple(row) for row in lowf if row in loud],
+            names=table.dtype.names,
+        )
         utils.assert_table_equal(brute, lowfloud)
 
         # check double-ended filter
@@ -414,8 +416,10 @@ class TestEventTable(TestTable):
         # check filtering on segments works
         segs = SegmentList([Segment(100, 200), Segment(400, 500)])
         inseg = table.filter(('time', filters.in_segmentlist, segs))
-        brute = type(table)(rows=[row for row in table if row['time'] in segs],
-                            names=table.colnames)
+        brute = type(table)(
+            rows=[tuple(row) for row in table if row['time'] in segs],
+            names=table.colnames,
+        )
         utils.assert_table_equal(inseg, brute)
 
         # check empty segmentlist is handled well
