@@ -29,10 +29,12 @@ install:
 build_script:
   - python -m pip install .
 test_script:
-  - python -m pytest --pyargs gwpy --cov gwpy --junitxml=junit.xml --numprocesses=2
+  # run scripts from a separate directory, so that we test the installed code
+  - mkdir "tests"
+  - pushd "tests" && python -m pytest --pyargs gwpy --cov gwpy --cov-report xml:coverage.xml --junitxml junit.xml --numprocesses 2 && popd
 after_test:
   - "set _PYV=%PYTHON_VERSION:.=%"
   - python -m pip install codecov
-  - python -m codecov --flags Windows python%_PYV% conda
+  - python -m codecov --file .\tests\coverage.xml --flags Windows python%_PYV% conda
 on_finish:
-  - ps: (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\junit.xml))
+  - ps: (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\tests\junit.xml))
