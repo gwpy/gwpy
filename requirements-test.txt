@@ -1,7 +1,8 @@
 # requirements for GWpy tests
 # pytest needs more-itertools, we need it to work on python2.7
 more-itertools < 6.0a0 ; python_version < '3'
-pytest >= 3.3.0, !=4.6.0, !=4.6.1, !=4.6.2
+pytest >= 3.3.0, !=4.6.0, !=4.6.1, !=4.6.2 ; python_version >= '3.5'
+pytest >= 3.3.0, !=4.6.0, !=4.6.1, !=4.6.2, < 5.0.0 ; python_version < '3.5'
 pytest-cov >= 2.4.0
 pytest-xdist < 1.28.0
 mock ; python_version < '3'

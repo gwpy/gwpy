@@ -48,4 +48,4 @@ def test_return_as_error():
 
     with pytest.raises(ValueError) as exc:
         myfunc('test')
-    assert 'failed to cast return from myfunc as int: ' in str(exc)
+    assert 'failed to cast return from myfunc as int: ' in str(exc.value)

@@ -1,22 +1,26 @@
 environment:
   matrix:
-    - MINICONDA: C:\Miniconda-x64
-      PYTHON_VERSION: 2.7
-    - MINICONDA: C:\Miniconda36-x64
-      PYTHON_VERSION: 3.6
     - MINICONDA: C:\Miniconda37-x64
       PYTHON_VERSION: 3.7
+    - MINICONDA: C:\Miniconda36-x64
+      PYTHON_VERSION: 3.6
+    - MINICONDA: C:\Miniconda-x64
+      PYTHON_VERSION: 2.7
 install:
   # configure conda
-  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
-  - "%MINICONDA%\\Scripts\\activate.bat %MINICONDA%"
+  - "set PATH=%MINICONDA%\\condabin;%PATH%"
+  - call "%MINICONDA%\\Scripts\\activate.bat"
   - conda config --set always_yes yes --set changeps1 no
   - conda config --add channels conda-forge
   - conda update --quiet conda pip
-  - conda info --all
+  # activate again for the (potential) new conda version
+  - call "%MINICONDA%\\Scripts\\activate.bat"
   # create a new environment for gwpy
   - conda create --name gwpy python=%PYTHON_VERSION%
-  - activate gwpy
+  - conda activate gwpy
+  # print details
+  - conda info --all
+  # fill it with our dependencies
   - python ci\\parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
   - conda install --yes --file conda-reqs.txt
   - conda install openssl=1.0.2
