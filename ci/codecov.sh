@@ -39,4 +39,4 @@ ${PYTHON} -m pip install ${PIP_FLAGS} coverage codecov
 _JOBNAME=${CIRCLE_JOB:-${TRAVIS_JOB_NAME}}
 
 # submit coverage results
-${PYTHON} -m codecov --flags $(uname) python${PYTHON_VERSION/./} ${_JOBNAME%%:*}
+${PYTHON} -m codecov --file tests/coverage.xml --flags $(uname) python${PYTHON_VERSION/./} ${_JOBNAME%%:*}

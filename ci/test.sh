@@ -52,5 +52,14 @@ else
     conda list --name gwpyci
 fi
 
-# run tests with coverage
-${PYTHON} -m pytest --pyargs gwpy --cov=gwpy --junitxml=test-reports/junit.xml --numprocesses=2
+# run tests with coverage - we use a separate directory here
+# to guarantee that we run the tests from the installed code
+mkdir -p tests
+pushd tests
+${PYTHON} -m pytest \
+    --pyargs gwpy \
+    --cov gwpy \
+    --cov-report xml \
+    --junitxml junit.xml \
+    --numprocesses 2
+popd

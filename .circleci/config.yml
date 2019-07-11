@@ -31,11 +31,11 @@ aliases:
 
   - &store_test_results
       store_test_results:
-        path: test-reports
+        path: tests
 
   - &store_test_artifacts
       store_artifacts:
-        path: test-reports
+        path: tests
 
   - &python-build
       docker:
@@ -50,9 +50,9 @@ aliases:
         - run: *run-tests
         - run: *codecov
         - store_test_results:
-            path: test-reports
+            path: tests
         - store_artifacts:
-            path: test-reports
+            path: tests
 
   - &pip-build
       docker:
@@ -156,15 +156,15 @@ jobs:
           command: |
             set -ex
             python -m pip install ${PIP_FLAGS} "flake8>=3.7.0"
-            mkdir -p test-reports
-            python -m flake8 --output-file test-reports/flake8.txt
+            mkdir -p tests
+            python -m flake8 --output-file tests/flake8.txt
       - run:
           name: Create flake8 report
           when: always
           command: |
             set -ex
             python -m pip install ${PIP_FLAGS} flake8-junit-report
-            python -m junit_conversor test-reports/flake8.txt test-reports/junit.xml
+            python -m junit_conversor tests/flake8.txt tests/junit.xml
       - *store_test_results
       - *store_test_artifacts
 
