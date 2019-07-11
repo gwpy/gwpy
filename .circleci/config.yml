@@ -175,11 +175,6 @@ jobs:
     docker:
       - image: python:2.7
 
-  python:3.4:
-    <<: *python-build
-    docker:
-      - image: python:3.4
-
   python:3.5:
     <<: *python-build
     docker:
@@ -201,11 +196,6 @@ jobs:
     <<: *pip-build
     docker:
       - image: python:2.7
-
-  pip:3.4:
-    <<: *pip-build
-    docker:
-      - image: python:3.4
 
   pip:3.5:
     <<: *pip-build
@@ -301,9 +291,6 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-      - python:3.4:
-          requires:
-            - sdist
       - python:3.5:
           requires:
             - sdist
@@ -321,9 +308,6 @@ workflows:
       - pip:2.7:
           requires:
             - python:2.7
-      - pip:3.4:
-          requires:
-            - python:3.4
       - pip:3.5:
           requires:
             - python:3.5
