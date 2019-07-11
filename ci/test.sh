@@ -18,6 +18,9 @@
 
 set -ex
 trap 'set +ex' RETURN
+unset -f cd
+unset -f pushd
+unset -f popd
 
 #
 # Run the test suite for GWpy on the current system
