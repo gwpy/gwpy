@@ -632,12 +632,22 @@ def _gwf_channel_segments(path, channel, warn=True):
 
 
 def _get_type(type_, enum):
+    """Handle a type string, or just return an `int`
+
+    Only to be called in relation to FrProcDataType and FrProcDataSubType
+    """
     if isinstance(type_, int):
         return type_
     return enum[str(type_).upper()]
 
 
 def _get_frprocdata_type(series, type_):
+    """Determine the appropriate `FrProcDataType` for this series
+
+    Notes
+    -----
+    See Table 17 (§4.3.2.11) of LIGO-T970130 for more details
+    """
     from ._framecpp import FrProcDataType
 
     if type_ is not None:  # format user value
@@ -664,6 +674,12 @@ def _get_frprocdata_type(series, type_):
 
 
 def _get_frprocdata_subtype(series, subtype):
+    """Determine the appropriate `FrProcDataSubType` for this series
+
+    Notes
+    -----
+    See Table 17 (§4.3.2.11) of LIGO-T970130 for more details
+    """
     from ._framecpp import FrProcDataSubType
 
     if subtype is not None:  # format user value
