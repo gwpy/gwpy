@@ -32,7 +32,7 @@ Pip
 
     $ python -m pip install gwpy
 
-Supported python versions: 2.7, 3.4+.
+Supported python versions: 2.7, 3.5+.
 
 
 .. _gwpy-install-debian:
