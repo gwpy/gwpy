@@ -31,9 +31,7 @@ build_script:
 test_script:
   # run scripts from a separate directory, so that we test the installed code
   - mkdir "tests"
-  - pushd "tests"
-  - python -m pytest --pyargs gwpy --cov gwpy --cov-report xml --junitxml junit.xml --numprocesses 2
-  - popd
+  - pushd "tests" && python -m pytest --pyargs gwpy --cov gwpy --cov-report xml:coverage.xml --junitxml junit.xml --numprocesses 2
 after_test:
   - "set _PYV=%PYTHON_VERSION:.=%"
   - python -m pip install codecov

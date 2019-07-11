@@ -59,7 +59,7 @@ pushd tests
 ${PYTHON} -m pytest \
     --pyargs gwpy \
     --cov gwpy \
-    --cov-report xml \
+    --cov-report xml:coverage.xml \
     --junitxml junit.xml \
     --numprocesses 2
 popd
