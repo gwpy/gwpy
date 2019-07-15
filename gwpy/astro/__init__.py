@@ -35,6 +35,8 @@ distance range of a detector
    ~gwpy.astro.inspiral_range_spectrum
    ~gwpy.astro.burst_range
    ~gwpy.astro.burst_range_spectrum
+   ~gwpy.astro.range_timeseries
+   ~gwpy.astro.range_spectrogram
 
 Each of the above methods has been given default parameters corresponding to
 the standard usage by the LIGO project.
@@ -45,6 +47,8 @@ from .range import (
     burst_range_spectrum,
     inspiral_range,
     inspiral_range_psd,
+    range_timeseries,
+    range_spectrogram,
 )
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
