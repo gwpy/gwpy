@@ -280,7 +280,7 @@ class SpectralVariance(Array2D):
 
         # get data and bins
         spectrogram = spectrograms[0]
-        data = numpy.vstack(s.value for s in spectrograms)
+        data = numpy.vstack([s.value for s in spectrograms])
         if bins is None:
             if low is None and log:
                 low = numpy.log10(data.min() / 2)
