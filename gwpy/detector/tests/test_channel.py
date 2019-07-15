@@ -189,8 +189,10 @@ class TestChannel(object):
 
     @pytest.mark.parametrize('arg, dtype', [
         (None, None),
+        (16, numpy.dtype('float64')),
         (float, numpy.dtype('float64')),
         ('float', numpy.dtype('float64')),
+        ('float64', numpy.dtype('float64')),
         ('u4', numpy.dtype('uint32')),
     ])
     def test_dtype(self, arg, dtype):
