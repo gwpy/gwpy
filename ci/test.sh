@@ -59,10 +59,35 @@ fi
 # to guarantee that we run the tests from the installed code
 mkdir -p tests
 pushd tests
+
+# run standard test suite
 ${PYTHON} -m pytest \
     --pyargs gwpy \
     --cov gwpy \
     --cov-report xml:coverage.xml \
-    --junitxml junit.xml \
+    --junitxml junit1.xml \
     --numprocesses 2
+
+# run examples test suite
+${PYTHON} -m pytest \
+    ../examples/test_examples.py \
+    --verbose \
+    --cov gwpy \
+    --cov-append \
+    --cov-report xml:coverage.xml \
+    --junitxml junit2.xml || {
+# handle exit code 5 (all tests skipped) as pass
+EC_="$?";
+[ "${EC_}" -ne 5 ] && exit "${EC_}";
+}
+
+# combine junit files from each pytest instance
+${PIP} install junitparser
+${PYTHON} -c "
+from junitparser import JUnitXml
+xml1 = JUnitXml.fromfile('junit1.xml')
+xml1 += JUnitXml.fromfile('junit2.xml')
+xml1.write('junit.xml')"
+rm -f junit1.xml junit2.xml
+
 popd
