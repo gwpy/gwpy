@@ -39,9 +39,11 @@ from gwpy.timeseries import TimeSeriesDict
 # and then :meth:`~TimeSeriesDict.get` the data for the strain output
 # (``H1:GDS-CALIB_STRAIN``) and the PSL periscope accelerometer
 # (``H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ``):
-data = TimeSeriesDict.get(['H1:GDS-CALIB_STRAIN',
-                           'H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ'],
-                           1126260017, 1126260617)
+data = TimeSeriesDict.get(
+    ['H1:GDS-CALIB_STRAIN', 'H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ'],
+    1126260017,
+    1126260617,
+)
 hoft = data['H1:GDS-CALIB_STRAIN']
 acc = data['H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ']
 
@@ -57,7 +59,9 @@ ax = plot.gca()
 ax.set_ylabel('Frequency [Hz]')
 ax.set_yscale('log')
 ax.set_ylim(10, 8000)
-ax.set_title('Coherence between PSL periscope motion and LIGO-Hanford strain data')
+ax.set_title(
+    'Coherence between PSL periscope motion and LIGO-Hanford strain data',
+)
 ax.grid(True, 'both', 'both')
 ax.colorbar(label='Coherence', clim=[0, 1], cmap='plasma')
 plot.show()

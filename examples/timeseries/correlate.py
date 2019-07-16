@@ -53,7 +53,7 @@ aux = TimeSeries.get('L1:PSL-ISS_PDA_REL_OUT_DQ', 1172489751, 1172489815)
 whoft = hoft.whiten(8, 4)
 waux = aux.whiten(8, 4)
 
- # We can now cross-correlate these channels:
+# We can now cross-correlate these channels:
 mfilter = waux.crop(1172489782.57, 1172489783.57)
 snr = whoft.correlate(mfilter).abs()
 
