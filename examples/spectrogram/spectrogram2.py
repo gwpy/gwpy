@@ -68,6 +68,6 @@ plot.show()
 
 # Here we can see the trace of a high-mass binary black hole system,
 # referred to as GW150914.
-# For more details on this signal, please see 
+# For more details on this signal, please see
 # `Abbott et al. (2016) <https://doi.org/10.1103/PhysRevLett.116.061102>`_
 # (the joint LSC-Virgo publication announcing this detection).

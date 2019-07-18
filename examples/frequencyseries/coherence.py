@@ -39,9 +39,11 @@ from gwpy.timeseries import TimeSeriesDict
 # and then :meth:`~TimeSeriesDict.get` the data for the strain output
 # (``H1:GDS-CALIB_STRAIN``) and the PSL periscope accelerometer
 # (``H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ``):
-data = TimeSeriesDict.get(['H1:GDS-CALIB_STRAIN',
-                           'H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ'],
-                           1126260017, 1126260617)
+data = TimeSeriesDict.get(
+    ['H1:GDS-CALIB_STRAIN', 'H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ'],
+    1126260017,
+    1126260617,
+)
 hoft = data['H1:GDS-CALIB_STRAIN']
 acc = data['H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ']
 
@@ -50,7 +52,8 @@ acc = data['H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ']
 # transform length, with a 1-second (50%) overlap:
 coh = hoft.coherence(acc, fftlength=2, overlap=1)
 
-# Finally, we can :meth:`~gwpy.frequencyseries.FrequencySeries.plot` the resulting data:
+# Finally, we can :meth:`~gwpy.frequencyseries.FrequencySeries.plot` the
+# resulting data:
 plot = coh.plot(
     xlabel='Frequency [Hz]', xscale='log',
     ylabel='Coherence', yscale='linear', ylim=(0, 1),

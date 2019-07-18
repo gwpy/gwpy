@@ -59,6 +59,6 @@ ax.set_ylabel(r'[strain/$\sqrt{\mathrm{Hz}}$]')
 ax.set_title('LIGO-Livingston sensitivity variance')
 plot.show()
 
-# From this we see that in general the sensitivity varies a few parts in 
+# From this we see that in general the sensitivity varies a few parts in
 # 10 :sup:`-23`, while many of the lines (narrow-band peaks in the spectrum)
 # are much more stationary.

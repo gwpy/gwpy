@@ -52,7 +52,7 @@ ax.set_title('LIGO-Livingston sensitivity to BNS around GW170817')
 ax.set_epoch(1187008882)  # <- set 0 on plot to GW170817
 ax.colorbar(cmap='cividis', clim=(0, 16),
             label='BNS range amplitude spectral density '
-                  '[Mpc/$\sqrt{\mathrm{Hz}}$]')
+                  r'[Mpc/$\sqrt{\mathrm{Hz}}$]')
 plot.show()
 
 # Note, the extreme dip in sensitivity near GW170817 is caused by a
