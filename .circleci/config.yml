@@ -7,6 +7,23 @@ aliases:
       attach_workspace:
         at: .
 
+  - &configure_debian
+      name: Configure debian environment
+      command: |
+        # remove apt repos we don't use
+        pushd /etc/apt/sources.list.d
+        rm -v cernvm.list cvmfs-contrib.list
+        # install git and ssh
+        apt-get -yqq update
+        apt-get -yqq install -y git ssh
+
+  - &configure_rhel
+      name: Configure RHEL environment
+      command: |
+        # install git and ssh
+        yum -y -q update
+        yum -y -q install git openssh-clients
+
   - &set_python_environment
       name: Set Python environment
       command: |
@@ -16,13 +33,6 @@ aliases:
         export PYTHON_VERSION=${CIRCLE_JOB##*:}
         echo "export PYTHON_VERSION=\"${PYTHON_VERSION}\"" >> ${BASH_ENV}
         echo "Set PYTHON_VERSION=\"${PYTHON_VERSION}\""
-
-  - &configure_debian
-      name: Configure debian environment
-      command: |
-        # remove apt repos we don't use
-        pushd /etc/apt/sources.list.d
-        rm -v cernvm.list cvmfs-contrib.list
 
   - &run-tests
       name: Test
@@ -105,9 +115,9 @@ aliases:
 
   - &debian-build
       steps:
+        - run: *configure_debian
         - checkout
         - *attach_workspace
-        - run: *configure_debian
         - run: *set_python_environment
         - run:
             name: Build
@@ -119,6 +129,7 @@ aliases:
 
   - &centos-build
       steps:
+        - run: *configure_rhel
         - checkout
         - *attach_workspace
         - run: *set_python_environment
