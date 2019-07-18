@@ -432,7 +432,7 @@ class Series(Array):
         figure : `~matplotlib.figure.Figure`
             the newly created figure, with populated Axes.
 
-        See Also
+        See also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the
@@ -566,7 +566,7 @@ class Series(Array):
             as the input, except along `axis` where the dimension is
             smaller by `n`.
 
-        See Also
+        See also
         --------
         numpy.diff
             for documentation on the underlying method

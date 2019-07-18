@@ -335,7 +335,7 @@ class Spectrogram(Array2D):
         plot : `~gwpy.plot.Plot`
             the `Plot` containing the data
 
-        See Also
+        See also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the
@@ -343,7 +343,8 @@ class Spectrogram(Array2D):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        gwpy.plot.Axes.imshow or gwpy.plot.Axes.pcolormesh
+        gwpy.plot.Axes.imshow
+        gwpy.plot.Axes.pcolormesh
             for documentation of keyword arguments used in rendering the
             `Spectrogram` data
         """
@@ -446,7 +447,7 @@ class Spectrogram(Array2D):
         specgram : `Spectrogram`
             the frequency-domain filtered version of the input data
 
-        See Also
+        See also
         --------
         Spectrogram.filter
             for details on how a digital ZPK-format filter is applied
@@ -526,9 +527,9 @@ class Spectrogram(Array2D):
         specvar : `SpectralVariance`
             2D-array of spectral frequency-amplitude counts
 
-        See Also
+        See also
         --------
-        :func:`numpy.histogram`
+        numpy.histogram
             for details on specifying bins and weights
         """
         from ..frequencyseries import SpectralVariance

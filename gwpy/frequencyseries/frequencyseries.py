@@ -212,10 +212,9 @@ class FrequencySeries(Series):
         out : :class:`~gwpy.timeseries.TimeSeries`
             the normalised, real-valued `TimeSeries`.
 
-        See Also
+        See also
         --------
-        :mod:`scipy.fftpack` for the definition of the DFT and conventions
-        used.
+        numpy.fft.irfft : The inverse (real) FFT function
 
         Notes
         -----
@@ -258,7 +257,7 @@ class FrequencySeries(Series):
         spectrum : `FrequencySeries`
             the frequency-domain filtered version of the input data
 
-        See Also
+        See also
         --------
         FrequencySeries.filter
             for details on how a digital ZPK-format filter is applied
@@ -286,7 +285,7 @@ class FrequencySeries(Series):
         out : `FrequencySeries`
             the interpolated version of the input `FrequencySeries`
 
-        See Also
+        See also
         --------
         numpy.interp
             for the underlying 1-D linear interpolation scheme

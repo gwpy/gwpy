@@ -115,9 +115,9 @@ class SegmentAxes(Axes):
         Line2D
             the `~matplotlib.lines.Line2D` for this line layer
 
-        See Also
+        See also
         --------
-        :meth:`matplotlib.axes.Axes.plot`
+        matplotlib.axes.Axes.plot
             for a full description of acceptable ``*args` and ``**kwargs``
         """
         out = []

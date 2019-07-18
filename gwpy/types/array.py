@@ -469,7 +469,7 @@ class Array(Quantity):
         y : `~astropy.units.Quantity`
             A copy of the input array, flattened to one dimension.
 
-        See Also
+        See also
         --------
         ravel : Return a flattened array.
         flat : A 1-D flat iterator over the array.

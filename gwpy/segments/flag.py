@@ -387,7 +387,7 @@ class DataQualityFlag(object):
             ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
             ``'https://segments.ligo.org'``
 
-        See Also
+        See also
         --------
         DataQualityFlag.query_segdb
         DataQualityFlag.query_dqsegdb
@@ -895,7 +895,7 @@ class DataQualityFlag(object):
         figure : `~matplotlib.figure.Figure`
             the newly created figure, with populated Axes.
 
-        See Also
+        See also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the
@@ -1083,7 +1083,7 @@ class DataQualityDict(OrderedDict):
             ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
             ``'https://segments.ligo.org'``
 
-        See Also
+        See also
         --------
         DataQualityDict.query_segdb
         DataQualityDict.query_dqsegdb
@@ -1812,7 +1812,7 @@ class DataQualityDict(OrderedDict):
         figure : `~matplotlib.figure.Figure`
             the newly created figure, with populated Axes.
 
-        See Also
+        See also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the

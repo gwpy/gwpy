@@ -126,7 +126,7 @@ def table_to_gwf(table, filename, name, **kwargs):
     **kwargs
         other keyword arguments (see below for references)
 
-    See Also
+    See also
     --------
     gwpy.io.gwf.create_frame
     gwpy.io.gwf.write_frames

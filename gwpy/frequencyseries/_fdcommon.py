@@ -33,7 +33,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def fdfilter(data, *filt, **kwargs):
     """Filter a frequency-domain data object
 
-    See Also
+    See also
     --------
     gwpy.frequencyseries.FrequencySeries.filter
     gwpy.spectrogram.Spectrogram.filter

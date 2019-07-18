@@ -184,7 +184,7 @@ class QTiling(QObject):
         N : `int`
             estimated number of statistically independent tiles
 
-        See Also
+        See also
         --------
         QPlane.transform
             compute the Q-transform over a single time-frequency plane
@@ -310,7 +310,7 @@ class QPlane(QBase):
             the complex energies of the Q-transform of the input `fseries`
             at each frequency
 
-        See Also
+        See also
         --------
         QTile.transform
             for details on the transform over a row of `(Q, frequency)` tiles
@@ -508,7 +508,7 @@ class QGram(object):
         out : `~gwpy.spectrogram.Spectrogram`
             output `Spectrogram` of normalised Q energy
 
-        See Also
+        See also
         --------
         scipy.interpolate
             this method uses `~scipy.interpolate.InterpolatedUnivariateSpline`

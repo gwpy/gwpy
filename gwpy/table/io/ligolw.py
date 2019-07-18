@@ -308,7 +308,7 @@ def read_table(source, tablename=None, **kwargs):
     **kwargs
         keyword arguments for the read, or conversion functions
 
-    See Also
+    See also
     --------
     gwpy.io.ligolw.read_table
         for details of keyword arguments for the read operation

@@ -717,9 +717,9 @@ class StateVector(TimeSeriesBase):
             a list of `~gwpy.segments.flag.DataQualityFlag`
             reprensentations for each bit in this `StateVector`
 
-        See Also
+        See also
         --------
-        :meth:`StateTimeSeries.to_dqflag`
+        StateTimeSeries.to_dqflag
             for details on the segment representation method for
             `StateVector` bits
         """
@@ -821,7 +821,7 @@ class StateVector(TimeSeriesBase):
             :meth:`.find` (for direct GWF file access) or
             :meth:`.fetch` for remote NDS2 access
 
-        See Also
+        See also
         --------
         StateVector.fetch
             for grabbing data from a remote NDS2 server
@@ -859,7 +859,7 @@ class StateVector(TimeSeriesBase):
         plot : `~gwpy.plot.Plot`
             output plot object
 
-        See Also
+        See also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the

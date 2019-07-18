@@ -147,10 +147,9 @@ class TimeSeries(TimeSeriesBase):
         out : `~gwpy.frequencyseries.FrequencySeries`
             the normalised, complex-valued FFT `FrequencySeries`.
 
-        See Also
+        See also
         --------
-        :mod:`scipy.fftpack` for the definition of the DFT and conventions
-        used.
+        numpy.fft.rfft : The FFT implementation used in this method.
 
         Notes
         -----
@@ -201,10 +200,10 @@ class TimeSeries(TimeSeriesBase):
             the transformed output, with populated frequencies array
             metadata
 
-        See Also
+        See also
         --------
-        :mod:`scipy.fftpack` for the definition of the DFT and conventions
-        used.
+        TimeSeries.fft
+           The FFT method used.
         """
         from gwpy.spectrogram import Spectrogram
         # format lengths
@@ -613,9 +612,9 @@ class TimeSeries(TimeSeriesBase):
         specvar : `SpectralVariance`
             2D-array of spectral frequency-amplitude counts
 
-        See Also
+        See also
         --------
-        :func:`numpy.histogram`
+        numpy.histogram
             for details on specifying bins and weights
 
         Notes
@@ -687,7 +686,7 @@ class TimeSeries(TimeSeriesBase):
             time-frequency Rayleigh spectrogram as generated from the
             input time-series.
 
-        See Also
+        See also
         --------
         TimeSeries.rayleigh
             for details of the statistic calculation
@@ -782,18 +781,18 @@ class TimeSeries(TimeSeriesBase):
         hpseries : `TimeSeries`
             a high-passed version of the input `TimeSeries`
 
-        See Also
+        See also
         --------
         gwpy.signal.filter_design.highpass
             for details on the filter design
         TimeSeries.filter
             for details on how the filter is applied
 
-        .. note::
-
-           When using `scipy < 0.16.0` some higher-order filters may be
-           unstable. With `scipy >= 0.16.0` higher-order filters are
-           decomposed into second-order-sections, and so are much more stable.
+        Notes
+        -----
+        When using `scipy < 0.16.0` some higher-order filters may be
+        unstable. With `scipy >= 0.16.0` higher-order filters are
+        decomposed into second-order-sections, and so are much more stable.
         """
         # design filter
         filt = filter_design.highpass(frequency, self.sample_rate,
@@ -832,18 +831,18 @@ class TimeSeries(TimeSeriesBase):
         lpseries : `TimeSeries`
             a low-passed version of the input `TimeSeries`
 
-        See Also
+        See also
         --------
         gwpy.signal.filter_design.lowpass
             for details on the filter design
         TimeSeries.filter
             for details on how the filter is applied
 
-        .. note::
-
-           When using `scipy < 0.16.0` some higher-order filters may be
-           unstable. With `scipy >= 0.16.0` higher-order filters are
-           decomposed into second-order-sections, and so are much more stable.
+        Notes
+        -----
+        When using `scipy < 0.16.0` some higher-order filters may be
+        unstable. With `scipy >= 0.16.0` higher-order filters are
+        decomposed into second-order-sections, and so are much more stable.
         """
         # design filter
         filt = filter_design.lowpass(frequency, self.sample_rate,
@@ -885,18 +884,18 @@ class TimeSeries(TimeSeriesBase):
         bpseries : `TimeSeries`
             a band-passed version of the input `TimeSeries`
 
-        See Also
+        See also
         --------
         gwpy.signal.filter_design.bandpass
             for details on the filter design
         TimeSeries.filter
             for details on how the filter is applied
 
-        .. note::
-
-           When using `scipy < 0.16.0` some higher-order filters may be
-           unstable. With `scipy >= 0.16.0` higher-order filters are
-           decomposed into second-order-sections, and so are much more stable.
+        Notes
+        -----
+        When using `scipy < 0.16.0` some higher-order filters may be
+        unstable. With `scipy >= 0.16.0` higher-order filters are
+        decomposed into second-order-sections, and so are much more stable.
         """
         # design filter
         filt = filter_design.bandpass(flow, fhigh, self.sample_rate,
@@ -988,7 +987,7 @@ class TimeSeries(TimeSeriesBase):
         timeseries : `TimeSeries`
             the filtered version of the input data
 
-        See Also
+        See also
         --------
         TimeSeries.filter
             for details on how a digital ZPK-format filter is applied
@@ -1043,11 +1042,9 @@ class TimeSeries(TimeSeriesBase):
         ``(numerator, denominator)`` representation before being applied
         to this `TimeSeries`.
 
-        .. note::
-
-           When using `scipy < 0.16` some higher-order filters may be
-           unstable. With `scipy >= 0.16` higher-order filters are
-           decomposed into second-order-sections, and so are much more stable.
+        When using `scipy < 0.16` some higher-order filters may be
+        unstable. With `scipy >= 0.16` higher-order filters are
+        decomposed into second-order-sections, and so are much more stable.
 
         FIR filters are passed directly to :func:`scipy.signal.lfilter` or
         :func:`scipy.signal.filtfilt` without any conversions.
@@ -1173,9 +1170,9 @@ class TimeSeries(TimeSeriesBase):
         :attr:`TimeSeries.sample_rate` values, the higher sampled
         `TimeSeries` will be down-sampled to match the lower.
 
-        See Also
+        See also
         --------
-        :func:`matplotlib.mlab.cohere`
+        matplotlib.mlab.cohere
             for details of the coherence calculator
         """
         from matplotlib import mlab
@@ -1257,9 +1254,9 @@ class TimeSeries(TimeSeriesBase):
         The :meth:`TimeSeries.auto_coherence` will perform best when
         ``dt`` is approximately ``fftlength / 2``.
 
-        See Also
+        See also
         --------
-        :func:`matplotlib.mlab.cohere`
+        matplotlib.mlab.cohere
             for details of the coherence calculator
         """
         # shifting self backwards is the same as forwards
@@ -1532,7 +1529,7 @@ class TimeSeries(TimeSeriesBase):
             a whitened version of the input data with zero mean and unit
             variance
 
-        See Also
+        See also
         --------
         TimeSeries.asd
             for details on the ASD calculation
@@ -1690,7 +1687,7 @@ class TimeSeries(TimeSeriesBase):
         out : `TimeSeries`
             the result of the convolution
 
-        See Also
+        See also
         --------
         scipy.signal.fftconvolve
             for details on the convolution scheme used here
@@ -1777,7 +1774,7 @@ class TimeSeries(TimeSeriesBase):
         snr : `TimeSeries`
             the correlated signal-to-noise ratio (SNR) timeseries
 
-        See Also
+        See also
         --------
         TimeSeries.asd
             for details on the ASD calculation
@@ -1843,7 +1840,7 @@ class TimeSeries(TimeSeriesBase):
         detrended : `TimeSeries`
             the detrended input series
 
-        See Also
+        See also
         --------
         scipy.signal.detrend
             for details on the options for the `detrend` argument, and
@@ -1873,7 +1870,7 @@ class TimeSeries(TimeSeriesBase):
         notched : `TimeSeries`
            a notch-filtered copy of the input `TimeSeries`
 
-        See Also
+        See also
         --------
         TimeSeries.filter
            for details on the filtering method
@@ -1917,7 +1914,7 @@ class TimeSeries(TimeSeriesBase):
         qgram : `EventTable`
             a table of time-frequency tiles on the most significant `QPlane`
 
-        See Also
+        See also
         --------
         TimeSeries.q_transform
             for a method to interpolate the raw Q-transform over a regularly
@@ -2028,7 +2025,7 @@ class TimeSeries(TimeSeriesBase):
         out : `~gwpy.spectrogram.Spectrogram`
             output `Spectrogram` of normalised Q energy
 
-        See Also
+        See also
         --------
         TimeSeries.asd
             for documentation on acceptable `**asd_kw`

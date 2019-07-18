@@ -543,7 +543,7 @@ class EventTable(Table):
         plot : `~gwpy.plot.Plot`
             the newly created figure
 
-        See Also
+        See also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the
@@ -587,7 +587,7 @@ class EventTable(Table):
         plot : `~gwpy.plot.Plot`
             the newly created figure
 
-        See Also
+        See also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the
@@ -655,7 +655,7 @@ class EventTable(Table):
         plot : `~gwpy.plot.Plot`
             The newly created figure.
 
-        See Also
+        See also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the

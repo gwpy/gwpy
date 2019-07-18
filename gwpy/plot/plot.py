@@ -368,7 +368,7 @@ class Plot(figure.Figure):
         cbar : `~matplotlib.colorbar.Colorbar`
             the newly added `Colorbar`
 
-        See Also
+        See also
         --------
         matplotlib.figure.Figure.colorbar
         matplotlib.colorbar.Colorbar
