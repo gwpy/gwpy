@@ -483,6 +483,8 @@ def build_examples(_):
         logger.debug('[examples] created {0}'.format(outdir))
 
     for exdir in next(os.walk(srcdir))[1]:
+        if exdir in {"__pycache__",}:  # ignore
+            continue
         subdir = os.path.join(outdir, exdir)
         if not os.path.isdir(subdir):
             os.makedirs(subdir)
