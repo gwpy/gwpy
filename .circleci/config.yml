@@ -17,6 +17,13 @@ aliases:
         echo "export PYTHON_VERSION=\"${PYTHON_VERSION}\"" >> ${BASH_ENV}
         echo "Set PYTHON_VERSION=\"${PYTHON_VERSION}\""
 
+  - &configure_debian
+      name: Configure debian environment
+      command: |
+        # remove apt repos we don't use
+        pushd /etc/apt/sources.list.d
+        rm -v cernvm.list cvmfs-contrib.list
+
   - &run-tests
       name: Test
       command: bash -ex ci/test.sh
@@ -100,6 +107,7 @@ aliases:
       steps:
         - checkout
         - *attach_workspace
+        - run: *configure_debian
         - run: *set_python_environment
         - run:
             name: Build
