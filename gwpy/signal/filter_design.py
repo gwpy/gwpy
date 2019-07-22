@@ -242,7 +242,7 @@ def fir_from_transfer(transfer, ntaps, window='hanning', ncorner=None):
     If `ncorner` is not `None`, then `ncorner` extra samples will be zeroed
     on the left as a hard highpass filter.
 
-    See Also
+    See also
     --------
     scipy.signal.remez
         an alternative FIR filter design using the Remez exchange algorithm
@@ -586,7 +586,7 @@ def notch(frequency, sample_rate, type='iir', **kwargs):
     zpk : `tuple` of `complex` or `float`
        the filter components in digital zero-pole-gain format
 
-    See Also
+    See also
     --------
     scipy.signal.iirdesign
         for details on the IIR filter design method

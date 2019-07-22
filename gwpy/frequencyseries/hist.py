@@ -259,10 +259,10 @@ class SpectralVariance(Array2D):
         specvar : `SpectralVariance`
             2D-array of spectral frequency-amplitude counts
 
-        See Also
+        See also
         --------
-        :func:`numpy.histogram`
-            for details on specifying bins and weights
+        numpy.histogram
+            The histogram function
         """
         # parse args and kwargs
         if not spectrograms:

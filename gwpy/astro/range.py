@@ -371,7 +371,7 @@ def range_timeseries(hoft, stride=None, fftlength=None, overlap=None,
     compact binary inspirals and to unmodelled GW bursts, each a class
     of transient event.
 
-    See Also
+    See also
     --------
     gwpy.timeseries.TimeSeries.spectrogram
         for the underlying power spectral density estimator
@@ -462,7 +462,7 @@ def range_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
     innermost stable circular orbit (ISCO), the output will extend only up
     to the latter.
 
-    See Also
+    See also
     --------
     gwpy.timeseries.TimeSeries.spectrogram
         for the underlying power spectral density estimator

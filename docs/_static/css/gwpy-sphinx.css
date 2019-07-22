@@ -188,3 +188,7 @@ dl.classmethod table td:first-child, {
 .method .rubric {
 		margin-top: 10px;
 }
+
+div.seealso dd {
+		margin-left: 20px;
+}

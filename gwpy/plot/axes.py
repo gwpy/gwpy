@@ -225,7 +225,7 @@ class Axes(_Axes):
             All arguments and keywords are passed to the inherited
             :meth:`~matplotlib.axes.Axes.imshow` method.
 
-        See Also
+        See also
         --------
         matplotlib.axes.Axes.imshow
             for details of the image rendering
@@ -272,7 +272,7 @@ class Axes(_Axes):
         Unlike the upstream :meth:`matplotlib.axes.Axes.pcolormesh`,
         this method respects the current grid settings.
 
-        See Also
+        See also
         --------
         matplotlib.axes.Axes.pcolormesh
         """
@@ -368,7 +368,7 @@ class Axes(_Axes):
             - `~matplotlib.lines.Line2D` for ``upper``, if given
             - `~matplitlib.collections.PolyCollection` for shading
 
-        See Also
+        See also
         --------
         matplotlib.axes.Axes.plot
             for a full description of acceptable ``*args`` and ``**kwargs``
@@ -551,7 +551,7 @@ class Axes(_Axes):
         cbar : `~matplotlib.colorbar.Colorbar`
             the newly added `Colorbar`
 
-        See Also
+        See also
         --------
         Plot.colorbar
         """

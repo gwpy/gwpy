@@ -615,7 +615,7 @@ class TimeSeriesBase(Series):
             :meth:`.find` (for direct GWF file access) or
             :meth:`.fetch` for remote NDS2 access
 
-        See Also
+        See also
         --------
         TimeSeries.fetch
             for grabbing data from a remote NDS2 server
@@ -637,7 +637,7 @@ class TimeSeriesBase(Series):
         figure : `~matplotlib.figure.Figure`
             the newly created figure, with populated Axes.
 
-        See Also
+        See also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the
@@ -969,7 +969,7 @@ class TimeSeriesBaseDict(OrderedDict):
         **kwargs
             other keyword arguments to send to `TimeSeries.append`
 
-        See Also
+        See also
         --------
         TimeSeries.append
             for details of the underlying series append operation
@@ -998,7 +998,7 @@ class TimeSeriesBaseDict(OrderedDict):
         **kwargs
             other keyword arguments to send to `TimeSeries.prepend`
 
-        See Also
+        See also
         --------
         TimeSeries.prepend
             for details of the underlying series prepend operation
@@ -1026,7 +1026,7 @@ class TimeSeriesBaseDict(OrderedDict):
             GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        See Also
+        See also
         --------
         TimeSeries.crop
             for more details
@@ -1611,7 +1611,7 @@ class TimeSeriesBaseList(list):
         series : `gwpy.types.TimeSeriesBase` subclass
              a single series containing all data from each entry in this list
 
-        See Also
+        See also
         --------
         TimeSeries.append
             for details on how the individual series are concatenated together
