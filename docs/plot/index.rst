@@ -105,6 +105,7 @@ Plot customisation
    gps
    colorbars
    legend
+   log
 
 =================
 Plot applications
