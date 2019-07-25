@@ -183,12 +183,15 @@ def write(tsdict, outfile, start=None, end=None,
 
     # get ifos list
     detectors = 0
+    _detidx = list(lalutils.LAL_DETECTORS.keys())
     for series in tsdict.values():
+        ifo = getattr(series.channel, "ifo", None)
         try:
-            idx = list(lalutils.LAL_DETECTORS.keys()).index(series.channel.ifo)
-            detectors |= 1 << 2*idx
-        except (KeyError, AttributeError):
+            idx = _detidx.index(ifo)
+        except ValueError:  # don't worry about mismatched detectors
             continue
+        else:
+            detectors |= 1 << 2 * idx
 
     # create new frame
     frame = lalframe.FrameNew(start, duration, name, run, 0, detectors)
