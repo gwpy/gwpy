@@ -32,11 +32,10 @@ from six import string_types
 # to give the user a bit more information
 import lalframe
 import lal
-from lal.utils import CacheEntry
 
 
 from ....io.cache import is_cache
-from ....io.utils import (FILE_LIKE, file_list)
+from ....io.utils import (file_list, file_path)
 from ....utils import lal as lalutils
 from ... import TimeSeries
 
@@ -65,22 +64,26 @@ def open_data_source(source):
     ValueError
         If the input format cannot be identified.
     """
-    if isinstance(source, FILE_LIKE):
-        source = source.name
-    if isinstance(source, CacheEntry):
-        source = source.path
+    # -- preformatting
 
-    # read cache file
+    try:
+        source = file_path(source)
+    except ValueError:  # not parsable as a single file
+        pass
+
+    # import cache from file
     if (isinstance(source, string_types) and
             source.endswith(('.lcf', '.cache'))):
-        return lalframe.FrStreamCacheOpen(lal.CacheImport(source))
+        source = lal.CacheImport(source)
 
-    # read glue cache object
+    # reformat cache (or any list of files) as a lal cache object
     if isinstance(source, list) and is_cache(source):
         cache = lal.Cache()
         for entry in file_list(source):
             cache = lal.CacheMerge(cache, lal.CacheGlob(*os.path.split(entry)))
-        return lalframe.FrStreamCacheOpen(cache)
+        source = cache
+
+    # -- now we have a lal.Cache or a filename
 
     # read lal cache object
     if isinstance(source, lal.Cache):
@@ -111,7 +114,7 @@ def get_stream_duration(stream):
                             stream.epoch.gpsNanoSeconds)
     # loop over each file in the stream cache and query its duration
     nfile = stream.cache.length
-    duration = 0
+    duration = 0.
     for dummy_i in range(nfile):
         for dummy_j in range(lalframe.FrFileQueryNFrame(stream.file)):
             duration += lalframe.FrFileQueryDt(stream.file, 0)
@@ -143,14 +146,10 @@ def read(source, channels, start=None, end=None, series_class=TimeSeries,
     streamdur = get_stream_duration(stream)
     if start is None:
         start = epoch
-    else:
-        start = max(epoch, lalutils.to_lal_ligotimegps(start))
+    start = max(epoch, lalutils.to_lal_ligotimegps(start))
     if end is None:
-        offset = float(start - epoch)
-        duration = streamdur - offset
-    else:
-        end = min(epoch + streamdur, lalutils.to_lal_ligotimegps(end))
-        duration = float(end - start)
+        end = epoch + streamdur
+    duration = float(end - start)
 
     # read data
     out = series_class.DictClass()
@@ -163,7 +162,12 @@ def read(source, channels, start=None, end=None, series_class=TimeSeries,
 
 
 def _read_channel(stream, channel, start, duration):
-    dtype = lalframe.FrStreamGetTimeSeriesType(channel, stream)
+    try:
+        dtype = lalframe.FrStreamGetTimeSeriesType(channel, stream)
+    except RuntimeError as exc:
+        if str(exc).lower() == "wrong name":
+            exc.args = "channel '{}' not found".format(channel),
+        raise
     reader = lalutils.find_typed_function(dtype, 'FrStreamRead', 'TimeSeries',
                                           module=lalframe)
     return reader(stream, channel, start, duration, 0)
