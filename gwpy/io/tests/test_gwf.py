@@ -57,6 +57,19 @@ def test_open_gwf():
         io_gwf.open_gwf('test', mode='a')
 
 
+@skip_missing_dependency("LDAStools.frameCPP")
+def test_create_frvect(noisy_sinusoid):
+    vect = io_gwf.create_frvect(noisy_sinusoid)
+    assert vect.nData == noisy_sinusoid.size
+    assert vect.nBytes == noisy_sinusoid.nbytes
+    assert vect.name == noisy_sinusoid.name
+    assert vect.unitY == noisy_sinusoid.unit
+    xdim = vect.GetDim(0)
+    assert xdim.unitX == noisy_sinusoid.xunit
+    assert xdim.dx == noisy_sinusoid.dx.value
+    assert xdim.startX == noisy_sinusoid.x0.value
+
+
 @skip_missing_dependency('LDAStools.frameCPP')
 def test_iter_channel_names():
     # maybe need something better?

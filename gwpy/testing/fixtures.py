@@ -90,7 +90,7 @@ def noisy_sinusoid():
     time = numpy.arange(size) / rate
     x = amp * numpy.sin(2 * numpy.pi * freq * time)
     x += numpy.random.normal(scale=numpy.sqrt(noise_power), size=time.shape)
-    return TimeSeries(x, xindex=time, unit='V')
+    return TimeSeries(x, xindex=time, unit='V', name="noisy sinusoid")
 
 
 @pytest.fixture
@@ -102,4 +102,5 @@ def corrupt_noisy_sinusoid(noisy_sinusoid):
     # add corruption in part of the signal
     size = noisy_sinusoid.size
     noisy_sinusoid.value[int(size//2):int(size//2)+10] *= 50.
+    noisy_sinusoid.name = "corrupt noisy sinusoid"
     return noisy_sinusoid

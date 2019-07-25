@@ -20,16 +20,16 @@
 """
 
 import os
+import sys
 
 import pytest
-
-import numpy
 
 from ...detector import Channel
 from ...segments import (Segment, SegmentList)
 from ...testing import mocks
 from ...testing.compat import mock
 from ...testing.utils import skip_missing_dependency
+from ...utils.tests.test_enum import TestNumpyTypeEnum as _TestNumpyTypeEnum
 from .. import nds2 as io_nds2
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -40,6 +40,17 @@ class _TestNds2Enum(object):
 
     def test_any(self):
         assert self.TEST_CLASS.any() == 2 ** (len(self.TEST_CLASS) - 1) - 1
+
+    @pytest.mark.xfail(sys.version_info < (3, 4),
+                       reason="enum34 error messages don't match python34")
+    def test_find_errors(self):
+        """Test error raising for :meth:`gwpy.io.nds2.Nds2ChannelType.find`
+        """
+        with pytest.raises(ValueError) as exc:
+            self.TEST_CLASS.find('blah')
+        assert str(exc.value) == "'blah' is not a valid {}".format(
+            self.TEST_CLASS.__name__,
+        )
 
 
 class TestNds2ChannelType(_TestNds2Enum):
@@ -60,32 +71,11 @@ class TestNds2ChannelType(_TestNds2Enum):
         """
         assert self.TEST_CLASS.find(input_) == self.TEST_CLASS.MTREND
 
-    def test_find_errors(self):
-        """Test error raising for :meth:`gwpy.io.nds2.Nds2ChannelType.find`
-        """
-        with pytest.raises(ValueError) as exc:
-            self.TEST_CLASS.find('blah')
-        assert str(exc.value).startswith('blah is not a valid')
 
-
-class TestNds2DataType(_TestNds2Enum):
+class TestNds2DataType(_TestNds2Enum, _TestNumpyTypeEnum):
     """Tests of :class:`gwpy.io.nds2.Nds2DataType`
     """
     TEST_CLASS = io_nds2.Nds2DataType
-
-    @pytest.mark.parametrize('input_', [float, 'float64', 16, numpy.float64])
-    def test_find(self, input_):
-        """Test :meth:`gwpy.io.nds2.Nds2DataType.find`
-        """
-        assert self.TEST_CLASS.find(input_) == self.TEST_CLASS.FLOAT64
-
-    @pytest.mark.parametrize('input_', ['blah', numpy.float16])
-    def test_find_errors(self, input_):
-        """Test error raising for :meth:`gwpy.io.nds2.Nds2ChannelType.find`
-        """
-        with pytest.raises(ValueError) as exc:
-            self.TEST_CLASS.find(input_)
-        assert str(exc.value).startswith('{0} is not a valid'.format(input_))
 
 
 @pytest.mark.parametrize('key, value, hosts', [

@@ -27,8 +27,6 @@ from math import ceil
 
 from six.moves.urllib.parse import urlparse
 
-import numpy
-
 from astropy import units
 from astropy.io import registry as io_registry
 
@@ -269,8 +267,6 @@ class Channel(object):
     def type(self, type_):
         if type_ is None:
             self._type = None
-        elif isinstance(type_, int):
-            self._type = io_nds2.Nds2ChannelType(type_).name
         else:
             self._type = io_nds2.Nds2ChannelType.find(type_).name
 
@@ -300,7 +296,7 @@ class Channel(object):
         if type_ is None:
             self._dtype = None
         else:
-            self._dtype = numpy.dtype(type_)
+            self._dtype = io_nds2.Nds2DataType.find(type_).dtype
 
     @property
     def url(self):
@@ -482,24 +478,13 @@ class Channel(object):
     def from_nds2(cls, nds2channel):
         """Generate a new channel using an existing nds2.channel object
         """
-        # extract metadata
-        name = nds2channel.name
-        sample_rate = nds2channel.sample_rate
-        unit = nds2channel.signal_units
-        if not unit:
-            unit = None
-        ctype = nds2channel.channel_type_to_string(nds2channel.channel_type)
-        # get dtype
-        dtype = {  # pylint: disable: no-member
-            nds2channel.DATA_TYPE_INT16: numpy.int16,
-            nds2channel.DATA_TYPE_INT32: numpy.int32,
-            nds2channel.DATA_TYPE_INT64: numpy.int64,
-            nds2channel.DATA_TYPE_FLOAT32: numpy.float32,
-            nds2channel.DATA_TYPE_FLOAT64: numpy.float64,
-            nds2channel.DATA_TYPE_COMPLEX32: numpy.complex64,
-        }.get(nds2channel.data_type)
-        return cls(name, sample_rate=sample_rate, unit=unit, dtype=dtype,
-                   type=ctype)
+        return cls(
+            nds2channel.name,
+            sample_rate=nds2channel.sample_rate,
+            unit=nds2channel.signal_units or None,
+            dtype=nds2channel.data_type,
+            type=nds2channel.channel_type,
+        )
 
     # -- methods --------------------------------
 
