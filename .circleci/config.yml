@@ -71,27 +71,6 @@ aliases:
         - store_artifacts:
             path: tests
 
-  - &pip-build
-      docker:
-        - image: python
-      steps:
-        - checkout
-        - restore_cache:
-            key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
-        - run: *set_python_environment
-        - run:
-            name: Install
-            command: bash -ex ci/install-pip.sh
-        - run: *run-tests
-        - run: *codecov
-        - save_cache:
-            key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
-            paths:
-              - "/usr/local/bin"
-              - "/usr/local/lib"
-        - *store_test_results
-        - *store_test_artifacts
-
   - &conda-build
       docker:
         - image: continuumio/miniconda3
@@ -209,35 +188,6 @@ jobs:
     docker:
       - image: python:3.7
 
-  # -- pip ------------------
-
-  pip:2.7:
-    <<: *pip-build
-    docker:
-      - image: python:2.7
-
-  pip:3.5:
-    <<: *pip-build
-    docker:
-      - image: python:3.5
-
-  pip:3.6:
-    <<: *pip-build
-    docker:
-      - image: python:3.6
-
-  pip:3.7:
-    <<: *pip-build
-    docker:
-      - image: python:3.7
-
-  pip:pre:3.7:
-    <<: *pip-build
-    docker:
-      - image: python:3.7
-    environment:
-      PIP_FLAGS: "--progress-bar off --upgrade --pre"
-
   # -- conda ----------------
 
   conda:2.7:
@@ -323,33 +273,16 @@ workflows:
             tags:
               only: /^v.*/
 
-      # full tests with extended dependencies
-      - pip:2.7:
-          requires:
-            - python:2.7
-      - pip:3.5:
-          requires:
-            - python:3.5
-      - pip:3.6:
-          requires:
-            - python:3.6
-      - pip:3.7:
-          requires:
-            - python:3.7
-      - pip:pre:3.7:
-          requires:
-            - python:3.7
-
       # conda tests
       - conda:2.7:
           requires:
-            - pip:2.7
+            - python:2.7
       - conda:3.6:
           requires:
-            - pip:3.6
+            - python:3.6
       - conda:3.7:
           requires:
-            - pip:3.7
+            - python:3.7
 
       # LDG reference OS tests
       - debian:stretch:2.7:
