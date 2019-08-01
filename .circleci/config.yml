@@ -8,43 +8,49 @@ aliases:
         at: .
 
   - &configure_debian
-      name: Configure debian environment
-      command: |
-        # remove apt repos we don't use
-        pushd /etc/apt/sources.list.d
-        rm -v cernvm.list cvmfs-contrib.list
-        # install git and ssh
-        apt-get -yqq update
-        apt-get -yqq install -y git ssh
+      run:
+        name: Configure debian environment
+        command: |
+          # remove apt repos we don't use
+          pushd /etc/apt/sources.list.d
+          rm -v cernvm.list cvmfs-contrib.list
+          # install git and ssh
+          apt-get -yqq update
+          apt-get -yqq install -y git ssh
 
   - &configure_rhel
-      name: Configure RHEL environment
-      command: |
-        # install git and ssh
-        yum -y -q update
-        yum -y -q install git openssh-clients
+      run:
+        name: Configure RHEL environment
+        command: |
+          # install git and ssh
+          yum -y -q update
+          yum -y -q install git openssh-clients
 
   - &set_python_environment
-      name: Set Python environment
-      command: |
-        export PIP_FLAGS=${PIP_FLAGS:-"--progress-bar=off"}
-        echo "export PIP_FLAGS=\"${PIP_FLAGS}\"" >> ${BASH_ENV}
-        echo "Set PIP_FLAGS=\"${PIP_FLAGS}\""
-        export PYTHON_VERSION=${CIRCLE_JOB##*:}
-        echo "export PYTHON_VERSION=\"${PYTHON_VERSION}\"" >> ${BASH_ENV}
-        echo "Set PYTHON_VERSION=\"${PYTHON_VERSION}\""
+      run:
+        name: Set Python environment
+        command: |
+          export PIP_FLAGS=${PIP_FLAGS:-"--progress-bar=off"}
+          echo "export PIP_FLAGS=\"${PIP_FLAGS}\"" >> ${BASH_ENV}
+          echo "Set PIP_FLAGS=\"${PIP_FLAGS}\""
+          export PYTHON_VERSION=${CIRCLE_JOB##*:}
+          echo "export PYTHON_VERSION=\"${PYTHON_VERSION}\"" >> ${BASH_ENV}
+          echo "Set PYTHON_VERSION=\"${PYTHON_VERSION}\""
 
   - &run-tests
-      name: Test
-      command: bash -ex ci/test.sh
+      run:
+        name: Test
+        command: bash -ex ci/test.sh
 
   - &codecov
-      name: Submit coverage to codecov
-      command: bash -ex ci/codecov.sh
+      run:
+        name: Submit coverage to codecov
+        command: bash -ex ci/codecov.sh
 
   - &coveralls
-      name: Submit coverage to coveralls
-      command: bash -ex ci/coveralls.sh
+      run:
+        name: Submit coverage to coveralls
+        command: bash -ex ci/coveralls.sh
 
   - &store_test_results
       store_test_results:
@@ -60,37 +66,16 @@ aliases:
       steps:
         - checkout
         - *attach_workspace
-        - run: *set_python_environment
+        - *set_python_environment
         - run:
             name: Install
             command: python -m pip install ${PIP_FLAGS} gwpy-*.tar.*
-        - run: *run-tests
-        - run: *codecov
+        - *run-tests
+        - *codecov
         - store_test_results:
             path: tests
         - store_artifacts:
             path: tests
-
-  - &pip-build
-      docker:
-        - image: python
-      steps:
-        - checkout
-        - restore_cache:
-            key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
-        - run: *set_python_environment
-        - run:
-            name: Install
-            command: bash -ex ci/install-pip.sh
-        - run: *run-tests
-        - run: *codecov
-        - save_cache:
-            key: v1-gwpy-{{ .Environment.CIRCLE_JOB }}
-            paths:
-              - "/usr/local/bin"
-              - "/usr/local/lib"
-        - *store_test_results
-        - *store_test_artifacts
 
   - &conda-build
       docker:
@@ -100,12 +85,12 @@ aliases:
         - *attach_workspace
         - restore_cache:
             key: v6-gwpy-{{ .Environment.CIRCLE_JOB }}
-        - run: *set_python_environment
+        - *set_python_environment
         - run:
             name: Install
             command: bash -ex ci/install-conda.sh
-        - run: *run-tests
-        - run: *codecov
+        - *run-tests
+        - *codecov
         - save_cache:
             key: v6-gwpy-{{ .Environment.CIRCLE_JOB }}
             paths:
@@ -115,29 +100,29 @@ aliases:
 
   - &debian-build
       steps:
-        - run: *configure_debian
+        - *configure_debian
         - checkout
         - *attach_workspace
-        - run: *set_python_environment
+        - *set_python_environment
         - run:
             name: Build
             command: bash -ex ci/install-debian.sh
-        - run: *run-tests
-        - run: *codecov
+        - *run-tests
+        - *codecov
         - *store_test_results
         - *store_test_artifacts
 
   - &centos-build
       steps:
-        - run: *configure_rhel
+        - *configure_rhel
         - checkout
         - *attach_workspace
-        - run: *set_python_environment
+        - *set_python_environment
         - run:
             name: Build
             command: bash -ex ci/install-el.sh
-        - run: *run-tests
-        - run: *codecov
+        - *run-tests
+        - *codecov
         - *store_test_results
         - *store_test_artifacts
         - store_artifacts:
@@ -208,35 +193,6 @@ jobs:
     <<: *python-build
     docker:
       - image: python:3.7
-
-  # -- pip ------------------
-
-  pip:2.7:
-    <<: *pip-build
-    docker:
-      - image: python:2.7
-
-  pip:3.5:
-    <<: *pip-build
-    docker:
-      - image: python:3.5
-
-  pip:3.6:
-    <<: *pip-build
-    docker:
-      - image: python:3.6
-
-  pip:3.7:
-    <<: *pip-build
-    docker:
-      - image: python:3.7
-
-  pip:pre:3.7:
-    <<: *pip-build
-    docker:
-      - image: python:3.7
-    environment:
-      PIP_FLAGS: "--progress-bar off --upgrade --pre"
 
   # -- conda ----------------
 
@@ -323,33 +279,16 @@ workflows:
             tags:
               only: /^v.*/
 
-      # full tests with extended dependencies
-      - pip:2.7:
-          requires:
-            - python:2.7
-      - pip:3.5:
-          requires:
-            - python:3.5
-      - pip:3.6:
-          requires:
-            - python:3.6
-      - pip:3.7:
-          requires:
-            - python:3.7
-      - pip:pre:3.7:
-          requires:
-            - python:3.7
-
       # conda tests
       - conda:2.7:
           requires:
-            - pip:2.7
+            - python:2.7
       - conda:3.6:
           requires:
-            - pip:3.6
+            - python:3.6
       - conda:3.7:
           requires:
-            - pip:3.7
+            - python:3.7
 
       # LDG reference OS tests
       - debian:stretch:2.7:
