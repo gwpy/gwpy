@@ -58,6 +58,12 @@ def tconvert(gpsordate='now'):
     converted from GPS format into a `datetime.datetime`, otherwise
     the input will be converted into `LIGOTimeGPS`.
 
+    .. warning::
+
+       This method cannot convert exact leap seconds to
+       `datetime.datetime`, that object doesn't support it,
+       so you should consider using `astropy.time.Time` directly.
+
     Examples
     --------
     Integers and floats are automatically converted from GPS to
@@ -186,6 +192,14 @@ def from_gps(gps):
     datetime : `datetime.datetime`
         ISO-format datetime equivalent of input GPS time
 
+    Notes
+    -----
+    .. warning::
+
+       This method cannot convert exact leap seconds to
+       `datetime.datetime`, that object doesn't support it,
+       so you should consider using `astropy.time.Time` directly.
+
     Examples
     --------
     >>> from_gps(1167264018)
@@ -198,7 +212,17 @@ def from_gps(gps):
     except (ValueError, TypeError, RuntimeError):
         gps = LIGOTimeGPS(float(gps))
     sec, nano = gps.gpsSeconds, gps.gpsNanoSeconds
-    date = Time(sec, format='gps', scale='utc').datetime
+    try:
+        date = Time(sec, format='gps', scale='utc').datetime
+    except ValueError as exc:
+        if "within a leap second" in str(exc):
+            exc.args = (
+                "cannot represent leap second using datetime.datetime, "
+                "consider using "
+                "astropy.time.Time({}, format=\"gps\", scale=\"utc\") "
+                "directly".format(gps),
+            )
+        raise
     return date + datetime.timedelta(microseconds=nano*1e-3)
 
 

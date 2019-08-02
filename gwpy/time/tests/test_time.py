@@ -113,6 +113,7 @@ def test_to_gps(in_, out):
     pytest.param(GlueGPS(GW150914.gpsSeconds, GW150914.gpsNanoSeconds),
                  GW150914_DT, marks=skip_missing_dependency('glue')),
     ('test', ValueError),
+    (1167264017, ValueError),  # gwpy/gwpy#1021
 ])
 def test_from_gps(in_, out):
     """Test :func:`gwpy.time.from_gps`
