@@ -1411,7 +1411,7 @@ class TimeSeries(TimeSeriesBase):
         phase.override_unit('deg' if deg else 'rad')
         return (mag, phase)
 
-    def taper(self, side='leftright'):
+    def taper(self, side='leftright', duration=None, nsamples=None):
         """Taper the ends of this `TimeSeries` smoothly to zero.
 
         Parameters
@@ -1419,6 +1419,14 @@ class TimeSeries(TimeSeriesBase):
         side : `str`, optional
             the side of the `TimeSeries` to taper, must be one of `'left'`,
             `'right'`, or `'leftright'`
+
+        duration : `float`, optional
+            the duration of time to taper, cannot be specified if `nsamples`
+            is provided as an argument
+
+        nsamples : `int`, optional
+            the number of samples to taper, cannot be specified if `duration`
+            is provided as an argument
 
         Returns
         -------
@@ -1429,6 +1437,9 @@ class TimeSeries(TimeSeriesBase):
         ------
         ValueError
             if `side` is not one of `('left', 'right', 'leftright')`
+
+        ValueError
+            if `duration` and `nsamples` are both provided as arguments
 
         Examples
         --------
@@ -1463,18 +1474,26 @@ class TimeSeries(TimeSeriesBase):
         if side not in ('left', 'right', 'leftright'):
             raise ValueError("side must be one of 'left', 'right', "
                              "or 'leftright'")
+        if duration and nsamples:
+            raise ValueError("only one of 'duration' or 'nsamples' may be "
+                             "provided as arguments")
+        elif duration:
+            nsamples = int(duration * self.sample_rate.to("Hz").value)
         out = self.copy()
+        # if a duration or number of samples is not specified, automatically
         # identify the second stationary point away from each boundary,
         # else default to half the TimeSeries width
         nleft, nright = 0, 0
-        mini, = signal.argrelmin(out.value)
-        maxi, = signal.argrelmax(out.value)
+        if not nsamples:
+            mini, = signal.argrelmin(out.value)
+            maxi, = signal.argrelmax(out.value)
         if 'left' in side:
-            nleft = max(mini[0], maxi[0])
-            nleft = min(nleft, self.size/2)
+            nleft = nsamples if nsamples else max(mini[0], maxi[0])
+            nleft = min(nleft, int(self.size/2))
         if 'right' in side:
-            nright = out.size - min(mini[-1], maxi[-1])
-            nright = min(nright, self.size/2)
+            nright = (nsamples if nsamples else
+                      out.size - min(mini[-1], maxi[-1]))
+            nright = min(nright, int(self.size/2))
         out *= planck(out.size, nleft=nleft, nright=nright)
         return out
 
