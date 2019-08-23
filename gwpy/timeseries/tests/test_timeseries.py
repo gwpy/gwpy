@@ -868,7 +868,9 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_allclose(numpy.angle(het.value), phase, rtol=2e-4)
 
         # test with singlesided=True
-        het = data.heterodyne(phases, stride=stride, exp=True, singlesided=True)
+        het = data.heterodyne(
+            phases, stride=stride, exp=True, singlesided=True
+        )
         assert het.unit == data.unit
         assert het.size == duration // stride
         utils.assert_allclose(numpy.abs(het.value), amp, rtol=1e-4)
