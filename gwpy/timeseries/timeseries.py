@@ -1474,9 +1474,7 @@ class TimeSeries(TimeSeriesBase):
             iend = istart + stridesamp
             idx = numpy.arange(istart, iend)
             mixed = numpy.exp(-1j * phasearray[idx]) * self.value[idx]
-            if singlesided:
-                mixed *= 2
-            out.value[step] = mixed.mean()
+            out.value[step] = 2 * mixed.mean() if singlesided else mixed.mean()
         if exp:
             return out
         mag = out.abs()
