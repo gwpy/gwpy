@@ -1411,47 +1411,43 @@ class TimeSeries(TimeSeriesBase):
         phase.override_unit('deg' if deg else 'rad')
         return (mag, phase)
 
-    def heterodyne(self, phase, stride=1, exp=False, deg=True,
-                   singlesided=False):
+    def heterodyne(self, phase, stride=1, singlesided=False):
         """Compute the average magnitude and phase of this `TimeSeries`
-        once per stride after heterodyning using a given phase series.
-        This is similar to the :meth:`~gwpy.timeseries.TimeSeries.demodulate`
-        method, but can use a varying phase evolution, rather than that from
-        a fixed frequency. Unlike with
-        :meth:`~gwpy.timeseries.TimeSeries.demodulate`, the complex output
-        is by default double-sided, so is not multiplied by 2.
+        once per stride after heterodyning with a given phase series
 
         Parameters
         ----------
         phase : `array_like`
-            a phase array (rads) with which to heterodyne the signal
+            an array of phase measurements (radians) with which to heterodyne
+            the signal
 
         stride : `float`, optional
             stride (seconds) between calculations, defaults to 1 second
 
-        exp : `bool`, optional
-            return the magnitude and phase trends as one `TimeSeries` object
-            representing a complex exponential, default: False
-
-        deg : `bool`, optional
-            if `exp=False`, calculates the phase in degrees
-
         singlesided : `bool`, optional
-            if `singlesided=True` it is equivalent to a single-sided output
-            (i.e., as if the power has not been split between the complex
-            components), which is what is done with
-            :meth:`~gwpy.timeseries.TimeSeries.demodulate`. default: False
+            Boolean switch to return single-sided output (i.e., to multiply by 2
+            so that the signal is distributed across positive frequencies only),
+            default: False
 
         Returns
         -------
-        mag, phase : `TimeSeries`
-            if `exp=False`, returns a pair of `TimeSeries` objects representing
-            magnitude and phase trends with `dt=stride`
-
         out : `TimeSeries`
-            if `exp=True`, returns a single `TimeSeries` with magnitude and
-            phase trends represented as `mag * exp(1j*phase)` with `dt=stride`
+            magnitude and phase trends, represented as
+            `mag * exp(1j*phase)` with `dt=stride`
 
+        Notes
+        -----
+        This is similar to the :meth:`~gwpy.timeseries.TimeSeries.demodulate`
+        method, but is more general in that it accepts a varying phase evolution,
+        rather than a fixed frequency.
+
+        Unlike :meth:`~gwpy.timeseries.TimeSeries.demodulate`, the complex
+        output is double-sided by default, so is not multiplied by 2.
+
+        See also
+        --------
+        TimeSeries.demodulate
+            for a method to heterodyne at a fixed frequency
         """
         try:
             phaselen = len(phase)
@@ -1463,8 +1459,7 @@ class TimeSeries(TimeSeriesBase):
             )
         stridesamp = int(stride * self.sample_rate.value)
         nsteps = int(self.size // stridesamp)
-        # stride through the TimeSeries and mix with a local oscillator,
-        # taking the average over each stride
+        # stride through the TimeSeries and heterodyne
         out = type(self)(numpy.zeros(nsteps, dtype=complex))
         out.__array_finalize__(self)
         out.sample_rate = 1 / float(stride)
@@ -1475,13 +1470,7 @@ class TimeSeries(TimeSeriesBase):
             idx = numpy.arange(istart, iend)
             mixed = numpy.exp(-1j * phasearray[idx]) * self.value[idx]
             out.value[step] = 2 * mixed.mean() if singlesided else mixed.mean()
-        if exp:
-            return out
-        mag = out.abs()
-        phase = type(mag)(numpy.angle(out, deg=deg))
-        phase.__array_finalize__(out)
-        phase.override_unit('deg' if deg else 'rad')
-        return (mag, phase)
+        return out
 
     def taper(self, side='leftright'):
         """Taper the ends of this `TimeSeries` smoothly to zero.

@@ -861,7 +861,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             data.heterodyne(phases[0:len(phases) // 2])
 
         # test with exp=True
-        het = data.heterodyne(phases, stride=stride, exp=True)
+        het = data.heterodyne(phases, stride=stride)
         assert het.unit == data.unit
         assert het.size == duration // stride
         utils.assert_allclose(numpy.abs(het.value), 0.5*amp, rtol=1e-4)
@@ -869,25 +869,22 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # test with singlesided=True
         het = data.heterodyne(
-            phases, stride=stride, exp=True, singlesided=True
+            phases, stride=stride, singlesided=True
         )
         assert het.unit == data.unit
         assert het.size == duration // stride
         utils.assert_allclose(numpy.abs(het.value), amp, rtol=1e-4)
         utils.assert_allclose(numpy.angle(het.value), phase, rtol=2e-4)
 
-        # test with exp=False, deg=True
-        mag, ph = data.heterodyne(phases, stride=stride)
-        assert mag.unit == data.unit
-        assert mag.size == ph.size
-        assert ph.unit == 'deg'
-        utils.assert_allclose(mag.value, 0.5*amp, rtol=1e-4)
-        utils.assert_allclose(ph.value, numpy.rad2deg(phase), rtol=2e-4)
-
-        # test with exp=False, deg=False
-        mag, ph = data.heterodyne(phases, stride=stride, deg=False)
-        assert ph.unit == 'rad'
-        utils.assert_allclose(ph.value, phase, rtol=2e-4)
+        # test against demodulate for a fixed frequency
+        phasesfixed = 2*numpy.pi*(f*t)
+        data = TimeSeries(amp * numpy.cos(phasesfixed + phase),
+                          unit='', times=t)
+        het = data.heterodyne(
+            phases, stride=stride, singlesided=True
+        )
+        demod = data.demodulate(f, stride=stride, exp=True)
+        utils.assert_array_equal(het, demod)
 
     def test_taper(self):
         # create a flat timeseries, then taper it
