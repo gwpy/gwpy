@@ -1425,9 +1425,9 @@ class TimeSeries(TimeSeriesBase):
             stride (seconds) between calculations, defaults to 1 second
 
         singlesided : `bool`, optional
-            Boolean switch to return single-sided output (i.e., to multiply by 2
-            so that the signal is distributed across positive frequencies only),
-            default: False
+            Boolean switch to return single-sided output (i.e., to multiply by
+            2 so that the signal is distributed across positive frequencies
+            only), default: False
 
         Returns
         -------
@@ -1438,8 +1438,8 @@ class TimeSeries(TimeSeriesBase):
         Notes
         -----
         This is similar to the :meth:`~gwpy.timeseries.TimeSeries.demodulate`
-        method, but is more general in that it accepts a varying phase evolution,
-        rather than a fixed frequency.
+        method, but is more general in that it accepts a varying phase
+        evolution, rather than a fixed frequency.
 
         Unlike :meth:`~gwpy.timeseries.TimeSeries.demodulate`, the complex
         output is double-sided by default, so is not multiplied by 2.

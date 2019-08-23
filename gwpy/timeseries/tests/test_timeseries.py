@@ -876,15 +876,15 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_allclose(numpy.abs(het.value), amp, rtol=1e-4)
         utils.assert_allclose(numpy.angle(het.value), phase, rtol=2e-4)
 
-        # test against demodulate for a fixed frequency
+        # test against demodulation for a fixed frequency
         phasesfixed = 2*numpy.pi*(f*t)
         data = TimeSeries(amp * numpy.cos(phasesfixed + phase),
                           unit='', times=t)
         het = data.heterodyne(
-            phases, stride=stride, singlesided=True
+            phasesfixed, stride=stride, singlesided=True
         )
         demod = data.demodulate(f, stride=stride, exp=True)
-        utils.assert_array_equal(het, demod)
+        utils.assert_allclose(het.value, demod.value, rtol=1e-9)
 
     def test_taper(self):
         # create a flat timeseries, then taper it
