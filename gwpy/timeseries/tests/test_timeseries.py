@@ -860,7 +860,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         with pytest.raises(ValueError):
             data.heterodyne(phases[0:len(phases) // 2])
 
-        # test with exp=True
+        # test with default settings
         het = data.heterodyne(phases, stride=stride)
         assert het.unit == data.unit
         assert het.size == duration // stride
