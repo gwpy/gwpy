@@ -1338,7 +1338,7 @@ class TimeSeries(TimeSeriesBase):
 
     def demodulate(self, f, stride=1, exp=False, deg=True):
         """Compute the average magnitude and phase of this `TimeSeries`
-        once per stride at a given frequency.
+        once per stride at a given frequency
 
         Parameters
         ----------
@@ -1388,21 +1388,17 @@ class TimeSeries(TimeSeriesBase):
         >>> ax = plot.gca()
         >>> ax.set_ylabel('Strain Amplitude at 331.3 Hz')
         >>> plot.show()
+
+        See also
+        --------
+        TimeSeries.heterodyne
+            for the underlying heterodyne detection method
         """
-        stridesamp = int(stride * self.sample_rate.value)
-        nsteps = int(self.size // stridesamp)
-        # stride through the TimeSeries and mix with a local oscillator,
-        # taking the average over each stride
-        out = type(self)(numpy.zeros(nsteps, dtype=complex))
-        out.__array_finalize__(self)
-        out.sample_rate = 1 / float(stride)
-        w = 2 * numpy.pi * f * self.dt.decompose().value
-        for step in range(nsteps):
-            istart = int(stridesamp * step)
-            iend = istart + stridesamp
-            idx = numpy.arange(istart, iend)
-            mixed = 2 * numpy.exp(-1j * w * idx) * self.value[idx]
-            out.value[step] = mixed.mean()
+        # stride through the TimeSeries and heterodyne at a single frequency
+        phase = (2 * numpy.pi * f *
+                 self.dt.decompose().value *
+                 numpy.arange(0, self.size))
+        out = self.heterodyne(phase, stride=stride, singlesided=True)
         if exp:
             return out
         mag = out.abs()
