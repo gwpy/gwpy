@@ -1443,16 +1443,18 @@ class TimeSeries(TimeSeriesBase):
         Examples
         --------
         Heterodyning can be useful in examining quasi-monochromatic signals
-        with a known phase evolution. An example of such signals are the
+        with a known phase evolution. Examples of such signals are the
         `continuous-wave hardware injections
-        <https://www.gw-openscience.org/s6hwcw/>`_ in many of the observing
-        runs, which are designed to mimic the expected signals from rapidly
-        rotationing neutron stars. In these cases the signals frequency
-        slowly decreases, while the signal is also Doppler modulated due to
-        the Earth's rotational and orbital motion. For instance, we can
-        download some data from GWOSC from the sixth science run of the
+        <https://www.gw-openscience.org/s6hwcw/>`_ in many of the LIGO
+        observing runs, which are designed to mimic the expected signals
+        from rapidly rotating neutron stars. For these sources the signal's
+        frequency slowly decreases and is also Doppler modulated due to
+        the Earth's rotational and orbital motion.
+
+        We can download some data from GWOSC from the sixth science run of the
         initial LIGO detectors, and heterodyne it using the phase
-        evolution for the hardware injection pulsar number 3 (see the table
+        evolution for the hardware injection pulsar signal "number 3" (see the
+        table
         `here <https://www.gw-openscience.org/static/injections/cw/S6_injections/pulsar_injections.html>`_).  # noqa
 
         >>> from gwpy.timeseries import TimeSeries
@@ -1513,9 +1515,9 @@ class TimeSeries(TimeSeriesBase):
         >>>     lalpulsar.TIMECORRECTION_TDB
         >>> )
 
-        Now bandpass the data around the signal frequency, and then heterodyne
-        the `TimeSeries` using this phase evolution with a stride of one
-        minute:
+        We now bandpass the data around the signal frequency, and then
+        heterodyne the `TimeSeries` using this phase evolution with a stride of
+        one minute:
 
         >>> import numpy
         >>> filtdata = data.bandpass(par["F0"] - 0.5, par["F0"] + 0.5)
