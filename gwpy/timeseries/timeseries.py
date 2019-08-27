@@ -1451,93 +1451,52 @@ class TimeSeries(TimeSeriesBase):
         frequency slowly decreases and is also Doppler modulated due to
         the Earth's rotational and orbital motion.
 
-        We can download some data from GWOSC from the sixth science run of the
-        initial LIGO detectors, and heterodyne it using the phase
-        evolution for the hardware injection pulsar signal "number 3" (see the
-        table
-        `here <https://www.gw-openscience.org/static/injections/cw/S6_injections/pulsar_injections.html>`_).  # noqa
+        We can show an example of demodulation by creating a simulated signal
+        with a phase evolution described by a second order Taylor expansion in
+        phase, i.e., it is defined by a frequency and first frequency
+        derivative. We can download some LIGO Livingston data from GWOSC and
+        inject such a signal and attempt to recover the amplitude.
 
-        >>> from gwpy.timeseries import TimeSeries
-        >>> data = TimeSeries.fetch_open_data("H1", 943213436, 943213436+3600)
+        >>> from gwpy.timeseries import TimeSeries, TimeSeriesDict
+        >>> data = TimeSeries.fetch_open_data('L1', 1131350417, 1131357617)
 
-        We now need to generate the expected phase evolution:
+        We now need to set the signal parameters, generate the expected
+        phase evolution, and create the signal:
 
-        >>> import lal
-        >>> import lalpulsar
-        >>> from lalpulsar.PulsarParametersWrapper import PulsarParametersPy
-        >>> # set the hardware injection parameters
-        >>> par = PulsarParametersPy()
-        >>> par["RAJ"] = 3.113188712  # source right ascension (rads)
-        >>> par["DECJ"] = -0.583578803  # source declination (rads)
-        >>> # source frequency (Hz) and frequency derivative (Hz/s)
-        >>> par["F"] = [108.8571594, -1.46e-17]
-        >>> par["PEPOCH"] = 751680013.0  # frequency epoch (GPS seconds)
-        >>> # get the LAL-style detector
-        >>> det = lalpulsar.GetSiteInfo("H1")
-        >>> # convert data times to GPS times vector
-        >>> gpstimes = lalpulsar.CreateTimestampVector(len(data))
-        >>> for i, time in enumerate(data.times.value):
-        >>>     gpstimes.data[i] = lal.LIGOTimeGPS(time)
-        >>> # get the solar system ephemeris files
-        >>> from astropy.utils.data import download_file
-        >>> DOWNLOAD_URL = ("https://git.ligo.org/lscsoft/lalsuite/raw/master/"
-        >>>                 "lalpulsar/src/{}")
-        >>> earthfile = "earth00-40-DE200.dat.gz"
-        >>> sunfile = "sun00-40-DE200.dat.gz"
-        >>> efile = download_file(DOWNLOAD_URL.format(earthfile), cache=True)
-        >>> sfile = download_file(DOWNLOAD_URL.format(sunfile), cache=True)
-        >>> edat = lalpulsar.InitBarycenter(efile, sfile)
-        >>> timefile = "tdb_2000-2040.dat.gz"
-        >>> tfile = download_file(DOWNLOAD_URL.format(timefile), cache=True)
-        >>> tdat = lalpulsar.InitTimeCorrections(tfile)
-        >>> # get the time delay between signal arrival at the detector and
-        >>> # solar system barycentre
-        >>> ssbdelay = lalpulsar.HeterodynedPulsarGetSSBDelay(
-        >>>     par.PulsarParameters()
-        >>>     gpstimes,
-        >>>     det,
-        >>>     edat,
-        >>>     tdat,
-        >>>     lalpulsar.TIMECORRECTION_TDB
-        >>> )
-        >>> # get the phase evolution of the signal (in cycles)
-        >>> phase = lalpulsar.HeterodynedPulsarPhaseDifference(
-        >>>     par.PulsarParameters(),
-        >>>     gpstimes,
-        >>>     1.0,  # multiplicative factor for the frequencies
-        >>>     ssbdelay,
-        >>>     0,  # do not update the solar system barycentre delays
-        >>>     None,  # source not in binary system
-        >>>     0,  # do not update binary system barycentre delays
-        >>>     det,
-        >>>     edat,
-        >>>     tdat,
-        >>>     lalpulsar.TIMECORRECTION_TDB
-        >>> )
+        >>> f0 = 123.456789  # signal frequency (Hz)
+        >>> fdot = -9.87654321e-7  # signal frequency derivative (Hz/s) 
+        >>> fpeoch = 1131350417  # phase epoch
+        >>> amp = 1.5e-22  # signal amplitude
+        >>> phase0 = 0.4  # signal phase at the phase epoch
+        >>> import numpy
+        >>> times = data.times.value - fepoch
+        >>> phase = 2 * numpy.pi * (f0 * times + 0.5 * fdot * times**2)
+        >>> signal = TimeSeries(amp * numpy.cos(phase + phase0),
+        >>>                     sample_rate=data.sample_rate, t0=data.t0)
+        >>> data = data.inject(signal)
 
         We now bandpass the data around the signal frequency, and then
         heterodyne the `TimeSeries` using this phase evolution with a stride of
         one minute:
 
-        >>> import numpy
-        >>> filtdata = data.bandpass(par["F0"] - 0.5, par["F0"] + 0.5)
-        >>> het = filtdata.heterodyne(2.0 * numpy.pi * phase.data, stride=60)
+        >>> filtdata = data.bandpass(f0 - 0.5, f0 + 0.5)
+        >>> het = filtdata.heterodyne(phase, stride=60, singlesided=True)
 
-        We can then plot the real and imaginary parts of the heterodyned data
-        to visualise the amplitude variations of the injected signal buried in
-        the noise (we cut off the first two points to discard the filter
-        response):
+        Let's also demodulate the signal at a fixed freqeuncy for comparison
 
-        >>> from gwpy.plot import Plot
-        >>> plot = Plot(het[2:].real)
+        >>> demod = filtdata.demodulate(f0, stride=60, exp=True)
+
+        We can then plot signal amplitude over time (cropping the first two
+        minutes to remove the filter response):
+
+        >>> combined = TimeSeriesDict()
+        >>> combined['Heterodyned'] = het.crop(het.x0.value + 180).abs()
+        >>> combined['Demodulated'] = demod.crop(demod.x0.value + 180).abs()
+        >>> plot = combined.plot()
         >>> ax = plot.gca()
-        >>> ax.plot(het[2:].imag, 'r')
-        >>> ax.set_ylabel("Complex Strain Amplitude at 108.9 Hz")
+        >>> ax.legend()
+        >>> ax.set_ylabel("Signal Strain Amplitude")
         >>> plot.show()
-
-        If repeating this over data for a day or so, the amplitude modulation
-        of the simulated signal due to the detector's antenna pattern should
-        become visible.
 
         See also
         --------
