@@ -1396,7 +1396,7 @@ class TimeSeries(TimeSeriesBase):
         """
         # stride through the TimeSeries and heterodyne at a single frequency
         phase = (2 * numpy.pi * f *
-                 self.dt.astype('float32').decompose().value *
+                 self.dt.decompose().value *
                  numpy.arange(0, self.size))
         out = self.heterodyne(phase, stride=stride, singlesided=True)
         if exp:
