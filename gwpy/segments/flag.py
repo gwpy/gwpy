@@ -494,7 +494,7 @@ class DataQualityFlag(object):
         for start, end in qsegs:
             # handle infinities
             if float(end) == +inf:
-                end = to_gps('now').gpsSeconds
+                end = int(to_gps('now'))
 
             # query
             try:
