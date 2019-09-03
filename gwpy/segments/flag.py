@@ -1152,7 +1152,7 @@ class DataQualityDict(OrderedDict):
                 vers = dqflag.version
             for gpsstart, gpsend in qsegs:
                 if float(gpsend) == +inf:
-                    gpsend = to_gps('now').gpsSeconds
+                    gpsend = int(to_gps('now'))
                 gpsstart = float(gpsstart)
                 if not gpsstart.is_integer():
                     raise ValueError("Segment database queries can only"
