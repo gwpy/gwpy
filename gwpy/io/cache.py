@@ -279,7 +279,13 @@ def is_cache(cache):
     if isinstance(cache, string_types + FILE_LIKE):
         try:
             return bool(len(read_cache(cache)))
-        except (TypeError, ValueError, UnicodeDecodeError, ImportError):
+        except (
+            TypeError,
+            ValueError,
+            UnicodeDecodeError,
+            ImportError,
+            RuntimeError,
+        ):
             # failed to parse cache
             return False
     if HAS_CACHE and isinstance(cache, Cache):
