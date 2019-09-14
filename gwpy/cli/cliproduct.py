@@ -185,6 +185,10 @@ class CliProduct(object):
         #: channels to load
         self.chan_list = unique(c for clist in args.chan for c in clist)
 
+        # use reduced as an alias for rds in channel name
+        for idx in range(len(self.chan_list)):
+            self.chan_list[idx] = self.chan_list[idx].replace('reduced', 'rds')
+
         # total number of datasets that _should_ be acquired
         self.n_datasets = len(self.chan_list) * len(self.start_list)
 
@@ -417,6 +421,7 @@ class CliProduct(object):
 
         if args.out is None:
             args.out = "gwpy.png"
+
 
     def _validate_arguments(self):
         """Sanity check arguments and raise errors if required
@@ -740,7 +745,9 @@ class CliProduct(object):
             if args.std_seg:
                 segments = std_segments
             if args.seg:
-                segments += args.seg
+                for seg in args.seg:
+                    # NB: args.seg may be list of lists
+                    segments += seg
 
             chan = args.chan[0][0]
             m = re.match('^([A-Za-z][0-9]):', chan)
