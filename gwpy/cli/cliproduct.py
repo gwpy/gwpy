@@ -422,7 +422,6 @@ class CliProduct(object):
         if args.out is None:
             args.out = "gwpy.png"
 
-
     def _validate_arguments(self):
         """Sanity check arguments and raise errors if required
         """
@@ -734,12 +733,12 @@ class CliProduct(object):
     def add_segs(self, args):
         """ If requested add DQ segments"""
         std_segments = \
-        [
-            '{ifo}:DMT-GRD_ISC_LOCK_NOMINAL:1',
-            '{ifo}:DMT-DC_READOUT_LOCKED:1',
-            '{ifo}:DMT-CALIBRATED:1',
-            '{ifo}:DMT-ANALYSIS_READY:1'
-        ]
+            [
+                '{ifo}:DMT-GRD_ISC_LOCK_NOMINAL:1',
+                '{ifo}:DMT-DC_READOUT_LOCKED:1',
+                '{ifo}:DMT-CALIBRATED:1',
+                '{ifo}:DMT-ANALYSIS_READY:1'
+            ]
         segments = list()
         if hasattr(args, 'std_seg'):
             if args.std_seg:
@@ -769,7 +768,7 @@ class CliProduct(object):
                     seg_data = DataQualityFlag. \
                         query_dqsegdb(seg_name, start, end,
                                       url='https://segments.ligo.org')
-                except:
+                except:             # noqa: E722
                     seg_data = DataQualityFlag. \
                         query_dqsegdb(seg_name, start, end,
                                       url='https://segments-backup.ligo.org/')
