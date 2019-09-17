@@ -199,7 +199,12 @@ class QTiling(QObject):
             if result.peak['energy'] > peak:
                 out = result
                 peak = out.peak['energy']
-        return (out, nind * weight / nplanes)
+        try:
+            return (out, nind * weight / nplanes)
+        except UnboundLocalError:
+            raise ValueError(
+                'No Q-planes were found, likely because the input timeseries '
+                'record is too short, please load more data and try again')
 
 
 class QPlane(QBase):
