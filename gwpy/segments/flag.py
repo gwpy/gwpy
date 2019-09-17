@@ -494,7 +494,11 @@ class DataQualityFlag(object):
         for start, end in qsegs:
             # handle infinities
             if float(end) == +inf:
+<<<<<<< HEAD
                 end = to_gps('now').gpsSeconds
+=======
+                end = int(to_gps('now'))
+>>>>>>> 4987e35509a2121b3dca6886ccbfe63bb58cf41a
 
             # query
             try:
@@ -1152,7 +1156,11 @@ class DataQualityDict(OrderedDict):
                 vers = dqflag.version
             for gpsstart, gpsend in qsegs:
                 if float(gpsend) == +inf:
+<<<<<<< HEAD
                     gpsend = to_gps('now').gpsSeconds
+=======
+                    gpsend = int(to_gps('now'))
+>>>>>>> 4987e35509a2121b3dca6886ccbfe63bb58cf41a
                 gpsstart = float(gpsstart)
                 if not gpsstart.is_integer():
                     raise ValueError("Segment database queries can only"
