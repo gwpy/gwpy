@@ -842,6 +842,40 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert ph.unit == 'rad'
         utils.assert_allclose(ph.value, phase, rtol=1e-5)
 
+    def test_heterodyne(self):
+        # create a timeseries that is simply one loud sinusoidal oscillation,
+        # with a frequency and frequency derivative, then heterodyne using the
+        # phase evolution to recover the amplitude and phase
+        amp, phase, f, fdot = 1., numpy.pi/4, 30, 1e-4
+        duration, sample_rate, stride = 600, 4096, 60
+        t = numpy.linspace(0, duration, duration*sample_rate)
+        phases = 2*numpy.pi*(f*t + 0.5*fdot*t**2)
+        data = TimeSeries(amp * numpy.cos(phases + phase),
+                          unit='', times=t)
+
+        # test exceptions
+        with pytest.raises(TypeError):
+            data.heterodyne(1.0)
+
+        with pytest.raises(ValueError):
+            data.heterodyne(phases[0:len(phases) // 2])
+
+        # test with default settings
+        het = data.heterodyne(phases, stride=stride)
+        assert het.unit == data.unit
+        assert het.size == duration // stride
+        utils.assert_allclose(numpy.abs(het.value), 0.5*amp, rtol=1e-4)
+        utils.assert_allclose(numpy.angle(het.value), phase, rtol=2e-4)
+
+        # test with singlesided=True
+        het = data.heterodyne(
+            phases, stride=stride, singlesided=True
+        )
+        assert het.unit == data.unit
+        assert het.size == duration // stride
+        utils.assert_allclose(numpy.abs(het.value), amp, rtol=1e-4)
+        utils.assert_allclose(numpy.angle(het.value), phase, rtol=2e-4)
+
     def test_taper(self):
         # create a flat timeseries, then taper it
         t = numpy.linspace(0, 1, 2048)

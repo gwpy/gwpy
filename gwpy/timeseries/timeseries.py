@@ -1338,7 +1338,7 @@ class TimeSeries(TimeSeriesBase):
 
     def demodulate(self, f, stride=1, exp=False, deg=True):
         """Compute the average magnitude and phase of this `TimeSeries`
-        once per stride at a given frequency.
+        once per stride at a given frequency
 
         Parameters
         ----------
@@ -1388,21 +1388,17 @@ class TimeSeries(TimeSeriesBase):
         >>> ax = plot.gca()
         >>> ax.set_ylabel('Strain Amplitude at 331.3 Hz')
         >>> plot.show()
+
+        See also
+        --------
+        TimeSeries.heterodyne
+            for the underlying heterodyne detection method
         """
-        stridesamp = int(stride * self.sample_rate.value)
-        nsteps = int(self.size // stridesamp)
-        # stride through the TimeSeries and mix with a local oscillator,
-        # taking the average over each stride
-        out = type(self)(numpy.zeros(nsteps, dtype=complex))
-        out.__array_finalize__(self)
-        out.sample_rate = 1 / float(stride)
-        w = 2 * numpy.pi * f * self.dt.decompose().value
-        for step in range(nsteps):
-            istart = int(stridesamp * step)
-            iend = istart + stridesamp
-            idx = numpy.arange(istart, iend)
-            mixed = 2 * numpy.exp(-1j * w * idx) * self.value[idx]
-            out.value[step] = mixed.mean()
+        # stride through the TimeSeries and heterodyne at a single frequency
+        phase = (2 * numpy.pi * f *
+                 self.dt.decompose().value *
+                 numpy.arange(0, self.size))
+        out = self.heterodyne(phase, stride=stride, singlesided=True)
         if exp:
             return out
         mag = out.abs()
@@ -1410,6 +1406,114 @@ class TimeSeries(TimeSeriesBase):
         phase.__array_finalize__(out)
         phase.override_unit('deg' if deg else 'rad')
         return (mag, phase)
+
+    def heterodyne(self, phase, stride=1, singlesided=False):
+        """Compute the average magnitude and phase of this `TimeSeries`
+        once per stride after heterodyning with a given phase series
+
+        Parameters
+        ----------
+        phase : `array_like`
+            an array of phase measurements (radians) with which to heterodyne
+            the signal
+
+        stride : `float`, optional
+            stride (seconds) between calculations, defaults to 1 second
+
+        singlesided : `bool`, optional
+            Boolean switch to return single-sided output (i.e., to multiply by
+            2 so that the signal is distributed across positive frequencies
+            only), default: False
+
+        Returns
+        -------
+        out : `TimeSeries`
+            magnitude and phase trends, represented as
+            `mag * exp(1j*phase)` with `dt=stride`
+
+        Notes
+        -----
+        This is similar to the :meth:`~gwpy.timeseries.TimeSeries.demodulate`
+        method, but is more general in that it accepts a varying phase
+        evolution, rather than a fixed frequency.
+
+        Unlike :meth:`~gwpy.timeseries.TimeSeries.demodulate`, the complex
+        output is double-sided by default, so is not multiplied by 2.
+
+        Examples
+        --------
+        Heterodyning can be useful in analysing quasi-monochromatic signals
+        with a known phase evolution, such as continuous-wave signals
+        from rapidly rotating neutron stars. These sources radiate at a
+        frequency that slowly decreases over time, and is Doppler modulated
+        due to the Earth's rotational and orbital motion.
+
+        To see an example of heterodyning in action, we can simulate a signal
+        whose phase evolution is described by the frequency and its first
+        derivative with respect to time. We can download some O1 era
+        LIGO-Livingston data from GWOSC, inject the simulated signal, and
+        recover its amplitude.
+
+        >>> from gwpy.timeseries import TimeSeries
+        >>> data = TimeSeries.fetch_open_data('L1', 1131350417, 1131354017)
+
+        We now need to set the signal parameters, generate the expected
+        phase evolution, and create the signal:
+
+        >>> import numpy
+        >>> f0 = 123.456789  # signal frequency (Hz)
+        >>> fdot = -9.87654321e-7  # signal frequency derivative (Hz/s)
+        >>> fpeoch = 1131350417  # phase epoch
+        >>> amp = 1.5e-22  # signal amplitude
+        >>> phase0 = 0.4  # signal phase at the phase epoch
+        >>> times = data.times.value - fepoch
+        >>> phase = 2 * numpy.pi * (f0 * times + 0.5 * fdot * times**2)
+        >>> signal = TimeSeries(amp * numpy.cos(phase + phase0),
+        >>>                     sample_rate=data.sample_rate, t0=data.t0)
+        >>> data = data.inject(signal)
+
+        To recover the signal, we can bandpass the injected data around the
+        signal frequency, then heterodyne using our phase model with a stride
+        of 60 seconds:
+
+        >>> filtdata = data.bandpass(f0 - 0.5, f0 + 0.5)
+        >>> het = filtdata.heterodyne(phase, stride=60, singlesided=True)
+
+        We can then plot signal amplitude over time (cropping the first two
+        minutes to remove the filter response):
+
+        >>> plot = het.crop(het.x0.value + 180).abs().plot()
+        >>> ax = plot.gca()
+        >>> ax.set_ylabel("Strain amplitude")
+        >>> plot.show()
+
+        See also
+        --------
+        TimeSeries.demodulate
+            for a method to heterodyne at a fixed frequency
+        """
+        try:
+            phaselen = len(phase)
+        except Exception as exc:
+            raise TypeError("Phase is not array_like: {}".format(exc))
+        if phaselen != len(self):
+            raise ValueError(
+                "Phase array must be the same length as the TimeSeries"
+            )
+        stridesamp = int(stride * self.sample_rate.value)
+        nsteps = int(self.size // stridesamp)
+        # stride through the TimeSeries and heterodyne
+        out = type(self)(numpy.zeros(nsteps, dtype=complex))
+        out.__array_finalize__(self)
+        out.sample_rate = 1 / float(stride)
+        phasearray = numpy.asarray(phase)  # make sure phase is a numpy array
+        for step in range(nsteps):
+            istart = int(stridesamp * step)
+            iend = istart + stridesamp
+            idx = numpy.arange(istart, iend)
+            mixed = numpy.exp(-1j * phasearray[idx]) * self.value[idx]
+            out.value[step] = 2 * mixed.mean() if singlesided else mixed.mean()
+        return out
 
     def taper(self, side='leftright'):
         """Taper the ends of this `TimeSeries` smoothly to zero.
