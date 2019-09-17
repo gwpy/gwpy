@@ -77,7 +77,7 @@ if not PEP_508 and (
 
 # test dependencies
 tests_require = [
-    'pytest>=3.3.0',
+    'pytest>=3.3.0,<5.0.0',
     'freezegun>=0.2.3',
     'sqlparse>=0.2.0',
     'beautifulsoup4',
