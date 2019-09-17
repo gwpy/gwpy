@@ -1052,9 +1052,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert qspecgram.q == 5.65685424949238
         nptest.assert_almost_equal(qspecgram.value.max(), 155.93774, decimal=5)
 
-    def test_q_transform_nan(self, losc):
-        data = TimeSeries([numpy.nan for y in losc.value])
-        data.__array_finalize__(losc)
+    def test_q_transform_nan(self):
+        data = TimeSeries(numpy.empty(256*10) * numpy.nan, sample_rate=256)
         with pytest.raises(ValueError) as exc:
             data.q_transform()
         assert str(exc.value) == 'Input signal contains non-numerical values'
