@@ -48,6 +48,7 @@ from ..plot.gps import (GPS_SCALES, GPSTransform)
 from ..plot.tex import label_to_latex
 from ..segments import DataQualityFlag
 
+
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
 BAD_UNITS = {'*', 'Counts.', }
@@ -752,6 +753,7 @@ class CliProduct(object):
             ifo = m.group(1) if m else '?:'
 
             start = None
+            end = 0
             for ts in self.timeseries:
                 if start:
                     start = min(ts.t0, start)
@@ -946,7 +948,7 @@ class TimeDomainProduct(CliProduct):
             args.xmin = min(starts)
         if args.epoch is None:
             args.epoch = args.xmin
-        elif (args.epoch < 1e8):
+        elif args.epoch < 1e8:
             args.epoch += min(starts)
 
         if args.xmax is None:
