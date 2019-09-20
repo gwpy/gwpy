@@ -46,7 +46,7 @@ from ..time import to_gps
 from ..timeseries import TimeSeriesDict
 from ..plot.gps import (GPS_SCALES, GPSTransform)
 from ..plot.tex import label_to_latex
-from ..segments import DataQualityFlag   # noqa: E402
+from ..segments import DataQualityFlag
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
@@ -732,8 +732,7 @@ class CliProduct(object):
 
     def add_segs(self, args):
         """ If requested add DQ segments"""
-        std_segments = \
-            [
+        std_segments = [
                 '{ifo}:DMT-GRD_ISC_LOCK_NOMINAL:1',
                 '{ifo}:DMT-DC_READOUT_LOCKED:1',
                 '{ifo}:DMT-CALIBRATED:1',
@@ -750,9 +749,8 @@ class CliProduct(object):
 
             chan = args.chan[0][0]
             m = re.match('^([A-Za-z][0-9]):', chan)
-            ifo = '?:'
-            if m:
-                ifo = m.group(1)
+            ifo = m.group(1) if m else '?:'
+
             start = None
             for ts in self.timeseries:
                 if start:
