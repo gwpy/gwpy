@@ -189,6 +189,8 @@ class QTiling(QObject):
         QPlane.transform
             compute the Q-transform over a single time-frequency plane
         """
+        if not numpy.isfinite(fseries).all():
+            raise ValueError('Input signal contains non-numerical values')
         weight = 1 + numpy.log10(self.qrange[1]/self.qrange[0]) / numpy.sqrt(2)
         nind, nplanes, peak, result = (0, 0, 0, None)
         # identify the plane with the loudest tile
