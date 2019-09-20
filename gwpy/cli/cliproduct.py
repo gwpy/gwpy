@@ -731,7 +731,8 @@ class CliProduct(object):
             self.plot_num += 1
 
     def add_segs(self, args):
-        """ If requested add DQ segments"""
+        """If requested add DQ segments
+        """
         std_segments = \
             [
                 '{ifo}:DMT-GRD_ISC_LOCK_NOMINAL:1',
