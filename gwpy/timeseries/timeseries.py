@@ -1438,9 +1438,6 @@ class TimeSeries(TimeSeriesBase):
         ValueError
             if `side` is not one of `('left', 'right', 'leftright')`
 
-        ValueError
-            if `duration` and `nsamples` are both provided as arguments
-
         Examples
         --------
         To see the effect of the Planck-taper window, we can taper a
