@@ -1421,12 +1421,12 @@ class TimeSeries(TimeSeriesBase):
             `'right'`, or `'leftright'`
 
         duration : `float`, optional
-            the duration of time to taper, cannot be specified if `nsamples`
-            is provided as an argument
+            the duration of time to taper, will override `nsamples`
+            if both are provided as arguments
 
         nsamples : `int`, optional
-            the number of samples to taper, cannot be specified if `duration`
-            is provided as an argument
+            the number of samples to taper, will be overridden by `duration`
+            if both are provided as arguments
 
         Returns
         -------
@@ -1474,10 +1474,7 @@ class TimeSeries(TimeSeriesBase):
         if side not in ('left', 'right', 'leftright'):
             raise ValueError("side must be one of 'left', 'right', "
                              "or 'leftright'")
-        if duration and nsamples:
-            raise ValueError("only one of 'duration' or 'nsamples' may be "
-                             "provided as arguments")
-        elif duration:
+        if duration:
             nsamples = int(duration * self.sample_rate.to("Hz").value)
         out = self.copy()
         # if a duration or number of samples is not specified, automatically
@@ -1488,11 +1485,10 @@ class TimeSeries(TimeSeriesBase):
             mini, = signal.argrelmin(out.value)
             maxi, = signal.argrelmax(out.value)
         if 'left' in side:
-            nleft = nsamples if nsamples else max(mini[0], maxi[0])
+            nleft = nsamples or max(mini[0], maxi[0])
             nleft = min(nleft, int(self.size/2))
         if 'right' in side:
-            nright = (nsamples if nsamples else
-                      out.size - min(mini[-1], maxi[-1]))
+            nright = nsamples or out.size - min(mini[-1], maxi[-1])
             nright = min(nright, int(self.size/2))
         out *= planck(out.size, nleft=nleft, nright=nright)
         return out
