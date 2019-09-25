@@ -53,6 +53,12 @@ def test_far():
     assert FAR < 1 / (1.37e10 * 365 * 86400)
 
 
+def test_monotonicity():
+    # test that Q-plane frequencies are monotonic increasing
+    freq = QGRAM.plane.frequencies
+    assert all(x < y for x, y in zip(freq, freq[1:]))
+
+
 def test_q_scan():
     # scan with the TimeSeries method
     ts_qspecgram = DATA.q_transform(whiten=False)
