@@ -890,6 +890,22 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert tapered.size == data.size
         utils.assert_allclose(data.value, numpy.cos(10*numpy.pi*t))
 
+        # run the same tests for a user-specified taper duration
+        dtapered = data.taper(duration=0.1)
+        assert dtapered[0].value == 0
+        assert dtapered[-1].value == 0
+        assert dtapered.unit == data.unit
+        assert dtapered.size == data.size
+        utils.assert_allclose(data.value, numpy.cos(10*numpy.pi*t))
+
+        # run the same tests for a user-specified number of samples to taper
+        stapered = data.taper(nsamples=10)
+        assert stapered[0].value == 0
+        assert stapered[-1].value == 0
+        assert stapered.unit == data.unit
+        assert stapered.size == data.size
+        utils.assert_allclose(data.value, numpy.cos(10*numpy.pi*t))
+
     def test_inject(self):
         # create a timeseries out of an array of zeros
         duration, sample_rate = 1, 4096

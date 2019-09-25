@@ -1515,7 +1515,7 @@ class TimeSeries(TimeSeriesBase):
             out.value[step] = 2 * mixed.mean() if singlesided else mixed.mean()
         return out
 
-    def taper(self, side='leftright'):
+    def taper(self, side='leftright', duration=None, nsamples=None):
         """Taper the ends of this `TimeSeries` smoothly to zero.
 
         Parameters
@@ -1523,6 +1523,14 @@ class TimeSeries(TimeSeriesBase):
         side : `str`, optional
             the side of the `TimeSeries` to taper, must be one of `'left'`,
             `'right'`, or `'leftright'`
+
+        duration : `float`, optional
+            the duration of time to taper, will override `nsamples`
+            if both are provided as arguments
+
+        nsamples : `int`, optional
+            the number of samples to taper, will be overridden by `duration`
+            if both are provided as arguments
 
         Returns
         -------
@@ -1567,18 +1575,22 @@ class TimeSeries(TimeSeriesBase):
         if side not in ('left', 'right', 'leftright'):
             raise ValueError("side must be one of 'left', 'right', "
                              "or 'leftright'")
+        if duration:
+            nsamples = int(duration * self.sample_rate.to("Hz").value)
         out = self.copy()
+        # if a duration or number of samples is not specified, automatically
         # identify the second stationary point away from each boundary,
         # else default to half the TimeSeries width
         nleft, nright = 0, 0
-        mini, = signal.argrelmin(out.value)
-        maxi, = signal.argrelmax(out.value)
+        if not nsamples:
+            mini, = signal.argrelmin(out.value)
+            maxi, = signal.argrelmax(out.value)
         if 'left' in side:
-            nleft = max(mini[0], maxi[0])
-            nleft = min(nleft, self.size/2)
+            nleft = nsamples or max(mini[0], maxi[0])
+            nleft = min(nleft, int(self.size/2))
         if 'right' in side:
-            nright = out.size - min(mini[-1], maxi[-1])
-            nright = min(nright, self.size/2)
+            nright = nsamples or out.size - min(mini[-1], maxi[-1])
+            nright = min(nright, int(self.size/2))
         out *= planck(out.size, nleft=nleft, nright=nright)
         return out
 
