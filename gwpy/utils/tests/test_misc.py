@@ -47,6 +47,11 @@ def test_null_context():
         print('this should work')
 
 
+def test_unique():
+    a = [1, 2, 4, 3, 5, 4, 5, 3]
+    assert utils_misc.unique(a) == [1, 2, 4, 3, 5]
+
+
 @pytest.mark.parametrize('func, value, out', [
     (str, None, None),
     (str, 1, '1'),

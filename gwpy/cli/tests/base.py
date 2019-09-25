@@ -74,11 +74,6 @@ def test_to_float():
     assert to_s('4ms') == 0.004
 
 
-def test_unique():
-    a = [1, 2, 4, 3, 5, 4, 5, 3]
-    assert cliproduct.unique(a) == [1, 2, 4, 3, 5]
-
-
 # -- class tests --------------------------------------------------------------
 
 class _TestCliProduct(object):

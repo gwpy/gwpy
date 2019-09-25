@@ -34,6 +34,7 @@ from six.moves import xrange
 import numpy
 from numpy import fft as npfft
 
+from ..utils import unique
 from ..segments import Segment
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -242,7 +243,6 @@ class QPlane(QBase):
 
         Yields a `QTile` at each frequency
         """
-        from ..cli.cliproduct import unique
         # for each frequency, yield a QTile
         for freq in unique(self._iter_frequencies()):
             yield QTile(self.q, freq, self.duration, self.sampling,
@@ -269,7 +269,6 @@ class QPlane(QBase):
 
         :type: `numpy.ndarray`
         """
-        from ..cli.cliproduct import unique
         return numpy.array(list(unique(self._iter_frequencies())))
 
     @property
