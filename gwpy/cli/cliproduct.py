@@ -26,7 +26,6 @@ import re
 import time
 import warnings
 import sys
-from collections import OrderedDict
 from functools import wraps
 
 from six import add_metaclass
