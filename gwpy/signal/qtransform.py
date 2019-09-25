@@ -27,7 +27,6 @@ from __future__ import division
 
 import warnings
 from math import (log, ceil, pi, isinf, exp)
-from more_itertools import unique_everseen
 
 from six import string_types
 from six.moves import xrange
@@ -243,8 +242,9 @@ class QPlane(QBase):
 
         Yields a `QTile` at each frequency
         """
+        from ..cli.cliproduct import unique
         # for each frequency, yield a QTile
-        for freq in unique_everseen(self._iter_frequencies()):
+        for freq in unique(self._iter_frequencies()):
             yield QTile(self.q, freq, self.duration, self.sampling,
                         mismatch=self.mismatch)
 
@@ -269,7 +269,8 @@ class QPlane(QBase):
 
         :type: `numpy.ndarray`
         """
-        return numpy.array(list(unique_everseen(self._iter_frequencies())))
+        from ..cli.cliproduct import unique
+        return numpy.array(list(unique(self._iter_frequencies())))
 
     @property
     def farray(self):
