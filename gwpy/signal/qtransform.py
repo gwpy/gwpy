@@ -269,7 +269,7 @@ class QPlane(QBase):
 
         :type: `numpy.ndarray`
         """
-        return numpy.array(list(unique(self._iter_frequencies())))
+        return numpy.array(unique(self._iter_frequencies()))
 
     @property
     def farray(self):
