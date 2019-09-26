@@ -54,7 +54,7 @@ def test_far():
 
 
 def test_monotonicity():
-    # test that Q-plane frequencies are monotonic increasing
+    # test that Q-plane frequencies are strictly increasing
     freq = QGRAM.plane.frequencies
     assert all(x < y for x, y in zip(freq, freq[1:]))
 
