@@ -34,7 +34,6 @@ from six.moves import xrange
 import numpy
 from numpy import fft as npfft
 
-from ..utils import unique
 from ..segments import Segment
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -244,7 +243,7 @@ class QPlane(QBase):
         Yields a `QTile` at each frequency
         """
         # for each frequency, yield a QTile
-        for freq in unique(self._iter_frequencies()):
+        for freq in self._iter_frequencies():
             yield QTile(self.q, freq, self.duration, self.sampling,
                         mismatch=self.mismatch)
 
@@ -258,10 +257,15 @@ class QPlane(QBase):
         fstep = fcum_mismatch / nfreq
         fstepmin = 1 / self.duration
         # for each frequency, yield a QTile
+        last = None
         for i in xrange(nfreq):
-            yield (minf *
-                   exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep) //
-                   fstepmin * fstepmin)
+            this = (
+                minf * exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep) //
+                fstepmin * fstepmin
+            )
+            if this != last:  # yield only unique elements
+                yield this
+            last = this
 
     @property
     def frequencies(self):
@@ -269,7 +273,7 @@ class QPlane(QBase):
 
         :type: `numpy.ndarray`
         """
-        return numpy.array(unique(self._iter_frequencies()))
+        return numpy.array(list(self._iter_frequencies()))
 
     @property
     def farray(self):

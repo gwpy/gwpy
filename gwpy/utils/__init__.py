@@ -27,7 +27,6 @@ from .misc import (
     gprint,
     if_not_none,
     null_context,
-    unique,
 )
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

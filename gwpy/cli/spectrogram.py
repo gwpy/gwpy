@@ -20,9 +20,7 @@
 """
 
 from numpy import percentile
-
-from .cliproduct import (FFTMixin, TimeDomainProduct, ImageProduct)
-from ..utils import unique
+from .cliproduct import (FFTMixin, TimeDomainProduct, ImageProduct, unique)
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
