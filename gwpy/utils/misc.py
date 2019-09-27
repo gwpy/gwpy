@@ -52,7 +52,7 @@ def if_not_none(func, value):
 
     Examples
     --------
-    >>> from gwpy.utils import if_not_none
+    >>> from gwpy.utils.misc import if_not_none
     >>> if_not_none(int, '1')
     1
     >>> if_not_none(int, None)
@@ -89,7 +89,7 @@ def round_to_power(x, base=2, which=None):
 
     Examples
     --------
-    >>> from gwpy.utils import round_to_power
+    >>> from gwpy.utils.misc import round_to_power
     >>> round_to_power(2)
     2
     >>> round_to_power(9, base=10)
@@ -115,7 +115,7 @@ def unique(list_):
 
     Examples
     --------
-    >>> from gwpy.utils import unique
+    >>> from gwpy.utils.misc import unique
     >>> unique(['b', 'c', 'a', 'a', 'd', 'e', 'd', 'a'])
     ['b', 'c', 'a', 'd', 'e']
     """
