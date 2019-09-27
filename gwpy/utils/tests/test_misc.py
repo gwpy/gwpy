@@ -47,6 +47,25 @@ def test_null_context():
         print('this should work')
 
 
+def test_round_to_power():
+    """Test for :func:`gwpy.utils.misc.round_to_power`
+    """
+    # test basic features
+    assert utils_misc.round_to_power(2) == 2
+    assert utils_misc.round_to_power(9, base=10) == 10
+    assert utils_misc.round_to_power(5, which='lower') == 4
+    assert utils_misc.round_to_power(5, which='upper') == 8
+    # test output
+    base = 10.
+    rounded = utils_misc.round_to_power(9, base=10.)
+    assert base == rounded
+    assert type(base) == type(rounded)
+    with pytest.raises(ValueError) as exc:
+        utils_misc.round_to_power(7, which='')
+    assert str(exc.value) == (
+        "'which' argument must be one of 'lower', 'upper', or None")
+
+
 def test_unique():
     """Test for :func:`gwpy.utils.misc.unique`
     """

@@ -22,6 +22,7 @@
 from __future__ import print_function
 
 import sys
+import math
 from collections import OrderedDict
 from contextlib import contextmanager
 
@@ -51,7 +52,7 @@ def if_not_none(func, value):
 
     Examples
     --------
-    >>> from gwpy.utils.misc import if_not_none
+    >>> from gwpy.utils import if_not_none
     >>> if_not_none(int, '1')
     1
     >>> if_not_none(int, None)
@@ -62,12 +63,59 @@ def if_not_none(func, value):
     return func(value)
 
 
+def round_to_power(x, base=2, which=None):
+    """Round a positive `float` to the nearest integer power of `base`
+
+    Parameters
+    ----------
+    x : scalar
+        value to round, must be strictly positive
+
+    base : scalar, optional
+        base to whose power `x` will be rounded, default: 2
+
+    which : `str` or `NoneType`, optional
+        which value to round to, must be one of `'lower'`, `'upper'`, or
+        `None` to round to whichever is nearest, default: `None`
+
+    Returns
+    -------
+    rounded : scalar
+        the rounded value
+
+    Notes
+    -----
+    The object returned will be of the same type as `base`.
+
+    Examples
+    --------
+    >>> from gwpy.utils import round_to_power
+    >>> round_to_power(2)
+    2
+    >>> round_to_power(9, base=10)
+    10
+    >>> round_to_power(5, which='lower')
+    4
+    """
+    if which == 'lower':
+        selector = math.floor
+    elif which == 'upper':
+        selector = math.ceil
+    elif which is not None:
+        raise ValueError("'which' argument must be one of 'lower', "
+                         "'upper', or None")
+    else:
+        selector = round
+    return type(base)(base ** selector(math.log(x, base)))
+
+
 def unique(list_):
     """Return a version of the input list with unique elements,
     preserving order
 
     Examples
     --------
+    >>> from gwpy.utils import unique
     >>> unique(['b', 'c', 'a', 'a', 'd', 'e', 'd', 'a'])
     ['b', 'c', 'a', 'd', 'e']
     """
