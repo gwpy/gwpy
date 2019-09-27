@@ -22,7 +22,8 @@
 from astropy.time import Time
 import warnings
 
-from .cliproduct import (FrequencyDomainProduct, FFTMixin, unique)
+from .cliproduct import (FrequencyDomainProduct, FFTMixin)
+from ..utils import unique
 from ..plot import Plot
 from ..plot.tex import label_to_latex
 

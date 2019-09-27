@@ -22,7 +22,9 @@
 from __future__ import print_function
 
 import sys
+from collections import OrderedDict
 from contextlib import contextmanager
+
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -58,3 +60,15 @@ def if_not_none(func, value):
     if value is None:
         return
     return func(value)
+
+
+def unique(list_):
+    """Return a version of the input list with unique elements,
+    preserving order
+
+    Examples
+    --------
+    >>> unique(['b', 'c', 'a', 'a', 'd', 'e', 'd', 'a'])
+    ['b', 'c', 'a', 'd', 'e']
+    """
+    return list(OrderedDict.fromkeys(list_).keys())

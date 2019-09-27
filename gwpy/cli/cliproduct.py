@@ -26,7 +26,6 @@ import re
 import time
 import warnings
 import sys
-from collections import OrderedDict
 from functools import wraps
 
 from six import add_metaclass
@@ -40,6 +39,7 @@ except ImportError:
 from astropy.time import Time
 from astropy.units import Quantity
 
+from ..utils import unique
 from ..signal import filter_design
 from ..signal.window import recommended_overlap
 from ..time import to_gps
@@ -89,17 +89,6 @@ def to_float(unit):
 
 to_hz = to_float('Hz')  # pylint: disable=invalid-name
 to_s = to_float('s')  # pylint: disable=invalid-name
-
-
-def unique(list_):
-    """Returns a unique version of the input list preserving order
-
-    Examples
-    --------
-    >>> unique(['b', 'c', 'a', 'a', 'd', 'e', 'd', 'a'])
-    ['b', 'c', 'a', 'd', 'e']
-    """
-    return list(OrderedDict.fromkeys(list_).keys())
 
 
 # -- base product class -------------------------------------------------------
