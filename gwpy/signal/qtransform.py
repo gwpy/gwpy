@@ -257,10 +257,15 @@ class QPlane(QBase):
         fstep = fcum_mismatch / nfreq
         fstepmin = 1 / self.duration
         # for each frequency, yield a QTile
+        last = None
         for i in xrange(nfreq):
-            yield (minf *
-                   exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep) //
-                   fstepmin * fstepmin)
+            this = (
+                minf * exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep) //
+                fstepmin * fstepmin
+            )
+            if this != last:  # yield only unique elements
+                yield this
+            last = this
 
     @property
     def frequencies(self):
