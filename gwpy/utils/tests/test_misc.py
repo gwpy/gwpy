@@ -57,7 +57,7 @@ def test_round_to_power():
     assert utils_misc.round_to_power(5, which='upper') == 8
     # test output
     base = 10.
-    rounded = utils_misc.round_to_power(9, base=10.)
+    rounded = utils_misc.round_to_power(9, base=base)
     assert base == rounded
     assert type(base) == type(rounded)
     with pytest.raises(ValueError) as exc:
