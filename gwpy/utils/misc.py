@@ -64,7 +64,7 @@ def if_not_none(func, value):
 
 
 def round_to_power(x, base=2, which=None):
-    """Round a positive `float` to the nearest integer power of `base`
+    """Round a positive value to the nearest integer power of `base`
 
     Parameters
     ----------
