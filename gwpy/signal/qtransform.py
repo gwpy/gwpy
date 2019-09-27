@@ -289,7 +289,7 @@ class QPlane(QBase):
     def whitening_duration(self):
         """The recommended data duration required for whitening
         """
-        return round_to_power(log(self.q / (2 * self.frange[0]), 2))
+        return round_to_power(self.q / (2 * self.frange[0]))
 
     def transform(self, fseries, norm=True, epoch=None, search=None):
         """Calculate the energy `TimeSeries` for the given `fseries`
