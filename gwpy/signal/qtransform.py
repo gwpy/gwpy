@@ -34,6 +34,7 @@ from six.moves import xrange
 import numpy
 from numpy import fft as npfft
 
+from ..utils import round_to_power
 from ..segments import Segment
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -288,7 +289,7 @@ class QPlane(QBase):
     def whitening_duration(self):
         """The recommended data duration required for whitening
         """
-        return 2 ** (round(log(self.q / (2 * self.frange[0]), 2)))
+        return round_to_power(log(self.q / (2 * self.frange[0]), 2))
 
     def transform(self, fseries, norm=True, epoch=None, search=None):
         """Calculate the energy `TimeSeries` for the given `fseries`
@@ -354,7 +355,7 @@ class QTile(QBase):
         :type: `int`
         """
         tcum_mismatch = self.duration * 2 * pi * self.frequency / self.q
-        return next_power_of_two(tcum_mismatch / self.deltam)
+        return round_to_power(tcum_mismatch / self.deltam, which='upper')
 
     @property
     def windowsize(self):
@@ -632,12 +633,6 @@ class QGram(object):
 
 
 # -- utilities ----------------------------------------------------------------
-
-def next_power_of_two(x):
-    """Return the smallest power of two greater than or equal to `x`
-    """
-    return 2**(ceil(log(x, 2)))
-
 
 def q_scan(data, mismatch=DEFAULT_MISMATCH, qrange=DEFAULT_QRANGE,
            frange=DEFAULT_FRANGE, duration=None, sampling=None,
