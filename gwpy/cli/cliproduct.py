@@ -732,7 +732,8 @@ class CliProduct(object):
             self.plot_num += 1
 
     def add_segs(self, args):
-        """ If requested add DQ segments"""
+        """ If requested add DQ segments
+        """
         std_segments = [
                 '{ifo}:DMT-GRD_ISC_LOCK_NOMINAL:1',
                 '{ifo}:DMT-DC_READOUT_LOCKED:1',
@@ -764,14 +765,9 @@ class CliProduct(object):
 
             for segment in segments:
                 seg_name = segment.replace('{ifo}', ifo)
-                try:
-                    seg_data = DataQualityFlag. \
-                        query_dqsegdb(seg_name, start, end,
-                                      url='https://segments.ligo.org')
-                except:             # noqa: E722
-                    seg_data = DataQualityFlag. \
-                        query_dqsegdb(seg_name, start, end,
-                                      url='https://segments-backup.ligo.org/')
+                seg_data = DataQualityFlag.query_dqsegdb(
+                        seg_name, start, end)
+
                 self.plot.add_segments_bar(seg_data, label=seg_name)
 
 
