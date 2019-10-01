@@ -1283,7 +1283,13 @@ class TimeSeriesBaseDict(OrderedDict):
                     exc.args = "Cannot parse list of IFOs from channel names",
                     raise
             # find frames
-            cache = io_datafind.find_urls(observatory, frametype, start, end)
+            cache = io_datafind.find_urls(
+                observatory,
+                frametype,
+                start,
+                end,
+                on_gaps="error" if pad is None else "warn",
+            )
             if not cache:
                 raise RuntimeError("No %s-%s frame files found for [%d, %d)"
                                    % (observatory, frametype, start, end))
