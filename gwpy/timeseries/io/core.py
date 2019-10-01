@@ -49,6 +49,7 @@ def read(cls, source, *args, **kwargs):
     # read
     return io_read_multi(joiner, cls, source, *args, **kwargs)
 
+
 def _join_factory(cls, gap, pad, start, end):
     """Build a joiner for the given cls, and the given padding options
     """
