@@ -300,6 +300,27 @@ class TestTimeSeries(_TestTimeSeriesBase):
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['unit', 'name', 'channel', 'x0']})
 
+    def test_read_pad(self):
+        a = self.TEST_CLASS.read(
+            utils.TEST_HDF5_FILE,
+            "H1:LDAS-STRAIN",
+        )
+        b = self.TEST_CLASS.read(
+            utils.TEST_HDF5_FILE,
+            "H1:LDAS-STRAIN",
+            pad=0.,
+            start=a.span[0]-1,
+            end=a.span[1]+1,
+        )
+        utils.assert_quantity_sub_equal(
+            a.pad(
+                (int(a.sample_rate.value), int(a.sample_rate.value)),
+                mode="constant",
+                constant_values=(0,),
+            ),
+            b,
+        )
+
     @utils.skip_missing_dependency('nds2')
     def test_from_nds2_buffer_dynamic_scaled(self):
         # build fake buffer for LIGO channel
