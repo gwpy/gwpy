@@ -289,7 +289,8 @@ class QPlane(QBase):
     def whitening_duration(self):
         """The recommended data duration required for whitening
         """
-        return round_to_power(self.q / (2 * self.frange[0]))
+        return round_to_power(self.q / (2 * self.frange[0]),
+                              base=2, which=None)
 
     def transform(self, fseries, norm=True, epoch=None, search=None):
         """Calculate the energy `TimeSeries` for the given `fseries`
@@ -355,7 +356,8 @@ class QTile(QBase):
         :type: `int`
         """
         tcum_mismatch = self.duration * 2 * pi * self.frequency / self.q
-        return round_to_power(tcum_mismatch / self.deltam, which='upper')
+        return round_to_power(tcum_mismatch / self.deltam,
+                              base=2, which='upper')
 
     @property
     def windowsize(self):

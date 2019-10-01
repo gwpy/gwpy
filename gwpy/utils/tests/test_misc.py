@@ -60,6 +60,11 @@ def test_round_to_power():
     rounded = utils_misc.round_to_power(9, base=base)
     assert base == rounded
     assert type(base) == type(rounded)
+
+
+def test_round_to_power_error():
+    """Test for an errored use case of :func:`gwpy.utils.misc.round_to_power`
+    """
     with pytest.raises(ValueError) as exc:
         utils_misc.round_to_power(7, which='')
     assert str(exc.value) == (
