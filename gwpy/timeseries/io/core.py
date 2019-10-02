@@ -90,13 +90,11 @@ def _pad_series(ts, pad, start=None, end=None):
     """
     span = ts.span
     if start is None:
-        pada = 0
-    else:
-        pada = max(int((span[0] - start) * ts.sample_rate.value), 0)
+        start = span[0]
     if end is None:
-        padb = 0
-    else:
-        padb = max(int((end - span[1]) * ts.sample_rate.value), 0)
+        end = span[1]
+    pada = max(int((span[0] - start) * ts.sample_rate.value), 0)
+    padb = max(int((end - span[1]) * ts.sample_rate.value), 0)
     if pada or padb:
         return ts.pad((pada, padb), mode='constant', constant_values=(pad,))
     return ts
