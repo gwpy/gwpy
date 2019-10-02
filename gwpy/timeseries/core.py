@@ -523,17 +523,13 @@ class TimeSeriesBase(Series):
             name of frametype in which this channel is stored, will search
             for containing frame types if necessary
 
-        pad : `float`, optional
-            value with which to fill gaps in the source data,
-            by default gaps will result in a `ValueError`.
-
-        scaled : `bool`, optional
-            apply slope and bias calibration to ADC data, for non-ADC data
-            this option has no effect.
-
         nproc : `int`, optional, default: `1`
             number of parallel processes to use, serial process by
             default.
+
+        pad : `float`, optional
+            value with which to fill gaps in the source data,
+            by default gaps will result in a `ValueError`.
 
         dtype : `numpy.dtype`, `str`, `type`, or `dict`
             numeric data type for returned data, e.g. `numpy.float`, or
@@ -1217,8 +1213,8 @@ class TimeSeriesBaseDict(OrderedDict):
             regular expression to use for frametype matching
 
         pad : `float`, optional
-            value with which to fill gaps in the source data, defaults to
-            'don't fill gaps'
+            value with which to fill gaps in the source data,
+            by default gaps will result in a `ValueError`.
 
         scaled : `bool`, optional
             apply slope and bias calibration to ADC data, for non-ADC data
@@ -1287,7 +1283,13 @@ class TimeSeriesBaseDict(OrderedDict):
                     exc.args = "Cannot parse list of IFOs from channel names",
                     raise
             # find frames
-            cache = io_datafind.find_urls(observatory, frametype, start, end)
+            cache = io_datafind.find_urls(
+                observatory,
+                frametype,
+                start,
+                end,
+                on_gaps="error" if pad is None else "warn",
+            )
             if not cache:
                 raise RuntimeError("No %s-%s frame files found for [%d, %d)"
                                    % (observatory, frametype, start, end))
@@ -1327,8 +1329,8 @@ class TimeSeriesBaseDict(OrderedDict):
             will search for all required frame types
 
         pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
+            value with which to fill gaps in the source data,
+            by default gaps will result in a `ValueError`.
 
         scaled : `bool`, optional
             apply slope and bias calibration to ADC data, for non-ADC data
@@ -1593,8 +1595,9 @@ class TimeSeriesBaseList(list):
 
         Parameters
         ----------
-        pad : `float`, optional, default: `0.0`
-            value with which to pad gaps
+        pad : `float`, optional
+            value with which to fill gaps in the source data,
+            by default gaps will result in a `ValueError`.
 
         gap : `str`, optional, default: `'raise'`
             what to do if there are gaps in the data, one of

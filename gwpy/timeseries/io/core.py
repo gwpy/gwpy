@@ -39,13 +39,18 @@ def read(cls, source, *args, **kwargs):
     # get join arguments
     pad = kwargs.pop('pad', None)
     gap = kwargs.pop('gap', 'raise' if pad is None else 'pad')
-    joiner = _join_factory(cls, gap, pad)
-
+    joiner = _join_factory(
+        cls,
+        gap,
+        pad,
+        kwargs.get("start", None),
+        kwargs.get("end", None),
+    )
     # read
     return io_read_multi(joiner, cls, source, *args, **kwargs)
 
 
-def _join_factory(cls, gap, pad):
+def _join_factory(cls, gap, pad, start, end):
     """Build a joiner for the given cls, and the given padding options
     """
     if issubclass(cls, dict):
@@ -56,11 +61,40 @@ def _join_factory(cls, gap, pad):
                 tsd = data.pop(0)
                 out.append(tsd, gap=gap, pad=pad)
                 del tsd
+            for key in out:
+                out[key] = _pad_series(
+                    out[key],
+                    pad,
+                    start,
+                    end,
+                )
             return out
     else:
         from .. import TimeSeriesBaseList
 
         def _join(arrays):
             list_ = TimeSeriesBaseList(*arrays)
-            return list_.join(pad=pad, gap=gap)
+            return _pad_series(
+                list_.join(pad=pad, gap=gap),
+                pad,
+                start,
+                end,
+            )
     return _join
+
+
+def _pad_series(ts, pad, start=None, end=None):
+    """Pad a timeseries to match the specified [start, end) limits
+
+    To cover a gap in data returned from a data source
+    """
+    span = ts.span
+    if start is None:
+        start = span[0]
+    if end is None:
+        end = span[1]
+    pada = max(int((span[0] - start) * ts.sample_rate.value), 0)
+    padb = max(int((end - span[1]) * ts.sample_rate.value), 0)
+    if pada or padb:
+        return ts.pad((pada, padb), mode='constant', constant_values=(pad,))
+    return ts

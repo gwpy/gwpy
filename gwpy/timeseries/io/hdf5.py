@@ -41,6 +41,10 @@ def read_hdf5_timeseries(h5f, path=None, start=None, end=None, **kwargs):
     kwargs.setdefault('array_type', TimeSeries)
     series = read_hdf5_array(h5f, path=path, **kwargs)
     # crop if needed
+    if start is not None:
+        start = max(start, series.span[0])
+    if end is not None:
+        end = min(end, series.span[1])
     if start is not None or end is not None:
         return series.crop(start, end)
     return series
