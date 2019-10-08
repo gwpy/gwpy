@@ -735,11 +735,11 @@ class CliProduct(object):
         """ If requested add DQ segments
         """
         std_segments = [
-                '{ifo}:DMT-GRD_ISC_LOCK_NOMINAL:1',
-                '{ifo}:DMT-DC_READOUT_LOCKED:1',
-                '{ifo}:DMT-CALIBRATED:1',
-                '{ifo}:DMT-ANALYSIS_READY:1'
-            ]
+            '{ifo}:DMT-GRD_ISC_LOCK_NOMINAL:1',
+            '{ifo}:DMT-DC_READOUT_LOCKED:1',
+            '{ifo}:DMT-CALIBRATED:1',
+            '{ifo}:DMT-ANALYSIS_READY:1'
+        ]
         segments = list()
         if hasattr(args, 'std_seg'):
             if args.std_seg:
