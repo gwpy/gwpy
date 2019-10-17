@@ -189,6 +189,11 @@ jobs:
     docker:
       - image: python:3.7
 
+  python:3.8:
+    <<: *python-build
+    docker:
+      - image: python:3.8
+
   # -- conda ----------------
 
   conda:3.6:
@@ -234,7 +239,9 @@ workflows:
       - python:3.7:
           requires:
             - sdist
-
+      - python:3.8:
+          requires:
+            - sdist
       # conda tests
       - conda:3.6:
           requires:
