@@ -46,6 +46,8 @@ from ..time import to_gps
 from ..timeseries import TimeSeriesDict
 from ..plot.gps import (GPS_SCALES, GPSTransform)
 from ..plot.tex import label_to_latex
+from ..segments import DataQualityFlag
+
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
@@ -172,6 +174,10 @@ class CliProduct(object):
 
         #: channels to load
         self.chan_list = unique(c for clist in args.chan for c in clist)
+
+        # use reduced as an alias for rds in channel name
+        for idx in range(len(self.chan_list)):
+            self.chan_list[idx] = self.chan_list[idx].replace('reduced', 'rds')
 
         # total number of datasets that _should_ be acquired
         self.n_datasets = len(self.chan_list) * len(self.start_list)
@@ -699,6 +705,7 @@ class CliProduct(object):
             self._make_plot()
             if self.plot:
                 self.set_plot_properties()
+                self.add_segs(self.args)
                 if self.args.interactive:
                     self.log(3, 'Interactive manipulation of '
                                 'image should be available.')
@@ -712,6 +719,45 @@ class CliProduct(object):
                 self.got_error = True
                 show_error = False
             self.plot_num += 1
+
+    def add_segs(self, args):
+        """ If requested add DQ segments
+        """
+        std_segments = [
+            '{ifo}:DMT-GRD_ISC_LOCK_NOMINAL:1',
+            '{ifo}:DMT-DC_READOUT_LOCKED:1',
+            '{ifo}:DMT-CALIBRATED:1',
+            '{ifo}:DMT-ANALYSIS_READY:1'
+        ]
+        segments = list()
+        if hasattr(args, 'std_seg'):
+            if args.std_seg:
+                segments = std_segments
+            if args.seg:
+                for seg in args.seg:
+                    # NB: args.seg may be list of lists
+                    segments += seg
+
+            chan = args.chan[0][0]
+            m = re.match('^([A-Za-z][0-9]):', chan)
+            ifo = m.group(1) if m else '?:'
+
+            start = None
+            end = 0
+            for ts in self.timeseries:
+                if start:
+                    start = min(ts.t0, start)
+                    end = max(ts.t0+ts.duration, end)
+                else:
+                    start = ts.t0
+                    end = start + ts.duration
+
+            for segment in segments:
+                seg_name = segment.replace('{ifo}', ifo)
+                seg_data = DataQualityFlag.query_dqsegdb(
+                        seg_name, start, end)
+
+                self.plot.add_segments_bar(seg_data, label=seg_name)
 
 
 # -- extensions ---------------------------------------------------------------
@@ -872,6 +918,11 @@ class TimeDomainProduct(CliProduct):
         group.add_argument('--epoch', type=to_gps,
                            help='center X axis on this GPS time, may be'
                                 'absolute date/time or delta')
+
+        group.add_argument('--std-seg', action='store_true',
+                           help='add DQ segment describing IFO state')
+        group.add_argument('--seg', type=str, nargs='+', action='append',
+                           help='specify one or more DQ segment names')
         return group
 
     def _finalize_arguments(self, args):
@@ -882,7 +933,7 @@ class TimeDomainProduct(CliProduct):
             args.xmin = min(starts)
         if args.epoch is None:
             args.epoch = args.xmin
-        elif (args.epoch < 1e8):
+        elif args.epoch < 1e8:
             args.epoch += min(starts)
 
         if args.xmax is None:
