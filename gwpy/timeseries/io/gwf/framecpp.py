@@ -443,7 +443,10 @@ def read_frvect(vect, epoch, start, end, name=None, series_class=TimeSeries):
 
 # -- write --------------------------------------------------------------------
 
-def write(tsdict, outfile, start=None, end=None, name='gwpy', run=0,
+def write(tsdict, outfile,
+          start=None, end=None,
+          type=None,
+          name='gwpy', run=0,
           compression='GZIP', compression_level=None):
     """Write data to a GWF file using the frameCPP API
 
@@ -460,6 +463,10 @@ def write(tsdict, outfile, start=None, end=None, name='gwpy', run=0,
 
     end : `float`, optional
         the GPS end time of the file
+
+    type : `str`, optional
+        the type of the channel, one of 'adc', 'proc', 'sim', default
+        is 'proc' unless stored in the channel structure
 
     name : `str`, optional
         the name of each frame
@@ -504,11 +511,11 @@ def write(tsdict, outfile, start=None, end=None, name='gwpy', run=0,
 
     # append channels
     for i, key in enumerate(tsdict):
-        try:
-            # pylint: disable=protected-access
-            ctype = tsdict[key].channel._ctype.lower() or 'proc'
-        except AttributeError:
-            ctype = 'proc'
+        ctype = (
+            type or
+            getattr(tsdict[key].channel, "_ctype", "proc").lower() or
+            "proc"
+        )
         if ctype == 'adc':
             kw = {"channelid": i}
         else:
