@@ -19,12 +19,7 @@
 """Read events from SNAX
 """
 
-import re
 import os
-
-import numpy
-
-import h5py
 
 from astropy.io.misc.hdf5 import read_table_hdf5
 from astropy.table import vstack
