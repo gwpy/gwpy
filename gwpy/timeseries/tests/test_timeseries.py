@@ -269,7 +269,15 @@ class TestTimeSeries(_TestTimeSeriesBase):
         with utils.TemporaryFilename(suffix=".gwf") as tmp:
             losc.write(tmp, type=ctype, format=gwfformat)
             assert get_channel_type(losc.name, tmp) == expected_ctype
-            new = type(losc).read(tmp, losc.name, format=gwfformat)
+            try:
+                new = type(losc).read(tmp, losc.name, format=gwfformat)
+            except OverflowError:
+                if format.lower() == "framecpp" and ctype.lower() == "sim":
+                    pytest.xfail(
+                        "reading Sim data with "
+                        "python-ldas-tools-framecpp < 2.6.9 is broken"
+                    )
+                raise
         # epoch seems to mismatch at O(1e-12), which is unfortunate
         utils.assert_quantity_sub_equal(
             losc,
