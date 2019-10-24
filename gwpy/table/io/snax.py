@@ -28,12 +28,15 @@ from ...io.hdf5 import with_read_hdf5
 from ...io.registry import register_reader
 from .. import EventTable
 from ..filter import filter_table
+from .utils import (read_with_columns, read_with_selection)
 
 __author__ = 'Patrick Godwin <patrick.godwin@ligo.org>'
 
 
+@read_with_columns
+@read_with_selection
 @with_read_hdf5
-def table_from_file(source, channel, columns=None, selection=None):
+def table_from_file(source, channel):
     """Read an `EventTable` from a SNAX HDF5 file
 
     Parameters
@@ -44,34 +47,15 @@ def table_from_file(source, channel, columns=None, selection=None):
     channel : `str`
         the channel to read data from
 
-    columns : `list` of `str`, optional
-        the list of column names to read
-
-    selection : `str`, or `list` of `str`, optional
-        one or more column filters with which to downselect the
-        returned table rows as they as read, e.g. ``'snr > 5'``;
-        multiple selections should be connected by ' && ', or given as
-        a `list`, e.g. ``'snr > 5 && frequency < 1000'`` or
-        ``['snr > 5', 'frequency < 1000']``
-
     Returns
     -------
     table : `~gwpy.table.EventTable`
     """
-
-    # concatenate all datasets with a given channel
-    datasets = source[channel].keys()
-    tables = [read_table_hdf5(source, path=os.path.join(channel, dataset))
-              for dataset in datasets]
-    table = vstack(tables)
-
-    # apply selection and column filters
-    if selection:
-        table = filter_table(table, selection)
-    if columns:
-        table = table[columns]
-
-    return EventTable(data=table)
+    return vstack(
+        list(map(read_table_hdf5, source[channel].values())),
+        join_type="exact",
+        metadata_conflicts="error",
+    )
 
 
 # register for unified I/O
