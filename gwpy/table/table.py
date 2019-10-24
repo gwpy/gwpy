@@ -726,7 +726,8 @@ class EventTable(Table):
             name of the column to maximize over in each time window
 
         window : `float`
-            time window to use when clustering data points
+            time window to use when clustering data points, will raise
+            ValueError if `window > 0` is not satisfied
 
         Returns
         -------
@@ -741,8 +742,10 @@ class EventTable(Table):
 
         >>> table.cluster(timecolumn='end_time', clusterparam='snr',
                           window=0.1)
-
         """
+        if window <= 0.0:
+            raise ValueError('Window must be a positive value')
+
         # Generate time and clusterparam vectors that are time-ordered
         timeidx = numpy.argsort(self.get_column(timecolumn))
         times = self.get_column(timecolumn)[timeidx]

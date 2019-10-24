@@ -32,7 +32,7 @@ import pytest
 
 import sqlparse
 
-from numpy import (random, isclose, dtype, asarray)
+from numpy import (random, isclose, dtype, asarray, all)
 from numpy.testing import assert_array_equal
 from numpy.ma.core import MaskedConstant
 
@@ -515,8 +515,19 @@ class TestEventTable(TestTable):
         t2 = t.cluster(timecolumn='time', clusterparam='amplitude', window=0.6)
         assert len(t2) == 3
         assert len(t) == 7
-        assert numpy.all(t2.get_column('amplitude') == [11, 10, 9])
-        assert numpy.all(t2.get_column('time') == [0.0, 2.0, 4.0])
+        assert all(t2.get_column('amplitude') == [11, 10, 9])
+        assert all(t2.get_column('time') == [0.0, 2.0, 4.0])
+
+        # check that a large cluster window returns at least one data point
+        t3 = t.cluster(timecolumn='time', clusterparam='amplitude', window=10)
+        assert len(t3) == 1
+        assert all(t3.get_column('amplitude') == [11])
+        assert all(t3.get_column('time') == [0.0])
+
+        # check that a non-positive window throws an appropriate ValueError
+        with pytest.raises(ValueError) as exc:
+            t.cluster(timecolumn='time', clusterparam='amplitude', window=0)
+        assert str(exc.value) == 'Window must be a positive value'
 
     # -- test I/O -------------------------------
 
