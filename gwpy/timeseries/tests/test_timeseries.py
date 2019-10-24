@@ -259,11 +259,26 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @SKIP_FRAMECPP
     @SKIP_LALFRAME
     @pytest.mark.parametrize("ctype", ("adc", "proc", "sim", None))
-    @pytest.mark.parametrize("format", GWF_APIS)
-    def test_write_gwf_type(self, losc, format, ctype):
+    @pytest.mark.parametrize("format_", GWF_APIS)
+    def test_write_gwf_type(self, losc, format_, ctype):
         from ...io.gwf import get_channel_type
 
-        gwfformat = "gwf.{}".format(format)
+        # on debian, python=3, python-ldas-tools-framecpp < 2.6.9,
+        # the simdata test causes a segfault
+        import platform
+        import sys
+        if (
+            format_ == "framecpp" and
+            ctype == "sim" and
+            sys.version_info[0] >= 3 and
+            "debian" in platform.platform()
+        ):
+            pytest.xfail(
+                "reading Sim data with "
+                "python-ldas-tools-framecpp < 2.6.9 is broken"
+            )
+
+        gwfformat = "gwf.{}".format(format_)
         expected_ctype = ctype if ctype else "proc"
 
         with utils.TemporaryFilename(suffix=".gwf") as tmp:
@@ -272,7 +287,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
             try:
                 new = type(losc).read(tmp, losc.name, format=gwfformat)
             except OverflowError:
-                if format.lower() == "framecpp" and ctype.lower() == "sim":
+                # python-ldas-tools-framecpp < 2.6.9
+                if format_ == "framecpp" and ctype == "sim":
                     pytest.xfail(
                         "reading Sim data with "
                         "python-ldas-tools-framecpp < 2.6.9 is broken"
