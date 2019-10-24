@@ -755,12 +755,12 @@ class EventTable(Table):
         # and divide the resulting array into clusters of adjacent points
         clusterpoints = numpy.where(numpy.diff(times) <= window)[0]
         sublists = numpy.split(clusterpoints,
-                            numpy.where(numpy.diff(clusterpoints) > 1)[0]+1)
+                               numpy.where(numpy.diff(clusterpoints) > 1)[0]+1)
 
         # Add end-points to each cluster and find the index of the maximum
         # point in each list
         padded_sublists = [numpy.append(s, numpy.array([s[-1]+1]))
-                          for s in sublists]
+                           for s in sublists]
         maxidx = [s[numpy.argmax(param[s])] for s in padded_sublists]
 
         # Construct a mask that removes all points within clusters and

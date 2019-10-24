@@ -509,9 +509,9 @@ class TestEventTable(TestTable):
         # check that the central data points are all clustered away,
         # the original table is unchanged, and all points return their
         # intended values
-        t = self.TABLE(data=[[11,1,1,10,1,1,9],
-                            [0.0,1.9,1.95,2.0,2.05,2.1,4.0]],
-                       names=['amplitude','time'])
+        t = self.TABLE(data=[[11, 1, 1, 10, 1, 1, 9],
+                       [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
+                       names=['amplitude', 'time'])
         t2 = t.cluster(timecolumn='time', clusterparam='amplitude', window=0.6)
         assert len(t2) == 3
         assert len(t) == 7
