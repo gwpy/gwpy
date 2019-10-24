@@ -45,6 +45,7 @@ from ...testing.compat import mock
 from ...time import LIGOTimeGPS
 from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
+from ..io.gwf import APIS as GWF_APIS
 from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
@@ -254,6 +255,27 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 scaled=True,
             )
         utils.assert_quantity_sub_equal(data, data2)
+
+    @SKIP_FRAMECPP
+    @SKIP_LALFRAME
+    @pytest.mark.parametrize("ctype", ("adc", "proc", "sim", None))
+    @pytest.mark.parametrize("format", GWF_APIS)
+    def test_write_gwf_type(self, losc, format, ctype):
+        from ...io.gwf import get_channel_type
+
+        gwfformat = "gwf.{}".format(format)
+        expected_ctype = ctype if ctype else "proc"
+
+        with utils.TemporaryFilename(suffix=".gwf") as tmp:
+            losc.write(tmp, type=ctype, format=gwfformat)
+            assert get_channel_type(losc.name, tmp) == expected_ctype
+            new = type(losc).read(tmp, losc.name, format=gwfformat)
+        # epoch seems to mismatch at O(1e-12), which is unfortunate
+        utils.assert_quantity_sub_equal(
+            losc,
+            new,
+            exclude=("channel", "x0"),
+        )
 
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
     @pytest.mark.parametrize('channel', [
