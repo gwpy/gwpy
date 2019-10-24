@@ -122,11 +122,25 @@ def assert_quantity_sub_equal(a, b, *attrs, **kwargs):
         assert_array = assert_allclose
     else:
         assert_array = assert_array_equal
+
     # parse attributes to be tested
     if not attrs:
         attrs = a._metadata_slots
     exclude = kwargs.pop('exclude', [])
     attrs = [attr for attr in attrs if attr not in exclude]
+
+    # don't assert indexes that don't exist for both
+    def _check_index(dim):
+        index = "{}index".format(dim)
+        _index = "_" + index
+        if index in attrs and (
+                getattr(a, _index, "-") == "-" and
+                getattr(b, _index, "-") == "-"
+        ):
+            attrs.remove(index)
+    _check_index("x")
+    _check_index("y")
+
     # test data
     assert_attributes(a, b, *attrs)
     assert_array(a.value, b.value)
