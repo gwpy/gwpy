@@ -119,6 +119,13 @@ class TestTable(object):
     def table(cls):
         return cls.create(100, ['time', 'snr', 'frequency'])
 
+    @classmethod
+    @pytest.fixture()
+    def clustertable(cls):
+        return cls.TABLE(data=[[11, 1, 1, 10, 1, 1, 9],
+                         [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
+                         names=['amplitude', 'time'])
+
     @staticmethod
     @pytest.fixture()
     def llwtable():
@@ -505,28 +512,30 @@ class TestEventTable(TestTable):
     def test_get_column(self, table):
         utils.assert_array_equal(table.get_column('snr'), table['snr'])
 
-    def test_cluster(self):
+    def test_cluster(self, clustertable):
         # check that the central data points are all clustered away,
         # the original table is unchanged, and all points return their
         # intended values
-        t = self.TABLE(data=[[11, 1, 1, 10, 1, 1, 9],
-                       [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
-                       names=['amplitude', 'time'])
-        t2 = t.cluster(timecolumn='time', clusterparam='amplitude', window=0.6)
-        assert len(t2) == 3
-        assert len(t) == 7
-        assert all(t2.get_column('amplitude') == [11, 10, 9])
-        assert all(t2.get_column('time') == [0.0, 2.0, 4.0])
+        t = clustertable.cluster(timecolumn='time', clusterparam='amplitude',
+                                  window=0.6)
+        assert len(t) == 3
+        assert len(clustertable) == 7
+        assert all(t['amplitude'] == [11, 10, 9])
+        assert all(t['time'] == [0.0, 2.0, 4.0])
 
+    def test_single_point_cluster(self, clustertable):
         # check that a large cluster window returns at least one data point
-        t3 = t.cluster(timecolumn='time', clusterparam='amplitude', window=10)
-        assert len(t3) == 1
-        assert all(t3.get_column('amplitude') == [11])
-        assert all(t3.get_column('time') == [0.0])
+        t = clustertable.cluster(timecolumn='time', clusterparam='amplitude',
+                                 window=10)
+        assert len(t) == 1
+        assert all(t['amplitude'] == [11])
+        assert all(t['time'] == [0.0])
 
+    def test_cluster_window(self, clustertable):
         # check that a non-positive window throws an appropriate ValueError
         with pytest.raises(ValueError) as exc:
-            t.cluster(timecolumn='time', clusterparam='amplitude', window=0)
+            clustertable.cluster(timecolumn='time', clusterparam='amplitude',
+                                 window=0)
         assert str(exc.value) == 'Window must be a positive value'
 
     # -- test I/O -------------------------------
