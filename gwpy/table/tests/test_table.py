@@ -517,7 +517,7 @@ class TestEventTable(TestTable):
         # the original table is unchanged, and all points return their
         # intended values
         t = clustertable.cluster(timecolumn='time', clusterparam='amplitude',
-                                  window=0.6)
+                                 window=0.6)
         assert len(t) == 3
         assert len(clustertable) == 7
         assert all(t['amplitude'] == [11, 10, 9])
