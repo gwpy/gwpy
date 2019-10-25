@@ -19,15 +19,12 @@
 """Read events from SNAX
 """
 
-import os
-
 from astropy.io.misc.hdf5 import read_table_hdf5
 from astropy.table import vstack
 
 from ...io.hdf5 import with_read_hdf5
 from ...io.registry import register_reader
 from .. import EventTable
-from ..filter import filter_table
 from .utils import (read_with_columns, read_with_selection)
 
 __author__ = 'Patrick Godwin <patrick.godwin@ligo.org>'
