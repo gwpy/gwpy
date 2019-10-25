@@ -747,9 +747,9 @@ class EventTable(Table):
             raise ValueError('Window must be a positive value')
 
         # Generate time and clusterparam vectors that are time-ordered
-        timeidx = numpy.argsort(self.get_column(timecolumn))
-        times = self.get_column(timecolumn)[timeidx]
-        param = self.get_column(clusterparam)[timeidx]
+        timeidx = numpy.argsort(self[timecolumn])
+        times = self[timecolumn][timeidx]
+        param = self[clusterparam][timeidx]
 
         # Find all points where the time vector changes by less than window
         # and divide the resulting array into clusters of adjacent points
