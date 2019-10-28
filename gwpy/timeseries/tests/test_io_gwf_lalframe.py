@@ -163,8 +163,6 @@ def test_write():
         data2 = gwpy_lalframe.read(tmp, CHANNELS)
         assert_dict_equal(data, data2, assert_quantity_sub_equal)
 
-        #
-
 
 def test_write_no_ifo():
     # create timeseries with no IFO

@@ -175,8 +175,12 @@ def _read_channel(stream, channel, start, duration):
 
 # -- write --------------------------------------------------------------------
 
-def write(tsdict, outfile, start=None, end=None,
-          name='gwpy', run=0):
+def write(
+        tsdict, outfile,
+        start=None, end=None,
+        type=None,
+        name='gwpy', run=0,
+):
     """Write data to a GWF file using the LALFrame API
     """
     if not start:
@@ -201,12 +205,23 @@ def write(tsdict, outfile, start=None, end=None,
     frame = lalframe.FrameNew(start, duration, name, run, 0, detectors)
 
     for series in tsdict.values():
+        # get type
+        ctype = (
+                type or
+                getattr(series.channel, "_ctype", "proc") or
+                "proc"
+        ).title()
+
         # convert to LAL
         lalseries = series.to_lal()
 
         # find adder
         add_ = lalutils.find_typed_function(
-            series.dtype, 'FrameAdd', 'TimeSeriesProcData', module=lalframe)
+            series.dtype,
+            'FrameAdd',
+            'TimeSeries{}Data'.format(ctype),
+            module=lalframe,
+        )
 
         # add time series to frame
         add_(frame, lalseries)

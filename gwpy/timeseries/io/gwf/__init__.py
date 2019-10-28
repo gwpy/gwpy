@@ -309,8 +309,15 @@ def register_gwf_api(library):
 
     # -- write ----------------------------------
 
-    def write_timeseriesdict(data, outfile, start=None, end=None,
-                             name='gwpy', run=0):
+    def write_timeseriesdict(
+            data,
+            outfile,
+            start=None,
+            end=None,
+            type=None,
+            name='gwpy',
+            run=0,
+    ):
         """Write a `TimeSeriesDict` to disk in GWF format
 
         Parameters
@@ -329,6 +336,10 @@ def register_gwf_api(library):
             GPS end time of required data,
             any input parseable by `~gwpy.time.to_gps` is fine
 
+        type : `str`, optional
+            the type of the channel, one of 'adc', 'proc', 'sim', default
+            is 'proc' unless stored in the channel structure
+
         name : `str`, optional
             name of the project that created this GWF
 
@@ -339,8 +350,15 @@ def register_gwf_api(library):
         import_gwf_library(library)
 
         # then write using the relevant API
-        return libwrite_(data, outfile, start=start, end=end,
-                         name=name, run=run)
+        return libwrite_(
+            data,
+            outfile,
+            start=start,
+            end=end,
+            type=type,
+            name=name,
+            run=run,
+        )
 
     def write_timeseries(series, *args, **kwargs):
         """Write a `TimeSeries` to disk in GWF format

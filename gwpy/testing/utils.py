@@ -33,6 +33,8 @@ import pytest
 import numpy
 from numpy.testing import (assert_array_equal, assert_allclose)
 
+from astropy.time import Time
+
 # -- useful constants ---------------------------------------------------------
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -120,11 +122,25 @@ def assert_quantity_sub_equal(a, b, *attrs, **kwargs):
         assert_array = assert_allclose
     else:
         assert_array = assert_array_equal
+
     # parse attributes to be tested
     if not attrs:
         attrs = a._metadata_slots
     exclude = kwargs.pop('exclude', [])
     attrs = [attr for attr in attrs if attr not in exclude]
+
+    # don't assert indexes that don't exist for both
+    def _check_index(dim):
+        index = "{}index".format(dim)
+        _index = "_" + index
+        if index in attrs and (
+                getattr(a, _index, "-") == "-" and
+                getattr(b, _index, "-") == "-"
+        ):
+            attrs.remove(index)
+    _check_index("x")
+    _check_index("y")
+
     # test data
     assert_attributes(a, b, *attrs)
     assert_array(a.value, b.value)
@@ -141,6 +157,8 @@ def assert_attributes(a, b, *attrs):
         y = getattr(b, attr, None)
         if isinstance(x, numpy.ndarray) and isinstance(b, numpy.ndarray):
             assert_array_equal(x, y)
+        elif isinstance(x, Time) and isinstance(y, Time):
+            assert x.gps == y.gps
         else:
             assert x == y
 

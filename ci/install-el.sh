@@ -40,6 +40,10 @@ pushd build
 
 yum -y -q update
 
+# correct issue with missing tzdata files
+# https://listserv.fnal.gov/scripts/wa.exe?A2=ind1910&L=SCIENTIFIC-LINUX-USERS&P=21164
+yum -y -q reinstall tzdata
+
 # install basic build dependencies
 yum -y -q install \
     rpm-build \
