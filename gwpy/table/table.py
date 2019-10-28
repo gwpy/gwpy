@@ -707,22 +707,22 @@ class EventTable(Table):
         """
         return filter_table(self, *column_filters)
 
-    def cluster(self, column=None, clusterparam=None, window=None):
-        """Cluster this `EventTable` over a given column, maximizing over a
-        specified column in the table.
+    def cluster(self, index, rank, window):
+        """Cluster this `EventTable` over a given column, `index`, maximizing
+        over a specified column in the table, `rank`.
 
         The clustering algorithm uses a pooling method to identify groups
-        of points that are all separated in `column` by less than `window`.
+        of points that are all separated in `index` by less than `window`.
 
         Each cluster of nearby points is replaced by the point in that cluster
-        with the maximum value of `clusterparam`.
+        with the maximum value of `rank`.
 
         Parameters
         ----------
-        column : `str`
+        index : `str`
             name of the column which is used to search for clusters
 
-        clusterparam : `str`
+        rank : `str`
             name of the column to maximize over in each cluster
 
         window : `float`
@@ -737,21 +737,20 @@ class EventTable(Table):
 
         Examples
         --------
-        To cluster an `EventTable` (``table``) whose `column` is
+        To cluster an `EventTable` (``table``) whose `index` is
         `end_time`, `window` is `0.1`, and maximize over `snr`:
 
-        >>> table.cluster(column='end_time', clusterparam='snr',
-                          window=0.1)
+        >>> table.cluster('end_time', 'snr', 0.1)
         """
         if window <= 0.0:
             raise ValueError('Window must be a positive value')
 
-        # Generate column and clusterparam vectors that are ordered
-        orderidx = numpy.argsort(self[column])
-        col = self[column][orderidx]
-        param = self[clusterparam][orderidx]
+        # Generate index and rank vectors that are ordered
+        orderidx = numpy.argsort(self[index])
+        col = self[index][orderidx]
+        param = self[rank][orderidx]
 
-        # Find all points where the column vector changes by less than window
+        # Find all points where the index vector changes by less than window
         # and divide the resulting array into clusters of adjacent points
         clusterpoints = numpy.where(numpy.diff(col) <= window)[0]
         sublists = numpy.split(clusterpoints,

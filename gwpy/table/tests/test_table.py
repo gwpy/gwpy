@@ -516,8 +516,7 @@ class TestEventTable(TestTable):
         # check that the central data points are all clustered away,
         # the original table is unchanged, and all points return their
         # intended values
-        t = clustertable.cluster(column='time', clusterparam='amplitude',
-                                 window=0.6)
+        t = clustertable.cluster('time', 'amplitude', 0.6)
         assert len(t) == 3
         assert len(clustertable) == 7
         assert all(t['amplitude'] == [11, 10, 9])
@@ -525,8 +524,7 @@ class TestEventTable(TestTable):
 
     def test_single_point_cluster(self, clustertable):
         # check that a large cluster window returns at least one data point
-        t = clustertable.cluster(column='time', clusterparam='amplitude',
-                                 window=10)
+        t = clustertable.cluster('time', 'amplitude', 10)
         assert len(t) == 1
         assert all(t['amplitude'] == [11])
         assert all(t['time'] == [0.0])
@@ -534,8 +532,7 @@ class TestEventTable(TestTable):
     def test_cluster_window(self, clustertable):
         # check that a non-positive window throws an appropriate ValueError
         with pytest.raises(ValueError) as exc:
-            clustertable.cluster(column='time', clusterparam='amplitude',
-                                 window=0)
+            clustertable.cluster('time', 'amplitude', 0)
         assert str(exc.value) == 'Window must be a positive value'
 
     # -- test I/O -------------------------------
