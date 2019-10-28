@@ -709,6 +709,37 @@ class TestEventTable(TestTable):
             if os.path.isdir(os.path.dirname(fp)):
                 shutil.rmtree(os.path.dirname(fp))
 
+    def test_read_snax(self):
+        table = self.create(
+            100, names=['time', 'snr', 'frequency'])
+        fp = os.path.join(tempfile.mkdtemp(), 'SNAX-0-0.h5')
+        try:
+            # write table in snax format (by hand)
+            with h5py.File(fp, 'w') as h5f:
+                group = h5f.create_group('H1:FAKE')
+                group.create_dataset(data=table, name='0.0_20.0')
+
+            # check that we can read
+            t2 = self.TABLE.read(fp, 'H1:FAKE', format='hdf5.snax')
+            utils.assert_table_equal(table, t2)
+
+            # test with selection and columns
+            t2 = self.TABLE.read(
+                fp,
+                'H1:FAKE',
+                format='hdf5.snax',
+                selection='snr>.5',
+                columns=('time', 'snr'),
+            )
+            utils.assert_table_equal(
+                t2,
+                filter_table(table, 'snr>.5')[('time', 'snr')],
+            )
+
+        finally:
+            if os.path.isdir(os.path.dirname(fp)):
+                shutil.rmtree(os.path.dirname(fp))
+
     def test_fetch_hacr(self):
         table = self.create(100, names=HACR_COLUMNS)
         try:

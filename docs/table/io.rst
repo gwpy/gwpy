@@ -267,6 +267,31 @@ Writing
 
 Writing tables in PyCBC Live HDF5 format is not supported at this time.
 
+.. _gwpy-table-io-snax:
+
+===========
+SNAX (HDF5)
+===========
+
+The SNAX (Signal-based Noise Acquisition and eXtraction) analysis pipeline is a low-latency search for identifying glitches in h(t) and auxiliary channel data using glitch waveforms, operating in low-latency (online) and offline modes.
+This search writes files on the LIGO Data Grid (LIGO.ORG-authenticated users only) in HDF5 format containing regularly-sampled features; each channel in the table is recorded as a separate HDF5 Dataset.
+
+Reading
+-------
+
+To read an `EventTable` from a ``snax`` format HDF5 file, specify a ``channel`` and use the ``format='hdf5.snax'`` keyword::
+
+   >>> t = EventTable.read('H-GSTLAL_IDQ_FEATURES-1255853400-20.h5', 'H1:CAL-DELTAL_EXTERNAL_DQ', format='hdf5.snax')
+
+To restrict the returned columns, use the ``columns`` keyword argument::
+
+   >>> t = EventTable.read('H-GSTLAL_IDQ_FEATURES-1255853400-20.h5', 'H1:CAL-DELTAL_EXTERNAL_DQ', format='hdf5.snax', columns=['time', 'snr'])
+
+Writing
+-------
+
+Writing tables in SNAX HDF5 format is not supported at this time.
+
 .. _gwpy-table-io-gwf:
 
 ===

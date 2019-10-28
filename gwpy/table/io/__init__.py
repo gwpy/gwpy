@@ -36,6 +36,7 @@ from . import (
     hacr,  # Hierarchichal Algorithm for Curves and Ridges
     gwf,  # GWF FrEvents (e.g. MBTA)
     gravityspy,  # Gravity Spy Triggers
+    snax,  # SNAX HDF5 features
 )
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
