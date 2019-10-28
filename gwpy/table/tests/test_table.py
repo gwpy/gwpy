@@ -32,7 +32,7 @@ import pytest
 
 import sqlparse
 
-from numpy import (random, isclose, dtype, asarray)
+from numpy import (random, isclose, dtype, asarray, all)
 from numpy.testing import assert_array_equal
 from numpy.ma.core import MaskedConstant
 
@@ -118,6 +118,13 @@ class TestTable(object):
     @pytest.fixture()
     def table(cls):
         return cls.create(100, ['time', 'snr', 'frequency'])
+
+    @classmethod
+    @pytest.fixture()
+    def clustertable(cls):
+        return cls.TABLE(data=[[11, 1, 1, 10, 1, 1, 9],
+                               [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
+                         names=['amplitude', 'time'])
 
     @staticmethod
     @pytest.fixture()
@@ -504,6 +511,29 @@ class TestEventTable(TestTable):
 
     def test_get_column(self, table):
         utils.assert_array_equal(table.get_column('snr'), table['snr'])
+
+    def test_cluster(self, clustertable):
+        # check that the central data points are all clustered away,
+        # the original table is unchanged, and all points return their
+        # intended values
+        t = clustertable.cluster('time', 'amplitude', 0.6)
+        assert len(t) == 3
+        assert len(clustertable) == 7
+        assert all(t['amplitude'] == [11, 10, 9])
+        assert all(t['time'] == [0.0, 2.0, 4.0])
+
+    def test_single_point_cluster(self, clustertable):
+        # check that a large cluster window returns at least one data point
+        t = clustertable.cluster('time', 'amplitude', 10)
+        assert len(t) == 1
+        assert all(t['amplitude'] == [11])
+        assert all(t['time'] == [0.0])
+
+    def test_cluster_window(self, clustertable):
+        # check that a non-positive window throws an appropriate ValueError
+        with pytest.raises(ValueError) as exc:
+            clustertable.cluster('time', 'amplitude', 0)
+        assert str(exc.value) == 'Window must be a positive value'
 
     # -- test I/O -------------------------------
 

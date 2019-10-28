@@ -706,3 +706,66 @@ class EventTable(Table):
         >>> filter(my_table, ('time', in_segmentlist, segs))
         """
         return filter_table(self, *column_filters)
+
+    def cluster(self, index, rank, window):
+        """Cluster this `EventTable` over a given column, `index`, maximizing
+        over a specified column in the table, `rank`.
+
+        The clustering algorithm uses a pooling method to identify groups
+        of points that are all separated in `index` by less than `window`.
+
+        Each cluster of nearby points is replaced by the point in that cluster
+        with the maximum value of `rank`.
+
+        Parameters
+        ----------
+        index : `str`
+            name of the column which is used to search for clusters
+
+        rank : `str`
+            name of the column to maximize over in each cluster
+
+        window : `float`
+            window to use when clustering data points, will raise
+            ValueError if `window > 0` is not satisfied
+
+        Returns
+        -------
+        table : `EventTable`
+            a new table that has had the clustering algorithm applied via
+            slicing of the original
+
+        Examples
+        --------
+        To cluster an `EventTable` (``table``) whose `index` is
+        `end_time`, `window` is `0.1`, and maximize over `snr`:
+
+        >>> table.cluster('end_time', 'snr', 0.1)
+        """
+        if window <= 0.0:
+            raise ValueError('Window must be a positive value')
+
+        # Generate index and rank vectors that are ordered
+        orderidx = numpy.argsort(self[index])
+        col = self[index][orderidx]
+        param = self[rank][orderidx]
+
+        # Find all points where the index vector changes by less than window
+        # and divide the resulting array into clusters of adjacent points
+        clusterpoints = numpy.where(numpy.diff(col) <= window)[0]
+        sublists = numpy.split(clusterpoints,
+                               numpy.where(numpy.diff(clusterpoints) > 1)[0]+1)
+
+        # Add end-points to each cluster and find the index of the maximum
+        # point in each list
+        padded_sublists = [numpy.append(s, numpy.array([s[-1]+1]))
+                           for s in sublists]
+        maxidx = [s[numpy.argmax(param[s])] for s in padded_sublists]
+
+        # Construct a mask that removes all points within clusters and
+        # replaces them with the maximum point from each cluster
+        mask = numpy.ones_like(col, dtype=bool)
+        mask[numpy.concatenate(padded_sublists)] = False
+        mask[maxidx] = True
+
+        return self[orderidx[mask]]
