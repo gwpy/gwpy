@@ -123,7 +123,7 @@ class TestTable(object):
     @pytest.fixture()
     def clustertable(cls):
         return cls.TABLE(data=[[11, 1, 1, 10, 1, 1, 9],
-                         [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
+                               [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
                          names=['amplitude', 'time'])
 
     @staticmethod
