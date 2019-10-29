@@ -59,7 +59,6 @@ install_requires = [
     'ligotimegps >= 1.2.1',
     'matplotlib >= 1.2.0, != 2.1.0, != 2.1.1',
     'numpy >= 1.7.1',
-    'pathlib ; python_version < \'3.4\'',
     'python-dateutil',
     'scipy >= 0.12.1',
     'six >= 1.5',
