@@ -35,11 +35,6 @@ matrix:
 
   include:
     # conda builds
-    - python: '2.7'
-      language: minimal
-      stage: Distribution tests
-      name: "conda:2.7"
-      env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="2.7"
     - python: '3.6'
       language: minimal
       stage: Distribution tests
