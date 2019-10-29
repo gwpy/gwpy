@@ -52,7 +52,6 @@ install_requires = [
     'astropy >= 1.3.0, < 3.0.0 ; python_version < \'3.5\'',
     'astropy >= 1.3.0 ; python_version >= \'3.5\'',
     'dqsegdb2',
-    'enum34 ; python_version < \'3.4\'',
     'gwdatafind',
     'gwosc >= 0.4.0',
     'h5py >= 1.3',
