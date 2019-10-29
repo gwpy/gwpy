@@ -7,8 +7,8 @@
 Name:           python-%{srcname}
 Version:        {{ version }}
 Release:        1%{?dist}
-Summary:        {{ description }}
 
+Summary:        {{ description }}
 License:        {{ license }}
 URL:            {{ url }}
 Source0:        %pypi_source
@@ -16,34 +16,9 @@ Source0:        %pypi_source
 BuildArch:      noarch
 
 # SRPM dependencies
-BuildRequires:  python-rpm-macros
 BuildRequires:  python-srpm-macros
 
-# python2-gwpy
-BuildRequires:  python
-BuildRequires:  python2-rpm-macros
-BuildRequires:  python2-setuptools
-
-# check requirements for python2-gwpy
-BuildRequires:  h5py >= 1.3
-BuildRequires:  numpy >= 1.7.1
-BuildRequires:  python-pathlib
-BuildRequires:  python-six >= 1.5
-BuildRequires:  python2-astropy >= 1.1.1
-BuildRequires:  python2-dateutil
-BuildRequires:  python2-dqsegdb2
-BuildRequires:  python2-enum34
-BuildRequires:  python2-gwdatafind
-BuildRequires:  python2-gwosc
-BuildRequires:  python2-lal >= 6.14.0
-BuildRequires:  python2-ldas-tools-framecpp >= 2.6.0
-BuildRequires:  python2-ligo-segments >= 1.0.0
-BuildRequires:  python2-matplotlib >= 1.2.0
-BuildRequires:  python2-tqdm >= 4.10.0
-BuildRequires:  scipy >= 0.12.1
-
 # python3-gwpy
-BuildRequires:  epel-rpm-macros
 BuildRequires:  python3-rpm-macros
 BuildRequires:  python%{python3_pkgversion}
 BuildRequires:  python%{python3_pkgversion}-setuptools
@@ -71,39 +46,10 @@ BuildRequires: help2man
 {{ long_description }}
 
 
-# -- python2-gwpy -------------------------------------------------------------
-
-%package -n python2-%{srcname}
-Summary:        %{summary}
-Requires:       h5py >= 1.3
-Requires:       numpy >= 1.7.1
-Requires:       python
-Requires:       python-pathlib
-Requires:       python-six >= 1.5
-Requires:       python2-astropy >= 1.1.1
-Requires:       python2-dateutil
-Requires:       python2-dqsegdb2
-Requires:       python2-enum34
-Requires:       python2-gwdatafind
-Requires:       python2-gwosc
-Requires:       python2-lal >= 6.14.0
-Requires:       python2-ldas-tools-framecpp >= 2.6.0
-Requires:       python2-ligo-segments >= 1.0.0
-Requires:       python2-matplotlib >= 1.2.0
-Requires:       python2-tqdm >= 4.10.0
-Requires:       scipy >= 0.12.1
-%{?python_provide:%python_provide python2-%{srcname}}
-
-%description -n python2-%{srcname}
-GWpy is a collaboration-driven Python package providing tools for
-studying data from ground-based gravitational-wave detectors.
-This package provides the Python %{python2_version} library.
-
 # -- python3-gwpy -------------------------------------------------------------
 
 %package -n python%{python3_pkgversion}-%{srcname}
 Summary:        %{summary}
-Requires:       python%{python3_pkgversion}
 Requires:       python%{python3_pkgversion}-astropy >= 1.1.1
 Requires:       python%{python3_pkgversion}-dateutil
 Requires:       python%{python3_pkgversion}-dqsegdb2
@@ -129,7 +75,7 @@ This package provides the Python %{python3_version} library.
 
 %package -n gwpy-plot
 Summary:       Command-line GWpy plot generator
-Requires:      python2-gwpy = %{version}-%{release}
+Requires:      python%{python3_pkgversion}-%{srcname} = %{version}-%{release}
 Conflicts:     python2-gwpy < 1.0.0-1
 
 %description -n gwpy-plot
@@ -143,19 +89,14 @@ This package provides the command line plotting interface 'gwpy-plot'
 %autosetup -n %{srcname}-%{version}
 
 %build
-%py2_build
 %py3_build
 
 %install
-# install python3 library
 %py3_install
-
-# install python2 library (including gwpy-plot entry point)
-%py2_install
 
 # install man page for gwpy-plot
 mkdir -vp %{buildroot}%{_mandir}/man1
-env PYTHONPATH="%{buildroot}%{python2_sitelib}" COLUMNS=1000 \
+env PYTHONPATH="%{buildroot}%{python3_sitelib}" COLUMNS=1000 \
 help2man \
     --name "Command-line GWpy plot generator" \
     --source "Gwpy-%{version}" \
@@ -165,23 +106,13 @@ help2man \
     %{buildroot}%{_bindir}/gwpy-plot
 
 %check
-# sanity check python2
-export PYTHONPATH="${RPM_BUILD_ROOT}%{python2_sitelib}"
-%{__python2} -c "import gwpy; print(gwpy.__version__)"
-%{__python2} -m gwpy.time --help
-${RPM_BUILD_ROOT}%{_bindir}/gwpy-plot --help
-
 # sanity check python3
 export PYTHONPATH="${RPM_BUILD_ROOT}%{python3_sitelib}"
 %{__python3} -c "import gwpy; print(gwpy.__version__)"
 %{__python3} -m gwpy.time --help
+${RPM_BUILD_ROOT}%{_bindir}/gwpy-plot --help
 
 # -- files --------------------------------------------------------------------
-
-%files -n python2-%{srcname}
-%license LICENSE
-%doc README.md
-%{python2_sitelib}/*
 
 %files -n python%{python3_pkgversion}-%{srcname}
 %license LICENSE
