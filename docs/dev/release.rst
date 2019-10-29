@@ -19,24 +19,11 @@ Notes:
 Step-by-step
 ============
 
-#. **If this is a major, or minor release (as opposed to a bug-fix release), create a release branch**:
+#. **If this is a bug-fix release, just check out that branch**:
 
    .. code-block:: bash
 
-      git checkout -b release/vX.Y
-
-   **Or, if this is a bug-fix release, just check out that branch**:
-
-   .. code-block:: bash
-
-      git checkout release/vX.Y
-
-#. **Bump versions and add changelog entries in OS packaging files:**
-
-   - `/debian/changelog`
-   - `/gwosc.spec`
-
-   and then **commit those**
+      git checkout release/X.Y.x
 
 #. **Update the copyright**:
 
@@ -49,17 +36,40 @@ Step-by-step
 
    .. code-block:: bash
 
-      git push -u origin release/vX.Y
+      git push -u origin master
+
+   for major/minor releases, or
+
+   .. code-block:: bash
+      git push -u origin release/X.Y.x
+
+   for bug-fix releases
 
 #. **Wait patiently for the continuous integration to finish**
 
 #. **Announce the release** and ask for final contributions
 
-#. **Finalise the release and push**:
+#. **Tag the release**:
 
    .. code-block:: bash
 
       git tag --sign vX.Y.Z
+
+#. **Create a maintenance branch** (major/minor releases only):
+
+   .. code-block:: bash
+
+      git branch release/X.Y.x
+
+#. **Publish everything**:
+
+   .. code-block:: bash
+
+      # push maintenance branch
+      git push --signed=if-asked origin release/X.Y.x
+      # push master branch
+      git push --signed=if-asked origin master
+      # push new tag
       git push --signed=if-asked origin vX.Y.Z
 
 #. **Draft a release on GitHub**
@@ -123,6 +133,7 @@ To create a new release on PyPI:
 .. code-block:: bash
 
    rm -rf dist/
+   git checkout vX.Y.Z
    python setup.py sdist bdist_wheel
    gpg --armor --detach-sign dist/gwpy-*.tar.gz
    twine upload dist/gwpy-*
