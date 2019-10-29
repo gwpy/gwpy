@@ -56,7 +56,7 @@ def _test_usetex():
     from matplotlib import pyplot
     with rc_context(rc={'text.usetex': True}):
         fig = pyplot.figure()
-        ax = fig.gca()
+        fig.gca()
         try:
             fig.canvas.draw()
         except RuntimeError:
