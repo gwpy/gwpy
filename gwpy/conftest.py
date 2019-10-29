@@ -25,6 +25,9 @@ import numpy
 
 from matplotlib import (use, rcParams)
 
+# force Agg for all tests
+use('agg', warn=False, force=True)  # noqa
+
 # register custom fixtures for all test modules
 from .testing.fixtures import *  # noqa: F401,F403
 
@@ -35,9 +38,6 @@ numpy.random.seed(1)
 
 # ignore errors due from pyplot.show() using Agg
 warnings.filterwarnings('ignore', message=".*non-GUI backend.*")
-
-# force Agg for all tests
-use('agg', warn=False, force=True)
 
 # force simpler rcParams for all tests
 # (fixtures or tests may update these individually)
