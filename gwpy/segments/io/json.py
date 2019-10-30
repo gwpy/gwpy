@@ -19,8 +19,6 @@
 """Read/write segments and flags from DQSEGDB-format JSON
 """
 
-from __future__ import absolute_import
-
 import json
 
 from six import string_types

@@ -20,8 +20,6 @@
 helpful set of major and minor ticks.
 """
 
-from __future__ import division
-
 from math import (ceil, floor, modf)
 
 import numpy

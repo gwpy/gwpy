@@ -19,8 +19,6 @@
 """I/O routines for parsing Omega pipeline scan channel lists
 """
 
-from __future__ import print_function
-
 import sys
 import os
 from collections import OrderedDict

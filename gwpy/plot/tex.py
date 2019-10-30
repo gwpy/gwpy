@@ -19,8 +19,6 @@
 """Handle TeX formatting for matplotlib output
 """
 
-from __future__ import division
-
 import re
 
 from ..utils.shell import which

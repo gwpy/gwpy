@@ -19,8 +19,6 @@
 """GWpy API to the scipy.signal FFT routines
 """
 
-from __future__ import absolute_import
-
 import numpy
 
 from scipy import __version__ as scipy_version

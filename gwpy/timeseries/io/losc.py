@@ -21,8 +21,6 @@
 For more details, see https://losc.ligo.org
 """
 
-from __future__ import print_function
-
 import os.path
 import re
 from math import ceil

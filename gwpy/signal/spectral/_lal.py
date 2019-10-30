@@ -25,8 +25,6 @@ for more details
 This module is deprecated and will be removed in a future release.
 """
 
-from __future__ import absolute_import
-
 import re
 import warnings
 

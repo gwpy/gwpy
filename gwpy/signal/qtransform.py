@@ -23,8 +23,6 @@ pipeline, all credits for the original algorithm go to its
 authors.
 """
 
-from __future__ import division
-
 import warnings
 from math import (log, ceil, pi, isinf, exp)
 

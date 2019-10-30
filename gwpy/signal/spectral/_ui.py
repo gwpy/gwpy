@@ -22,8 +22,6 @@ This module provides the methods that eventually get called by TimeSeries.xxx,
 so isn't really for direct user interaction.
 """
 
-from __future__ import absolute_import
-
 from functools import wraps
 
 from six import string_types

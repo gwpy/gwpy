@@ -19,7 +19,6 @@
 """Base class for CLI (`gwpy-plot`) products.
 """
 
-from __future__ import print_function
 import abc
 import os.path
 import re
