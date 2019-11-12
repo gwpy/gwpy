@@ -57,12 +57,25 @@ def test_multiprocess_with_queues(capsys, nproc, verbose):
     else:
         assert cap.out.startswith('\r{}: '.format(verbose))
 
-    with pytest.raises(ValueError):
-        utils_mp.multiprocess_with_queues(nproc, sqrt, [-1],
-                                          verbose=verbose)
+
+@pytest.mark.parametrize('nproc', [1, 2])
+def test_multiprocess_with_queues_errors(nproc):
+    """Check that errors from child processes propagate to the parent
+    """
+    with pytest.raises(ValueError) as exc:
+        utils_mp.multiprocess_with_queues(
+            nproc,
+            sqrt,
+            [-1, -1, -1, -1],
+        )
+    assert str(exc.value) == "math domain error"
 
 
 def test_multiprocess_with_queues_raise():
     with pytest.deprecated_call():
-        utils_mp.multiprocess_with_queues(1, sqrt, [1],
-                                          raise_exceptions=True)
+        utils_mp.multiprocess_with_queues(
+            1,
+            sqrt,
+            [1],
+            raise_exceptions=True,
+        )
