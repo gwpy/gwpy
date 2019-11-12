@@ -27,7 +27,7 @@ from operator import itemgetter
 from .progress import progress_bar
 
 
-def process_in_out_queues(func, q_in, q_out, nproc=1):
+def _process_in_out_queues(func, q_in, q_out):
     """Iterate through a Queue, call, ``func`, and Queue the result
 
     Parameters
@@ -44,19 +44,21 @@ def process_in_out_queues(func, q_in, q_out, nproc=1):
 
     Notes
     -----
-    To close the input `Queue`, add ``(None, None)` as the last item
+    To close the input `Queue`, add ``(None, None)`` as the last item
     """
     while True:
-        # pick item out of input wqueue
+        # pick item out of input queue
         idx, arg = q_in.get()
-        if idx is None:  # sentinel
+
+        # sentinel
+        if idx is None:
             break
-        # execute method and put the result in the output queue
+
+        # execute method and put the result in the output queue,
+        # exceptions are returned and handled upstream
         try:
             q_out.put((idx, func(arg)))
         except Exception as exc:  # pylint: disable=broad-except
-            if nproc == 1:
-                raise
             q_out.put((idx, exc))
 
 
@@ -137,8 +139,8 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
     # create child processes and start
     proclist = [
         Process(
-            target=process_in_out_queues,
-            args=(func, q_in, q_out, nproc),
+            target=_process_in_out_queues,
+            args=(func, q_in, q_out),
         ) for _ in range(nproc)
     ]
 
