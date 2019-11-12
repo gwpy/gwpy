@@ -19,7 +19,6 @@
 """Utilities for multi-processing
 """
 
-import os
 import warnings
 from multiprocessing import (Queue, Process)
 from operator import itemgetter
@@ -94,13 +93,6 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
         the `list` of results from calling ``func(x)`` for each element
         of ``inputs``
     """
-    if nproc != 1 and os.name == 'nt':
-        warnings.warn(
-            "multiprocessing is currently not supported on Windows, see "
-            "https://github.com/gwpy/gwpy/issues/880, will continue with "
-            "serial procesing (nproc=1)")
-        nproc = 1
-
     if progress_kw.pop('raise_exceptions', None) is not None:
         warnings.warn("the `raise_exceptions` keyword to "
                       "multiprocess_with_queues is deprecated, and will be "
