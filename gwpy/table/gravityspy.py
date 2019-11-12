@@ -212,7 +212,7 @@ class GravitySpyTable(EventTable):
             '/search/similarity_search_restful_API'
 
         map_era_to_url = {
-            'ALL': "event_time BETWEEN 1126400000 AND 1229176818",
+            'ALL': "event_time BETWEEN 1126400000 AND 1584057618",
             'O1': "event_time BETWEEN 1126400000 AND 1137250000",
             'ER10': "event_time BETWEEN 1161907217 AND 1164499217",
             'O2a': "event_time BETWEEN 1164499217 AND 1219276818",
@@ -226,7 +226,7 @@ class GravitySpyTable(EventTable):
             'ifo': "{}".format(", ".join(
                 map(repr, [ifos[i:i+2] for i in range(0, len(ifos), 2)]),
              )),
-            'database': 'updated_similarity_index_v2d0',
+            'database': 'similarity_index_o3',
         }
 
         search = urllib.parse.urlencode(parts)
