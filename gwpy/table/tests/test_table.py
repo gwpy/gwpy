@@ -657,7 +657,7 @@ class TestEventTable(TestTable):
 
             # add another IFO, then assert that reading the table without
             # specifying the IFO fails
-            with h5py.File(fp) as h5f:
+            with h5py.File(fp, "r+") as h5f:
                 h5f.create_group('Z1')
             with pytest.raises(ValueError) as exc:
                 self.TABLE.read(fp, format="hdf5.pycbc_live")
