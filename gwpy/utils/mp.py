@@ -27,7 +27,7 @@ from operator import itemgetter
 from .progress import progress_bar
 
 
-def process_in_out_queues(func, q_in, q_out):
+def process_in_out_queues(func, q_in, q_out, nproc=1):
     """Iterate through a Queue, call, ``func`, and Queue the result
 
     Parameters
@@ -52,7 +52,12 @@ def process_in_out_queues(func, q_in, q_out):
         if idx is None:  # sentinel
             break
         # execute method and put the result in the output queue
-        q_out.put((idx, func(arg)))
+        try:
+            q_out.put((idx, func(arg)))
+        except Exception as exc:  # pylint: disable=broad-except
+            if nproc == 1:
+                raise
+            q_out.put((idx, exc))
 
 
 def multiprocess_with_queues(nproc, func, inputs, verbose=False,
@@ -112,23 +117,15 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
 
     # -------------------------------------------
 
-    def _inner(x):
-        """Run function capturing errors
-        """
-        try:
-            return func(x)
-        except Exception as exc:  # pylint: disable=broad-except
-            if nproc == 1:
-                raise
-            return exc
-        finally:
-            if pbar and nproc == 1:
-                pbar.update()
-
-    # -------------------------------------------
-
     # shortcut single process
     if nproc == 1:
+        def _inner(x):
+            try:
+                return func(x)
+            finally:
+                if pbar:
+                    pbar.update(1)
+
         return list(map(_inner, inputs))
 
     # -------------------------------------------
@@ -138,8 +135,12 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
     q_out = Queue()
 
     # create child processes and start
-    proclist = [Process(target=process_in_out_queues,
-                        args=(_inner, q_in, q_out)) for _ in range(nproc)]
+    proclist = [
+        Process(
+            target=process_in_out_queues,
+            args=(func, q_in, q_out, nproc),
+        ) for _ in range(nproc)
+    ]
 
     for proc in proclist:
         proc.daemon = True
