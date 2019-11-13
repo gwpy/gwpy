@@ -830,7 +830,12 @@ class TestDataQualityDict(object):
         )
 
     def test_read_on_missing(self, instance):
-        with h5py.File('test', driver='core', backing_store=False) as h5f:
+        with h5py.File(
+                'test',
+                mode='w-',
+                driver='core',
+                backing_store=False,
+        ) as h5f:
             instance.write(h5f)
             names = ['randomname']
 
