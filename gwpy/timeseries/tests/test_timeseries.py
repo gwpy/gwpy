@@ -330,7 +330,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             # check that we can't then write the same data again
             with pytest.raises(IOError):
                 array.write(tmp)
-            with pytest.raises((RuntimeError, OSError)):
+            with pytest.raises((IOError, OSError, RuntimeError)):
                 array.write(tmp, append=True)
 
             # check reading with start/end works
