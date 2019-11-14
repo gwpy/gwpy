@@ -19,33 +19,25 @@
 """Unit test for utils module
 """
 
-import os
 from math import sqrt
 
 import pytest
 
 from .. import mp as utils_mp
-from ..misc import null_context
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-pytestmark = pytest.mark.filterwarnings(
-    'always:multiprocessing is currently not supported on Windws')
 
 
 @pytest.mark.parametrize('verbose', [False, True, 'Test'])
 @pytest.mark.parametrize('nproc', [1, 2])
 def test_multiprocess_with_queues(capsys, nproc, verbose):
     inputs = [1, 4, 9, 16, 25]
-    if os.name == 'nt' and nproc > 1:
-        ctx = pytest.warns(UserWarning)
-    else:
-        ctx = null_context()
-
-    with ctx:  # on windows, mp prints warning and falls back to nproc=1
-        out = utils_mp.multiprocess_with_queues(
-            nproc, sqrt, inputs, verbose=verbose,
-        )
+    out = utils_mp.multiprocess_with_queues(
+        nproc,
+        sqrt,
+        inputs,
+        verbose=verbose,
+    )
     assert out == [1, 2, 3, 4, 5]
 
     # assert progress bar prints correctly
@@ -57,12 +49,25 @@ def test_multiprocess_with_queues(capsys, nproc, verbose):
     else:
         assert cap.out.startswith('\r{}: '.format(verbose))
 
-    with pytest.raises(ValueError):
-        utils_mp.multiprocess_with_queues(nproc, sqrt, [-1],
-                                          verbose=verbose)
+
+@pytest.mark.parametrize('nproc', [1, 2])
+def test_multiprocess_with_queues_errors(nproc):
+    """Check that errors from child processes propagate to the parent
+    """
+    with pytest.raises(ValueError) as exc:
+        utils_mp.multiprocess_with_queues(
+            nproc,
+            sqrt,
+            [-1, -1, -1, -1],
+        )
+    assert str(exc.value) == "math domain error"
 
 
 def test_multiprocess_with_queues_raise():
     with pytest.deprecated_call():
-        utils_mp.multiprocess_with_queues(1, sqrt, [1],
-                                          raise_exceptions=True)
+        utils_mp.multiprocess_with_queues(
+            1,
+            sqrt,
+            [1],
+            raise_exceptions=True,
+        )

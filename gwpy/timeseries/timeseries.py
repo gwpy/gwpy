@@ -493,9 +493,13 @@ class TimeSeries(TimeSeriesBase):
         # set kwargs for periodogram()
         kwargs.setdefault('fs', self.sample_rate.to('Hz').value)
         # run
-        return spectral.spectrogram(self, signal.periodogram,
-                                    fftlength=fftlength, overlap=overlap,
-                                    window=window, **kwargs)
+        return spectral.spectrogram(
+            self,
+            fftlength=fftlength,
+            overlap=overlap,
+            window=window,
+            **kwargs
+        )
 
     def fftgram(self, fftlength, overlap=None, window='hann', **kwargs):
         """Calculate the Fourier-gram of this `TimeSeries`.

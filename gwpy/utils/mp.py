@@ -19,7 +19,6 @@
 """Utilities for multi-processing
 """
 
-import os
 import warnings
 from multiprocessing import (Queue, Process)
 from operator import itemgetter
@@ -27,7 +26,7 @@ from operator import itemgetter
 from .progress import progress_bar
 
 
-def process_in_out_queues(func, q_in, q_out):
+def _process_in_out_queues(func, q_in, q_out):
     """Iterate through a Queue, call, ``func`, and Queue the result
 
     Parameters
@@ -44,15 +43,22 @@ def process_in_out_queues(func, q_in, q_out):
 
     Notes
     -----
-    To close the input `Queue`, add ``(None, None)` as the last item
+    To close the input `Queue`, add ``(None, None)`` as the last item
     """
     while True:
-        # pick item out of input wqueue
+        # pick item out of input queue
         idx, arg = q_in.get()
-        if idx is None:  # sentinel
+
+        # sentinel
+        if idx is None:
             break
-        # execute method and put the result in the output queue
-        q_out.put((idx, func(arg)))
+
+        # execute method and put the result in the output queue,
+        # exceptions are returned and handled upstream
+        try:
+            q_out.put((idx, func(arg)))
+        except Exception as exc:  # pylint: disable=broad-except
+            q_out.put((idx, exc))
 
 
 def multiprocess_with_queues(nproc, func, inputs, verbose=False,
@@ -87,13 +93,6 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
         the `list` of results from calling ``func(x)`` for each element
         of ``inputs``
     """
-    if nproc != 1 and os.name == 'nt':
-        warnings.warn(
-            "multiprocessing is currently not supported on Windows, see "
-            "https://github.com/gwpy/gwpy/issues/880, will continue with "
-            "serial procesing (nproc=1)")
-        nproc = 1
-
     if progress_kw.pop('raise_exceptions', None) is not None:
         warnings.warn("the `raise_exceptions` keyword to "
                       "multiprocess_with_queues is deprecated, and will be "
@@ -112,23 +111,15 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
 
     # -------------------------------------------
 
-    def _inner(x):
-        """Run function capturing errors
-        """
-        try:
-            return func(x)
-        except Exception as exc:  # pylint: disable=broad-except
-            if nproc == 1:
-                raise
-            return exc
-        finally:
-            if pbar and nproc == 1:
-                pbar.update()
-
-    # -------------------------------------------
-
     # shortcut single process
     if nproc == 1:
+        def _inner(x):
+            try:
+                return func(x)
+            finally:
+                if pbar:
+                    pbar.update(1)
+
         return list(map(_inner, inputs))
 
     # -------------------------------------------
@@ -138,8 +129,12 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
     q_out = Queue()
 
     # create child processes and start
-    proclist = [Process(target=process_in_out_queues,
-                        args=(_inner, q_in, q_out)) for _ in range(nproc)]
+    proclist = [
+        Process(
+            target=_process_in_out_queues,
+            args=(func, q_in, q_out),
+        ) for _ in range(nproc)
+    ]
 
     for proc in proclist:
         proc.daemon = True

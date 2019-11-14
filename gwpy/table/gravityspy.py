@@ -19,6 +19,10 @@
 """Extend :mod:`astropy.table` with the `GravitySpyTable`
 """
 
+import os.path
+
+from six.moves.urllib.request import urlopen
+
 from ..utils import mp as mp_utils
 from .table import EventTable
 import numpy as np
@@ -68,7 +72,6 @@ class GravitySpyTable(EventTable):
         -------
         Folder containing omega scans sorted by label
         """
-        from six.moves.urllib.request import urlopen
         import os
         # back to pandas
         try:
@@ -152,28 +155,15 @@ class GravitySpyTable(EventTable):
                            images_for_download_ext, duration,
                            images_for_for_download_path))
 
-        def get_image(url):
-            name = url[3] + '_' + url[4] + '_spectrogram_' + url[5] + '.png'
-            outfile = os.path.join(url[6], url[1], url[2], name)
-            with open(outfile, 'wb') as fout:
-                fout.write(urlopen(url[0]).read())
-
         # calculate maximum number of processes
         nproc = min(kwargs.pop('nproc', 1), len(images))
 
-        # define multiprocessing method
-        def _download_single_image(url):
-            try:
-                return url, get_image(url)
-            except Exception as exc:  # pylint: disable=broad-except
-                if nproc == 1:
-                    raise
-                else:
-                    return url, exc
-
         # read files
         output = mp_utils.multiprocess_with_queues(
-            nproc, _download_single_image, images)
+            nproc,
+            _download_single_image,
+            [(img, nproc) for img in images],
+        )
 
         # raise exceptions (from multiprocessing, single process raises inline)
         for f, x in output:
@@ -240,3 +230,21 @@ class GravitySpyTable(EventTable):
             if exc.code == 500:
                 exc.msg += ', confirm the gravityspy_id is valid'
                 raise
+
+
+def _get_image(url):
+    name = "{0[3]}_{0[4]}_spectrogram_{0[5]}.png".format(url)
+    outfile = os.path.join(url[6], url[1], url[2], name)
+    with open(outfile, 'wb') as fout:
+        fout.write(urlopen(url[0]).read())
+
+
+def _download_single_image(bundle):
+    url, nproc = bundle
+    try:
+        return url, _get_image(url)
+    except Exception as exc:  # pylint: disable=broad-except
+        if nproc == 1:
+            raise
+        else:
+            return url, exc
