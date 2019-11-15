@@ -34,12 +34,11 @@ yum -y -q install \
 # https://listserv.fnal.gov/scripts/wa.exe?A2=ind1910&L=SCIENTIFIC-LINUX-USERS&P=21164
 yum -y -q reinstall tzdata
 
-# determine python prefix, even though we only install for python2
-
-if [[ "${PYTHON_VERSION}" == "2.7" ]]; then
-    PY_PREFIX="python2"
-else
+# determine python package prefix
+if [ "${PYTHON_VERSION:0:1}" -eq 3 ]; then
     PY_PREFIX="python$(rpm --eval "%python3_pkgversion")"
+else
+    PY_PREFIX="python${PYTHON_VERSION:0:1}"
 fi
 
 # -- build --------------------------------------
