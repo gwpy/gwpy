@@ -1,8 +1,8 @@
 # GWpy core requirements
 #           [use requirements-dev.txt for a full development environment
 #            including docs and testing dependencies]
-astropy >= 1.1.1, < 3.0.0 ; python_version < '3.5'
-astropy >= 1.1.1 ; python_version >= '3.5'
+astropy >= 1.3.0, < 3.0.0 ; python_version < '3.5'
+astropy >= 1.3.0 ; python_version >= '3.5'
 dqsegdb2
 enum34 ; python_version < '3.4'
 gwdatafind

@@ -49,8 +49,8 @@ setup_requires = get_setup_requires()
 
 # runtime dependencies
 install_requires = [
-    'astropy >= 1.1.1, < 3.0.0 ; python_version < \'3.5\'',
-    'astropy >= 1.1.1 ; python_version >= \'3.5\'',
+    'astropy >= 1.3.0, < 3.0.0 ; python_version < \'3.5\'',
+    'astropy >= 1.3.0 ; python_version >= \'3.5\'',
     'dqsegdb2',
     'enum34 ; python_version < \'3.4\'',
     'gwdatafind',

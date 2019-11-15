@@ -24,10 +24,6 @@ import re
 from six import string_types
 
 from astropy.io import registry as io_registry
-try:
-    from astropy.io.registry import IORegistryError
-except ImportError:  # astropy < 1.2.1
-    IORegistryError = Exception
 from astropy.table import Table
 
 _FETCHERS = {}
@@ -58,9 +54,10 @@ def register_fetcher(data_format, data_class, function, force=False,
     if key not in _FETCHERS or force:
         _FETCHERS[key] = (function, usage)
     else:
-        raise IORegistryError("Fetcher for format '{0}' and class '{1}' "
-                              "has already been " "defined".format(
-                                  data_format, data_class))
+        raise io_registry.IORegistryError(
+            "Fetcher for format '{0}' and class '{1}' has already "
+            "been defined".format(data_format, data_class),
+        )
     _update__doc__(data_class)
 
 
@@ -89,10 +86,11 @@ def get_fetcher(data_format, data_class):
         formats = [fmt for fmt, cls in _FETCHERS if
                    io_registry._is_best_match(fmt, cls, fetchers)]
         formatstr = '\n'.join(sorted(formats))
-        raise IORegistryError(
+        raise io_registry.IORegistryError(
             "No fetcher definer for format '{0}' and class '{1}'.\n"
             "The available formats are:\n{2}".format(
-                data_format, data_class.__name__, formatstr))
+                data_format, data_class.__name__, formatstr),
+        )
 
 
 def _update__doc__(data_class):
