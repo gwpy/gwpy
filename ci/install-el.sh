@@ -24,7 +24,8 @@
 
 # install basic build dependencies
 yum -y -q update
-
+yum -y -q install lscsoft-testing-config
+yum -y -q update
 yum -y -q install \
     rpm-build \
     yum-utils \
