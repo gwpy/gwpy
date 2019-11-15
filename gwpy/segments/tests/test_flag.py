@@ -519,17 +519,8 @@ class TestDataQualityFlag(object):
             f2 = self.TEST_CLASS.read(fp)
             utils.assert_flag_equal(f2, flag)
 
-    @utils.skip_missing_dependency('glue.ligolw.lsctables')
-    @pytest.mark.parametrize("ilwdchar_compat", [
-        pytest.param(
-            False,
-            marks=utils.skip_missing_dependency("ligo.lw.lsctables"),
-        ),
-        pytest.param(
-            True,
-            marks=utils.skip_missing_dependency("glue.ligolw.lsctables"),
-        ),
-    ])
+    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.parametrize("ilwdchar_compat", [False, True])
     def test_read_write_ligolw(self, flag, ilwdchar_compat):
         utils.test_read_write(
             flag, "ligolw", extension="xml",
@@ -808,16 +799,8 @@ class TestDataQualityDict(object):
             _read_write(autoidentify=True)
         _read_write(autoidentify=True, write_kw={'overwrite': True})
 
-    @pytest.mark.parametrize("ilwdchar_compat", [
-        pytest.param(
-            False,
-            marks=utils.skip_missing_dependency("ligo.lw.lsctables"),
-        ),
-        pytest.param(
-            True,
-            marks=utils.skip_missing_dependency("glue.ligolw.lsctables"),
-        ),
-    ])
+    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.parametrize("ilwdchar_compat", [False, True])
     def test_read_write_ligolw(self, instance, ilwdchar_compat):
         def _assert(a, b):
             return utils.assert_dict_equal(a, b, utils.assert_flag_equal)
@@ -862,20 +845,8 @@ class TestDataQualityDict(object):
             with pytest.raises(ValueError) as exc:
                 _read(on_missing='blah')
 
-    @pytest.mark.parametrize("ilwdchar_compat", [
-        pytest.param(  # default `None` maps to `True` for now
-            None,
-            marks=utils.skip_missing_dependency("ligo.lw.lsctables"),
-        ),
-        pytest.param(
-            False,
-            marks=utils.skip_missing_dependency("ligo.lw.lsctables"),
-        ),
-        pytest.param(
-            True,
-            marks=utils.skip_missing_dependency("glue.ligolw.lsctables"),
-        ),
-    ])
+    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.parametrize("ilwdchar_compat", [None, False, True])
     def test_to_ligolw_tables(self, instance, ilwdchar_compat):
         if ilwdchar_compat is None:
             ctx = pytest.warns(PendingDeprecationWarning)
