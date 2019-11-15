@@ -232,6 +232,13 @@ jobs:
     environment:
       PIP_FLAGS: " "
 
+  el7:3.6:
+    <<: *centos-build
+    docker:
+      - image: igwn/base:el7
+    environment:
+      PIP_FLAGS: " "
+
   # -- deploy ---------------
 
   deploy:
@@ -309,6 +316,9 @@ workflows:
           filters:
             tags:
               only: /^v.*/
+      - el7:3.6:
+          requires:
+            - sdist
 
       # deploy
       - deploy:

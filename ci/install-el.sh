@@ -22,12 +22,24 @@
 
 # -- setup --------------------------------------
 
+# install basic build dependencies
+yum -y -q update
+
+yum -y -q install \
+    rpm-build \
+    yum-utils \
+    epel-rpm-macros
+
+# correct issue with missing tzdata files
+# https://listserv.fnal.gov/scripts/wa.exe?A2=ind1910&L=SCIENTIFIC-LINUX-USERS&P=21164
+yum -y -q reinstall tzdata
+
 # determine python prefix, even though we only install for python2
 
 if [[ "${PYTHON_VERSION}" == "2.7" ]]; then
     PY_PREFIX="python2"
 else
-    PY_PREFIX="python${PYTHON_VERSION/./}"
+    PY_PREFIX="python$(rpm --eval "%python3_pkgversion")"
 fi
 
 # -- build --------------------------------------
@@ -37,17 +49,6 @@ TARBALL="$(pwd)/gwpy-*.tar.*"
 
 mkdir build
 pushd build
-
-yum -y -q update
-
-# correct issue with missing tzdata files
-# https://listserv.fnal.gov/scripts/wa.exe?A2=ind1910&L=SCIENTIFIC-LINUX-USERS&P=21164
-yum -y -q reinstall tzdata
-
-# install basic build dependencies
-yum -y -q install \
-    rpm-build \
-    yum-utils
 
 # build src rpm
 SRPM=$(rpmbuild --define "_topdir ${TOPDIR}" -ts ${TARBALL} | cut -d\  -f2)
@@ -66,38 +67,28 @@ RPM="${TOPDIR}/RPMS/noarch/${PY_PREFIX}-gwpy-*.rpm"
 yum -y -q --nogpgcheck localinstall ${RPM}
 
 # -- extras -------------------------------------
-#
-# This is explicitly only set up for python2.7 on RHEL7
-#
 
 # install system-level extras
 yum -y -q install \
     which \
-    python2-pip \
-    python2-pytest \
-    python2-pytest-cov \
-    python2-mock \
-    python2-freezegun \
-    python-sqlparse \
-    python-beautifulsoup4 \
-    python-sqlalchemy \
-    python2-PyMySQL \
-    m2crypto \
-    glue \
-    dqsegdb \
-    python-psycopg2 \
-    python-pandas \
-    python2-root \
-    python2-nds2-client \
-    python2-ldas-tools-framecpp \
-    python2-lalframe \
-    python2-lalsimulation \
-    python-ligo-lw \
+    ${PY_PREFIX}-beautifulsoup4 \
+    ${PY_PREFIX}-dqsegdb \
+    ${PY_PREFIX}-freezegun \
+    ${PY_PREFIX}-glue \
+    ${PY_PREFIX}-lalframe \
+    ${PY_PREFIX}-lalsimulation \
+    ${PY_PREFIX}-ligo-lw \
+    ${PY_PREFIX}-m2crypto \
+    ${PY_PREFIX}-nds2-client \
+    ${PY_PREFIX}-pandas \
+    ${PY_PREFIX}-pip \
+    ${PY_PREFIX}-psycopg2 \
+    ${PY_PREFIX}-PyMySQL \
+    ${PY_PREFIX}-pytest \
+    ${PY_PREFIX}-pytest-cov \
+    ${PY_PREFIX}-root \
+    ${PY_PREFIX}-sqlparse \
+    ${PY_PREFIX}-sqlalchemy \
     texlive-dvipng-bin texlive-latex-bin-bin \
-    texlive-type1cm texlive-collection-fontsrecommended
-
-# HACK: fix missing file from ldas-tools-framecpp
-if [ -d /usr/lib64/${PYTHON}/site-packages/LDAStools -a \
-     ! -f /usr/lib64/${PYTHON}/site-packages/LDAStools/__init__.py ]; then
-    touch /usr/lib64/${PYTHON}/site-packages/LDAStools/__init__.py
-fi
+    texlive-type1cm texlive-collection-fontsrecommended \
+;

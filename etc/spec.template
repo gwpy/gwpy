@@ -11,13 +11,18 @@ Summary:        {{ description }}
 
 License:        {{ license }}
 URL:            {{ url }}
-Source0:        https://files.pythonhosted.org/packages/source/g/%{srcname}/%{srcname}-%{version}.tar.gz
+Source0:        %pypi_source
 
 BuildArch:      noarch
 BuildRequires:  rpm-build
 BuildRequires:  python-rpm-macros
+BuildRequires:  python-srpm-macros
 BuildRequires:  python2-rpm-macros
+BuildRequires:  python3-rpm-macros
+BuildRequires:  epel-rpm-macros
+
 BuildRequires:  python2-setuptools
+BuildRequires:  python%{python3_pkgversion}-setuptools
 
 %description
 {{ long_description }}
@@ -43,10 +48,32 @@ Requires:       python2-tqdm >= 4.10.0
 Requires:       python2-gwosc
 Requires:       python2-dqsegdb2
 Requires:       python2-gwdatafind
-
 %{?python_provide:%python_provide python2-%{srcname}}
 
 %description -n python2-%{srcname}
+{{ long_description }}
+
+# -- python3-gwpy -------------------------------------------------------------
+
+%package -n python%{python3_pkgversion}-%{srcname}
+Summary:        %{summary}
+Requires:       python%{python3_pkgversion}-astropy >= 1.1.1
+Requires:       python%{python3_pkgversion}-dateutil
+Requires:       python%{python3_pkgversion}-dqsegdb2
+Requires:       python%{python3_pkgversion}-gwdatafind
+Requires:       python%{python3_pkgversion}-gwosc
+Requires:       python%{python3_pkgversion}-h5py >= 1.3
+Requires:       python%{python3_pkgversion}-lal >= 6.14.0
+Requires:       python%{python3_pkgversion}-ldas-tools-framecpp >= 2.6.0
+Requires:       python%{python3_pkgversion}-ligo-segments >= 1.0.0
+Requires:       python%{python3_pkgversion}-matplotlib >= 1.2.0
+Requires:       python%{python3_pkgversion}-numpy >= 1.7.1
+Requires:       python%{python3_pkgversion}-scipy >= 0.12.1
+Requires:       python%{python3_pkgversion}-six >= 1.5
+Requires:       python%{python3_pkgversion}-tqdm >= 4.10.0
+%{?python_provide:%python_provide python%{python3_pkgversion}-%{srcname}}
+
+%description -n python%{python3_pkgversion}-%{srcname}
 {{ long_description }}
 
 # -- build stages -------------------------------------------------------------
@@ -56,8 +83,10 @@ Requires:       python2-gwdatafind
 
 %build
 %py2_build
+%py3_build
 
 %install
+%py3_install
 %py2_install
 
 # -- files --------------------------------------------------------------------
@@ -67,6 +96,11 @@ Requires:       python2-gwdatafind
 %doc README.md
 %{python2_sitelib}/*
 %{_bindir}/gwpy-plot
+
+%files -n python%{python3_pkgversion}-%{srcname}
+%license LICENSE
+%doc README.md
+%{python3_sitelib}/*
 
 # -- changelog ----------------------------------------------------------------
 
