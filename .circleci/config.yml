@@ -212,14 +212,14 @@ jobs:
   debian:stretch:2.7:
     <<: *debian-build
     docker:
-      - image: containers.ligo.org/docker/base:stretch
+      - image: igwn/base:stretch
     environment:
       PIP_FLAGS: " "
 
   debian:stretch:3.5:
     <<: *debian-build
     docker:
-      - image: containers.ligo.org/docker/base:stretch
+      - image: igwn/base:stretch
     environment:
       PIP_FLAGS: " "
 
@@ -228,7 +228,7 @@ jobs:
   el7:2.7:
     <<: *centos-build
     docker:
-      - image: containers.ligo.org/docker/base:el7
+      - image: igwn/base:el7
     environment:
       PIP_FLAGS: " "
 
