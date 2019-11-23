@@ -50,7 +50,27 @@ def tmpfile():
 
 # -- plotting -----------------------------------------------------------------
 
-SKIP_TEX = pytest.mark.skipif(not HAS_TEX, reason='TeX is not available')
+def _test_usetex():
+    """Return `True` if we can render figures using `text.usetex`.
+    """
+    from matplotlib import pyplot
+    with rc_context(rc={'text.usetex': True}):
+        fig = pyplot.figure()
+        fig.gca()
+        try:
+            fig.canvas.draw()
+        except RuntimeError:
+            return False
+        else:
+            return True
+        finally:
+            pyplot.close(fig)
+
+
+SKIP_TEX = pytest.mark.skipif(
+    not HAS_TEX or not _test_usetex(),
+    reason='TeX is not available',
+)
 
 
 @pytest.fixture(scope='function', params=[
