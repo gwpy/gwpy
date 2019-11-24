@@ -212,14 +212,14 @@ jobs:
   debian:stretch:2.7:
     <<: *debian-build
     docker:
-      - image: containers.ligo.org/docker/base:stretch
+      - image: igwn/base:stretch
     environment:
       PIP_FLAGS: " "
 
   debian:stretch:3.5:
     <<: *debian-build
     docker:
-      - image: containers.ligo.org/docker/base:stretch
+      - image: igwn/base:stretch
     environment:
       PIP_FLAGS: " "
 
@@ -228,22 +228,16 @@ jobs:
   el7:2.7:
     <<: *centos-build
     docker:
-      - image: containers.ligo.org/docker/base:el7
+      - image: igwn/base:el7
     environment:
       PIP_FLAGS: " "
 
-  # -- deploy ---------------
-
-  deploy:
+  el7:3.6:
+    <<: *centos-build
     docker:
-      - image: python
-    steps:
-      - run:
-          name: Twine upload
-          command: |
-            # TWINE_USERNAME and TWINE_PASSWORD are set in repo settings
-            python -m pip install twine
-            python -m twine upload gwpy-*.tar.* gwpy-*-none-any.whl
+      - image: igwn/base:el7
+    environment:
+      PIP_FLAGS: " "
 
 # -- workflow ---------------
 
@@ -251,21 +245,13 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-      # sdist includes filters because the deploy job requires it
-      # https://circleci.com/docs/2.0/workflows/#executing-workflows-for-a-git-tag
-      - sdist:
-          filters:
-            tags:
-              only: /^v.*/
+      - sdist
       - flake8
 
       # basic tests with minimal dependencies
       - python:2.7:
           requires:
             - sdist
-          filters:
-            tags:
-              only: /^v.*/
       - python:3.5:
           requires:
             - sdist
@@ -275,9 +261,6 @@ workflows:
       - python:3.7:
           requires:
             - sdist
-          filters:
-            tags:
-              only: /^v.*/
 
       # conda tests
       - conda:2.7:
@@ -294,33 +277,12 @@ workflows:
       - debian:stretch:2.7:
           requires:
             - sdist
-          filters:
-            tags:
-              only: /^v.*/
       - debian:stretch:3.5:
           requires:
             - sdist
-          filters:
-            tags:
-              only: /^v.*/
       - el7:2.7:
           requires:
             - sdist
-          filters:
-            tags:
-              only: /^v.*/
-
-      # deploy
-      - deploy:
+      - el7:3.6:
           requires:
             - sdist
-            - python:2.7
-            - python:3.7
-            - debian:stretch:2.7
-            - debian:stretch:3.5
-            - el7:2.7
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/

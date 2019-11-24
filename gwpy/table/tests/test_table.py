@@ -243,7 +243,7 @@ class TestTable(object):
             assert str(exc.value) == ('document must contain exactly '
                                       'one sngl_burst table')
 
-    @utils.skip_missing_dependency('glue.ligolw.lsctables')
+    @utils.skip_missing_dependency('ligo.lw.lsctables')
     def test_read_write_ligolw_ilwdchar_compat(self):
         from glue.ligolw.ilwd import get_ilwdchar_class
         from glue.ligolw.lsctables import SnglBurstTable
@@ -343,6 +343,7 @@ class TestTable(object):
                                  ('time', filters.in_segmentlist, segs)),
             )
 
+    @utils.skip_missing_dependency('LDAStools.frameCPP')
     def test_read_write_gwf(self):
         table = self.create(100, ['time', 'blah', 'frequency'])
         columns = table.dtype.names
@@ -350,11 +351,11 @@ class TestTable(object):
             # check write
             try:
                 table.write(tmp, 'test_read_write_gwf')
-            except ImportError as exc:  # no frameCPP
-                pytest.skip(str(exc))
             except TypeError as exc:  # frameCPP broken (2.6.7)
                 if 'ParamList' in str(exc):
-                    pytest.skip("bug in python-ldas-tools-framecpp")
+                    pytest.skip(
+                        "bug in python-ldas-tools-framecpp: {!s}".format(exc),
+                    )
                 raise
 
             # check read gives back same table
@@ -443,22 +444,29 @@ class TestEventTable(TestTable):
             table.filter(('time', filters.not_in_segmentlist, SegmentList())))
 
     def test_event_rates(self, table):
+        """Test :meth:`gwpy.table.EventTable.event_rate`
+        """
         rate = table.event_rate(1)
         assert isinstance(rate, TimeSeries)
         assert rate.sample_rate == 1 * units.Hz
 
-        # repeat with object dtype
-        try:
-            from lal import LIGOTimeGPS as LalGps
-        except ImportError:
-            return
+    @utils.skip_missing_dependency('lal')
+    def test_event_rates_gpsobject(self, table):
+        """Test that `EventTable.event_rate` can handle object dtypes
+        """
+        rate = table.event_rate(1)
+
+        from lal import LIGOTimeGPS as LalGps
         lgps = list(map(LalGps, table['time']))
         t2 = type(table)(data=[lgps], names=['time'])
         rate2 = t2.event_rate(1, start=table['time'].min())
+
         utils.assert_quantity_sub_equal(rate, rate2)
 
-        # check that method can function without explicit time column
-        # (and no data) if and only if start/end are both given
+    def test_event_rates_start_end(self):
+        """Check that `EventTable.event_rate` can function without explicit time column
+        (and no data) if and only if start/end are both given
+        """
         t2 = self.create(10, names=['a', 'b'])
         with pytest.raises(ValueError) as exc:
             t2.event_rate(1)
