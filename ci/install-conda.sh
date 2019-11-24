@@ -58,6 +58,11 @@ fi
 conda activate gwpyci || { source activate gwpyci; set -ex; }
 PYTHON=$(which python)
 
+# install basic dependencies (please document each entry)
+conda install --name gwpyci --yes \
+    coreutils `# needed for timeout` \
+;
+
 # install conda dependencies (based on pip requirements file)
 ${PYTHON} ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
 conda install --name gwpyci --yes --file conda-reqs.txt
