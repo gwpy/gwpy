@@ -58,6 +58,11 @@ fi
 conda activate gwpyci || { source activate gwpyci; set -ex; }
 PYTHON=$(which python)
 
+# install basic dependencies (please document each entry)
+conda install --name gwpyci --yes \
+    coreutils `# needed for timeout` \
+;
+
 # install conda dependencies (based on pip requirements file)
 ${PYTHON} ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
 conda install --name gwpyci --yes --file conda-reqs.txt
@@ -71,7 +76,7 @@ conda install --name gwpyci --yes \
     python-ldas-tools-framecpp \
     python-nds2-client
 # try and install root_numpy, but don't try too hard, incompatibility is easy
-conda install --name gwpyci --yes root_numpy || true
+timeout 2m conda install --name gwpyci --yes root_numpy || true
 
 # install gwpy into this environment
 ${PYTHON} -m pip install ${PIP_FLAGS} . --ignore-installed --no-deps
