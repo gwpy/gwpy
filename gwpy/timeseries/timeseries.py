@@ -325,8 +325,8 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        psd :  `~gwpy.frequencyseries.FrequencySeries`
-            a data series containing the PSD.
+        asd :  `~gwpy.frequencyseries.FrequencySeries`
+            a data series containing the ASD
 
         See also
         --------
