@@ -29,7 +29,7 @@ from astropy import units
 
 from ...segments import Segment
 from ...testing import utils
-from .. import (Series, Array2D)
+from .. import (Series, Array2D, Index)
 from .test_array import TestArray as _TestArray
 
 
@@ -321,13 +321,16 @@ class TestSeries(_TestArray):
         ts2 = ts1.pad(10)
         utils.assert_array_equal(
             ts2.xindex,
-            numpy.linspace(*ts2.xspan, num=ts2.size, endpoint=False),
+            Index(
+                numpy.linspace(*ts2.xspan, num=ts2.shape[0], endpoint=False),
+                unit=ts1.xindex.unit,
+            ),
         )
 
     def test_pad_asymmetric(self):
         ts1 = self.create()
         ts2 = ts1.pad((20, 10))
-        assert ts2.size == ts1.size + 30
+        assert ts2.shape[0] == ts1.shape[0] + 30
         utils.assert_array_equal(
             ts2.value,
             numpy.concatenate((numpy.zeros(20), ts1.value, numpy.zeros(10))))
