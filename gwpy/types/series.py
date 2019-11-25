@@ -977,7 +977,7 @@ class Series(Array):
         new.__metadata_finalize__(self)
         new._unit = self.unit
         # finally move the starting index based on the amount of left-padding
-        new.x0 -= self.dx * pad_width[0]
+        new.x0 = new.x0 - self.dx * pad_width[0]
         return new
 
     def inject(self, other):
