@@ -749,7 +749,6 @@ class TestEventTable(TestTable):
                 shutil.rmtree(os.path.dirname(fp))
 
     @pytest.fixture(scope="module")
-    @utils.skip_missing_dependency("pymysql")
     def hacr_table(self):
         """Create a table of HACR-like data, and patch
         `pymysql.connect` to return it
@@ -759,7 +758,10 @@ class TestEventTable(TestTable):
             "pymysql.connect",
             return_value=mock_hacr_connection(table, 123, 456),
         )
-        connect.start()
+        try:
+            connect.start()
+        except ImportError as exc:
+            return pytest.skip(str(exc))
         yield table
         connect.stop()
 
