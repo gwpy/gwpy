@@ -748,34 +748,38 @@ class TestEventTable(TestTable):
             if os.path.isdir(os.path.dirname(fp)):
                 shutil.rmtree(os.path.dirname(fp))
 
-    def test_fetch_hacr(self):
+    @pytest.fixture(scope="module")
+    @utils.skip_missing_dependency("pymysql")
+    def hacr_table(self):
+        """Create a table of HACR-like data, and patch
+        `pymysql.connect` to return it
+        """
         table = self.create(100, names=HACR_COLUMNS)
-        try:
-            from pymysql import connect  # noqa: F401
-        except ImportError:
-            mockee = 'gwpy.table.io.hacr.connect'
-        else:
-            mockee = 'pymysql.connect'
-        with mock.patch(mockee) as mock_connect:
-            mock_connect.return_value = mock_hacr_connection(
-                table, 123, 456)
+        connect = mock.patch(
+            "pymysql.connect",
+            return_value=mock_hacr_connection(table, 123, 456),
+        )
+        connect.start()
+        yield table
+        connect.stop()
 
-            # test simple query returns the full table
-            t2 = self.TABLE.fetch('hacr', 'X1:TEST-CHANNEL', 123, 456)
-            utils.assert_table_equal(table, t2)
+    def test_fetch_hacr(self, hacr_table):
+        t2 = self.TABLE.fetch('hacr', 'X1:TEST-CHANNEL', 123, 456)
 
-            # test column selection works
-            t2 = self.TABLE.fetch('hacr', 'X1:TEST-CHANNEL', 123, 456,
-                                  columns=['gps_start', 'snr'])
-            utils.assert_table_equal(table['gps_start', 'snr'], t2)
+        # check type matches
+        assert type(t2) is self.TABLE
 
-            # test column selection works
-            t2 = self.TABLE.fetch('hacr', 'X1:TEST-CHANNEL', 123, 456,
-                                  columns=['gps_start', 'snr'],
-                                  selection='freq_central>500')
-            utils.assert_table_equal(
-                filter_table(table, 'freq_central>500')['gps_start', 'snr'],
-                t2)
+        # check response is correct
+        utils.assert_table_equal(hacr_table, t2)
+
+    def test_fetch_hacr_columns(self, hacr_table):
+        t2 = self.TABLE.fetch('hacr', 'X1:TEST-CHANNEL', 123, 456,
+                              columns=['gps_start', 'snr'],
+                              selection='freq_central>500')
+        utils.assert_table_equal(
+            filter_table(hacr_table, 'freq_central>500')['gps_start', 'snr'],
+            t2,
+        )
 
     def test_fetch_open_data(self):
         try:
