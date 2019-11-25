@@ -761,7 +761,7 @@ class TestEventTable(TestTable):
         try:
             connect.start()
         except ImportError as exc:
-            return pytest.skip(str(exc))
+            pytest.skip(str(exc))
         yield table
         connect.stop()
 
