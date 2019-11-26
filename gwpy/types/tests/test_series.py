@@ -29,7 +29,7 @@ from astropy import units
 
 from ...segments import Segment
 from ...testing import utils
-from .. import (Series, Array2D)
+from .. import (Series, Array2D, Index)
 from .test_array import TestArray as _TestArray
 
 
@@ -312,16 +312,29 @@ class TestSeries(_TestArray):
             ts2.value,
             numpy.concatenate((numpy.zeros(10), ts1.value, numpy.zeros(10))))
         assert ts2.x0 == ts1.x0 - 10*ts1.x0.unit
-        # test pre-pad
-        ts3 = ts1.pad((20, 10))
-        assert ts3.size == ts1.size + 30
+
+    def test_pad_index(self):
+        """Check that `Series.pad` correctly returns a padded index array
+        """
+        ts1 = self.create()
+        ts1.xindex  # <- create the index for ts1
+        ts2 = ts1.pad(10)
         utils.assert_array_equal(
-            ts3.value,
+            ts2.xindex,
+            Index(
+                numpy.linspace(*ts2.xspan, num=ts2.shape[0], endpoint=False),
+                unit=ts1.xindex.unit,
+            ),
+        )
+
+    def test_pad_asymmetric(self):
+        ts1 = self.create()
+        ts2 = ts1.pad((20, 10))
+        assert ts2.shape[0] == ts1.shape[0] + 30
+        utils.assert_array_equal(
+            ts2.value,
             numpy.concatenate((numpy.zeros(20), ts1.value, numpy.zeros(10))))
-        assert ts3.x0 == ts1.x0 - 20*ts1.x0.unit
-        # test bogus input
-        with pytest.raises(ValueError):
-            ts1.pad(-1)
+        assert ts2.x0 == ts1.x0 - 20*ts1.x0.unit
 
     def test_diff(self, array):
         """Test the `Series.diff` method
