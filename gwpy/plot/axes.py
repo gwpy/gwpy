@@ -525,7 +525,18 @@ class Axes(_Axes):
         # create legend
         return super(Axes, self).legend(*args, **kwargs)
 
-    legend.__doc__ = _Axes.legend.__doc__
+    legend.__doc__ = _Axes.legend.__doc__.replace(
+        "Call signatures",
+        """.. note::
+
+   This method uses a custom default legend handler for
+   `~matplotlib.lines.Line2D` objects, with increased linewidth relative
+   to the upstream :meth:`~matplotlib.axes.Axes.legend` method.
+   To disable this, pass ``handler_map=None``, or create and pass your
+   own handler class.  See :ref:`gwpy-plot-legend` for more details.
+
+Call signatures""",
+    )
 
     def colorbar(self, mappable=None, **kwargs):
         """Add a `~matplotlib.colorbar.Colorbar` to these `Axes`
