@@ -38,7 +38,7 @@ def series_contenthandler():
     @ligolw_array.use_in
     @ligolw_param.use_in
     class ArrayContentHandler(ligolw.LIGOLWContentHandler):
-        """`~xml.sax.handlers.ContentHandler` to read a LIGO_LW <Array>
+        """`~xml.sax.handlers.ContentHandler` to read a LIGO_LW ``<Array>``
         """
         pass
 
@@ -134,7 +134,7 @@ def _update_metadata_from_ligolw(array, kwargs):
     return kwargs
 
 
-def read_series(source, name=None, epoch=None, **params):
+def read_series(source, name=None, epoch=None, contenthandler=None, **params):
     """Read a `Series` from ``LIGO_LW`` XML
 
     Parameters
@@ -148,6 +148,10 @@ def read_series(source, name=None, epoch=None, **params):
     epoch : `float`, `int`, optional
         GPS time epoch of ``<LIGO_LW>`` element to read
 
+    contenthandler : `~xml.sax.handler.ContentHandler`, optional
+        the content handler to use when parsing the document, see
+        :func:`series_contenthandler` for the default handler
+
     **params
         other ``<Param>`` ``(name, value)`` pairs to use in matching
         the parent correct ``<LIGO_LW>`` element to read
@@ -160,7 +164,10 @@ def read_series(source, name=None, epoch=None, **params):
     from ligo.lw.ligolw import Dim
 
     # read document and find relevant <Array> element
-    xmldoc = read_ligolw(source, contenthandler=series_contenthandler())
+    xmldoc = read_ligolw(
+        source,
+        contenthandler=contenthandler or series_contenthandler(),
+    )
     array = _match_array(xmldoc, name=name, epoch=epoch, **params)
 
     # parse dimensions
@@ -169,9 +176,12 @@ def read_series(source, name=None, epoch=None, **params):
     x0 = xdim.Start
     dx = xdim.Scale
     xunit = xdim.Unit
-    if ydim.n > Series._ndim + 1:
-        raise ValueError("Cannot parse LIGO_LW Array with {} "
-                         "dimensions".format(ydim.n))
+    if ydim.n > Series._ndim + 1:  # check that we can store these data
+        raise ValueError(
+            "Cannot parse LIGO_LW Array with {} dimensions in a Series".format(
+                ydim.n,
+            ),
+        )
 
     # parse metadata
     array_kw = {
@@ -194,4 +204,6 @@ def read_series(source, name=None, epoch=None, **params):
         xindex, value = array.array
     except ValueError:  # not two dimensions stored
         return Series(array.array[0], x0=x0, dx=dx, **array_kw)
-    return Series(value, xindex=xindex, **array_kw)
+    else:
+        xindex += x0
+        return Series(value, xindex=xindex, **array_kw)
