@@ -28,19 +28,21 @@ from importlib import import_module
 from argparse import (ArgumentParser, ArgumentDefaultsHelpFormatter)
 
 from matplotlib import use
-# if launched from a terminal with no display
-# Must be done before modules like pyplot are imported
-if len(os.getenv('DISPLAY', '')) == 0:
-    use('Agg')
 
 from .. import __version__
 from . import PRODUCTS
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
+# if launched from a terminal with no display
+# Must be done before modules like pyplot are imported
+if len(os.getenv('DISPLAY', '')) == 0:
+    use('Agg')
+
 PROG_START = time.time()    # verbose enough times major ops
 
 INTERACTIVE = hasattr(sys, 'ps1')
+
 
 # -- init command line --------------------------------------------------------
 
@@ -72,13 +74,11 @@ def create_parser():
 
     # Add the subparsers for each plot product
     for product, product_class in PRODUCTS.items():
-        # the action is the command line argument for which lot which class to call
         subparser = subparsers.add_parser(
             product, help=product_class.__doc__.strip().split('\n')[0],
             parents=[parentparser],
             formatter_class=ArgumentDefaultsHelpFormatter,
         )
-
         product_class.init_cli(subparser)
 
     return parser
