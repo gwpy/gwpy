@@ -50,7 +50,7 @@ LIGO_LW_ARRAY = r"""<?xml version='1.0' encoding='utf-8'?>
     <Time Type="GPS" Name="epoch">1000000000</Time>
     <Param Type="lstring" Name="channel:param">X1:TEST-CHANNEL_1</Param>
     <Array Type="real_8" Name="PSD1:array" Unit="Hz^-1">
-      <Dim Start="0" Scale="1" Name="Frequency" Unit="Hz">5</Dim>
+      <Dim Start="10" Scale="1" Name="Frequency" Unit="Hz">5</Dim>
       <Dim Name="Frequency,Real">2</Dim>
       <Stream Delimiter=" " Type="Local">
         0 1
@@ -253,13 +253,13 @@ class TestFrequencySeries(_TestSeries):
     @utils.skip_missing_dependency('ligo.lw')
     def test_read_ligolw(self, ligolw):
         array = FrequencySeries.read(ligolw, 'PSD1')
-        utils.assert_array_equal(
+        utils.assert_quantity_equal(
             array,
             [1, 2, 3, 4, 5] / units.Hz,
         )
-        utils.assert_array_equal(
+        utils.assert_quantity_equal(
             array.frequencies,
-            [0, 1, 2, 3, 4] * units.Hz,
+            [10, 11, 12, 13, 14] * units.Hz,
         )
         assert numpy.isclose(array.epoch.gps, 1000000000)  # precision gah!
         assert array.unit == units.Hz ** -1
