@@ -410,15 +410,6 @@ def get_setup_requires():
     return reqlist
 
 
-def get_scripts(scripts_dir='bin'):
-    """Get relative file paths for all files under the ``scripts_dir``
-    """
-    scripts = []
-    for (dirname, _, filenames) in os.walk(scripts_dir):
-        scripts.extend([os.path.join(dirname, fn) for fn in filenames])
-    return scripts
-
-
 def _parse_years(years):
     """Parse string of ints include ranges into a `list` of `int`
 
