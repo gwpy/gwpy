@@ -157,7 +157,7 @@ This package provides the command line plotting interface 'gwpy-plot'
 mkdir -vp %{buildroot}%{_mandir}/man1
 env PYTHONPATH="%{buildroot}%{python2_sitelib}" COLUMNS=1000 \
 help2man \
-    --name "Command-line GWpy plot generator"
+    --name "Command-line GWpy plot generator" \
     --source "Gwpy-%{version}" \
     --version-string %{version} \
     --section 1 --no-info --no-discard-stderr \

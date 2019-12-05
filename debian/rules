@@ -10,7 +10,7 @@ export PYBUILD_AFTER_INSTALL_python2 := \
 	mkdir -pv {destdir}/usr/share/man/man1 && \
 	env PYTHONPATH={destdir}{install_dir} \
 	help2man \
-		--name "Command-line GWpy plot generator"
+		--name "Command-line GWpy plot generator" \
 		--source "GWpy-%{version}" \
 		--version-string %{version} \
 		--section 1 --no-info --no-discard-stderr \
