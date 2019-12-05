@@ -122,3 +122,7 @@ def main(args=None):
     prod.log(1, 'Program run time: %.1f' % run_time)
     if prod.got_error:
         return 2     # make sure when running batch they can test for error
+
+
+if __name__ == "__main__":  # pragma: no-cover
+    sys.exit(main())
