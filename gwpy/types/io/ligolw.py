@@ -200,10 +200,9 @@ def read_series(source, name=None, epoch=None, contenthandler=None, **params):
         array_kw["unit"] = array_kw["unit"].split(" ", 1)[1] + " Hz^-1"
 
     # build Series
-    try:
-        xindex, value = array.array
-    except ValueError:  # not two dimensions stored
-        return Series(array.array[0], x0=x0, dx=dx, **array_kw)
-    else:
-        xindex += x0
-        return Series(value, xindex=xindex, **array_kw)
+    # note: in order to match the functionality of lal.series,
+    #       we discard the actual frequency array, I (DMM) am
+    #       not convinced this is the right thing to do, but
+    #       it at least provides consistency across multiple
+    #       implementations
+    return Series(array.array[-1], x0=x0, dx=dx, **array_kw)
