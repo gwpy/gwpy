@@ -82,6 +82,7 @@ Description: GWpy is a collaboration-driven Python package providing tools for
 Package: gwpy-plot
 Architecture: all
 Depends: ${misc:Depends},
+         ${python:Depends},
          python-gwpy (= ${binary:Version}),
 Description: GWpy is a collaboration-driven Python package providing tools for
  studying data from ground-based gravitational-wave detectors.
