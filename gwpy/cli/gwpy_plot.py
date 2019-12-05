@@ -24,7 +24,6 @@ import time
 
 import os
 import sys
-from importlib import import_module
 from argparse import (ArgumentParser, ArgumentDefaultsHelpFormatter)
 
 from matplotlib import use
@@ -98,7 +97,7 @@ def main(args=None):
     """
     # parse the command line and create a product object
     args = parse_command_line(args=args)
-    prod = PRODUCT[args.mode](args)
+    prod = PRODUCTS[args.mode](args)
     prod.log(2, ('{0} created'.format(prod.action)))
 
     # log how long it took us to get here
@@ -111,13 +110,13 @@ def main(args=None):
     # overload the current namespace for interactive (i)python users
     if INTERACTIVE:
         # import pyplot so that user has access to it
-        from matplotlib import pyplot as plt  # pylint: disable=unused-import
+        from matplotlib import pyplot as plt  # noqa: F401
         plot = prod.plot
         # pull raw data and plotted results from product for their use
-        timeseries = prod.timeseries
-        result = prod.result
+        timeseries = prod.timeseries  # noqa: F841
+        result = prod.result  # noqa: F841
         print('Raw data is in "timeseries", plotted data is in "result"')
-        ax = plot.gca()
+        ax = plot.gca()  # noqa: F841
 
     run_time = time.time() - PROG_START
     prod.log(1, 'Program run time: %.1f' % run_time)
