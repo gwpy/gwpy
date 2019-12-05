@@ -24,7 +24,11 @@ import time
 
 import os
 import sys
-from argparse import (ArgumentParser, ArgumentDefaultsHelpFormatter)
+from argparse import (
+    ArgumentParser,
+    ArgumentDefaultsHelpFormatter,
+    RawTextHelpFormatter,
+)
 
 from matplotlib import use
 
@@ -42,19 +46,49 @@ PROG_START = time.time()    # verbose enough times major ops
 
 INTERACTIVE = hasattr(sys, 'ps1')
 
+EPILOG = """
+Examples:
+
+    $ gwpy-plot timeseries --chan H1:GDS-CALIB_STRAIN --start 1126259457
+
+    $ gwpy-plot spectrum --chan H1:GDS-CALIB_STRAIN L1:GDS-CALIB_STRAIN --chan V1:Hrec_hoft_16384Hz --start 1187008866 --duration 32 --xmin 10 --xmax 4000
+
+    $ gwpy-plot coherencegram --chan H1:GDS-CALIB_STRAIN H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ --start 1126260017 --duration 600
+
+Written by {author}.
+Report bugs to https://github.com/gwpy/gwpy/issues/.
+""".format(
+    author=__author__,
+)
+
 
 # -- init command line --------------------------------------------------------
+
+class HelpFormatter(ArgumentDefaultsHelpFormatter, RawTextHelpFormatter):
+    def _format_usage(self, usage, actions, groups, prefix):
+        if prefix is None:
+            prefix = "Usage: "
+        return super(HelpFormatter, self)._format_usage(
+            usage,
+            actions,
+            groups,
+            prefix,
+        )
+
 
 class _ArgumentParser(ArgumentParser):
     def __init__(self, *args, **kwargs):
         super(_ArgumentParser, self).__init__(*args, **kwargs)
         self._positionals.title = 'Positional arguments'
-        self._optionals.title = 'Help options'
+        self._optionals.title = 'Options'
 
 
 def create_parser():
     parser = _ArgumentParser(
-        description=__doc__, formatter_class=ArgumentDefaultsHelpFormatter)
+        description=__doc__,
+        formatter_class=HelpFormatter,
+        epilog=EPILOG,
+    )
     parser.add_argument('-V', '--version', action='version',
                         version=__version__)
 
