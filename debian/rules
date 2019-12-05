@@ -1,7 +1,5 @@
 #!/usr/bin/make -f
 
-export PYBUILD_NAME := gwpy
-
 # don't run tests (yet)
 export PYBUILD_DISABLE := test
 
