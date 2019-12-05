@@ -57,7 +57,7 @@ Examples:
 
 Written by {author}.
 Report bugs to https://github.com/gwpy/gwpy/issues/.
-""".format(
+""".format(  # noqa: E501
     author=__author__,
 )
 
