@@ -64,6 +64,9 @@ BuildRequires:  python%{python3_pkgversion}-scipy >= 0.12.1
 BuildRequires:  python%{python3_pkgversion}-six >= 1.5
 BuildRequires:  python%{python3_pkgversion}-tqdm >= 4.10.0
 
+# gwpy-plot
+BuildRequires: help2man
+
 %description
 {{ long_description }}
 
@@ -92,7 +95,9 @@ Requires:       scipy >= 0.12.1
 %{?python_provide:%python_provide python2-%{srcname}}
 
 %description -n python2-%{srcname}
-{{ long_description }}
+GWpy is a collaboration-driven Python package providing tools for
+studying data from ground-based gravitational-wave detectors.
+This package provides the Python %{python2_version} library.
 
 # -- python3-gwpy -------------------------------------------------------------
 
@@ -116,7 +121,21 @@ Requires:       python%{python3_pkgversion}-tqdm >= 4.10.0
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{srcname}}
 
 %description -n python%{python3_pkgversion}-%{srcname}
-{{ long_description }}
+GWpy is a collaboration-driven Python package providing tools for
+studying data from ground-based gravitational-wave detectors.
+This package provides the Python %{python3_version} library.
+
+# -- gwpy-plot ----------------------------------------------------------------
+
+%package -n gwpy-plot
+Summary:       Command-line GWpy plot generator
+Requires:      python2-gwpy = %{version}-%{release}
+Conflicts:     python2-gwpy < 1.0.0-1
+
+%description -n gwpy-plot
+GWpy is a collaboration-driven Python package providing tools for
+studying data from ground-based gravitational-wave detectors.
+This package provides the command line plotting interface 'gwpy-plot'
 
 # -- build stages -------------------------------------------------------------
 
@@ -128,8 +147,22 @@ Requires:       python%{python3_pkgversion}-tqdm >= 4.10.0
 %py3_build
 
 %install
+# install python3 library
 %py3_install
+
+# install python2 library (including gwpy-plot entry point)
 %py2_install
+
+# install man page for gwpy-plot
+mkdir -vp %{buildroot}%{_mandir}/man1
+env PYTHONPATH="%{buildroot}%{python2_sitelib}" COLUMNS=1000 \
+help2man \
+    --name "Command-line GWpy plot generator" \
+    --source "Gwpy-%{version}" \
+    --version-string %{version} \
+    --section 1 --no-info --no-discard-stderr \
+    --output %{buildroot}%{_mandir}/man1/gwpy-plot.1 \
+    %{buildroot}%{_bindir}/gwpy-plot
 
 %check
 # sanity check python2
@@ -149,12 +182,15 @@ export PYTHONPATH="${RPM_BUILD_ROOT}%{python3_sitelib}"
 %license LICENSE
 %doc README.md
 %{python2_sitelib}/*
-%{_bindir}/gwpy-plot
 
 %files -n python%{python3_pkgversion}-%{srcname}
 %license LICENSE
 %doc README.md
 %{python3_sitelib}/*
+
+%files -n gwpy-plot
+%{_bindir}/gwpy-plot
+%{_mandir}/man1/gwpy-plot.1*
 
 # -- changelog ----------------------------------------------------------------
 
