@@ -299,7 +299,7 @@ class SpectralVariance(Array2D):
             else:
                 bins = numpy.linspace(low, high, num=nbins+1)
         nbins = bins.size-1
-        bins = bins * spectrogram.unit
+        qbins = bins * spectrogram.unit
 
         # loop over frequencies
         out = numpy.zeros((data.shape[1], nbins))
@@ -311,7 +311,7 @@ class SpectralVariance(Array2D):
 
         # return SpectralVariance
         name = '%s variance' % spectrogram.name
-        new = cls(out, bins, epoch=spectrogram.epoch, name=name,
+        new = cls(out, qbins, epoch=spectrogram.epoch, name=name,
                   channel=spectrogram.channel, f0=spectrogram.f0,
                   df=spectrogram.df)
         return new
