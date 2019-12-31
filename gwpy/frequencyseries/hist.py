@@ -352,7 +352,7 @@ class SpectralVariance(Array2D):
         if method == 'imshow':
             raise TypeError("plotting a {0} with {1}() is not "
                             "supported".format(type(self).__name__, method))
-        bins = self.bins
+        bins = self.bins.value
         if (numpy.all(bins > 0) and
                 numpy.allclose(numpy.diff(numpy.log10(bins), n=2), 0)):
             kwargs.setdefault('yscale', 'log')
