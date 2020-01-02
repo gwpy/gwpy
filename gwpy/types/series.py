@@ -973,7 +973,7 @@ class Series(Array):
         if isinstance(pad_width, int):
             pad_width = (pad_width,)
         # form pad and view to this type
-        new = numpy.pad(self, pad_width, **kwargs).view(type(self))
+        new = numpy.pad(self.value, pad_width, **kwargs).view(type(self))
         # numpy.pad has stripped all metadata, so copy it over
         new.__metadata_finalize__(self)
         new._unit = self.unit
