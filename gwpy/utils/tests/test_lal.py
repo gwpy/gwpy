@@ -70,7 +70,7 @@ def test_to_lal_unit():
 def test_from_lal_unit():
     try:
         lalms = lal.MeterUnit / lal.SecondUnit
-    except TypeError as exc:
+    except TypeError as exc:  # pragma: no-cover
         # see https://git.ligo.org/lscsoft/lalsuite/issues/65
         pytest.skip(str(exc))
     assert utils_lal.from_lal_unit(lalms) == units.Unit('m/s')

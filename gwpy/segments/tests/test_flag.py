@@ -162,7 +162,7 @@ def query_segdb(query_func, *args, **kwargs):
              mock.patch('glue.segmentdb.segmentdb_utils.query_segments',
                         mocks.segdb_query_segments(QUERY_RESULT)):
             return query_func(*args, **kwargs)
-    except ImportError as e:
+    except ImportError as e:  # pragma: no-cover
         pytest.skip(str(e))
 
 
@@ -633,7 +633,7 @@ class TestDataQualityFlag(object):
         try:
             segs = self.TEST_CLASS.fetch_open_data(
                 'H1_DATA', 946339215, 946368015)
-        except (URLError, SSLError) as exc:
+        except (URLError, SSLError) as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         assert segs.ifo == 'H1'
         assert segs.name == 'H1:DATA'

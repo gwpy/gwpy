@@ -63,7 +63,7 @@ class TestGravitySpyTable(_TestEventTable):
                 howmany=1,
                 remote_timeout=60,
             )
-        except (URLError, SSLError, timeout) as e:
+        except (URLError, SSLError, timeout) as e:  # pragma: no-cover
             pytest.skip(str(e))
 
         utils.assert_table_equal(table, self.TABLE(JSON_RESPONSE))
