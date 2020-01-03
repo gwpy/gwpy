@@ -951,9 +951,10 @@ class Series(Array):
         Parameters
         ----------
         pad_width : `int`, pair of `ints`
-            number of samples by which to pad each end of the array.
-            Single int to pad both ends by the same amount, or
-            (before, after) `tuple` to give uneven padding
+            number of samples by which to pad each end of the array;
+            given a single `int` to pad both ends by the same amount,
+            or a (before, after) `tuple` for assymetric padding
+
         **kwargs
             see :meth:`numpy.pad` for kwarg documentation
 
@@ -972,12 +973,12 @@ class Series(Array):
         if isinstance(pad_width, int):
             pad_width = (pad_width,)
         # form pad and view to this type
-        new = numpy.pad(self, pad_width, **kwargs).view(type(self))
+        new = numpy.pad(self.value, pad_width, **kwargs).view(type(self))
         # numpy.pad has stripped all metadata, so copy it over
         new.__metadata_finalize__(self)
         new._unit = self.unit
         # finally move the starting index based on the amount of left-padding
-        new.x0 -= self.dx * pad_width[0]
+        new.x0 = new.x0 - self.dx * pad_width[0]
         return new
 
     def inject(self, other):

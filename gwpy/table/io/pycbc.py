@@ -234,11 +234,17 @@ def empty_hdf5_file(h5f, ifo=None):
     # the decorator opens the HDF5 file for us, so h5f is guaranteed to
     # be an h5py.Group object
     h5f = h5f.file
+    # if the root group is empty, the file is empty
     if list(h5f) == []:
         return True
-    if ifo is not None and (ifo not in h5f or list(h5f[ifo]) == ['psd']):
-        return True
-    return False
+
+    # for each group (or the IFO group given by the user),
+    # check whether there is any useful content
+    groups = h5f.keys() if ifo is None else [ifo]
+    for group in groups:
+        if not set(h5f.get(group, [])).issubset({'gates', 'psd'}):
+            return False
+    return True
 
 
 def identify_pycbc_live(origin, filepath, fileobj, *args, **kwargs):

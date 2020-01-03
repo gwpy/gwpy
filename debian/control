@@ -9,10 +9,11 @@ X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
 Build-Depends: debhelper (>= 9),
                dh-python,
+               help2man,
                python-all,
                python3-all,
                python-setuptools,
-               python3-setuptools
+               python3-setuptools,
 
 # -- python-gwpy --------------------------------------------------------------
 
@@ -42,9 +43,9 @@ Suggests: python-glue (>= 1.60.0),
           python-psycopg2,
           python-pymysql,
           python-sqlalchemy
-Description: A python package for gravitational-wave astrophysics
- GWpy is a collaboration-driven Python package providing tools
- for studying data from ground-based gravitational-wave detectors.
+Description: GWpy is a collaboration-driven Python package providing tools for
+ studying data from ground-based gravitational-wave detectors.
+ This package provides the Python 2 library.
 
 # -- python3-gwpy -------------------------------------------------------------
 
@@ -72,6 +73,17 @@ Suggests: python3-glue (>= 1.60.0),
           python3-psycopg2,
           python3-pymysql,
           python3-sqlalchemy
-Description: A python package for gravitational-wave astrophysics
- GWpy is a collaboration-driven Python package providing tools
- for studying data from ground-based gravitational-wave detectors.
+Description: GWpy is a collaboration-driven Python package providing tools for
+ studying data from ground-based gravitational-wave detectors.
+ This package provides the Python 3 library.
+
+# -- gwpy-plot ----------------------------------------------------------------
+
+Package: gwpy-plot
+Architecture: all
+Depends: ${misc:Depends},
+         ${python:Depends},
+         python-gwpy (= ${binary:Version}),
+Description: GWpy is a collaboration-driven Python package providing tools for
+ studying data from ground-based gravitational-wave detectors.
+ This package provides the command line plotting interface 'gwpy-plot'

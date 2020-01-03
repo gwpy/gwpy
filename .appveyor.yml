@@ -23,6 +23,8 @@ install:
   # fill it with our dependencies
   - python ci\\parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
   - conda install --yes --file conda-reqs.txt
+  - conda deactivate
+  - conda activate gwpy
   # print everything we have
   - conda list
 build_script:

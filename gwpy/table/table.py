@@ -335,7 +335,22 @@ class EventTable(Table):
         # standard registered fetch
         from .io.fetch import get_fetcher
         fetcher = get_fetcher(format_, cls)
-        return fetcher(*args, **kwargs)
+        out = fetcher(*args, **kwargs)
+        if not isinstance(out, cls):
+            if issubclass(cls, type(out)):
+                try:
+                    return cls(out)
+                except Exception as exc:
+                    exc.args = (
+                        "could not convert fetch() output to {0}: {1}".format(
+                            cls.__name__, str(exc),
+                        ),
+                    )
+                    raise
+            raise TypeError(
+                "fetch() should return a {0} instance".format(cls.__name__),
+            )
+        return out
 
     @classmethod
     def fetch_open_data(cls, catalog, columns=None, selection=None,

@@ -32,7 +32,7 @@ from setuptools import (setup, find_packages,
                         __version__ as setuptools_version)
 
 import versioneer
-from setup_utils import (CMDCLASS, get_setup_requires, get_scripts)
+from setup_utils import (CMDCLASS, get_setup_requires)
 
 __version__ = versioneer.get_version()
 
@@ -109,7 +109,11 @@ setup(
 
     # package content
     packages=find_packages(),
-    scripts=get_scripts(),
+    entry_points={
+        "console_scripts": [
+            "gwpy-plot=gwpy.cli.gwpy_plot:main",
+        ],
+    },
     include_package_data=True,
 
     # dependencies

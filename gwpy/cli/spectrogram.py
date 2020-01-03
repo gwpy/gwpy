@@ -186,8 +186,8 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             imin = specgram.value.min()
             imax = specgram.value.max()
         else:
-            imin = percentile(specgram, 1)
-            imax = percentile(specgram, 100)
+            imin = percentile(specgram.value, 1)
+            imax = percentile(specgram.value, 100)
         imin = args.imin if args.imin is not None else imin
         imax = args.imax if args.imax is not None else imax
 

@@ -1,9 +1,19 @@
 #!/usr/bin/make -f
 
-export PYBUILD_NAME := gwpy
-
 # don't run tests (yet)
 export PYBUILD_DISABLE := test
+
+# generate gwpy-plot man page with help2man
+export PYBUILD_AFTER_INSTALL_python2 := \
+	mkdir -pv {destdir}/usr/share/man/man1 && \
+	env PYTHONPATH={destdir}{install_dir} \
+	help2man \
+		--name "Command-line GWpy plot generator" \
+		--source "GWpy-%{version}" \
+		--version-string %{version} \
+		--section 1 --no-info --no-discard-stderr \
+		--output {destdir}/usr/share/man/man1/gwpy-plot.1 \
+		{destdir}/usr/bin/gwpy-plot
 
 # don't install scripts for python3 (yet)
 export PYBUILD_INSTALL_ARGS_python3 := --install-scripts=/trash

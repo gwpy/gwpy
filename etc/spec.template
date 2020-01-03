@@ -14,15 +14,58 @@ URL:            {{ url }}
 Source0:        %pypi_source
 
 BuildArch:      noarch
-BuildRequires:  rpm-build
+
+# SRPM dependencies
 BuildRequires:  python-rpm-macros
 BuildRequires:  python-srpm-macros
-BuildRequires:  python2-rpm-macros
-BuildRequires:  python3-rpm-macros
-BuildRequires:  epel-rpm-macros
 
+# python2-gwpy
+BuildRequires:  python
+BuildRequires:  python2-rpm-macros
 BuildRequires:  python2-setuptools
+
+# check requirements for python2-gwpy
+BuildRequires:  h5py >= 1.3
+BuildRequires:  numpy >= 1.7.1
+BuildRequires:  python-pathlib
+BuildRequires:  python-six >= 1.5
+BuildRequires:  python2-astropy >= 1.1.1
+BuildRequires:  python2-dateutil
+BuildRequires:  python2-dqsegdb2
+BuildRequires:  python2-enum34
+BuildRequires:  python2-gwdatafind
+BuildRequires:  python2-gwosc
+BuildRequires:  python2-lal >= 6.14.0
+BuildRequires:  python2-ldas-tools-framecpp >= 2.6.0
+BuildRequires:  python2-ligo-segments >= 1.0.0
+BuildRequires:  python2-matplotlib >= 1.2.0
+BuildRequires:  python2-tqdm >= 4.10.0
+BuildRequires:  scipy >= 0.12.1
+
+# python3-gwpy
+BuildRequires:  epel-rpm-macros
+BuildRequires:  python3-rpm-macros
+BuildRequires:  python%{python3_pkgversion}
 BuildRequires:  python%{python3_pkgversion}-setuptools
+
+# check requirements for python3-gwpy
+BuildRequires:  python%{python3_pkgversion}-astropy >= 1.1.1
+BuildRequires:  python%{python3_pkgversion}-dateutil
+BuildRequires:  python%{python3_pkgversion}-dqsegdb2
+BuildRequires:  python%{python3_pkgversion}-gwdatafind
+BuildRequires:  python%{python3_pkgversion}-gwosc
+BuildRequires:  python%{python3_pkgversion}-h5py >= 1.3
+BuildRequires:  python%{python3_pkgversion}-lal >= 6.14.0
+BuildRequires:  python%{python3_pkgversion}-ldas-tools-framecpp >= 2.6.0
+BuildRequires:  python%{python3_pkgversion}-ligo-segments >= 1.0.0
+BuildRequires:  python%{python3_pkgversion}-matplotlib >= 1.2.0
+BuildRequires:  python%{python3_pkgversion}-numpy >= 1.7.1
+BuildRequires:  python%{python3_pkgversion}-scipy >= 0.12.1
+BuildRequires:  python%{python3_pkgversion}-six >= 1.5
+BuildRequires:  python%{python3_pkgversion}-tqdm >= 4.10.0
+
+# gwpy-plot
+BuildRequires: help2man
 
 %description
 {{ long_description }}
@@ -32,31 +75,35 @@ BuildRequires:  python%{python3_pkgversion}-setuptools
 
 %package -n python2-%{srcname}
 Summary:        %{summary}
-Requires:       python-six >= 1.5
-Requires:       python-dateutil
-Requires:       python-enum34
-Requires:       numpy >= 1.7.1
-Requires:       scipy >= 0.12.1
-Requires:       python-matplotlib >= 1.2.0
-Requires:       python-astropy >= 1.3.0
 Requires:       h5py >= 1.3
-Requires:       python2-ldas-tools-framecpp >= 2.6.0
-Requires:       python2-lal >= 6.14.0
-Requires:       python2-ligo-segments >= 1.0.0
+Requires:       numpy >= 1.7.1
+Requires:       python
 Requires:       python-pathlib
-Requires:       python2-tqdm >= 4.10.0
-Requires:       python2-gwosc
+Requires:       python-six >= 1.5
+Requires:       python2-astropy >= 1.1.1
+Requires:       python2-dateutil
 Requires:       python2-dqsegdb2
+Requires:       python2-enum34
 Requires:       python2-gwdatafind
+Requires:       python2-gwosc
+Requires:       python2-lal >= 6.14.0
+Requires:       python2-ldas-tools-framecpp >= 2.6.0
+Requires:       python2-ligo-segments >= 1.0.0
+Requires:       python2-matplotlib >= 1.2.0
+Requires:       python2-tqdm >= 4.10.0
+Requires:       scipy >= 0.12.1
 %{?python_provide:%python_provide python2-%{srcname}}
 
 %description -n python2-%{srcname}
-{{ long_description }}
+GWpy is a collaboration-driven Python package providing tools for
+studying data from ground-based gravitational-wave detectors.
+This package provides the Python %{python2_version} library.
 
 # -- python3-gwpy -------------------------------------------------------------
 
 %package -n python%{python3_pkgversion}-%{srcname}
 Summary:        %{summary}
+Requires:       python%{python3_pkgversion}
 Requires:       python%{python3_pkgversion}-astropy >= 1.1.1
 Requires:       python%{python3_pkgversion}-dateutil
 Requires:       python%{python3_pkgversion}-dqsegdb2
@@ -74,7 +121,21 @@ Requires:       python%{python3_pkgversion}-tqdm >= 4.10.0
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{srcname}}
 
 %description -n python%{python3_pkgversion}-%{srcname}
-{{ long_description }}
+GWpy is a collaboration-driven Python package providing tools for
+studying data from ground-based gravitational-wave detectors.
+This package provides the Python %{python3_version} library.
+
+# -- gwpy-plot ----------------------------------------------------------------
+
+%package -n gwpy-plot
+Summary:       Command-line GWpy plot generator
+Requires:      python2-gwpy = %{version}-%{release}
+Conflicts:     python2-gwpy < 1.0.0-1
+
+%description -n gwpy-plot
+GWpy is a collaboration-driven Python package providing tools for
+studying data from ground-based gravitational-wave detectors.
+This package provides the command line plotting interface 'gwpy-plot'
 
 # -- build stages -------------------------------------------------------------
 
@@ -86,8 +147,34 @@ Requires:       python%{python3_pkgversion}-tqdm >= 4.10.0
 %py3_build
 
 %install
+# install python3 library
 %py3_install
+
+# install python2 library (including gwpy-plot entry point)
 %py2_install
+
+# install man page for gwpy-plot
+mkdir -vp %{buildroot}%{_mandir}/man1
+env PYTHONPATH="%{buildroot}%{python2_sitelib}" COLUMNS=1000 \
+help2man \
+    --name "Command-line GWpy plot generator" \
+    --source "Gwpy-%{version}" \
+    --version-string %{version} \
+    --section 1 --no-info --no-discard-stderr \
+    --output %{buildroot}%{_mandir}/man1/gwpy-plot.1 \
+    %{buildroot}%{_bindir}/gwpy-plot
+
+%check
+# sanity check python2
+export PYTHONPATH="${RPM_BUILD_ROOT}%{python2_sitelib}"
+%{__python2} -c "import gwpy; print(gwpy.__version__)"
+%{__python2} -m gwpy.time --help
+${RPM_BUILD_ROOT}%{_bindir}/gwpy-plot --help
+
+# sanity check python3
+export PYTHONPATH="${RPM_BUILD_ROOT}%{python3_sitelib}"
+%{__python3} -c "import gwpy; print(gwpy.__version__)"
+%{__python3} -m gwpy.time --help
 
 # -- files --------------------------------------------------------------------
 
@@ -95,12 +182,15 @@ Requires:       python%{python3_pkgversion}-tqdm >= 4.10.0
 %license LICENSE
 %doc README.md
 %{python2_sitelib}/*
-%{_bindir}/gwpy-plot
 
 %files -n python%{python3_pkgversion}-%{srcname}
 %license LICENSE
 %doc README.md
 %{python3_sitelib}/*
+
+%files -n gwpy-plot
+%{_bindir}/gwpy-plot
+%{_mandir}/man1/gwpy-plot.1*
 
 # -- changelog ----------------------------------------------------------------
 

@@ -61,6 +61,10 @@ rpmbuild --define "_topdir ${TOPDIR}" --rebuild ${SRPM}
 
 popd
 
+# print info
+rpm -qilp ${TOPDIR}/RPMS/*/*gwpy*.rpm
+rpm -qp --provides ${TOPDIR}/RPMS/*/*gwpy*.rpm
+
 # -- install ------------------------------------
 
 RPM="${TOPDIR}/RPMS/noarch/${PY_PREFIX}-gwpy-*.rpm"
