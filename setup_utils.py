@@ -46,7 +46,9 @@ CMDCLASS = versioneer.get_cmdclass()
 SETUP_REQUIRES = {
     'test': ['pytest_runner'],
 }
-COPYRIGHT_REGEX = re.compile(r"Copyright[\S ]+\((?P<years>\d\d\d\d([, \d-]+)?)\)")
+COPYRIGHT_REGEX = re.compile(
+    r"Copyright[\S ]+\((?P<years>\d\d\d\d([, \d-]+)?)\)"
+)
 
 # -- documentation builder ----------------------------------------------------
 
