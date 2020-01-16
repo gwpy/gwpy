@@ -777,12 +777,12 @@ class EventTable(Table):
             AllClusterList = []
             SingleClusterIdxList = []
             Cluster_Tend = self['tend'][0]
-            N=len(self)
+            N = len(self)
 
             # Loop over the triggers sorted by tstart column
             for i in range(N):
                 # Same cluster
-                if self['tstart'][i] - Cluster_Tend <= window :
+                if self['tstart'][i] - Cluster_Tend <= window:
                     SingleClusterIdxList.append(i)
                     if self['tend'][i] > Cluster_Tend:
                         Cluster_Tend = self['tend'][i]
@@ -792,10 +792,10 @@ class EventTable(Table):
                     SingleClusterIdxList = []
                     SingleClusterIdxList.append(i)
                     Cluster_Tend = self['tend'][i]
-            # Append last cluster list of indexes       
+            # Append last cluster list of indexes
             AllClusterList.append(SingleClusterIdxList)
 
-            # Get index of the trigger with highest value in column rank 
+            # Get index of the trigger with highest value in column rank
             # for each cluster
             maxidx = [s[numpy.argmax(param[s])] for s in AllClusterList]
 
@@ -814,11 +814,13 @@ class EventTable(Table):
             col = self[index][orderidx]
             param = self[rank][orderidx]
 
-            # Find all points where the index vector changes by less than window
-            # and divide the resulting array into clusters of adjacent points
+            # Find all points where the index vector changes by less than
+            # window and divide the resulting array into clusters of 
+            # adjacent points
             clusterpoints = numpy.where(numpy.diff(col) <= window)[0]
             sublists = numpy.split(clusterpoints,
-                                   numpy.where(numpy.diff(clusterpoints) > 1)[0]+1)
+                                   numpy.where(
+                                       numpy.diff(clusterpoints) > 1)[0]+1)
 
             # Add end-points to each cluster and find the index of the maximum
             # point in each list
