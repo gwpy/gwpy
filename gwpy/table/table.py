@@ -722,7 +722,6 @@ class EventTable(Table):
         """
         return filter_table(self, *column_filters)
 
-
     def cluster(self, index, rank, window):
         """Cluster this `EventTable` over a given column, `index`, maximizing
         over a specified column in the table, `rank`.
@@ -769,7 +768,6 @@ class EventTable(Table):
         """
         # Use same algorithm as omicron
         if index == 'omicron':
-
             # Sort table by tstart column
             self.sort('tstart')
 
@@ -808,7 +806,6 @@ class EventTable(Table):
             return self[mask]
 
         else:
-
             if window <= 0.0:
                 raise ValueError('Window must be a positive value')
 
@@ -836,4 +833,3 @@ class EventTable(Table):
             mask[maxidx] = True
 
             return self[orderidx[mask]]
-
