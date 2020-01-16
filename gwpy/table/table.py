@@ -815,7 +815,7 @@ class EventTable(Table):
             param = self[rank][orderidx]
 
             # Find all points where the index vector changes by less than
-            # window and divide the resulting array into clusters of 
+            # window and divide the resulting array into clusters of
             # adjacent points
             clusterpoints = numpy.where(numpy.diff(col) <= window)[0]
             sublists = numpy.split(clusterpoints,
