@@ -733,10 +733,14 @@ class EventTable(Table):
         Each cluster of nearby points is replaced by the point in that cluster
         with the maximum value of `rank`.
 
+        To use the clustering algorithm implemented in omicron, set `index` to
+        'omicron'
+
         Parameters
         ----------
         index : `str`
-            name of the column which is used to search for clusters
+            name of the column which is used to search for clusters.
+            If index == 'omicron': use omicron clustering algortihm
 
         rank : `str`
             name of the column to maximize over in each cluster
@@ -757,104 +761,79 @@ class EventTable(Table):
         `end_time`, `window` is `0.1`, and maximize over `snr`:
 
         >>> table.cluster('end_time', 'snr', 0.1)
+
+        To cluster an `EventTable` (``table``) with the omicron clustering
+        algorithm, with a `window` of `0.1`, and maximize over `snr`:
+
+        >>> table.cluster('omicron', 'snr', 0.1)
         """
-        if window <= 0.0:
-            raise ValueError('Window must be a positive value')
+        # Use same algorithm as omicron
+        if index == 'omicron':
 
-        # Generate index and rank vectors that are ordered
-        orderidx = numpy.argsort(self[index])
-        col = self[index][orderidx]
-        param = self[rank][orderidx]
+            # Sort table by tstart column
+            self.sort('tstart')
 
-        # Find all points where the index vector changes by less than window
-        # and divide the resulting array into clusters of adjacent points
-        clusterpoints = numpy.where(numpy.diff(col) <= window)[0]
-        sublists = numpy.split(clusterpoints,
-                               numpy.where(numpy.diff(clusterpoints) > 1)[0]+1)
+            param = self[rank]
 
-        # Add end-points to each cluster and find the index of the maximum
-        # point in each list
-        padded_sublists = [numpy.append(s, numpy.array([s[-1]+1]))
-                           for s in sublists]
-        maxidx = [s[numpy.argmax(param[s])] for s in padded_sublists]
+            # Initialise lists and Tend of the first cluster
+            AllClusterList = []
+            SingleClusterIdxList = []
+            Cluster_Tend = self['tend'][0]
+            N=len(self)
 
-        # Construct a mask that removes all points within clusters and
-        # replaces them with the maximum point from each cluster
-        mask = numpy.ones_like(col, dtype=bool)
-        mask[numpy.concatenate(padded_sublists)] = False
-        mask[maxidx] = True
-
-        return self[orderidx[mask]]
-
-    def cluster_omicronprint(self, rank, window):
-        """Cluster this `EventTable` over tstart and tend columns, maximizing
-        over a specified column in the table, `rank`.
-
-        The clustering algorithm is the same as in omicron-print to identify
-        groups of triggers that are all separated by less than `window`.
-
-        Each cluster of nearby points is replaced by the point in that cluster
-        with the maximum value of `rank`.
-
-        Parameters
-        ----------
-        rank : `str`
-            name of the column to maximize over in each cluster
-
-        window : `float`
-            window to use when clustering data points, will raise
-            ValueError if `window > 0` is not satisfied
-
-        Returns
-        -------
-        table : `EventTable`
-            a new table that has had the clustering algorithm applied via
-            slicing of the original
-
-        Examples
-        --------
-        To cluster an `EventTable` (``table``) with
-        `window` is `0.1`, and maximize over `snr`:
-
-        >>> table.cluster_omicronprint('snr', 0.1)
-        """
-        if window <= 0.0:
-            raise ValueError('Window must be a positive value')
-
-        # Sort table by index column
-        self.sort('tstart')
-
-        param = self[rank]
-
-        # Initialise lists and Tend of the first cluster
-        AllClusterList = []
-        SingleClusterIdxList = []
-        Cluster_Tend = self['tend'][0]
-        N=len(self)
-
-        # Loop over the triggers sorted by tstart column
-        for i in range(N):
-            # Same cluster
-            if self['tstart'][i] - Cluster_Tend <= window :
-                SingleClusterIdxList.append(i)
-                if self['tend'][i] > Cluster_Tend:
+            # Loop over the triggers sorted by tstart column
+            for i in range(N):
+                # Same cluster
+                if self['tstart'][i] - Cluster_Tend <= window :
+                    SingleClusterIdxList.append(i)
+                    if self['tend'][i] > Cluster_Tend:
+                        Cluster_Tend = self['tend'][i]
+                # Start new cluster
+                else:
+                    AllClusterList.append(SingleClusterIdxList)
+                    SingleClusterIdxList = []
+                    SingleClusterIdxList.append(i)
                     Cluster_Tend = self['tend'][i]
-            # Start new cluster
-            else:
-                AllClusterList.append(SingleClusterIdxList)
-                SingleClusterIdxList = []
-                SingleClusterIdxList.append(i)
-                Cluster_Tend = self['tend'][i]
-        # Append last cluster list of indexes       
-        AllClusterList.append(SingleClusterIdxList)
+            # Append last cluster list of indexes       
+            AllClusterList.append(SingleClusterIdxList)
 
-        # Get index of the trigger with highest value in column rank 
-        # for each cluster
-        maxidx = [s[numpy.argmax(param[s])] for s in AllClusterList]
+            # Get index of the trigger with highest value in column rank 
+            # for each cluster
+            maxidx = [s[numpy.argmax(param[s])] for s in AllClusterList]
 
-        # Construct a mask that returns the value of the trigger with
-        # highest value in rank column
-        mask = numpy.zeros_like(param, dtype=bool)
-        mask[maxidx] = True
-        return self[mask]
+            # Construct a mask that returns the value of the trigger with
+            # highest value in rank column
+            mask = numpy.zeros_like(param, dtype=bool)
+            mask[maxidx] = True
+            return self[mask]
+
+        else:
+
+            if window <= 0.0:
+                raise ValueError('Window must be a positive value')
+
+            # Generate index and rank vectors that are ordered
+            orderidx = numpy.argsort(self[index])
+            col = self[index][orderidx]
+            param = self[rank][orderidx]
+
+            # Find all points where the index vector changes by less than window
+            # and divide the resulting array into clusters of adjacent points
+            clusterpoints = numpy.where(numpy.diff(col) <= window)[0]
+            sublists = numpy.split(clusterpoints,
+                                   numpy.where(numpy.diff(clusterpoints) > 1)[0]+1)
+
+            # Add end-points to each cluster and find the index of the maximum
+            # point in each list
+            padded_sublists = [numpy.append(s, numpy.array([s[-1]+1]))
+                               for s in sublists]
+            maxidx = [s[numpy.argmax(param[s])] for s in padded_sublists]
+
+            # Construct a mask that removes all points within clusters and
+            # replaces them with the maximum point from each cluster
+            mask = numpy.ones_like(col, dtype=bool)
+            mask[numpy.concatenate(padded_sublists)] = False
+            mask[maxidx] = True
+
+            return self[orderidx[mask]]
 
