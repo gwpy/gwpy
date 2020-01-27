@@ -220,7 +220,7 @@ def _normalize_window(window, nfft, library, dtype):
         window = canonical_name(window)
     if isinstance(window, string_types + (tuple,)):
         return get_window(window, nfft)
-    return None
+    return window
 
 
 def set_fft_params(func):
