@@ -37,7 +37,7 @@ PYTHON=$(which "python${PYTHON_VERSION}")
 PIP="${PYTHON} -m pip"
 
 # upgrade setuptools in order to understand environment markers
-${PIP} install ${PIP_FLAGS} "pip>=8.0.0" "setuptools>=20.2.2"
+${PIP} install ${PIP_FLAGS} "pip>=8.0.0" "setuptools>=20.2.2" wheel
 
 # install test dependencies
 ${PIP} install ${PIP_FLAGS} -r requirements-test.txt
