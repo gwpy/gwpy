@@ -21,6 +21,8 @@
 
 import numpy
 
+import pytest
+
 from scipy import signal
 
 from astropy import units
@@ -28,6 +30,7 @@ from astropy import units
 from ...testing.utils import (
     assert_array_equal,
     assert_quantity_sub_equal,
+    skip_missing_dependency,
 )
 from ...timeseries import TimeSeries
 from ..spectral import _ui as fft_ui
@@ -48,6 +51,9 @@ def test_normalize_fft_params():
     ftp = fft_ui.normalize_fft_params(
         TimeSeries(numpy.zeros(1024), sample_rate=256))
     assert ftp == {'nfft': 1024, 'noverlap': 0}
+
+
+def test_normalize_fft_params_window_str():
     ftp = fft_ui.normalize_fft_params(
         TimeSeries(numpy.zeros(1024), sample_rate=256),
         {'window': 'hann'})
@@ -56,6 +62,31 @@ def test_normalize_fft_params():
     assert ftp.pop('noverlap') == 512
     assert_array_equal(ftp.pop('window'), win)
     assert not ftp
+
+
+def test_normalize_fft_params_window_array():
+    win = signal.get_window(("kaiser", 14), 1024)
+    ftp = fft_ui.normalize_fft_params(
+        TimeSeries(numpy.zeros(1024), sample_rate=256),
+        {"window": win},
+    )
+    assert_array_equal(ftp.pop("window"), win)
+
+
+@skip_missing_dependency("lal")
+@pytest.mark.parametrize("win", [
+    "hann",
+    signal.get_window(("kaiser", 14), 1024),
+])
+def test_normalize_fft_params_window_lal(win):
+    import lal
+    from gwpy.signal.spectral._lal import welch
+    ftp = fft_ui.normalize_fft_params(
+        TimeSeries(numpy.zeros(1024, dtype="float32"), sample_rate=256),
+        kwargs={'window': win},
+        func=welch,
+    )
+    assert isinstance(ftp.pop("window"), lal.REAL4Window)
 
 
 def test_chunk_timeseries():
