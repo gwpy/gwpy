@@ -33,7 +33,6 @@ import pytest
 import sqlparse
 
 from numpy import (random, isclose, dtype, asarray, all)
-from numpy.testing import assert_array_equal
 from numpy.ma.core import MaskedConstant
 
 import h5py
@@ -126,34 +125,7 @@ class TestTable(object):
                                [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
                          names=['amplitude', 'time'])
 
-    @staticmethod
-    @pytest.fixture()
-    def llwtable():
-        from ligo.lw.lsctables import (New, SnglBurstTable)
-        llwtab = New(SnglBurstTable, columns=["peak_frequency", "snr"])
-        for i in range(10):
-            row = llwtab.RowType()
-            row.peak_frequency = float(i)
-            row.snr = float(i)
-            llwtab.append(row)
-        return llwtab
-
     # -- test I/O -------------------------------
-
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
-    def test_ligolw(self, llwtable):
-        tab = self.TABLE(llwtable)
-        assert set(tab.colnames) == {"peak_frequency", "snr"}
-        assert_array_equal(tab["snr"], llwtable.getColumnByName("snr"))
-
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
-    def test_ligolw_rename(self, llwtable):
-        tab = self.TABLE(llwtable, rename={"peak_frequency": "frequency"})
-        assert set(tab.colnames) == {"frequency", "snr"}
-        assert_array_equal(
-            tab["frequency"],
-            llwtable.getColumnByName("peak_frequency"),
-        )
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
     @pytest.mark.parametrize('ext', ['xml', 'xml.gz'])
