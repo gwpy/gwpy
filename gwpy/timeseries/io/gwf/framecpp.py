@@ -498,7 +498,7 @@ def write(tsdict, outfile,
     duration = end - start
     ifos = {ts.channel.ifo for ts in tsdict.values() if
             ts.channel and ts.channel.ifo and
-            ts.channel.ifo in io_framecpp.DetectorLocation}
+            ts.channel.ifo in io_framecpp.DetectorLocation.__members__}
 
     # create frame
     frame = io_gwf.create_frame(
