@@ -236,7 +236,7 @@ def create_fradcdata(series, frame_epoch=0,
                         "written as FrAdcData")
 
     frdata = frameCPP.FrAdcData(
-        str(series.channel or series.name),
+        _series_name(series),
         channelgroup,
         channelid,
         nbits,
@@ -323,7 +323,7 @@ def create_frprocdata(series, frame_epoch=0, comment=None,
         frange = _get_series_frange(series)
 
     return frameCPP.FrProcData(
-        str(series.channel or series.name),
+        _series_name(series),
         str(comment or series.name),
         _get_frprocdata_type(series, type),
         _get_frprocdata_subtype(series, subtype),
@@ -375,7 +375,7 @@ def create_frsimdata(series, frame_epoch=0, comment=None, fshift=0, phase=0):
         raise TypeError("only timeseries data can be written as FrSimData")
 
     return frameCPP.FrSimData(
-        str(series.channel or series.name),
+        _series_name(series),
         str(comment or series.name),
         (1 / series.dx.to('s')).value,
         float(LIGOTimeGPS(series.x0.value) - LIGOTimeGPS(frame_epoch)),
@@ -414,7 +414,7 @@ def create_frvect(series):
 
     # create FrVect
     vect = frameCPP.FrVect(
-        series.name or '',  # name
+        _series_name(series),  # name
         int(FrVectType.find(series.dtype)),  # data type enum
         series.ndim,  # num dimensions
         dims,  # dimension object
@@ -688,3 +688,25 @@ def _get_frprocdata_subtype(series, subtype):
     if series.unit == 'coherence':
         return FrProcDataSubType.COHERENCE
     return FrProcDataSubType.UNKNOWN
+
+
+def _series_name(series):
+    """Returns the 'name' of a `Series` that should be written to GWF
+
+    This is basically `series.name or str(series.channel) or ""`
+
+    Parameters
+    ----------
+    series : `gwpy.types.Series`
+        the input series that will be written
+
+    Returns
+    -------
+    name : `str`
+        the name to use when storing this series
+    """
+    return (
+            series.name or
+            str(series.channel) or
+            ""
+    )
