@@ -5,7 +5,7 @@ pytest >= 3.3.0, !=4.6.0, !=4.6.1, !=4.6.2, < 5.0.0 ; python_version >= '3'
 pytest >= 3.3.0, < 4.0.0a0 ; python_version < '3'
 pytest-cov >= 2.4.0
 pytest-xdist < 1.28.0
-mock ; python_version < '3'
+mock < 4.0.0a0 ; python_version < '3'
 freezegun >= 0.2.3
 sqlparse >= 0.2.0
 beautifulsoup4

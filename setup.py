@@ -83,7 +83,7 @@ tests_require = [
     'beautifulsoup4',
 ]
 if sys.version < '3':
-    tests_require.append('mock')
+    tests_require.append('mock<4.0.0a0')
 
 # -- run setup ----------------------------------------------------------------
 
