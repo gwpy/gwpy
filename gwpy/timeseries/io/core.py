@@ -61,13 +61,14 @@ def _join_factory(cls, gap, pad, start, end):
                 tsd = data.pop(0)
                 out.append(tsd, gap=gap, pad=pad)
                 del tsd
-            if gap == "pad":
+            if gap in ("pad", "raise"):
                 for key in out:
                     out[key] = _pad_series(
                         out[key],
                         pad,
                         start,
                         end,
+                        error=(gap == "raise"),
                     )
             return out
     else:
@@ -76,21 +77,54 @@ def _join_factory(cls, gap, pad, start, end):
         def _join(arrays):
             list_ = TimeSeriesBaseList(*arrays)
             joined = list_.join(pad=pad, gap=gap)
-            if gap == "pad":
+            if gap in ("pad", "raise"):
                 return _pad_series(
                     joined,
                     pad,
                     start,
                     end,
+                    error=(gap == "raise"),
                 )
             return joined
     return _join
 
 
-def _pad_series(ts, pad, start=None, end=None):
+def _pad_series(ts, pad, start=None, end=None, error=False):
     """Pad a timeseries to match the specified [start, end) limits
 
-    To cover a gap in data returned from a data source
+    To cover a gap in data returned from a data source.
+
+    Parameters
+    ----------
+    ts : `gwpy.types.Series`
+        the input series
+
+    pad : `float`, `astropy.units.Quantity`
+        the value with which to pad
+
+    start : `float`, `astropy.units.Quantity`, optional
+        the desired start point of the X-axis, defaults to
+        the start point of the incoming series
+
+    end : `float`, `astropy.units.Quantity`, optional
+        the desired end point of the X-axis, defaults to
+        the end point of the incoming series
+
+    error : `bool`, optional
+        raise `ValueError` when gaps are present, rather than padding
+        anything
+
+    Returns
+    -------
+    series : instance of incoming series type
+        a padded version of the series. This may be the same
+        object if not padding is needed.
+
+    Raises
+    ------
+    ValueError
+        if `error=True` is given and padding would have been required
+        to match the request.
     """
     span = ts.span
     if start is None:
@@ -99,6 +133,15 @@ def _pad_series(ts, pad, start=None, end=None):
         end = span[1]
     pada = max(int((span[0] - start) * ts.sample_rate.value), 0)
     padb = max(int((end - span[1]) * ts.sample_rate.value), 0)
-    if pada or padb:
-        return ts.pad((pada, padb), mode='constant', constant_values=(pad,))
-    return ts
+    if not (pada or padb):  # if noop, just return the input
+        return ts
+    if error:  # if error, bail out now
+        raise ValueError(
+            "{} with span {} does not cover requested interval {}".format(
+                type(ts).__name__,
+                span,
+                type(span)(start, end),
+            )
+        )
+    # otherwise applying the padding
+    return ts.pad((pada, padb), mode='constant', constant_values=(pad,))

@@ -442,6 +442,24 @@ class TestTimeSeries(_TestTimeSeriesBase):
             b,
         )
 
+    def test_read_pad_raise(self):
+        """Check that `TimeSeries.read` with `gap='raise'` actually
+        raises appropriately.
+
+        [regression: https://github.com/gwpy/gwpy/issues/1211]
+        """
+        from gwpy.io.cache import file_segment
+        span = file_segment(utils.TEST_HDF5_FILE)
+        with pytest.raises(ValueError):
+            self.TEST_CLASS.read(
+                utils.TEST_HDF5_FILE,
+                "H1:LDAS-STRAIN",
+                pad=0.,
+                start=span[0],
+                end=span[1]+1.,
+                gap="raise",
+            )
+
     @utils.skip_missing_dependency('nds2')
     def test_from_nds2_buffer_dynamic_scaled(self):
         # build fake buffer for LIGO channel
