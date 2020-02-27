@@ -323,8 +323,8 @@ class TestTable(object):
             # check write
             try:
                 table.write(tmp, 'test_read_write_gwf')
-            except TypeError as exc:  # frameCPP broken (2.6.7)
-                if 'ParamList' in str(exc):
+            except TypeError as exc:  # pragma: no-cover
+                if 'ParamList' in str(exc):  # frameCPP broken (2.6.7)
                     pytest.skip(
                         "bug in python-ldas-tools-framecpp: {!s}".format(exc),
                     )
@@ -732,7 +732,7 @@ class TestEventTable(TestTable):
         )
         try:
             connect.start()
-        except ImportError as exc:
+        except ImportError as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         yield table
         connect.stop()
@@ -758,7 +758,7 @@ class TestEventTable(TestTable):
     def test_fetch_open_data(self):
         try:
             table = self.TABLE.fetch_open_data("GWTC-1-confident")
-        except (URLError, SSLError) as exc:
+        except (URLError, SSLError) as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         assert len(table)
         assert {"L_peak", "distance", "mass1"}.intersection(table.colnames)
@@ -774,7 +774,7 @@ class TestEventTable(TestTable):
                 "GWTC-1-confident",
                 selection="mass1 < 5",
                 columns=["name", "mass1", "mass2", "distance"])
-        except (URLError, SSLError) as exc:
+        except (URLError, SSLError) as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         assert len(table) == 1
         assert table[0]["name"] == "GW170817"
