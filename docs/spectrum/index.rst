@@ -2,9 +2,9 @@
 
 .. _gwpy-frequencyseries:
 
-############################
-The :class:`FrequencySeries`
-############################
+##################################
+The :class:`FrequencySeries` class
+##################################
 
 While gravitational-wave detectors are time-domain instruments, their sensitivity is frequency dependent and so is often measured as a power-spectral-density over the range of interesting gravitational-wave frequencies (~10-10,000 Hz).
 Additionally, the auxiliary `channels <../detector/channel>`_ used to sense and control instrumental operations each have their own frequency-domain characteristics, contributing to the overall sensitivity spectrum.

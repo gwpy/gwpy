@@ -2,9 +2,9 @@
 
 .. _gwpy-channel:
 
-####################
-The :class:`Channel`
-####################
+##########################
+The :class:`Channel` class
+##########################
 
 .. code-block:: python
 
