@@ -96,6 +96,21 @@ def _get_property_columns(tabletype, columns):
     return extracols
 
 
+@ilwdchar_compat
+def _get_property_type(tabletype, column):
+    """Returns the type of values in the given property
+
+    Examples
+    --------
+    >>> _get_property_type(lsctables.SnglBurstTable, 'peak')
+    lal.LIGOTimeGPS
+    """
+    from ligo.lw.lsctables import gpsproperty as GpsProperty
+    prop = vars(tabletype.RowType)[column]
+    if isinstance(prop, GpsProperty):
+        return LIGOTimeGPS
+
+
 # -- conversions --------------------------------------------------------------
 
 def to_astropy_table(llwtable, apytable, copy=False, columns=None,
@@ -155,6 +170,15 @@ def to_astropy_table(llwtable, apytable, copy=False, columns=None,
 
 
 def _get_column(llwtable, name):
+    # handle empty tables as special (since we can't introspect the types)
+    if not len(llwtable):
+        if name in llwtable.validcolumns:
+            dtype = _get_pytype(llwtable.validcolumns[name])
+        else:
+            dtype = _get_property_type(type(llwtable), name)
+        if dtype:
+            return numpy.empty((0,), dtype=dtype)
+
     # try get_{}
     get_ = "get_{}".format(name)
     if name not in GET_AS_EXCLUDE and hasattr(llwtable, get_):
@@ -257,11 +281,18 @@ def _get_column_dtype(llwcol):
             except IndexError:
                 return None
         else:  # map column type str to python type
-            from ligo.lw.types import (ToPyType, ToNumPyType)
-            try:
-                return ToNumPyType[llwtype]
-            except KeyError:
-                return ToPyType[llwtype]
+            return _get_pytype(llwtype)
+
+
+@ilwdchar_compat
+def _get_pytype(llwtype):
+    """Returns a dtype-compatible type for the given LIGO_LW type string
+    """
+    from ligo.lw.types import (ToPyType, ToNumPyType)
+    try:
+        return ToNumPyType[llwtype]
+    except KeyError:
+        return ToPyType[llwtype]
 
 
 @ilwdchar_compat

@@ -102,7 +102,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         try:
             return self.TEST_CLASS.fetch_open_data(
                 LOSC_IFO, *LOSC_GW150914_SEGMENT)
-        except LOSC_FETCH_ERROR as e:
+        except LOSC_FETCH_ERROR as e:  # pragma: no-cover
             pytest.skip(str(e))
 
     @pytest.fixture(scope='class')
@@ -110,7 +110,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         try:
             return self.TEST_CLASS.fetch_open_data(
                 LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384)
-        except LOSC_FETCH_ERROR as e:
+        except LOSC_FETCH_ERROR as e:  # pragma: no-cover
             pytest.skip(str(e))
 
     # -- test class functionality ---------------
@@ -161,7 +161,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 array, fmt, extension='gwf', read_args=[array.name],
                 assert_equal=utils.assert_quantity_sub_equal,
                 assert_kw={'exclude': ['channel']})
-        except ImportError as e:
+        except ImportError as e:  # pragma: no-cover
             pytest.skip(str(e))
 
         # test read keyword arguments
@@ -406,7 +406,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         try:
             ts = self.TEST_CLASS.fetch_open_data(
                 LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, verbose=True)
-        except LOSC_FETCH_ERROR as e:
+        except LOSC_FETCH_ERROR as e:  # pragma: no-cover
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(ts, losc,
                                         exclude=['name', 'unit', 'channel'])
@@ -507,7 +507,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         try:
             ft = datafind.find_best_frametype(
                 channel, 1143504017, 1143504017+100)
-        except ValueError as exc:  # ignore
+        except ValueError as exc:  # pragma: no-cover
             if str(exc).lower().startswith('cannot locate'):
                 pytest.skip(str(exc))
             raise
@@ -527,7 +527,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         try:
             ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
                                      frametype_match=r'C01\Z')
-        except (ImportError, RuntimeError) as e:
+        except (ImportError, RuntimeError) as e:  # pragma: no-cover
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(ts, losc_16384,
                                         exclude=['name', 'channel', 'unit'])
@@ -1186,7 +1186,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         try:
             tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
             tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        except LOSC_FETCH_ERROR as exc:
+        except LOSC_FETCH_ERROR as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         coh = tsh.coherence(tsl, fftlength=1.0)
         assert coh.df == 1 * units.Hz
@@ -1196,7 +1196,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         try:
             tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
             tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        except LOSC_FETCH_ERROR as exc:
+        except LOSC_FETCH_ERROR as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         cohsg = tsh.coherence_spectrogram(tsl, 4, fftlength=1.0)
         assert cohsg.t0 == tsh.t0

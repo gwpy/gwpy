@@ -212,7 +212,7 @@ def _normalize_window(window, nfft, library, dtype):
     """
     if library == '_lal' and isinstance(window, numpy.ndarray):
         from ._lal import window_from_array
-        return window_from_array(window)
+        return window_from_array(window, dtype=dtype)
     if library == '_lal':
         from ._lal import generate_window
         return generate_window(nfft, window=window, dtype=dtype)
@@ -220,7 +220,7 @@ def _normalize_window(window, nfft, library, dtype):
         window = canonical_name(window)
     if isinstance(window, string_types + (tuple,)):
         return get_window(window, nfft)
-    return None
+    return window
 
 
 def set_fft_params(func):
@@ -452,6 +452,6 @@ def _chunk_timeseries(series, nstride, noverlap):
 
 def _fft_library(method_func):
     mod = method_func.__module__.rsplit('.', 1)[-1]
-    if mod == 'median-mean':
+    if mod == 'median_mean':
         return "lal"
     return mod

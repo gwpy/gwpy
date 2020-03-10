@@ -33,7 +33,6 @@ import pytest
 import sqlparse
 
 from numpy import (random, isclose, dtype, asarray, all)
-from numpy.testing import assert_array_equal
 from numpy.ma.core import MaskedConstant
 
 import h5py
@@ -126,34 +125,7 @@ class TestTable(object):
                                [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
                          names=['amplitude', 'time'])
 
-    @staticmethod
-    @pytest.fixture()
-    def llwtable():
-        from ligo.lw.lsctables import (New, SnglBurstTable)
-        llwtab = New(SnglBurstTable, columns=["peak_frequency", "snr"])
-        for i in range(10):
-            row = llwtab.RowType()
-            row.peak_frequency = float(i)
-            row.snr = float(i)
-            llwtab.append(row)
-        return llwtab
-
     # -- test I/O -------------------------------
-
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
-    def test_ligolw(self, llwtable):
-        tab = self.TABLE(llwtable)
-        assert set(tab.colnames) == {"peak_frequency", "snr"}
-        assert_array_equal(tab["snr"], llwtable.getColumnByName("snr"))
-
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
-    def test_ligolw_rename(self, llwtable):
-        tab = self.TABLE(llwtable, rename={"peak_frequency": "frequency"})
-        assert set(tab.colnames) == {"frequency", "snr"}
-        assert_array_equal(
-            tab["frequency"],
-            llwtable.getColumnByName("peak_frequency"),
-        )
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
     @pytest.mark.parametrize('ext', ['xml', 'xml.gz'])
@@ -351,8 +323,8 @@ class TestTable(object):
             # check write
             try:
                 table.write(tmp, 'test_read_write_gwf')
-            except TypeError as exc:  # frameCPP broken (2.6.7)
-                if 'ParamList' in str(exc):
+            except TypeError as exc:  # pragma: no-cover
+                if 'ParamList' in str(exc):  # frameCPP broken (2.6.7)
                     pytest.skip(
                         "bug in python-ldas-tools-framecpp: {!s}".format(exc),
                     )
@@ -760,7 +732,7 @@ class TestEventTable(TestTable):
         )
         try:
             connect.start()
-        except ImportError as exc:
+        except ImportError as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         yield table
         connect.stop()
@@ -786,7 +758,7 @@ class TestEventTable(TestTable):
     def test_fetch_open_data(self):
         try:
             table = self.TABLE.fetch_open_data("GWTC-1-confident")
-        except (URLError, SSLError) as exc:
+        except (URLError, SSLError) as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         assert len(table)
         assert {"L_peak", "distance", "mass1"}.intersection(table.colnames)
@@ -802,7 +774,7 @@ class TestEventTable(TestTable):
                 "GWTC-1-confident",
                 selection="mass1 < 5",
                 columns=["name", "mass1", "mass2", "distance"])
-        except (URLError, SSLError) as exc:
+        except (URLError, SSLError) as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         assert len(table) == 1
         assert table[0]["name"] == "GW170817"

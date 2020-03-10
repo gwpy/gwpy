@@ -90,12 +90,14 @@ def test_example(script):
         code = compile(raw, str(script), "exec")
         try:
             exec(code, globals())
-        except NDSWarning as exc:  # if we can't authenticate, dont worry
+        except NDSWarning as exc:  # pragma: no-cover
+            # if we can't authenticate, dont worry
             for msg in NDS2_AUTH_FAILURES:
                 if msg.match(str(exc)):
                     pytest.skip(str(exc))
             raise
-        except ImportError as exc:  # needs an optional dependency
+        except ImportError as exc:  # pragma: no-cover
+            # needs an optional dependency
             if "gwpy" in str(exc):
                 raise
             pytest.skip(str(exc))

@@ -72,7 +72,7 @@ def psd():
     try:
         data = TimeSeries.read(utils.TEST_HDF5_FILE, 'L1:LDAS-STRAIN',
                                format='hdf5')
-    except ImportError as e:
+    except ImportError as e:  # pragma: no-cover
         pytest.skip(str(e))
     return data.psd(.4, overlap=.2, window=('kaiser', 24))
 
@@ -82,7 +82,7 @@ def hoft():
     try:
         data = TimeSeries.read(utils.TEST_HDF5_FILE, 'L1:LDAS-STRAIN',
                                format='hdf5')
-    except ImportError as e:
+    except ImportError as e:  # pragma: no-cover
         pytest.skip(str(e))
     return data
 

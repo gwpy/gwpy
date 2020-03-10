@@ -30,6 +30,8 @@ from __future__ import absolute_import
 import re
 import warnings
 
+import numpy
+
 from ...frequencyseries import FrequencySeries
 from ..window import canonical_name
 from ._utils import scale_timeseries_unit
@@ -133,16 +135,17 @@ def generate_window(length, window=None, dtype='float64'):
         return LAL_WINDOWS[key]
 
 
-def window_from_array(array):
+def window_from_array(array, dtype=None):
     """Convert a `numpy.ndarray` into a LAL `Window` object
     """
     from ...utils.lal import (find_typed_function)
 
-    dtype = array.dtype
+    if dtype is None:
+        dtype = array.dtype
 
     # create sequence
     seq = find_typed_function(dtype, 'Create', 'Sequence')(array.size)
-    seq.data = array
+    seq.data = numpy.asarray(array, dtype=dtype)
 
     # create window from sequence
     return find_typed_function(dtype, 'Create', 'WindowFromSequence')(seq)

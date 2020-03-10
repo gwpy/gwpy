@@ -19,9 +19,9 @@ The international collaboration operates using the GPS time standard
 (seconds since the GPS epoch of midnight on January 6th 1980), and records
 such times as semi-open GPS ``[start, stop)`` segments.
 
-=============================================
-The :class:`Segment` and :class:`SegmentList`
-=============================================
+=====================================================
+The :class:`Segment` and :class:`SegmentList` classes
+=====================================================
 
 GWpy provides a number of classes for generating and manipulating such
 segments, enhancing the functionality provided by the (excellent)
@@ -39,9 +39,9 @@ These basic objects are as follows:
 While these objects are key to representing core data segments,
 they are usually applied to analyses of data as a `DataQualityFlag`.
 
-============================
-The :class:`DataQualityFlag`
-============================
+==================================
+The :class:`DataQualityFlag` class
+==================================
 
 A `DataQualityFlag` is an annotated set of segments that indicate something
 about instrumental operation.

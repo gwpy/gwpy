@@ -650,7 +650,7 @@ class StateVector(TimeSeriesBase):
         gap : `str`, optional
             how to handle gaps in the cache, one of
 
-            - 'ignore': do nothing, let the undelying reader method handle it
+            - 'ignore': do nothing, let the underlying reader method handle it
             - 'warn': do nothing except print a warning to the screen
             - 'raise': raise an exception upon finding a gap (default)
             - 'pad': insert a value to fill the gaps
@@ -1003,7 +1003,7 @@ class StateVectorDict(TimeSeriesBaseDict):
         gap : `str`, optional
             how to handle gaps in the cache, one of
 
-            - 'ignore': do nothing, let the undelying reader method handle it
+            - 'ignore': do nothing, let the underlying reader method handle it
             - 'warn': do nothing except print a warning to the screen
             - 'raise': raise an exception upon finding a gap (default)
             - 'pad': insert a value to fill the gaps
