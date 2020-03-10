@@ -803,7 +803,6 @@ class EventTable(Table):
             # highest value in rank column
             mask = numpy.zeros_like(param, dtype=bool)
             mask[maxidx] = True
-            return self[mask]
 
         else:
             if window <= 0.0:
@@ -830,8 +829,10 @@ class EventTable(Table):
 
             # Construct a mask that removes all points within clusters and
             # replaces them with the maximum point from each cluster
-            mask = numpy.ones_like(col, dtype=bool)
-            mask[numpy.concatenate(padded_sublists)] = False
-            mask[maxidx] = True
+            mask1 = numpy.ones_like(col, dtype=bool)
+            mask1[numpy.concatenate(padded_sublists)] = False
+            mask1[maxidx] = True
 
-            return self[orderidx[mask]]
+            mask = orderidx[mask1]
+
+        return self[mask]
