@@ -62,7 +62,7 @@ def _spectral_density(timeseries, segmentlength, noverlap=None, name=None,
 def welch(timeseries, segmentlength, **kwargs):
     """Calculate a PSD using Welch's method
     """
-    kwargs.setdefault('average', 'welch')
+    kwargs.setdefault('average', 'mean')
     return _spectral_density(timeseries, segmentlength, **kwargs)
 
 
