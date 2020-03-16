@@ -36,8 +36,11 @@ PYTHON_VERSION=$(echo "${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}" | cut -d. -f
 PYTHON=$(which "python${PYTHON_VERSION}")
 PIP="${PYTHON} -m pip"
 
-# upgrade setuptools in order to understand environment markers
-${PIP} install ${PIP_FLAGS} "pip>=8.0.0" "setuptools>=20.2.2" wheel
+# upgrade pip to understand python_requires
+${PIP} install ${PIP_FLAGS} "pip>=9.0.0"
+
+# upgrade setuptools to understand environment markers
+${PIP} install ${PIP_FLAGS} "setuptools>=20.2.2" wheel
 
 # install test dependencies
 ${PIP} install ${PIP_FLAGS} -r requirements-test.txt

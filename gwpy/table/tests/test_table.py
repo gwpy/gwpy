@@ -75,9 +75,11 @@ def mock_hacr_connection(table, start, stop):
     cursor.execute = execute
 
     def fetchall():
-        if cursor._query.get_real_name() == 'job':
+        q = cursor._query
+        name = q.get_real_name() or q._get_first_name()
+        if name == 'job':
             return [(1, start, stop)]
-        if cursor._query.get_real_name() == 'mhacr':
+        if name == 'mhacr':
             columns = list(map(
                 str, list(cursor._query.get_sublists())[0].get_identifiers()))
             selections = list(map(
