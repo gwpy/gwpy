@@ -87,6 +87,8 @@ This package provides the command line plotting interface 'gwpy-plot'
 
 %prep
 %autosetup -n %{srcname}-%{version}
+# remove ligotimegps dependency: # we use lal in the RPM package (it's faster)
+sed -i "/ligotimegps.*/d" setup.py
 
 %build
 %py3_build
