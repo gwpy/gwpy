@@ -31,7 +31,7 @@ import pytest
 import numpy
 from numpy import testing as nptest
 
-from scipy import (signal, __version__ as scipy_version)
+from scipy import signal
 
 from astropy import units
 
