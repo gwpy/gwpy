@@ -23,8 +23,6 @@ and associated metadata for those files, designed to make identifying
 relevant data, and sieving large file lists, easier for the user.
 """
 
-from __future__ import (division, print_function)
-
 import os.path
 import warnings
 from collections import (namedtuple, OrderedDict)

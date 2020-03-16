@@ -21,8 +21,6 @@
 This module requires lal >= 6.14.0
 """
 
-from __future__ import absolute_import
-
 import operator
 from collections import OrderedDict
 

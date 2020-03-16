@@ -19,8 +19,6 @@
 """This module defines locators/formatters and a scale for GPS data.
 """
 
-from __future__ import division
-
 from decimal import Decimal
 from numbers import Number
 

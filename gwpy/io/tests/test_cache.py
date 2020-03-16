@@ -19,8 +19,6 @@
 """Unit test for `io` module
 """
 
-from __future__ import print_function
-
 import os.path
 import tempfile
 from copy import deepcopy

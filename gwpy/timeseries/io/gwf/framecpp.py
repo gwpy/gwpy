@@ -20,8 +20,6 @@
 |LDAStools.frameCPP|__.
 """
 
-from __future__ import division
-
 import re
 from math import ceil
 

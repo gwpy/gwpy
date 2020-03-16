@@ -19,8 +19,6 @@
 """Tests for :mod:`gwpy.segments.segments`
 """
 
-from __future__ import print_function
-
 import pytest
 
 import h5py

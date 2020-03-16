@@ -22,8 +22,6 @@
 # ignore all invalid names (pylint isn't good at looking at executables)
 # pylint: disable=invalid-name
 
-from __future__ import print_function
-
 import os
 import sys
 from distutils.version import LooseVersion

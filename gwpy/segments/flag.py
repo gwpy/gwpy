@@ -26,8 +26,6 @@ The `DataQualityDict` is just a `dict` of flags, provided as a convenience
 for handling multiple flags over the same global time interval.
 """
 
-from __future__ import absolute_import
-
 import datetime
 import json
 import operator

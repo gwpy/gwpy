@@ -19,8 +19,6 @@
 """Read SegmentLists from seg-wizard format ASCII files
 """
 
-from __future__ import print_function
-
 import re
 
 from six import string_types

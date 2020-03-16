@@ -19,8 +19,6 @@
 """This module defines the `Channel` and `ChannelList` classes.
 """
 
-from __future__ import print_function
-
 import re
 from copy import copy
 from math import ceil

@@ -19,8 +19,6 @@
 """Array with metadata
 """
 
-from __future__ import (division, print_function)
-
 import warnings
 
 from six.moves import range

@@ -20,8 +20,6 @@
 time-frequency coherence spectrogram from a pair of time-series.
 """
 
-from __future__ import division
-
 from multiprocessing import (Process, Queue as ProcessQueue)
 from math import ceil
 

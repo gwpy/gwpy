@@ -20,8 +20,6 @@
 to LIGO data.
 """
 
-from __future__ import (absolute_import, print_function)
-
 import enum
 import operator
 import os

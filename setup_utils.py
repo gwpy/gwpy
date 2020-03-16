@@ -19,8 +19,6 @@
 """Packaging utilities for the GWpy package
 """
 
-from __future__ import print_function
-
 import contextlib
 import datetime
 import glob

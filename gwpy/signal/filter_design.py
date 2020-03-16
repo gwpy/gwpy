@@ -19,7 +19,6 @@
 """Custom filtering utilities for the `TimeSeries`
 """
 
-from __future__ import division
 import operator
 from math import (pi, log10)
 
