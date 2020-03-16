@@ -82,7 +82,7 @@ And that's it.
 
 ### Python compatibility
 
-**GWpy code must be compatible with Python 2.7 and all versions >=3.4.**
+**GWpy code must be compatible with Python >= 3.5.**
 
 ### Style
 

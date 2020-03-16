@@ -174,11 +174,6 @@ jobs:
 
   # -- python ---------------
 
-  python:2.7:
-    <<: *python-build
-    docker:
-      - image: python:2.7
-
   python:3.5:
     <<: *python-build
     docker:
@@ -196,11 +191,6 @@ jobs:
 
   # -- conda ----------------
 
-  conda:2.7:
-    <<: *conda-build
-    docker:
-      - image: continuumio/miniconda2
-
   conda:3.6:
     <<: *conda-build
 
@@ -208,13 +198,6 @@ jobs:
     <<: *conda-build
 
   # -- debian ---------------
-
-  debian:stretch:2.7:
-    <<: *debian-build
-    docker:
-      - image: igwn/base:stretch
-    environment:
-      PIP_FLAGS: " "
 
   debian:stretch:3.5:
     <<: *debian-build
@@ -224,13 +207,6 @@ jobs:
       PIP_FLAGS: " "
 
   # -- rhel -----------------
-
-  el7:2.7:
-    <<: *centos-build
-    docker:
-      - image: igwn/base:el7
-    environment:
-      PIP_FLAGS: " "
 
   el7:3.6:
     <<: *centos-build
@@ -249,9 +225,6 @@ workflows:
       - flake8
 
       # basic tests with minimal dependencies
-      - python:2.7:
-          requires:
-            - sdist
       - python:3.5:
           requires:
             - sdist
@@ -263,9 +236,6 @@ workflows:
             - sdist
 
       # conda tests
-      - conda:2.7:
-          requires:
-            - python:2.7
       - conda:3.6:
           requires:
             - python:3.6
@@ -274,13 +244,7 @@ workflows:
             - python:3.7
 
       # LDG reference OS tests
-      - debian:stretch:2.7:
-          requires:
-            - sdist
       - debian:stretch:3.5:
-          requires:
-            - sdist
-      - el7:2.7:
           requires:
             - sdist
       - el7:3.6:

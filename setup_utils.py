@@ -183,8 +183,8 @@ class changelog(Command):
         else:
             repo = git.Repo()
             commit = repo.head.commit
-            date = commit.authored_datetime
-            tz = commit.author_tz_offset
+            date = datetime.datetime.now()
+            tz = 0
             version = str(tag)
             author = commit.author.name
             email = commit.author.email
