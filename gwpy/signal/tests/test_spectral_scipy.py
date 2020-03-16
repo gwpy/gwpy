@@ -19,12 +19,11 @@
 """Tests for :mod:`gwpy.signal.spectral.scipy`
 
 Here we check `welch` thoroughly, and the others less so, because
-they just call out to that method anyway.
+they just call out to the same method anyway.
 """
 
 import pytest
 
-from ...testing.utils import skip_minimum_version
 from ..spectral import _scipy as fft_scipy
 
 
@@ -45,7 +44,6 @@ def test_bartlett(noisy_sinusoid):
     assert psd.max() == psd.value_at(500.)
 
 
-@skip_minimum_version("scipy", "1.2.0")
 def test_median(noisy_sinusoid):
     psd = fft_scipy.median(noisy_sinusoid, 4096, noverlap=2048)
     assert psd.max() == psd.value_at(500.)

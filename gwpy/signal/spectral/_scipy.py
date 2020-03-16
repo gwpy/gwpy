@@ -21,7 +21,6 @@
 
 import numpy
 
-from scipy import __version__ as scipy_version
 import scipy.signal
 
 from ...frequencyseries import FrequencySeries
@@ -32,15 +31,13 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 # -- density scaling methods --------------------------------------------------
-#
-# Developer note: as soon as we can pin to scipy >= 0.16.0, we can refactor
-#                 these methods to call out to the csd() function below
 
-def welch(timeseries, segmentlength, noverlap=None, **kwargs):
-    """Calculate a PSD of this `TimeSeries` using Welch's method.
+def _spectral_density(timeseries, segmentlength, noverlap=None, name=None,
+                      sdfunc=scipy.signal.welch, **kwargs):
+    """Calculate a generic spectral density of this `TimeSeries`
     """
-    # calculate PSD
-    freqs, psd_ = scipy.signal.welch(
+    # compute spectral density
+    freqs, psd_ = sdfunc(
         timeseries.value,
         noverlap=noverlap,
         fs=timeseries.sample_rate.decompose().value,
@@ -56,28 +53,31 @@ def welch(timeseries, segmentlength, noverlap=None, **kwargs):
         psd_,
         unit=unit,
         frequencies=freqs,
-        name=timeseries.name,
+        name=(name or timeseries.name),
         epoch=timeseries.epoch,
         channel=timeseries.channel,
     )
+
+
+def welch(timeseries, segmentlength, **kwargs):
+    """Calculate a PSD using Welch's method
+    """
+    kwargs.setdefault('average', 'welch')
+    return _spectral_density(timeseries, segmentlength, **kwargs)
 
 
 def bartlett(timeseries, segmentlength, **kwargs):
     """Calculate a PSD using Bartlett's method
     """
     kwargs.pop('noverlap', None)
-    return welch(timeseries, segmentlength, noverlap=0, **kwargs)
+    return _spectral_density(timeseries, segmentlength, noverlap=0, **kwargs)
 
 
 def median(timeseries, segmentlength, **kwargs):
     """Calculate a PSD using Welch's method with a median average
     """
-    if scipy_version <= '1.1.9999':
-        raise ValueError(
-            "median average PSD estimation requires scipy >= 1.2.0",
-        )
     kwargs.setdefault('average', 'median')
-    return welch(timeseries, segmentlength, **kwargs)
+    return _spectral_density(timeseries, segmentlength, **kwargs)
 
 
 # register
@@ -158,19 +158,8 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
     scipy.signal.csd
     """
     # calculate CSD
-    try:
-        freqs, csd_ = scipy.signal.csd(
-            timeseries.value, other.value, noverlap=noverlap,
-            fs=timeseries.sample_rate.decompose().value,
-            nperseg=segmentlength, **kwargs)
-    except AttributeError as exc:
-        exc.args = ('{}, scipy>=0.16 is required'.format(str(exc)),)
-        raise
-
-    # generate FrequencySeries and return
-    unit = scale_timeseries_unit(timeseries.unit,
-                                 kwargs.get('scaling', 'density'))
-    return FrequencySeries(
-        csd_, unit=unit, frequencies=freqs,
+    kwargs.setdefault('y', other.value)
+    return _spectral_density(
+        timeseries, segmentlength, noverlap=noverlap,
         name=str(timeseries.name)+'---'+str(other.name),
-        epoch=timeseries.epoch, channel=timeseries.channel)
+        sdfunc=scipy.signal.csd, **kwargs)

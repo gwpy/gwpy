@@ -577,11 +577,11 @@ class QGram(object):
         else:
             if fres == "<default>":
                 fres = 500
-            # using `~numpy.logspace` here to support numpy-1.7.1 for EPEL7,
-            # but numpy-1.12.0 introduced the function `~numpy.geomspace`
-            logfmin = numpy.log10(self.plane.frange[0])
-            logfmax = numpy.log10(self.plane.frange[1])
-            outfreq = numpy.logspace(logfmin, logfmax, num=int(fres))
+            outfreq = numpy.geomspace(
+                self.plane.frange[0],
+                self.plane.frange[1],
+                num=int(fres),
+            )
         new = type(out)(
             interp(xout, outfreq).T.astype(
                 dtype, casting="same_kind", copy=False),
