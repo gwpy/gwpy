@@ -34,18 +34,6 @@ __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
 # -- test results -------------------------------------------------------------
 
-# hack up constants that changed between astropy 1.3 and 2.0
-# TODO: might want to do this in reverse, i.e. hard-coding the answers for 2.0
-from astropy import __version__ as astropy_version  # nopep8
-if astropy_version >= '2.0':
-    from astropy import constants
-    from astropy.constants import (si, astropyconst13)
-    units.M_sun._represents = units.Unit(astropyconst13.M_sun)
-    constants.M_sun = si.M_sun = astropyconst13.M_sun
-    constants.G = si.G = astropyconst13.G
-    constants.c = si.c = astropyconst13.c
-    constants.pc = si.pc = astropyconst13.pc
-
 TEST_RESULTS = {
     'inspiral_range': 19.63872448570372 * units.Mpc,
     'inspiral_range_psd': 7.92640311063505 * units.Mpc ** 2 / units.Hz,

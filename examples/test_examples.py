@@ -38,7 +38,6 @@ if sys.version_info < (3, 6):  # python < 3.6
     pytest.skip('example tests will only run on python >= 3.6',
                 allow_module_level=True)
 pytest.importorskip("matplotlib", minversion="2.2.0")
-pytest.importorskip("astropy", minversion="2.0.0")
 
 use('agg')  # force non-interactive backend
 

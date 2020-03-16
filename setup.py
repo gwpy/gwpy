@@ -42,7 +42,7 @@ setup_requires = get_setup_requires()
 
 # runtime dependencies
 install_requires = [
-    'astropy >= 1.3.0',
+    'astropy >= 3.0.0',
     'dqsegdb2',
     'gwdatafind',
     'gwosc >= 0.4.0',
