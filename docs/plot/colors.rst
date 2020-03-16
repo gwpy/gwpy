@@ -11,7 +11,6 @@ In order to simplify visual identification of a specific gravitational-wave obse
 .. plot::
     :include-source: False
 
-    from __future__ import division
     import numpy
     from matplotlib import (pyplot, rcParams)
     from matplotlib.colors import to_hex
