@@ -309,10 +309,7 @@ def test_read_write(data, format,
     DataClass = type(data)
 
     with TemporaryFilename(suffix=extension) as fp:
-        try:
-            data.write(fp, *write_args, format=format, **write_kw)
-        except TypeError as e:
-            raise
+        data.write(fp, *write_args, format=format, **write_kw)
 
         # try again with automatic format identification
         if autoidentify:
