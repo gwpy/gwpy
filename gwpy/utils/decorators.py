@@ -90,27 +90,27 @@ def deprecated_function(func, warning=DEPRECATED_FUNCTION_WARNING):
     return wrapped_func
 
 
-def return_as(func, returntype):
+def return_as(returntype):
     """Decorator to cast return of function as the given type
 
     Parameters
     ----------
-    func : `callable`
-        the function to decorate
-
     returntype : `type`
-        desired return type of the decorated function
+        the desired return type of the decorated function
     """
-    @wraps(func)
-    def wrapped_func(*args, **kwargs):
-        result = func(*args, **kwargs)
-        try:
-            return returntype(result)
-        except (TypeError, ValueError) as exc:
-            exc.args = (
-                'failed to cast return from {0} as {1}: {2}'.format(
-                    func.__name__, returntype.__name__, str(exc)),
-            )
-            raise
+    def decorator(func):
+        # @wraps(func) <- we can't use this as normal because it doesn't work
+        #                 for instance methods, see workaround below
+        def wrapped(*args, **kwargs):
+            result = func(*args, **kwargs)
+            try:
+                return returntype(result)
+            except (TypeError, ValueError) as exc:
+                exc.args = (
+                    'failed to cast return from {0} as {1}: {2}'.format(
+                        func.__name__, returntype.__name__, str(exc)),
+                )
+                raise
+        return wraps(func)(wrapped)
 
-    return wrapped_func
+    return decorator
