@@ -26,8 +26,6 @@ from io import BytesIO
 from ssl import SSLError
 from urllib.error import URLError
 
-from six import PY2
-
 import pytest
 
 import sqlparse
@@ -169,8 +167,6 @@ class TestTable(object):
                 t3 = self.TABLE.read([tmp, tmp], format='ligolw',
                                      tablename='sngl_burst')
             except NameError as e:
-                if not PY2:  # ligolw not patched for python3 just yet
-                    pytest.xfail(str(e))
                 raise
             utils.assert_table_equal(vstack((t2, t2)), t3)
 
