@@ -20,9 +20,9 @@
 """
 
 import os
+from http.client import (HTTPConnection, HTTPException)
 from io import BytesIO
 from itertools import cycle
-from http.client import (HTTPConnection, HTTPException)
 
 import pytest
 
