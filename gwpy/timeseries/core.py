@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2019)
+# Copyright (C) Duncan Macleod (2014-2020)
 #
 # This file is part of GWpy.
 #
@@ -85,7 +85,7 @@ def _dynamic_scaled(scaled, channel):
     """Determine default for scaled based on channel name
 
     This is mainly to work around LIGO not correctly recording ADC
-    scaling parameters for most of Advanced LIGO (through 2019).
+    scaling parameters for most of Advanced LIGO (through 2020).
 
     Parameters
     ----------

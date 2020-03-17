@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) Joseph Areeda (2015-2019)
+# Copyright (C) Joseph Areeda (2015-2020)
 #
 # This file is part of GWpy.
 #
