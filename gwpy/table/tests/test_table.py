@@ -163,11 +163,8 @@ class TestTable(object):
                 t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
 
             # check reading multiple tables works
-            try:
-                t3 = self.TABLE.read([tmp, tmp], format='ligolw',
-                                     tablename='sngl_burst')
-            except NameError as e:
-                raise
+            t3 = self.TABLE.read([tmp, tmp], format='ligolw',
+                                 tablename='sngl_burst')
             utils.assert_table_equal(vstack((t2, t2)), t3)
 
             # check writing to existing file raises IOError
@@ -176,14 +173,7 @@ class TestTable(object):
             assert str(exc.value) == 'File exists: %s' % tmp
 
             # check overwrite=True, append=False rewrites table
-            try:
-                _write(overwrite=True)
-            except TypeError as e:
-                # ligolw is not python3-compatbile, so skip if it fails
-                if not PY2 and (
-                        str(e) == 'write() argument must be str, not bytes'):
-                    pytest.xfail(str(e))
-                raise
+            _write(overwrite=True)
             t3 = _read()
             utils.assert_table_equal(t2, t3)
 
@@ -383,7 +373,7 @@ class TestEventTable(TestTable):
         utils.assert_table_equal(
             midf, table.filter('frequency > 100').filter('frequency < 1000'))
 
-        # check unicode parsing (PY2)
+        # check unicode parsing
         table.filter(u'snr > 100')
 
     def test_filter_in_segmentlist(self, table):
