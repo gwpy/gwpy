@@ -20,8 +20,7 @@
 """
 
 import inspect
-
-from six.moves.urllib.error import HTTPError
+from urllib.error import HTTPError
 
 from ..detector import Channel
 from ..time import LIGOTimeGPS

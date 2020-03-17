@@ -21,8 +21,6 @@
 
 import warnings
 
-from six import string_types
-
 import numpy
 
 from astropy import units
@@ -307,7 +305,7 @@ class Spectrogram(Array2D):
         ValueError
             if ``operand`` is given as a `str` that isn't supported
         """
-        if isinstance(operand, string_types):
+        if isinstance(operand, str):
             if operand == 'mean':
                 operand = self.mean(axis=0)
             elif operand == 'median':

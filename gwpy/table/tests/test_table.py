@@ -24,9 +24,9 @@ import shutil
 import tempfile
 from io import BytesIO
 from ssl import SSLError
+from urllib.error import URLError
 
 from six import PY2
-from six.moves.urllib.error import URLError
 
 import pytest
 

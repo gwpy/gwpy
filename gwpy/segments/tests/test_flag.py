@@ -24,8 +24,7 @@ import re
 import tempfile
 from io import BytesIO
 from ssl import SSLError
-
-from six.moves.urllib.error import (URLError, HTTPError)
+from urllib.error import (URLError, HTTPError)
 
 import pytest
 

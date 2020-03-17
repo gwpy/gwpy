@@ -27,8 +27,6 @@ import warnings
 import sys
 from functools import wraps
 
-from six import add_metaclass
-
 from matplotlib import rcParams
 try:
     from matplotlib.cm import viridis as DEFAULT_CMAP
@@ -94,8 +92,7 @@ to_s = to_float('s')  # pylint: disable=invalid-name
 
 # -- base product class -------------------------------------------------------
 
-@add_metaclass(abc.ABCMeta)
-class CliProduct(object):
+class CliProduct(object, metaclass=abc.ABCMeta):
     """Base class for all cli plot products
 
     Parameters
@@ -761,8 +758,7 @@ class CliProduct(object):
 
 # -- extensions ---------------------------------------------------------------
 
-@add_metaclass(abc.ABCMeta)
-class ImageProduct(CliProduct):
+class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
     """Base class for all x/y/color plots
     """
     MAX_DATASETS = 1
@@ -824,8 +820,7 @@ class ImageProduct(CliProduct):
         return  # image plots don't have legends
 
 
-@add_metaclass(abc.ABCMeta)
-class FFTMixin(object):
+class FFTMixin(object, metaclass=abc.ABCMeta):
     """Mixin for `CliProduct` class that will perform FFTs
 
     This just adds FFT-based command line options
@@ -902,8 +897,7 @@ class FFTMixin(object):
         return super(FFTMixin, self)._finalize_arguments(args)
 
 
-@add_metaclass(abc.ABCMeta)
-class TimeDomainProduct(CliProduct):
+class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
     """`CliProduct` with time on the X-axis
     """
     @classmethod
@@ -953,8 +947,7 @@ class TimeDomainProduct(CliProduct):
         return ''
 
 
-@add_metaclass(abc.ABCMeta)
-class FrequencyDomainProduct(CliProduct):
+class FrequencyDomainProduct(CliProduct, abc.ABCMeta):
     """`CliProduct` with frequency on the X-axis
     """
     def get_xlabel(self):

@@ -26,9 +26,6 @@ authors.
 import warnings
 from math import (log, ceil, pi, isinf, exp)
 
-from six import string_types
-from six.moves import xrange
-
 import numpy
 from numpy import fft as npfft
 
@@ -150,7 +147,7 @@ class QTiling(QObject):
         cumum = log(self.qrange[1] / self.qrange[0]) / 2**(1/2.)
         nplanes = int(max(ceil(cumum / self.deltam), 1))
         dq = cumum / nplanes  # pylint: disable=invalid-name
-        for i in xrange(nplanes):
+        for i in range(nplanes):
             yield self.qrange[0] * exp(2**(1/2.) * dq * (i + .5))
 
     def __iter__(self):
@@ -257,7 +254,7 @@ class QPlane(QBase):
         fstepmin = 1 / self.duration
         # for each frequency, yield a QTile
         last = None
-        for i in xrange(nfreq):
+        for i in range(nfreq):
             this = (
                 minf * exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep) //
                 fstepmin * fstepmin
@@ -441,7 +438,7 @@ class QTile(QBase):
             x0=cenergy.x0, dx=cenergy.dx, copy=False)
 
         if norm:
-            norm = norm.lower() if isinstance(norm, string_types) else norm
+            norm = norm.lower() if isinstance(norm, str) else norm
             if norm in (True, 'median'):
                 narray = energy / energy.median()
             elif norm in ('mean',):

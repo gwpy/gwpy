@@ -20,9 +20,7 @@
 """
 
 import warnings
-
-import six
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 import numpy
 
@@ -33,10 +31,7 @@ from .cache import read_cache
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # first 4 bytes of any valid GWF file (see LIGO-T970130 §4.3.1)
-if six.PY2:
-    GWF_SIGNATURE = 'IGWD'
-else:
-    GWF_SIGNATURE = b'IGWD'
+GWF_SIGNATURE = b'IGWD'
 
 
 # -- i/o ----------------------------------------------------------------------

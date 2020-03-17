@@ -98,24 +98,16 @@ def return_as(returntype):
     returntype : `type`
         the desired return type of the decorated function
     """
-    def decorator(func):
-        # @wraps(func) <- we can't use this as normal because it doesn't work
-        #                 on python < 3 for instance methods,
-        #                 see workaround below
-        def wrapped(*args, **kwargs):
-            result = func(*args, **kwargs)
-            try:
-                return returntype(result)
-            except (TypeError, ValueError) as exc:
-                exc.args = (
-                    'failed to cast return from {0} as {1}: {2}'.format(
-                        func.__name__, returntype.__name__, str(exc)),
-                )
-                raise
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        result = func(*args, **kwargs)
         try:
-            return wraps(func)(wrapped)
-        except AttributeError:  # python < 3.0.0
-            wrapped.__doc__ == func.__doc__
-            return wrapped
+            return returntype(result)
+        except (TypeError, ValueError) as exc:
+            exc.args = (
+                'failed to cast return from {0} as {1}: {2}'.format(
+                    func.__name__, returntype.__name__, str(exc)),
+            )
+            raise
 
-    return decorator
+    return wrapped_func

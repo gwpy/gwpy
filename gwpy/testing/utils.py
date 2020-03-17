@@ -24,9 +24,9 @@ import tempfile
 from contextlib import contextmanager
 from distutils.version import LooseVersion
 from importlib import import_module
+from itertools import zip_longest
 
 from six import PY2
-from six.moves import zip_longest
 
 import pytest
 

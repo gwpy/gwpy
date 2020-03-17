@@ -21,8 +21,7 @@
 
 from socket import timeout
 from ssl import SSLError
-
-from six.moves.urllib.error import URLError
+from urllib.error import URLError
 
 import pytest
 

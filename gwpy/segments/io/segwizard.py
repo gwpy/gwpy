@@ -21,8 +21,6 @@
 
 import re
 
-from six import string_types
-
 from .. import (Segment, SegmentList)
 from ...io import registry
 from ...io.utils import identify_factory
@@ -71,7 +69,7 @@ def from_segwizard(source, gpstype=LIGOTimeGPS, strict=True):
     distributed under GPLv3.
     """
     # read file path
-    if isinstance(source, string_types):
+    if isinstance(source, str):
         with open(source, 'r') as fobj:
             return from_segwizard(fobj, gpstype=gpstype, strict=strict)
 
@@ -141,7 +139,7 @@ def to_segwizard(segs, target, header=True, coltype=LIGOTimeGPS):
     distributed under GPLv3.
     """
     # write file path
-    if isinstance(target, string_types):
+    if isinstance(target, str):
         with open(target, 'w') as fobj:
             return to_segwizard(segs, fobj, header=header, coltype=coltype)
 

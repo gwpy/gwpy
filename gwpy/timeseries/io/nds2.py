@@ -22,8 +22,6 @@
 import operator
 import warnings
 
-from six.moves import reduce
-
 from numpy import ones as numpy_ones
 
 from ...detector import Channel
