@@ -55,11 +55,11 @@ EXAMPLES = sorted([
 @contextmanager
 def cwd(path):
     oldpwd = Path.cwd()
-    os.chdir(path)
+    os.chdir(str(path))
     try:
         yield
     finally:
-        os.chdir(oldpwd)
+        os.chdir(str(oldpwd))
 
 
 @pytest.fixture(autouse=True)
