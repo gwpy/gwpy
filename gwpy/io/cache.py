@@ -272,7 +272,7 @@ def is_cache(cache):
         `True` if the input object is a cache, or a file in LAL cache format,
         otherwise `False`
     """
-    if isinstance(cache, str + FILE_LIKE):
+    if isinstance(cache, (str,) + FILE_LIKE):
         try:
             return bool(len(read_cache(cache)))
         except (TypeError, ValueError, UnicodeDecodeError, ImportError):
