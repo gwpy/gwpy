@@ -32,37 +32,7 @@ Pip
 
     $ python -m pip install gwpy
 
-Supported python versions: 2.7, 3.5+.
-
-
-.. _gwpy-install-debian:
-
-------------
-Debian Linux
-------------
-
-.. code-block:: bash
-
-    $ apt-get install python3-gwpy
-
-Supported python versions: 2.7 (all), 3.5 (Stretch), 3.6 (Buster),
-`click here <https://wiki.ligo.org/Computing/DASWG/SoftwareOnDebian>`__ for
-instructions on how to add the required repositories.
-
-
-.. _gwpy-install-el:
-
-----------------
-Scientific Linux
-----------------
-
-.. code-block:: bash
-
-    $ yum install python-gwpy
-
-Supported python versions: 2.7,
-`click here <https://wiki.ligo.org/DASWG/ScientificLinux>`__ for
-instructions on how to add the required yum repositories.
+Supported python versions: 3.5+.
 
 
 ============

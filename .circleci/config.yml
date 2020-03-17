@@ -7,32 +7,10 @@ aliases:
       attach_workspace:
         at: .
 
-  - &configure_debian
-      run:
-        name: Configure debian environment
-        command: |
-          # remove apt repos we don't use
-          pushd /etc/apt/sources.list.d
-          rm -v cernvm.list cvmfs-contrib.list
-          # install git and ssh
-          apt-get -yqq update
-          apt-get -yqq install -y git ssh
-
-  - &configure_rhel
-      run:
-        name: Configure RHEL environment
-        command: |
-          # install git and ssh
-          yum -y -q update
-          yum -y -q install git openssh-clients
-
   - &set_python_environment
       run:
         name: Set Python environment
         command: |
-          export PIP_FLAGS=${PIP_FLAGS:-"--progress-bar=off"}
-          echo "export PIP_FLAGS=\"${PIP_FLAGS}\"" >> ${BASH_ENV}
-          echo "Set PIP_FLAGS=\"${PIP_FLAGS}\""
           export PYTHON_VERSION=${CIRCLE_JOB##*:}
           echo "export PYTHON_VERSION=\"${PYTHON_VERSION}\"" >> ${BASH_ENV}
           echo "Set PYTHON_VERSION=\"${PYTHON_VERSION}\""
@@ -60,6 +38,11 @@ aliases:
       store_artifacts:
         path: tests
 
+  - &install
+      run:
+        name: Install tarball
+        command: python -m pip install --progress-bar=off gwpy-*.tar.*
+
   - &python-build
       docker:
         - image: python
@@ -67,9 +50,7 @@ aliases:
         - checkout
         - *attach_workspace
         - *set_python_environment
-        - run:
-            name: Install
-            command: python -m pip install ${PIP_FLAGS} gwpy-*.tar.*
+        - *install
         - *run-tests
         - *codecov
         - store_test_results:
@@ -87,8 +68,15 @@ aliases:
             key: v6-gwpy-{{ .Environment.CIRCLE_JOB }}
         - *set_python_environment
         - run:
-            name: Install
-            command: bash -ex ci/install-conda.sh
+            name: Create conda environment
+            command: |
+              set -ex;
+              # create conda env
+              . ci/install-conda.sh;
+              # activate conda env in future stages
+              echo "source /opt/conda/etc/profile.d/conda.sh" >> ${BASH_ENV}
+              echo "conda activate gwpyci" >> ${BASH_ENV}
+        - *install
         - *run-tests
         - *codecov
         - save_cache:
@@ -97,36 +85,6 @@ aliases:
               - "/opt/conda/envs/gwpyci"
         - *store_test_results
         - *store_test_artifacts
-
-  - &debian-build
-      steps:
-        - *configure_debian
-        - checkout
-        - *attach_workspace
-        - *set_python_environment
-        - run:
-            name: Build
-            command: bash -ex ci/install-debian.sh
-        - *run-tests
-        - *codecov
-        - *store_test_results
-        - *store_test_artifacts
-
-  - &centos-build
-      steps:
-        - *configure_rhel
-        - checkout
-        - *attach_workspace
-        - *set_python_environment
-        - run:
-            name: Build
-            command: bash -ex ci/install-el.sh
-        - *run-tests
-        - *codecov
-        - *store_test_results
-        - *store_test_artifacts
-        - store_artifacts:
-            path: "*.rpm"
 
 # -- jobs -------------------
 
@@ -159,7 +117,7 @@ jobs:
           name: Lint
           command: |
             set -ex
-            python -m pip install ${PIP_FLAGS} "flake8>=3.7.0"
+            python -m pip install "flake8>=3.7.0"
             mkdir -p tests
             python -m flake8 --output-file tests/flake8.txt
       - run:
@@ -167,7 +125,7 @@ jobs:
           when: always
           command: |
             set -ex
-            python -m pip install ${PIP_FLAGS} flake8-junit-report
+            python -m pip install flake8-junit-report
             python -m junit_conversor tests/flake8.txt tests/junit.xml
       - *store_test_results
       - *store_test_artifacts
@@ -202,23 +160,8 @@ jobs:
   conda:3.7:
     <<: *conda-build
 
-  # -- debian ---------------
-
-  debian:stretch:3.5:
-    <<: *debian-build
-    docker:
-      - image: igwn/base:stretch
-    environment:
-      PIP_FLAGS: " "
-
-  # -- rhel -----------------
-
-  el7:3.6:
-    <<: *centos-build
-    docker:
-      - image: igwn/base:el7
-    environment:
-      PIP_FLAGS: " "
+  conda:3.8:
+    <<: *conda-build
 
 # -- workflow ---------------
 
@@ -242,6 +185,7 @@ workflows:
       - python:3.8:
           requires:
             - sdist
+
       # conda tests
       - conda:3.6:
           requires:
@@ -249,11 +193,6 @@ workflows:
       - conda:3.7:
           requires:
             - python:3.7
-
-      # LDG reference OS tests
-      - debian:stretch:3.5:
+      - conda:3.8:
           requires:
-            - sdist
-      - el7:3.6:
-          requires:
-            - sdist
+            - python:3.8
