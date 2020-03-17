@@ -26,8 +26,6 @@ from distutils.version import LooseVersion
 from importlib import import_module
 from itertools import zip_longest
 
-from six import PY2
-
 import pytest
 
 import numpy
@@ -314,10 +312,6 @@ def test_read_write(data, format,
         try:
             data.write(fp, *write_args, format=format, **write_kw)
         except TypeError as e:
-            # ligolw is not python3-compatbile, so skip if it fails
-            if not PY2 and format == 'ligolw' and (
-                    str(e) == 'write() argument must be str, not bytes'):
-                pytest.xfail(str(e))
             raise
 
         # try again with automatic format identification
