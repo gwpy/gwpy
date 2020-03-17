@@ -22,7 +22,6 @@
 import re
 from copy import copy
 from math import ceil
-
 from urllib.parse import urlparse
 
 from astropy import units

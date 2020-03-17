@@ -39,7 +39,6 @@ import os.path
 import re
 import warnings
 from functools import wraps
-
 from http.client import HTTPException
 from urllib.parse import urlparse
 
