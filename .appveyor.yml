@@ -1,29 +1,24 @@
 environment:
+  global:
+    MINICONDA: C:\Miniconda37-x64
   matrix:
-    - MINICONDA: C:\Miniconda37-x64
-      PYTHON_VERSION: 3.7
-    - MINICONDA: C:\Miniconda36-x64
-      PYTHON_VERSION: 3.6
+    - PYTHON_VERSION: 3.6
+    - PYTHON_VERSION: 3.7
+    - PYTHON_VERSION: 3.8
 install:
-  # configure conda
   - "set PATH=%MINICONDA%\\condabin;%PATH%"
   - call "%MINICONDA%\\Scripts\\activate.bat"
-  - conda config --set always_yes yes --set changeps1 no
+  - conda config --set always_yes yes
   - conda config --add channels conda-forge
-  - conda update --quiet conda pip
-  # activate again for the (potential) new conda version
-  - call "%MINICONDA%\\Scripts\\activate.bat"
-  # create a new environment for gwpy
-  - conda create --name gwpy python=%PYTHON_VERSION%
+  - conda create --quiet --yes --name gwpy
+        "python=%PYTHON_VERSION%"
+        "pip"
+        "setuptools"
   - conda activate gwpy
-  # print details
-  - conda info --all
-  # fill it with our dependencies
   - python ci\\parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
-  - conda install --yes --file conda-reqs.txt
-  - conda deactivate
-  - conda activate gwpy
+  - conda install --quiet --yes --name gwpy --file conda-reqs.txt
   # print everything we have
+  - conda info --all
   - conda list
 build_script:
   - python -m pip install .
