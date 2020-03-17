@@ -20,6 +20,7 @@
 """
 
 import operator
+from functools import reduce
 from math import (pi, log10)
 
 import numpy

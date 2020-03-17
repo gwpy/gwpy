@@ -23,6 +23,7 @@ This module requires lal >= 6.14.0
 
 import operator
 from collections import OrderedDict
+from functools import reduce
 
 import numpy
 
