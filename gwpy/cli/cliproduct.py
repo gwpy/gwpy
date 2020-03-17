@@ -947,7 +947,7 @@ class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
         return ''
 
 
-class FrequencyDomainProduct(CliProduct, abc.ABCMeta):
+class FrequencyDomainProduct(CliProduct, metaclass=abc.ABCMeta):
     """`CliProduct` with frequency on the X-axis
     """
     def get_xlabel(self):
