@@ -65,7 +65,7 @@ aliases:
         - checkout
         - *attach_workspace
         - restore_cache:
-            key: v6-gwpy-{{ .Environment.CIRCLE_JOB }}
+            key: v7-gwpy-{{ .Environment.CIRCLE_JOB }}
         - *set_python_environment
         - run:
             name: Create conda environment
@@ -79,10 +79,13 @@ aliases:
         - *install
         - *run-tests
         - *codecov
+        - run:
+            name: Clean conda pkgs dirs
+            command: conda clean --yes --quiet --tarballs
         - save_cache:
-            key: v6-gwpy-{{ .Environment.CIRCLE_JOB }}
+            key: v7-gwpy-{{ .Environment.CIRCLE_JOB }}
             paths:
-              - "/opt/conda/envs/gwpyci"
+              - "/opt/conda/pkgs"
         - *store_test_results
         - *store_test_artifacts
 
