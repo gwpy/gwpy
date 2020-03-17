@@ -90,13 +90,16 @@ def deprecated_function(func, warning=DEPRECATED_FUNCTION_WARNING):
     return wrapped_func
 
 
-def return_as(returntype):
+def return_as(func, returntype):
     """Decorator to cast return of function as the given type
 
     Parameters
     ----------
+    func : `callable`
+        the function to decorate
+
     returntype : `type`
-        the desired return type of the decorated function
+        desired return type of the decorated function
     """
     @wraps(func)
     def wrapped_func(*args, **kwargs):
