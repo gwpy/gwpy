@@ -50,7 +50,7 @@ def preformat_cache(cache, start=None, end=None):
         A parsed, sieved list of paths based on the input arguments.
     """
     # open cache file
-    if isinstance(cache, str + FILE_LIKE):
+    if isinstance(cache, (str,) + FILE_LIKE):
         return read_cache(cache, sort=file_segment,
                           segment=Segment(start, end))
 
