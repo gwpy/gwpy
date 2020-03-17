@@ -47,11 +47,6 @@ if [ ! -f ${CONDA_PATH}/envs/gwpyci/conda-meta/history ]; then
     conda create --name gwpyci python=${PYTHON_VERSION} pip setuptools
 fi
 
-# install basic dependencies (please document each entry)
-conda install --name gwpyci --quiet --yes \
-    coreutils `# needed for timeout` \
-;
-
 # install conda dependencies (based on pip requirements file)
 conda run --name gwpyci \
 python ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
