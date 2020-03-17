@@ -19,10 +19,7 @@
 """Unit test for :mod:`gwpy.signal.spectral._median_mean`
 """
 
-try:
-    from unittest import mock
-except ImportError:  # python < 3
-    import mock
+from unittest import mock
 
 import pytest
 

@@ -22,9 +22,7 @@
 import os.path
 from itertools import (chain, product)
 from ssl import SSLError
-
-import six
-from six.moves.urllib.error import URLError
+from urllib.error import URLError
 
 import pytest
 
@@ -167,10 +165,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
             def read_(**kwargs):
                 return type(array).read(tmp, array.name, format=fmt,
                                         **kwargs)
-
-            # test reading unicode (python2)
-            if six.PY2:
-                type(array).read(six.u(tmp), array.name, format=fmt)
 
             # test start, end
             start, end = array.span.contract(10)

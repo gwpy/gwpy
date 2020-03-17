@@ -28,8 +28,6 @@ import warnings
 from collections import OrderedDict
 from functools import wraps
 
-from six.moves import reduce
-
 from ..time import to_gps
 from ..utils.enum import NumpyTypeEnum
 from .kerberos import kinit

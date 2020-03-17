@@ -40,8 +40,8 @@ import re
 import warnings
 from functools import wraps
 
-from six.moves.http_client import HTTPException
-from six.moves.urllib.parse import urlparse
+from http.client import HTTPException
+from urllib.parse import urlparse
 
 from ligo.segments import (
     segment as LigoSegment,

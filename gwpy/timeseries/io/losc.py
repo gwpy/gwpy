@@ -24,8 +24,7 @@ For more details, see https://losc.ligo.org
 import os.path
 import re
 from math import ceil
-
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from astropy.io import registry
 from astropy.units import Quantity

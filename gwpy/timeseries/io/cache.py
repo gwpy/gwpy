@@ -19,8 +19,6 @@
 """I/O utilities for reading `TimeSeries` from a `list` of file paths.
 """
 
-from six import string_types
-
 from ...io.cache import (FILE_LIKE, read_cache, file_segment, sieve)
 from ...segments import Segment
 
@@ -52,7 +50,7 @@ def preformat_cache(cache, start=None, end=None):
         A parsed, sieved list of paths based on the input arguments.
     """
     # open cache file
-    if isinstance(cache, FILE_LIKE + string_types):
+    if isinstance(cache, str + FILE_LIKE):
         return read_cache(cache, sort=file_segment,
                           segment=Segment(start, end))
 

@@ -19,6 +19,9 @@
 """Interface to the LIGO Channel Information System
 """
 
+import json
+from urllib.error import HTTPError
+
 import numpy
 
 from .. import (Channel, ChannelList)

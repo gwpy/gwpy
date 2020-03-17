@@ -21,8 +21,6 @@
 
 import operator
 
-from six.moves import reduce
-
 from astropy.io import registry as io_registry
 
 from ...io.ligolw import (is_xml, build_content_handler, read_ligolw,

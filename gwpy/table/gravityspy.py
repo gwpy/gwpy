@@ -20,8 +20,7 @@
 """
 
 import os.path
-
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 from ..utils import mp as mp_utils
 from .table import EventTable
@@ -194,8 +193,8 @@ class GravitySpyTable(EventTable):
         """
         from astropy.utils.data import get_readable_fileobj
         import json
-        from six.moves.urllib.error import HTTPError
-        from six.moves import urllib
+        import urllib
+        from urllib.error import HTTPError
 
         # Need to build the url call for the restful API
         base = 'https://gravityspytools.ciera.northwestern.edu' + \

@@ -24,9 +24,9 @@ import glob
 import shutil
 import subprocess
 import warnings
-from string import Template
 
-from six.moves.configparser import (ConfigParser, NoOptionError)
+from string import Template
+from configparser import (ConfigParser, NoOptionError)
 
 import matplotlib
 

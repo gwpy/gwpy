@@ -22,8 +22,6 @@
 import operator
 from math import (pi, log10)
 
-from six.moves import reduce
-
 import numpy
 from numpy import fft as npfft
 

@@ -34,9 +34,6 @@ from gwpy.io.nds2 import NDSWarning
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-if sys.version_info < (3, 6):  # python < 3.6
-    pytest.skip('example tests will only run on python >= 3.6',
-                allow_module_level=True)
 pytest.importorskip("matplotlib", minversion="2.2.0")
 
 use('agg')  # force non-interactive backend
@@ -84,8 +81,6 @@ def test_example(script):
     with cwd(script.parent):
         with script.open('r') as example:
             raw = example.read()
-        if not isinstance(raw, bytes):  # python < 3
-            raw = raw.encode('utf-8')
         code = compile(raw, str(script), "exec")
         try:
             exec(code, globals())

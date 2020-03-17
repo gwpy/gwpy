@@ -22,21 +22,13 @@ All specific unified input/output for class objects should be placed in
 an 'io' subdirectory of the containing directory for that class.
 """
 
+import builtins
 import os.path
 import re
 from contextlib import contextmanager
 from functools import wraps
 from importlib import import_module
 from numbers import Integral
-
-# note: because the "future" module provides a builtins namespace,
-# we need to do this the other way around compared to normal
-try:
-    import __builtin__ as builtins
-except ImportError:  # python >= 3
-    import builtins
-
-from six import string_types
 
 import numpy
 
@@ -415,7 +407,7 @@ def open_xmldoc(fobj, **kwargs):
     use_in(kwargs.setdefault('contenthandler', LIGOLWContentHandler))
 
     try:  # try and load existing file
-        if isinstance(fobj, string_types):
+        if isinstance(fobj, str):
             return load_filename(fobj, **kwargs)
         if isinstance(fobj, FILE_LIKE):
             return load_fileobj(fobj, **kwargs)[0]
@@ -530,7 +522,7 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
             target, contenthandler=kwargs.pop('contenthandler',
                                               LIGOLWContentHandler))
     # fail on existing document and not overwriting
-    elif (not overwrite and isinstance(target, string_types) and
+    elif (not overwrite and isinstance(target, str) and
           os.path.isfile(target)):
         raise IOError("File exists: {}".format(target))
     else:  # or create a new document
@@ -540,7 +532,7 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
     write_tables_to_document(xmldoc, tables, overwrite=overwrite)
 
     # write file
-    if isinstance(target, string_types):
+    if isinstance(target, str):
         kwargs.setdefault('gz', target.endswith('.gz'))
         ligolw_utils.write_filename(xmldoc, target, **kwargs)
     elif isinstance(target, FILE_LIKE):
