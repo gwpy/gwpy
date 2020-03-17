@@ -25,9 +25,6 @@ Portfile
 .coverage
 .eggs/
 
-debian/changelog
-gwpy.spec
-
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
