@@ -19,11 +19,6 @@
 """Coherence spectrogram
 """
 
-try:
-    from matplotlib.cm import plasma as DEFAULT_CMAP
-except ImportError:
-    DEFAULT_CMAP = None
-
 from .spectrogram import Spectrogram
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
@@ -32,6 +27,7 @@ __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 class Coherencegram(Spectrogram):
     """Plot the coherence-spectrogram comparing two time series
     """
+    DEFAULT_CMAP = "plasma"
     MIN_DATASETS = 2
     MAX_DATASETS = 2
     action = 'coherencegram'
@@ -58,8 +54,6 @@ class Coherencegram(Spectrogram):
                 args.imin = 0.
             if args.imax is None:
                 args.imax = 1.
-        if args.cmap is None and DEFAULT_CMAP is not None:
-            args.cmap = DEFAULT_CMAP.name
         return super()._finalize_arguments(args)
 
     def get_ylabel(self):

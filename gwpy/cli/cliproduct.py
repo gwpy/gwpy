@@ -27,7 +27,6 @@ import sys
 from functools import wraps
 
 from matplotlib import (rcParams, style)
-from matplotlib.cm import viridis as DEFAULT_CMAP
 
 from astropy.time import Time
 from astropy.units import Quantity
@@ -750,6 +749,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
 class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
     """Base class for all x/y/color plots
     """
+    DEFAULT_CMAP = "viridis"
     MAX_DATASETS = 1
 
     @classmethod
@@ -767,6 +767,7 @@ class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
         group.add_argument('--imax', type=float,
                            help='maximum value for colorbar')
         group.add_argument('--cmap',
+                           default=cls.DEFAULT_CMAP,
                            help='Colormap. See '
                                 'https://matplotlib.org/examples/color/'
                                 'colormaps_reference.html for options')
@@ -778,11 +779,6 @@ class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
                                 'that frequency bin')
         group.add_argument('--nocolorbar', action='store_true',
                            help='hide the colour bar')
-
-    def _finalize_arguments(self, args):
-        if args.cmap is None:
-            args.cmap = DEFAULT_CMAP.name
-        return super()._finalize_arguments(args)
 
     @staticmethod
     def get_color_label():
