@@ -19,8 +19,6 @@
 """Unit test for detector module
 """
 
-import json
-
 import pytest
 
 import numpy
@@ -313,9 +311,10 @@ class TestChannel(object):
             assert getattr(c, key) == pdict[key]
         assert c.ndsname == name
 
-    @utils.skip_missing_dependency('ligo.org')
+    @utils.skip_missing_dependency("ciecplib")
     @pytest.mark.parametrize('name', ('X1:TEST-CHANNEL', 'Y1:TEST_CHANNEL'))
     def test_query(self, name):
+        requests_mock = pytest.importorskip("requests_mock")
         # build fake CIS response
         channelinfo = {'X1:TEST-CHANNEL': {
             'name': 'X1:TEST-CHANNEL',
@@ -329,13 +328,13 @@ class TestChannel(object):
             results = [channelinfo[name]]
         else:
             results = []
-        jsonresponse = json.dumps({'results': results})
 
         # mock response and test parsing
-        with mock.patch('ligo.org.request') as mocked:
-            mocked.return_value = jsonresponse
+        url = "https://cis.ligo.org/api/channel/?q={}".format(name)
+        with requests_mock.Mocker() as rmock:
+            rmock.get(url, json=results)
             if name == 'X1:TEST-CHANNEL':
-                c = self.TEST_CLASS.query(name)
+                c = self.TEST_CLASS.query(name, kerberos=True)
                 assert c.name == 'X1:TEST-CHANNEL'
                 assert c.unit == units.m
                 assert c.sample_rate == 16384 * units.Hz
@@ -344,7 +343,7 @@ class TestChannel(object):
                 assert c.url == 'https://cis.ligo.org/channel/123456'
             else:
                 with pytest.raises(ValueError) as exc:
-                    c = self.TEST_CLASS.query(name)
+                    self.TEST_CLASS.query(name, kerberos=True)
                 assert str(exc.value) == 'No channels found matching %r' % name
 
     @pytest.mark.parametrize('name', ('X1:TEST-CHANNEL', 'Y1:TEST_CHANNEL'))
