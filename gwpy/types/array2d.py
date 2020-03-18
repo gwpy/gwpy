@@ -21,7 +21,6 @@
 
 from warnings import warn
 
-from matplotlib import __version__ as mpl_version
 
 from astropy.units import (Unit, Quantity)
 
@@ -30,8 +29,6 @@ from .series import Series
 from .index import Index
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
-DEFAULT_IMAGE_METHOD = 'imshow' if mpl_version >= '2.0' else 'pcolormesh'
 
 
 class Array2D(Series):
@@ -357,7 +354,7 @@ class Array2D(Series):
     def pcolormesh(self, **kwargs):
         return self.plot(method='pcolormesh', **kwargs)
 
-    def plot(self, method=DEFAULT_IMAGE_METHOD, **kwargs):
+    def plot(self, method="imshow", **kwargs):
         from ..plot import Plot
 
         # correct for log scales and zeros

@@ -42,10 +42,7 @@ def color_cycle(colors=None):
     """
     if colors:
         return itertools.cycle(colors)
-    try:
-        return itertools.cycle(p["color"] for p in rcParams["axes.prop_cycle"])
-    except KeyError:  # matplotlib < 1.5
-        return itertools.cycle(rcParams["axes.color_cycle"])
+    return itertools.cycle(p["color"] for p in rcParams["axes.prop_cycle"])
 
 
 def marker_cycle(markers=None):

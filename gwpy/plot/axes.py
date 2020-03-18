@@ -28,16 +28,13 @@ import numpy
 
 from astropy.time import Time
 
-from matplotlib import (__version__ as mpl_version, rcParams)
+from matplotlib import rcParams
 from matplotlib.artist import allow_rasterization
 from matplotlib.axes import Axes as _Axes
-from matplotlib.lines import Line2D
+from matplotlib.axes._base import _process_plot_var_args
 from matplotlib.collections import PolyCollection
+from matplotlib.lines import Line2D
 from matplotlib.projections import register_projection
-try:
-    from matplotlib.axes._base import _process_plot_var_args
-except ImportError:  # matplotlib-1.x
-    from matplotlib.axes import _process_plot_var_args
 
 from . import (Plot, colorbar as gcbar)
 from .colors import format_norm
@@ -46,8 +43,6 @@ from .legend import HandlerLine2D
 from ..time import (LIGOTimeGPS, to_gps)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-DEFAULT_SCATTER_COLOR = 'b' if mpl_version < '2.0' else None
 
 
 def log_norm(func):
@@ -173,10 +168,8 @@ class Axes(_Axes):
 
     # -- overloaded plotting methods ------------
 
-    def scatter(self, x, y, c=DEFAULT_SCATTER_COLOR, **kwargs):
+    def scatter(self, x, y, c=None, **kwargs):
         # scatter with auto-sorting by colour
-        if c is None and mpl_version < '2.0':
-            c = DEFAULT_SCATTER_COLOR
         try:
             if c is None:
                 raise ValueError
@@ -508,8 +501,7 @@ class Axes(_Axes):
             )
         alpha = kwargs.pop("alpha", None)
         if alpha:
-            if mpl_version >= "1.3.0":  # matplotlib >= 1.3.0
-                kwargs.setdefault("framealpha", alpha)
+            kwargs.setdefault("framealpha", alpha)
             warnings.warn(
                 "the alpha keyword to gwpy.plot.Axes.legend has been "
                 "deprecated and will be removed in a future release; "

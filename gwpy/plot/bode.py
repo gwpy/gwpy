@@ -133,12 +133,9 @@ class BodePlot(Plot):
         self.paxes.set_ylabel('Phase [deg]')
         self.maxes.set_xscale('log')
         self.paxes.set_xscale('log')
-        try:
-            self.paxes.yaxis.set_major_locator(
-                MaxNLocator(nbins='auto', steps=[4.5, 9]))
-        except ValueError:  # matplotlib < 2.0
-            self.paxes.yaxis.set_major_locator(
-                MaxNLocator(nbins=9, steps=[4.5, 9]))
+        self.paxes.yaxis.set_major_locator(
+            MaxNLocator(nbins='auto', steps=[4.5, 9]),
+        )
         self.paxes.yaxis.set_minor_locator(
             MaxNLocator(nbins=20, steps=[4.5, 9]))
         if title:

@@ -23,7 +23,7 @@ import pytest
 
 import numpy
 
-from matplotlib import (rcParams, __version__ as mpl_version)
+from matplotlib import rcParams
 from matplotlib.collections import PolyCollection
 from matplotlib.lines import Line2D
 
@@ -151,11 +151,8 @@ class TestAxes(AxesTestBase):
         assert str(exc.value).startswith('cannot generate log-spaced '
                                          'histogram bins')
         # assert it works if we give the range manually
-        if mpl_version >= '1.5.0':
-            ax.hist([], logbins=True, range=(1, 100))
+        ax.hist([], logbins=True, range=(1, 100))
 
-    @pytest.mark.xfail(mpl_version < '1.4.0',
-                       reason='bugs in matplotlib-1.4.0')
     def test_tile(self, ax):
         x = numpy.arange(10)
         y = numpy.arange(x.size)
@@ -228,8 +225,7 @@ class TestAxes(AxesTestBase):
         ax.plot(numpy.arange(5), label='test')
         with pytest.deprecated_call():
             leg = ax.legend(alpha=.1)
-        if mpl_version >= "1.3.0":
-            assert leg.get_frame().get_alpha() == .1
+        assert leg.get_frame().get_alpha() == .1
 
     def test_plot_mmm(self, ax):
         mean_ = Series(numpy.random.random(10))

@@ -23,15 +23,11 @@ import abc
 import os.path
 import re
 import time
-import warnings
 import sys
 from functools import wraps
 
-from matplotlib import rcParams
-try:
-    from matplotlib.cm import viridis as DEFAULT_CMAP
-except ImportError:
-    from matplotlib.cm import YlOrRd as DEFAULT_CMAP
+from matplotlib import (rcParams, style)
+from matplotlib.cm import viridis as DEFAULT_CMAP
 
 from astropy.time import Time
 from astropy.units import Quantity
@@ -146,14 +142,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         self._finalize_arguments(args)  # post-process args
 
         if args.style:  # apply custom styling
-            try:
-                from matplotlib import style
-            except ImportError:
-                from matplotlib import __version__ as mpl_version
-                warnings.warn('--style can only be used with matplotlib >= '
-                              '1.4.0, you have {0}'.format(mpl_version))
-            else:
-                style.use(args.style)
+            style.use(args.style)
 
         #: the current figure object
         self.plot = None
