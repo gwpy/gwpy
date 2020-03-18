@@ -112,7 +112,7 @@ class EventColumn(Column):
     def __new__(cls, *args, **kwargs):
         warnings.warn("the EventColumn is deprecated, and will be removed in "
                       "a future gwpy release", DeprecationWarning)
-        super(EventColumn, cls).__new__(*args, **kwargs)
+        super().__new__(*args, **kwargs)
 
     def in_segmentlist(self, segmentlist):
         """Return the index of values lying inside the given segmentlist

@@ -37,7 +37,7 @@ class Coherencegram(Spectrogram):
     action = 'coherencegram'
 
     def __init__(self, *args, **kwargs):
-        super(Coherencegram, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.ref_chan = self.args.ref or self.chan_list[0]
         # deal with channel type (e.g. m-trend)
         if ',' in self.ref_chan:
@@ -45,7 +45,7 @@ class Coherencegram(Spectrogram):
 
     @classmethod
     def arg_channels(cls, parser):
-        group = super(Coherencegram, cls).arg_channels(parser)
+        group = super().arg_channels(parser)
         group.add_argument('--ref', help='Reference channel against which '
                                          'others will be compared')
         return group
@@ -60,7 +60,7 @@ class Coherencegram(Spectrogram):
                 args.imax = 1.
         if args.cmap is None and DEFAULT_CMAP is not None:
             args.cmap = DEFAULT_CMAP.name
-        return super(Coherencegram, self)._finalize_arguments(args)
+        return super()._finalize_arguments(args)
 
     def get_ylabel(self):
         """Text for y-axis label

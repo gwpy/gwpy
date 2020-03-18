@@ -122,7 +122,7 @@ class Plot(figure.Figure):
         # create Figure
         num = kwargs.pop('num', max(pyplot.get_fignums() or {0}) + 1)
         self._parse_subplotpars(kwargs)
-        super(Plot, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.number = num
 
         # add interactivity (scraped from pyplot.figure())
@@ -278,7 +278,7 @@ class Plot(figure.Figure):
                 block = False
 
         # render
-        super(Plot, self).show(warn=warn)
+        super().show(warn=warn)
 
         # don't block on ipython with interactive backends
         if block is None and interactive_backend():
@@ -400,7 +400,7 @@ class Plot(figure.Figure):
             self, mappable, ax, cax=cax, fraction=fraction, **kwargs)
 
         # generate colour bar
-        cbar = super(Plot, self).colorbar(mappable, **kwargs)
+        cbar = super().colorbar(mappable, **kwargs)
         self.colorbars.append(cbar)
         if label:  # mpl<1.3 doesn't accept label in Colorbar constructor
             cbar.set_label(label)

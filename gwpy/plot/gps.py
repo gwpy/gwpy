@@ -84,7 +84,7 @@ class GPSMixin(object):
         self.set_unit(kwargs.pop('unit', None))
         self.set_epoch(kwargs.pop('epoch', None))
         try:  # call super for __init__ if this is part of a larger MRO
-            super(GPSMixin, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
         except TypeError:  # otherwise return
             pass
 
@@ -188,7 +188,7 @@ class GPSTransformBase(GPSMixin, Transform):
         # format ticks using decimal for precision display
         if isinstance(values, (Number, Decimal)):
             return self._transform_decimal(values, self.epoch or 0, self.scale)
-        return super(GPSTransformBase, self).transform(values)
+        return super().transform(values)
 
     def transform_non_affine(self, values):
         """Transform an array of GPS times.
@@ -291,8 +291,7 @@ class GPSAutoLocator(ticker.MaxNLocator):
         Each of the `epoch` and `scale` keyword arguments should match those
         passed to the `GPSFormatter`
         """
-        super(GPSAutoLocator, self).__init__(nbins=nbins, steps=steps,
-                                             **kwargs)
+        super().__init__(nbins=nbins, steps=steps, **kwargs)
 
     def tick_values(self, vmin, vmax):
         transform = self.axis.get_transform()
@@ -308,7 +307,7 @@ class GPSAutoLocator(ticker.MaxNLocator):
             self.set_params(steps=None)
 
         try:
-            ticks = super(GPSAutoLocator, self).tick_values(vmin, vmax)
+            ticks = super().tick_values(vmin, vmax)
         finally:
             self._steps = steps
         return transform.inverted().transform(ticks)
@@ -395,7 +394,7 @@ class GPSScale(GPSMixin, LinearScale):
         unit:
             either name (`str`) or scale (float in seconds)
         """
-        super(GPSScale, self).__init__(unit=unit, epoch=epoch)
+        super().__init__(unit=unit, epoch=epoch)
         self.axis = axis
         # set tight scaling on parent axes
         getattr(axis.axes, 'set_{0}margin'.format(axis.axis_name))(0)
@@ -487,7 +486,7 @@ def _gps_scale_factory(unit):
         def __init__(self, axis, epoch=None):
             """
             """
-            super(FixedGPSScale, self).__init__(axis, epoch=epoch, unit=unit)
+            super().__init__(axis, epoch=epoch, unit=unit)
     return FixedGPSScale
 
 

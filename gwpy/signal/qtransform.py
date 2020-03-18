@@ -76,7 +76,7 @@ class QBase(QObject):
     This class just provides a property for Q-prime = Q / sqrt(11)
     """
     def __init__(self, q, duration, sampling, mismatch=DEFAULT_MISMATCH):
-        super(QBase, self).__init__(duration, sampling, mismatch=mismatch)
+        super().__init__(duration, sampling, mismatch=mismatch)
         self.q = float(q)
 
     @property
@@ -113,7 +113,7 @@ class QTiling(QObject):
                  qrange=DEFAULT_QRANGE,
                  frange=DEFAULT_FRANGE,
                  mismatch=DEFAULT_MISMATCH):
-        super(QTiling, self).__init__(duration, sampling, mismatch=mismatch)
+        super().__init__(duration, sampling, mismatch=mismatch)
         self.qrange = (float(qrange[0]), float(qrange[1]))
         self.frange = [float(frange[0]), float(frange[1])]
 
@@ -228,7 +228,7 @@ class QPlane(QBase):
     """
     def __init__(self, q, frange, duration, sampling,
                  mismatch=DEFAULT_MISMATCH):
-        super(QPlane, self).__init__(q, duration, sampling, mismatch=mismatch)
+        super().__init__(q, duration, sampling, mismatch=mismatch)
         self.frange = [float(frange[0]), float(frange[1])]
 
         if self.frange[0] == 0:  # set non-zero lower frequency
@@ -336,7 +336,7 @@ class QTile(QBase):
     """
     def __init__(self, q, frequency, duration, sampling,
                  mismatch=DEFAULT_MISMATCH):
-        super(QTile, self).__init__(q, duration, sampling, mismatch=mismatch)
+        super().__init__(q, duration, sampling, mismatch=mismatch)
         self.frequency = frequency
 
     @property

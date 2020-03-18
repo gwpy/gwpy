@@ -1704,7 +1704,7 @@ class DataQualityDict(OrderedDict):
         """
         if deep:
             return deepcopy(self)
-        return super(DataQualityDict, self).copy()
+        return super().copy()
 
     def __iand__(self, other):
         for key, value in other.items():

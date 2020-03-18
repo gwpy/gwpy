@@ -105,7 +105,7 @@ class BodePlot(Plot):
                 figargs[key] = kwargs.pop(key)
 
         # generate figure
-        super(BodePlot, self).__init__(**figargs)
+        super().__init__(**figargs)
 
         # delete the axes, and create two more
         self.add_subplot(2, 1, 1)

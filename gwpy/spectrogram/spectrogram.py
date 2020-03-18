@@ -159,8 +159,8 @@ class Spectrogram(Array2D):
             kwargs['yindex'] = frequencies
 
         # generate Spectrogram
-        return super(Spectrogram, cls).__new__(cls, data, unit=unit, name=name,
-                                               channel=channel, **kwargs)
+        return super().__new__(cls, data, unit=unit, name=name,
+                               channel=channel, **kwargs)
 
     # -- Spectrogram properties -----------------
 
@@ -353,7 +353,7 @@ class Spectrogram(Array2D):
             kwargs.setdefault('method', 'imshow' if kwargs.pop('imshow') else
                                         'pcolormesh')
         kwargs.update(figsize=figsize, xscale=xscale)
-        return super(Spectrogram, self).plot(**kwargs)
+        return super().plot(**kwargs)
 
     @classmethod
     def from_spectra(cls, *spectra, **kwargs):
@@ -592,8 +592,7 @@ class Spectrogram(Array2D):
     # -- Spectrogram ufuncs ---------------------
 
     def _wrap_function(self, function, *args, **kwargs):
-        out = super(Spectrogram, self)._wrap_function(
-            function, *args, **kwargs)
+        out = super()._wrap_function(function, *args, **kwargs)
         # requested frequency axis, return a FrequencySeries
         if out.ndim == 1 and out.x0.unit == self.y0.unit:
             return FrequencySeries(out.value, name=out.name, unit=out.unit,
@@ -610,7 +609,7 @@ class Spectrogram(Array2D):
     # -- other ----------------------------------
 
     def __getitem__(self, item):
-        out = super(Spectrogram, self).__getitem__(item)
+        out = super().__getitem__(item)
 
         # set epoch manually, because Spectrogram doesn't store self._epoch
         if isinstance(out, self._columnclass):

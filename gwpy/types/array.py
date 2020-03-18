@@ -119,9 +119,8 @@ class Array(Quantity):
             unit = parse_unit(unit, parse_strict='warn')
 
         # create new array
-        new = super(Array, cls).__new__(cls, value, unit=unit, dtype=dtype,
-                                        copy=False, order=order, subok=subok,
-                                        ndmin=ndmin)
+        new = super().__new__(cls, value, unit=unit, dtype=dtype, copy=False,
+                              order=order, subok=subok, ndmin=ndmin)
 
         # explicitly copy here to get ownership of the data,
         # see (astropy/astropy#7244)
@@ -146,7 +145,7 @@ class Array(Quantity):
     def _wrap_function(self, function, *args, **kwargs):
         # if the output of the function is a scalar, return it as a Quantity
         # not whatever class this is
-        out = super(Array, self)._wrap_function(function, *args, **kwargs)
+        out = super()._wrap_function(function, *args, **kwargs)
         if out.ndim == 0:
             return Quantity(out.value, out.unit)
         return out
@@ -162,7 +161,7 @@ class Array(Quantity):
             return
 
         # call Quantity.__array_finalize__ to handle the units
-        super(Array, self).__array_finalize__(obj)
+        super().__array_finalize__(obj)
 
         # then update metadata
         if isinstance(obj, Quantity):
@@ -192,12 +191,12 @@ class Array(Quantity):
                         setattr(self, _attr, val)
 
     def __getattr__(self, attr):
-        return super(Array, self).__getattribute__(attr)
+        return super().__getattribute__(attr)
 
     def __getitem__(self, item):
         if isinstance(item, list):
             item = tuple(item)
-        new = super(Array, self).__getitem__(item)
+        new = super().__getitem__(item)
 
         # return scalar as a Quantity
         if numpy.ndim(new) == 0:
@@ -269,11 +268,11 @@ class Array(Quantity):
     # -- Pickle helpers -------------------------
 
     def dumps(self):
-        return super(Quantity, self).dumps()
+        return super(Quantity).dumps()
     dumps.__doc__ = numpy.ndarray.dumps.__doc__
 
     def tostring(self, order='C'):
-        return super(Quantity, self).tostring(order=order)
+        return super(Quantity).tostring(order=order)
     tostring.__doc__ = numpy.ndarray.tostring.__doc__
 
     # -- new properties -------------------------
@@ -395,8 +394,7 @@ class Array(Quantity):
     # -- array methods --------------------------
 
     def __array_ufunc__(self, function, method, *inputs, **kwargs):
-        out = super(Array, self).__array_ufunc__(function, method,
-                                                 *inputs, **kwargs)
+        out = super().__array_ufunc__(function, method, *inputs, **kwargs)
         # if a ufunc returns a scalar, return a Quantity
         if not out.ndim:
             return Quantity(out, copy=False)
@@ -415,12 +413,12 @@ class Array(Quantity):
         if self.unit is None:
             try:
                 self.unit = ''
-                return super(Array, self)._to_own_unit(
+                return super()._to_own_unit(
                     value, check_precision=check_precision)
             finally:
                 del self.unit
         else:
-            return super(Array, self)._to_own_unit(
+            return super()._to_own_unit(
                 value, check_precision=check_precision)
     _to_own_unit.__doc__ = Quantity._to_own_unit.__doc__
 
@@ -480,10 +478,10 @@ class Array(Quantity):
         >>> a.flatten()
         <Quantity [1., 2., 3., 4.] m>
         """
-        return super(Array, self).flatten(order=order).view(Quantity)
+        return super().flatten(order=order).view(Quantity)
 
     def copy(self, order='C'):
-        out = super(Array, self).copy(order=order)
+        out = super().copy(order=order)
         for slot in self._metadata_slots:
             old = getattr(self, '_{0}'.format(slot), None)
             if old is not None:

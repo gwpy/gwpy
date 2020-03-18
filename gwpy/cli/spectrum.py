@@ -36,7 +36,7 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
     action = 'spectrum'
 
     def __init__(self, *args, **kwargs):
-        super(Spectrum, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.spectra = []
 
     @property
@@ -56,7 +56,7 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
     def _finalize_arguments(self, args):
         if args.yscale is None:
             args.yscale = 'log'
-        super(Spectrum, self)._finalize_arguments(args)
+        super()._finalize_arguments(args)
 
     def get_ylabel(self):
         """Text for y-axis label

@@ -36,7 +36,7 @@ class Qtransform(Spectrogram):
     action = 'qtransform'
 
     def __init__(self, *args, **kwargs):
-        super(Qtransform, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         args = self.args
         self.qxfrm_args = {
@@ -54,7 +54,7 @@ class Qtransform(Spectrogram):
     @classmethod
     def init_data_options(cls, parser):
         # call super of FFTMixin to skip setting FFT arguments
-        super(FFTMixin, cls).init_data_options(parser)
+        super(FFTMixin).init_data_options(parser)
         cls.arg_qxform(parser)
 
     @classmethod
@@ -69,13 +69,13 @@ class Qtransform(Spectrogram):
 
     @classmethod
     def arg_signal(cls, parser):
-        group = super(Qtransform, cls).arg_signal(parser)
+        group = super().arg_signal(parser)
         group.add_argument('--sample-freq', type=float, default=2048,
                            help='Downsample freq')
 
     @classmethod
     def arg_plot(cls, parser):
-        group = super(Qtransform, cls).arg_plot(parser)
+        group = super().arg_plot(parser)
 
         # remove --out option
         outopt = [act for act in group._actions if act.dest == 'out'][0]
@@ -144,7 +144,7 @@ class Qtransform(Spectrogram):
         xmin = args.xmin
         xmax = args.xmax
 
-        super(Qtransform, self)._finalize_arguments(args)
+        super()._finalize_arguments(args)
 
         # unset defaults from `TimeDomainProduct`
         args.xmin = xmin
@@ -231,7 +231,7 @@ class Qtransform(Spectrogram):
 
     def scale_axes_from_data(self):
         self.args.xmin, self.args.xmax = self.result.xspan
-        return super(Qtransform, self).scale_axes_from_data()
+        return super().scale_axes_from_data()
 
     def has_more_plots(self):
         """any ranges left to plot?
@@ -244,4 +244,4 @@ class Qtransform(Spectrogram):
         png = '{0}-{1}-{2}.png'.format(cname, float(self.args.gps),
                                        self.args.plot[self.plot_num])
         outfile = os.path.join(outdir, png)
-        return super(Qtransform, self).save(outfile)
+        return super().save(outfile)

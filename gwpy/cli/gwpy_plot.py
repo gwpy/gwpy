@@ -68,7 +68,7 @@ class HelpFormatter(ArgumentDefaultsHelpFormatter, RawTextHelpFormatter):
     def _format_usage(self, usage, actions, groups, prefix):
         if prefix is None:
             prefix = "Usage: "
-        return super(HelpFormatter, self)._format_usage(
+        return super()._format_usage(
             usage,
             actions,
             groups,
@@ -78,7 +78,7 @@ class HelpFormatter(ArgumentDefaultsHelpFormatter, RawTextHelpFormatter):
 
 class _ArgumentParser(ArgumentParser):
     def __init__(self, *args, **kwargs):
-        super(_ArgumentParser, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._positionals.title = 'Positional arguments'
         self._optionals.title = 'Options'
 
