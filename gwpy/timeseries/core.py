@@ -46,7 +46,6 @@ from math import ceil
 import numpy
 
 from astropy import units
-from astropy import __version__ as astropy_version
 from astropy.io import registry as io_registry
 
 from gwosc.api import DEFAULT_URL as GWOSC_DEFAULT_HOST
@@ -777,26 +776,23 @@ class TimeSeriesBase(Series):
 
     # -- TimeSeries operations ------------------
 
-    if astropy_version >= '2.0.0':  # remove _if_ when we pin astropy >= 2.0.0
-        def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-            # this is new in numpy 1.13, astropy 2.0 adopts it, we need to
-            # work out how to handle this and __array_wrap__ together properly
-            out = super(TimeSeriesBase, self).__array_ufunc__(
-                ufunc, method, *inputs, **kwargs)
-            if out.dtype is numpy.dtype(bool) and len(inputs) == 2:
-                from .statevector import StateTimeSeries
-                orig, value = inputs
-                try:
-                    op_ = _UFUNC_STRING[ufunc.__name__]
-                except KeyError:
-                    op_ = ufunc.__name__
-                out = out.view(StateTimeSeries)
-                out.__metadata_finalize__(orig)
-                out.override_unit('')
-                oname = orig.name if isinstance(orig, type(self)) else orig
-                vname = value.name if isinstance(value, type(self)) else value
-                out.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
-            return out
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        out = super(TimeSeriesBase, self).__array_ufunc__(
+            ufunc, method, *inputs, **kwargs)
+        if out.dtype is numpy.dtype(bool) and len(inputs) == 2:
+            from .statevector import StateTimeSeries
+            orig, value = inputs
+            try:
+                op_ = _UFUNC_STRING[ufunc.__name__]
+            except KeyError:
+                op_ = ufunc.__name__
+            out = out.view(StateTimeSeries)
+            out.__metadata_finalize__(orig)
+            out.override_unit('')
+            oname = orig.name if isinstance(orig, type(self)) else orig
+            vname = value.name if isinstance(value, type(self)) else value
+            out.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
+        return out
 
     def __array_wrap__(self, obj, context=None):
         # if output type is boolean, return a `StateTimeSeries`
