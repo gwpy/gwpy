@@ -55,8 +55,6 @@ SKIP_LAL = utils.skip_missing_dependency('lal')
 SKIP_LALFRAME = utils.skip_missing_dependency('lalframe')
 SKIP_PYCBC_PSD = utils.skip_missing_dependency('pycbc.psd')
 
-SCIPY_METHODS = ('welch', 'bartlett', 'median')
-
 FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C02'
 FIND_FRAMETYPE = 'L1_HOFT_C02'
 
@@ -591,7 +589,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         with pytest.warns(UserWarning):
             losc.psd(1, .5, method='lal_median_mean')
 
-    @pytest.mark.parametrize('method', SCIPY_METHODS)
+    @pytest.mark.parametrize('method', ('welch', 'bartlett', 'median'))
     def test_psd(self, noisy_sinusoid, method):
         fftlength = .5
         overlap = .25
