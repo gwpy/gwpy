@@ -28,10 +28,7 @@ import numpy
 from numpy import fft as npfft
 
 from scipy import signal
-try:
-    from scipy.signal.ltisys import LinearTimeInvariant
-except ImportError:  # scipy < 0.18
-    from scipy.signal import lti as LinearTimeInvariant
+from scipy.signal.ltisys import LinearTimeInvariant
 
 from astropy.units import (Unit, Quantity)
 
@@ -356,10 +353,7 @@ def parse_filter(args, analog=False, sample_rate=None):
         lti = signal.lti(*args)
 
     # convert to zpk format
-    try:
-        lti = lti.to_zpk()
-    except AttributeError:  # scipy < 0.18, doesn't matter
-        pass
+    lti = lti.to_zpk()
 
     # convert to digital components
     if analog:

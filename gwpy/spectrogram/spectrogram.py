@@ -25,8 +25,6 @@ from six import string_types
 
 import numpy
 
-import scipy
-
 from astropy import units
 from astropy.io import registry as io_registry
 
@@ -414,7 +412,7 @@ class Spectrogram(Array2D):
             the given percentile `FrequencySeries` calculated from this
             `SpectralVaraicence`
         """
-        out = scipy.percentile(self.value, percentile, axis=0)
+        out = numpy.percentile(self.value, percentile, axis=0)
         if self.name is not None:
             name = '{}: {} percentile'.format(self.name, _ordinal(percentile))
         else:

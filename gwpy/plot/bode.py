@@ -194,16 +194,7 @@ class BodePlot(Plot):
         mag, phase : `tuple` of `lines <matplotlib.lines.Line2D>`
             the lines drawn for the magnitude and phase of the filter.
         """
-        try:
-            from scipy.signal import (lti, dlti)
-        except ImportError as exc:  # scipy < 0.18.0
-            exc.args = (
-                "scipy >= 0.18.0 is required to use {}.add_filter: {}".format(
-                    type(self).__name__,
-                    str(exc),
-                ),
-            )
-            raise
+        from scipy.signal import (lti, dlti)
         from gwpy.signal.filter_design import parse_filter
 
         if not analog:
