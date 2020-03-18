@@ -268,11 +268,11 @@ class Array(Quantity):
     # -- Pickle helpers -------------------------
 
     def dumps(self):
-        return super(Quantity).dumps()
+        return super(Quantity, self).dumps()
     dumps.__doc__ = numpy.ndarray.dumps.__doc__
 
     def tostring(self, order='C'):
-        return super(Quantity).tostring(order=order)
+        return super(Quantity, self).tostring(order=order)
     tostring.__doc__ = numpy.ndarray.tostring.__doc__
 
     # -- new properties -------------------------

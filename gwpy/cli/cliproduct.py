@@ -769,7 +769,7 @@ class ImageProduct(CliProduct):
 
     @classmethod
     def init_plot_options(cls, parser):
-        super().init_plot_options(parser)
+        super(ImageProduct, cls).init_plot_options(parser)
         cls.arg_color_axis(parser)
 
     @classmethod
@@ -797,7 +797,7 @@ class ImageProduct(CliProduct):
     def _finalize_arguments(self, args):
         if args.cmap is None:
             args.cmap = DEFAULT_CMAP.name
-        return super()._finalize_arguments(args)
+        return super(ImageProduct, self)._finalize_arguments(args)
 
     @staticmethod
     def get_color_label():
@@ -809,7 +809,7 @@ class ImageProduct(CliProduct):
         """Set properties for each axis (scale, limits, label) and create
         a colorbar.
         """
-        super().set_axes_properties()
+        super(ImageProduct, self).set_axes_properties()
         if not self.args.nocolorbar:
             self.set_colorbar()
 
@@ -834,7 +834,7 @@ class FFTMixin(object):
     def init_data_options(cls, parser):
         """Set up data input and signal processing options including FFTs
         """
-        super().init_data_options(parser)
+        super(FFTMixin, cls).init_data_options(parser)
         cls.arg_fft(parser)
 
     @classmethod
@@ -899,7 +899,7 @@ class FFTMixin(object):
                 args.overlap = recommended_overlap(args.window)
             except ValueError:
                 args.overlap = .5
-        return super()._finalize_arguments(args)
+        return super(FFTMixin, self)._finalize_arguments(args)
 
 
 @add_metaclass(abc.ABCMeta)
@@ -913,7 +913,7 @@ class TimeDomainProduct(CliProduct):
         This method includes the standard X-axis options, as well as a new
         ``--epoch`` option for the time axis.
         """
-        group = super().arg_xaxis(parser)
+        group = super(TimeDomainProduct, cls).arg_xaxis(parser)
         group.add_argument('--epoch', type=to_gps,
                            help='center X axis on this GPS time, may be'
                                 'absolute date/time or delta')
@@ -937,7 +937,7 @@ class TimeDomainProduct(CliProduct):
 
         if args.xmax is None:
             args.xmax = max(starts) + args.duration
-        return super()._finalize_arguments(args)
+        return super(TimeDomainProduct, self)._finalize_arguments(args)
 
     def get_xlabel(self):
         """Default X-axis label for plot

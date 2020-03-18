@@ -97,7 +97,7 @@ class CombinedLogFormatterMathtext(MinorLogFormatterMathtext):
     def __call__(self, x, pos=None):
         if is_decade(x, self._base):
             # pylint: disable=bad-super-call
-            return super(MinorLogFormatterMathtext).__call__(x, pos=pos)
+            return super(MinorLogFormatterMathtext, self).__call__(x, pos=pos)
         return super().__call__(x, pos=pos)
 
 

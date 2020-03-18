@@ -57,8 +57,9 @@ class SpectralVariance(Array2D):
             kwargs['xindex'] = frequencies
 
         # generate SpectralVariance using the Series constructor
-        new = super(Array2D).__new__(cls, data, unit=unit, name=name,
-                                     channel=channel, epoch=epoch, **kwargs)
+        new = super(Array2D, cls).__new__(cls, data, unit=unit, name=name,
+                                          channel=channel, epoch=epoch,
+                                          **kwargs)
 
         # set bins
         new.bins = bins

@@ -54,7 +54,7 @@ class Qtransform(Spectrogram):
     @classmethod
     def init_data_options(cls, parser):
         # call super of FFTMixin to skip setting FFT arguments
-        super(FFTMixin).init_data_options(parser)
+        super(FFTMixin, cls).init_data_options(parser)
         cls.arg_qxform(parser)
 
     @classmethod
