@@ -71,7 +71,7 @@ class SegmentAxes(Axes):
         kwargs.setdefault('insetlabels', False)
 
         # make axes
-        super(SegmentAxes, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # set y-axis labels
         self.yaxis.set_major_locator(MultipleLocator())
@@ -130,7 +130,7 @@ class SegmentAxes(Axes):
             out.append(plotter(args[0], **kwargs))
             args.pop(0)
         if args:
-            out.extend(super(SegmentAxes, self).plot(*args, **kwargs))
+            out.extend(super().plot(*args, **kwargs))
         self.autoscale(enable=None, axis='both', tight=False)
         return out
 
@@ -434,7 +434,7 @@ class SegmentAxes(Axes):
                     del tick._orig_bbox
                     del tick._orig_ha
                     del tick._orig_pos
-        return super(SegmentAxes, self).draw(*args, **kwargs)
+        return super().draw(*args, **kwargs)
 
     draw.__doc__ = Axes.draw.__doc__
 
@@ -499,6 +499,6 @@ class SegmentRectangle(Rectangle):
                              "'bottom'")
         width = segment[1] - segment[0]
 
-        super(SegmentRectangle, self).__init__((segment[0], y0), width=width,
-                                               height=height, **kwargs)
+        super().__init__((segment[0], y0), width=width,
+                         height=height, **kwargs)
         self.segment = segment

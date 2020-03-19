@@ -41,11 +41,11 @@ class HandlerLine2D(legend_handler.HandlerLine2D):
         for all information
     """
     def __init__(self, linewidth=6., **kw):
-        super(HandlerLine2D, self).__init__(**kw)
+        super().__init__(**kw)
         self._linewidth = linewidth
 
     def create_artists(self, *args, **kwargs):
-        line, marker = super(HandlerLine2D, self).create_artists(
+        line, marker = super().create_artists(
             *args,
             **kwargs
         )

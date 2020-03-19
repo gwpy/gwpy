@@ -67,7 +67,7 @@ class MinorLogFormatterMathtext(GWpyLogFormatterMathtext):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('labelOnlyBase', False)
-        super(MinorLogFormatterMathtext, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __call__(self, x, pos=None):
         """Format the minor tick label if less than 2 visible major ticks.
@@ -81,7 +81,7 @@ class MinorLogFormatterMathtext(GWpyLogFormatterMathtext):
         # if already two major ticks, don't need minor labels
         if nticks >= 2 or (halfdecade and not is_decade(x * 2, self._base)):
             return ''
-        return super(MinorLogFormatterMathtext, self).__call__(x, pos=pos)
+        return super().__call__(x, pos=pos)
 
 
 class CombinedLogFormatterMathtext(MinorLogFormatterMathtext):
@@ -98,7 +98,7 @@ class CombinedLogFormatterMathtext(MinorLogFormatterMathtext):
         if is_decade(x, self._base):
             # pylint: disable=bad-super-call
             return super(MinorLogFormatterMathtext, self).__call__(x, pos=pos)
-        return super(CombinedLogFormatterMathtext, self).__call__(x, pos=pos)
+        return super().__call__(x, pos=pos)
 
 
 class GWpyLogScale(LogScale):

@@ -86,7 +86,7 @@ class Index(Quantity):
         return numpy.isclose(numpy.diff(self.value, n=2), 0).all()
 
     def __getitem__(self, key):
-        item = super(Index, self).__getitem__(key)
+        item = super().__getitem__(key)
         if item.isscalar:
             return item.view(Quantity)
         return item

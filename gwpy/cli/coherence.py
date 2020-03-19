@@ -37,7 +37,7 @@ class Coherence(Spectrum):
     MIN_DATASETS = 2
 
     def __init__(self, *args, **kwargs):
-        super(Coherence, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.ref_chan = self.args.ref or self.chan_list[0]
         # deal with channel type appendages
         if ',' in self.ref_chan:
@@ -45,7 +45,7 @@ class Coherence(Spectrum):
 
     @classmethod
     def arg_channels(cls, parser):
-        group = super(Coherence, cls).arg_channels(parser)
+        group = super().arg_channels(parser)
         group.add_argument('--ref', help='Reference channel against which '
                                          'others will be compared')
         return group
@@ -58,7 +58,7 @@ class Coherence(Spectrum):
                 args.ymin = 0
             if not args.ymax:
                 args.ymax = 1.05
-        return super(Coherence, self)._finalize_arguments(args)
+        return super()._finalize_arguments(args)
 
     def get_ylabel(self):
         """Text for y-axis label
@@ -125,7 +125,7 @@ class Coherence(Spectrum):
     def set_legend(self):
         """Create a legend for this product
         """
-        leg = super(Coherence, self).set_legend()
+        leg = super().set_legend()
         if leg is not None:
             leg.set_title('Coherence with:')
         return leg

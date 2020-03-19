@@ -33,7 +33,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
     action = 'spectrogram'
 
     def __init__(self, *args, **kwargs):
-        super(Spectrogram, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         #: attribute to hold calculated Spectrogram data array
         self.result = None
@@ -45,7 +45,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
     def _finalize_arguments(self, args):
         if args.color_scale is None:
             args.color_scale = 'log'
-        super(Spectrogram, self)._finalize_arguments(args)
+        super()._finalize_arguments(args)
 
     @property
     def units(self):
@@ -73,7 +73,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
                 self.units[0].to_string('latex').strip('$'))
         elif len(self.units) == 1:
             return 'ASD ({0})'.format(self.units[0].to_string('generic'))
-        return super(Spectrogram, self).get_color_label()
+        return super().get_color_label()
 
     def get_stride(self):
         """Calculate the stride for the spectrogram

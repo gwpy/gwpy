@@ -103,7 +103,7 @@ def restore_grid(func):
 
 class Axes(_Axes):
     def __init__(self, *args, **kwargs):
-        super(Axes, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # handle Series in `ax.plot()`
         self._get_lines = PlotArgsProcessor(self)
@@ -129,7 +129,7 @@ class Axes(_Axes):
                     unit, utc, epoch))
 
         try:
-            super(Axes, self).draw(*args, **kwargs)
+            super().draw(*args, **kwargs)
         finally:
             for ax in labels:  # reset labels
                 ax.isDefault_label = True
@@ -191,7 +191,7 @@ class Axes(_Axes):
                 y = numpy.asarray(y)[sortidx]
                 c = numpy.asarray(c)[sortidx]
 
-        return super(Axes, self).scatter(x, y, c=c, **kwargs)
+        return super().scatter(x, y, c=c, **kwargs)
 
     scatter.__doc__ = _Axes.scatter.__doc__.replace(
         'marker :',
@@ -233,7 +233,7 @@ class Axes(_Axes):
         if hasattr(array, "yspan"):  # Array2D
             return self._imshow_array2d(array, *args, **kwargs)
 
-        image = super(Axes, self).imshow(array, *args, **kwargs)
+        image = super().imshow(array, *args, **kwargs)
         self.autoscale(enable=None, axis='both', tight=None)
         return image
 
@@ -278,7 +278,7 @@ class Axes(_Axes):
         """
         if len(args) == 1 and hasattr(args[0], "yindex"):  # Array2D
             return self._pcolormesh_array2d(*args, **kwargs)
-        return super(Axes, self).pcolormesh(*args, **kwargs)
+        return super().pcolormesh(*args, **kwargs)
 
     def _pcolormesh_array2d(self, array, *args, **kwargs):
         """Render an `~gwpy.types.Array2D` using `Axes.pcolormesh`
@@ -323,7 +323,7 @@ class Axes(_Axes):
                 log(hrange[0], logbase), log(hrange[1], logbase),
                 nbins+1, endpoint=True)
 
-        return super(Axes, self).hist(x, *args, **kwargs)
+        return super().hist(x, *args, **kwargs)
 
     hist.__doc__ = _Axes.hist.__doc__.replace(
         'color :',
@@ -523,7 +523,7 @@ class Axes(_Axes):
             handler_map.setdefault(Line2D, HandlerLine2D(linewidth or 6))
 
         # create legend
-        return super(Axes, self).legend(*args, **kwargs)
+        return super().legend(*args, **kwargs)
 
     legend.__doc__ = _Axes.legend.__doc__.replace(
         "Call signatures",
@@ -613,4 +613,4 @@ class PlotArgsProcessor(_process_plot_var_args):
                 args = args[1:]
             newargs.extend(this)
 
-        return super(PlotArgsProcessor, self).__call__(*newargs, **kwargs)
+        return super().__call__(*newargs, **kwargs)

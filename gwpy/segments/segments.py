@@ -138,7 +138,7 @@ class SegmentList(segmentlist):
     extent = return_as(Segment)(segmentlist.extent)
 
     def coalesce(self):
-        super(SegmentList, self).coalesce()
+        super().coalesce()
         for i, seg in enumerate(self):
             self[i] = Segment(seg[0], seg[1])
         return self

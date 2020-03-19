@@ -31,7 +31,7 @@ class LatexInlineDimensional(LatexInline):
 
     @classmethod
     def to_string(cls, unit):
-        u = '[{0}]'.format(super(LatexInlineDimensional, cls).to_string(unit))
+        u = '[{0}]'.format(super().to_string(unit))
 
         if unit.physical_type not in {None, 'unknown', 'dimensionless'}:
             ptype = cls._latex_escape(unit.physical_type.title())
