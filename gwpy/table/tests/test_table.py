@@ -373,8 +373,6 @@ class TestEventTable(TestTable):
         utils.assert_table_equal(
             midf, table.filter('frequency > 100').filter('frequency < 1000'))
 
-        # check unicode parsing
-        table.filter(u'snr > 100')
 
     def test_filter_in_segmentlist(self, table):
         # check filtering on segments works
