@@ -19,7 +19,6 @@
 """Base class for CLI (`gwpy-plot`) products.
 """
 
-from __future__ import print_function
 import abc
 import os.path
 import re
@@ -27,8 +26,6 @@ import time
 import warnings
 import sys
 from functools import wraps
-
-from six import add_metaclass
 
 from matplotlib import rcParams
 try:
@@ -95,8 +92,7 @@ to_s = to_float('s')  # pylint: disable=invalid-name
 
 # -- base product class -------------------------------------------------------
 
-@add_metaclass(abc.ABCMeta)
-class CliProduct(object):
+class CliProduct(object, metaclass=abc.ABCMeta):
     """Base class for all cli plot products
 
     Parameters
@@ -762,15 +758,14 @@ class CliProduct(object):
 
 # -- extensions ---------------------------------------------------------------
 
-@add_metaclass(abc.ABCMeta)
-class ImageProduct(CliProduct):
+class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
     """Base class for all x/y/color plots
     """
     MAX_DATASETS = 1
 
     @classmethod
     def init_plot_options(cls, parser):
-        super(ImageProduct, cls).init_plot_options(parser)
+        super().init_plot_options(parser)
         cls.arg_color_axis(parser)
 
     @classmethod
@@ -798,7 +793,7 @@ class ImageProduct(CliProduct):
     def _finalize_arguments(self, args):
         if args.cmap is None:
             args.cmap = DEFAULT_CMAP.name
-        return super(ImageProduct, self)._finalize_arguments(args)
+        return super()._finalize_arguments(args)
 
     @staticmethod
     def get_color_label():
@@ -810,7 +805,7 @@ class ImageProduct(CliProduct):
         """Set properties for each axis (scale, limits, label) and create
         a colorbar.
         """
-        super(ImageProduct, self).set_axes_properties()
+        super().set_axes_properties()
         if not self.args.nocolorbar:
             self.set_colorbar()
 
@@ -825,8 +820,7 @@ class ImageProduct(CliProduct):
         return  # image plots don't have legends
 
 
-@add_metaclass(abc.ABCMeta)
-class FFTMixin(object):
+class FFTMixin(object, metaclass=abc.ABCMeta):
     """Mixin for `CliProduct` class that will perform FFTs
 
     This just adds FFT-based command line options
@@ -835,7 +829,7 @@ class FFTMixin(object):
     def init_data_options(cls, parser):
         """Set up data input and signal processing options including FFTs
         """
-        super(FFTMixin, cls).init_data_options(parser)
+        super().init_data_options(parser)
         cls.arg_fft(parser)
 
     @classmethod
@@ -900,11 +894,10 @@ class FFTMixin(object):
                 args.overlap = recommended_overlap(args.window)
             except ValueError:
                 args.overlap = .5
-        return super(FFTMixin, self)._finalize_arguments(args)
+        return super()._finalize_arguments(args)
 
 
-@add_metaclass(abc.ABCMeta)
-class TimeDomainProduct(CliProduct):
+class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
     """`CliProduct` with time on the X-axis
     """
     @classmethod
@@ -914,7 +907,7 @@ class TimeDomainProduct(CliProduct):
         This method includes the standard X-axis options, as well as a new
         ``--epoch`` option for the time axis.
         """
-        group = super(TimeDomainProduct, cls).arg_xaxis(parser)
+        group = super().arg_xaxis(parser)
         group.add_argument('--epoch', type=to_gps,
                            help='center X axis on this GPS time, may be'
                                 'absolute date/time or delta')
@@ -938,7 +931,7 @@ class TimeDomainProduct(CliProduct):
 
         if args.xmax is None:
             args.xmax = max(starts) + args.duration
-        return super(TimeDomainProduct, self)._finalize_arguments(args)
+        return super()._finalize_arguments(args)
 
     def get_xlabel(self):
         """Default X-axis label for plot
@@ -954,8 +947,7 @@ class TimeDomainProduct(CliProduct):
         return ''
 
 
-@add_metaclass(abc.ABCMeta)
-class FrequencyDomainProduct(CliProduct):
+class FrequencyDomainProduct(CliProduct, metaclass=abc.ABCMeta):
     """`CliProduct` with frequency on the X-axis
     """
     def get_xlabel(self):

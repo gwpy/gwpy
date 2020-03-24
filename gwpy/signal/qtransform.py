@@ -23,8 +23,6 @@ pipeline, all credits for the original algorithm go to its
 authors.
 """
 
-from __future__ import division
-
 import warnings
 from math import (log, ceil, pi, isinf, exp)
 
@@ -78,7 +76,7 @@ class QBase(QObject):
     This class just provides a property for Q-prime = Q / sqrt(11)
     """
     def __init__(self, q, duration, sampling, mismatch=DEFAULT_MISMATCH):
-        super(QBase, self).__init__(duration, sampling, mismatch=mismatch)
+        super().__init__(duration, sampling, mismatch=mismatch)
         self.q = float(q)
 
     @property
@@ -115,7 +113,7 @@ class QTiling(QObject):
                  qrange=DEFAULT_QRANGE,
                  frange=DEFAULT_FRANGE,
                  mismatch=DEFAULT_MISMATCH):
-        super(QTiling, self).__init__(duration, sampling, mismatch=mismatch)
+        super().__init__(duration, sampling, mismatch=mismatch)
         self.qrange = (float(qrange[0]), float(qrange[1]))
         self.frange = [float(frange[0]), float(frange[1])]
 
@@ -230,7 +228,7 @@ class QPlane(QBase):
     """
     def __init__(self, q, frange, duration, sampling,
                  mismatch=DEFAULT_MISMATCH):
-        super(QPlane, self).__init__(q, duration, sampling, mismatch=mismatch)
+        super().__init__(q, duration, sampling, mismatch=mismatch)
         self.frange = [float(frange[0]), float(frange[1])]
 
         if self.frange[0] == 0:  # set non-zero lower frequency
@@ -338,7 +336,7 @@ class QTile(QBase):
     """
     def __init__(self, q, frequency, duration, sampling,
                  mismatch=DEFAULT_MISMATCH):
-        super(QTile, self).__init__(q, duration, sampling, mismatch=mismatch)
+        super().__init__(q, duration, sampling, mismatch=mismatch)
         self.frequency = frequency
 
     @property
@@ -579,11 +577,11 @@ class QGram(object):
         else:
             if fres == "<default>":
                 fres = 500
-            # using `~numpy.logspace` here to support numpy-1.7.1 for EPEL7,
-            # but numpy-1.12.0 introduced the function `~numpy.geomspace`
-            logfmin = numpy.log10(self.plane.frange[0])
-            logfmax = numpy.log10(self.plane.frange[1])
-            outfreq = numpy.logspace(logfmin, logfmax, num=int(fres))
+            outfreq = numpy.geomspace(
+                self.plane.frange[0],
+                self.plane.frange[1],
+                num=int(fres),
+            )
         new = type(out)(
             interp(xout, outfreq).T.astype(
                 dtype, casting="same_kind", copy=False),

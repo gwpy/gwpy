@@ -26,8 +26,6 @@ The `DataQualityDict` is just a `dict` of flags, provided as a convenience
 for handling multiple flags over the same global time interval.
 """
 
-from __future__ import absolute_import
-
 import datetime
 import json
 import operator
@@ -1706,7 +1704,7 @@ class DataQualityDict(OrderedDict):
         """
         if deep:
             return deepcopy(self)
-        return super(DataQualityDict, self).copy()
+        return super().copy()
 
     def __iand__(self, other):
         for key, value in other.items():

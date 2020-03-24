@@ -19,10 +19,6 @@
 """Interface to the LIGO Channel Information System
 """
 
-import json
-
-from six.moves.urllib.error import HTTPError
-
 import numpy
 
 from .. import (Channel, ChannelList)
@@ -41,7 +37,7 @@ CIS_DATA_TYPE = {
 }
 
 
-def query(name, use_kerberos=None, debug=False):
+def query(name, kerberos=None):
     """Query the Channel Information System for details on the given
     channel name
 
@@ -59,7 +55,7 @@ def query(name, use_kerberos=None, debug=False):
     more = True
     out = ChannelList()
     while more:
-        reply = _get(url, use_kerberos=use_kerberos, debug=debug)
+        reply = _get(url, kerberos=kerberos)
         try:
             out.extend(map(parse_json, reply[u'results']))
         except KeyError:
@@ -76,22 +72,13 @@ def query(name, use_kerberos=None, debug=False):
     return out
 
 
-def _get(url, use_kerberos=None, debug=False):
+def _get(url, kerberos=None, idp="login.ligo.org"):
     """Perform a GET query against the CIS
     """
-    from ligo.org import request
-
-    # perform query
-    try:
-        response = request(url, debug=debug, use_kerberos=use_kerberos)
-    except HTTPError:
-        raise ValueError("Channel not found at URL %s "
-                         "Information System. Please double check the "
-                         "name and try again." % url)
-
-    if isinstance(response, bytes):
-        response = response.decode('utf-8')
-    return json.loads(response)
+    from ciecplib import get as get_cis
+    response = get_cis(url, endpoint=idp, kerberos=kerberos)
+    response.raise_for_status()
+    return response.json()
 
 
 def parse_json(data):

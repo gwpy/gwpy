@@ -26,27 +26,18 @@ unset -f popd
 # Run the test suite for GWpy on the current system
 #
 
-# reactivate environmennt
-if [ -n ${CIRCLECI} ] && [ -d /opt/conda/envs ]; then
-    conda activate gwpyci || { source activate gwpyci; set -ex; }
-fi
-
 # get path to python and pip
-PYTHON_VERSION=$(echo "${PYTHON_VERSION:-${TRAVIS_PYTHON_VERSION}}" | cut -d. -f-2)
 PYTHON=$(which "python${PYTHON_VERSION}")
 PIP="${PYTHON} -m pip"
 
-# upgrade setuptools in order to understand environment markers
-${PIP} install ${PIP_FLAGS} "pip>=8.0.0" "setuptools>=20.2.2" wheel
+# upgrade pip to understand python_requires
+${PIP} install "pip>=9.0.0"
+
+# upgrade setuptools to understand environment markers
+${PIP} install "setuptools>=20.2.2" wheel
 
 # install test dependencies
-${PIP} install ${PIP_FLAGS} -r requirements-test.txt
-
-# try and install pytest-cov again, which forces pip to make sure
-# that the right version of pytest is installed
-if grep -q "pytest-cov" requirements-test.txt; then
-    ${PIP} install ${PIP_FLAGS} pytest-cov
-fi
+${PIP} install -r requirements-test.txt
 
 # list all packages
 if [ -z ${CONDA_PREFIX} ]; then

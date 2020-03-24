@@ -44,14 +44,14 @@ class TestSpectralVariance(_TestArray2D):
 
     @classmethod
     def setup_class(cls):
-        super(TestSpectralVariance, cls).setup_class()
+        super().setup_class()
         cls.bins = numpy.linspace(0, 1e5, cls.data.shape[1] + 1, endpoint=True)
 
     @classmethod
     def create(cls, *args, **kwargs):
         args = list(args)
         args.insert(0, cls.bins)
-        return super(TestSpectralVariance, cls).create(*args, **kwargs)
+        return super().create(*args, **kwargs)
 
     # -- test properties ------------------------
 

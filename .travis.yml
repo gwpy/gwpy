@@ -1,33 +1,18 @@
 # -- init ---------------------------------------
 
-# we use python
-language: python
+language: minimal
 
 os: osx
 
 env:
   global:
-    # default environment variables
-    - PIP_FLAGS=""
     # https://nedbatchelder.com/blog/201809/coveragepy_50a2_sqlite_storage.html
     - COVERAGE_STORAGE="json"
-
-    # default operations
-    - INSTALL_CMD="python -m pip install ${PIP_FLAGS} ."
-    - TEST_CMD=". ./ci/test.sh"
 
     # enable slack notifications (I think)
     - secure: KXq3Kn+i5pDl7ApqYkMKAZlxC7OOLDmiBn46t/JYKyRAchacp1PR84vrwTNj7OfhZek0tlTkKwQtwpFaw6llhYSpB9xl9SsPNmoYsBtZb9zC8z/oRXlXgYudesPSt7cltlt0K21pV9gRflOezRjlJRDoccbw3pe90vYpMdvr7+0=
 
 # -- build --------------------------------------
-
-stages:
-  # do some basic sanity checking
-  - name: Basic tests
-  # do the rest
-  - name: Full tests
-  # try distributions
-  - name: Distribution tests
 
 matrix:
   # bail-out early for failures
@@ -35,41 +20,31 @@ matrix:
 
   include:
     # conda builds
-    - python: '2.7'
-      language: minimal
-      stage: Distribution tests
-      name: "conda:2.7"
-      env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="2.7"
-    - python: '3.6'
-      language: minimal
-      stage: Distribution tests
-      name: "conda:3.6"
-      env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.6"
-    - python: '3.7'
-      language: minimal
-      stage: Distribution tests
-      name: "conda:3.7"
-      env: INSTALL_CMD=". ./ci/install-conda.sh" PYTHON_VERSION="3.7"
+    - name: "conda:3.6"
+      env: PYTHON_VERSION="3.6"
+    - name: "conda:3.7"
+      env: PYTHON_VERSION="3.7"
+    - name: "conda:3.8"
+      env: PYTHON_VERSION="3.8"
 
-install:  # install package
-  - ${INSTALL_CMD}
+install:
+  - set -ex;
+  # install miniconda, create env, and activate
+  - . ./ci/install-conda.sh
+  # install this package
+  - python -m pip install .
 
 script:  # run tests
-  - ${TEST_CMD}
+  - bash -ex ./ci/test.sh
 
 after_success:
   - bash -ex ci/codecov.sh
-
-before_deploy:
-  - git clean -dfX
 
 notifications:
   slack:
     secure: jQdoSpwNbUnq0Eo7o6Ko7vuhu58LQdfy8jFKxLUnUjv/GLezK/PPAQCU9SgmyDPh1yD8sb5Xa8UtbNfGtpYdwBAGwZxPHz3oQQAflivFwcF6UP7/NlAB9muSOOnL0QfQyX1I4sIKOkX+gkl+TBciX4v58B8NUU02dDkwDqTLUqQ=
 
 cache:
-  apt: true
   pip: true
-  ccache: true
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log

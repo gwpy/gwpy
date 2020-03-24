@@ -63,3 +63,17 @@ def test_read_scaled_type_change(int32ts):
         new = type(int32ts).read(tmpf, "test", type="adc")
     assert new.dtype == numpy.dtype("float64")
     assert_quantity_sub_equal(int32ts, new)
+
+
+def test_read_write_frvect_name():
+    """Test against regression of https://github.com/gwpy/gwpy/issues/1206
+    """
+    data = TimeSeries(
+        numpy.random.random(10),
+        channel="X1:TEST",
+        name="test",
+    )
+    with TemporaryFilename() as tmpf:
+        data.write(tmpf, format="gwf.framecpp", type="proc")
+        new = type(data).read(tmpf, "test")
+    assert_quantity_sub_equal(data, new, exclude=('channel',))

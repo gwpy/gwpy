@@ -19,8 +19,6 @@
 """NDS2 data query routines for the TimeSeries
 """
 
-from __future__ import division
-
 import operator
 import warnings
 

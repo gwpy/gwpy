@@ -31,7 +31,7 @@ import pytest
 import numpy
 from numpy import testing as nptest
 
-from scipy import (signal, __version__ as scipy_version)
+from scipy import signal
 
 from astropy import units
 
@@ -54,11 +54,6 @@ SKIP_FRAMECPP = utils.skip_missing_dependency('LDAStools.frameCPP')
 SKIP_LAL = utils.skip_missing_dependency('lal')
 SKIP_LALFRAME = utils.skip_missing_dependency('lalframe')
 SKIP_PYCBC_PSD = utils.skip_missing_dependency('pycbc.psd')
-
-if scipy_version < '1.2.0':
-    SCIPY_METHODS = ('welch', 'bartlett')
-else:
-    SCIPY_METHODS = ('welch', 'bartlett', 'median')
 
 FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C02'
 FIND_FRAMETYPE = 'L1_HOFT_C02'
@@ -338,7 +333,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
             t = type(array).read(tmp, start=start, end=end)
             utils.assert_quantity_sub_equal(t, array.crop(start, end))
 
-    @utils.skip_minimum_version('scipy', '0.13.0')
     def test_read_write_wav(self):
         array = self.create(dtype='float32')
         utils.test_read_write(
@@ -595,7 +589,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         with pytest.warns(UserWarning):
             losc.psd(1, .5, method='lal_median_mean')
 
-    @pytest.mark.parametrize('method', SCIPY_METHODS)
+    @pytest.mark.parametrize('method', ('welch', 'bartlett', 'median'))
     def test_psd(self, noisy_sinusoid, method):
         fftlength = .5
         overlap = .25
@@ -641,7 +635,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
         fs = losc.asd(1)
         utils.assert_quantity_sub_equal(fs, losc.psd(1) ** (1/2.))
 
-    @utils.skip_minimum_version('scipy', '0.16')
     def test_csd(self, noisy_sinusoid, corrupt_noisy_sinusoid):
         # test that csd(self) is the same as psd()
         fs = noisy_sinusoid.csd(noisy_sinusoid)
@@ -669,6 +662,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @pytest.mark.parametrize('method', [
         'scipy-welch',
         'scipy-bartlett',
+        'scipy-median',
         pytest.param('lal-welch', marks=SKIP_LAL),
         pytest.param('lal-bartlett', marks=SKIP_LAL),
         pytest.param('lal-median', marks=SKIP_LAL),
@@ -771,7 +765,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # note: bizarre stride length because 4096/100 gets rounded
         assert sg.dt == 0.010009765625 * units.second
 
-    @utils.skip_minimum_version('scipy', '0.16')
     def test_fftgram(self, losc):
         fgram = losc.fftgram(1)
         fs = int(losc.sample_rate.value)
@@ -826,7 +819,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
         nptest.assert_almost_equal(ray.max().value, 1.8814775174483833)
         assert ray.frequencies[ray.argmax()] == 136 * units.Hz
 
-    @utils.skip_minimum_version('scipy', '0.16')
     def test_csd_spectrogram(self, losc):
         # test defaults
         sg = losc.csd_spectrogram(losc, 1)
@@ -993,7 +985,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_allclose(new_data.value[ind], waveform.value)
         utils.assert_allclose(data.value, numpy.zeros(duration*sample_rate))
 
-    @utils.skip_minimum_version("scipy", "1.1.0")
     def test_gate(self):
         # generate Gaussian noise with std = 0.5
         noise = self.TEST_CLASS(numpy.random.normal(scale=0.5, size=16384*64),
@@ -1097,13 +1088,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # check SOS filters can be used directly
         zpk = filter_design.highpass(50, sample_rate=losc.sample_rate)
-        try:
-            sos = signal.zpk2sos(*zpk)
-        except AttributeError:  # scipy < 0.16
-            pass
-        else:
-            utils.assert_quantity_almost_equal(losc.filter(zpk),
-                                               losc.filter(sos))
+        sos = signal.zpk2sos(*zpk)
+        utils.assert_quantity_almost_equal(losc.filter(zpk), losc.filter(sos))
 
     def test_zpk(self, losc):
         zpk = [10, 10], [1, 1], 100

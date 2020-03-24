@@ -19,8 +19,6 @@
 """Unit tests for :mod:`gwpy.io.datafind`
 """
 
-from __future__ import print_function
-
 import os
 from io import BytesIO
 from itertools import cycle

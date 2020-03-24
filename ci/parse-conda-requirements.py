@@ -3,8 +3,6 @@
 """Parse a requirements.txt-format file for use with Conda
 """
 
-from __future__ import print_function
-
 import argparse
 import atexit
 import json

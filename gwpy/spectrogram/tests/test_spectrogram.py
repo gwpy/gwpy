@@ -44,7 +44,7 @@ class TestSpectrogram(_TestArray2D):
     TEST_CLASS = Spectrogram
 
     def test_new(self):
-        super(TestSpectrogram, self).test_new()
+        super().test_new()
 
         # check handling of epoch vs t0
         a = self.create(epoch=10)
@@ -63,7 +63,7 @@ class TestSpectrogram(_TestArray2D):
         assert array.epoch.gps == array.x0.value
 
     def test_value_at(self, array):
-        super(TestSpectrogram, self).test_value_at(array)
+        super().test_value_at(array)
         v = array.value_at(5000 * units.millisecond,
                            2000 * units.milliHertz)
         assert v == self.data[5][2] * array.unit

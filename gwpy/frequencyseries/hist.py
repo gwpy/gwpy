@@ -215,7 +215,7 @@ class SpectralVariance(Array2D):
     def __getitem__(self, item):
         # disable slicing bins
         if not isinstance(item, tuple) or null_slice(item[1]):
-            return super(SpectralVariance, self).__getitem__(item)
+            return super().__getitem__(item)
         raise NotImplementedError("cannot slice SpectralVariance across bins")
     __getitem__.__doc__ = Array2D.__getitem__.__doc__
 
@@ -357,4 +357,4 @@ class SpectralVariance(Array2D):
                 numpy.allclose(numpy.diff(numpy.log10(bins), n=2), 0)):
             kwargs.setdefault('yscale', 'log')
         kwargs.update(method=method, xscale=xscale)
-        return super(SpectralVariance, self).plot(**kwargs)
+        return super().plot(**kwargs)

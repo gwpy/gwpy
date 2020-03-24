@@ -21,7 +21,6 @@
 
 import pytest
 
-from astropy import __version__ as astropy_version
 from astropy.table import (Table, vstack)
 
 from ...testing.utils import (assert_table_equal, TemporaryFilename)
@@ -93,8 +92,7 @@ def test_read_multi_not_a_file():
     """Check that a strange input gets passed along properly
     so that errors can be raise by the reader.
     """
-    # astropy < 3 has a different error message
-    with pytest.raises(ValueError if astropy_version < '3.0' else TypeError):
+    with pytest.raises(TypeError):
         io_mp.read_multi(vstack, Table, None, format="ascii.csv", nproc=1)
 
 

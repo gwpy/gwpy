@@ -21,8 +21,6 @@
 This module is deprecated and will be removed in a future release.
 """
 
-from __future__ import absolute_import
-
 from ...frequencyseries import FrequencySeries
 from ...utils.misc import null_context
 from ._utils import scale_timeseries_unit

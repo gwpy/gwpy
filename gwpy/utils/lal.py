@@ -21,8 +21,6 @@
 This module requires lal >= 6.14.0
 """
 
-from __future__ import absolute_import
-
 import operator
 from collections import OrderedDict
 
@@ -150,7 +148,7 @@ def find_typed_function(pytype, prefix, suffix, module=lal):
 
 # -- units --------------------------------------------------------------------
 
-LAL_UNIT_INDEX = [
+LAL_UNIT_INDEX = [  # the order corresponds to how LAL stores compound units
     lal.MeterUnit,
     lal.KiloGramUnit,
     lal.SecondUnit,
@@ -159,7 +157,15 @@ LAL_UNIT_INDEX = [
     lal.StrainUnit,
     lal.ADCCountUnit,
 ]
-LAL_UNIT_FROM_ASTROPY = {units.Unit(str(u)): u for u in LAL_UNIT_INDEX}
+
+
+def _lal_unit_from_astropy(u):
+    """Convert an `astropy.units.Unit` into a `lal.Unit`
+    """
+    for lalu in LAL_UNIT_INDEX:
+        if u == units.Unit(str(lalu)):
+            return lalu
+    raise KeyError(str(u))
 
 
 def to_lal_unit(aunit):
@@ -191,20 +197,18 @@ def to_lal_unit(aunit):
     aunit = aunit.decompose()
     lunit = lal.Unit()
     for base, power in zip(aunit.bases, aunit.powers):
-        # try this base
-        try:
-            lalbase = LAL_UNIT_FROM_ASTROPY[base]
-        except KeyError:
-            lalbase = None
-            # otherwise loop through the equivalent bases
+        try:  # try this base
+            lalbase = _lal_unit_from_astropy(base)
+        except KeyError:  # otherwise loop through the equivalent bases
             for eqbase in base.find_equivalent_units():
                 try:
-                    lalbase = LAL_UNIT_FROM_ASTROPY[eqbase]
+                    lalbase = _lal_unit_from_astropy(eqbase)
                 except KeyError:
                     continue
-        # if we didn't find anything, raise an exception
-        if lalbase is None:
-            raise ValueError("LAL has no unit corresponding to %r" % base)
+                break
+            # if we didn't find anything, raise an exception
+            else:
+                raise ValueError("LAL has no unit corresponding to %r" % base)
         lunit *= lalbase ** power
     return lunit
 

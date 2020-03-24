@@ -199,7 +199,7 @@ def build_content_handler(parent, filter_func):
     class _ContentHandler(parent):
         # pylint: disable=too-few-public-methods
         def __init__(self, document):
-            super(_ContentHandler, self).__init__(document, filter_func)
+            super().__init__(document, filter_func)
 
     return use_in(_ContentHandler)
 

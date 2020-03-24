@@ -19,8 +19,6 @@
 """Miscellaneous utilties for GWpy
 """
 
-from __future__ import print_function
-
 from sys import stdout
 
 from .misc import (

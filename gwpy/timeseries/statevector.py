@@ -175,7 +175,7 @@ class StateTimeSeries(TimeSeriesBase):
             data = numpy.asarray(data)
         if not isinstance(data, cls):
             data = data.astype(bool)
-        return super(StateTimeSeries, cls).__new__(
+        return super().__new__(
             cls, data, t0=t0, dt=dt, sample_rate=sample_rate, times=times,
             name=name, channel=channel, **kwargs)
 
@@ -199,15 +199,13 @@ class StateTimeSeries(TimeSeriesBase):
     # -- math handling (always boolean) ---------
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-        out = super(StateTimeSeries, self).__array_ufunc__(
-            ufunc, method, *inputs, **kwargs)
+        out = super().__array_ufunc__(ufunc, method, *inputs, **kwargs)
         if out.ndim:
             return out.view(bool)
         return out
 
     def __array_wrap__(self, obj, context=None):
-        return super(StateTimeSeries, self).__array_wrap__(
-            obj, context=context).view(bool)
+        return super().__array_wrap__(obj, context=context).view(bool)
 
     def diff(self, n=1, axis=-1):
         slice1 = (slice(1, None),)
@@ -303,13 +301,13 @@ class StateTimeSeries(TimeSeriesBase):
     @wraps(TimeSeriesBase.from_nds2_buffer)
     def from_nds2_buffer(cls, buffer, **metadata):
         metadata.setdefault('unit', None)
-        return super(StateTimeSeries, cls).from_nds2_buffer(buffer, **metadata)
+        return super().from_nds2_buffer(buffer, **metadata)
 
     def __getitem__(self, item):
         if isinstance(item, (float, int)):
             return numpy.ndarray.__getitem__(self, item)
         else:
-            return super(StateTimeSeries, self).__getitem__(item)
+            return super().__getitem__(item)
 
     def tolist(self):
         return self.value.tolist()
@@ -506,10 +504,10 @@ class StateVector(TimeSeriesBase):
                 times=None, channel=None, name=None, **kwargs):
         """Generate a new `StateVector`.
         """
-        new = super(StateVector, cls).__new__(cls, data, t0=t0, dt=dt,
-                                              sample_rate=sample_rate,
-                                              times=times, channel=channel,
-                                              name=name, **kwargs)
+        new = super().__new__(cls, data, t0=t0, dt=dt,
+                              sample_rate=sample_rate,
+                              times=times, channel=channel,
+                              name=name, **kwargs)
         new.bits = bits
         return new
 
@@ -692,7 +690,7 @@ class StateVector(TimeSeriesBase):
 
         Notes
         -----"""
-        return super(StateVector, cls).read(source, *args, **kwargs)
+        return super().read(source, *args, **kwargs)
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
         """Convert this `StateVector` into a `~gwpy.segments.DataQualityDict`
@@ -872,7 +870,7 @@ class StateVector(TimeSeriesBase):
             statevector flag.
         """
         if format == 'timeseries':
-            return super(StateVector, self).plot(**kwargs)
+            return super().plot(**kwargs)
         if format == 'segments':
             from ..plot import Plot
             kwargs.setdefault('xscale', 'auto-gps')
@@ -1020,7 +1018,7 @@ class StateVectorDict(TimeSeriesBaseDict):
 
         Notes
         -----"""
-        return super(StateVectorDict, cls).read(source, *args, **kwargs)
+        return super().read(source, *args, **kwargs)
 
 
 class StateVectorList(TimeSeriesBaseList):

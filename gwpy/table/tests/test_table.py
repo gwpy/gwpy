@@ -75,9 +75,11 @@ def mock_hacr_connection(table, start, stop):
     cursor.execute = execute
 
     def fetchall():
-        if cursor._query.get_real_name() == 'job':
+        q = cursor._query
+        name = q.get_real_name() or q._get_first_name()
+        if name == 'job':
             return [(1, start, stop)]
-        if cursor._query.get_real_name() == 'mhacr':
+        if name == 'mhacr':
             columns = list(map(
                 str, list(cursor._query.get_sublists())[0].get_identifiers()))
             selections = list(map(
@@ -357,13 +359,9 @@ class TestEventTable(TestTable):
         assert t._get_time_column() == 'blah2'
 
         # check that two GPS columns causes issues
-        try:
-            t.add_column(t['blah2'], name='blah3')
-        except TypeError:  # astropy < 2.0 (or something like that)
-            pass
-        else:
-            with pytest.raises(ValueError):
-                t._get_time_column()
+        t.add_column(t['blah2'], name='blah3')
+        with pytest.raises(ValueError):
+            t._get_time_column()
 
     def test_filter(self, table):
         # check simple filter

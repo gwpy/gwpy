@@ -23,10 +23,7 @@ import numpy
 
 from math import ceil
 
-try:  # scipy 1.1.0rc1
-    from scipy.signal.windows import windows as scipy_windows
-except ImportError:  # scipy <= 1.0.x
-    from scipy.signal import windows as scipy_windows
+from scipy.signal.windows import windows as scipy_windows
 
 from scipy.special import expit
 
@@ -64,16 +61,9 @@ def canonical_name(name):
     try:  # use equivalence introduced in scipy 0.16.0
         # pylint: disable=protected-access
         return scipy_windows._win_equiv[name.lower()].__name__
-    except AttributeError:  # old scipy
-        try:
-            return getattr(scipy_windows, name.lower()).__name__
-        except AttributeError:  # no match
-            pass  # raise later
     except KeyError:  # no match
-        pass  # raise later
-
-    raise ValueError('no window function in scipy.signal equivalent to %r'
-                     % name,)
+        raise ValueError('no window function in scipy.signal equivalent to %r'
+                         % name,)
 
 
 # -- recommended overlap ------------------------------------------------------

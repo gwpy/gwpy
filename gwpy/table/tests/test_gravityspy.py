@@ -52,7 +52,6 @@ JSON_RESPONSE = {
 }
 
 
-@utils.skip_minimum_version('astropy', '2.0.4')
 class TestGravitySpyTable(_TestEventTable):
     TABLE = GravitySpyTable
 

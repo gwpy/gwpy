@@ -26,10 +26,7 @@ from io import BytesIO
 import pytest
 
 import numpy
-try:
-    from numpy import shares_memory
-except ImportError:  # numpy < 1.11.0
-    from numpy import may_share_memory as shares_memory
+from numpy import shares_memory
 
 from matplotlib import rc_context
 
@@ -56,7 +53,7 @@ class TestTimeSeriesBase(_TestSeries):
     def test_new(self):
         """Test `gwpy.timeseries.TimeSeriesBase` constructor
         """
-        array = super(TestTimeSeriesBase, self).test_new()
+        array = super().test_new()
 
         # check time-domain metadata
         assert array.epoch == GPS_EPOCH

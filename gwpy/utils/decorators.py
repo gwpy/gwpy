@@ -58,7 +58,7 @@ class deprecated_property(property):  # pylint: disable=invalid-name
         if not fset and not fdel:  # only wrap once
             fget = _warn(fget)
 
-        super(deprecated_property, self).__init__(fget, fset, fdel, doc)
+        super().__init__(fget, fset, fdel, doc)
 
 
 def deprecated_function(func, warning=DEPRECATED_FUNCTION_WARNING):

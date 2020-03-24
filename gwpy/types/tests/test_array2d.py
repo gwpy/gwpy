@@ -186,7 +186,7 @@ class TestArray2D(_TestSeries):
             exclude=['epoch'])
 
     def test_is_compatible(self, array):
-        super(TestArray2D, self).test_is_compatible(array)
+        super().test_is_compatible(array)
 
         a2 = self.create(dy=2)
         with pytest.raises(ValueError):

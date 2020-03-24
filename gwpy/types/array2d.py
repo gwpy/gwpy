@@ -113,8 +113,8 @@ class Array2D(Series):
         """
 
         # create new object
-        new = super(Array2D, cls).__new__(cls, data, unit=unit, xindex=xindex,
-                                          xunit=xunit, x0=x0, dx=dx, **kwargs)
+        new = super().__new__(cls, data, unit=unit, xindex=xindex,
+                              xunit=xunit, x0=x0, dx=dx, **kwargs)
 
         # set y-axis metadata from yindex
         if yindex is not None:
@@ -148,7 +148,7 @@ class Array2D(Series):
 
     # rebuild getitem to handle complex slicing
     def __getitem__(self, item):
-        new = super(Array2D, self).__getitem__(item)
+        new = super().__getitem__(item)
 
         # slice axis 1 metadata
         colslice, rowslice = sliceutils.format_nd_slice(item, self.ndim)
@@ -172,7 +172,7 @@ class Array2D(Series):
         return new
 
     def __array_finalize__(self, obj):
-        super(Array2D, self).__array_finalize__(obj)
+        super().__array_finalize__(obj)
         # Series.__array_finalize__ might set _yindex to None, so delete it
         if getattr(self, '_yindex', 0) is None:
             del self.yindex
@@ -308,7 +308,7 @@ class Array2D(Series):
     def is_compatible(self, other):
         """Check whether this array and ``other`` have compatible metadata
         """
-        super(Array2D, self).is_compatible(other)
+        super().is_compatible(other)
         # check y-axis metadata
         if isinstance(other, type(self)):
             try:
@@ -373,7 +373,7 @@ class Array2D(Series):
     # all of these try to return Quantities rather than simple numbers
 
     def _wrap_function(self, function, *args, **kwargs):
-        out = super(Array2D, self)._wrap_function(function, *args, **kwargs)
+        out = super()._wrap_function(function, *args, **kwargs)
         if out.ndim == 1:  # return Series
             # HACK: need to check astropy will always pass axis as first arg
             axis = args[0]

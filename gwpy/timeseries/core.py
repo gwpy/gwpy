@@ -37,8 +37,6 @@ This module defines the following classes
 user-facing objects.**
 """
 
-from __future__ import (division, print_function)
-
 import os
 import sys
 import warnings
@@ -48,7 +46,6 @@ from math import ceil
 import numpy
 
 from astropy import units
-from astropy import __version__ as astropy_version
 from astropy.io import registry as io_registry
 
 from gwosc.api import DEFAULT_URL as GWOSC_DEFAULT_HOST
@@ -185,9 +182,8 @@ class TimeSeriesBase(Series):
             kwargs['xindex'] = times
 
         # generate TimeSeries
-        new = super(TimeSeriesBase, cls).__new__(cls, data, name=name,
-                                                 unit=unit, channel=channel,
-                                                 **kwargs)
+        new = super().__new__(cls, data, name=name, unit=unit,
+                              channel=channel, **kwargs)
 
         # manually set sample_rate if given
         if sample_rate is not None:
@@ -645,7 +641,7 @@ class TimeSeriesBase(Series):
             for documentation of keyword arguments used in rendering the data
         """
         kwargs.update(figsize=figsize, xscale=xscale)
-        return super(TimeSeriesBase, self).plot(method=method, **kwargs)
+        return super().plot(method=method, **kwargs)
 
     @classmethod
     def from_nds2_buffer(cls, buffer_, scaled=None, copy=True, **metadata):
@@ -779,26 +775,22 @@ class TimeSeriesBase(Series):
 
     # -- TimeSeries operations ------------------
 
-    if astropy_version >= '2.0.0':  # remove _if_ when we pin astropy >= 2.0.0
-        def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-            # this is new in numpy 1.13, astropy 2.0 adopts it, we need to
-            # work out how to handle this and __array_wrap__ together properly
-            out = super(TimeSeriesBase, self).__array_ufunc__(
-                ufunc, method, *inputs, **kwargs)
-            if out.dtype is numpy.dtype(bool) and len(inputs) == 2:
-                from .statevector import StateTimeSeries
-                orig, value = inputs
-                try:
-                    op_ = _UFUNC_STRING[ufunc.__name__]
-                except KeyError:
-                    op_ = ufunc.__name__
-                out = out.view(StateTimeSeries)
-                out.__metadata_finalize__(orig)
-                out.override_unit('')
-                oname = orig.name if isinstance(orig, type(self)) else orig
-                vname = value.name if isinstance(value, type(self)) else value
-                out.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
-            return out
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        out = super().__array_ufunc__(ufunc, method, *inputs, **kwargs)
+        if out.dtype is numpy.dtype(bool) and len(inputs) == 2:
+            from .statevector import StateTimeSeries
+            orig, value = inputs
+            try:
+                op_ = _UFUNC_STRING[ufunc.__name__]
+            except KeyError:
+                op_ = ufunc.__name__
+            out = out.view(StateTimeSeries)
+            out.__metadata_finalize__(orig)
+            out.override_unit('')
+            oname = orig.name if isinstance(orig, type(self)) else orig
+            vname = value.name if isinstance(value, type(self)) else value
+            out.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
+        return out
 
     def __array_wrap__(self, obj, context=None):
         # if output type is boolean, return a `StateTimeSeries`
@@ -817,8 +809,7 @@ class TimeSeriesBase(Series):
             result.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
         # otherwise, return a regular TimeSeries
         else:
-            result = super(TimeSeriesBase, self).__array_wrap__(
-                obj, context=context)
+            result = super().__array_wrap__(obj, context=context)
         return result
 
 
@@ -1538,7 +1529,7 @@ class TimeSeriesBaseList(list):
     def __init__(self, *items):
         """Initialise a new list
         """
-        super(TimeSeriesBaseList, self).__init__()
+        super().__init__()
         for item in items:
             self.append(item)
 
@@ -1553,13 +1544,13 @@ class TimeSeriesBaseList(list):
         if not isinstance(item, self.EntryClass):
             raise TypeError("Cannot append type '%s' to %s"
                             % (type(item).__name__, type(self).__name__))
-        super(TimeSeriesBaseList, self).append(item)
+        super().append(item)
         return self
     append.__doc__ = list.append.__doc__
 
     def extend(self, item):
         item = TimeSeriesBaseList(*item)
-        super(TimeSeriesBaseList, self).extend(item)
+        super().extend(item)
     extend.__doc__ = list.extend.__doc__
 
     def coalesce(self):
@@ -1628,13 +1619,13 @@ class TimeSeriesBaseList(list):
         return out
 
     def __getslice__(self, i, j):
-        return type(self)(*super(TimeSeriesBaseList, self).__getslice__(i, j))
+        return type(self)(*super().__getslice__(i, j))
 
     def __getitem__(self, key):
         if isinstance(key, slice):
             return type(self)(
-                *super(TimeSeriesBaseList, self).__getitem__(key))
-        return super(TimeSeriesBaseList, self).__getitem__(key)
+                *super().__getitem__(key))
+        return super().__getitem__(key)
 
     def copy(self):
         """Return a copy of this list with each element copied to new memory

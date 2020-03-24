@@ -21,8 +21,6 @@
 
 import pytest
 
-from scipy import __version__ as scipy_version
-
 from astropy import units
 
 from ... import astro
@@ -36,33 +34,12 @@ __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
 # -- test results -------------------------------------------------------------
 
-# hack up constants that changed between astropy 1.3 and 2.0
-# TODO: might want to do this in reverse, i.e. hard-coding the answers for 2.0
-from astropy import __version__ as astropy_version  # nopep8
-if astropy_version >= '2.0':
-    from astropy import constants
-    from astropy.constants import (si, astropyconst13)
-    units.M_sun._represents = units.Unit(astropyconst13.M_sun)
-    constants.M_sun = si.M_sun = astropyconst13.M_sun
-    constants.G = si.G = astropyconst13.G
-    constants.c = si.c = astropyconst13.c
-    constants.pc = si.pc = astropyconst13.pc
-
-# something changed in scipy 0.19, something FFT-related
-if scipy_version < '0.19':
-    TEST_RESULTS = {
-        'inspiral_range': 19.63704209223392 * units.Mpc,
-        'inspiral_range_psd': 7.915847068684727 * units.Mpc ** 2 / units.Hz,
-        'burst_range': 13.813232309724613 * units.Mpc,
-        'burst_range_spectrum': 35.19303454822539 * units.Mpc,
-    }
-else:
-    TEST_RESULTS = {
-        'inspiral_range': 19.63872448570372 * units.Mpc,
-        'inspiral_range_psd': 7.92640311063505 * units.Mpc ** 2 / units.Hz,
-        'burst_range': 13.815456279746522 * units.Mpc,
-        'burst_range_spectrum': 35.216492263916535 * units.Mpc,
-    }
+TEST_RESULTS = {
+    'inspiral_range': 19.63418297300058 * units.Mpc,
+    'inspiral_range_psd': 7.922730174148789 * units.Mpc ** 2 / units.Hz,
+    'burst_range': 13.81353542862508 * units.Mpc,
+    'burst_range_spectrum': 35.211595883103456 * units.Mpc,
+}
 
 
 # -- utilities ----------------------------------------------------------------

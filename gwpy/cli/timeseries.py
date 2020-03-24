@@ -44,7 +44,7 @@ class TimeSeries(TimeDomainProduct):
             return units[0].to_string()
         elif len(units) > 1:
             return 'Multiple units'
-        return super(TimeSeries, self).get_ylabel()
+        return super().get_ylabel()
 
     def get_suptitle(self):
         """Start of default super title, first channel is appended to it
@@ -52,7 +52,7 @@ class TimeSeries(TimeDomainProduct):
         return 'Time series: {0}'.format(self.chan_list[0])
 
     def get_title(self):
-        suffix = super(TimeSeries, self).get_title()
+        suffix = super().get_title()
         # limit significant digits for minute trends
         rates = {ts.sample_rate.round(3) for ts in self.timeseries}
         fss = '({0})'.format('), ('.join(map(str, rates)))

@@ -19,71 +19,52 @@
 """Setup the GWpy package
 """
 
-# ignore all invalid names (pylint isn't good at looking at executables)
-# pylint: disable=invalid-name
+from setuptools import (
+    find_packages,
+    setup,
+)
 
-from __future__ import print_function
-
-import os
-import sys
-from distutils.version import LooseVersion
-
-from setuptools import (setup, find_packages,
-                        __version__ as setuptools_version)
-
-import versioneer
-from setup_utils import (CMDCLASS, get_setup_requires)
-
-__version__ = versioneer.get_version()
-
-PEP_508 = LooseVersion(setuptools_version) >= '20.2.2'
+# local module to handle build customisations
+from setup_utils import (
+    CMDCLASS,
+    VERSION,
+    get_setup_requires,
+)
 
 # read description
 with open('README.md', 'rb') as f:
     longdesc = f.read().decode().strip()
 
-# -- dependencies -------------------------------------------------------------
+# -- dependencies -----------
 
-# build dependencies
+# build dependencies (dynamic based on arguments)
 setup_requires = get_setup_requires()
 
 # runtime dependencies
 install_requires = [
-    'astropy >= 1.3.0, < 3.0.0 ; python_version < \'3.5\'',
-    'astropy >= 1.3.0 ; python_version >= \'3.5\'',
+    'astropy >= 3.0.0',
     'dqsegdb2',
-    'enum34 ; python_version < \'3.4\'',
     'gwdatafind',
     'gwosc >= 0.4.0',
     'h5py >= 1.3',
     'ligo-segments >= 1.0.0',
     'ligotimegps >= 1.2.1',
     'matplotlib >= 1.2.0, != 2.1.0, != 2.1.1',
-    'numpy >= 1.7.1',
-    'pathlib ; python_version < \'3.4\'',
+    'numpy >= 1.12.0',
     'python-dateutil',
-    'scipy >= 0.12.1',
+    'scipy >= 1.2.0',
     'six >= 1.5',
     'tqdm >= 4.10.0',
 ]
 
-# if setuptools is too old and we are building an EL7 or Debian 8
-# distribution, empty the install_requires, the distribution files
-# will handle dependencies anyway
-# NOTE: this probably isn't very robust
-if not PEP_508 and (
-        os.getenv('RPM_BUILD_ROOT') or os.getenv('PYBUILD_NAME')):
-    install_requires = []
-
 # test dependencies
 tests_require = [
-    'pytest>=3.3.0,<5.0.0',
-    'freezegun>=0.2.3',
-    'sqlparse>=0.2.0',
-    'beautifulsoup4',
+    "beautifulsoup4",
+    "freezegun >= 0.2.3",
+    "pytest >= 3.3.0",
+    "pytest-cov >= 2.4.0",
+    "sqlparse >= 0.2.0",
 ]
-if sys.version < '3':
-    tests_require.append('mock<4.0.0a0')
 
 # -- run setup ----------------------------------------------------------------
 
@@ -91,7 +72,7 @@ setup(
     # metadata
     name='gwpy',
     provides=['gwpy'],
-    version=__version__,
+    version=VERSION,
     description="A python package for gravitational-wave astrophysics",
     long_description=longdesc,
     long_description_content_type='text/markdown',
@@ -131,7 +112,7 @@ setup(
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',

@@ -32,37 +32,7 @@ Pip
 
     $ python -m pip install gwpy
 
-Supported python versions: 2.7, 3.5+.
-
-
-.. _gwpy-install-debian:
-
-------------
-Debian Linux
-------------
-
-.. code-block:: bash
-
-    $ apt-get install python3-gwpy
-
-Supported python versions: 2.7 (all), 3.5 (Stretch), 3.6 (Buster),
-`click here <https://wiki.ligo.org/Computing/DASWG/SoftwareOnDebian>`__ for
-instructions on how to add the required repositories.
-
-
-.. _gwpy-install-el:
-
-----------------
-Scientific Linux
-----------------
-
-.. code-block:: bash
-
-    $ yum install python-gwpy
-
-Supported python versions: 2.7,
-`click here <https://wiki.ligo.org/DASWG/ScientificLinux>`__ for
-instructions on how to add the required yum repositories.
+Supported python versions: 3.5+.
 
 
 ============
@@ -78,7 +48,7 @@ GWpy has the following strict requirements:
    ==================  ===========================
    Name                Constraints
    ==================  ===========================
-   |astropy|_          ``>=1.3.0``
+   |astropy|_          ``>=3.0.0``
    |dqsegdb2|_
    |gwdatafind|_
    |gwosc-mod|_        ``>=0.4.0``
@@ -86,9 +56,9 @@ GWpy has the following strict requirements:
    |ligo-segments|_    ``>=1.0.0``
    |ligotimegps|_      ``>=1.2.1``
    |matplotlib|_       ``!=2.1.0,!=2.1.1,>=1.2.0``
-   |numpy|_            ``>=1.7.1``
+   |numpy|_            ``>=1.12.0``
    |dateutil|_
-   |scipy|_            ``>=0.12.1``
+   |scipy|_            ``>=1.2.0``
    |six|_              ``>=1.5``
    |tqdm|_             ``>=4.10.0``
    ==================  ===========================
