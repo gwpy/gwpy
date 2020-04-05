@@ -264,10 +264,6 @@ class Plot(figure.Figure):
         # mainly for user convenience. However, as of matplotlib-3.0.0,
         # pyplot.show() ends up calling _back_ to Plot.show(),
         # so we have to be careful not to end up in a recursive loop
-        #
-        # Developer note: if we ever make it pinning to matplotlib >=3.0.0
-        #                 this method can likely be completely removed
-        #
         import inspect
         try:
             callframe = inspect.currentframe().f_back
@@ -287,10 +283,7 @@ class Plot(figure.Figure):
         # block in GUI loop (stolen from mpl.backend_bases._Backend.show)
         if block:
             backend_mod = get_backend_mod()
-            try:
-                backend_mod.Show().mainloop()
-            except AttributeError:  # matplotlib < 2.1.0
-                backend_mod.show.mainloop()
+            backend_mod.Show().mainloop()
 
     def save(self, *args, **kwargs):
         """Save the figure to disk.
@@ -334,7 +327,7 @@ class Plot(figure.Figure):
     # -- colour bars ----------------------------
 
     def colorbar(self, mappable=None, cax=None, ax=None, fraction=0.,
-                 label=None, emit=True, **kwargs):
+                 emit=True, **kwargs):
         """Add a colorbar to the current `Plot`
 
         A colorbar must be associated with an `Axes` on this `Plot`,
@@ -402,8 +395,6 @@ class Plot(figure.Figure):
         # generate colour bar
         cbar = super().colorbar(mappable, **kwargs)
         self.colorbars.append(cbar)
-        if label:  # mpl<1.3 doesn't accept label in Colorbar constructor
-            cbar.set_label(label)
 
         # update mappables for this axis
         if emit:

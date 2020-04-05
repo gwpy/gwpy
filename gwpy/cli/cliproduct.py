@@ -23,15 +23,10 @@ import abc
 import os.path
 import re
 import time
-import warnings
 import sys
 from functools import wraps
 
-from matplotlib import rcParams
-try:
-    from matplotlib.cm import viridis as DEFAULT_CMAP
-except ImportError:
-    from matplotlib.cm import YlOrRd as DEFAULT_CMAP
+from matplotlib import (rcParams, style)
 
 from astropy.time import Time
 from astropy.units import Quantity
@@ -146,14 +141,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         self._finalize_arguments(args)  # post-process args
 
         if args.style:  # apply custom styling
-            try:
-                from matplotlib import style
-            except ImportError:
-                from matplotlib import __version__ as mpl_version
-                warnings.warn('--style can only be used with matplotlib >= '
-                              '1.4.0, you have {0}'.format(mpl_version))
-            else:
-                style.use(args.style)
+            style.use(args.style)
 
         #: the current figure object
         self.plot = None
@@ -761,6 +749,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
 class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
     """Base class for all x/y/color plots
     """
+    DEFAULT_CMAP = "viridis"
     MAX_DATASETS = 1
 
     @classmethod
@@ -778,6 +767,7 @@ class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
         group.add_argument('--imax', type=float,
                            help='maximum value for colorbar')
         group.add_argument('--cmap',
+                           default=cls.DEFAULT_CMAP,
                            help='Colormap. See '
                                 'https://matplotlib.org/examples/color/'
                                 'colormaps_reference.html for options')
@@ -789,11 +779,6 @@ class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
                                 'that frequency bin')
         group.add_argument('--nocolorbar', action='store_true',
                            help='hide the colour bar')
-
-    def _finalize_arguments(self, args):
-        if args.cmap is None:
-            args.cmap = DEFAULT_CMAP.name
-        return super()._finalize_arguments(args)
 
     @staticmethod
     def get_color_label():

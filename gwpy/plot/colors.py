@@ -21,34 +21,10 @@
 
 import numpy
 
-from matplotlib import (__version__ as mpl_version, rcParams)
 from matplotlib import colors
-try:
-    from matplotlib.colors import (_colors_full_map as color_map, to_rgb)
-except ImportError:  # mpl < 2
-    from matplotlib.colors import (cnames as color_map, ColorConverter)
-    to_rgb = ColorConverter().to_rgb
+from matplotlib.colors import (_colors_full_map as color_map, to_rgb)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
-# build better default colour cycle for matplotlib < 2
-if mpl_version < '2.0':
-    DEFAULT_COLORS = [
-        '#1f77b4',  # blue
-        '#ffb200',  # yellow(ish)
-        '#33cc33',  # green
-        '#ff0000',  # red
-        '#8000bf',  # magenta
-        '#808080',  # gray
-        '#4cb2ff',  # light blue
-        '#ffc0cb',  # pink
-        '#232c16',  # dark green
-        '#ff7fe0',  # orange
-        '#8b4513',  # saddlebrown
-        '#000080',  # navy
-    ]
-else:  # just in case anyone expects DEFAULT_COLORS to exist for mpl 2
-    DEFAULT_COLORS = rcParams['axes.prop_cycle'].by_key()['color']
 
 # -- recommended defaults for current Gravitational-Wave Observatories --------
 # the below colours are designed to work well for the colour-blind, as well

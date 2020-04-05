@@ -22,7 +22,6 @@
 import itertools
 
 from matplotlib import (
-    __version__ as mpl_version,
     colors as mpl_colors,
 )
 
@@ -32,10 +31,7 @@ from .. import utils as plot_utils
 def test_color_cycle():
     cyc = plot_utils.color_cycle()
     assert isinstance(cyc, itertools.cycle)
-    if mpl_version < '1.5':
-        assert next(cyc) == 'b'
-    else:
-        assert next(cyc) == mpl_colors.to_hex("C0")
+    assert next(cyc) == mpl_colors.to_hex("C0")
 
 
 def test_color_cycle_arg():

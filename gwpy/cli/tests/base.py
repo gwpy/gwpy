@@ -278,10 +278,6 @@ class _TestImageProduct(_TestCliProduct):
         for key in ('nocolorbar', 'cmap', 'imin', 'imax'):
             assert hasattr(args, key)
 
-    def test_finalize_arguments(self, prod):
-        # finalize_arguments() called by __init__
-        assert prod.args.cmap == cliproduct.DEFAULT_CMAP.name
-
     @pytest.mark.parametrize('visible', [False, True])
     def test_set_plot_properties(self, plotprod, visible):
         update_namespace(plotprod.args, nocolorbar=not visible)
