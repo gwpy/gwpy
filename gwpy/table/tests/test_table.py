@@ -20,6 +20,7 @@
 """
 
 import os.path
+import re
 import shutil
 import tempfile
 from io import BytesIO
@@ -27,8 +28,6 @@ from ssl import SSLError
 from urllib.error import URLError
 
 import pytest
-
-import sqlparse
 
 from numpy import (random, isclose, dtype, asarray, all)
 from numpy.ma.core import MaskedConstant
@@ -67,21 +66,22 @@ def mock_hacr_connection(table, start, stop):
     cursor = mock.MagicMock()
 
     def execute(qstr):
-        cursor._query = sqlparse.parse(qstr)[0]
+        cursor._query = qstr
         return len(table)
 
     cursor.execute = execute
+    column_regex = re.compile(r"\Aselect (.*) from ", re.I)
+    select_regex = re.compile(r"where (.*) (order by .*)?\Z", re.I)
 
     def fetchall():
         q = cursor._query
-        name = q.get_real_name() or q._get_first_name()
-        if name == 'job':
+        if "from job" in q:
             return [(1, start, stop)]
-        if name == 'mhacr':
-            columns = list(map(
-                str, list(cursor._query.get_sublists())[0].get_identifiers()))
-            selections = list(map(
-                str, list(cursor._query.get_sublists())[2].get_sublists()))
+        if "from mhacr" in q:
+            columns = column_regex.match(q).groups()[0].split(", ")
+            selections = (
+                select_regex.search(q).groups()[0].strip().split(" and ")
+            )
             return map(tuple, filter_table(table, selections[3:])[columns])
 
     cursor.fetchall = fetchall
