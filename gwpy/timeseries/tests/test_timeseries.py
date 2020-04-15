@@ -467,13 +467,23 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.gwpy')
             assert 'no data received' in str(exc.value)
 
+    def _find_or_skip(self, *args, **kwargs):
+        """Execute `self.TEST_CLASS.find()` catching credential errors
+        """
+        try:
+            return self.TEST_CLASS.find(*args, **kwargs)
+        except RuntimeError as exc:  # pragma: no-cover
+            if "credential" in str(exc):
+                pytest.skip(str(exc))
+            raise
+
     @SKIP_FRAMECPP
     @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
                         reason='No LIGO datafind server configured '
                                'on this host')
     def test_find(self, losc_16384):
-        ts = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                  frametype=FIND_FRAMETYPE)
+        ts = self._find_or_skip(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
+                                frametype=FIND_FRAMETYPE)
         utils.assert_quantity_sub_equal(ts, losc_16384,
                                         exclude=['name', 'channel', 'unit'])
 
@@ -512,7 +522,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                         reason='No LIGO datafind server configured '
                                'on this host')
     def test_find_best_frametype_in_find(self, losc_16384):
-        ts = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
+        ts = self._find_or_skip(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
         utils.assert_quantity_sub_equal(ts, losc_16384,
                                         exclude=['name', 'channel', 'unit'])
 
