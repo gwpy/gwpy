@@ -24,8 +24,6 @@ The frame format is defined in LIGO-T970130 available from dcc.ligo.org.
 import os.path
 import warnings
 
-from six import string_types
-
 # import in this order so that lalframe throws the ImportError
 # to give the user a bit more information
 import lalframe
@@ -70,7 +68,7 @@ def open_data_source(source):
         pass
 
     # import cache from file
-    if (isinstance(source, string_types) and
+    if (isinstance(source, str) and
             source.endswith(('.lcf', '.cache'))):
         source = lal.CacheImport(source)
 
@@ -88,7 +86,7 @@ def open_data_source(source):
         return lalframe.FrStreamCacheOpen(source)
 
     # read single file
-    if isinstance(source, string_types):
+    if isinstance(source, str):
         return lalframe.FrStreamOpen(*map(str, os.path.split(source)))
 
     raise ValueError("Don't know how to open data source of type %r"

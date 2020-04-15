@@ -59,7 +59,6 @@ GWpy has the following strict requirements:
    |numpy|_            ``>=1.12.0``
    |dateutil|_
    |scipy|_            ``>=1.2.0``
-   |six|_              ``>=1.5``
    |tqdm|_             ``>=4.10.0``
    ==================  ===========================
 

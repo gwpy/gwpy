@@ -21,8 +21,6 @@
 
 import re
 
-from six import string_types
-
 from astropy.io import registry as io_registry
 from astropy.table import Table
 
@@ -98,7 +96,7 @@ def _update__doc__(data_class):
     fetch = data_class.fetch
 
     # if __doc__ isn't a string, bail-out now
-    if not isinstance(fetch.__doc__, string_types):
+    if not isinstance(fetch.__doc__, str):
         return
 
     # remove the old format list

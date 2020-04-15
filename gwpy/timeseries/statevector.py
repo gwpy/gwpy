@@ -30,8 +30,6 @@ statement of instrumental operation
 from functools import wraps
 from math import (ceil, log)
 
-from six.moves import range
-
 import numpy
 
 from astropy import units

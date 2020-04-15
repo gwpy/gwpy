@@ -19,8 +19,6 @@
 """Read events from ROOT trees into Tables
 """
 
-from six import string_types
-
 from ...io import registry
 from ...io.utils import identify_factory
 from ..filter import (OPERATORS, parse_column_filters, filter_table)
@@ -54,7 +52,7 @@ def table_from_root(source, treename=None, columns=None, **kwargs):
         kwargs['selection'] = ' && '.join(rootfilters)
 
     # pass file name (not path)
-    if not isinstance(source, string_types):
+    if not isinstance(source, str):
         source = source.name
 
     # find single tree (if only one tree present)

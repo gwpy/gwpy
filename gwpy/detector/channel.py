@@ -22,8 +22,7 @@
 import re
 from copy import copy
 from math import ceil
-
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from astropy import units
 from astropy.io import registry as io_registry

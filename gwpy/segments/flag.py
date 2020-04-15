@@ -35,13 +35,12 @@ import warnings
 from io import BytesIO
 from collections import OrderedDict
 from copy import (copy as shallowcopy, deepcopy)
+from functools import reduce
 from math import (floor, ceil)
+from queue import Queue
 from threading import Thread
-
-from six.moves import reduce
-from six.moves.urllib.error import (URLError, HTTPError)
-from six.moves.urllib.parse import urlparse
-from six.moves.queue import Queue
+from urllib.error import (URLError, HTTPError)
+from urllib.parse import urlparse
 
 from numpy import inf
 

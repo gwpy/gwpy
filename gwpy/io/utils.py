@@ -21,24 +21,16 @@
 
 import gzip
 import tempfile
-
-from six import string_types
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # build list of file-like types
-try:  # python < 3
-    FILE_LIKE = (
-        file, gzip.GzipFile,
-        tempfile._TemporaryFileWrapper,  # pylint: disable=protected-access
-    )
-except NameError:  # python >= 3
-    from io import IOBase
-    FILE_LIKE = (
-        IOBase, gzip.GzipFile,
-        tempfile._TemporaryFileWrapper,  # pylint: disable=protected-access
-    )
+from io import IOBase
+FILE_LIKE = (
+    IOBase, gzip.GzipFile,
+    tempfile._TemporaryFileWrapper,  # pylint: disable=protected-access
+)
 
 GZIP_SIGNATURE = b'\x1f\x8b\x08'
 
@@ -64,7 +56,7 @@ def identify_factory(*extensions):
         """Identify the given extensions in a file object/path
         """
         # pylint: disable=unused-argument
-        if (isinstance(filepath, string_types) and
+        if (isinstance(filepath, str) and
                 filepath.endswith(extensions)):
             return True
         return False
@@ -134,13 +126,13 @@ def file_list(flist):
         if the input `flist` cannot be interpreted as any of the above inputs
     """
     # open a cache file and return list of paths
-    if (isinstance(flist, string_types) and
+    if (isinstance(flist, str) and
             flist.endswith(('.cache', '.lcf', '.ffl'))):
         from .cache import read_cache
         return read_cache(flist)
 
     # separate comma-separate list of names
-    if isinstance(flist, string_types):
+    if isinstance(flist, str):
         return flist.split(',')
 
     # parse list of entries (of some format)
@@ -189,9 +181,9 @@ def file_path(fobj):
     >>> file_path("file:///home/user/test.txt")
     '/home/user/test.txt'
     """
-    if isinstance(fobj, string_types) and fobj.startswith("file:"):
+    if isinstance(fobj, str) and fobj.startswith("file:"):
         return urlparse(fobj).path
-    if isinstance(fobj, string_types):
+    if isinstance(fobj, str):
         return fobj
     if (isinstance(fobj, FILE_LIKE) and hasattr(fobj, "name")):
         return fobj.name

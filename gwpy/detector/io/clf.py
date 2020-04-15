@@ -66,10 +66,8 @@ For example,
 """
 
 import re
+import configparser
 from collections import OrderedDict
-
-from six import string_types
-from six.moves import configparser
 
 from numpy import inf
 
@@ -107,7 +105,7 @@ def read_channel_list_file(*source):
         if 'flow' in params or 'fhigh' in params:
             low = params.pop('flow', 0)
             high = params.pop('fhigh', inf)
-            if isinstance(high, string_types) and high.lower() == 'nyquist':
+            if isinstance(high, str) and high.lower() == 'nyquist':
                 high = inf
             frange = float(low), float(high)
         else:

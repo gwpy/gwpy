@@ -34,8 +34,6 @@ on a system.
 import importlib
 import warnings
 
-from six import string_types
-
 import numpy
 
 from astropy.io.registry import (get_reader, get_writer)
@@ -244,7 +242,7 @@ def register_gwf_api(library):
             gap = 'raise'
 
         # read cache file up-front
-        if (isinstance(source, string_types) and
+        if (isinstance(source, str) and
                 source.endswith(('.lcf', '.cache'))) or (
                     isinstance(source, io_cache.FILE_LIKE) and
                     source.name.endswith(('.lcf', '.cache'))):

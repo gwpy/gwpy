@@ -21,8 +21,7 @@
 
 import operator
 import warnings
-
-from six.moves import reduce
+from functools import reduce
 
 from numpy import ones as numpy_ones
 

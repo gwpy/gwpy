@@ -53,7 +53,6 @@ install_requires = [
     'numpy >= 1.12.0',
     'python-dateutil',
     'scipy >= 1.2.0',
-    'six >= 1.5',
     'tqdm >= 4.10.0',
 ]
 

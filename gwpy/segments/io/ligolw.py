@@ -20,8 +20,7 @@
 """
 
 import operator
-
-from six.moves import reduce
+from functools import reduce
 
 from astropy.io import registry as io_registry
 

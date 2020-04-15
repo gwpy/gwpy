@@ -23,9 +23,7 @@ This module requires lal >= 6.14.0
 
 import operator
 from collections import OrderedDict
-
-from six import string_types
-from six.moves import reduce
+from functools import reduce
 
 import numpy
 
@@ -192,7 +190,7 @@ def to_lal_unit(aunit):
     ValueError
         if LAL doesn't understand the base units for the input
     """
-    if isinstance(aunit, string_types):
+    if isinstance(aunit, str):
         aunit = units.Unit(aunit)
     aunit = aunit.decompose()
     lunit = lal.Unit()

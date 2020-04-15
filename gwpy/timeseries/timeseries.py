@@ -21,8 +21,6 @@
 
 import warnings
 
-from six.moves import range
-
 import numpy
 from numpy import fft as npfft
 from scipy import signal

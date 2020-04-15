@@ -19,7 +19,4 @@
 """Unit testing compatibility module
 """
 
-try:
-    from unittest import mock  # noqa
-except ImportError:  # python < 3
-    import mock  # noqa
+from unittest import mock  # noqa

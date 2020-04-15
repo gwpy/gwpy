@@ -27,8 +27,6 @@ import warnings
 from decimal import Decimal
 from numbers import Number
 
-from six import string_types
-
 from dateutil import parser as dateparser
 
 from astropy.units import Quantity
@@ -143,7 +141,7 @@ def to_gps(t, *args, **kwargs):
     """
     # -- convert input to Time, or something we can pass to LIGOTimeGPS
 
-    if isinstance(t, string_types):
+    if isinstance(t, str):
         try:  # if str represents a number, leave it for LIGOTimeGPS to handle
             float(t)
         except ValueError:  # str -> datetime.datetime
@@ -162,12 +160,8 @@ def to_gps(t, *args, **kwargs):
         t = t.to('second').value
 
     # Number/Decimal -> str
-    if isinstance(t, Decimal):
+    if isinstance(t, (Decimal, Number)):
         t = str(t)
-    if isinstance(t, Number):
-        # note, on python < 3, str(<float>) isn't very good, so we use repr
-        # for python > 3 we can just use str for both Decimal and Number
-        t = repr(t)
 
     # -- convert to LIGOTimeGPS
 

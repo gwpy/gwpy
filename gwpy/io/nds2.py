@@ -26,9 +26,7 @@ import os
 import re
 import warnings
 from collections import OrderedDict
-from functools import wraps
-
-from six.moves import reduce
+from functools import (reduce, wraps)
 
 from ..time import to_gps
 from ..utils.enum import NumpyTypeEnum
