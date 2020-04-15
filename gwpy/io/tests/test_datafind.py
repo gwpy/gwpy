@@ -38,8 +38,6 @@ from .. import datafind as io_datafind
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-OPEN = 'builtins.open'
-
 # -- mock the environment -----------------------------------------------------
 
 MOCK_ENV = {
@@ -127,7 +125,7 @@ class TestFflConnection(object):
             ('X', 'test2'): os.path.join(os.curdir, 'test2.ffl'),
         }
 
-    @mock.patch(OPEN, return_value=BytesIO(b"""
+    @mock.patch("builtins.open", return_value=BytesIO(b"""
 /path/to/X-TEST-0-1.gwf 0 1 0 0
 /path/to/X-TEST-1-1.gwf 1 1 0 0
 """.lstrip()))
@@ -173,7 +171,7 @@ class TestFflConnection(object):
         assert conn.find_types('X') == ['test']
         assert conn.find_types(match='test2') == ['test2']
 
-    @mock.patch(OPEN, return_value=BytesIO(b"""
+    @mock.patch("builtins.open", return_value=BytesIO(b"""
 /path/to/X-TEST-0-1.gwf 0 1 0 0
 /path/to/X-TEST-1-1.gwf 1 1 0 0
 /path/to/X-TEST-2-1.gwf 2 1 0 0
