@@ -26,7 +26,7 @@ if ! which conda 1> /dev/null; then
         # install conda
         [ "$(uname)" == "Darwin" ] && MC_OSNAME="MacOSX" || MC_OSNAME="Linux"
         MINICONDA="Miniconda${PYTHON_VERSION%%.*}-latest-${MC_OSNAME}-x86_64.sh"
-        curl https://repo.continuum.io/miniconda/${MINICONDA} -o miniconda.sh
+        curl -L https://repo.continuum.io/miniconda/${MINICONDA} -o miniconda.sh
         bash miniconda.sh -b -u -p ${HOME}/miniconda
     fi
     source ${HOME}/miniconda/etc/profile.d/conda.sh
