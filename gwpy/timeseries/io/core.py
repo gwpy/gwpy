@@ -61,25 +61,29 @@ def _join_factory(cls, gap, pad, start, end):
                 tsd = data.pop(0)
                 out.append(tsd, gap=gap, pad=pad)
                 del tsd
-            for key in out:
-                out[key] = _pad_series(
-                    out[key],
-                    pad,
-                    start,
-                    end,
-                )
+            if gap == "pad":
+                for key in out:
+                    out[key] = _pad_series(
+                        out[key],
+                        pad,
+                        start,
+                        end,
+                    )
             return out
     else:
         from .. import TimeSeriesBaseList
 
         def _join(arrays):
             list_ = TimeSeriesBaseList(*arrays)
-            return _pad_series(
-                list_.join(pad=pad, gap=gap),
-                pad,
-                start,
-                end,
-            )
+            joined = list_.join(pad=pad, gap=gap)
+            if gap == "pad":
+                return _pad_series(
+                    joined,
+                    pad,
+                    start,
+                    end,
+                )
+            return joined
     return _join
 
 
