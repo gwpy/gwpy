@@ -348,7 +348,13 @@ class TestTimeSeries(_TestTimeSeriesBase):
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['unit', 'name', 'channel', 'x0']})
 
-    def test_read_pad(self):
+    @pytest.mark.parametrize("pre, post", [
+        pytest.param(0, 0, id="none"),
+        pytest.param(0, 1, id="right"),
+        pytest.param(1, 0, id="left"),
+        pytest.param(1, 1, id="both"),
+    ])
+    def test_read_pad(self, pre, post):
         a = self.TEST_CLASS.read(
             utils.TEST_HDF5_FILE,
             "H1:LDAS-STRAIN",
@@ -357,12 +363,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
             utils.TEST_HDF5_FILE,
             "H1:LDAS-STRAIN",
             pad=0.,
-            start=a.span[0]-1,
-            end=a.span[1]+1,
+            start=a.span[0]-pre,
+            end=a.span[1]+post,
         )
+        pres = int(pre * a.sample_rate.value)
+        posts = int(post * a.sample_rate.value)
         utils.assert_quantity_sub_equal(
             a.pad(
-                (int(a.sample_rate.value), int(a.sample_rate.value)),
+                (pres, posts),
                 mode="constant",
                 constant_values=(0,),
             ),
