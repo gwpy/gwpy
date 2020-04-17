@@ -40,7 +40,7 @@ from . import (Plot, colorbar as gcbar)
 from .colors import format_norm
 from .gps import GPS_SCALES
 from .legend import HandlerLine2D
-from ..time import (LIGOTimeGPS, to_gps)
+from ..time import to_gps
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -133,12 +133,12 @@ class Axes(_Axes):
 
     def _fmt_xdata(self, x):
         if self.get_xscale() in GPS_SCALES:
-            return str(LIGOTimeGPS(x))
+            return str(to_gps(x))
         return self.xaxis.get_major_formatter().format_data_short(x)
 
     def _fmt_ydata(self, y):
         if self.get_yscale() in GPS_SCALES:
-            return str(LIGOTimeGPS(y))
+            return str(to_gps(y))
         return self.yaxis.get_major_formatter().format_data_short(y)
 
     set_xlim = xlim_as_gps(_Axes.set_xlim)

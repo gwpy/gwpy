@@ -31,6 +31,7 @@ import warnings
 import numpy
 
 from ...frequencyseries import FrequencySeries
+from ...time import to_gps
 from ..window import canonical_name
 from ._utils import scale_timeseries_unit
 from . import _registry as fft_registry
@@ -217,9 +218,14 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
 
     # generate output spectrum
     create = find_typed_function(timeseries.dtype, 'Create', 'FrequencySeries')
-    lalfs = create(timeseries.name, lal.LIGOTimeGPS(timeseries.epoch.gps), 0,
-                   1 / segmentlength, lal.StrainUnit,
-                   int(segmentlength // 2 + 1))
+    lalfs = create(
+        timeseries.name,
+        lal.LIGOTimeGPS(to_gps(timeseries.epoch.gps)),
+        0,
+        1 / segmentlength,
+        lal.StrainUnit,
+        int(segmentlength // 2 + 1),
+    )
 
     # find LAL method (e.g. median-mean -> lal.REAL8AverageSpectrumMedianMean)
     methodname = ''.join(map(str.title, re.split('[-_]', method)))
