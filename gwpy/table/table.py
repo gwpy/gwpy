@@ -799,13 +799,13 @@ class EventTable(Table):
             # Get index of the trigger with highest value in column rank
             # for each cluster
             maxidx = [s[numpy.argmax(param[s])] for s in AllClusterList]
-            # Get min tstart for each cluster
+            # Get min tstart for each cluster
             tstart_list = [numpy.min(self[s]['tstart'])
                            for s in AllClusterList]
-            # Get max tend for each cluster
+            # Get max tend for each cluster
             tend_list = [numpy.max(self[s]['tend']) for s in AllClusterList]
 
-            # Apply these value to the tile representing the cluster
+            # Apply these values to tile representing the cluster
             self['tstart'][maxidx] = tstart_list
             self['tend'][maxidx] = tend_list
 
