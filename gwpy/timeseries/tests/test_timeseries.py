@@ -21,6 +21,7 @@
 
 import os.path
 from itertools import (chain, product)
+from math import isnan
 from ssl import SSLError
 from urllib.error import URLError
 
@@ -290,6 +291,19 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=("channel", "x0"),
         )
 
+    @SKIP_FRAMECPP
+    def test_read_gwf_sample_error(self):
+        """Regression against bug where final sample would be missed
+        when reading too close to the end of the vector
+        """
+        ts = self.TEST_CLASS.read(
+            utils.TEST_GWF_FILE,
+            "H1:LDAS-STRAIN",
+            start=968654552,
+            end=968654553.0001,
+        )
+        assert not isnan(ts[-1].value)
+
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
     @pytest.mark.parametrize('channel', [
         None,
@@ -334,21 +348,32 @@ class TestTimeSeries(_TestTimeSeriesBase):
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['unit', 'name', 'channel', 'x0']})
 
-    def test_read_pad(self):
+    @pytest.mark.parametrize("pre, post", [
+        pytest.param(None, None, id="none"),
+        pytest.param(0, 0, id="zero"),
+        pytest.param(None, 1, id="right"),
+        pytest.param(1, None, id="left"),
+        pytest.param(1, 1, id="both"),
+    ])
+    def test_read_pad(self, pre, post):
         a = self.TEST_CLASS.read(
             utils.TEST_HDF5_FILE,
             "H1:LDAS-STRAIN",
         )
+        start = None if pre is None else a.span[0] - pre
+        end = None if post is None else a.span[1] + post
         b = self.TEST_CLASS.read(
             utils.TEST_HDF5_FILE,
             "H1:LDAS-STRAIN",
             pad=0.,
-            start=a.span[0]-1,
-            end=a.span[1]+1,
+            start=start,
+            end=end,
         )
+        pres = 0 if not pre else int(pre * a.sample_rate.value)
+        posts = 0 if not post else int(post * a.sample_rate.value)
         utils.assert_quantity_sub_equal(
             a.pad(
-                (int(a.sample_rate.value), int(a.sample_rate.value)),
+                (pres, posts),
                 mode="constant",
                 constant_values=(0,),
             ),
