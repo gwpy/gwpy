@@ -24,8 +24,6 @@ from functools import wraps
 from operator import attrgetter
 from math import ceil
 
-from six import string_types
-
 import numpy
 
 from gwosc.api import DEFAULT_URL as DEFAULT_GWOSC_URL
@@ -508,7 +506,7 @@ class EventTable(Table):
             bins = [(-numpy.inf, numpy.inf)]
         if operator == 'in' and not isinstance(bins[0], tuple):
             bins = [(bin_, bins[i+1]) for i, bin_ in enumerate(bins[:-1])]
-        elif isinstance(operator, string_types):
+        elif isinstance(operator, str):
             op_func = parse_operator(operator)
         else:
             op_func = operator

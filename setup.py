@@ -49,11 +49,10 @@ install_requires = [
     'h5py >= 1.3',
     'ligo-segments >= 1.0.0',
     'ligotimegps >= 1.2.1',
-    'matplotlib >= 1.2.0, != 2.1.0, != 2.1.1',
+    'matplotlib >= 3.0.0',
     'numpy >= 1.12.0',
     'python-dateutil',
     'scipy >= 1.2.0',
-    'six >= 1.5',
     'tqdm >= 4.10.0',
 ]
 
@@ -63,7 +62,6 @@ tests_require = [
     "freezegun >= 0.2.3",
     "pytest >= 3.3.0",
     "pytest-cov >= 2.4.0",
-    "sqlparse >= 0.2.0",
 ]
 
 # -- run setup ----------------------------------------------------------------

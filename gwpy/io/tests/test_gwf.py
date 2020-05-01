@@ -19,7 +19,7 @@
 """Unit tests for :mod:`gwpy.io.gwf`
 """
 
-from six.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 import pytest
 

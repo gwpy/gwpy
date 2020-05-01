@@ -20,11 +20,9 @@
 """
 
 import os
+from http.client import (HTTPConnection, HTTPException)
 from io import BytesIO
 from itertools import cycle
-
-import six
-from six.moves.http_client import (HTTPConnection, HTTPException)
 
 import pytest
 
@@ -36,10 +34,7 @@ from .. import datafind as io_datafind
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-if six.PY2:
-    OPEN = '__builtin__.open'
-else:
-    OPEN = 'builtins.open'
+OPEN = 'builtins.open'
 
 # -- mock the environment -----------------------------------------------------
 

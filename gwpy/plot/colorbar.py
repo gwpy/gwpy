@@ -21,7 +21,6 @@
 
 import warnings
 
-from matplotlib import __version__ as mpl_version
 from matplotlib.axes import SubplotBase
 from matplotlib.colors import LogNorm
 from matplotlib.legend import Legend
@@ -132,8 +131,7 @@ def _scale_height(value, ax):
 
 def make_axes_axesgrid(ax, **kwargs):
     kwargs.setdefault('location', 'right')
-    if mpl_version >= '1.3.0':
-        kwargs.setdefault('ticklocation', kwargs['location'])
+    kwargs.setdefault('ticklocation', kwargs['location'])
 
     fraction = kwargs.pop('fraction', 0.)
     try:

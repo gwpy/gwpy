@@ -19,13 +19,18 @@
 """Extend :mod:`astropy.table` with the `GravitySpyTable`
 """
 
-import os.path
+import json
+import os
+from urllib.error import HTTPError
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
-from six.moves.urllib.request import urlopen
+import numpy as np
+
+from astropy.utils.data import get_readable_fileobj
 
 from ..utils import mp as mp_utils
 from .table import EventTable
-import numpy as np
 
 __author__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
 __all__ = ['GravitySpyTable']
@@ -72,7 +77,6 @@ class GravitySpyTable(EventTable):
         -------
         Folder containing omega scans sorted by label
         """
-        import os
         # back to pandas
         try:
             images_db = self.to_pandas()
@@ -192,11 +196,6 @@ class GravitySpyTable(EventTable):
         an evaluation of the Euclidean distance of the input image
         to all other images in some Feature Space
         """
-        from astropy.utils.data import get_readable_fileobj
-        import json
-        from six.moves.urllib.error import HTTPError
-        from six.moves import urllib
-
         # Need to build the url call for the restful API
         base = 'https://gravityspytools.ciera.northwestern.edu' + \
             '/search/similarity_search_restful_API'
@@ -219,7 +218,7 @@ class GravitySpyTable(EventTable):
             'database': 'similarity_index_o3',
         }
 
-        search = urllib.parse.urlencode(parts)
+        search = urlencode(parts)
 
         url = '{}/?{}'.format(base, search)
 

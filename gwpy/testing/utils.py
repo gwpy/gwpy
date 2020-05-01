@@ -24,9 +24,7 @@ import tempfile
 from contextlib import contextmanager
 from distutils.version import LooseVersion
 from importlib import import_module
-
-from six import PY2
-from six.moves import zip_longest
+from itertools import zip_longest
 
 import pytest
 
@@ -311,14 +309,7 @@ def test_read_write(data, format,
     DataClass = type(data)
 
     with TemporaryFilename(suffix=extension) as fp:
-        try:
-            data.write(fp, *write_args, format=format, **write_kw)
-        except TypeError as e:
-            # ligolw is not python3-compatbile, so skip if it fails
-            if not PY2 and format == 'ligolw' and (
-                    str(e) == 'write() argument must be str, not bytes'):
-                pytest.xfail(str(e))
-            raise
+        data.write(fp, *write_args, format=format, **write_kw)
 
         # try again with automatic format identification
         if autoidentify:

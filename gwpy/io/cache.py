@@ -28,8 +28,6 @@ import warnings
 from collections import (namedtuple, OrderedDict)
 from pathlib import Path
 
-from six import string_types
-
 from ..time import LIGOTimeGPS
 from .utils import (FILE_LIKE, file_path)
 
@@ -239,7 +237,7 @@ def write_cache(cache, fobj, format=None):
         - ``'ffl'`` : write an FFL-format cache
     """
     # open file
-    if isinstance(fobj, string_types):
+    if isinstance(fobj, str):
         with open(fobj, 'w') as fobj2:
             return write_cache(cache, fobj2, format=format)
 
@@ -274,7 +272,7 @@ def is_cache(cache):
         `True` if the input object is a cache, or a file in LAL cache format,
         otherwise `False`
     """
-    if isinstance(cache, string_types + FILE_LIKE):
+    if isinstance(cache, (str,) + FILE_LIKE):
         try:
             return bool(len(read_cache(cache)))
         except (TypeError, ValueError, UnicodeDecodeError, ImportError):

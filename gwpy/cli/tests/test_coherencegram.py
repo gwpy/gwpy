@@ -20,7 +20,6 @@
 """
 
 from ... import cli
-from ...cli import cliproduct
 from .test_spectrogram import TestCliSpectrogram as _TestCliSpectrogram
 from .test_coherence import TestCliCoherence as _TestCliCoherence
 
@@ -31,11 +30,7 @@ class TestCliCoherencegram(_TestCliSpectrogram):
     TEST_ARGS = _TestCliCoherence.TEST_ARGS
 
     def test_finalize_arguments(self, prod):
-        from gwpy.cli.coherencegram import DEFAULT_CMAP as DEFAULT_COH_CMAP
-        if DEFAULT_COH_CMAP is None:
-            assert prod.args.cmap == cliproduct.DEFAULT_CMAP.name
-        else:
-            assert prod.args.cmap == DEFAULT_COH_CMAP.name
+        assert prod.args.cmap == "plasma"
         assert prod.args.color_scale == 'linear'
         assert prod.args.imin == 0.
         assert prod.args.imax == 1.

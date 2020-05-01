@@ -19,8 +19,6 @@
 """This module provides a spectral-variation histogram class
 """
 
-from six.moves import range
-
 import numpy
 
 from astropy.io import registry as io_registry

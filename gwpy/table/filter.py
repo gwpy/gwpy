@@ -20,13 +20,11 @@
 """
 
 import operator
-import token
 import re
-from tokenize import generate_tokens
+import token
 from collections import OrderedDict
-
-from six import string_types
-from six.moves import StringIO
+from io import StringIO
+from tokenize import generate_tokens
 
 import numpy
 
@@ -194,10 +192,10 @@ def parse_column_filters(*definitions):
 def _flatten(container):
     """Flatten arbitrary nested list of filters into a 1-D list
     """
-    if isinstance(container, string_types):
+    if isinstance(container, str):
         container = [container]
     for elem in container:
-        if isinstance(elem, string_types) or is_filter_tuple(elem):
+        if isinstance(elem, str) or is_filter_tuple(elem):
             yield elem
         else:
             for elem2 in _flatten(elem):
@@ -209,7 +207,7 @@ def is_filter_tuple(tup):
     """
     return isinstance(tup, (tuple, list)) and (
         len(tup) == 3 and
-        isinstance(tup[0], string_types) and
+        isinstance(tup[0], str) and
         callable(tup[1]))
 
 

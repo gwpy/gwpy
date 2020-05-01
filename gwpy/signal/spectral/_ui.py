@@ -24,8 +24,6 @@ so isn't really for direct user interaction.
 
 from functools import wraps
 
-from six import string_types
-
 import numpy
 
 from scipy.signal import (
@@ -178,7 +176,7 @@ def _normalize_overlap(overlap, window, nfft, samp, method='welch'):
     """
     if method == 'bartlett':
         return 0
-    if overlap is None and isinstance(window, string_types):
+    if overlap is None and isinstance(window, str):
         return recommended_overlap(window, nfft)
     if overlap is None:
         return 0
@@ -214,9 +212,9 @@ def _normalize_window(window, nfft, library, dtype):
     if library == '_lal':
         from ._lal import generate_window
         return generate_window(nfft, window=window, dtype=dtype)
-    if isinstance(window, string_types):
+    if isinstance(window, str):
         window = canonical_name(window)
-    if isinstance(window, string_types + (tuple,)):
+    if isinstance(window, (str, tuple)):
         return get_window(window, nfft)
     return window
 

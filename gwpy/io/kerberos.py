@@ -31,8 +31,6 @@ import subprocess
 import sys
 from collections import OrderedDict
 
-from six.moves import input
-
 from ..utils.shell import which
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

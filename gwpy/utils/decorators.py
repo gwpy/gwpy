@@ -99,9 +99,7 @@ def return_as(returntype):
         the desired return type of the decorated function
     """
     def decorator(func):
-        # @wraps(func) <- we can't use this as normal because it doesn't work
-        #                 on python < 3 for instance methods,
-        #                 see workaround below
+        @wraps(func)
         def wrapped(*args, **kwargs):
             result = func(*args, **kwargs)
             try:
@@ -112,10 +110,6 @@ def return_as(returntype):
                         func.__name__, returntype.__name__, str(exc)),
                 )
                 raise
-        try:
-            return wraps(func)(wrapped)
-        except AttributeError:  # python < 3.0.0
-            wrapped.__doc__ == func.__doc__
-            return wrapped
+        return wrapped
 
     return decorator

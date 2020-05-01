@@ -19,8 +19,7 @@
 """Custom default figure configuration
 """
 
-from matplotlib import (rcParams, rc_params, RcParams,
-                        __version__ as mpl_version)
+from matplotlib import (rcParams, rc_params, RcParams)
 
 from . import tex
 from ..utils.env import bool_env
@@ -31,7 +30,7 @@ MPL_RCPARAMS = rc_params()
 # record the LaTeX preamble
 try:
     PREAMBLE = rcParams.get('text.latex.preamble', []) + tex.MACROS
-except TypeError:
+except TypeError:  # matplotlib < 3.1.0
     PREAMBLE = rcParams.get('text.latex.preamble', '') + '\n'.join(tex.MACROS)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -49,6 +48,7 @@ GWPY_RCPARAMS = RcParams(**{
     # ticks
     'axes.formatter.limits': (-3, 4),
     'axes.formatter.use_mathtext': True,
+    'axes.labelpad': 5,
     # fonts
     'axes.titlesize': 'large',
     'axes.labelsize': 'large',
@@ -61,20 +61,11 @@ GWPY_RCPARAMS = RcParams(**{
     ] + rcParams['font.sans-serif'],
     'font.size': 12,
     # legend (revert to mpl 1.5 formatting in parts)
+    'legend.edgecolor': 'inherit',
     'legend.numpoints': 2,
     'legend.handlelength': 1,
     'legend.fancybox': False,
 })
-
-# set parameters only supported in matplotlib >= 1.5
-# https://matplotlib.org/1.5.1/users/whats_new.html#configuration-rcparams
-try:
-    GWPY_RCPARAMS.update({
-        'axes.labelpad': 5,
-        'legend.edgecolor': 'inherit',
-    })
-except KeyError:  # matplotlib < 1.5
-    pass
 
 # set latex options
 GWPY_TEX_RCPARAMS = RcParams(**{
@@ -87,13 +78,6 @@ GWPY_TEX_RCPARAMS = RcParams(**{
     # don't use mathtext for offset
     'axes.formatter.use_mathtext': False,
 })
-if mpl_version < '2.0':
-    GWPY_TEX_RCPARAMS['font.serif'] = ['Computer Modern']
-
-if mpl_version < '1.3':
-    # really old matplotlib stored font.family as a str, not a list
-    GWPY_RCPARAMS['font.family'] = GWPY_RCPARAMS['font.family'][0]
-    GWPY_TEX_RCPARAMS['font.family'] = GWPY_TEX_RCPARAMS['font.family'][0]
 
 
 def rc_params(usetex=None):
