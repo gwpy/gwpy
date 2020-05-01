@@ -768,6 +768,9 @@ class EventTable(Table):
         """
         # Use same algorithm as omicron
         if index == 'omicron':
+            if window <= 0.0:
+                raise ValueError('Window must be a positive value')
+
             # Sort table by tstart column
             self.sort('tstart')
 
@@ -778,7 +781,6 @@ class EventTable(Table):
             SingleClusterIdxList = []
             Cluster_Tend = self['tend'][0]
             N = len(self)
-
             # Loop over the triggers sorted by tstart column
             for i in range(N):
                 # Same cluster
@@ -792,12 +794,22 @@ class EventTable(Table):
                     SingleClusterIdxList = []
                     SingleClusterIdxList.append(i)
                     Cluster_Tend = self['tend'][i]
+
             # Append last cluster list of indexes
             AllClusterList.append(SingleClusterIdxList)
 
             # Get index of the trigger with highest value in column rank
             # for each cluster
             maxidx = [s[numpy.argmax(param[s])] for s in AllClusterList]
+            # Get min tstart for each cluster
+            tstart_list = [numpy.min(self[s]['tstart'])
+                           for s in AllClusterList]
+            # Get max tend for each cluster
+            tend_list = [numpy.max(self[s]['tend']) for s in AllClusterList]
+
+            # Apply these value to the tile representing the cluster
+            self['tstart'][maxidx] = tstart_list
+            self['tend'][maxidx] = tend_list
 
             # Construct a mask that returns the value of the trigger with
             # highest value in rank column
