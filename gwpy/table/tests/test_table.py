@@ -125,6 +125,8 @@ class TestTable(object):
                                [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
                          names=['amplitude', 'time'])
 
+    @classmethod
+    @pytest.fixture()
     def clustertable_omicron(cls):
         return cls.TABLE(data=[[15.09375, 15.09375, 18.708007, 18.708496,
                                 23.265625, 23.890625, 23.9375, 23.9375,
