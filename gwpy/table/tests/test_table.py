@@ -127,6 +127,22 @@ class TestTable(object):
                                [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
                          names=['amplitude', 'time'])
 
+    def clustertable_omicron(cls):
+        return cls.TABLE(data=[[15.09375, 15.09375, 18.708007, 18.708496, \
+                                23.265625, 23.890625, 23.9375, 23.9375, \
+                                23.90625, 23.90625],
+                               [6.08, 5.64, 3.13, 3.21, 8.93, 9.01, 6.38, \
+                                8.17, 7.23, 1.11],
+                               [5.92, 5.57, 5.18, 5.13, 5.10, 5.15, 5.44, \
+                                5.10, 5.66, 5.78],
+                               [15.0625, 15.0625, 18.707031, 18.708007, \
+                                23.25, 23.875, 23.875, 23.875, 23.875, \
+                                23.875, 23.875],
+                               [15.125, 15.125, 18.708985, 18.708985, \
+                                23.28125 ,23.90625, 24.0, 24.0, 23.9375, \
+                                23.9375]],
+                         names=['time', 'amplitude', 'snr', 'tstart', 'tend'])
+
     # -- test I/O -------------------------------
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
@@ -512,6 +528,36 @@ class TestEventTable(TestTable):
         with pytest.raises(ValueError) as exc:
             clustertable.cluster('time', 'amplitude', 0)
         assert str(exc.value) == 'Window must be a positive value'
+
+    def test_cluster_omicron(self, clustertable_omicron):
+        # check that only the tile with the highest snr is returned for
+        # each cluster, the original table is unchanged, and all points
+        # return their intended values
+        t = clustertable_omicron.cluster('omicron', 'snr', 0.1)
+        assert len(t) == 4
+        assert len(clustertable_omicron) == 10
+        assert all(t['time'] == [15.09375, 18.708007, 23.265625, 23.90625])
+        assert all(t['snr'] == [5.92, 5.18, 5.1, 5.78])
+        assert all(t['amplitude'] == [6.08, 3.13, 8.93, 1.11])
+        assert all(t['tstart'] == [15.0625, 18.707031, 23.25, 23.875])
+        assert all(t['tend'] == [15.125, 18.708985, 23.28125, 24.0])
+
+    def test_single_point_cluster_omicron(self, clustertable_omicron):
+        # check that a large cluster window returns at least one data point
+        t = clustertable_omicron.cluster('omicron', 'snr', 10)
+        assert len(t) == 1
+        assert all(t['time'] == [15.09375])
+        assert all(t['amplitude'] == [6.08])
+        assert all(t['snr'] == [5.92])
+        assert all(t['tstart'] == [15.0625])
+        assert all(t['tend'] == [24.0])
+
+    def test_cluster_omicron_window(self, clustertable_omicron):
+        # check that a non-positive window throws an appropriate ValueError
+        with pytest.raises(ValueError) as exc:
+            clustertable_omicron.cluster('omicron', 'snr', 0)
+        assert str(exc.value) == 'Window must be a positive value'
+
 
     # -- test I/O -------------------------------
 
