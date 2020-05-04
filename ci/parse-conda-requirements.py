@@ -13,10 +13,18 @@ import sys
 import tempfile
 from distutils.spawn import find_executable
 
-try:
-    from pip._internal import req as pip_req
-except ImportError:  # pip < 10.0.0
-    from pip import req as pip_req
+import pkg_resources
+
+
+def parse_requirements(file):
+    for line in file:
+        if line.startswith("-r "):
+            name = line[3:].rstrip()
+            with open(name, "r") as file2:
+                yield from parse_requirements(file2)
+        else:
+            yield from pkg_resources.parse_requirements(line)
+
 
 CONDA = find_executable("conda") or os.environ.get("CONDA_EXE", "conda")
 
@@ -32,14 +40,15 @@ parser.add_argument('-o', '--output', help='path of output file, '
 args = parser.parse_args()
 
 requirements = ["python={0.python_version}.*".format(args)]
-for item in pip_req.parse_requirements(args.filename, session='gwpyci'):
-    # if environment markers don't pass, skip
-    if item.markers and not item.markers.evaluate():
-        continue
-    # if requirement is a URL, skip
-    if item.original_link:
-        continue
-    requirements.append('{0.name}{0.req.specifier}'.format(item))
+with open(args.filename, "r") as reqf:
+    for item in parse_requirements(reqf):
+        # if environment markers don't pass, skip
+        if item.marker and not item.marker.evaluate():
+            continue
+        # if requirement is a URL, skip
+        if item.url:
+            continue
+        requirements.append('{0.name}{0.specifier}'.format(item))
 
 tmp = tempfile.mktemp()
 
