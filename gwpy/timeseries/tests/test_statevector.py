@@ -319,7 +319,7 @@ class TestStateVector(_TestTimeSeriesBase):
     def test_fetch_open_data(self, format):
         try:
             sv = self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, version=1)
+                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, version=3)
         except LOSC_FETCH_ERROR as e:  # pragma: no-cover
             pytest.skip(str(e))
         ref = StateVector(
