@@ -55,12 +55,14 @@ rm -f conda-reqs.txt  # clean up
 
 # install other conda packages that aren't represented in the requirements file
 conda install --name gwpyci --quiet --yes \
-    python-lal \
-    python-lalframe \
-    python-lalsimulation \
-    python-ldas-tools-framecpp \
-    python-nds2-client \
-    root_numpy
+    "python-lal" \
+    "python-lalframe" \
+    "python-lalsimulation" \
+    "python-ldas-tools-framecpp" \
+    "python-nds2-client" \
+    "root>=6.20" \
+    "root_numpy" \
+;
 
 # activate the environment
 . ${CONDA_PATH}/etc/profile.d/conda.sh
