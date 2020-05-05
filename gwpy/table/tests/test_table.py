@@ -527,6 +527,18 @@ class TestEventTable(TestTable):
         assert all(t['tstart'] == [15.0625, 18.707031, 23.25, 23.875])
         assert all(t['tend'] == [15.125, 18.708985, 23.28125, 24.0])
 
+    def test_cluster_omicron_comp(self, clustertable_omicron):
+        # comparison of the result usingfor the same table as above
+        # but not using omicron. Only the tend changes here.
+        t = clustertable_omicron.cluster('time', 'snr', 0.1)
+        assert len(t) == 4
+        assert len(clustertable_omicron) == 10
+        assert all(t['time'] == [15.09375, 18.708007, 23.265625, 23.90625])
+        assert all(t['snr'] == [5.92, 5.18, 5.1, 5.78])
+        assert all(t['amplitude'] == [6.08, 3.13, 8.93, 1.11])
+        assert all(t['tstart'] == [15.0625, 18.707031, 23.25, 23.875])
+        assert all(t['tend'] == [15.125, 18.708985, 23.28125, 23.9375])
+
     def test_single_point_cluster_omicron(self, clustertable_omicron):
         # check that a large cluster window returns at least one data point
         t = clustertable_omicron.cluster('omicron', 'snr', 10)
