@@ -1,4 +1,7 @@
-version: 2
+version: 2.1
+
+orbs:
+  slack: circleci/slack@3.4.2
 
 # -- templates --------------
 
@@ -38,6 +41,10 @@ aliases:
       store_artifacts:
         path: tests
 
+  - &slack_status
+      slack/status:
+        fail_only: true
+
   - &install
       run:
         name: Install tarball
@@ -53,10 +60,9 @@ aliases:
         - *install
         - *run-tests
         - *codecov
-        - store_test_results:
-            path: tests
-        - store_artifacts:
-            path: tests
+        - *store_test_results
+        - *store_test_artifacts
+        - *slack_status
 
   - &conda-build
       docker:
@@ -88,6 +94,7 @@ aliases:
               - "/opt/conda/pkgs"
         - *store_test_results
         - *store_test_artifacts
+        - *slack_status
 
 # -- jobs -------------------
 
@@ -110,6 +117,7 @@ jobs:
           paths:
             - gwpy-*.tar.*
             - gwpy-*-none-any.whl
+      - *slack_status
 
   flake8:
     docker:
@@ -132,6 +140,7 @@ jobs:
             python -m junit_conversor tests/flake8.txt tests/junit.xml
       - *store_test_results
       - *store_test_artifacts
+      - *slack_status
 
   # -- python ---------------
 
