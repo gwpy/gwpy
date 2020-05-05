@@ -15,6 +15,10 @@ from distutils.spawn import find_executable
 
 import pkg_resources
 
+CONDA_PACKAGE_MAP = {
+    "matplotlib": "matplotlib-base",
+}
+
 
 def parse_requirements(file):
     for line in file:
@@ -48,7 +52,8 @@ with open(args.filename, "r") as reqf:
         # if requirement is a URL, skip
         if item.url:
             continue
-        requirements.append('{0.name}{0.specifier}'.format(item))
+        name = CONDA_PACKAGE_MAP.get(item.name, item.name)
+        requirements.append('{}{}'.format(name, item.specifier))
 
 tmp = tempfile.mktemp()
 
