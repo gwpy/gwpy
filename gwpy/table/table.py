@@ -31,6 +31,8 @@ from gwosc.api import DEFAULT_URL as DEFAULT_GWOSC_URL
 from astropy.table import (Table, Column, vstack)
 from astropy.io import registry
 
+import copy
+
 from ..io.mp import read_multi as io_read_multi
 from ..time import gps_types
 from .filter import (filter_table, parse_operator)
@@ -767,7 +769,7 @@ class EventTable(Table):
             self.sort('tstart')
 
             # Initialise lists and Tend of the first cluster
-            AllClusterList = []
+            ClustersList = []
             SingleClusterIdxList = []
             Cluster_Tend = self['tend'][0]
             N = len(self)
@@ -780,31 +782,24 @@ class EventTable(Table):
                         Cluster_Tend = self['tend'][i]
                 # Start new cluster
                 else:
-                    AllClusterList.append(SingleClusterIdxList)
+                    ClustersList.append(SingleClusterIdxList)
                     SingleClusterIdxList = []
                     SingleClusterIdxList.append(i)
                     Cluster_Tend = self['tend'][i]
 
             # Append last cluster list of indexes
-            AllClusterList.append(SingleClusterIdxList)
+            ClustersList.append(SingleClusterIdxList)
 
             # Create ID for the cluster
-            cluster_id = numpy.arange(len(AllClusterList))
-
-            # Add the cluster ID to each tile
-            cluster_id_tile = []
-            for i, s in enumerate(AllClusterList):
-                cluster_id_tile.extend([cluster_id[i]] * len(s))
-
-            self['clusterID'] = cluster_id_tile
+            cluster_id = numpy.arange(len(ClustersList))
 
         else:
             if window <= 0.0:
                 raise ValueError('Window must be a positive value')
 
-            # Generate index and rank vectors that are ordered
-            orderidx = numpy.argsort(self[index])
-            col = self[index][orderidx]
+            # sort table by the grequired column
+            self.sort(index)
+            col = self[index]
 
             # Find all points where the index vector changes by less than
             # window and divide the resulting array into clusters of
@@ -816,34 +811,49 @@ class EventTable(Table):
 
             # Add end-points to each cluster and find the index of the maximum
             # point in each list
-            padded_sublists = [numpy.append(s, numpy.array([s[-1]+1]))
-                               for s in sublists]
+            ClustersList = [numpy.append(s, numpy.array([s[-1]+1]))
+                            for s in sublists]
             # Find triggers that are between two clusters
             # Happens when successive triggers do not fill the window
             # criteria. N triggers missing --> add N clusters
             missing_trigger = []
             missing_trigger_idx = []
-            for i in range(len(padded_sublists)-1):
-                if padded_sublists[i+1][0] - padded_sublists[i][-1] > 1:
+            for i in range(len(ClustersList)-1):
+                if ClustersList[i+1][0] - ClustersList[i][-1] > 1:
                     missing_trigger_idx.append(i+1)
                     missing_trigger.append(numpy.arange(
-                                             padded_sublists[i][-1]+1,
-                                             padded_sublists[i+1][0]))
+                                             ClustersList[i][-1]+1,
+                                             ClustersList[i+1][0]))
             # Insert them in the cluster list
             # Need to reverse the list, otherwise the list size update
             # is a problem
             for i in range(len(missing_trigger))[::-1]:
                 for j in range(len(missing_trigger[i])):
-                    padded_sublists.insert(missing_trigger_idx[i]+j,
-                                           numpy.atleast_1d(
+                    ClustersList.insert(missing_trigger_idx[i]+j,
+                                        numpy.atleast_1d(
                                                missing_trigger[i][j]))
-            # Create ID for the cluster
-            cluster_id = numpy.arange(len(padded_sublists))
-            # Add the cluster ID to each tile
-            cluster_id_tile = []
-            for i, s in enumerate(padded_sublists):
-                cluster_id_tile.extend([cluster_id[i]] * len(s))
-            self['clusterID'] = cluster_id_tile
+
+            # Check if there are some missing points at the beginning
+            # and end of this list
+            if ClustersList[0][0] != 0:
+                missing_trigger = numpy.arange(0, ClustersList[0][0])
+                for i in range(len(missing_trigger)):
+                    ClustersList.insert(i,
+                                        numpy.atleast_1d(missing_trigger[i]))
+            if ClustersList[-1][-1] != len(self):
+                missing_trigger = numpy.arange(ClustersList[-1][-1]+1,
+                                               len(self))
+                for i in range(len(missing_trigger)):
+                    ClustersList.insert(len(ClustersList)+i,
+                                        numpy.atleast_1d(missing_trigger[i]))
+
+        # Create ID for the cluster
+        cluster_id = numpy.arange(len(ClustersList))
+        # Add the cluster ID to each tile
+        cluster_id_tile = []
+        for i, s in enumerate(ClustersList):
+            cluster_id_tile.extend([cluster_id[i]] * len(s))
+        self['clusterID'] = cluster_id_tile
 
         return self
 
@@ -894,13 +904,19 @@ class EventTable(Table):
 
         # Perform the clustering, without rewriting the table, just
         # by appending a cluster ID to each trigger
-        self.clustering(index, window)
+        # a deepcopy is used here because of the 'tstart' and 'tend'
+        # columns are rewritten using the omicron option. Meaning
+        # that if the cluster() method is called an another time
+        # without reloading the EventTable, the Tstart and Tend
+        # are the updated ones, not the original ones for the trigger
+        # which represent a cluster.
+        triggers = copy.deepcopy(self.clustering(index, window))
 
         # Add a trigger index
-        self['idx'] = numpy.arange(len(self))
+        triggers['idx'] = numpy.arange(len(self))
 
         # store column to maximise over
-        param = self[rank]
+        param = triggers[rank]
 
         # Get index of the trigger with highest value in column rank
         # for each cluster
@@ -908,21 +924,22 @@ class EventTable(Table):
         maxidx = []
         tstart_list = []
         tend_list = []
-        for idx in self.group_by('clusterID').groups.keys:
-            mask = self['clusterID'] == idx[0]
-            maxidx.append(self[mask][numpy.argmax(param[mask])]['idx'])
-            tstart_list.append(numpy.min(self[mask]['tstart']))
-            tend_list.append(numpy.max(self[mask]['tend']))
+        for idx in triggers.group_by('clusterID').groups.keys:
+            mask = triggers['clusterID'] == idx[0]
+            maxidx.append(triggers[mask][numpy.argmax(param[mask])]['idx'])
+            if index == 'omicron':
+                tstart_list.append(numpy.min(triggers[mask]['tstart']))
+                tend_list.append(numpy.max(triggers[mask]['tend']))
 
         # Apply these values to tile representing the cluster, only for
         # the omicron method. Might need to use it as well for other method
         if index == 'omicron':
-            self['tstart'][maxidx] = tstart_list
-            self['tend'][maxidx] = tend_list
+            triggers['tstart'][maxidx] = tstart_list
+            triggers['tend'][maxidx] = tend_list
 
         # Construct a mask that returns the value of the trigger with
         # highest value in rank column
         mask = numpy.zeros_like(param, dtype=bool)
         mask[maxidx] = True
 
-        return self[mask]
+        return triggers[mask]
