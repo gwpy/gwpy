@@ -353,19 +353,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=("channel", "x0"),
         )
 
-    @SKIP_FRAMECPP
-    def test_read_gwf_sample_error(self):
-        """Regression against bug where final sample would be missed
-        when reading too close to the end of the vector
-        """
-        ts = self.TEST_CLASS.read(
-            utils.TEST_GWF_FILE,
-            "H1:LDAS-STRAIN",
-            start=968654552,
-            end=968654553.0001,
-        )
-        assert not isnan(ts[-1].value)
-
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
     @pytest.mark.parametrize('channel', [
         None,
