@@ -71,7 +71,7 @@ class LogFormatter(mticker.LogFormatterMathtext):
                 i, x in enumerate(values2)
             ]
         # otherwise use the matplotlib default
-        return super(LogFormatter, self).format_ticks(values)
+        return super().format_ticks(values)
 
     def _num_ticks(self):
         viewlim = self.axis.get_view_interval()
@@ -83,7 +83,7 @@ class LogFormatter(mticker.LogFormatterMathtext):
         ).size
 
     def set_locs(self, locs=None):
-        ret = super(LogFormatter, self).set_locs(locs=locs)
+        ret = super().set_locs(locs=locs)
 
         # if a single major tick, but matplotlib decided not to include
         # sub-ticks, then there is more than a decade on the axis, so
