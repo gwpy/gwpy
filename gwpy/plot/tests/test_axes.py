@@ -27,7 +27,7 @@ from matplotlib import rcParams
 from matplotlib.collections import PolyCollection
 from matplotlib.lines import Line2D
 
-from ...time import LIGOTimeGPS
+from ...time import to_gps
 from ...types import (Series, Array2D)
 from ...testing import utils
 from .. import Axes
@@ -241,7 +241,7 @@ class TestAxes(AxesTestBase):
 
     def test_fmt_data(self, ax):
         value = 1234567890.123
-        result = str(LIGOTimeGPS(value))
+        result = str(to_gps(value))
         assert ax.format_xdata(value) == '1.23457e+09 '
         ax.set_xscale('auto-gps')
         ax.set_yscale('auto-gps')

@@ -238,7 +238,7 @@ def create_fradcdata(series, frame_epoch=0,
         (1 / series.dx.to('s')).value
     )
     frdata.SetTimeOffset(
-        float(LIGOTimeGPS(series.x0.value) - LIGOTimeGPS(frame_epoch)),
+        float(to_gps(series.x0.value) - to_gps(frame_epoch)),
     )
     return frdata
 
@@ -322,7 +322,7 @@ def create_frprocdata(series, frame_epoch=0, comment=None,
         str(comment or series.name),
         _get_frprocdata_type(series, type),
         _get_frprocdata_subtype(series, subtype),
-        float(LIGOTimeGPS(series.x0.value) - LIGOTimeGPS(frame_epoch)),
+        float(to_gps(series.x0.value) - to_gps(frame_epoch)),
         trange,
         fshift,
         phase,
@@ -373,7 +373,7 @@ def create_frsimdata(series, frame_epoch=0, comment=None, fshift=0, phase=0):
         _series_name(series),
         str(comment or series.name),
         (1 / series.dx.to('s')).value,
-        float(LIGOTimeGPS(series.x0.value) - LIGOTimeGPS(frame_epoch)),
+        float(to_gps(series.x0.value) - to_gps(frame_epoch)),
         fshift,
         phase,
     )

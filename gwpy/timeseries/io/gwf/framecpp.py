@@ -31,7 +31,7 @@ from ....io import gwf as io_gwf
 from ....io import _framecpp as io_framecpp
 from ....io.utils import file_list
 from ....segments import Segment
-from ....time import LIGOTimeGPS
+from ....time import (LIGOTimeGPS, to_gps)
 from ... import TimeSeries
 from ...core import _dynamic_scaled
 
@@ -491,8 +491,8 @@ def write(tsdict, outfile,
     # set frame header metadata
     if not start or not end:
         starts, ends = zip(*(ts.span for ts in tsdict.values()))
-        start = LIGOTimeGPS(start or min(starts))
-        end = LIGOTimeGPS(end or max(ends))
+        start = to_gps(start or min(starts))
+        end = to_gps(end or max(ends))
     duration = end - start
     ifos = {ts.channel.ifo for ts in tsdict.values() if
             ts.channel and ts.channel.ifo and
