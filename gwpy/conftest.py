@@ -26,10 +26,10 @@ import numpy
 from matplotlib import (use, rcParams)
 
 # force Agg for all tests
-use('agg', warn=False, force=True)  # noqa
+use('agg', warn=False, force=True)
 
 # register custom fixtures for all test modules
-from .testing.fixtures import *  # noqa: F401,F403
+from .testing.fixtures import *  # noqa: E402,F401,F403
 
 # set random seed to 1 for reproducability
 numpy.random.seed(1)
