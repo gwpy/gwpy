@@ -23,6 +23,7 @@ import os.path
 from itertools import (chain, product)
 from math import isnan
 from ssl import SSLError
+from unittest import mock
 from urllib.error import URLError
 
 import pytest
@@ -40,7 +41,6 @@ from ...signal import filter_design
 from ...table import EventTable
 from ...spectrogram import Spectrogram
 from ...testing import (mocks, utils)
-from ...testing.compat import mock
 from ...time import LIGOTimeGPS
 from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)

@@ -23,12 +23,12 @@ import os
 from http.client import (HTTPConnection, HTTPException)
 from io import BytesIO
 from itertools import cycle
+from unittest import mock
 
 import pytest
 
 import gwdatafind
 
-from ...testing.compat import mock
 from ...testing.utils import (
     TEST_GWF_FILE,
     TemporaryFilename,

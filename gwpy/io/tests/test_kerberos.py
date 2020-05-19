@@ -21,10 +21,10 @@
 
 import os
 import subprocess
+from unittest import mock
 
 import pytest
 
-from ...testing.compat import mock
 from .. import kerberos as io_kerberos
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

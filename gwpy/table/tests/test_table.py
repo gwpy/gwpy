@@ -25,6 +25,7 @@ import shutil
 import tempfile
 from io import BytesIO
 from ssl import SSLError
+from unittest import mock
 from urllib.error import URLError
 
 import pytest
@@ -42,7 +43,6 @@ from ...frequencyseries import FrequencySeries
 from ...io import ligolw as io_ligolw
 from ...segments import (Segment, SegmentList)
 from ...testing import utils
-from ...testing.compat import mock
 from ...time import LIGOTimeGPS
 from ...timeseries import (TimeSeries, TimeSeriesDict)
 from .. import (Table, EventTable, filters)
