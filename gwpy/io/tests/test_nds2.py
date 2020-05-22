@@ -20,13 +20,13 @@
 """
 
 import os
+from unittest import mock
 
 import pytest
 
 from ...detector import Channel
 from ...segments import (Segment, SegmentList)
 from ...testing import mocks
-from ...testing.compat import mock
 from ...testing.utils import skip_missing_dependency
 from ...utils.tests.test_enum import TestNumpyTypeEnum as _TestNumpyTypeEnum
 from .. import nds2 as io_nds2
@@ -173,9 +173,9 @@ def test_connect(connector, host, port, callport):
     """
     io_nds2.connect(host, port=port)
     if callport is None:
-        assert connector.called_with(host)
+        connector.assert_called_once_with(host)
     else:
-        assert connector.called_with(host, callport)
+        connector.assert_called_once_with(host, callport)
 
 
 @skip_missing_dependency('nds2')
@@ -184,7 +184,7 @@ def test_auth_connect(connect):
     """Test `gwpy.io.nds2.auth_connect`
     """
     io_nds2.auth_connect('host', 'port')
-    assert connect.called_with('host', 'port')
+    connect.assert_called_once_with('host', 'port')
 
 
 @skip_missing_dependency('nds2')
@@ -202,9 +202,9 @@ def test_auth_connect_kinit(connect, kinit):
     """
     with pytest.warns(io_nds2.NDSWarning):
         assert io_nds2.auth_connect('host', 'port')
-    assert kinit.called_with()
+    kinit.assert_called_with()
     assert connect.call_count == 2
-    assert connect.called_with('host', 'port')
+    connect.assert_called_with('host', 'port')
 
 
 @skip_missing_dependency('nds2')
@@ -215,8 +215,7 @@ def test_auth_connect_error(connect):
     with pytest.raises(RuntimeError) as exc:
         io_nds2.auth_connect('host', 'port')
     assert str(exc.value) == 'Anything else'
-    assert connect.call_count == 1
-    assert connect.called_with('host', 'port')
+    connect.assert_called_once_with("host", "port")
 
 
 @mock.patch('gwpy.io.nds2.auth_connect', return_value=1)
@@ -233,7 +232,7 @@ def test_open_connection(auth_connect):
     # call function and check that `connection` was injected
     assert new_func(0, host='test') == (0, 1)
     # check that auth_connect was called with the right arguments
-    assert auth_connect.called_with('test', None)
+    auth_connect.assert_called_once_with('test', None)
 
 
 @skip_missing_dependency('nds2')
@@ -243,18 +242,19 @@ def test_find_channels(connection):
     """
     # set up connection.find_channels
     chan = mocks.nds2_channel('X1:test', 16, 'm')
-    conn = connection.return_value
+    conn = mock.MagicMock()
+    connection.return_value = conn
     conn.find_channels.return_value = [chan]
 
     # call function and check result
     assert io_nds2.find_channels(['X1:test'], host='test.nds2') == [chan]
 
     # check callouts in find_channels
-    assert connection.called_with('test.nds2', None)
-    assert conn.set_epoch.called_with('All')
+    connection.assert_called_once_with('test.nds2')
+    conn.set_epoch.assert_any_call('ALL')
 
     # check callouts in _find_channels
-    assert conn.find_channels.called_with(
+    conn.find_channels.assert_called_once_with(
         'X1:test',
         io_nds2.Nds2ChannelType.any(),
         io_nds2.Nds2DataType.any(),
@@ -264,7 +264,7 @@ def test_find_channels(connection):
     conn.get_protocol.return_value = 1
     io_nds2.find_channels(['X1:test,m-trend'], host='test.nds2',
                           sample_rate=16, dtype=float)
-    assert conn.find_channels.called_with(
+    conn.find_channels.assert_called_with(
         'X1:test,m-trend',
         io_nds2.Nds2ChannelType.MTREND.value,  # m-trend
         io_nds2.Nds2DataType.FLOAT64.value,  # float
@@ -294,7 +294,8 @@ def test_get_availability(auth_connect, _):
     """Test `gwpy.io.nds2.get_availability`
     """
     # setup mocks
-    conn = auth_connect.return_value
+    conn = mock.MagicMock()
+    auth_connect.return_value = conn
     conn.get_availability.return_value = [
         mocks.nds2_availability('X1:test', [(0, 1), (2, 3)]),
     ]
@@ -305,8 +306,14 @@ def test_get_availability(auth_connect, _):
     }
 
     # check callouts
-    assert conn.set_epoch.called_with(0, 1)
-    assert conn.get_availability.called_with(['X1:test'])
+    conn.set_epoch.assert_has_calls([
+        mock.call(0, 1),
+        mock.call(
+            conn.current_epoch().gps_start,
+            conn.current_epoch().gps_stop,
+        ),
+    ])
+    conn.get_availability.assert_called_once_with(['X1:test'])
 
 
 @pytest.mark.parametrize('start, end, out', [

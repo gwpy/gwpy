@@ -21,6 +21,7 @@
 
 import pickle
 import warnings
+from unittest import mock
 
 import pytest
 
@@ -31,7 +32,6 @@ from astropy.time import Time
 
 from ...detector import Channel
 from ...testing import utils
-from ...testing.compat import mock
 from ...time import LIGOTimeGPS
 from .. import Array
 

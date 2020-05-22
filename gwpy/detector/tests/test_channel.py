@@ -19,6 +19,8 @@
 """Unit test for detector module
 """
 
+from unittest import mock
+
 import pytest
 
 import numpy
@@ -27,7 +29,6 @@ from astropy import units
 
 from ...segments import SegmentListDict
 from ...testing import (utils, mocks)
-from ...testing.compat import mock
 from .. import (Channel, ChannelList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

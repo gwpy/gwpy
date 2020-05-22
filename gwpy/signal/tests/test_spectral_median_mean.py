@@ -55,7 +55,7 @@ def test_median_mean(lal_func, pycbc_func):
         pass
     else:
         assert "pycbc_median_mean" in record[-1].message.args[0]
-        assert pycbc_func.called_with(1, 2, 3)
+        pycbc_func.assert_called_once_with(1, 2, 3, avg_method="median-mean")
 
     # second call goes to lal
     with pytest.deprecated_call() as record:
@@ -66,7 +66,14 @@ def test_median_mean(lal_func, pycbc_func):
         pass
     else:
         assert "lal_median_mean" in record[-1].message.args[0]
-        assert lal_func.called_with(1, 2, 3)
+        lal_func.assert_called_once_with(
+            1,
+            2,
+            noverlap=3,
+            method='median-mean',
+            window=None,
+            plan=None,
+        )
 
     # third call errors
     with pytest.deprecated_call(), pytest.raises(KeyError):

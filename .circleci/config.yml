@@ -135,11 +135,6 @@ jobs:
 
   # -- python ---------------
 
-  python:3.5:
-    <<: *python-build
-    docker:
-      - image: python:3.5
-
   python:3.6:
     <<: *python-build
     docker:
@@ -176,9 +171,6 @@ workflows:
       - flake8
 
       # basic tests with minimal dependencies
-      - python:3.5:
-          requires:
-            - sdist
       - python:3.6:
           requires:
             - sdist

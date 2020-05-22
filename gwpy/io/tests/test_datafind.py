@@ -23,12 +23,12 @@ import os
 from http.client import (HTTPConnection, HTTPException)
 from io import BytesIO
 from itertools import cycle
+from unittest import mock
 
 import pytest
 
 import gwdatafind
 
-from ...testing.compat import mock
 from ...testing.utils import (
     TEST_GWF_FILE,
     TemporaryFilename,
@@ -139,11 +139,11 @@ class TestFflConnection(object):
             '/path/to/X-TEST-0-1.gwf',
             '/path/to/X-TEST-1-1.gwf'
         ]
-        assert mopen.call_count == 1
+        mopen.assert_called_once()
 
         # check that calling the same again is a no-op
         conn._read_ffl_cache('X', 'test')
-        assert mopen.call_count == 1
+        mopen.assert_called_once()
 
     def test_read_last_line(self, _):
         with TemporaryFilename() as tmp:
@@ -204,9 +204,9 @@ class TestFflConnection(object):
     def test_find_latest(self, mwalk, msitetag, mreadlast):
         conn = self.TEST_CLASS()
         assert conn.find_latest('X', 'test') == ['/path/to/file.gwf']
-        assert mreadlast.call_count == 1
+        mreadlast.assert_called_once()
         assert conn.find_latest('X', 'test') == ['/path/to/file.gwf']
-        assert mreadlast.call_count == 1  # doesn't call again
+        mreadlast.assert_called_once()  # doesn't call again
 
         # check exceptions or warnings get raised as designed
         with pytest.raises(RuntimeError):
@@ -220,16 +220,19 @@ class TestFflConnection(object):
 # -- tests --------------------------------------------------------------------
 
 @mock.patch.dict("os.environ", MOCK_ENV)
-@mock.patch("gwdatafind.ui.connect", return_value="connection")
+@mock.patch("gwdatafind.connect", return_value="connection")
 def test_with_connection(connect):
+    # mock out the function, and wrap it
     func = mock.MagicMock()
-    # https://stackoverflow.com/questions/22204660/python-mock-wrapsf-problems
-    func.__name__ = "func"
     wrapped_func = io_datafind.with_connection(func)
 
+    # call it
     wrapped_func(1, host="host")
-    assert func.called_with(1, connection="connection")
-    assert connect.called_with(host="host")
+
+    # check that connect() was called once
+    connect.assert_called_once_with(host="host", port=None)
+    # and that the function was called once with that connection
+    func.assert_called_once_with(1, connection="connection", host="host")
 
 
 @mock.patch.dict("os.environ", MOCK_ENV)

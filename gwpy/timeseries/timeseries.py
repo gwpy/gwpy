@@ -19,6 +19,7 @@
 """Array with metadata
 """
 
+import math
 import warnings
 
 import numpy
@@ -916,8 +917,7 @@ class TimeSeries(TimeSeriesBase):
         if isinstance(rate, units.Quantity):
             rate = rate.value
         factor = (self.sample_rate.value / rate)
-        # NOTE: use math.isclose when python >= 3.5
-        if numpy.isclose(factor, 1., rtol=1e-09, atol=0.):
+        if math.isclose(factor, 1., rel_tol=1e-09, abs_tol=0.):
             warnings.warn(
                 "resample() rate matches current sample_rate ({}), returning "
                 "input data unmodified; please double-check your "
