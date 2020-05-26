@@ -105,12 +105,12 @@ def _mask_column(col):
 def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
     catalog = fetch_catalog_json(catalog, host=host)
     data = catalog["events"]
-   
-    firstdata=next(iter(data))
+
+    firstdata = next(iter(data))
     parameters = list(data[firstdata])
-   
+
     unitlist = {k: v for k, v in data[firstdata].items() if k.endswith('unit')}
-    parameters = [ x for x in parameters if 'unit' not in x ]       
+    parameters = [x for x in parameters if 'unit' not in x]
 
     # unpack the catalogue data into a dict of columns
     names = ["name"] + parameters
@@ -134,7 +134,7 @@ def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
         },
         masked=True,
     )
-    
+
     # add column metadata
     for name in parameters:
         tab[name].mask = mask[name]
@@ -142,10 +142,11 @@ def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
         try:
             unit = _parse_unit(unitlist[name+'_unit'])
             tab[name].unit = unit
-        except: 
+        except:
             pass
 
     # add an index on the event name
     tab.add_index('name')
 
     return tab
+    

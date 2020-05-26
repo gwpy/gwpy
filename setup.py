@@ -45,7 +45,7 @@ install_requires = [
     'astropy >= 3.0.0',
     'dqsegdb2',
     'gwdatafind',
-    'gwosc >= 0.4.0',
+    'gwosc >= 0.5.3',
     'h5py >= 1.3',
     'ligo-segments >= 1.0.0',
     'ligotimegps >= 1.2.1',
