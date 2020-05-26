@@ -55,7 +55,7 @@ GWpy has the following strict requirements:
    |h5py|_             ``>=1.3``
    |ligo-segments|_    ``>=1.0.0``
    |ligotimegps|_      ``>=1.2.1``
-   |matplotlib|_       ``!=2.1.0,!=2.1.1,>=1.2.0``
+   |matplotlib|_       ``>=3.1.0``
    |numpy|_            ``>=1.12.0``
    |dateutil|_
    |scipy|_            ``>=1.2.0``

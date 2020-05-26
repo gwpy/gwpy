@@ -19,54 +19,60 @@
 """Tests for `gwpy.plot.log`
 """
 
+try:
+    from unittest import mock
+except ImportError:  # python < 3
+    import mock
+
 import pytest
 
-from matplotlib import (pyplot, rc_context)
+from matplotlib import rc_context
 
 from .. import log as plot_log
 
 
-@pytest.mark.parametrize('in_, out, texout', [
-    (0., r'$\mathdefault{0}$', '$0$'),
-    (0.1, r'$\mathdefault{0.1}$', '$0.1$'),
-    (1e-5, r'$\mathdefault{10^{-5}}$', r'$10^{-5}$'),
-    (1e5, r'$\mathdefault{10^{5}}$', r'$10^{5}$'),
-])
-def test_log_formatter_mathtext(in_, out, texout):
-    formatter = plot_log.GWpyLogFormatterMathtext()
-    with rc_context(rc={'text.usetex': False}):
-        assert formatter(in_) == out
-    with rc_context(rc={'text.usetex': True}):
-        assert formatter(in_) == texout
+class TestLogFormatter(object):
+    TEST_CLASS = plot_log.LogFormatter
 
+    @classmethod
+    @pytest.fixture
+    def formatter(cls):
+        with mock.patch(
+            "gwpy.plot.log.LogFormatter._num_ticks",
+            return_value=2,
+        ):
+            yield cls.TEST_CLASS()
 
-@pytest.mark.parametrize('lim, in_, out', [
-    ((1, 11), 5, ''),
-    ((1, 9), 5, r'$\mathdefault{5}$'),
-])
-def test_minor_log_formatter_mathtext(lim, in_, out):
-    with rc_context(rc={'text.usetex': False}):
-        fig = pyplot.figure()
-        ax = fig.gca(yscale='log')
-        ax.set_ylim(*lim)
-        formatter = ax.yaxis.get_minor_formatter()
-        assert isinstance(formatter, plot_log.MinorLogFormatterMathtext)
-        assert formatter(in_) == out
-        pyplot.close(fig)
+    @pytest.mark.parametrize('x, fmt, result, texresult', [
+        pytest.param(0., None, r'$\mathdefault{0}$', '$0$', id="0"),
+        pytest.param(1, None, r'$\mathdefault{10^{0}}$', r'$10^{0}$',
+                     id="fmt=None"),
+        pytest.param(1, "%s", r'$\mathdefault{1}$', r'$1$', id="fmt=%s"),
+    ])
+    def test_call(self, formatter, x, fmt, result, texresult):
+        with rc_context(rc={'text.usetex': False}):
+            assert formatter(x, fmt=fmt) == result
+        with rc_context(rc={'text.usetex': True}):
+            assert formatter(x, fmt=fmt) == texresult
 
-
-@pytest.mark.parametrize('lim, in_, out', [
-    ((1, 50), 5, ''),
-    ((1, 50), 10, r'$\mathdefault{10}$'),
-    ((2, 50), 5, r'$\mathdefault{5}$'),
-    ((2, 50), 10, r'$\mathdefault{10}$'),
-])
-def test_combined_log_formatter_mathtext(lim, in_, out):
-    with rc_context(rc={'text.usetex': False}):
-        fig = pyplot.figure()
-        ax = fig.gca(yscale='log')
-        ax.set_ylim(*lim)
-        ax.yaxis.set_major_formatter(plot_log.CombinedLogFormatterMathtext())
-        formatter = ax.yaxis.get_major_formatter()
-        assert formatter(in_) == out
-        pyplot.close(fig)
+    @mock.patch(  # we don't need this function for this test
+        "gwpy.plot.log.LogFormatter.set_locs",
+        mock.MagicMock(),
+    )
+    @pytest.mark.parametrize("values, result", [
+        # normal output
+        pytest.param(
+            [1e-1, 1e2, 1e5, 1e8],
+            [plot_log._math(x) for x in
+             ("10^{-1}", "10^{2}", "10^{5}", "10^{8}")],
+            id="mpl",
+        ),
+        # custom output
+        pytest.param(
+            [1e-1, 1e0, 1e1, 1e2],
+            [plot_log._math(x) for x in ("0.1", "1", "10", "100")],
+            id="gwpy",
+        ),
+    ])
+    def test_format_ticks(self, formatter, values, result):
+        assert formatter.format_ticks(values) == result
