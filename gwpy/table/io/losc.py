@@ -18,7 +18,6 @@
 
 """Fetch and parse an event catalog from GWOSC.
 """
-import json
 import numbers
 from collections import OrderedDict
 
