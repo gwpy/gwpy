@@ -27,7 +27,6 @@ from astropy import constants
 from astropy import units
 
 from gwosc.api import DEFAULT_URL as DEFAULT_GWOSC_URL
-from gwosc.catalog import download as download_catalog
 from gwosc.api import fetch_catalog_json
 
 from .. import EventTable

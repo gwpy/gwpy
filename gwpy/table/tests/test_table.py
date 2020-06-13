@@ -30,7 +30,6 @@ from urllib.error import URLError
 import pytest
 
 from numpy import (random, isclose, dtype, asarray, all)
-from numpy.ma.core import MaskedConstant
 
 import h5py
 
