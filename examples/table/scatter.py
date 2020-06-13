@@ -33,13 +33,19 @@ __currentmodule__ = 'gwpy.table'
 from gwpy.table import EventTable
 events = EventTable.fetch_open_data(
     "GWTC-1-confident",
-    columns=("mass_1_source", "mass_2_source", "chirp_mass_source", "luminosity_distance"),
+    columns=(
+        "mass_1_source", "mass_2_source",
+        "chirp_mass_source", "luminosity_distance"
+    ),
 )
 
 # We can now make a scatter plot by specifying the x- and y-axis columns,
 # and (optionally) the colour:
 
-plot = events.scatter("mass_1_source", "mass_2_source", color="chirp_mass_source")
+plot = events.scatter(
+    "mass_1_source", "mass_2_source",
+    color="chirp_mass_source"
+)
 plot.colorbar(label="Chirp_mass [{}]".format(r"M$_{\odot}$"))
 plot.show()
 
@@ -47,7 +53,10 @@ plot.show()
 # distance.  First we have to build the total mass (``'mtotal'``) column
 # from the component masses:
 
-events.add_column(events["mass_1_source"] + events["mass_2_source"], name="mtotal")
+events.add_column(
+    events["mass_1_source"] + events["mass_2_source"],
+    name="mtotal"
+)
 
 # and now can make a new scatter plot:
 

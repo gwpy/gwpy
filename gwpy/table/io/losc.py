@@ -137,14 +137,11 @@ def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
     for name in parameters:
         tab[name].mask = mask[name]
         tab[name].description = name
-        try:
+        if (name+'_unit') in unitlist:
             unit = _parse_unit(unitlist[name+'_unit'])
             tab[name].unit = unit
-        except:
-            pass
 
     # add an index on the event name
     tab.add_index('name')
 
     return tab
-    

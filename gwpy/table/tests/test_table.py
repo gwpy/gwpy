@@ -741,7 +741,11 @@ class TestEventTable(TestTable):
         except (URLError, SSLError) as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         assert len(table)
-        assert {"mass_1_source", "luminosity_distance", "chi_eff"}.intersection(table.colnames)
+        assert {
+            "mass_1_source",
+            "luminosity_distance",
+            "chi_eff"
+        }.intersection(table.colnames)
         # check unit parsing worked
         assert table["luminosity_distance"].unit == "Mpc"
 
@@ -750,9 +754,16 @@ class TestEventTable(TestTable):
             table = self.TABLE.fetch_open_data(
                 "GWTC-1-confident",
                 selection="mass_1_source < 5",
-                columns=["name","mass_1_source","mass_2_source", "luminosity_distance"])
+                columns=[
+                    "name", "mass_1_source",
+                    "mass_2_source", "luminosity_distance"
+                ]
+            )
         except (URLError, SSLError) as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         assert len(table) == 1
         assert table[0]["name"] == "GW170817_R1"
-        assert set(table.colnames) == {"name","mass_1_source","mass_2_source", "luminosity_distance"}
+        assert set(table.colnames) == {
+            "name", "mass_1_source",
+            "mass_2_source", "luminosity_distance"
+        }
