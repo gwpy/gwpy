@@ -41,6 +41,9 @@
 
 .. -- Extra software ----------------------------
 
+.. |framel| replace:: `framel`
+.. _framel: http://lappweb.in2p3.fr/virgo/FrameL/
+
 .. |LDAStools.frameCPP| replace:: `LDAStools.frameCPP`
 .. _LDAStools.frameCPP: https://ldas-jobs.ligo.caltech.edu/~emaros/share/doc/ldas-tools/framecpp/html/
 
