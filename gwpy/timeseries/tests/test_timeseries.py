@@ -44,15 +44,31 @@ from ...testing import (mocks, utils)
 from ...time import LIGOTimeGPS
 from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
-from ..io.gwf import APIS as GWF_APIS
+from ..io.gwf import get_default_gwf_api
 from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
 
 SKIP_FRAMECPP = utils.skip_missing_dependency('LDAStools.frameCPP')
+SKIP_FRAMEL = utils.skip_missing_dependency('framel')
 SKIP_LAL = utils.skip_missing_dependency('lal')
 SKIP_LALFRAME = utils.skip_missing_dependency('lalframe')
 SKIP_PYCBC_PSD = utils.skip_missing_dependency('pycbc.psd')
+
+try:
+    get_default_gwf_api()
+except ImportError:
+    HAVE_GWF_API = False
+else:
+    HAVE_GWF_API = True
+SKIP_GWF_API = pytest.mark.skipif(not HAVE_GWF_API, reason="no GWF API")
+
+GWF_APIS = [
+    pytest.param(None, marks=SKIP_GWF_API),
+    pytest.param('lalframe', marks=SKIP_LALFRAME),
+    pytest.param('framecpp', marks=SKIP_FRAMECPP),
+    pytest.param('framel', marks=SKIP_FRAMEL),
+]
 
 FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C02'
 FIND_FRAMETYPE = 'L1_HOFT_C02'
@@ -135,11 +151,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['name', 'channel', 'unit']})
 
-    @pytest.mark.parametrize('api', [
-        None,
-        pytest.param('lalframe', marks=SKIP_LALFRAME),
-        pytest.param('framecpp', marks=SKIP_FRAMECPP),
-    ])
+    @pytest.mark.parametrize('api', GWF_APIS)
     def test_read_write_gwf(self, api):
         array = self.create(name='TEST')
 
@@ -159,9 +171,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
             pytest.skip(str(e))
 
         # test read keyword arguments
-        suffix = '-%d-%d.gwf' % (array.t0.value, array.duration.value)
-        with utils.TemporaryFilename(prefix='GWpy-', suffix=suffix) as tmp:
-            array.write(tmp)
+        with utils.TemporaryFilename() as tmp:
+            array.write(tmp, format=fmt)
 
             def read_(**kwargs):
                 return type(array).read(tmp, array.name, format=fmt,
@@ -180,31 +191,72 @@ class TestTimeSeries(_TestTimeSeriesBase):
             utils.assert_quantity_sub_equal(t, array.crop(end=end),
                                             exclude=['channel'])
 
+    @pytest.mark.parametrize('api', GWF_APIS)
+    def test_read_write_gwf_deprecated_kwargs(self, api):
+        fmt = "gwf" if api is None else "gwf." + api
+        array = self.create(name='TEST')
+        with utils.TemporaryFilename() as tmp:
+            array.write(tmp, format=fmt)
+
             # test dtype - DEPRECATED
             with pytest.deprecated_call():
-                t = read_(dtype='float32')
+                t = self.TEST_CLASS.read(
+                    tmp,
+                    array.name,
+                    format=fmt,
+                    dtype='float32',
+                )
             assert t.dtype is numpy.dtype('float32')
             with pytest.deprecated_call():
-                t = read_(dtype={array.name: 'float64'})
+                t = self.TEST_CLASS.read(
+                    tmp,
+                    array.name,
+                    format=fmt,
+                    dtype={array.name: 'float64'},
+                )
             assert t.dtype is numpy.dtype('float64')
 
-            # check errors
-            with pytest.raises((ValueError, RuntimeError)):
-                read_(start=array.span[1])
-            with pytest.raises((ValueError, RuntimeError)):
-                read_(end=array.span[0]-1)
+    @pytest.mark.parametrize('api', GWF_APIS)
+    def test_read_write_gwf_gps_errors(self, api):
+        fmt = "gwf" if api is None else "gwf." + api
+        array = self.create(name='TEST')
+        with utils.TemporaryFilename() as tmp:
+            array.write(tmp, format=fmt)
 
-            # check reading from multiple files
-            a2 = self.create(name='TEST', t0=array.span[1], dt=array.dx)
-            suffix = '-%d-%d.gwf' % (a2.t0.value, a2.duration.value)
-            with utils.TemporaryFilename(prefix='GWpy-',
-                                         suffix=suffix) as tmp2:
-                a2.write(tmp2)
-                cache = [tmp, tmp2]
-                comb = type(array).read(cache, 'TEST', format=fmt, nproc=2)
-                utils.assert_quantity_sub_equal(
-                    comb, array.append(a2, inplace=False),
-                    exclude=['channel'])
+            # check that reading past the end of the array fails
+            with pytest.raises((ValueError, RuntimeError)):
+                self.TEST_CLASS.read(
+                    tmp,
+                    array.name,
+                    format=fmt,
+                    start=array.span[1],
+                )
+
+            # check that reading before the start of the array also fails
+            with pytest.raises((ValueError, RuntimeError)):
+                self.TEST_CLASS.read(
+                    tmp,
+                    array.name,
+                    format=fmt,
+                    end=array.span[0]-1,
+                )
+
+    @pytest.mark.parametrize('api', GWF_APIS)
+    def test_read_write_gwf_multiple(self, api):
+        fmt = "gwf" if api is None else "gwf." + api
+        a1 = self.create(name='TEST')
+        a2 = self.create(name='TEST', t0=a1.span[1], dt=a1.dx)
+
+        with utils.TemporaryFilename() as tmp1, \
+                utils.TemporaryFilename() as tmp2:
+            a1.write(tmp1, format=fmt)
+            a2.write(tmp2, format=fmt)
+            cache = [tmp1, tmp2]
+
+            comb = self.TEST_CLASS.read(cache, 'TEST', format=fmt, nproc=2)
+            utils.assert_quantity_sub_equal(
+                comb, a1.append(a2, inplace=False),
+                exclude=['channel'])
 
     @pytest.mark.parametrize('api', [
         pytest.param('framecpp', marks=SKIP_FRAMECPP),
@@ -246,11 +298,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
             )
         utils.assert_quantity_sub_equal(data, data2)
 
-    @SKIP_FRAMECPP
-    @SKIP_LALFRAME
+    @SKIP_FRAMECPP  # we need framecpp to extract frdata types
     @pytest.mark.parametrize("ctype", ("adc", "proc", "sim", None))
-    @pytest.mark.parametrize("format_", GWF_APIS)
-    def test_write_gwf_type(self, losc, format_, ctype):
+    @pytest.mark.parametrize("api", GWF_APIS)
+    def test_write_gwf_type(self, losc, api, ctype):
         from ...io.gwf import get_channel_type
 
         # on debian, python=3, python-ldas-tools-framecpp < 2.6.9,
@@ -258,7 +309,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         import platform
         import sys
         if (
-            format_ == "framecpp" and
+            api == "framecpp" and
             ctype == "sim" and
             sys.version_info[0] >= 3 and
             "debian" in platform.platform()
@@ -268,17 +319,17 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 "python-ldas-tools-framecpp < 2.6.9 is broken"
             )
 
-        gwfformat = "gwf.{}".format(format_)
+        fmt = "gwf" if api is None else "gwf." + api
         expected_ctype = ctype if ctype else "proc"
 
         with utils.TemporaryFilename(suffix=".gwf") as tmp:
-            losc.write(tmp, type=ctype, format=gwfformat)
+            losc.write(tmp, type=ctype, format=fmt)
             assert get_channel_type(losc.name, tmp) == expected_ctype
             try:
-                new = type(losc).read(tmp, losc.name, format=gwfformat)
+                new = type(losc).read(tmp, losc.name, format=fmt)
             except OverflowError:
                 # python-ldas-tools-framecpp < 2.6.9
-                if format_ == "framecpp" and ctype == "sim":
+                if api == "framecpp" and ctype == "sim":
                     pytest.xfail(
                         "reading Sim data with "
                         "python-ldas-tools-framecpp < 2.6.9 is broken"
@@ -1207,7 +1258,7 @@ class TestTimeSeriesDict(_TestTimeSeriesBaseDict):
     TEST_CLASS = TimeSeriesDict
     ENTRY_CLASS = TimeSeries
 
-    @SKIP_FRAMECPP
+    @SKIP_FRAMEL
     def test_read_write_gwf(self, instance):
         with utils.TemporaryFilename(suffix='.gwf') as tmp:
             instance.write(tmp)
