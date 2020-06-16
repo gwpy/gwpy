@@ -55,6 +55,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 # --- through this list, using whichever one imports correctly first
 APIS = [
     'framecpp',
+    'framel',
     'lalframe',
 ]
 
@@ -313,8 +314,7 @@ def register_gwf_api(library):
             start=None,
             end=None,
             type=None,
-            name='gwpy',
-            run=0,
+            **kwargs,
     ):
         """Write a `TimeSeriesDict` to disk in GWF format
 
@@ -354,8 +354,7 @@ def register_gwf_api(library):
             start=start,
             end=end,
             type=type,
-            name=name,
-            run=run,
+            **kwargs,
         )
 
     def write_timeseries(series, *args, **kwargs):
