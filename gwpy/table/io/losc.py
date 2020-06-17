@@ -108,7 +108,7 @@ def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
     parameters = list(data[firstdata])
 
     unitlist = {k: v for k, v in data[firstdata].items() if k.endswith('unit')}
-    parameters = [x for x in parameters if 'unit' not in x]
+    parameters = [x for x in parameters if not x.endswith('unit')]
 
     # unpack the catalogue data into a dict of columns
     names = ["name"] + parameters
