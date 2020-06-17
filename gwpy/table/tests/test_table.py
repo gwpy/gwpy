@@ -755,8 +755,10 @@ class TestEventTable(TestTable):
                 "GWTC-1-confident",
                 selection="mass_1_source < 5",
                 columns=[
-                    "name", "mass_1_source",
-                    "mass_2_source", "luminosity_distance"
+                    "name",
+                    "mass_1_source",
+                    "mass_2_source",
+                    "luminosity_distance"
                 ]
             )
         except (URLError, SSLError) as exc:  # pragma: no-cover
