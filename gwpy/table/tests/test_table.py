@@ -766,6 +766,8 @@ class TestEventTable(TestTable):
         assert len(table) == 1
         assert table[0]["name"] == "GW170817_R1"
         assert set(table.colnames) == {
-            "name", "mass_1_source",
-            "mass_2_source", "luminosity_distance"
+            "name",
+            "mass_1_source",
+            "mass_2_source",
+            "luminosity_distance"
         }
