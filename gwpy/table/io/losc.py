@@ -104,11 +104,13 @@ def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
     catalog = fetch_catalog_json(catalog, host=host)
     data = catalog["events"]
 
-    firstdata = next(iter(data))
-    parameters = list(data[firstdata])
-
-    unitlist = {k: v for k, v in data[firstdata].items() if k.endswith('unit')}
+    parameters = set(key for event in data.values() for key in event)
     parameters = [x for x in parameters if not x.endswith('unit')]
+
+    unitlist = {}
+    for event in data.values():
+        dictpartial = {k: v for k, v in event.items() if k.endswith('unit')}
+        unitlist.update(dictpartial)
 
     # unpack the catalogue data into a dict of columns
     names = ["name"] + parameters
