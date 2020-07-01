@@ -31,9 +31,12 @@ __currentmodule__ = 'gwpy.table'
 from gwpy.table import EventTable
 events = EventTable.fetch_open_data(
     "GWTC-1-confident",
-    columns=("mass1", "mass2"),
+    columns=("mass_1_source", "mass_2_source"),
 )
-events.add_column(events["mass1"] + events["mass2"], name="mtotal")
+events.add_column(
+    events["mass_1_source"] + events["mass_2_source"],
+    name="mtotal"
+)
 
 # and can generate a new `~gwpy.plot.Plot` using the
 # :meth:`~EventTable.hist` method:

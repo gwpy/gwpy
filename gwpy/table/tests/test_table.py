@@ -31,7 +31,6 @@ from urllib.error import URLError
 import pytest
 
 from numpy import (random, isclose, dtype, asarray, all)
-from numpy.ma.core import MaskedConstant
 
 import h5py
 
@@ -742,21 +741,33 @@ class TestEventTable(TestTable):
         except (URLError, SSLError) as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         assert len(table)
-        assert {"L_peak", "distance", "mass1"}.intersection(table.colnames)
+        assert {
+            "mass_1_source",
+            "luminosity_distance",
+            "chi_eff"
+        }.intersection(table.colnames)
         # check unit parsing worked
-        assert table["distance"].unit == "Mpc"
-        # check that masking worked (needs table to be sorted)
-        gw170818 = table.loc["GW170818"]
-        assert isinstance(gw170818["snr_pycbc"], MaskedConstant)
+        assert table["luminosity_distance"].unit == "Mpc"
 
     def test_fetch_open_data_kwargs(self):
         try:
             table = self.TABLE.fetch_open_data(
                 "GWTC-1-confident",
-                selection="mass1 < 5",
-                columns=["name", "mass1", "mass2", "distance"])
+                selection="mass_1_source < 5",
+                columns=[
+                    "name",
+                    "mass_1_source",
+                    "mass_2_source",
+                    "luminosity_distance"
+                ]
+            )
         except (URLError, SSLError) as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         assert len(table) == 1
-        assert table[0]["name"] == "GW170817"
-        assert set(table.colnames) == {"name", "mass1", "mass2", "distance"}
+        assert table[0]["name"] == "GW170817_R1"
+        assert set(table.colnames) == {
+            "name",
+            "mass_1_source",
+            "mass_2_source",
+            "luminosity_distance"
+        }
