@@ -36,8 +36,9 @@ from scipy import signal
 from astropy import units
 
 from ...frequencyseries import (FrequencySeries, SpectralVariance)
-from ...segments import Segment
+from ...segments import (Segment, SegmentList, DataQualityFlag)
 from ...signal import filter_design
+from ...signal.window import planck
 from ...table import EventTable
 from ...spectrogram import Spectrogram
 from ...testing import (mocks, utils)
@@ -72,6 +73,16 @@ GWF_APIS = [
 
 FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C02'
 FIND_FRAMETYPE = 'L1_HOFT_C02'
+
+LIVETIME = DataQualityFlag(
+    name='X1:TEST-FLAG:1',
+    active=SegmentList([
+        Segment(0, 32),
+        Segment(34, 34.5),
+    ]),
+    known=SegmentList([Segment(0, 64)]),
+    isgood=True,
+)
 
 LOSC_IFO = 'L1'
 LOSC_GW150914 = 1126259462
@@ -929,6 +940,30 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_rms(self, losc):
         rms = losc.rms(1.)
         assert rms.sample_rate == 1 * units.Hz
+
+    @mock.patch('gwpy.segments.DataQualityFlag.query',
+                return_value=LIVETIME)
+    def test_mask(self, dqflag):
+        # craft a timeseries of ones that can be easily tested against
+        # a few interesting corner cases
+        data = TimeSeries(numpy.ones(8192), sample_rate=128)
+        masked = data.mask(flag='X1:TEST-FLAG:1')
+
+        # create objects to test against
+        window = planck(128, nleft=64, nright=64)
+        times = (data.t0 + numpy.arange(data.size) * data.dt).value
+        (live, ) = numpy.nonzero([t in LIVETIME.active for t in times])
+        (dead, ) = numpy.nonzero([t not in LIVETIME.active for t in times])
+
+        # verify the mask is correct
+        assert data.is_compatible(masked)
+        assert live.size + dead.size == data.size
+        assert numpy.all(numpy.isfinite(masked.value[live]))
+        assert numpy.all(numpy.isnan(masked.value[dead]))
+        utils.assert_allclose(masked.value[:4032], numpy.ones(4032))
+        utils.assert_allclose(masked.value[4032:4096], window[-64:])
+        utils.assert_allclose(masked.value[4352:4416],
+                              window[:64] * window[-64:])
 
     def test_demodulate(self):
         # create a timeseries that is simply one loud sinusoidal oscillation

@@ -28,7 +28,7 @@ from scipy import signal
 
 from astropy import units
 
-from ..segments import Segment
+from ..segments import (Segment, SegmentList, DataQualityFlag)
 from ..signal import (filter_design, qtransform, spectral)
 from ..signal.window import (recommended_overlap, planck)
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
@@ -1303,6 +1303,104 @@ class TimeSeries(TimeSeriesBase):
         return self.__class__(data, channel=self.channel, t0=self.t0,
                               name=name, sample_rate=(1/float(stride)))
 
+    def mask(self, deadtime=None, flag=None, query_open_data=False,
+             const=numpy.nan, tpad=0.5, **kwargs):
+        """Mask away portions of this `TimeSeries` that fall within a given
+        list of time segments
+
+        Parameters
+        ----------
+        deadtime : `SegmentList`, optional
+            a list of time segments defining the deadtime (i.e., masked
+            portions) of the output, will supersede `flag` if given
+
+        flag : `str`, optional
+            the name of a data-quality flag for which to query, required if
+            `deadtime` is not given
+
+        query_open_data : `bool`, optional
+            if `True`, will query for publicly released data-quality segments
+            through the Gravitational-wave Open Science Center (GWOSC),
+            default: `False`
+
+        const : `float`, optional
+            constant value with which to mask deadtime data,
+            default: `~numpy.nan`
+
+        tpad : `float`, optional
+            length of time (in seconds) over which to taper off data at
+            mask segment boundaries, default: 0.5 seconds
+
+        **kwargs : `dict`, optional
+            additional keyword arguments to
+            `~gwpy.segments.DataQualityFlag.query` or
+            `~gwpy.segments.DataQualityFlag.fetch_open_data`,
+            see "Notes" below
+
+        Returns
+        -------
+        out : `TimeSeries`
+            the masked version of this `TimeSeries`
+
+        Notes
+        -----
+        If `tpad` is nonzero, the Planck-taper window is used to smoothly
+        ramp data down to zero over a timescale `tpad` approaching every
+        segment boundary in `deadtime`. However, this does not apply to
+        the left or right bounds of the original `TimeSeries`.
+
+        The `deadtime` segment list will always be coalesced and restricted to
+        the limits of `self.span`. In particular, when querying a data-quality
+        flag, this means the `start` and `end` arguments to
+        `~gwpy.segments.DataQualityFlag.query` will effectively be reset and
+        therefore need not be given.
+
+        If `flag` is interpreted positively, i.e. if `flag` being active
+        corresponds to a "good" state, then its complement in `self.span`
+        will be used to define the deadtime for masking.
+
+        See also
+        --------
+        gwpy.segments.DataQualityFlag.query
+            for the method to query segments of a given data-quality flag
+        gwpy.segments.DataQualityFlag.fetch_open_data
+            for the method to query data-quality flags from the GWOSC database
+        gwpy.signal.window.planck
+            for the generic Planck-taper window
+        """
+        query_method = (DataQualityFlag.fetch_open_data if query_open_data
+                        else DataQualityFlag.query)
+        (tstart, tend) = self.span
+        span = SegmentList([self.span])
+        sample = self.sample_rate.to('Hz').value
+        npad = int(tpad * sample)
+        out = self.copy()
+        # query the requested data-quality flag
+        if deadtime is None:
+            start = kwargs.pop('start', tstart)
+            end = kwargs.pop('end', tend)
+            dqflag = query_method(
+                flag, start=start, end=end, **kwargs)
+            deadtime = (~dqflag.active if dqflag.isgood
+                        else dqflag.active)
+        # identify timestamps and mask out
+        deadtime = (deadtime & span).coalesce()
+        timestamps = tstart + numpy.arange(self.size) / sample
+        (masked, ) = numpy.nonzero([t in deadtime for t in timestamps])
+        out.value[masked] = const
+        # taper off at segment boundaries, being careful not to taper
+        # at either edge of the original TimeSeries, and to cut off
+        # the taper window in segments that are too short
+        for seg in (span - deadtime):
+            k = int((seg[0] - tstart) * sample)
+            N = int(abs(seg) * sample)
+            nhalf = min(npad, N)
+            window = planck(2*npad, nleft=(int(k != 0) * npad),
+                            nright=(int(k + N != self.size) * npad))
+            out[k:k+nhalf] *= window[:nhalf]
+            out[k+N-nhalf:k+N] *= window[-nhalf:]
+        return out
+
     def demodulate(self, f, stride=1, exp=False, deg=True):
         """Compute the average magnitude and phase of this `TimeSeries`
         once per stride at a given frequency
@@ -1668,10 +1766,12 @@ class TimeSeries(TimeSeriesBase):
         Parameters
         ----------
         tzero : `int`, optional
-            half-width time duration in which the time series is set to zero
+            half-width time duration (seconds) in which the timeseries is
+            set to zero
 
         tpad : `int`, optional
-            half-width time duration in which the Planck window is tapered
+            half-width time duration (seconds) in which the Planck window
+            is tapered
 
         whiten : `bool`, optional
             if True, data will be whitened before gating points are discovered,
@@ -1682,7 +1782,7 @@ class TimeSeries(TimeSeriesBase):
             will be placed
 
         cluster_window : `float`, optional
-            time duration over which gating points will be clustered
+            time duration (seconds) over which gating points will be clustered
 
         **whiten_kwargs
             other keyword arguments that will be passed to the
@@ -1719,36 +1819,28 @@ class TimeSeries(TimeSeriesBase):
         >>> ax.set_xlim(1135148661, 1135148681)
         >>> ax.legend()
         >>> overlay.show()
+
+        See also
+        --------
+        TimeSeries.mask
+            for the method that masks out unwanted data
+        TimeSeries.whiten
+            for the whitening filter used to identify gating points
         """
         from scipy.signal import find_peaks
         # Find points to gate based on a threshold
+        sample = self.sample_rate.to('Hz').value
         data = self.whiten(**whiten_kwargs) if whiten else self
-        window_samples = cluster_window * data.sample_rate.value
+        window_samples = cluster_window * sample
         gates = find_peaks(abs(data.value), height=threshold,
                            distance=window_samples)[0]
-        out = self.copy()
-
-        # Iterate over list of indices to gate and apply each one
-        nzero = int(abs(tzero) * self.sample_rate.value)
-        npad = int(abs(tpad) * self.sample_rate.value)
-        half = nzero + npad
-        ntotal = 2 * half
-        for gate in gates:
-            # Set the boundaries for windowed data in the original time series
-            left_idx = max(0, gate - half)
-            right_idx = min(gate + half, len(self.value) - 1)
-
-            # Choose which part of the window will replace the data
-            # This must be done explicitly for edge cases where a window
-            # overlaps index 0 or the end of the time series
-            left_idx_window = half - (gate - left_idx)
-            right_idx_window = half + (right_idx - gate)
-
-            window = 1 - planck(ntotal, nleft=npad, nright=npad)
-            window = window[left_idx_window:right_idx_window]
-            out[left_idx:right_idx] *= window
-
-        return out
+        # represent gates as time segments
+        deadtime = SegmentList([Segment(
+            self.t0.value + (k / sample) - tzero,
+            self.t0.value + (k / sample) + tzero,
+        ) for k in gates]).coalesce()
+        # return the self-gated timeseries
+        return self.mask(deadtime=deadtime, const=0, tpad=tpad)
 
     def convolve(self, fir, window='hanning'):
         """Convolve this `TimeSeries` with an FIR filter using the
