@@ -26,7 +26,10 @@ except ImportError:  # python < 3
 
 import pytest
 
-from matplotlib import rc_context
+from matplotlib import (
+    __version__ as mpl_version,
+    rc_context,
+)
 
 from .. import log as plot_log
 
@@ -44,10 +47,27 @@ class TestLogFormatter(object):
             yield cls.TEST_CLASS()
 
     @pytest.mark.parametrize('x, fmt, result, texresult', [
-        pytest.param(0., None, r'$\mathdefault{0}$', '$0$', id="0"),
-        pytest.param(1, None, r'$\mathdefault{10^{0}}$', r'$10^{0}$',
-                     id="fmt=None"),
-        pytest.param(1, "%s", r'$\mathdefault{1}$', r'$1$', id="fmt=%s"),
+        pytest.param(
+            0.,
+            None,
+            r'$\mathdefault{0}$',
+            '$0$',
+            id="0",
+        ),
+        pytest.param(
+            1,
+            None,
+            r'$\mathdefault{10^{0}}$',
+            r'$\mathdefault{10^{0}}$' if mpl_version > "3.2.1" else "$10^{0}$",
+            id="fmt=None",
+        ),
+        pytest.param(
+            1,
+            "%s",
+            r'$\mathdefault{1}$',
+            r'$1$',
+            id="fmt=%s",
+        ),
     ])
     def test_call(self, formatter, x, fmt, result, texresult):
         with rc_context(rc={'text.usetex': False}):
