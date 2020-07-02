@@ -21,7 +21,6 @@
 
 import os.path
 from itertools import (chain, product)
-from math import isnan
 from ssl import SSLError
 from unittest import mock
 from urllib.error import URLError
