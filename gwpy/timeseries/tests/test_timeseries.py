@@ -21,7 +21,6 @@
 
 import os.path
 from itertools import (chain, product)
-from math import isnan
 from ssl import SSLError
 from unittest import mock
 from urllib.error import URLError
@@ -353,19 +352,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=("channel", "x0"),
         )
 
-    @SKIP_FRAMECPP
-    def test_read_gwf_sample_error(self):
-        """Regression against bug where final sample would be missed
-        when reading too close to the end of the vector
-        """
-        ts = self.TEST_CLASS.read(
-            utils.TEST_GWF_FILE,
-            "H1:LDAS-STRAIN",
-            start=968654552,
-            end=968654553.0001,
-        )
-        assert not isnan(ts[-1].value)
-
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
     @pytest.mark.parametrize('channel', [
         None,
@@ -441,6 +427,24 @@ class TestTimeSeries(_TestTimeSeriesBase):
             ),
             b,
         )
+
+    def test_read_pad_raise(self):
+        """Check that `TimeSeries.read` with `gap='raise'` actually
+        raises appropriately.
+
+        [regression: https://github.com/gwpy/gwpy/issues/1211]
+        """
+        from gwpy.io.cache import file_segment
+        span = file_segment(utils.TEST_HDF5_FILE)
+        with pytest.raises(ValueError):
+            self.TEST_CLASS.read(
+                utils.TEST_HDF5_FILE,
+                "H1:LDAS-STRAIN",
+                pad=0.,
+                start=span[0],
+                end=span[1]+1.,
+                gap="raise",
+            )
 
     @utils.skip_missing_dependency('nds2')
     def test_from_nds2_buffer_dynamic_scaled(self):
