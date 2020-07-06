@@ -34,7 +34,7 @@ from ..spectrogram import Spectrogram
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
-DEFAULT_FFT_METHOD = "welch"
+DEFAULT_FFT_METHOD = None
 
 
 def _get_spectrogram(hoft, **kwargs):
@@ -347,7 +347,7 @@ def range_timeseries(hoft, stride=None, fftlength=None, overlap=None,
         formats
 
     method : `str`, optional
-        FFT-averaging method, see
+        FFT-averaging method, defaults to Welch's method, see
         :meth:`~gwpy.timeseries.TimeSeries.spectrogram` for
         more details
 
@@ -427,7 +427,7 @@ def range_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
         formats
 
     method : `str`, optional
-        FFT-averaging method, see
+        FFT-averaging method, defaults to Welch's method, see
         :meth:`~gwpy.timeseries.TimeSeries.spectrogram` for
         more details
 

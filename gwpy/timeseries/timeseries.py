@@ -36,7 +36,7 @@ from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-DEFAULT_FFT_METHOD = "welch"
+DEFAULT_FFT_METHOD = None
 
 
 # -- utilities ----------------------------------------------------------------
@@ -272,7 +272,8 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method, see *Notes* for more details
+            FFT-averaging method (default: ``'welch'``),
+            see *Notes* for more details
 
         **kwargs
             other keyword arguments are passed to the underlying
@@ -318,7 +319,8 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method, see *Notes* for more details
+            FFT-averaging method (default: ``'welch'``),
+            see *Notes* for more details
 
         Returns
         -------
@@ -407,7 +409,8 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method, see *Notes* for more details
+            FFT-averaging method (default: ``'welch'``),
+            see *Notes* for more details
 
         nproc : `int`
             number of CPUs to use in parallel processing of FFTs
@@ -564,7 +567,8 @@ class TimeSeries(TimeSeriesBase):
             number of seconds in single FFT
 
         method : `str`, optional
-            FFT-averaging method, see *Notes* for more details
+            FFT-averaging method (default: ``'welch'``),
+            see *Notes* for more details
 
         overlap : `float`, optional
             number of seconds of overlap between FFTs, defaults to the
@@ -1675,7 +1679,7 @@ class TimeSeries(TimeSeriesBase):
             recommended overlap for the given window (if given), or 0
 
         method : `str`, optional
-            FFT-averaging method
+            FFT-averaging method (default: ``'welch'``)
 
         window : `str`, `numpy.ndarray`, optional
             window function to apply to timeseries prior to FFT,
