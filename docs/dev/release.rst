@@ -29,7 +29,7 @@ Step-by-step
 
    .. code-block:: bash
 
-      python -c "from setup_utils import update_all_copyright; update_all_copyright($(date +%Y))"
+      python -c "from setup_utils import update_all_copyright; update_all_copyright()"
       git commit -S -m "Updated copyright for release" .
 
 #. **Publish the release**, allowing CI to run, and others to see it:

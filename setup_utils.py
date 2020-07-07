@@ -22,6 +22,7 @@
 import re
 import subprocess
 import sys
+from datetime import date
 from itertools import groupby
 
 import versioneer
@@ -74,7 +75,10 @@ def get_setup_requires():
 
 # -- copyright utility --------------------------------------------------------
 
-COPYRIGHT_REGEX = re.compile(r"Copyright[\S ]+(?P<years>\d\d\d\d([, \d-]+)?)")
+COPYRIGHT_REGEX = re.compile(
+    r"Copyright[\S \t]+\((?P<years>\d\d\d\d([, \d-]+)?)\)",
+)
+CURRENT_YEAR = date.today().year
 
 
 def _parse_years(years):
@@ -113,7 +117,7 @@ def _format_years(years):
     return ", ".join(ranges)
 
 
-def update_copyright(path, year):
+def update_copyright(path, year=CURRENT_YEAR):
     """Update a file's copyright statement to include the given year
     """
     with open(path, "r") as fobj:
@@ -129,7 +133,7 @@ def update_copyright(path, year):
         print(text[:x] + _format_years(years) + text[y:], file=fobj)
 
 
-def update_all_copyright(year):
+def update_all_copyright(year=CURRENT_YEAR):
     files = subprocess.check_output([
         "git", "grep", "-l", "-E", r"(\#|\*) Copyright",
     ]).strip().splitlines()
