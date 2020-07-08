@@ -24,6 +24,7 @@ import re
 import tempfile
 from io import BytesIO
 from ssl import SSLError
+from unittest import mock
 from urllib.error import (URLError, HTTPError)
 
 import pytest
@@ -36,7 +37,6 @@ from ...plot import SegmentAxes
 from ...segments import (Segment, SegmentList,
                          DataQualityFlag, DataQualityDict)
 from ...testing import (mocks, utils)
-from ...testing.compat import mock
 from ...utils.misc import null_context
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

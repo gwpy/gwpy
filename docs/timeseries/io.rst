@@ -53,7 +53,7 @@ See :func:`numpy.savetxt` for keyword argument options.
 Gravitational-wave frames (GWF)
 ===============================
 
-**Additional dependencies:**  |LDAStools.frameCPP|_ or |lalframe|_
+**Additional dependencies:**  |LDAStools.frameCPP|_ or |framel|_ or |lalframe|_
 
 The raw observatory data are archived in ``.gwf`` files, a custom binary format that efficiently stores the time streams and all necessary metadata, for more details about this particular data format, take a look at the specification document `LIGO-T970130 <https://dcc.ligo.org/LIGO-T970130/public>`_.
 
@@ -87,6 +87,11 @@ The ``start`` and ``end`` keyword arguments can be used to downselect data to a 
     >>> data = TimeSeries.read('HLV-HW100916-968654552-1.gwf', 'L1:LDAS-STRAIN', start=968654552.5, end=968654553)
 
 Additionally, the following keyword arguments can be used:
+
+.. warning::
+
+   These keyword arguments are only supported when using the
+   |LDASTools.frameCPP|_ GWF API.
 
 .. table:: Keyword arguments for `TimeSeries.read`
    :align: left
@@ -128,6 +133,24 @@ To write data held in any of the :mod:`gwpy.timeseries` classes to a GWF file, s
     >>> data.write('output.gwf')
 
 **If the output file already exists it will be overwritten.**
+
+GWF library availability
+------------------------
+
+(Last we checked...) The three GWF library interfaces are available on
+the following platforms:
+
+.. table:: GWF library availability by platform
+   :align: left
+   :name: gwf-library-platforms
+
+   =====================  ==============================  =====  =====  =======
+   Library                Conda-forge package name        Linux  macOS  Windows
+   =====================  ==============================  =====  =====  =======
+   |LDASTools.frameCPP|_  ``python-ldas-tools-framecpp``  Yes    Yes    No
+   |framel|_              ``python-framel``               Yes    Yes    Yes
+   |lalframe|_            ``python-lalframe``             Yes    Yes    No
+   =====================  ==============================  =====  =====  =======
 
 .. _gwpy-timeseries-io-hdf5:
 

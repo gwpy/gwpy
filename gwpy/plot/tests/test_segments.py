@@ -29,7 +29,7 @@ from matplotlib.collections import PatchCollection
 
 from ...segments import (Segment, SegmentList, SegmentListDict,
                          DataQualityFlag, DataQualityDict)
-from ...time import LIGOTimeGPS
+from ...time import to_gps
 from .. import SegmentAxes
 from ..segments import SegmentRectangle
 from .test_axes import TestAxes as _TestAxes
@@ -140,7 +140,7 @@ class TestSegmentAxes(_TestAxes):
     def test_fmt_data(self, ax):
         # just check that the LIGOTimeGPS repr is in place
         value = 1234567890.123
-        assert ax.format_xdata(value) == str(LIGOTimeGPS(value))
+        assert ax.format_xdata(value) == str(to_gps(value))
 
     # -- disable tests from upstream
 

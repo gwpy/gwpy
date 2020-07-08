@@ -17,6 +17,9 @@ install:
   - conda activate gwpy
   - python ci\\parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
   - conda install --quiet --yes --name gwpy --file conda-reqs.txt
+  # manually install other things we can get on windows
+  - conda install --quiet --yes --name gwpy
+        "python-framel >=8.40.1"
   # print everything we have
   - conda info --all
   - conda list

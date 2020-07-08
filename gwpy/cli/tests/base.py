@@ -21,6 +21,7 @@
 
 import os
 from argparse import ArgumentParser
+from unittest import mock
 
 import pytest
 
@@ -33,7 +34,6 @@ from ...frequencyseries import FrequencySeries
 from ...timeseries import TimeSeries
 from ...plot import Plot
 from ...testing import (utils, mocks)
-from ...testing.compat import mock
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

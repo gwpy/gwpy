@@ -20,98 +20,130 @@
 helpful set of major and minor ticks.
 """
 
-from math import (ceil, floor, modf)
+from math import (ceil, floor, log)
 
 import numpy
 
-from matplotlib import rcParams
-from matplotlib.scale import (LogScale, register_scale)
-from matplotlib.ticker import (is_decade, LogFormatterMathtext, LogLocator)
-
-from .tex import float_to_latex
+from matplotlib import (rcParams, ticker as mticker)
+from matplotlib.scale import (LogScale as _LogScale, register_scale)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-class GWpyLogFormatterMathtext(LogFormatterMathtext):
+def _math(s):
+    if rcParams["text.usetex"]:
+        return "${}$".format(s)
+    return r"$\mathdefault{%s}$" % s
+
+
+def _render_simple(values, ndec=2, thresh=100001):
+    return (
+        values.size and  # is not empty, and
+        not all(values == 0) and  # not all zeros, and
+        values.max() < thresh and  # max below very large number, and
+        numpy.array_equal(values, values.round(ndec))  # all 2 dec. places
+    )
+
+
+class LogFormatter(mticker.LogFormatterMathtext):
     """Format values for log axis.
 
-    This `Formatter` extends the standard
-    :`~matplotlib.ticker.LogFormatterMathtext` to print numbers
-
-    in the range [0.01, 1000) normally, and all others via the
-    `LogFormatterMathtext` output.
+    This `LogFormatter` extends the standard
+    `~matplotlib.ticker.LogFormatterMathtext` to print numbers in the
+    range [0.01, 1000) normally, and all others via the standard
+    `~matplotlib.ticker.LogFormatterMathtext` output.
     """
-    def __call__(self, x, pos=None):
-        usetex = rcParams['text.usetex']
-        if 0.01 <= x < 1000:
-            f = int(x) if float(x).is_integer() else x
-        else:
-            f = float_to_latex(x, '%.2e')
-        if usetex:
-            return '$%s$' % f
-        return r'$\mathdefault{%s}$' % f
+    def format_ticks(self, values):
+        # this method overrides the default to enable formatting ticks
+        # using simple float/integer representations (as opposed) to
+        # scientific notation, if _all_ of the ticks have a value
+        # small enough to render nicely (roughly <=1000 for visible ticks)
+        # and no more than two decimal places
+        self.set_locs(values)
 
+        # remove floating-point precision errors
+        values2 = numpy.asanyarray([float("%.12g" % x) for x in values])
 
-class MinorLogFormatterMathtext(GWpyLogFormatterMathtext):
-    """Format minor tick labels on a log scale.
+        # if can render using just "%s" do it
+        if _render_simple(values2):
+            return [
+                self(int(x) if x.is_integer() else x, pos=i, fmt="%s") for
+                i, x in enumerate(values2)
+            ]
+        # otherwise use the matplotlib default
+        return super().format_ticks(values)
 
-    This `Formatter` conditionally formats minor tick labels based on the
-    number of major ticks visible when the formatter is called, either
-
-    - no minor tick labels if two or more major ticks are visible
-    - half-decade tick labels (0.5, 5, 50, ...) if only one major tick
-      is visible
-    - otherwise all minor ticks
-    """
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('labelOnlyBase', False)
-        super().__init__(*args, **kwargs)
-
-    def __call__(self, x, pos=None):
-        """Format the minor tick label if less than 2 visible major ticks.
-        """
+    def _num_ticks(self):
         viewlim = self.axis.get_view_interval()
         loglim = numpy.log10(viewlim)
-        majticks = numpy.arange(ceil(loglim[0]), floor(ceil(loglim[1])),
-                                dtype=int)
-        nticks = majticks.size
-        halfdecade = nticks == 1 and modf(loglim[0])[0] < 0.7
-        # if already two major ticks, don't need minor labels
-        if nticks >= 2 or (halfdecade and not is_decade(x * 2, self._base)):
+        return numpy.arange(
+            ceil(loglim[0]),
+            floor(ceil(loglim[1])),
+            dtype=int,
+        ).size
+
+    def set_locs(self, locs=None):
+        ret = super().set_locs(locs=locs)
+
+        # if a single major tick, but matplotlib decided not to include
+        # sub-ticks, then there is more than a decade on the axis, so
+        # (for base 10) include half-decade ticks
+        if (
+                self._num_ticks() == 1 and
+                self._sublabels == {1} and
+                self._base == 10
+        ):
+            self._sublabels = {1., 5., 10.}
+
+        return ret
+
+    def __call__(self, x, pos=None, fmt=None):
+        if not x:
+            return _math((fmt or "%s") % 0)
+
+        # determine whether to label or not
+        sign = '-' if x < 0 else ''
+        x = abs(x)
+        b = self._base
+        fx = log(x) / log(b)
+
+        is_x_decade = mticker.is_close_to_int(fx)
+        if self.labelOnlyBase and not is_x_decade:
             return ''
+
+        # work out whether to show this label
+        # if there are enough major ticks or this formatter doesn't support
+        # minor ticks, return a blank string
+        exponent = numpy.round(fx) if is_x_decade else numpy.floor(fx)
+        coeff = numpy.round(x / b ** exponent)
+        nticks = self._num_ticks()
+        if (
+                nticks >= 1 and
+                self._sublabels is not None and
+                coeff not in self._sublabels
+        ):
+            return ''
+
+        # enable custom format
+        if fmt:
+            return _math("{}{}".format(sign, fmt % x))
+
         return super().__call__(x, pos=pos)
 
 
-class CombinedLogFormatterMathtext(MinorLogFormatterMathtext):
-    """Format major and minor ticks with a single `Formatter`.
-
-    This is just a swap between the `MinorLogFormatterMathtext` and
-    the GWpyLogFormatterMathtext` depending on whether the tick in
-    question is a decade (0.1, 1, 10, 100, ...) or not.
-
-    This is useful for things like colorbars, which use a single formatter
-    for all ticks.
-    """
-    def __call__(self, x, pos=None):
-        if is_decade(x, self._base):
-            # pylint: disable=bad-super-call
-            return super(MinorLogFormatterMathtext, self).__call__(x, pos=pos)
-        return super().__call__(x, pos=pos)
-
-
-class GWpyLogScale(LogScale):
+class LogScale(_LogScale):
     """GWpy version of the matplotlib `LogScale`.
 
     This scale overrides the default to use the new GWpy formatters
     for major and minor ticks.
     """
     def set_default_locators_and_formatters(self, axis):
-        axis.set_major_locator(LogLocator(self.base))
-        axis.set_major_formatter(GWpyLogFormatterMathtext(self.base))
-        axis.set_minor_locator(LogLocator(self.base, self.subs))
-        axis.set_minor_formatter(MinorLogFormatterMathtext(self.base))
+        axis.set_major_locator(mticker.LogLocator(self.base))
+        axis.set_major_formatter(LogFormatter(self.base))
+        axis.set_minor_locator(mticker.LogLocator(self.base, self.subs))
+        axis.set_minor_formatter(
+            LogFormatter(self.base, labelOnlyBase=(self.subs is not None)),
+        )
 
 
-register_scale(GWpyLogScale)
+register_scale(LogScale)

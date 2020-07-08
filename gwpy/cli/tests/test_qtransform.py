@@ -21,9 +21,9 @@
 
 import os
 import re
+from unittest import mock
 
 from ... import cli
-from ...testing.compat import mock
 from ...testing.utils import skip_missing_dependency
 from .base import (update_namespace, mock_nds2_connection)
 from .test_spectrogram import TestCliSpectrogram as _TestCliSpectrogram

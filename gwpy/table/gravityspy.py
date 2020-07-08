@@ -145,7 +145,7 @@ class GravitySpyTable(EventTable):
                                                  ilabel))
 
         images_for_download = images_db[cols_for_download]
-        images = images_for_download.as_matrix().flatten()
+        images = images_for_download.values.flatten()
         images_for_download_ext = images_db[cols_for_download_ext]
         duration = np.atleast_2d(
                                  duration_values.repeat(

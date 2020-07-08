@@ -55,6 +55,7 @@ rm -f conda-reqs.txt  # clean up
 
 # install other conda packages that aren't represented in the requirements file
 conda install --name gwpyci --quiet --yes \
+    "python-framel>=8.40.1" \
     "python-lal" \
     "python-lalframe" \
     "python-lalsimulation" \

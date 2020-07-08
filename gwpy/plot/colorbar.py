@@ -26,7 +26,7 @@ from matplotlib.colors import LogNorm
 from matplotlib.legend import Legend
 
 from .colors import format_norm
-from .log import CombinedLogFormatterMathtext
+from .log import LogFormatter
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -64,7 +64,7 @@ def process_colorbar_kwargs(figure, mappable=None, ax=None, use_axesgrid=True,
     # -- set tick formatting
 
     if isinstance(norm, LogNorm):
-        kwargs.setdefault('format', CombinedLogFormatterMathtext())
+        kwargs.setdefault('format', LogFormatter())
 
     # -- create axes for colorbar (if required)
 

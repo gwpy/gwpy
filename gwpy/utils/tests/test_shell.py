@@ -19,7 +19,9 @@
 """Unit test for utils module
 """
 
+import platform
 import subprocess
+import sys
 from distutils.spawn import find_executable
 
 import pytest
@@ -30,20 +32,26 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 def test_shell_call():
-    out, err = shell.call(["echo", "This works"])
-    assert out.rstrip() == 'This works'
+    out, err = shell.call([sys.executable, "--version"])
+    assert out.rstrip() == 'Python {}'.format(platform.python_version())
     assert err.rstrip() == ''
 
-    shell.call("echo 'This works'")
 
+def test_shell_call_shell():
+    out, err = shell.call("echo This works")
+    assert out.rstrip() == "This works"
+    assert err.rstrip() == ""
+
+
+def test_shell_call_errors():
     with pytest.raises(OSError):
         shell.call(['this-command-doesnt-exist'])
     with pytest.raises(subprocess.CalledProcessError):
         shell.call('this-command-doesnt-exist')
     with pytest.raises(subprocess.CalledProcessError):
-        shell.call('false')
+        shell.call('python --blah')
     with pytest.warns(UserWarning):
-        shell.call('false', on_error='warn')
+        shell.call('python --blah', on_error='warn')
 
 
 def test_which():

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2019)
+# Copyright (C) Duncan Macleod (2019-2020)
 #
 # This file is part of GWpy.
 #
@@ -18,7 +18,6 @@
 
 """Fetch and parse an event catalog from GWOSC.
 """
-
 import numbers
 from collections import OrderedDict
 
@@ -28,7 +27,7 @@ from astropy import constants
 from astropy import units
 
 from gwosc.api import DEFAULT_URL as DEFAULT_GWOSC_URL
-from gwosc.catalog import download as download_catalog
+from gwosc.api import fetch_catalog_json
 
 from .. import EventTable
 from .utils import (
@@ -60,7 +59,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 def _parse_unit(parameter):
     try:
-        unit = parameter["unit_en"]
+        unit = parameter
     except KeyError:
         return
     if unit in UNITS:
@@ -102,17 +101,24 @@ def _mask_column(col):
 @read_with_columns
 @read_with_selection
 def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
-    catalog = download_catalog(catalog, host=host)
-    data = catalog["data"]
-    parameters = catalog["parameters"]
+    catalog = fetch_catalog_json(catalog, host=host)
+    data = catalog["events"]
+
+    parameters = set(key for event in data.values() for key in event)
+    parameters = [x for x in parameters if not x.endswith('unit')]
+
+    unitlist = {}
+    for event in data.values():
+        dictpartial = {k: v for k, v in event.items() if k.endswith('unit')}
+        unitlist.update(dictpartial)
 
     # unpack the catalogue data into a dict of columns
-    names = ["name"] + list(parameters.keys())
+    names = ["name"] + parameters
     cols = {n: [] for n in names}
     for event, plist in data.items():
         cols["name"].append(event)
         for n in names[1:]:
-            cols[n].append(plist[n]["best"])
+            cols[n].append(plist[n])
 
     # rebuild the columns by replacing the masked values
     mask = {}
@@ -130,11 +136,12 @@ def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
     )
 
     # add column metadata
-    for name, parameter in parameters.items():
+    for name in parameters:
         tab[name].mask = mask[name]
-        tab[name].description = parameter["name_en"]
-        unit = _parse_unit(parameter)
-        tab[name].unit = unit
+        tab[name].description = name
+        if (name+'_unit') in unitlist:
+            unit = _parse_unit(unitlist[name+'_unit'])
+            tab[name].unit = unit
 
     # add an index on the event name
     tab.add_index('name')

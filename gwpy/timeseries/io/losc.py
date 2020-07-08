@@ -177,8 +177,8 @@ def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
     kwargs['cls'] = cls
     for url in cache:
         keep = file_segment(url) & span
-        new = _fetch_losc_data_file(url, *args, **kwargs).crop(
-            *keep, copy=False)
+        kwargs["start"], kwargs["end"] = keep
+        new = _fetch_losc_data_file(url, *args, **kwargs)
         if is_gwf and (not args or args[0] is None):
             args = (new.name,)
         if out is None:

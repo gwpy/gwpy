@@ -21,10 +21,10 @@
 
 import os
 import subprocess
+from unittest import mock
 
 import pytest
 
-from ...testing.compat import mock
 from .. import kerberos as io_kerberos
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -122,8 +122,8 @@ def test_kinit_up_kwargs(popen, getpass, input_):
         password='test',
         exe='/usr/bin/kinit',
     )
-    assert input_.call_count == 0  # can use assert_not_called in python >= 3.5
-    assert getpass.call_count == 0
+    input_.assert_not_called()
+    getpass.assert_not_called()
     popen.assert_called_with(
         ['/usr/bin/kinit', 'albert.einstein@LIGO.ORG'],
         stdin=-1,
@@ -144,7 +144,7 @@ def test_kinit_keytab_dne(popen, parse_keytab):
     # test keytab from environment not found (default) prompts user
     io_kerberos.kinit(username='test', password='passwd',
                       exe='/bin/kinit')
-    assert parse_keytab.call_count == 0  # assert_not_called()
+    parse_keytab.assert_not_called()
     popen.assert_called_with(
         ['/bin/kinit', 'test@LIGO.ORG'],
         stdin=-1,
