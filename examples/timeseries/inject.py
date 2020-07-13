@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) Alex Urban (2018-2019)
+# Copyright (C) Alex Urban (2018-2020)
 #
 # This file is part of GWpy.
 #
