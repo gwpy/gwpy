@@ -139,8 +139,13 @@ class TestTable(object):
                                 23.875],
                                [15.125, 15.125, 18.708985, 18.708985,
                                 23.28125, 23.90625, 24.0, 24.0, 23.9375,
-                                23.9375]],
-                         names=['time', 'amplitude', 'snr', 'tstart', 'tend'])
+                                23.9375],
+                               [12.3, 11.15, 12.43, 13.86, 11.18, 11.83,
+                                10.0, 12.51, 12.31, 12.43],
+                               [15.15, 12.43, 13.86, 15.46, 11.83, 12.51,
+                                12.31, 13.23, 15.15, 13.86]],
+                         names=['time', 'amplitude', 'snr', 'tstart', 'tend',
+                                'fstart', 'fend'])
 
     # -- test I/O -------------------------------
 
@@ -434,8 +439,8 @@ class TestEventTable(TestTable):
         utils.assert_quantity_sub_equal(rate, rate2)
 
     def test_event_rates_start_end(self):
-        """Check that `EventTable.event_rate` can function without explicit time column
-        (and no data) if and only if start/end are both given
+        """Check that `EventTable.event_rate` can function without explicit
+        time column (and no data) if and only if start/end are both given
         """
         t2 = self.create(10, names=['a', 'b'])
         with pytest.raises(ValueError) as exc:
@@ -518,35 +523,76 @@ class TestEventTable(TestTable):
         # each cluster, the original table is unchanged, and all points
         # return their intended values
         t = clustertable_omicron.cluster('omicron', 'snr', 0.1)
-        assert len(t) == 4
+        # Check that the original eventTable has still same size
         assert len(clustertable_omicron) == 10
-        assert all(t['time'] == [15.09375, 18.708007, 23.265625, 23.90625])
-        assert all(t['snr'] == [5.92, 5.18, 5.1, 5.78])
-        assert all(t['amplitude'] == [6.08, 3.13, 8.93, 1.11])
-        assert all(t['tstart'] == [15.0625, 18.707031, 23.25, 23.875])
-        assert all(t['tend'] == [15.125, 18.708985, 23.28125, 24.0])
+        # Check that the identified clusters match expected ones
+        expected_res = [[15.09375, 18.708007, 23.265625, 23.90625],
+                        [6.08, 3.13, 8.93, 1.11],
+                        [5.92, 5.18, 5.1, 5.78],
+                        [15.0625, 18.707031, 23.25, 23.875],
+                        [15.125, 18.708985, 23.28125, 24.0],
+                        [11.15, 12.43, 11.18, 10.0],
+                        [15.15, 15.46, 11.83, 15.15],
+                        [0, 1, 2, 3]]
+        table_test = EventTable(expected_res,
+                                names=['time', 'amplitude', 'snr', 'tstart',
+                                       'tend', 'fstart', 'fend', 'cluster_id'])
+        numpy.testing.assert_array_equal(t, table_test)
 
     def test_cluster_omicron_comp(self, clustertable_omicron):
-        # comparison of the result usingfor the same table as above
-        # but not using omicron. Only the tend changes here.
-        t = clustertable_omicron.cluster('time', 'snr', 0.1)
-        assert len(t) == 4
+        # comparison of the result using the same table as above
+        # but not using omicron.
+        # Omicron identified one cluster less because it combines 2 into 1,.
+        t = clustertable_omicron.cluster('time', 'snr', 0.6)
+        # Check that the original eventTable has still same size
         assert len(clustertable_omicron) == 10
-        assert all(t['time'] == [15.09375, 18.708007, 23.265625, 23.90625])
-        assert all(t['snr'] == [5.92, 5.18, 5.1, 5.78])
-        assert all(t['amplitude'] == [6.08, 3.13, 8.93, 1.11])
-        assert all(t['tstart'] == [15.0625, 18.707031, 23.25, 23.875])
-        assert all(t['tend'] == [15.125, 18.708985, 23.28125, 23.9375])
+        # Check that the identified clusters match epected ones with
+        # basic method
+        expected_res = [[15.09375, 18.708007, 23.265625, 23.90625],
+                        [6.08, 3.13, 8.93, 1.11],
+                        [5.92, 5.18, 5.1, 5.78],
+                        [15.0625, 18.707031, 23.25, 23.875],
+                        [15.125, 18.708985, 23.28125, 23.9375],
+                        [12.3, 12.43, 11.18, 12.43],
+                        [15.15, 13.86, 11.83, 13.86],
+                        [0, 1, 2, 3]]
+        table_test = EventTable(expected_res,
+                                names=['time', 'amplitude', 'snr', 'tstart',
+                                       'tend', 'fstart', 'fend', 'cluster_id'])
+        numpy.testing.assert_array_equal(t, table_test)
+
+        # Check that the identified clusters match expected ones with
+        # omicron method
+        t_omicron = clustertable_omicron.cluster('omicron', 'snr', 0.6)
+        expected_res = [[15.09375, 18.708007, 23.90625],
+                        [6.08, 3.13, 1.11],
+                        [5.92, 5.18, 5.78],
+                        [15.0625, 18.707031, 23.25],
+                        [15.125, 18.708985, 24.0],
+                        [11.15, 12.43, 10.0],
+                        [15.15, 15.46, 15.15],
+                        [0, 1, 2]]
+        table_test = EventTable(expected_res,
+                                names=['time', 'amplitude', 'snr', 'tstart',
+                                       'tend', 'fstart', 'fend', 'cluster_id'])
+        numpy.testing.assert_array_equal(t_omicron, table_test)
 
     def test_single_point_cluster_omicron(self, clustertable_omicron):
         # check that a large cluster window returns at least one data point
         t = clustertable_omicron.cluster('omicron', 'snr', 10)
-        assert len(t) == 1
-        assert all(t['time'] == [15.09375])
-        assert all(t['amplitude'] == [6.08])
-        assert all(t['snr'] == [5.92])
-        assert all(t['tstart'] == [15.0625])
-        assert all(t['tend'] == [24.0])
+        # Check that the identified clusters match expected ones
+        expected_res = [[15.09375],
+                        [6.08],
+                        [5.92],
+                        [15.0625],
+                        [24.0],
+                        [10.0],
+                        [15.46],
+                        [0]]
+        table_test = EventTable(expected_res,
+                                names=['time', 'amplitude', 'snr', 'tstart',
+                                       'tend', 'fstart', 'fend', 'cluster_id'])
+        numpy.testing.assert_array_equal(t, table_test)
 
     def test_cluster_omicron_window(self, clustertable_omicron):
         # check that a non-positive window throws an appropriate ValueError

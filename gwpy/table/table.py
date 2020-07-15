@@ -722,14 +722,72 @@ class EventTable(Table):
         """
         return filter_table(self, *column_filters)
 
-    def clustering(self, index, window):
-        """Cluster this `EventTable` over a given column, `index`.
+    def _identify_omicron_clusters(self, window):
+        """ Identify clusters following the omicron method.
+            If a tile (i.e. row) has its Tstart fulfilling the condition
+            Tstart - Cluster_Tend < window
+            include this tile in the cluster.
+            Otherwise create a new cluster.
+
+        Add the list of identified clusters to `self`.
+
+        Parameters
+        ----------
+        window : `float`
+            window to use when clustering data points, will raise
+            ValueError if `window > 0` is not satisfied
+
+        Returns
+        -------
+        None
+
+        """
+
+        if window <= 0.0:
+            raise ValueError('Window must be a positive value')
+
+        # Sort table by tstart column
+        orderidx = numpy.argsort(self['tstart'])
+
+        tstart = self['tstart'][orderidx]
+        tend = self['tend'][orderidx]
+
+        # Initialise lists and Tend of the first cluster
+        clustersList = []
+        singleClusterIdxList = []
+        cluster_Tend = tend[0]
+        # Loop over the triggers sorted by tstart column
+        for i in range(len(self)):
+            # Same cluster
+            if tstart[i] - cluster_Tend <= window:
+                singleClusterIdxList.append(i)
+                if tend[i] > cluster_Tend:
+                    cluster_Tend = tend[i]
+            # Start new cluster
+            else:
+                clustersList.append(singleClusterIdxList)
+                singleClusterIdxList = []
+                singleClusterIdxList.append(i)
+                cluster_Tend = tend[i]
+
+        # Append last cluster list of indexes
+        clustersList.append(singleClusterIdxList)
+
+        self.clustersList = clustersList
+
+        # keep track of the order indexes
+        self.orderidx = orderidx
+
+        return True
+
+    def _identify_downselect_clusters(self, index, window):
+        """ Identify clusters of this `EventTable` over a given column,
+        `index`.
 
         The clustering algorithm uses a pooling method to identify groups
         of points that are all separated in `index` by less than `window`.
 
-        To use the clustering algorithm implemented in omicron, set `index` to
-        'omicron'
+        Add the list of identified clusters to `self`.
 
         Parameters
         ----------
@@ -743,129 +801,158 @@ class EventTable(Table):
 
         Returns
         -------
-        table : `EventTable`
-            same table as the input with a new column telling to which
-            cluster one trigger is included
+        None
+
+        """
+
+        if window <= 0.0:
+            raise ValueError('Window must be a positive value')
+
+        # sort table by the grequired column
+        orderidx = numpy.argsort(self[index])
+        col = self[index][orderidx]
+
+        # Find all points where the index vector changes by less than
+        # window and divide the resulting array into clusters of
+        # adjacent points
+        clusterpoints = numpy.where(numpy.diff(col) <= window)[0]
+        sublists = numpy.split(clusterpoints,
+                               numpy.where(
+                                   numpy.diff(clusterpoints) > 1)[0]+1)
+
+        # Add end-points to each cluster and find the index of the maximum
+        # point in each list
+        clustersList = [numpy.append(s, numpy.array([s[-1]+1]))
+                        for s in sublists]
+        # Find triggers that are between two clusters
+        # Happens when successive triggers do not fill the window
+        # criteria. N triggers missing --> add N clusters
+        missing_trigger = []
+        missing_trigger_idx = []
+        for i in range(len(clustersList)-1):
+            if clustersList[i+1][0] - clustersList[i][-1] > 1:
+                missing_trigger_idx.append(i+1)
+                missing_trigger.append(numpy.arange(
+                                         clustersList[i][-1]+1,
+                                         clustersList[i+1][0]))
+        # Insert them in the cluster list
+        # Need to reverse the list, otherwise the list size update
+        # is a problem
+        for i in range(len(missing_trigger))[::-1]:
+            for j in range(len(missing_trigger[i])):
+                clustersList.insert(missing_trigger_idx[i]+j,
+                                    numpy.atleast_1d(
+                                           missing_trigger[i][j]))
+
+        # Check if there are some missing points at the beginning
+        # and end of this list
+        if clustersList[0][0] != 0:
+            missing_trigger = numpy.arange(0, clustersList[0][0])
+            for i in range(len(missing_trigger)):
+                clustersList.insert(i,
+                                    numpy.atleast_1d(missing_trigger[i]))
+        if clustersList[-1][-1] != len(self):
+            missing_trigger = numpy.arange(clustersList[-1][-1]+1,
+                                           len(self))
+            for i in range(len(missing_trigger)):
+                clustersList.insert(len(clustersList)+i,
+                                    numpy.atleast_1d(missing_trigger[i]))
+
+        self.clustersList = clustersList
+
+        # keep track of the order indexes
+        self.orderidx = orderidx
+
+        return True
+
+    def identify_clusters(self, index, window):
+        """Identify clusters for this `EventTable` either using
+        omicron method or a 'downselect' method which clusters
+        over a given column, `index`.
+
+        To use the clustering algorithm implemented in omicron, set `index` to
+        'omicron'
+
+        As a result, a numpy array is added to `self`, containing the ID
+        of the cluster a point belongs to, for each point (i.e. row) of the
+        original `EventTable`.
+
+        Parameters
+        ----------
+        index : `str`
+            name of the column which is used to search for clusters.
+            If index == 'omicron': use omicron clustering algortihm
+
+        window : `float`
+            window to use when clustering data points, will raise
+            ValueError if `window > 0` is not satisfied
+
+        Returns
+        -------
+        None
 
         Examples
         --------
         To cluster an `EventTable` (``table``) whose `index` is
         `end_time`, `window` is `0.1`:
 
-        >>> table.clusterise('end_time', 0.1)
+        >>> table.identify_clusters('end_time', 0.1)
 
-        To cluster an `EventTable` (``table``) with the omicron clustering
-        algorithm, with a `window` of `0.1`:
+        To identify cluster an `EventTable` (``table``) with the omicron
+        clustering algorithm, with a `window` of `0.1`:
 
-        >>> table.clusterise('omicron', 0.1)
+        >>> table.identify_clusters('omicron', 0.1)
+
+        It creates a numpy array containing the ID of the cluster
+        a point belongs to, for each point (i.e. row) of the original
+        `EventTable`.
+        You can retrieve it through:
+
+        >>> table.tile_cluster_id
 
         """
         # Use same algorithm as omicron
         if index == 'omicron':
-            if window <= 0.0:
-                raise ValueError('Window must be a positive value')
-
-            # Sort table by tstart column
-            self.sort('tstart')
-
-            # Initialise lists and Tend of the first cluster
-            ClustersList = []
-            SingleClusterIdxList = []
-            Cluster_Tend = self['tend'][0]
-            N = len(self)
-            # Loop over the triggers sorted by tstart column
-            for i in range(N):
-                # Same cluster
-                if self['tstart'][i] - Cluster_Tend <= window:
-                    SingleClusterIdxList.append(i)
-                    if self['tend'][i] > Cluster_Tend:
-                        Cluster_Tend = self['tend'][i]
-                # Start new cluster
-                else:
-                    ClustersList.append(SingleClusterIdxList)
-                    SingleClusterIdxList = []
-                    SingleClusterIdxList.append(i)
-                    Cluster_Tend = self['tend'][i]
-
-            # Append last cluster list of indexes
-            ClustersList.append(SingleClusterIdxList)
-
-            # Create ID for the cluster
-            cluster_id = numpy.arange(len(ClustersList))
-
+            self._identify_omicron_clusters(window)
         else:
-            if window <= 0.0:
-                raise ValueError('Window must be a positive value')
+            self._identify_downselect_clusters(index, window)
 
-            # sort table by the grequired column
-            self.sort(index)
-            col = self[index]
+        # Create a given ID for each cluster
+        cluster_id = numpy.arange(len(self.clustersList))
+        # Associate each tile (i.e. row in the sorted EventTable)
+        # to a cluster ID
+        tile_cluster_id = []
+        for i, s in enumerate(self.clustersList):
+            tile_cluster_id.extend([cluster_id[i]] * len(s))
 
-            # Find all points where the index vector changes by less than
-            # window and divide the resulting array into clusters of
-            # adjacent points
-            clusterpoints = numpy.where(numpy.diff(col) <= window)[0]
-            sublists = numpy.split(clusterpoints,
-                                   numpy.where(
-                                       numpy.diff(clusterpoints) > 1)[0]+1)
+        tile_cluster_id = numpy.array(tile_cluster_id)
 
-            # Add end-points to each cluster and find the index of the maximum
-            # point in each list
-            ClustersList = [numpy.append(s, numpy.array([s[-1]+1]))
-                            for s in sublists]
-            # Find triggers that are between two clusters
-            # Happens when successive triggers do not fill the window
-            # criteria. N triggers missing --> add N clusters
-            missing_trigger = []
-            missing_trigger_idx = []
-            for i in range(len(ClustersList)-1):
-                if ClustersList[i+1][0] - ClustersList[i][-1] > 1:
-                    missing_trigger_idx.append(i+1)
-                    missing_trigger.append(numpy.arange(
-                                             ClustersList[i][-1]+1,
-                                             ClustersList[i+1][0]))
-            # Insert them in the cluster list
-            # Need to reverse the list, otherwise the list size update
-            # is a problem
-            for i in range(len(missing_trigger))[::-1]:
-                for j in range(len(missing_trigger[i])):
-                    ClustersList.insert(missing_trigger_idx[i]+j,
-                                        numpy.atleast_1d(
-                                               missing_trigger[i][j]))
+        # Pay attention that it corresponds to rows in the sorted EventTable
+        # in _identify_omicron_clusters() or _identify_downselect_clusters()
+        # and not the rows in the original EventTable.
 
-            # Check if there are some missing points at the beginning
-            # and end of this list
-            if ClustersList[0][0] != 0:
-                missing_trigger = numpy.arange(0, ClustersList[0][0])
-                for i in range(len(missing_trigger)):
-                    ClustersList.insert(i,
-                                        numpy.atleast_1d(missing_trigger[i]))
-            if ClustersList[-1][-1] != len(self):
-                missing_trigger = numpy.arange(ClustersList[-1][-1]+1,
-                                               len(self))
-                for i in range(len(missing_trigger)):
-                    ClustersList.insert(len(ClustersList)+i,
-                                        numpy.atleast_1d(missing_trigger[i]))
+        # In order to apply it to the original EventTable, one need to reverse
+        # the ordering.
+        self.tile_cluster_id = tile_cluster_id[numpy.argsort(self.orderidx)]
 
-        # Create ID for the cluster
-        cluster_id = numpy.arange(len(ClustersList))
-        # Add the cluster ID to each tile
-        cluster_id_tile = []
-        for i, s in enumerate(ClustersList):
-            cluster_id_tile.extend([cluster_id[i]] * len(s))
-        self['clusterID'] = cluster_id_tile
-
-        return self
+        return True
 
     def cluster(self, index, rank, window):
-        """Return the clusters this `EventTable` over a given column,
-        `index`, maximizing over a specified column in the table, `rank`.
+        """Return the clusters in `EventTable`.
+
+        Cluster identification is done either using omicron method or
+        a 'downselect' method which clusters over a given column, `index`,
+        maximizing over a specified column in the table, `rank`.
 
         The clustering algorithm uses a pooling method to identify groups
         of points that are all separated in `index` by less than `window`.
 
         Each cluster of nearby points is replaced by the point in that cluster
         with the maximum value of `rank`.
+
+        With omicron, each cluster is defined with min/max values of tstart,
+        tend, fstart, fend considering all point in a cluster.
+        All other parameters are taken from the point maximising the `snr`.
 
         To use the clustering algorithm implemented in omicron, set `index` to
         'omicron'
@@ -885,9 +972,8 @@ class EventTable(Table):
 
         Returns
         -------
-        table : `EventTable`
-            a new table that has had the clustering algorithm applied via
-            slicing of the original
+        table : `Table`
+            a new table that has had the clustering algorithm applied
 
         Examples
         --------
@@ -899,47 +985,42 @@ class EventTable(Table):
         To cluster an `EventTable` (``table``) with the omicron clustering
         algorithm, with a `window` of `0.1`, and maximize over `snr`:
 
-        >>> table.cluster('omicron', 'snr', 0.1)
+        >>> table.cluster('omicron','snr', 0.1)
         """
 
-        # Perform the clustering, without rewriting the table, just
-        # by appending a cluster ID to each trigger
-        # a deepcopy is used here because of the 'tstart' and 'tend'
-        # columns are rewritten using the omicron option. Meaning
-        # that if the cluster() method is called an another time
-        # without reloading the EventTable, the Tstart and Tend
-        # are the updated ones, not the original ones for the trigger
-        # which represent a cluster.
-        triggers = copy.deepcopy(self.clustering(index, window))
+        # Identify the clusters with the chosen method.
+        self.identify_clusters(index, window)
 
-        # Add a trigger index
-        triggers['idx'] = numpy.arange(len(self))
+        # Initialise output table.
+        # Same format as the input EventTable but only one row
+        # for a given cluster.
+        out_Table = Table(names=self.colnames)
 
         # store column to maximise over
-        param = triggers[rank]
+        param = self[rank]
 
+        # Get total number of clusters
+        nb_clusters = numpy.max(self.tile_cluster_id) + 1
+
+        # Loop over each cluster
         # Get index of the trigger with highest value in column rank
         # for each cluster
         # Also get tstart_min and tend_max
-        maxidx = []
-        tstart_list = []
-        tend_list = []
-        for idx in triggers.group_by('clusterID').groups.keys:
-            mask = triggers['clusterID'] == idx[0]
-            maxidx.append(triggers[mask][numpy.argmax(param[mask])]['idx'])
+        for idx in numpy.arange(nb_clusters):
+            mask = self.tile_cluster_id == idx
+            out_Table.add_row(list(self[mask][numpy.argmax(param[mask])]))
+
+            # Modify some parameters for best representing a cluster.
+            # Only for omicron, so far.
+            # might be also better to use it for the other method as well,
+            # otherwise tstart, tend, fstart and fend do not make much sense.
             if index == 'omicron':
-                tstart_list.append(numpy.min(triggers[mask]['tstart']))
-                tend_list.append(numpy.max(triggers[mask]['tend']))
+                out_Table['tstart'][idx] = numpy.min(self[mask]['tstart'])
+                out_Table['tend'][idx] = numpy.max(self[mask]['tend'])
+                out_Table['fstart'][idx] = numpy.min(self[mask]['fstart'])
+                out_Table['fend'][idx] = numpy.max(self[mask]['fend'])
 
-        # Apply these values to tile representing the cluster, only for
-        # the omicron method. Might need to use it as well for other method
-        if index == 'omicron':
-            triggers['tstart'][maxidx] = tstart_list
-            triggers['tend'][maxidx] = tend_list
+        # Add new column for cluster IDs
+        out_Table['cluster_id'] = numpy.arange(nb_clusters)
 
-        # Construct a mask that returns the value of the trigger with
-        # highest value in rank column
-        mask = numpy.zeros_like(param, dtype=bool)
-        mask[maxidx] = True
-
-        return triggers[mask]
+        return out_Table
