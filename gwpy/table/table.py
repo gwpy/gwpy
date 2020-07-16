@@ -31,8 +31,6 @@ from gwosc.api import DEFAULT_URL as DEFAULT_GWOSC_URL
 from astropy.table import (Table, Column, vstack)
 from astropy.io import registry
 
-import copy
-
 from ..io.mp import read_multi as io_read_multi
 from ..time import gps_types
 from .filter import (filter_table, parse_operator)
