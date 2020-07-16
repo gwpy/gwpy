@@ -743,9 +743,6 @@ class EventTable(Table):
 
         """
 
-        if window <= 0.0:
-            raise ValueError('Window must be a positive value')
-
         # Sort table by tstart column
         orderidx = numpy.argsort(self['tstart'])
 
@@ -804,9 +801,6 @@ class EventTable(Table):
         None
 
         """
-
-        if window <= 0.0:
-            raise ValueError('Window must be a positive value')
 
         # sort table by the grequired column
         orderidx = numpy.argsort(self[index])
@@ -911,6 +905,10 @@ class EventTable(Table):
         >>> table.tile_cluster_id
 
         """
+        # Ensure window is a positive number.
+        if window <= 0.0:
+            raise ValueError('Window must be a positive value')
+
         # Use same algorithm as omicron
         if index == 'omicron':
             self._identify_omicron_clusters(window)
