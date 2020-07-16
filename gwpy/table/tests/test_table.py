@@ -537,7 +537,7 @@ class TestEventTable(TestTable):
         table_test = EventTable(expected_res,
                                 names=['time', 'amplitude', 'snr', 'tstart',
                                        'tend', 'fstart', 'fend', 'cluster_id'])
-        numpy.testing.assert_array_equal(t, table_test)
+        utils.assert_array_equal(t, table_test)
 
     def test_cluster_omicron_comp(self, clustertable_omicron):
         # comparison of the result using the same table as above
@@ -559,7 +559,7 @@ class TestEventTable(TestTable):
         table_test = EventTable(expected_res,
                                 names=['time', 'amplitude', 'snr', 'tstart',
                                        'tend', 'fstart', 'fend', 'cluster_id'])
-        numpy.testing.assert_array_equal(t, table_test)
+        utils.assert_array_equal(t, table_test)
 
         # Check that the identified clusters match expected ones with
         # omicron method
@@ -575,7 +575,7 @@ class TestEventTable(TestTable):
         table_test = EventTable(expected_res,
                                 names=['time', 'amplitude', 'snr', 'tstart',
                                        'tend', 'fstart', 'fend', 'cluster_id'])
-        numpy.testing.assert_array_equal(t_omicron, table_test)
+        utils.assert_array_equal(t_omicron, table_test)
 
     def test_single_point_cluster_omicron(self, clustertable_omicron):
         # check that a large cluster window returns at least one data point
@@ -592,7 +592,7 @@ class TestEventTable(TestTable):
         table_test = EventTable(expected_res,
                                 names=['time', 'amplitude', 'snr', 'tstart',
                                        'tend', 'fstart', 'fend', 'cluster_id'])
-        numpy.testing.assert_array_equal(t, table_test)
+        utils.assert_array_equal(t, table_test)
 
     def test_cluster_omicron_window(self, clustertable_omicron):
         # check that a non-positive window throws an appropriate ValueError
