@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2016-2019)
+# Copyright (C) Duncan Macleod (2016-2020)
 #
 # This file is part of GWpy.
 #
