@@ -1479,7 +1479,8 @@ class TimeSeriesBaseDict(OrderedDict):
 
         return plot
 
-    def step(self, label='key', figsize=(12, 4), xscale='auto-gps', **kwargs):
+    def step(self, label='key', where='post', figsize=(12, 4),
+             xscale='auto-gps', **kwargs):
         """Create a step plot of this dict.
 
         Parameters
@@ -1497,8 +1498,10 @@ class TimeSeriesBaseDict(OrderedDict):
             all other keyword arguments are passed to the plotter as
             appropriate
         """
-        kwargs.setdefault('linestyle', kwargs.pop('where', 'steps-post'))
-
+        kwargs.setdefault(
+            "drawstyle",
+            "steps-{}".format(where),
+        )
         tmp = type(self)()
         for key, series in self.items():
             tmp[key] = series.append(series.value[-1:], inplace=False)

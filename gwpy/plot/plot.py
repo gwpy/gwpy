@@ -108,7 +108,8 @@ class Plot(figure.Figure):
         self._init_figure(**figure_kw)
 
         # initialise axes with data
-        self._init_axes(data, **kwargs)
+        if data or kwargs.get("geometry"):
+            self._init_axes(data, **kwargs)
 
     def _init_figure(self, **kwargs):
         from matplotlib import pyplot
