@@ -764,7 +764,7 @@ class TestEventTable(TestTable):
         except (URLError, SSLError) as exc:  # pragma: no-cover
             pytest.skip(str(exc))
         assert len(table) == 1
-        assert table[0]["name"] == "GW170817_R1"
+        assert table[0]["name"] == "GW170817-v3"
         assert set(table.colnames) == {
             "name",
             "mass_1_source",
