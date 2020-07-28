@@ -38,6 +38,13 @@ aliases:
       store_artifacts:
         path: tests
 
+  - &install_minimum_requirements
+      run:
+        name: Install minimum requirements
+        command: |
+          sed 's/>=/==/g' requirements.txt > minimum-requirements.txt
+          python -m pip install -r minimum-requirements.txt --upgrade-strategy=only-if-needed
+
   - &install
       run:
         name: Install tarball
@@ -50,6 +57,22 @@ aliases:
         - checkout
         - *attach_workspace
         - *set_python_environment
+        - *install
+        - *run-tests
+        - *codecov
+        - store_test_results:
+            path: tests
+        - store_artifacts:
+            path: tests
+
+  - &python-build-minimum-requirements
+      docker:
+        - image: python
+      steps:
+        - checkout
+        - *attach_workspace
+        - *set_python_environment
+        - *install_minimum_requirements
         - *install
         - *run-tests
         - *codecov
@@ -150,6 +173,11 @@ jobs:
     docker:
       - image: python:3.8
 
+  python:3.6:minreq:
+    <<: *python-build-minimum-requirements
+    docker:
+      - image: python:3.6
+
   # -- conda ----------------
 
   conda:3.6:
@@ -178,6 +206,9 @@ workflows:
           requires:
             - sdist
       - python:3.8:
+          requires:
+            - sdist
+      - python:3.6:minreq:
           requires:
             - sdist
 
