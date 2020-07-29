@@ -461,7 +461,11 @@ class Series(Array):
     def step(self, **kwargs):
         """Create a step plot of this series
         """
-        kwargs.setdefault('linestyle', kwargs.pop('where', 'steps-post'))
+        where = kwargs.pop("where", "post")
+        kwargs.setdefault(
+            "drawstyle",
+            "steps-{}".format(where),
+        )
         data = self.append(self.value[-1:], inplace=False)
         return data.plot(**kwargs)
 
