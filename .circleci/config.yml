@@ -173,7 +173,7 @@ jobs:
     docker:
       - image: python:3.8
 
-  python:3.6:minreq:
+  python:minreq:3.6:
     <<: *python-build-minimum-requirements
     docker:
       - image: python:3.6
@@ -208,7 +208,7 @@ workflows:
       - python:3.8:
           requires:
             - sdist
-      - python:3.6:minreq:
+      - python:minreq:3.6:
           requires:
             - sdist
 
