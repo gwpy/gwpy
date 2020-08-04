@@ -242,7 +242,9 @@ class TestAxes(AxesTestBase):
     def test_fmt_data(self, ax):
         value = 1234567890.123
         result = str(to_gps(value))
-        assert ax.format_xdata(value) == str(value)
+        assert ax.format_xdata(value) == (
+            ax.xaxis.get_major_formatter().format_data_short(value)
+        )
         ax.set_xscale('auto-gps')
         ax.set_yscale('auto-gps')
         assert ax.format_xdata(value) == result
