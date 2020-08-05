@@ -26,7 +26,7 @@ import numpy
 from matplotlib import (use, rcParams)
 
 # force Agg for all tests
-use('agg', warn=False, force=True)
+use('agg', force=True)
 
 # register custom fixtures for all test modules
 from .testing.fixtures import *  # noqa: E402,F401,F403
