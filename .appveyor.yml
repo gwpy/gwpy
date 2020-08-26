@@ -20,6 +20,7 @@ install:
   # manually install other things we can get on windows
   - conda install --quiet --yes --name gwpy
         "python-framel >=8.40.1"
+        "python-nds2-client"
   # print everything we have
   - conda info --all
   - conda list
