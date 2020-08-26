@@ -318,7 +318,7 @@ intersphinx_mapping = {
     'numpy': ('https://docs.scipy.org/doc/numpy/', None),
     'pycbc': ('http://pycbc.org/pycbc/latest/html/', None),
     'python': ('https://docs.python.org/3/', None),
-    'root_numpy': ('http://scikit-hep.org/root_numpy/', None),
+    'uproot': ('https://uproot.readthedocs.io/en/stable/', None),
     'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
 }
 

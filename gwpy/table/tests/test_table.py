@@ -271,36 +271,65 @@ class TestTable(object):
                                  use_numpy_dtypes=True)
             utils.assert_table_equal(t2, table, almost_equal=True)
 
-    @utils.skip_missing_dependency('root_numpy')
+    @utils.skip_missing_dependency('uproot')
     def test_read_write_root(self, table):
         with utils.TemporaryFilename(suffix='.root') as tmp:
             # check write
             table.write(tmp)
 
-            def _read(*args, **kwargs):
-                return type(table).read(tmp, *args, **kwargs)
-
             # check read gives back same table
-            utils.assert_table_equal(table, _read())
-
-            # check that reading table from file with multiple trees without
-            # specifying fails
-            table.write(tmp, treename='test')
-            with pytest.raises(ValueError) as exc:
-                _read()
-            assert str(exc.value).startswith('Multiple trees found')
+            t2 = self.TABLE.read(tmp)
+            utils.assert_table_equal(table, t2)
 
             # test selections work
             segs = SegmentList([Segment(100, 200), Segment(400, 500)])
-            t2 = _read(treename='test',
-                       selection=['200 < frequency < 500',
-                                  ('time', filters.in_segmentlist, segs)])
-            utils.assert_table_equal(
-                t2, filter_table(table,
-                                 'frequency > 200',
-                                 'frequency < 500',
-                                 ('time', filters.in_segmentlist, segs)),
+            t2 = self.TABLE.read(
+                tmp,
+                selection=['200 < frequency < 500',
+                           ('time', filters.in_segmentlist, segs)],
             )
+            utils.assert_table_equal(
+                t2,
+                filter_table(
+                    table,
+                    'frequency > 200',
+                    'frequency < 500',
+                    ('time', filters.in_segmentlist, segs),
+                ),
+            )
+
+    @utils.skip_missing_dependency('uproot')
+    def test_write_root_overwrite(self, table):
+        with utils.TemporaryFilename(suffix='.root') as tmp:
+            table.write(tmp)
+
+            # assert failure with overwrite=False (default)
+            with pytest.raises(OSError):
+                table.write(tmp)
+
+            # assert works with overwrite=True
+            table.write(tmp, overwrite=True)
+
+    @utils.skip_missing_dependency('uproot')
+    def test_read_root_multiple_trees(self, table):
+        import uproot
+        # append hasn't been implemented in uproot 3 yet
+        with utils.TemporaryFilename(suffix='.root') as tmp:
+            with uproot.create(tmp) as root:
+                root["a"] = uproot.newtree({"branch": "int32"})
+                root["a"].extend({"branch": asarray([1, 2, 3, 4, 5])})
+                root["b"] = uproot.newtree()
+            with pytest.raises(ValueError) as exc:
+                self.TABLE.read(tmp)
+            assert str(exc.value).startswith('Multiple trees found')
+            self.TABLE.read(tmp, treename="a")
+
+    @utils.skip_missing_dependency('uproot')
+    def test_read_write_root_append(self, table):
+        # append hasn't been implemented in uproot 3 yet
+        with utils.TemporaryFilename(suffix='.root') as tmp, \
+             pytest.raises(NotImplementedError):
+            table.write(tmp, treename="test2", append=True)
 
     @utils.skip_missing_dependency('LDAStools.frameCPP')
     def test_read_write_gwf(self):

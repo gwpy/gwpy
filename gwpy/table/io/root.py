@@ -20,71 +20,60 @@
 """
 
 from ...io import registry
-from ...io.utils import identify_factory
-from ..filter import (OPERATORS, parse_column_filters, filter_table)
+from ...io.utils import (file_path, identify_factory)
 from .. import (Table, EventTable)
+from .utils import (read_with_columns, read_with_selection)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def table_from_root(source, treename=None, columns=None, **kwargs):
+@read_with_columns
+@read_with_selection
+def table_from_root(source, treename=None, **kwargs):
     """Read a Table from a ROOT tree
     """
-    import root_numpy
+    import uproot
 
-    # parse column filters into tree2array ``selection`` keyword
-    # NOTE: not all filters can be passed directly to root_numpy, so we store
-    #       those separately and apply them after-the-fact before returning
-    try:
-        selection = kwargs.pop('selection')
-    except KeyError:  # no filters
-        filters = None
-    else:
-        rootfilters = []
-        filters = []
-        for col, op_, value in parse_column_filters(selection):
-            try:
-                opstr = [key for key in OPERATORS if OPERATORS[key] is op_][0]
-            except (IndexError, KeyError):  # cannot filter with root_numpy
-                filters.append((col, op_, value))
-            else:  # can filter with root_numpy
-                rootfilters.append('{0} {1} {2!r}'.format(col, opstr, value))
-        kwargs['selection'] = ' && '.join(rootfilters)
+    with uproot.open(file_path(source)) as trees:
+        # find single tree (if only one tree present)
+        if treename is None:
+            names = [name.decode("utf-8") for name in trees]
+            if len(names) == 1:
+                treename = names[0]
+            elif not trees:
+                raise ValueError("No trees found in %s" % source)
+            else:
+                raise ValueError(
+                    "Multiple trees found in {}, please select one via the "
+                    "`treename` keyword argument, e.g. `treename='events'`. "
+                    "Available trees are: '{}'.".format(
+                        source,
+                        "', '".join(names),
+                    ),
+                )
 
-    # pass file name (not path)
-    if not isinstance(source, str):
-        source = source.name
-
-    # find single tree (if only one tree present)
-    if treename is None:
-        trees = root_numpy.list_trees(source)
-        if len(trees) == 1:
-            treename = trees[0]
-        elif not trees:
-            raise ValueError("No trees found in %s" % source)
-        else:
-            raise ValueError("Multiple trees found in %s, please select on "
-                             "via the `treename` keyword argument, e.g. "
-                             "`treename='events'`. Available trees are: %s."
-                             % (source, ', '.join(map(repr, trees))))
-
-    # read, filter, and return
-    t = Table(root_numpy.root2array(
-        source,
-        treename,
-        branches=columns,
-        **kwargs
-    ))
-    if filters:
-        return filter_table(t, *filters)
-    return t
+        return Table(trees[treename].arrays(namedecode="utf-8"), **kwargs)
 
 
-def table_to_root(table, filename, **kwargs):
+def table_to_root(table, filename, treename="tree",
+                  overwrite=False, append=False, **kwargs):
     """Write a Table to a ROOT file
     """
-    import root_numpy
-    root_numpy.array2root(table.as_array(), filename, **kwargs)
+    import uproot
+
+    createkw = {k: kwargs.pop(k) for k in {"compression", } if k in kwargs}
+    create_func = uproot.recreate if overwrite else uproot.create
+
+    if append is True:
+        raise NotImplementedError(
+            "uproot currently doesn't support appending to existing files",
+        )
+
+    tree = uproot.newtree(dict(table.dtype.descr), **kwargs)
+
+    with create_func(filename, **createkw) as outf:
+        outf[treename] = tree
+        outf[treename].extend(dict(table.columns))
 
 
 # register I/O

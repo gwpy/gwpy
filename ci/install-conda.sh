@@ -61,8 +61,6 @@ conda install --name gwpyci --quiet --yes \
     "python-lalsimulation" \
     "python-ldas-tools-framecpp" \
     "python-nds2-client" \
-    "root>=6.20" \
-    "root_numpy" \
 ;
 
 # activate the environment

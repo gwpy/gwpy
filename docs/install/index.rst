@@ -71,5 +71,5 @@ GWpy also depends on the following other packages for optional features:
 - |LDAStools.frameCPP|_: to read/write data in GWF format
 - |nds2|_: to provide remote data access for `TimeSeries`
   (see :ref:`gwpy-timeseries-remote`)
-- |root_numpy|_: to read/write :class:`~gwpy.table.EventTable` with ROOT
+- |uproot|_: to read/write :class:`~gwpy.table.EventTable` with ROOT
   format (see :ref:`gwpy-table-io-root`)

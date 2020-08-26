@@ -199,7 +199,7 @@ To write a table using the cWB ASCII format:
 ROOT
 ====
 
-**Additional dependencies:** |root_numpy|_
+**Additional dependencies:** |uproot|_
 
 Reading
 -------
@@ -210,11 +210,7 @@ To read a `ROOT <https://root.cern.ch/>`_ tree into a `Table` (or `EventTable`),
 
 If ``treename=None`` is given (default), a single tree will be read if only one exists in the file, otherwise a `ValueError` will be raised.
 
-To specify the branches to read, use the ``branches`` keyword argument::
-
-    >>> t = Table.read('my-data.root', treename='triggers', branches=['time', 'frequency', 'snr'])
-
-Any other keyword arguments will be passed directly to :func:`root_numpy.root2array`.
+Any other keyword arguments will be passed directly to :meth:`uproot.tree.TTreeMethods.arrays`.
 
 Writing
 -------
@@ -229,7 +225,7 @@ By default, an existing file with an existing tree of the given name will be app
 
     >>> t.write('new-table.root', treename='triggers', mode='recreate')
 
-Any other keyword arguments will be passed directly to :func:`root_numpy.array2root`.
+Any other keyword arguments will be passed directly to :class:`uproot.newtree`.
 
 .. _gwpy-table-io-pycbc_live:
 

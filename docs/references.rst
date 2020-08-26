@@ -71,9 +71,6 @@
 .. |pycbc| replace:: `pycbc`
 .. _pycbc: https://pycbc.org/
 
-.. |root_numpy| replace:: `root_numpy`
-.. _root_numpy: https://rootpy.github.io/root_numpy/
-
 .. |sphinx| replace:: `sphinx`
 .. _sphinx: http://www.sphinx-doc.org/
 
@@ -85,6 +82,9 @@
 
 .. |sphinx-automodapi| replace:: `sphinx-automodapi`
 .. _sphinx-automodapi: http://sphinx-automodapi.readthedocs.io/
+
+.. |uproot| replace:: `uproot`
+.. _uproot: https://uproot.readthedocs.io/
 
 .. -- Other references --------------------------
 
