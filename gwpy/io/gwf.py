@@ -20,13 +20,13 @@
 """
 
 import warnings
-from urllib.parse import urlparse
 
 import numpy
 
 from ..segments import (Segment, SegmentList)
 from ..time import (to_gps, LIGOTimeGPS)
 from .cache import read_cache
+from .utils import file_path
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -87,7 +87,7 @@ def open_gwf(filename, mode='r'):
     if mode not in ('r', 'w'):
         raise ValueError("mode must be either 'r' or 'w'")
     from LDAStools import frameCPP
-    filename = urlparse(filename).path  # strip file://localhost or similar
+    filename = file_path(filename)
     if mode == 'r':
         return frameCPP.IFrameFStream(str(filename))
     return frameCPP.OFrameFStream(str(filename))
