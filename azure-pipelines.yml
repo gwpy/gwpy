@@ -1,0 +1,156 @@
+variables:
+  CONDA_PKGS_DIRS: $(Pipeline.Workspace)/.conda/pkgs
+  USE_CONDA: true
+
+stages:
+  - stage: Prep
+    displayName: Prep and lint
+    jobs:
+      - job: sdist
+        displayName: Create source tarball
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.x'
+          - bash: python setup.py --quiet sdist --dist-dir $(Build.ArtifactStagingDirectory)
+            displayName: Build Tarball
+          - task: PublishBuildArtifacts@1
+            displayName: Publish tarball
+            inputs:
+              artifactName: tarball
+              pathToPublish: $(Build.ArtifactStagingDirectory)
+
+      - job: lint
+        displayName: Lint
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.8'
+          - bash: python -m pip install "flake8>=3.7.0" flake8-junit-report
+            displayName: Install flake8
+          - bash: |
+              python -m flake8 --output-file flake8.txt
+              cat flake8.txt
+            displayName: Lint with flake8
+          - bash: python -m junit_conversor flake8.txt flake8.xml
+            condition: succeededOrFailed()
+            displayName: Convert flake8 report to XML
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFiles: "flake8.xml"
+              testRunTitle: "$(Agent.OS) | Python $(PYTHON_VERSION)"
+
+  - stage: Test
+    jobs:
+      - job:
+        strategy:
+          matrix:
+            # simple python builds
+            basic_python3.6:
+              imageName: 'ubuntu-latest'
+              PYTHON_VERSION: '3.6'
+              USE_CONDA: false
+            basic_python3.7:
+              imageName: 'ubuntu-latest'
+              PYTHON_VERSION: '3.7'
+              USE_CONDA: false
+            basic_python3.8:
+              imageName: 'ubuntu-latest'
+              PYTHON_VERSION: '3.8'
+              USE_CONDA: false
+            # conda Linux
+            linux_python3.6:
+              imageName: 'ubuntu-latest'
+              PYTHON_VERSION: '3.6'
+            linux_python3.7:
+              imageName: 'ubuntu-latest'
+              PYTHON_VERSION: '3.7'
+            linux_python3.8:
+              imageName: 'ubuntu-latest'
+              PYTHON_VERSION: '3.8'
+            # conda macOS
+            macos_python3.6:
+              imageName: 'macOS-latest'
+              PYTHON_VERSION: '3.6'
+            macos_python3.7:
+              imageName: 'macOS-latest'
+              PYTHON_VERSION: '3.7'
+            macos_python3.8:
+              imageName: 'macOS-latest'
+              PYTHON_VERSION: '3.8'
+            # conda Windows
+            win_python3.6:
+              imageName: 'windows-latest'
+              PYTHON_VERSION: '3.6'
+            win_python3.7:
+              imageName: 'windows-latest'
+              PYTHON_VERSION: '3.7'
+            win_python3.8:
+              imageName: 'windows-latest'
+              PYTHON_VERSION: '3.8'
+        pool:
+          vmImage: $(imageName)
+        steps:
+          - task: Cache@2
+            inputs:
+              key: 'conda | "$(Agent.OS)" | "python$(PYTHON_VERSION)"'
+              path: $(CONDA_PKGS_DIRS)
+              restoreKeys: |
+                conda | "$(Agent.OS)"
+            displayName: Cache Conda packages
+            condition: eq(variables['USE_CONDA'], true)
+
+          - task: DownloadBuildArtifacts@0
+            inputs:
+              downloadType: 'single'
+              artifactName: tarball
+              downloadPath: '$(System.DefaultWorkingDirectory)'
+
+          - bash: |
+              cp tarball/gwpy-*.tar.* .
+              rm -rf tarball
+            displayName: Retrieve tarball
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(PYTHON_VERSION)'
+            condition: eq(variables['USE_CONDA'], false)
+
+          - bash: echo "##vso[task.prependpath]$CONDA/bin"
+            displayName: Add conda to PATH (Linux)
+            condition: and(eq(variables['USE_CONDA'], true), eq(variables['Agent.OS'], 'Linux'))
+
+          - bash: |
+              echo "##vso[task.prependpath]$CONDA/bin"
+              sudo chown -R $USER $CONDA
+            displayName: Add conda to PATH (macOS)
+            condition: and(eq(variables['USE_CONDA'], true), eq(variables['Agent.OS'], 'Darwin'))
+
+          - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+            displayName: Add conda to PATH (Windows)
+            condition: and(eq(variables['USE_CONDA'], true), eq(variables['Agent.OS'], 'Windows_NT'))
+
+          - bash: bash ci/install-conda.sh
+            displayName: Create conda environment
+            condition: eq(variables['USE_CONDA'], true)
+
+          - bash: bash ci/install.sh
+            displayName: "Install GWpy"
+
+          - bash: bash ci/test.sh
+            displayName: "Run tests"
+
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFiles: "tests/junit.xml"
+              testRunTitle: "$(Agent.OS) | Python $(PYTHON_VERSION)"
+
+          - task: PublishCodeCoverageResults@1
+            inputs:
+              codeCoverageTool: Cobertura
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+
+          - bash: bash ci/codecov.sh
+            displayName: 'Upload to codecov.io'
