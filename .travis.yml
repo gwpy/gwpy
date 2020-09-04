@@ -12,6 +12,9 @@ env:
     # enable slack notifications (I think)
     - secure: KXq3Kn+i5pDl7ApqYkMKAZlxC7OOLDmiBn46t/JYKyRAchacp1PR84vrwTNj7OfhZek0tlTkKwQtwpFaw6llhYSpB9xl9SsPNmoYsBtZb9zC8z/oRXlXgYudesPSt7cltlt0K21pV9gRflOezRjlJRDoccbw3pe90vYpMdvr7+0=
 
+    # where to install miniconda
+    - CONDA_ROOT="${HOME}/miniconda"
+
 # -- build --------------------------------------
 
 matrix:
@@ -30,15 +33,16 @@ matrix:
 install:
   - set -ex;
   # install miniconda, create env, and activate
-  - . ./ci/install-conda.sh
+  - bash -ex ./ci/install-conda.sh
+  - source ${HOME}/miniconda/etc/profile.d/conda.sh
   # install this package
-  - python -m pip install .
+  - bash -ex ./ci/install.sh
 
 script:  # run tests
   - bash -ex ./ci/test.sh
 
 after_success:
-  - bash -ex ci/codecov.sh
+  - bash -ex ./ci/codecov.sh
 
 notifications:
   slack:

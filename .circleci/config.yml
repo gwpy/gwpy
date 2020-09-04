@@ -48,11 +48,13 @@ aliases:
   - &install
       run:
         name: Install tarball
-        command: python -m pip install --progress-bar=off gwpy-*.tar.*
+        command: bash -ex ./ci/install.sh
 
   - &python-build
       docker:
         - image: python
+      environment:
+        USE_CONDA: false
       steps:
         - checkout
         - *attach_workspace
@@ -68,6 +70,8 @@ aliases:
   - &python-build-minimum-requirements
       docker:
         - image: python
+      environment:
+        USE_CONDA: false
       steps:
         - checkout
         - *attach_workspace

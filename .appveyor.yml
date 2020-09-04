@@ -8,30 +8,13 @@ environment:
 install:
   - "set PATH=%MINICONDA%\\condabin;%PATH%"
   - call "%MINICONDA%\\Scripts\\activate.bat"
-  - conda config --set always_yes yes
-  - conda config --add channels conda-forge
-  - conda create --quiet --yes --name gwpy
-        "python=%PYTHON_VERSION%"
-        "pip"
-        "setuptools"
-  - conda activate gwpy
-  - python ci\\parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
-  - conda install --quiet --yes --name gwpy --file conda-reqs.txt
-  # manually install other things we can get on windows
-  - conda install --quiet --yes --name gwpy
-        "python-framel >=8.40.1"
-  # print everything we have
-  - conda info --all
-  - conda list
+  - bash -ex .\ci\install-conda.sh
+  - conda activate gwpyci
 build_script:
-  - python -m pip install .
+  - bash -ex .\ci\install.sh
 test_script:
-  # run scripts from a separate directory, so that we test the installed code
-  - mkdir "tests"
-  - pushd "tests" && python -m pytest --pyargs gwpy --cov gwpy --cov-report xml:coverage.xml --junitxml junit.xml --numprocesses 2 && popd
+  - bash -ex .\ci\test.sh
 after_test:
-  - "set _PYV=%PYTHON_VERSION:.=%"
-  - python -m pip install codecov
-  - python -m codecov --file .\tests\coverage.xml --flags Windows python%_PYV% conda
+  - bash -ex .\ci\codecov.sh
 on_finish:
   - ps: (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\tests\junit.xml))

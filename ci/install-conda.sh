@@ -16,53 +16,45 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+set -ex
+
+# get local functions
+. ci/lib.sh
+
 #
 # Install GWpy and dependencies using Conda
 #
 
-# install miniconda
-if ! which conda 1> /dev/null; then
-    if test ! -f ${HOME}/miniconda/etc/profile.d/conda.sh; then
-        # install conda
-        [ "$(uname)" == "Darwin" ] && MC_OSNAME="MacOSX" || MC_OSNAME="Linux"
-        MINICONDA="Miniconda${PYTHON_VERSION%%.*}-latest-${MC_OSNAME}-x86_64.sh"
-        curl -L https://repo.continuum.io/miniconda/${MINICONDA} -o miniconda.sh
-        bash miniconda.sh -b -u -p ${HOME}/miniconda
-    fi
-    source ${HOME}/miniconda/etc/profile.d/conda.sh
-fi
-hash -r
-
-# get CONDA base path
-CONDA_PATH=$(conda info --base)
+install_miniconda
+conda_init
 
 # configure miniconda
-conda config --set always_yes yes --set changeps1 no
-conda config --add channels conda-forge
-conda update --quiet --yes conda
-conda info --all
+${CONDA_EXE} config --set always_yes yes --set changeps1 no
+${CONDA_EXE} config --add channels conda-forge
+${CONDA_EXE} update --quiet --yes conda
+${CONDA_EXE} info --all
 
-# create environment for tests (if needed)
-if [ ! -f ${CONDA_PATH}/envs/gwpyci/conda-meta/history ]; then
-    conda create --name gwpyci python=${PYTHON_VERSION} pip setuptools
-fi
+# create environment for tests
+${CONDA_EXE} create --name "${GWPY_CONDA_ENV_NAME}" --quiet --yes python=${PYTHON_VERSION} pip setuptools
 
 # install conda dependencies (based on pip requirements file)
-conda run --name gwpyci \
+${CONDA_EXE} run --name "${GWPY_CONDA_ENV_NAME}" \
 python ./ci/parse-conda-requirements.py requirements-dev.txt -o conda-reqs.txt
-conda install --name gwpyci --quiet --yes --file conda-reqs.txt --update-all
+${CONDA_EXE} install --name "${GWPY_CONDA_ENV_NAME}" --quiet --yes --file conda-reqs.txt --update-all
 rm -f conda-reqs.txt  # clean up
 
-# install other conda packages that aren't represented in the requirements file
-conda install --name gwpyci --quiet --yes \
+# -- install other conda packages that aren't represented in the requirements file
+# all platforms
+${CONDA_EXE} install --name "${GWPY_CONDA_ENV_NAME}" --quiet --yes \
     "python-framel>=8.40.1" \
-    "python-lal" \
-    "python-lalframe" \
-    "python-lalsimulation" \
-    "python-ldas-tools-framecpp" \
     "python-nds2-client" \
 ;
-
-# activate the environment
-. ${CONDA_PATH}/etc/profile.d/conda.sh
-conda activate gwpyci
+# unix
+if ! on_windows; then
+    ${CONDA_EXE} install --name "${GWPY_CONDA_ENV_NAME}" --quiet --yes \
+        "python-lal" \
+        "python-lalframe" \
+        "python-lalsimulation" \
+        "python-ldas-tools-framecpp" \
+    ;
+fi

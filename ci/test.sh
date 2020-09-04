@@ -17,18 +17,15 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 set -ex
-trap 'set +ex' RETURN
-unset -f cd
-unset -f pushd
-unset -f popd
+
+# get local functions
+. ci/lib.sh
 
 #
 # Run the test suite for GWpy on the current system
 #
 
-# get path to python and pip
-PYTHON=$(which "python${PYTHON_VERSION}")
-PIP="${PYTHON} -m pip"
+find_python_and_pip
 
 # upgrade pip to understand python_requires
 ${PIP} install "pip>=9.0.0"
@@ -38,18 +35,33 @@ ${PIP} install "setuptools>=20.2.2" wheel
 
 # install test dependencies
 ${PIP} install -r requirements-test.txt
+${PIP} install junitparser
 
 # list all packages
-if [ -z ${CONDA_PREFIX} ]; then
-    ${PIP} list installed
+if [[ -n ${CONDA_EXE} ]]; then
+    ${CONDA_EXE} list --name "${GWPY_CONDA_ENV_NAME}"
 else
-    conda list --name gwpyci
+    ${PIP} list installed
 fi
 
 # run tests with coverage - we use a separate directory here
 # to guarantee that we run the tests from the installed code
 mkdir -p tests
 pushd tests
+
+function combine_junit() {
+    # combine junit files from each pytest instance
+    ${PYTHON} -c "
+import os.path
+from junitparser import JUnitXml
+xml1 = JUnitXml.fromfile('junit1.xml')
+if os.path.isfile('junit2.xml'):
+    xml1 += JUnitXml.fromfile('junit2.xml')
+xml1.write('junit.xml')"
+    rm -f junit1.xml junit2.xml
+}
+
+trap combine_junit EXIT
 
 # run standard test suite
 ${PYTHON} -m pytest \
@@ -59,26 +71,17 @@ ${PYTHON} -m pytest \
     --junitxml junit1.xml \
     --numprocesses 2
 
-# run examples test suite
-${PYTHON} -m pytest \
-    ../examples/test_examples.py \
-    --verbose \
-    --cov gwpy \
-    --cov-append \
-    --cov-report xml:coverage.xml \
-    --junitxml junit2.xml || {
-# handle exit code 5 (all tests skipped) as pass
-EC_="$?";
-[ "${EC_}" -ne 5 ] && exit "${EC_}";
-}
-
-# combine junit files from each pytest instance
-${PIP} install junitparser
-${PYTHON} -c "
-from junitparser import JUnitXml
-xml1 = JUnitXml.fromfile('junit1.xml')
-xml1 += JUnitXml.fromfile('junit2.xml')
-xml1.write('junit.xml')"
-rm -f junit1.xml junit2.xml
-
-popd
+# run examples test suite (not on appveyor)
+if [[ -z ${APPVEYOR} ]]; then
+    ${PYTHON} -m pytest \
+        ../examples/test_examples.py \
+        --verbose \
+        --cov gwpy \
+        --cov-append \
+        --cov-report xml:coverage.xml \
+        --junitxml junit2.xml || {
+    # handle exit code 5 (all tests skipped) as pass
+    EC_="$?";
+    [ "${EC_}" -ne 5 ] && exit "${EC_}";
+    }
+fi

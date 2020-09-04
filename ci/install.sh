@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) Duncan Macleod (2019-2020)
+# Copyright (C) Cardiff University (2019-2020)
 #
 # This file is part of GWpy.
 #
@@ -22,16 +22,17 @@ set -ex
 . ci/lib.sh
 
 #
-# Submit coverage data to codecov.io
+# Install this package
 #
 
 find_python_and_pip
 
-# install codecov
-${PIP} install coverage codecov
+# update pip to support --progress-bar
+${PIP} install --quiet "pip>=10.0.0" "wheel"
 
-# find job name
-_JOBNAME=${CIRCLE_JOB:-${TRAVIS_JOB_NAME}}
-
-# submit coverage results
-${PYTHON} -m codecov --file tests/coverage.xml --flags $(uname) python${PYTHON_VERSION/./} ${_JOBNAME%%:*}
+# install from tarball if exists, or cwd
+if ls gwpy-*.tar.* &> /dev/null; then
+    ${PIP} install --progress-bar=off gwpy-*.tar.*
+else
+    ${PIP} install --progress-bar=off .
+fi
