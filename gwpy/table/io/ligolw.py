@@ -50,7 +50,11 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = []
 
 # methods to exclude from get_as_columns conversions
-GET_AS_EXCLUDE = ['get_column', 'get_table']
+GET_AS_EXCLUDE = [
+    'column',
+    'table',
+    'time_slide_id',
+]
 
 # map custom object types to numpy-compatible type
 NUMPY_TYPE_MAP = dict()
@@ -301,15 +305,27 @@ def table_to_ligolw(table, tablename):
     """
     from ligo.lw import lsctables
 
-    # create new LIGO_LW table
+    # -- work out columns for LIGO_LW table
+    # this is overly complicated because of the way that we magically
+    # map properties of ligo.lw.table.Table objects to real columns in
+    # astropy.table.Table objects, but also because ligo.lw internally
+    # combines table names and column names for some columns
+    # (e.g. process:process_id)
     columns = table.columns.keys()
     cls = lsctables.TableByName[tablename]
-    llwcolumns = list(columns)
+    inst = lsctables.New(cls)
+    try:
+        columnnamesreal = dict(zip(inst.columnnames, inst.columnnamesreal))
+    except AttributeError:  # glue doesn't have these attributes
+        columnnamesreal = {}
+    llwcolumns = [columnnamesreal.get(n, n) for n in columns]
     for col, llwcols in _get_property_columns(cls, columns).items():
         idx = llwcolumns.index(col)
         llwcolumns.pop(idx)
         for name in llwcols[::-1]:
             llwcolumns.insert(idx, name)
+
+    # create new LIGO_LW table
     llwtable = lsctables.New(cls, columns=llwcolumns)
 
     # map rows across
