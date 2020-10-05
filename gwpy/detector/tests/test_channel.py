@@ -333,6 +333,13 @@ class TestChannel(object):
         # mock response and test parsing
         url = "https://cis.ligo.org/api/channel/?q={}".format(name)
         with requests_mock.Mocker() as rmock:
+            # mock the request to get the list of IdPs
+            from ciecplib.utils import DEFAULT_IDPLIST_URL
+            rmock.get(
+                DEFAULT_IDPLIST_URL,
+                text="https://login.ligo.org/idp/profile/SAML2/SOAP/ECP LIGO",
+            )
+            # mock our request and test result parsing
             rmock.get(url, json=results)
             if name == 'X1:TEST-CHANNEL':
                 c = self.TEST_CLASS.query(name, kerberos=True)

@@ -41,13 +41,13 @@ def test_multiprocess_with_queues(capsys, nproc, verbose):
     assert out == [1, 2, 3, 4, 5]
 
     # assert progress bar prints correctly
-    cap = capsys.readouterr()
+    stdout = capsys.readouterr().out.strip()
     if verbose is True:
-        assert cap.out.startswith('\rProcessing: ')
+        assert stdout.startswith('Processing: ')
     elif verbose is False:
-        assert cap.out == ''
+        assert stdout == ''
     else:
-        assert cap.out.startswith('\r{}: '.format(verbose))
+        assert stdout.startswith(verbose)
 
 
 @pytest.mark.parametrize('nproc', [1, 2])
