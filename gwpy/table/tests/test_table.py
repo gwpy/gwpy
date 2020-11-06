@@ -738,20 +738,28 @@ class TestEventTable(TestTable):
         table = self.create(
             100, names=['time', 'snr', 'frequency'])
         fp = os.path.join(tempfile.mkdtemp(), 'SNAX-0-0.h5')
+        channel = 'H1:FAKE'
         try:
             # write table in snax format (by hand)
             with h5py.File(fp, 'w') as h5f:
-                group = h5f.create_group('H1:FAKE')
+                group = h5f.create_group(channel)
                 group.create_dataset(data=table, name='0.0_20.0')
 
-            # check that we can read
-            t2 = self.TABLE.read(fp, 'H1:FAKE', format='hdf5.snax')
+            # manually add 'channel' column to table
+            table["channel"] = channel
+
+            # check reading capabilities with and
+            # without specifying channels
+            t2 = self.TABLE.read(fp, format='hdf5.snax')
+            utils.assert_table_equal(table, t2)
+
+            t2 = self.TABLE.read(fp, channels=channel, format='hdf5.snax')
             utils.assert_table_equal(table, t2)
 
             # test with selection and columns
             t2 = self.TABLE.read(
                 fp,
-                'H1:FAKE',
+                channels=channel,
                 format='hdf5.snax',
                 selection='snr>.5',
                 columns=('time', 'snr'),

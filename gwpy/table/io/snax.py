@@ -33,7 +33,7 @@ __author__ = 'Patrick Godwin <patrick.godwin@ligo.org>'
 @read_with_columns
 @read_with_selection
 @with_read_hdf5
-def table_from_file(source, channel):
+def table_from_file(source, channels=None):
     """Read an `EventTable` from a SNAX HDF5 file
 
     Parameters
@@ -41,18 +41,38 @@ def table_from_file(source, channel):
     source : `h5py.File`
         the file path of open `h5py` object from which to read the data
 
-    channel : `str`
-        the channel to read data from
+    channels : `str` or `list`
+        the channel(s) to read data from
 
     Returns
     -------
     table : `~gwpy.table.EventTable`
     """
-    return vstack(
-        list(map(read_table_hdf5, source[channel].values())),
-        join_type="exact",
-        metadata_conflicts="error",
-    )
+    # format channels appropriately
+    if isinstance(channels, str):
+        channels = [channels]
+
+    # only query channels contained in file
+    # if channels not specified, load all of them
+    if channels is None:
+        channels = source.keys()
+    else:
+        channels = set(channels) & set(source.keys())
+
+    # read data, adding in 'channel' column
+    # to preserve uniqueness across channels
+    tables = []
+    for channel in channels:
+        table = vstack(
+            list(map(read_table_hdf5, source[channel].values())),
+            join_type="exact",
+            metadata_conflicts="error",
+        )
+        table["channel"] = channel
+        tables.append(table)
+
+    # combine results
+    return vstack(tables, join_type="exact", metadata_conflicts="error")
 
 
 # register for unified I/O
