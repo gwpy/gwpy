@@ -729,7 +729,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
             start = None
             end = 0
             for ts in self.timeseries:
-                if start:
+                if start is not None:       # NB quantity truth value is deprecated
                     start = min(ts.t0, start)
                     end = max(ts.t0+ts.duration, end)
                 else:

@@ -62,6 +62,15 @@ class TimeSeries(TimeDomainProduct):
             suffix,
         ])
 
+    def _finalize_arguments(self, args):
+        """if we are overlaying different times set x-axis appropriately"""
+        super()._finalize_arguments(args)
+        if args.dt:
+            starts = [float(gps) for gpsl in args.start for gps in gpsl]
+            xmax = min(starts) + args.duration
+            if args.xmax > xmax:
+                args.xmax = xmax
+
     def make_plot(self):
         """Generate the plot from time series and arguments
         """
@@ -71,6 +80,14 @@ class TimeSeries(TimeDomainProduct):
         # handle user specified plot labels
         if self.args.legend:
             nlegargs = len(self.args.legend[0])
+        elif self.args.dt:
+            # add times to legend
+            legend_text = list()
+            for ts in self.timeseries:
+                ltext = '{} - {:.0f}'.format(ts.channel.name, ts.t0.value)
+                legend_text.append(ltext)
+            self.args.legend = [legend_text]
+            nlegargs = len(legend_text)
         else:
             nlegargs = 0
         if nlegargs > 0 and nlegargs != self.n_datasets:
@@ -80,6 +97,15 @@ class TimeSeries(TimeDomainProduct):
                           'There are {:d} series and {:d} legends'.format(
                             len(self.timeseries), len(self.args.legend)))
             nlegargs = 0    # don't use  them
+
+        if self.args.dt:
+
+            min_t0 = self.timeseries[0].t0
+            for ts in self.timeseries:
+                min_to = min(min_t0, ts.t0)
+
+            for ts in self.timeseries:
+                ts.t0 = min_t0
 
         for i in range(0, self.n_datasets):
             series = self.timeseries[i]
@@ -109,3 +135,14 @@ class TimeSeries(TimeDomainProduct):
         ymax = max(ts.value.max() for ts in cropped)
         self.plot.gca().yaxis.set_data_interval(ymin, ymax, ignore=True)
         self.plot.gca().autoscale_view(scalex=False)
+
+    @classmethod
+    def arg_channels(self, parser):
+        """Add an option to overlay different times rather than on the
+        same time scale"""
+        super().arg_channels(parser)
+        group = parser.add_argument_group(
+                'Data options time series', 'Allow overlay')
+        group.add_argument('--dt', action='store_true',
+                           help='Display multiple start times overlayed '
+                                'rather than sequential on time a is')
