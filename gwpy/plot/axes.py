@@ -81,8 +81,16 @@ def restore_grid(func):
     """
     @wraps(func)
     def wrapped_func(self, *args, **kwargs):
-        grid = (self.xaxis._gridOnMinor, self.xaxis._gridOnMajor,
-                self.yaxis._gridOnMinor, self.yaxis._gridOnMajor)
+        try:
+            grid = (
+                self.xaxis._minor_tick_kw["gridOn"],
+                self.xaxis._major_tick_kw["gridOn"],
+                self.yaxis._minor_tick_kw["gridOn"],
+                self.yaxis._major_tick_kw["gridOn"],
+            )
+        except KeyError:  # matplotlib < 3.3.3
+            grid = (self.xaxis._gridOnMinor, self.xaxis._gridOnMajor,
+                    self.yaxis._gridOnMinor, self.yaxis._gridOnMajor)
         try:
             return func(self, *args, **kwargs)
         finally:
