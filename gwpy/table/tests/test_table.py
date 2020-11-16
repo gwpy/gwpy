@@ -769,6 +769,19 @@ class TestEventTable(TestTable):
                 filter_table(table, 'snr>.5')[('time', 'snr')],
             )
 
+            # check error handling when missing channels are encountered
+            missing = [channel, 'H1:MISSING']
+            with pytest.raises(ValueError):
+                self.TABLE.read(fp, channels=missing, format='hdf5.snax')
+
+            with pytest.warns(UserWarning):
+                self.TABLE.read(
+                    fp,
+                    channels=missing,
+                    format='hdf5.snax',
+                    on_missing='warn',
+                )
+
         finally:
             if os.path.isdir(os.path.dirname(fp)):
                 shutil.rmtree(os.path.dirname(fp))
