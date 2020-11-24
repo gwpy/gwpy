@@ -78,9 +78,11 @@ def _match_time(elem, gps):
 
 def _match_array(xmldoc, name=None, epoch=None, **params):
     from ligo.lw.ligolw import Array
-    from ligo.lw.param import get_param
+    from ligo.lw.param import (Param, get_param)
 
     def _is_match(arr):
+        """Work out whether this `<Array>` element matches the request
+        """
         parent = arr.parentNode
         if (
             (name is not None and not _match_name(arr, name)) or
@@ -95,6 +97,20 @@ def _match_array(xmldoc, name=None, epoch=None, **params):
                 return False
         return True
 
+    def _get_filter_keys(arrays, **given):
+        """Returns the set of keyword arguments that can be used to filter
+
+        This is just to format a helpful error message for users to show them
+        what params they could use to select the right array.
+        """
+        # return name and epoch if not given by the user
+        keys = set(k for k in ("name", "epoch") if given.pop(k, None) is None)
+        # add all of the params found in _any_ array
+        return (keys | set(
+            p.Name for arr in arrays for
+            p in arr.parentNode.getElementsByTagName(Param.tagName)
+        )) - set(given.keys())
+
     # parse out correct element
     matches = list(filter(
         _is_match,
@@ -105,11 +121,15 @@ def _match_array(xmldoc, name=None, epoch=None, **params):
     except ValueError as exc:
         if not matches:  # no arrays found
             exc.args = ("no <Array> elements found matching request",)
-        else:
-            exc.args = ("multiple <Array> elements found matching request, "
-                        "consider using the `name`, passing `epoch` or param "
-                        "`<name>=<value>` kwargs to filter the correct parent "
-                        "<LIGO_LW> element",)
+        else:  # multiple arrays found
+            keys = _get_filter_keys(matches, name=name, epoch=epoch, **params)
+            exc.args = (
+                "multiple <Array> elements found matching the request, "
+                "please use one of the following keyword arguments to "
+                "specify the correct array to read: {}".format(
+                    ", ".join(map(repr, sorted(keys))),
+                ),
+            )
         raise
 
     return arr
