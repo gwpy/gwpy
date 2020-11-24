@@ -271,27 +271,44 @@ class TestFrequencySeries(_TestSeries):
         assert array.epoch is None
 
     @utils.skip_missing_dependency('ligo.lw')
-    def test_read_ligolw_errors(self, ligolw):
+    def test_read_ligolw_error_multiple_array(self, ligolw):
         # assert errors
-        with pytest.raises(ValueError):  # multiple <Array> hits
+        with pytest.raises(ValueError) as exc:  # multiple <Array> hits
             FrequencySeries.read(ligolw)
-        with pytest.raises(ValueError):  # multiple <Array> hits
+        assert "'name'" in str(exc.value)
+
+        with pytest.raises(ValueError) as exc:  # multiple <Array> hits
             FrequencySeries.read(ligolw, "PSD2")
-        with pytest.raises(ValueError):  # no hits
+        assert "'epoch" in str(exc.value) and "'name'" not in str(exc.value)
+
+    @utils.skip_missing_dependency('ligo.lw')
+    def test_read_ligolw_error_no_array(self, ligolw):
+        with pytest.raises(ValueError) as exc:  # no hits
             FrequencySeries.read(ligolw, "blah")
+        assert str(exc.value).startswith("no <Array> elements found")
+
+    @utils.skip_missing_dependency('ligo.lw')
+    def test_read_ligolw_error_no_match(self, ligolw):
         with pytest.raises(ValueError):  # wrong epoch
             FrequencySeries.read(ligolw, epoch=0)
+
         with pytest.raises(ValueError):  # <Param>s don't match
             FrequencySeries.read(
                 ligolw,
                 "PSD1",
                 f0=0,
             )
+
+    @utils.skip_missing_dependency('ligo.lw')
+    def test_read_ligolw_error_no_param(self, ligolw):
         with pytest.raises(ValueError):  # no <Param>
             FrequencySeries.read(
                 ligolw,
                 "PSD2",
                 blah="blah",
             )
+
+    @utils.skip_missing_dependency('ligo.lw')
+    def test_read_ligolw_error_dim(self, ligolw):
         with pytest.raises(ValueError):  # wrong dimensionality
             FrequencySeries.read(ligolw, epoch=1000000001)
