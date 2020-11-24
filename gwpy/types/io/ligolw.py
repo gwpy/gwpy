@@ -94,11 +94,14 @@ def _match_array(xmldoc, name=None, epoch=None, **params):
         return True
 
     # parse out correct element
-    matches = filter(_is_match, xmldoc.getElementsByTagName(Array.tagName))
+    matches = list(filter(
+        _is_match,
+        xmldoc.getElementsByTagName(Array.tagName),
+    ))
     try:
         arr, = matches
     except ValueError as exc:
-        if not list(matches):
+        if not matches:  # no arrays found
             exc.args = ("no <Array> elements found matching request",)
         else:
             exc.args = ("multiple <Array> elements found matching request, "
