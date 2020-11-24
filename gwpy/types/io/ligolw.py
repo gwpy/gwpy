@@ -57,6 +57,10 @@ def _match_name(elem, name):
 def _get_time(time):
     """Returns the Time element of a ``<LIGO_LW>``.
     """
+    from ligo.lw.ligolw import Time
+    if not isinstance(time, Time):
+        t, = time.getElementsByTagName(Time.tagName)
+        return _get_time(t)
     return to_gps(time.pcdata)
 
 
@@ -66,12 +70,10 @@ def _match_time(elem, gps):
     This will return `False` if not exactly one ``<Time>`` element
     is found.
     """
-    from ligo.lw.ligolw import Time
     try:
-        time, = elem.getElementsByTagName(Time.tagName)
-    except ValueError:  # multiple times
+        return _get_time(elem) == to_gps(gps)
+    except (AttributeError, ValueError):  # not exactly one Time
         return False
-    return _get_time(time) == to_gps(gps)
 
 
 def _match_array(xmldoc, name=None, epoch=None, **params):
