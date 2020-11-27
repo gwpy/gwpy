@@ -36,7 +36,7 @@ from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-DEFAULT_FFT_METHOD = None
+DEFAULT_FFT_METHOD = "median"
 
 
 # -- utilities ----------------------------------------------------------------
@@ -272,7 +272,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method (default: ``'welch'``),
+            FFT-averaging method (default: ``'median'``),
             see *Notes* for more details
 
         **kwargs
@@ -319,7 +319,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method (default: ``'welch'``),
+            FFT-averaging method (default: ``'median'``),
             see *Notes* for more details
 
         Returns
@@ -409,7 +409,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method (default: ``'welch'``),
+            FFT-averaging method (default: ``'median'``),
             see *Notes* for more details
 
         nproc : `int`
@@ -567,7 +567,7 @@ class TimeSeries(TimeSeriesBase):
             number of seconds in single FFT
 
         method : `str`, optional
-            FFT-averaging method (default: ``'welch'``),
+            FFT-averaging method (default: ``'median'``),
             see *Notes* for more details
 
         overlap : `float`, optional
@@ -1695,7 +1695,7 @@ class TimeSeries(TimeSeriesBase):
             recommended overlap for the given window (if given), or 0
 
         method : `str`, optional
-            FFT-averaging method (default: ``'welch'``)
+            FFT-averaging method (default: ``'median'``)
 
         window : `str`, `numpy.ndarray`, optional
             window function to apply to timeseries prior to FFT,
