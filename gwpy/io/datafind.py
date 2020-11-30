@@ -40,7 +40,6 @@ import re
 import warnings
 from functools import wraps
 from http.client import HTTPException
-from urllib.parse import urlparse
 
 from ligo.segments import (
     segment as LigoSegment,
@@ -49,6 +48,7 @@ from ligo.segments import (
 from ..time import to_gps
 from .cache import (cache_segments, read_cache_entry, _iter_cache)
 from .gwf import (num_channels, iter_channel_names)
+from .utils import file_path
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -665,7 +665,7 @@ def find_latest(observatory, frametype, gpstime=None, allow_tape=False,
         raise RuntimeError(
             "no files found for {}-{}".format(observatory, frametype))
 
-    path = urlparse(path).path
+    path = file_path(path)
     if not allow_tape and on_tape(path):
         raise IOError("Latest frame file for {}-{} is on tape "
                       "(pass allow_tape=True to force): "

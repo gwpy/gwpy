@@ -271,6 +271,32 @@ class TestTable(object):
                                  use_numpy_dtypes=True)
             utils.assert_table_equal(t2, table, almost_equal=True)
 
+    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.parametrize('ilwdchar_compat', (False, True))
+    def test_read_ligolw_get_as_exclude(self, ilwdchar_compat):
+        table = self.TABLE(
+            rows=[
+                ("H1", 0.0, 4, 0),
+                ("L1", 0.62831, 4, 0),
+                ("V1", 0.31415, 4, 0),
+            ],
+            names=("instrument", "offset", "process_id", "time_slide_id"),
+        )
+        with tempfile.NamedTemporaryFile(suffix=".xml") as f:
+            table.write(
+                f,
+                format="ligolw",
+                tablename="time_slide",
+                ilwdchar_compat=ilwdchar_compat,
+            )
+            t2 = table.read(
+                f,
+                tablename="time_slide",
+                use_numpy_dtypes=ilwdchar_compat,
+            )
+            t2.sort("instrument")
+            utils.assert_table_equal(t2, table)
+
     @utils.skip_missing_dependency('root_numpy')
     def test_read_write_root(self, table):
         with utils.TemporaryFilename(suffix='.root') as tmp:
