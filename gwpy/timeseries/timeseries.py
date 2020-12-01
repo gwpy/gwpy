@@ -664,7 +664,7 @@ class TimeSeries(TimeSeriesBase):
             self,
             spectral.rayleigh,
             fftlength=fftlength,
-            overlap=overlap,
+            overlap=overlap or 0,
             window=window,
         )
 
@@ -708,7 +708,7 @@ class TimeSeries(TimeSeriesBase):
             spectral.rayleigh,
             stride,
             fftlength=fftlength,
-            overlap=overlap,
+            overlap=overlap or 0,
             window=window,
             nproc=nproc,
             **kwargs
