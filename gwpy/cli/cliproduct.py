@@ -909,13 +909,17 @@ class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
             args.xscale = 'auto-gps'
         if args.xmin is None:
             args.xmin = min(starts)
+        elif args.xmin < 1e6:
+            args.xmin += min(starts)
+        if args.xmax is None:
+            args.xmax = max(starts) + args.duration
+        elif args.xmax < 1e6:
+            args.xmax += min(starts)
         if args.epoch is None:
             args.epoch = args.xmin
         elif args.epoch < 1e8:
             args.epoch += min(starts)
 
-        if args.xmax is None:
-            args.xmax = max(starts) + args.duration
         return super()._finalize_arguments(args)
 
     def get_xlabel(self):
