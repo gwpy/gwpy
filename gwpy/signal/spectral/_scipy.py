@@ -101,8 +101,9 @@ def rayleigh(timeseries, segmentlength, noverlap=0, window='hann'):
     segmentlength : `int`
         number of samples in single average.
 
-    noverlap : `int`
-        number of samples to overlap between segments, defaults to 50%.
+    noverlap : `int
+        number of samples to overlap between segments, passing `None` will
+        choose based on the window method, default: ``0``
 
     window : `str`, `numpy.ndarray`, optional
         window function to apply to ``timeseries`` prior to FFT,
