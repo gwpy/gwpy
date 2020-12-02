@@ -90,7 +90,7 @@ for func in (welch, bartlett, median):
 
 # -- others -------------------------------------------------------------------
 
-def rayleigh(timeseries, segmentlength, noverlap=0):
+def rayleigh(timeseries, segmentlength, noverlap=0, window='hann'):
     """Calculate a Rayleigh statistic spectrum
 
     Parameters
@@ -101,8 +101,14 @@ def rayleigh(timeseries, segmentlength, noverlap=0):
     segmentlength : `int`
         number of samples in single average.
 
-    noverlap : `int`
-        number of samples to overlap between segments, defaults to 50%.
+    noverlap : `int
+        number of samples to overlap between segments, passing `None` will
+        choose based on the window method, default: ``0``
+
+    window : `str`, `numpy.ndarray`, optional
+        window function to apply to ``timeseries`` prior to FFT,
+        see :func:`scipy.signal.get_window` for details on acceptable
+        formats
 
     Returns
     -------
@@ -118,7 +124,7 @@ def rayleigh(timeseries, segmentlength, noverlap=0):
     for i in range(numsegs):
         tmpdata[i, :] = welch(
             timeseries[i*stepsize:i*stepsize+segmentlength],
-            segmentlength)
+            segmentlength, window=window)
     std = tmpdata.std(axis=0)
     mean = tmpdata.mean(axis=0)
     return FrequencySeries(std/mean, unit='', copy=False, f0=0,

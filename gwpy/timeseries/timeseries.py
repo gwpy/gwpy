@@ -634,7 +634,7 @@ class TimeSeries(TimeSeriesBase):
         return specgram.variance(bins=bins, low=low, high=high, nbins=nbins,
                                  log=log, norm=norm, density=density)
 
-    def rayleigh_spectrum(self, fftlength=None, overlap=None):
+    def rayleigh_spectrum(self, fftlength=None, overlap=0, window='hann'):
         """Calculate the Rayleigh `FrequencySeries` for this `TimeSeries`.
 
         The Rayleigh statistic is calculated as the ratio of the standard
@@ -647,8 +647,13 @@ class TimeSeries(TimeSeriesBase):
             covering the full duration
 
         overlap : `float`, optional
-            number of seconds of overlap between FFTs, defaults to that of
-            the relevant method.
+            number of seconds of overlap between FFTs, passing `None` will
+            choose based on the window method, default: ``0``
+
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
 
         Returns
         -------
@@ -660,10 +665,11 @@ class TimeSeries(TimeSeriesBase):
             spectral.rayleigh,
             fftlength=fftlength,
             overlap=overlap,
+            window=window,
         )
 
     def rayleigh_spectrogram(self, stride, fftlength=None, overlap=0,
-                             nproc=1, **kwargs):
+                             window='hann', nproc=1, **kwargs):
         """Calculate the Rayleigh statistic spectrogram of this `TimeSeries`
 
         Parameters
@@ -675,7 +681,13 @@ class TimeSeries(TimeSeriesBase):
             number of seconds in single FFT.
 
         overlap : `float`, optional
-            number of seconds of overlap between FFTs, default: ``0``
+            number of seconds of overlap between FFTs, passing `None` will
+            choose based on the window method, default: ``0``
+
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
 
         nproc : `int`, optional
             maximum number of independent frame reading processes, default
@@ -698,6 +710,7 @@ class TimeSeries(TimeSeriesBase):
             stride,
             fftlength=fftlength,
             overlap=overlap,
+            window=window,
             nproc=nproc,
             **kwargs
         )
