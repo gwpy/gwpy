@@ -469,21 +469,29 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         if all(x is None for x in (highpass, lowpass, notch)):
             return data
 
-        # build ZPK
-        zpks = []
-        if highpass is not None and lowpass is not None:
-            zpks.append(filter_design.bandpass(highpass, lowpass,
-                                               data.sample_rate))
-        elif highpass is not None:
-            zpks.append(filter_design.highpass(highpass, data.sample_rate))
-        elif lowpass is not None:
-            zpks.append(filter_design.lowpass(lowpass, data.sample_rate))
-        for freq in notch or []:
-            zpks.append(filter_design.notch(freq, data.sample_rate))
-        zpk = filter_design.concatenate_zpks(*zpks)
+        # apply sos filters one at a time to avoid problems combining them
 
-        # apply forward-backward (zero-phase) filter
-        return data.filter(*zpk, filtfilt=True)
+        sos = None
+        if highpass is not None and lowpass is not None:
+            sos = filter_design.bandpass(highpass, lowpass, data.sample_rate,
+                                         ftype='butter', output='sos')
+        elif highpass is not None:
+            sos = filter_design.highpass(highpass, data.sample_rate,
+                                         ftype='butter', output='sos')
+        elif lowpass is not None:
+            sos = filter_design.lowpass(lowpass, data.sample_rate,
+                                        ftype='butter', output='sos')
+
+        if sos is not None:
+            ret = data.filter(sos)
+        elif notch:
+            ret = data
+
+        for freq in notch or []:
+            sos = filter_design.notch(freq, data.sample_rate)
+            ret = ret.filter(sos)
+
+        return ret
 
     # -- plotting -------------------------------
 
