@@ -533,10 +533,10 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
 
     # write file
     if isinstance(target, str):
-        kwargs.setdefault('gz', target.endswith('.gz'))
+        kwargs.setdefault('compress', target.endswith('.gz'))
         ligolw_utils.write_filename(xmldoc, target, **kwargs)
     elif isinstance(target, FILE_LIKE):
-        kwargs.setdefault('gz', target.name.endswith('.gz'))
+        kwargs.setdefault('compress', target.name.endswith('.gz'))
         ligolw_utils.write_fileobj(xmldoc, target, **kwargs)
 
 
