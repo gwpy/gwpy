@@ -49,7 +49,7 @@ install_requires = [
     'h5py >= 2.7.0',
     'ligo-segments >= 1.0.0',
     'ligotimegps >= 1.2.1',
-    'matplotlib >= 3.1.0',
+    'matplotlib >= 3.3.0',
     'numpy >= 1.12.0',
     'python-dateutil',
     'scipy >= 1.2.0',
