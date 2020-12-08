@@ -314,10 +314,10 @@ class Axes(_Axes):
                     raise
             # log-scale the axis and extract the base
             if kwargs.get('orientation') == 'horizontal':
-                self.set_yscale('log', nonposy='clip')
+                self.set_yscale('log', nonpositive='clip')
                 logbase = self.yaxis._scale.base
             else:
-                self.set_xscale('log', nonposx='clip')
+                self.set_xscale('log', nonpositive='clip')
                 logbase = self.xaxis._scale.base
             # generate the bins
             kwargs['bins'] = numpy.logspace(
