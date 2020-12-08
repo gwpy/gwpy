@@ -50,7 +50,7 @@ install_requires = [
     'ligo-segments >= 1.0.0',
     'ligotimegps >= 1.2.1',
     'matplotlib >= 3.3.0',
-    'numpy >= 1.12.0',
+    'numpy >= 1.15.0',
     'python-dateutil',
     'scipy >= 1.2.0',
     'tqdm >= 4.10.0',
