@@ -69,6 +69,7 @@ def example_context():
         with warnings.catch_warnings():
             warnings.filterwarnings('error', category=NDSWarning)
             warnings.filterwarnings('ignore', message=".*non-GUI backend.*")
+            warnings.filterwarnings("ignore", message="numpy.ufunc size")
             yield
     finally:
         # close all open figures regardless of test status
