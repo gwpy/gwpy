@@ -734,9 +734,9 @@ class CliProduct(object, metaclass=abc.ABCMeta):
             start = None
             end = 0
             for ts in self.timeseries:
-                if start:
+                if start is not None:
                     start = min(ts.t0, start)
-                    end = max(ts.t0+ts.duration, end)
+                    end = max(ts.t0 + ts.duration, end)
                 else:
                     start = ts.t0
                     end = start + ts.duration
