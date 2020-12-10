@@ -531,19 +531,22 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
     # convert table to format
     write_tables_to_document(xmldoc, tables, overwrite=overwrite)
 
-    # write file
-    if isinstance(target, str):
-        kwargs.setdefault(
-            'compress',
-            'gz' if target.endswith('.gz') else False,
-        )
-        ligolw_utils.write_filename(xmldoc, target, **kwargs)
-    elif isinstance(target, FILE_LIKE):
-        kwargs.setdefault(
-            'compress',
-            'gz' if target.name.endswith('.gz') else False,
-        )
-        ligolw_utils.write_fileobj(xmldoc, target, **kwargs)
+    # find writer function and target filename
+    if isinstance(target, FILE_LIKE):
+        writer = ligolw_utils.write_fileobj
+        name = target.name
+    else:
+        writer = ligolw_utils.write_filename
+        name = str(target)
+
+    # handle gzip compression kwargs
+    if name.endswith('.gz') and writer.__module__.startswith('glue'):
+        kwargs.setdefault('gz', True)
+    elif name.endswith('.gz'):
+        kwargs.setdefault('compress', 'gz')
+
+    # write XML
+    writer(xmldoc, target, **kwargs)
 
 
 # -- utilities ----------------------------------------------------------------
