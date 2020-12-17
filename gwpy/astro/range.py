@@ -26,6 +26,7 @@ from functools import wraps
 from math import pi
 
 from scipy.integrate import trapz
+from scipy.interpolate import interp1d
 
 from astropy import (
     units,
@@ -35,7 +36,6 @@ from astropy import (
 from ..spectrogram import Spectrogram
 from ..timeseries import TimeSeries
 from ..utils import round_to_power
-from ..utils.decorators import deprecated_function
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
@@ -102,6 +102,8 @@ def _preformat_psd(func):
         return func(psd, *args, **kwargs)
     return decorated_func
 
+
+# -- SenseMon range -----------------------------
 
 @_preformat_psd
 def sensemon_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):
@@ -215,7 +217,7 @@ def sensemon_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
     >>> hoft = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
     >>> hoff = hoft.psd(fftlength=4)
 
-    Now we can calculate the :func:`inspiral_range`:
+    Now we can calculate the :func:`sensemon_range`:
 
     >>> from gwpy.astro import sensemon_range
     >>> r = sensemon_range(hoff, fmin=30)
@@ -241,24 +243,205 @@ def sensemon_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
     ) ** (1/2.)).to('Mpc')
 
 
-_DEPRECATED_SENSEMON_MESSAGE = (
-    "the {} function currently uses the LIGO SenseMon (LIGO-T030276) "
-    "estimation, but will be upgraded in gwpy-2.2.0 to use a model "
-    "with cosmological corrections; to keep using the SenseMon "
-    "estimation, please modify your usage to call "
-    "gwpy.astro.{{0.__name__}}."
-)
-inspiral_range_psd = deprecated_function(
-    sensemon_range_psd,
-    _DEPRECATED_SENSEMON_MESSAGE.format("inspiral_range_psd"),
-)
+# -- inspiral range -----------------------------
+
+def _import_inspiral_range():
+    try:
+        from inspiral_range import (
+            range,
+            find_root_redshift,
+        )
+    except ModuleNotFoundError as exc:  # no inspiral-range package
+        exc.msg = str(exc) + (
+            "; gwpy.astro's inspiral_range and inspiral_range_psd functions "
+            "require the extra package 'inspiral-range' to provide "
+            "cosmologically-corrected distance calculations, please install "
+            "that package and try again, or install gwpy with the 'astro' "
+            "extra via `python -m pip install gwpy[astro]`"
+        )
+        raise
+
+    from inspiral_range.waveform import CBCWaveform
+
+    return (
+        range,
+        find_root_redshift,
+        CBCWaveform,
+    )
 
 
-inspiral_range = deprecated_function(
-    sensemon_range,
-    _DEPRECATED_SENSEMON_MESSAGE.format("inspiral_range"),
-)
+@_preformat_psd
+def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False,
+                       **kwargs):
+    """Calculate the cosmology-corrected inspiral sensitive distance PSD
 
+    This method returns the power spectral density (in ``Mpc**2 / Hz``) to
+    which a compact binary inspiral with the given component masses would
+    be detectable given the instrumental PSD. The calculation is defined in
+    Belczynski et. al (2014):
+
+    https://dx.doi.org/10.1088/0004-637x/789/2/120
+
+    Parameters
+    ----------
+    psd : `~gwpy.frequencyseries.FrequencySeries`
+        the instrumental power-spectral-density data
+
+    snr : `float`, optional
+        the signal-to-noise ratio for which to calculate range,
+        default: `8`
+
+    mass1 : `float`, `~astropy.units.Quantity`, optional
+        the mass (`float` assumed in solar masses) of the first binary
+        component, default: `1.4`
+
+    mass2 : `float`, `~astropy.units.Quantity`, optional
+        the mass (`float` assumed in solar masses) of the second binary
+        component, default: `1.4`
+
+    horizon : `bool`, optional
+        if `True`, return the maximal 'horizon' luminosity distance, otherwise
+        return the angle-averaged comoving distance, default: `False`
+
+    **kwargs : `dict`, optional
+        additional keyword arguments to `~inspiral_range.waveform.CBCWaveform`
+
+    Returns
+    -------
+    rspec : `~gwpy.frequencyseries.FrequencySeries`
+        the calculated inspiral sensitivity PSD [Mpc^2 / Hz]
+
+    See also
+    --------
+    sensemon_range_psd
+        for the method based on LIGO-T030276, also known as LIGO SenseMonitor
+    inspiral-range
+        the package which does heavy lifting for waveform simulation and
+        cosmology calculations
+    """
+    # import the optional extras required here:
+    range_func, find_root_redshift, CBCWaveform = _import_inspiral_range()
+
+    # generate a waveform for this system
+    f = psd.frequencies.to('Hz').value
+    inspiral = CBCWaveform(f[f > 0], m1=mass1, m2=mass2, **kwargs)
+
+    # determine the detector horizon redshift
+    z_hor = find_root_redshift(
+        lambda z: inspiral.SNR(psd.value[f > 0], z) - snr,
+    )
+    dist = (
+        inspiral.cosmo.luminosity_distance(z_hor) if horizon else
+        range_func(f[f > 0], psd.value[f > 0], z_hor=z_hor, H=inspiral)
+    )
+    # calculate the sensitive distance PSD
+    (fz, hz) = inspiral.z_scale(z_hor)
+    hz = interp1d(fz, hz, bounds_error=False, fill_value=(hz[0], 0))(f)
+    out = type(psd)(4 * (dist / snr)**2 * (hz**2 / psd.value)[f > 0])
+    # finalize properties and return
+    out.__array_finalize__(psd)
+    out.override_unit('Mpc^2 / Hz')
+    out.f0 = f[f > 0][0]
+    return out
+
+
+@_preformat_psd
+def inspiral_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
+                   horizon=False, **kwargs):
+    """Calculate the cosmology-corrected inspiral sensitive distance
+
+    This method returns the distance (in megaparsecs) to which a compact
+    binary inspiral with the given component masses would be detectable
+    given the instrumental PSD. The calculation is defined in Belczynski
+    et. al (2014):
+
+    https://dx.doi.org/10.1088/0004-637x/789/2/120
+
+    Parameters
+    ----------
+    psd : `~gwpy.frequencyseries.FrequencySeries`
+        the instrumental power-spectral-density data
+
+    snr : `float`, optional
+        the signal-to-noise ratio for which to calculate range,
+        default: `8`
+
+    mass1 : `float`, `~astropy.units.Quantity`, optional
+        the mass (`float` assumed in solar masses) of the first binary
+        component, default: `1.4`
+
+    mass2 : `float`, `~astropy.units.Quantity`, optional
+        the mass (`float` assumed in solar masses) of the second binary
+        component, default: `1.4`
+
+    fmin : `float`, optional
+        the lower frequency cut-off of the integral, default: `psd.df`
+
+    fmax : `float`, optional
+        the maximum frequency limit of the integral, defaults to the rest-frame
+        innermost stable circular orbit (ISCO) frequency
+
+    horizon : `bool`, optional
+        if `True`, return the maximal 'horizon' luminosity distance, otherwise
+        return the angle-averaged comoving distance, default: `False`
+
+    **kwargs : `dict`, optional
+        additional keyword arguments to `~inspiral_range.waveform.CBCWaveform`
+
+    Returns
+    -------
+    range : `~astropy.units.Quantity`
+        the calculated inspiral range [Mpc]
+
+    Examples
+    --------
+    Grab some data for LIGO-Livingston around GW150914 and generate a PSD:
+
+    >>> from gwpy.timeseries import TimeSeries
+    >>> hoft = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+    >>> hoff = hoft.psd(fftlength=4)
+
+    Now, we can calculate the :func:`inspiral_range`:
+
+    >>> from gwpy.astro import inspiral_range
+    >>> r = inspiral_range(hoff, fmin=30)
+    >>> print(r)
+    70.4612102889 Mpc
+
+    See also
+    --------
+    sensemon_range
+        for the method based on LIGO-T030276, also known as LIGO SenseMonitor
+    inspiral-range
+        the package which does heavy lifting for waveform simulation and
+        cosmology calculations
+    """
+    # import the optional extras required here:
+    range_func, find_root_redshift, CBCWaveform = _import_inspiral_range()
+
+    # format frequency limits
+    f = psd.frequencies.to('Hz').value
+    fmin = fmin or psd.df.value  # avoid DC value
+    fmax = fmax or round_to_power(f[-1], which='lower')
+    frange = (f >= fmin) & (f < fmax)
+
+    # generate a waveform for this system
+    inspiral = CBCWaveform(f[frange], m1=mass1, m2=mass2, **kwargs)
+
+    # determine the detector horizon redshift
+    z_hor = find_root_redshift(
+        lambda z: inspiral.SNR(psd.value[frange], z) - snr,
+    )
+
+    # return the sensitive distance metric
+    return units.Quantity(
+        inspiral.cosmo.luminosity_distance(z_hor) if horizon else
+        range_func(f[frange], psd.value[frange], z_hor=z_hor, H=inspiral),
+        unit='Mpc',
+    )
+
+
+# -- burst range --------------------------------
 
 @_preformat_psd
 def burst_range_spectrum(psd, snr=8, energy=1e-2):
@@ -353,9 +536,19 @@ def burst_range(psd, snr=8, energy=1e-2, fmin=100, fmax=500):
     ) ** (1/3.)).to('Mpc')
 
 
-def range_timeseries(hoft, stride=None, fftlength=None, overlap=None,
-                     window='hann', method=DEFAULT_FFT_METHOD, nproc=1,
-                     **rangekwargs):
+# -- timeseries/spectrogram wrappers ------------
+
+def range_timeseries(
+    hoft,
+    stride=None,
+    fftlength=None,
+    overlap=None,
+    window='hann',
+    method=DEFAULT_FFT_METHOD,
+    nproc=1,
+    range_func=None,
+    **rangekwargs,
+):
     """Measure timeseries trends of astrophysical detector range (Mpc)
     directly from strain
 
@@ -388,6 +581,11 @@ def range_timeseries(hoft, stride=None, fftlength=None, overlap=None,
     nproc : `int`, optional
         number of CPUs to use in parallel processing of FFTs, default: 1
 
+    range_func : `callable`, optional
+        the function to call to generate the range for each stride,
+        defaults to ``inspiral_range`` unless ``energy`` is given
+        as a keyword argument to the range function
+
     **rangekwargs : `dict`, optional
         additional keyword arguments to :func:`burst_range` or
         :func:`inspiral_range` (see "Notes" below), defaults to
@@ -417,8 +615,10 @@ def range_timeseries(hoft, stride=None, fftlength=None, overlap=None,
         for a `~gwpy.spectrogram.Spectrogram` of the range integrand
     """
     rangekwargs = rangekwargs or {'mass1': 1.4, 'mass2': 1.4}
-    range_func = (burst_range if 'energy' in rangekwargs
-                  else inspiral_range)
+    if range_func is None and "energy" in rangekwargs:
+        range_func = burst_range
+    elif range_func is None:
+        range_func = inspiral_range
     hoft = _get_spectrogram(
         hoft, stride=stride, fftlength=fftlength, overlap=overlap,
         window=window, method=method, nproc=nproc)
@@ -432,9 +632,17 @@ def range_timeseries(hoft, stride=None, fftlength=None, overlap=None,
     return out
 
 
-def range_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
-                      window='hann', method=DEFAULT_FFT_METHOD, nproc=1,
-                      **rangekwargs):
+def range_spectrogram(
+    hoft,
+    stride=None,
+    fftlength=None,
+    overlap=None,
+    window='hann',
+    method=DEFAULT_FFT_METHOD,
+    nproc=1,
+    range_func=None,
+    **rangekwargs,
+):
     """Calculate the average range or range power spectrogram (Mpc or
     Mpc^2 / Hz) directly from strain
 
@@ -473,6 +681,11 @@ def range_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
     fmax : `float`, optional
         high frequency cut-off (Hz), defaults to Nyquist frequency of `hoft`
 
+    range_func : `callable`, optional
+        the function to call to generate the range for each stride,
+        defaults to ``inspiral_range`` unless ``energy`` is given
+        as a keyword argument to the range function
+
     **rangekwargs : `dict`, optional
         additional keyword arguments to :func:`burst_range_spectrum` or
         :func:`inspiral_range_psd` (see "Notes" below), defaults to
@@ -507,8 +720,10 @@ def range_spectrogram(hoft, stride=None, fftlength=None, overlap=None,
         for `TimeSeries` trends of the astrophysical range
     """
     rangekwargs = rangekwargs or {'mass1': 1.4, 'mass2': 1.4}
-    range_func = (burst_range_spectrum if 'energy' in rangekwargs
-                  else inspiral_range_psd)
+    if range_func is None and "energy" in rangekwargs:
+        range_func = burst_range_spectrum
+    elif range_func is None:
+        range_func = inspiral_range_psd
     hoft = _get_spectrogram(
         hoft, stride=stride, fftlength=fftlength, overlap=overlap,
         window=window, method=method, nproc=nproc)
