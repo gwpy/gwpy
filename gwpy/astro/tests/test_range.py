@@ -22,6 +22,7 @@
 import pytest
 
 from astropy import units
+from scipy.integrate import trapz
 
 from ... import astro
 from ...testing import utils
@@ -35,10 +36,8 @@ __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 # -- test results -------------------------------------------------------------
 
 TEST_RESULTS = {
-    'inspiral_range': 19.63418297300058 * units.Mpc,
-    'inspiral_range_psd': 7.922730174148789 * units.Mpc ** 2 / units.Hz,
+    'inspiral_range': 19.634311605544845 * units.Mpc,
     'burst_range': 13.81353542862508 * units.Mpc,
-    'burst_range_spectrum': 35.211595883103456 * units.Mpc,
 }
 
 
@@ -69,32 +68,43 @@ def hoft():
 def test_inspiral_range_psd(psd):
     """Test for :func:`gwpy.astro.inspiral_range_psd`
     """
-    r = astro.inspiral_range_psd(psd[1:])  # avoid DC
+    fisco = astro.range._get_isco_frequency(1.4, 1.4).value
+    frange = (psd.frequencies.value < fisco)
+    r = astro.inspiral_range_psd(psd[frange])
     assert isinstance(r, FrequencySeries)
-    utils.assert_quantity_almost_equal(r.max(),
-                                       TEST_RESULTS['inspiral_range_psd'])
+    utils.assert_quantity_almost_equal(
+        trapz(r, r.frequencies) ** (1/2.),
+        TEST_RESULTS['inspiral_range'],
+    )
+    assert r.f0.value > 0
 
 
 def test_inspiral_range(psd):
-    """Test for :func:`gwpy.astro.inspiral_range_psd`
+    """Test for :func:`gwpy.astro.inspiral_range`
     """
-    r = astro.inspiral_range(psd, fmin=40)
+    r = astro.inspiral_range(psd)
     utils.assert_quantity_almost_equal(r, TEST_RESULTS['inspiral_range'])
-
-
-def test_burst_range(psd):
-    """Test for :func:`gwpy.astro.burst_range`
-    """
-    r = astro.burst_range(psd.crop(None, 1000)[1:])
-    utils.assert_quantity_almost_equal(r, TEST_RESULTS['burst_range'])
 
 
 def test_burst_range_spectrum(psd):
     """Test for :func:`gwpy.astro.burst_range_spectrum`
     """
-    r = astro.burst_range_spectrum(psd.crop(None, 1000)[1:])
-    utils.assert_quantity_almost_equal(r.max(),
-                                       TEST_RESULTS['burst_range_spectrum'])
+    f = psd.frequencies
+    frange = (f.value >= 100) & (f.value < 500)
+    r = astro.burst_range_spectrum(psd[frange])
+    assert isinstance(r, FrequencySeries)
+    utils.assert_quantity_almost_equal(
+        (trapz(r**3, r.frequencies) / (400 * units.Hz)) ** (1/3.),
+        TEST_RESULTS['burst_range'],
+    )
+    assert r.f0.value > 0
+
+
+def test_burst_range(psd):
+    """Test for :func:`gwpy.astro.burst_range`
+    """
+    r = astro.burst_range(psd)
+    utils.assert_quantity_almost_equal(r, TEST_RESULTS['burst_range'])
 
 
 @pytest.mark.parametrize('rangekwargs', [
