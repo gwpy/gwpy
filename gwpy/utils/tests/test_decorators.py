@@ -49,3 +49,30 @@ def test_return_as_error():
     with pytest.raises(ValueError) as exc:
         myfunc('test')
     assert 'failed to cast return from myfunc as int: ' in str(exc.value)
+
+
+def test_deprecated_function():
+    """Test that `deprecated_function` works without a message
+
+    (and without any functional brackets)
+    """
+    @decorators.deprecated_function
+    def myfunc(value):
+        return str(value)
+
+    with pytest.warns(DeprecationWarning) as record:
+        myfunc('test')
+    assert len(record) == 1
+    assert "myfunc has been deprecated" in str(record[0].message)
+
+
+def test_deprecated_function_message():
+    """Test that `deprecated_function` works with a message
+    """
+    @decorators.deprecated_function(message="don't use {0.__name__}")
+    def myfunc(value):
+        return str(value)
+
+    with pytest.warns(DeprecationWarning) as record:
+        myfunc('test')
+    assert str(record[0].message) == "don't use myfunc"
