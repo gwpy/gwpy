@@ -61,7 +61,7 @@ class deprecated_property(property):  # pylint: disable=invalid-name
         super().__init__(fget, fset, fdel, doc)
 
 
-def deprecated_function(func, warning=DEPRECATED_FUNCTION_WARNING):
+def deprecated_function(func=None, message=DEPRECATED_FUNCTION_WARNING):
     """Adds a `DeprecationWarning` to a function
 
     Parameters
@@ -69,25 +69,28 @@ def deprecated_function(func, warning=DEPRECATED_FUNCTION_WARNING):
     func : `callable`
         the function to decorate with a `DeprecationWarning`
 
-    warning : `str`, optional
-        the warning to present
+    message : `str`, optional
+        the warning message to present
 
     Notes
     -----
-    The final warning message is formatted as ``warning.format(func)``
+    The final warning message is formatted as ``message.format(func)``
     so you can use attribute references to the function itself.
     See the default message as an example.
     """
-    @wraps(func)
-    def wrapped_func(*args, **kwargs):
-        warnings.warn(
-            DEPRECATED_FUNCTION_WARNING.format(func),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return func(*args, **kwargs)
-
-    return wrapped_func
+    def _decorator(func):
+        @wraps(func)
+        def wrapped_func(*args, **kwargs):
+            warnings.warn(
+                message.format(func),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            return func(*args, **kwargs)
+        return wrapped_func
+    if func:
+        return _decorator(func)
+    return _decorator
 
 
 def return_as(returntype):
