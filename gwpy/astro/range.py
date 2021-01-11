@@ -108,7 +108,7 @@ def _copy_docstring(func):
         message = (
             "this estimator currently uses the LIGO SenseMon (LIGO-T030276), "
             "which will be replaced by a model with cosmological corrections "
-            "in gwpy-2.2.0.\n\n"
+            "in gwpy-2.1.0.\n\n"
             "The SenseMon calculation has been moved to "
             "{0.__module__}.{0.__name__}".format(func)
         )
