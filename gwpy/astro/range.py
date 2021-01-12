@@ -103,18 +103,21 @@ def _preformat_psd(func):
     return decorated_func
 
 
-def _copy_docstring(func):
-    def decorated_func(target):
-        message = (
-            "this estimator currently uses the LIGO SenseMon (LIGO-T030276), "
-            "which will be replaced by a model with cosmological corrections "
-            "in gwpy-2.1.0.\n\n"
-            "The SenseMon calculation has been moved to "
-            "{0.__module__}.{0.__name__}".format(func)
-        )
-        target.__doc__ = func.__doc__
-        return deprecated_function(target, message=message)
-    return decorated_func
+def _deprecated_sensemon_call(name, sensemon_func):
+    @deprecated_function(
+        message=(
+            "the {} function currently uses the LIGO SenseMon (LIGO-T030276) "
+            "estimation, but will be upgraded in gwpy-2.1.0 to use a model "
+            "with cosmological corrections; to keep using the SenseMon "
+            "estimation, please modify your usage to call "
+            "gwpy.astro.{{0.__name__}}.".format(name)
+        ),
+    )
+    @wraps(sensemon_func)
+    def _new_func(*args, **kwargs):
+        return sensemon_func(*args, **kwargs)
+    _new_func.__name__ = name
+    return _new_func
 
 
 @_preformat_psd
@@ -221,10 +224,10 @@ def sensemon_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
     >>> hoft = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
     >>> hoff = hoft.psd(fftlength=4)
 
-    Now, we can calculate the :func:`inspiral_range`:
+    Now we can calculate the :func:`inspiral_range`:
 
-    >>> from gwpy.astro import inspiral_range
-    >>> r = inspiral_range(hoff, fmin=30)
+    >>> from gwpy.astro import sensemon_range
+    >>> r = sensemon_range(hoff, fmin=30)
     >>> print(r)
     70.4612102889 Mpc
     """
@@ -247,14 +250,16 @@ def sensemon_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
     ) ** (1/2.)).to('Mpc')
 
 
-@_copy_docstring(sensemon_range_psd)
-def inspiral_range_psd(psd, **kwargs):
-    return sensemon_range_psd(psd, **kwargs)
+inspiral_range_psd = _deprecated_sensemon_call(
+    "inspiral_range_psd",
+    sensemon_range_psd,
+)
 
 
-@_copy_docstring(sensemon_range)
-def inspiral_range(psd, **kwargs):
-    return sensemon_range(psd, **kwargs)
+inspiral_range = _deprecated_sensemon_call(
+    "inspiral_range",
+    sensemon_range,
+)
 
 
 @_preformat_psd
