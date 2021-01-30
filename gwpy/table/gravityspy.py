@@ -151,8 +151,9 @@ class GravitySpyTable(EventTable):
                                  duration_values.repeat(
                                    len(images_for_download_ext), 0).flatten(
                                      )).T
-        images_for_download_ext = images_for_download_ext.as_matrix(
-                                       ).repeat(len(cols_for_download), 0)
+        images_for_download_ext = images_for_download_ext.values
+        images_for_download_ext = images_for_download_ext.repeat(len(cols_for_download),
+                                                                 0)
         images_for_for_download_path = np.array([[download_location]]).repeat(
                                        len(images_for_download_ext), 0)
         images = np.hstack((np.atleast_2d(images).T,
