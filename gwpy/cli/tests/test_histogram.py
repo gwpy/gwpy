@@ -24,7 +24,7 @@ from .base import (_TestTimeDomainProduct, update_namespace)
 
 
 class TestCliTimeSeries(_TestTimeDomainProduct):
-    TEST_CLASS = cli.TimeSeries
+    TEST_CLASS = cli.Histogram
     ACTION = 'histogram'
 
     def test_get_title(self, prod):

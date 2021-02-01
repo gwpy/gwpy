@@ -37,6 +37,7 @@ from ..plot import Plot
 from ..plot.tex import label_to_latex
 import warnings
 
+
 class Histogram(TimeDomainProduct):
     """Plot a histogram of values for one or more time series
     """
@@ -55,7 +56,7 @@ class Histogram(TimeDomainProduct):
     @classmethod
     def init_cli(self, parser):
         """We add an option to add a fit ot gaussian PDF"""
-        super().init_cli(parser) # add all timeseries options
+        super().init_cli(parser)    # add all timeseries options
         group = parser.add_argument_group('Curve fit options')
         group.add_argument('--gauss', action='store_true',
                            help='Add gaussian fit')
@@ -65,15 +66,16 @@ class Histogram(TimeDomainProduct):
         """Text for x-axis label
         """
         units = self.units
+        ret = 'Timeseries amplitude'
         if len(units) == 1 and str(units[0]) == '':  # dimensionless
-            return 'Sample value'
-        if len(units) == 1 and self.usetex:
-            return 'Sample value ({})'.format(units[0].to_string('latex'))
+            pass
+        elif len(units) == 1 and self.usetex:
+            ret += ' [{}]'.format(units[0].to_string('latex'))
         elif len(units) == 1:
-            return 'Sample value ({})'.format(units[0].to_string())
+            return ' ({})'.format(units[0].to_string())
         elif len(units) > 1:
-            return 'Sample value (multiple units)'
-        return 'Sample value'
+            ret += ' (multiple units)'
+        return ret
 
     @classmethod
     def get_ylabel(self):
@@ -112,10 +114,8 @@ class Histogram(TimeDomainProduct):
         ax = plot.gca(xscale='linear')
 
         # handle user specified plot labels
-        if self.args.legend:
-            nlegargs = len(self.args.legend[0])
-        else:
-            nlegargs = 0
+        nlegargs = len(self.args.legend[0]) if self.args.legend else 0
+
         if nlegargs > 0 and nlegargs != self.n_datasets:
             warnings.warn('The number of legends specified must match '
                           'the number of time series'
@@ -126,13 +126,11 @@ class Histogram(TimeDomainProduct):
 
         for i in range(0, self.n_datasets):
             series = self.timeseries[i]
-            if nlegargs:
-                label = self.args.legend[0][i]
-            else:
-                label = series.channel.name
+            label = self.args.legend[0][i] if nlegargs else \
+                series.channel.name
             if self.usetex:
                 label = label_to_latex(label)
-            nbins = int(max(10, min(math.sqrt(len(series)), 2000)))
+            nbins = int(max(10., min(math.sqrt(len(series)), 2000)))
             n, bins, patches = ax.hist(series, bins=nbins, label=label,
                                        density=True, alpha=0.75)
             ymax = max(n)
