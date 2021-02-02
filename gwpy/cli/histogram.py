@@ -31,6 +31,7 @@ __myname__ = 'histogram.py'
 import math
 import sys
 from scipy.stats import kurtosis, norm, skew
+from astropy.units import Quantity
 
 from .cliproduct import TimeDomainProduct
 from ..plot import Plot
@@ -45,11 +46,12 @@ class Histogram(TimeDomainProduct):
 
     def __init__(self, args):
         super().__init__(args)
-        self.mean = None
-        self.std = None
-        self.skew = None
-        self.kurtosis = None
-        self.nbins = None
+        self.args = args
+        self.mean = Quantity(0, '')    # value needed for pytests
+        self.std = Quantity(0, '')
+        self.skew = Quantity(0, '')
+        self.kurtosis = 0
+        self.nbins = 0
         self.ymin = sys.maxsize
         self.ymax = 0
 
@@ -67,14 +69,15 @@ class Histogram(TimeDomainProduct):
         """
         units = self.units
         ret = 'Timeseries amplitude'
-        if len(units) == 1 and str(units[0]) == '':  # dimensionless
-            pass
-        elif len(units) == 1 and self.usetex:
-            ret += ' [{}]'.format(units[0].to_string('latex'))
-        elif len(units) == 1:
-            return ' ({})'.format(units[0].to_string())
-        elif len(units) > 1:
-            ret += ' (multiple units)'
+        if isinstance(units, list):
+            if len(units) == 1 and str(units[0]) == '':  # dimensionless
+                pass
+            elif len(units) == 1 and self.usetex:
+                ret += ' [{}]'.format(units[0].to_string('latex'))
+            elif len(units) == 1:
+                return ' ({})'.format(units[0].to_string())
+            elif len(units) > 1:
+                ret += ' (multiple units)'
         return ret
 
     @classmethod
@@ -83,13 +86,11 @@ class Histogram(TimeDomainProduct):
         """
         return 'Count'
 
-    @classmethod
     def get_suptitle(self):
         """Start of default super title, first channel is appended to it
         """
         return 'Histogram: {0}'.format(self.chan_list[0])
 
-    @classmethod
     def get_title(self):
         suffix = super().get_title()
         # limit significant digits for minute trends
@@ -106,7 +107,6 @@ class Histogram(TimeDomainProduct):
                    self.skew, self.kurtosis)
         return ret
 
-    @classmethod
     def make_plot(self):
         """Generate the plot from time series and arguments
         """
@@ -161,14 +161,12 @@ class Histogram(TimeDomainProduct):
 
         return plot
 
-    @classmethod
     def _finalize_arguments(self, args):
         """ We cannot guess at default plot params
         until histogram is calculated"""
         if args.xscale is None:  # set default x-axis scale
             args.xscale = 'linear'
 
-    @classmethod
     def scale_axes_from_data(self):
         """Restrict data limits for Y-axis based on what you can see
         """

@@ -29,10 +29,15 @@ class TestCliTimeSeries(_TestTimeDomainProduct):
 
     def test_get_title(self, prod):
         update_namespace(prod.args, highpass=10, lowpass=100)
-        t = 'Fs: (), duration: {0}, band pass (10.0-100.0)'.format(
-            prod.args.duration)
-        assert prod.get_title() == t
+        t = 'Fs: (), dur: {:d}, band pass (10.0-100.0) bins: 0, mean: 0, ' \
+            'sd: 0  skew: 0, kurtosis: 0'.format(prod.args.duration)
+        u = prod.get_title()
+        assert u == t
 
     def test_get_suptitle(self, prod):
-        assert prod.get_suptitle() == 'Time series: {0}'.format(
+        st = prod.get_suptitle()
+        assert st == 'Histogram: {0}'.format(
             prod.chan_list[0])
+
+    def test_set_plot_properties(self, plotprod):
+        assert True
