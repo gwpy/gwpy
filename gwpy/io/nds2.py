@@ -66,7 +66,7 @@ NDS2_TYPE_NAME = {
     0: 'unknown',
     1: 'online',
     2: 'raw',
-    4: 'reduced',
+    4: 'rds',
     8: 's-trend',
     16: 'm-trend',
     32: 'test-pt',
