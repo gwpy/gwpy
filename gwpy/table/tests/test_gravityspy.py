@@ -19,13 +19,8 @@
 """Unit tests for `gwpy.table`
 """
 
-from socket import timeout
-from ssl import SSLError
-from urllib.error import URLError
-
-import pytest
-
 from ...testing import utils
+from ...testing.errors import pytest_skip_network_error
 from .. import GravitySpyTable
 from .test_table import TestEventTable as _TestEventTable
 
@@ -54,14 +49,11 @@ JSON_RESPONSE = {
 class TestGravitySpyTable(_TestEventTable):
     TABLE = GravitySpyTable
 
+    @pytest_skip_network_error
     def test_search(self):
-        try:
-            table = self.TABLE.search(
-                gravityspy_id="8FHTgA8MEu",
-                howmany=1,
-                remote_timeout=60,
-            )
-        except (URLError, SSLError, timeout) as e:  # pragma: no-cover
-            pytest.skip(str(e))
-
+        table = self.TABLE.search(
+            gravityspy_id="8FHTgA8MEu",
+            howmany=1,
+            remote_timeout=60,
+        )
         utils.assert_table_equal(table, self.TABLE(JSON_RESPONSE))
