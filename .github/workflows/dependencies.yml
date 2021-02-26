@@ -1,0 +1,89 @@
+# ---------------------------
+#
+# Run tests that check integration with the dependencies, either
+#
+# minimal:
+#   check that the minimum version pins actually work
+#
+# experimental:
+#   check compatibility with the latest pre-releases of
+#   as much stuff as we can
+#
+# ---------------------------
+
+name: Dependencies
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  minmax-dependencies:
+    name: ${{ matrix.name }} (Python ${{ matrix.python-version }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "Minimum"
+            python-version: "3.6"
+            experimental: false
+          - name: "Experimental"
+            python-version: "3.x"
+            experimental: true
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Get source code
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install minimal dependencies
+      if: matrix.experimental != true
+      run: |
+        sed -i.tmp 's/>=/==/' requirements*.txt
+        python -m pip install -r requirements.txt -r requirements-test.txt
+
+    - name: Install experimental dependencies
+      if: matrix.experimental == true
+      run: |
+        sudo apt-get -y -q install libkrb5-dev
+        python -m pip install -U pip wheel
+        python -m pip install -r requirements-dev.txt --upgrade --upgrade-strategy=eager --pre
+
+    - name: Install GWpy
+      run: python -m pip install . --no-build-isolation -vv
+
+    - name: Package list
+      run: python -m pip list installed
+
+    - name: Run test suite
+      id: pytest
+      run: python -m pytest -ra --color yes --cov gwpy --pyargs gwpy --cov-report=xml --junitxml=pytest.xml
+
+    - name: Coverage report
+      run: python -m coverage report --show-missing
+
+    - name: Publish coverage to Codecov
+      uses: codecov/codecov-action@v1.2.1
+      with:
+        files: coverage.xml
+        flags: ${{ runner.os }},python${{ matrix.python-version }}
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: pytest-experimental-${{ matrix.os }}-${{ matrix.python-version }}
+        path: pytest.xml
