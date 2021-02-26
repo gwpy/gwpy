@@ -406,8 +406,10 @@ class Plot(figure.Figure):
                     cbar.ax.xaxis)
         if (
                 isinstance(cbar.formatter, LogFormatter)
-                and isinstance(longaxis.get_minor_formatter(),
-                           LogFormatterSciNotation)
+                and isinstance(
+                    longaxis.get_minor_formatter(),
+                    LogFormatterSciNotation,
+                )
         ):
             longaxis.set_minor_formatter(type(cbar.formatter)())
 
