@@ -1,3 +1,6 @@
+codecov:
+  require_ci_to_pass: true
+
 coverage:
   precision: 2
   range: 50..100
@@ -10,4 +13,3 @@ coverage:
     patch:
       default:
         target: 90
-
