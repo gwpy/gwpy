@@ -1,8 +1,7 @@
 # requirements for GWpy tests
 beautifulsoup4
-freezegun >= 0.2.3
-pytest >= 3.3.0 ; python_version >= '3.6'
-pytest >= 3.3.0, < 5.4.0a0 ; python_version < '3.6'
+freezegun >= 0.3.0
+pytest >= 3.6.3
 pytest-cov >= 2.4.0
 pytest-xdist
 requests-mock
