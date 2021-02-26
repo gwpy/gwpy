@@ -746,7 +746,10 @@ class CliProduct(object, metaclass=abc.ABCMeta):
             for segment in segments:
                 seg_name = segment.replace('{ifo}', ifo)
                 seg_data = DataQualityFlag.query_dqsegdb(
-                        seg_name, start, end)
+                    seg_name,
+                    start,
+                    end,
+                )
 
                 self.plot.add_segments_bar(seg_data, label=seg_name)
 
