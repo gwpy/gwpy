@@ -102,11 +102,14 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
         else:
             nlegargs = 0
         if nlegargs > 0 and nlegargs != self.n_datasets:
-            warnings.warn('The number of legends specified must match '
-                          'the number of time series'
-                          ' (channels * start times).  '
-                          'There are {:d} series and {:d} legends'.format(
-                            len(self.timeseries), len(self.args.legend)))
+            warnings.warn(
+                'The number of legends specified must match the number of '
+                'time series (channels * start times). '
+                'There are {:d} series and {:d} legends'.format(
+                    len(self.timeseries),
+                    len(self.args.legend),
+                ),
+            )
             nlegargs = 0  # don't use  themm
 
         for i in range(0, self.n_datasets):
