@@ -24,9 +24,7 @@ import re
 import shutil
 import tempfile
 from io import BytesIO
-from ssl import SSLError
 from unittest import mock
-from urllib.error import URLError
 
 import pytest
 
@@ -42,6 +40,7 @@ from ...frequencyseries import FrequencySeries
 from ...io import ligolw as io_ligolw
 from ...segments import (Segment, SegmentList)
 from ...testing import utils
+from ...testing.errors import pytest_skip_network_error
 from ...time import LIGOTimeGPS
 from ...timeseries import (TimeSeries, TimeSeriesDict)
 from .. import (Table, EventTable, filters)
@@ -761,11 +760,9 @@ class TestEventTable(TestTable):
             t2,
         )
 
+    @pytest_skip_network_error
     def test_fetch_open_data(self):
-        try:
-            table = self.TABLE.fetch_open_data("GWTC-1-confident")
-        except (URLError, SSLError) as exc:  # pragma: no-cover
-            pytest.skip(str(exc))
+        table = self.TABLE.fetch_open_data("GWTC-1-confident")
         assert len(table)
         assert {
             "mass_1_source",
@@ -775,20 +772,18 @@ class TestEventTable(TestTable):
         # check unit parsing worked
         assert table["luminosity_distance"].unit == "Mpc"
 
+    @pytest_skip_network_error
     def test_fetch_open_data_kwargs(self):
-        try:
-            table = self.TABLE.fetch_open_data(
-                "GWTC-1-confident",
-                selection="mass_1_source < 5",
-                columns=[
-                    "name",
-                    "mass_1_source",
-                    "mass_2_source",
-                    "luminosity_distance"
-                ]
-            )
-        except (URLError, SSLError) as exc:  # pragma: no-cover
-            pytest.skip(str(exc))
+        table = self.TABLE.fetch_open_data(
+            "GWTC-1-confident",
+            selection="mass_1_source < 5",
+            columns=[
+                "name",
+                "mass_1_source",
+                "mass_2_source",
+                "luminosity_distance"
+            ],
+        )
         assert len(table) == 1
         assert table[0]["name"] == "GW170817-v3"
         assert set(table.colnames) == {
