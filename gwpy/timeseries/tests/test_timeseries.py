@@ -1155,12 +1155,16 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_correlate(self):
         # create noise and a glitch template at 1000 Hz
         noise = self.TEST_CLASS(
-            numpy.random.normal(size=16384 * 64), sample_rate=16384, epoch=-32
-            ).zpk([], [1], 1)
+            numpy.random.normal(size=16384 * 64),
+            sample_rate=16384,
+            epoch=-32,
+        ).zpk([], [1], 1)
         glitchtime = -16.5
         glitch = self.TEST_CLASS(
             signal.gausspulse(numpy.arange(-1, 1, 1./16384), bw=100),
-            sample_rate=16384, epoch=glitchtime-1)
+            sample_rate=16384,
+            epoch=glitchtime-1,
+        )
 
         # check that, without a signal present, we only see background
         snr = noise.correlate(glitch, whiten=True)
