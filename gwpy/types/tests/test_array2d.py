@@ -170,20 +170,28 @@ class TestArray2D(_TestSeries):
         # test row slice returns as _rowclass
         row = array[1:10:3, 0]
         utils.assert_array_equal(row.value, array.value[1:10:3, 0])
-        utils.assert_quantity_sub_equal(row, self.TEST_CLASS._rowclass(
+        utils.assert_quantity_sub_equal(
+            row,
+            self.TEST_CLASS._rowclass(
                 array.value[1:10:3, 0],
                 x0=array.x0+array.dx, dx=array.dx*3,
-                name=array.name, channel=array.channel, unit=array.unit),
-            exclude=['epoch'])
+                name=array.name, channel=array.channel, unit=array.unit,
+            ),
+            exclude=['epoch'],
+        )
 
         # test dual slice returns type(self) with metadata
         subarray = array[1:5:2, 1:5:2]
-        utils.assert_quantity_sub_equal(subarray, self.TEST_CLASS(
+        utils.assert_quantity_sub_equal(
+            subarray,
+            self.TEST_CLASS(
                 array.value[1:5:2, 1:5:2],
                 x0=array.x0+array.dx, dx=array.dx*2,
                 y0=array.y0+array.dy, dy=array.dy*2,
-                name=array.name, channel=array.channel, unit=array.unit),
-            exclude=['epoch'])
+                name=array.name, channel=array.channel, unit=array.unit,
+            ),
+            exclude=['epoch'],
+        )
 
     def test_is_compatible(self, array):
         super().test_is_compatible(array)

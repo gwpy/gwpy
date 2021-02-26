@@ -1087,8 +1087,9 @@ class TimeSeries(TimeSeriesBase):
 
         # parse filter
         form, filt = filter_design.parse_filter(
-                filt, analog=kwargs.pop('analog', False),
-                sample_rate=self.sample_rate.to('Hz').value,
+            filt,
+            analog=kwargs.pop('analog', False),
+            sample_rate=self.sample_rate.to('Hz').value,
         )
         if form == 'zpk':
             sos = signal.zpk2sos(*filt)
