@@ -85,8 +85,8 @@ def _match_array(xmldoc, name=None, epoch=None, **params):
         """
         parent = arr.parentNode
         if (
-            (name is not None and not _match_name(arr, name)) or
-            (epoch is not None and not _match_time(parent, epoch))
+            (name is not None and not _match_name(arr, name))
+            or (epoch is not None and not _match_time(parent, epoch))
         ):
             return False
         for key, value in params.items():

@@ -243,10 +243,13 @@ def register_gwf_api(library):
             gap = 'raise'
 
         # read cache file up-front
-        if (isinstance(source, str) and
-                source.endswith(('.lcf', '.cache'))) or (
-                    isinstance(source, io_cache.FILE_LIKE) and
-                    source.name.endswith(('.lcf', '.cache'))):
+        if (
+            (isinstance(source, str) and source.endswith(('.lcf', '.cache')))
+            or (
+                isinstance(source, io_cache.FILE_LIKE)
+                and source.name.endswith(('.lcf', '.cache'))
+            )
+        ):
             source = io_cache.read_cache(source)
         # separate cache into contiguous segments
         if io_cache.is_cache(source):
@@ -272,11 +275,15 @@ def register_gwf_api(library):
 
         # apply resampling and dtype-casting -- DEPRECATED
         for name in out:
-            if (resample.get(name) and
-                    resample[name] != out[name].sample_rate.value):
+            if (
+                resample.get(name)
+                and resample[name] != out[name].sample_rate.value
+            ):
                 out[name] = out[name].resample(resample[name])
-            if dtype.get(name) is not None and (
-                    numpy.dtype(dtype[name]) != out[name].dtype):
+            if (
+                dtype.get(name) is not None
+                and numpy.dtype(dtype[name]) != out[name].dtype
+            ):
                 out[name] = out[name].astype(dtype[name])
         return out
 

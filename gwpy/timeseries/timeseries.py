@@ -1477,9 +1477,11 @@ class TimeSeries(TimeSeriesBase):
             for the underlying heterodyne detection method
         """
         # stride through the TimeSeries and heterodyne at a single frequency
-        phase = (2 * numpy.pi * f *
-                 self.dt.decompose().value *
-                 numpy.arange(0, self.size))
+        phase = (
+            2 * numpy.pi * f
+            * self.dt.decompose().value
+            * numpy.arange(0, self.size)
+        )
         out = self.heterodyne(phase, stride=stride, singlesided=True)
         if exp:
             return out

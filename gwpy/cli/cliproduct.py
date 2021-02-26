@@ -557,10 +557,12 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         max_ = getattr(self.args, '{}max'.format(axis))
 
         # parse limits
-        if scale == 'auto-gps' and (
-                min_ is not None and
-                max_ is not None and
-                max_ < 1e8):
+        if (
+            scale == 'auto-gps'
+            and min_ is not None
+            and max_ is not None
+            and max_ < 1e8
+        ):
             limits = (min_, min_ + max_)
         else:
             limits = (min_, max_)

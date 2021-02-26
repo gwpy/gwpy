@@ -1367,8 +1367,8 @@ class TimeSeriesBaseDict(OrderedDict):
 
         # try and find from frames
         if not nds_kw and (
-                os.getenv('LIGO_DATAFIND_SERVER') or
-                os.getenv('VIRGODATA')
+                os.getenv('LIGO_DATAFIND_SERVER')
+                or os.getenv('VIRGODATA')
         ):
             if verbose:
                 gprint("Attempting to access data from frames...")

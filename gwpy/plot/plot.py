@@ -97,8 +97,10 @@ class Plot(figure.Figure):
             _group_axes_data(data, flat=True)))
 
         # set default size for time-axis figures
-        if (kwargs.get('projection', None) == 'segments' or
-                kwargs.get('xscale') in GPS_SCALES):
+        if (
+            kwargs.get('projection', None) == 'segments'
+            or kwargs.get('xscale') in GPS_SCALES
+        ):
             kwargs.setdefault('figsize', (12, 6))
             kwargs.setdefault('xscale', 'auto-gps')
 
@@ -221,9 +223,10 @@ class Plot(figure.Figure):
         figsize = kwargs.get('figsize') or rcParams['figure.figsize']
         subplotpars = get_subplot_params(figsize)
         use_subplotpars = 'subplotpars' not in kwargs and all([
-            rcParams['figure.subplot.%s' % pos] ==
-            MPL_RCPARAMS['figure.subplot.%s' % pos] for
-            pos in ('left', 'bottom', 'right', 'top')])
+            rcParams['figure.subplot.%s' % pos]
+            == MPL_RCPARAMS['figure.subplot.%s' % pos]
+            for pos in ('left', 'bottom', 'right', 'top')
+        ])
         if use_subplotpars:
             kwargs['subplotpars'] = subplotpars
 
@@ -402,8 +405,8 @@ class Plot(figure.Figure):
         longaxis = (cbar.ax.yaxis if cbar.orientation == "vertical" else
                     cbar.ax.xaxis)
         if (
-                isinstance(cbar.formatter, LogFormatter) and
-                isinstance(longaxis.get_minor_formatter(),
+                isinstance(cbar.formatter, LogFormatter)
+                and isinstance(longaxis.get_minor_formatter(),
                            LogFormatterSciNotation)
         ):
             longaxis.set_minor_formatter(type(cbar.formatter)())
@@ -591,9 +594,11 @@ def _group_axes_data(inputs, separate=None, flat=False):
         #     structures, unless its a list of scalars in which case we
         #     should plot them all as one
         if (
-                isinstance(x, (KeysView, ValuesView)) or
-                isinstance(x, (list, tuple)) and (
-                    not x or not numpy.isscalar(x[0]))
+                isinstance(x, (KeysView, ValuesView))
+                or isinstance(x, (list, tuple)) and (
+                    not x
+                    or not numpy.isscalar(x[0])
+                )
         ):
             out.append(x)
 

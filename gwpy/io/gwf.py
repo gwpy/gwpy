@@ -655,9 +655,9 @@ def _get_frprocdata_type(series, type_):
     elif series.ndim == 1:
         type_ = FrProcDataType.OTHER_1D_SERIES_DATA
     elif (
-            series.ndim == 2 and
-            series.xunit.is_equivalent("s") and
-            series.yunit.is_equivalent("Hz")
+            series.ndim == 2
+            and series.xunit.is_equivalent("s")
+            and series.yunit.is_equivalent("Hz")
     ):
         type_ = FrProcDataType.TIME_FREQUENCY
     elif series.ndim > 2:
@@ -701,7 +701,7 @@ def _series_name(series):
         the name to use when storing this series
     """
     return (
-            series.name or
-            str(series.channel) or
-            ""
+        series.name
+        or str(series.channel)
+        or ""
     )

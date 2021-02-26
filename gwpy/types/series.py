@@ -195,10 +195,10 @@ class Series(Array):
             delattr(self, index)
         else:
             if (
-                    value is None or
-                    getattr(self, key) is None or
-                    not value.unit.is_equivalent(curr.unit) or
-                    value != curr
+                    value is None
+                    or getattr(self, key) is None
+                    or not value.unit.is_equivalent(curr.unit)
+                    or value != curr
             ):
                 delattr(self, index)
 
@@ -656,8 +656,9 @@ class Series(Array):
                                  "be compatible")
             # check units
             if not self.unit == other.unit and not (
-                    self.unit in [dimensionless_unscaled, None] and
-                    other.unit in [dimensionless_unscaled, None]):
+                    self.unit in [dimensionless_unscaled, None]
+                    and other.unit in [dimensionless_unscaled, None]
+            ):
                 raise ValueError("%s units do not match: %s vs %s."
                                  % (type(self).__name__, str(self.unit),
                                     str(other.unit)))
