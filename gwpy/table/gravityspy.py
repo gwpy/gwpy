@@ -220,7 +220,7 @@ class GravitySpyTable(EventTable):
             'era': map_era_to_url[era],
             'ifo': "{}".format(", ".join(
                 map(repr, [ifos[i:i+2] for i in range(0, len(ifos), 2)]),
-             )),
+            )),
             'database': 'similarity_index_o3',
         }
 
