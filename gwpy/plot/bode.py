@@ -142,8 +142,11 @@ class BodePlot(Plot):
             self.maxes.set_title(title)
 
         # get xlim
-        if (frequencies is None and len(filters) == 1 and
-                isinstance(filters[0], FrequencySeries)):
+        if (
+            frequencies is None
+            and len(filters) == 1
+            and isinstance(filters[0], FrequencySeries)
+        ):
             frequencies = filters[0].frequencies.value
         if not isinstance(frequencies, (type(None), int)):
             frequencies = frequencies[frequencies > 0]

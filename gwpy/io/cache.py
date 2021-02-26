@@ -280,11 +280,11 @@ def is_cache(cache):
             return False
     if HAS_CACHE and isinstance(cache, Cache):
         return True
-    if (isinstance(cache, (list, tuple)) and cache and
-            all(map(is_cache_entry, cache))):
-        return True
-
-    return False
+    return bool(
+        isinstance(cache, (list, tuple))
+        and cache
+        and all(map(is_cache_entry, cache))
+    )
 
 
 def is_cache_entry(path):

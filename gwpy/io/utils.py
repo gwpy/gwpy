@@ -56,10 +56,10 @@ def identify_factory(*extensions):
         """Identify the given extensions in a file object/path
         """
         # pylint: disable=unused-argument
-        if (isinstance(filepath, str) and
-                filepath.endswith(extensions)):
-            return True
-        return False
+        return (
+            isinstance(filepath, str)
+            and filepath.endswith(extensions)
+        )
     return identify
 
 
@@ -126,8 +126,10 @@ def file_list(flist):
         if the input `flist` cannot be interpreted as any of the above inputs
     """
     # open a cache file and return list of paths
-    if (isinstance(flist, str) and
-            flist.endswith(('.cache', '.lcf', '.ffl'))):
+    if (
+        isinstance(flist, str)
+        and flist.endswith(('.cache', '.lcf', '.ffl'))
+    ):
         from .cache import read_cache
         return read_cache(flist)
 

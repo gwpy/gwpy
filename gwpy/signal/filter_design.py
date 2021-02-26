@@ -123,8 +123,12 @@ def num_taps(sample_rate, transitionwidth, gpass, gstop):
     """
     gpass = 10 ** (-gpass / 10.)
     gstop = 10 ** (-gstop / 10.)
-    return int(2/3. * log10(1 / (10 * gpass * gstop)) *
-               sample_rate / transitionwidth)
+    return int(
+        2/3.
+        * log10(1 / (10 * gpass * gstop))
+        * sample_rate
+        / transitionwidth
+    )
 
 
 def is_zpk(zpktup):
@@ -137,11 +141,12 @@ def is_zpk(zpktup):
         otherwise `False`
     """
     return (
-        isinstance(zpktup, (tuple, list)) and
-        len(zpktup) == 3 and
-        isinstance(zpktup[0], (list, tuple, numpy.ndarray)) and
-        isinstance(zpktup[1], (list, tuple, numpy.ndarray)) and
-        isinstance(zpktup[2], float))
+        isinstance(zpktup, (tuple, list))
+        and len(zpktup) == 3
+        and isinstance(zpktup[0], (list, tuple, numpy.ndarray))
+        and isinstance(zpktup[1], (list, tuple, numpy.ndarray))
+        and isinstance(zpktup[2], float)
+    )
 
 
 def truncate_transfer(transfer, ncorner=None):
@@ -345,8 +350,11 @@ def parse_filter(args, analog=False, sample_rate=None):
     # parse IIR filter
     if isinstance(args, LinearTimeInvariant):
         lti = args
-    elif (isinstance(args, numpy.ndarray) and
-            args.ndim == 2 and args.shape[1] == 6):
+    elif (
+        isinstance(args, numpy.ndarray)
+        and args.ndim == 2
+        and args.shape[1] == 6
+    ):
         lti = signal.lti(*signal.sos2zpk(args))
     else:
         lti = signal.lti(*args)
