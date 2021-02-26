@@ -19,4 +19,4 @@ pymysql
 pyRXP
 python-ligo-lw >= 1.5.0 ; sys_platform != 'win32'
 sqlalchemy
-uproot >= 3.11, == 3.*
+uproot >= 3.11, == 3.* ; python_version < '3.9'
