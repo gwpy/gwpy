@@ -194,9 +194,13 @@ class FflConnection(object):
         """Find all files of the given type in the [start, end) GPS interval.
         """
         span = LigoSegment(gpsstart, gpsend)
-        cache = [e for e in self._read_ffl_cache(site, frametype) if
-                 e.observatory == site and e.description == frametype and
-                 e.segment.intersects(span)]
+        cache = [
+            e for e in self._read_ffl_cache(site, frametype) if (
+                e.observatory == site
+                and e.description == frametype
+                and e.segment.intersects(span)
+            )
+        ]
         urls = [e.path for e in cache]
         missing = LigoSegmentList([span]) - cache_segments(cache)
 

@@ -131,9 +131,10 @@ def assert_quantity_sub_equal(a, b, *attrs, **kwargs):
     def _check_index(dim):
         index = "{}index".format(dim)
         _index = "_" + index
-        if index in attrs and (
-                getattr(a, _index, "-") == "-" and
-                getattr(b, _index, "-") == "-"
+        if (
+            index in attrs
+            and getattr(a, _index, "-") == "-"
+            and getattr(b, _index, "-") == "-"
         ):
             attrs.remove(index)
     _check_index("x")

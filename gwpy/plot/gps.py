@@ -116,8 +116,10 @@ class GPSMixin(object):
         """Set the GPS step scale
         """
         # accept all core time units
-        if unit is None or (isinstance(unit, units.NamedUnit) and
-                            unit.physical_type == 'time'):
+        if unit is None or (
+            isinstance(unit, units.NamedUnit)
+            and unit.physical_type == 'time'
+        ):
             self._unit = unit
             return
         # convert float to custom unit in seconds
@@ -205,8 +207,8 @@ class GPSTransformBase(GPSMixin, Transform):
 
         # handle simple or data transformations with floats
         if self._parents or (  # part of composite transform (from draw())
-                epoch == 0 and  # no large additions
-                scale == 1  # no multiplications
+                epoch == 0  # no large additions
+                and scale == 1  # no multiplications
         ):
             return self._transform(values, float(epoch), float(scale))
 
@@ -411,8 +413,8 @@ class GPSScale(GPSMixin, LinearScale):
         autoscale_on_var = "get_autoscale{}_on".format(axis.axis_name)
         dlim = tuple(axis.get_data_interval())
         if (
-                getattr(axis.axes, autoscale_on_var)() and
-                not numpy.isinf(dlim).any()
+                getattr(axis.axes, autoscale_on_var)()
+                and not numpy.isinf(dlim).any()
         ):
             return dlim
         # otherwise use the view lim

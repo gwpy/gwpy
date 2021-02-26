@@ -318,10 +318,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
         import platform
         import sys
         if (
-            api == "framecpp" and
-            ctype == "sim" and
-            sys.version_info[0] >= 3 and
-            "debian" in platform.platform()
+            api == "framecpp"
+            and ctype == "sim"
+            and sys.version_info[0] >= 3
+            and "debian" in platform.platform()
         ):
             pytest.xfail(
                 "reading Sim data with "
