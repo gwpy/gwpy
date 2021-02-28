@@ -213,7 +213,6 @@ HDF5 (GWOSC)
 |GWOSC|_ write data in HDF5 using a custom schema that is incompatible
 with `format='hdf5'`.
 
--------
 Reading
 -------
 
