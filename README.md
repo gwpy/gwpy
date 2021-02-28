@@ -19,7 +19,7 @@ step.
 
 # Development status
 
-![Build status](https://github.com/duncanmmacleod/dqsegdb2/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/duncanmmacleod/dqsegdb2/actions/workflows/build.yml)
+[![Build status](https://github.com/gwpy/gwpy/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/gwpy/gwpy/actions/workflows/build.yml)
 [![Coverage status](https://codecov.io/gh/gwpy/gwpy/branch/master/graph/badge.svg)](https://codecov.io/gh/gwpy/gwpy)
 [![Maintainability](https://api.codeclimate.com/v1/badges/2cf14445b3e070133745/maintainability)](https://codeclimate.com/github/gwpy/gwpy/maintainability)
 
