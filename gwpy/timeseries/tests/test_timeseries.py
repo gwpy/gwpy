@@ -21,9 +21,7 @@
 
 import os.path
 from itertools import (chain, product)
-from ssl import SSLError
 from unittest import mock
-from urllib.error import URLError
 
 import pytest
 
@@ -41,6 +39,7 @@ from ...signal.window import planck
 from ...table import EventTable
 from ...spectrogram import Spectrogram
 from ...testing import (mocks, utils)
+from ...testing.errors import pytest_skip_network_error
 from ...time import LIGOTimeGPS
 from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
@@ -107,8 +106,6 @@ LOSC_GW150914_DQ_BITS = {
     ],
 }
 
-LOSC_FETCH_ERROR = (URLError, SSLError)
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
@@ -118,20 +115,21 @@ class TestTimeSeries(_TestTimeSeriesBase):
     # -- fixtures -------------------------------
 
     @pytest.fixture(scope='class')
+    @pytest_skip_network_error
     def losc(self):
-        try:
-            return self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT)
-        except LOSC_FETCH_ERROR as e:  # pragma: no-cover
-            pytest.skip(str(e))
+        return self.TEST_CLASS.fetch_open_data(
+            LOSC_IFO,
+            *LOSC_GW150914_SEGMENT,
+        )
 
     @pytest.fixture(scope='class')
+    @pytest_skip_network_error
     def losc_16384(self):
-        try:
-            return self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384)
-        except LOSC_FETCH_ERROR as e:  # pragma: no-cover
-            pytest.skip(str(e))
+        return self.TEST_CLASS.fetch_open_data(
+            LOSC_IFO,
+            *LOSC_GW150914_SEGMENT,
+            sample_rate=16384,
+        )
 
     # -- test class functionality ---------------
 
@@ -481,12 +479,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
         'hdf5',
         pytest.param('gwf', marks=SKIP_FRAMECPP),
     ])
+    @pytest_skip_network_error
     def test_fetch_open_data(self, losc, format):
-        try:
-            ts = self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, verbose=True)
-        except LOSC_FETCH_ERROR as e:  # pragma: no-cover
-            pytest.skip(str(e))
+        ts = self.TEST_CLASS.fetch_open_data(
+            LOSC_IFO,
+            *LOSC_GW150914_SEGMENT,
+            format=format,
+            verbose=True,
+        )
         utils.assert_quantity_sub_equal(ts, losc,
                                         exclude=['name', 'unit', 'channel'])
 
@@ -1266,22 +1266,18 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert comp.name == '%s >= 2.0' % (array.name)
         assert (array == array).name == '{0} == {0}'.format(array.name)
 
+    @pytest_skip_network_error
     def test_coherence(self):
-        try:
-            tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
-            tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        except LOSC_FETCH_ERROR as exc:  # pragma: no-cover
-            pytest.skip(str(exc))
+        tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+        tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
         coh = tsh.coherence(tsl, fftlength=1.0)
         assert coh.df == 1 * units.Hz
         assert coh.frequencies[coh.argmax()] == 60 * units.Hz
 
+    @pytest_skip_network_error
     def test_coherence_spectrogram(self):
-        try:
-            tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
-            tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        except LOSC_FETCH_ERROR as exc:  # pragma: no-cover
-            pytest.skip(str(exc))
+        tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+        tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
         cohsg = tsh.coherence_spectrogram(tsl, 4, fftlength=1.0)
         assert cohsg.t0 == tsh.t0
         assert cohsg.dt == 4 * units.second

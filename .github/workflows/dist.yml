@@ -99,4 +99,29 @@ jobs:
         python -m pip install -r requirements-test.txt
 
     - name: Run test suite
-      run: python -m pytest -ra --color yes --pyargs gwpy --junitxml=pytest.xml
+      run: |
+        python -m pytest \
+            -ra \
+            --color yes \
+            --cov gwpy \
+            --cov-report=xml \
+            --disable-socket \
+            --junitxml=pytest.xml \
+            --pyargs gwpy \
+        ;
+
+    - name: Coverage report
+      run: python -m coverage report --show-missing
+
+    - name: Publish coverage to Codecov
+      uses: codecov/codecov-action@v1.2.1
+      with:
+        files: coverage.xml
+        flags: ${{ runner.os }},python${{ matrix.python-version }}
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: pytest-conda-${{ matrix.os }}-${{ matrix.python-version }}
+        path: pytest.xml

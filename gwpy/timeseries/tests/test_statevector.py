@@ -32,14 +32,17 @@ from astropy import units
 from ...detector import Channel
 from ...time import (Time, LIGOTimeGPS)
 from ...testing import (mocks, utils)
+from ...testing.errors import pytest_skip_network_error
 from ...types import Array2D
 from .. import (StateVector, StateVectorDict, StateVectorList,
                 StateTimeSeries, StateTimeSeriesDict, Bits)
 from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
-from .test_timeseries import (LOSC_IFO, LOSC_GW150914_SEGMENT,
-                              LOSC_FETCH_ERROR)
+from .test_timeseries import (
+    LOSC_IFO,
+    LOSC_GW150914_SEGMENT,
+)
 
 LOSC_GW150914_DQ_NAME = {
     'hdf5': 'Data quality',
@@ -316,12 +319,14 @@ class TestStateVector(_TestTimeSeriesBase):
         pytest.param(  # only frameCPP actually reads units properly
             'gwf', marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
     ])
+    @pytest_skip_network_error
     def test_fetch_open_data(self, format):
-        try:
-            sv = self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, version=3)
-        except LOSC_FETCH_ERROR as e:  # pragma: no-cover
-            pytest.skip(str(e))
+        sv = self.TEST_CLASS.fetch_open_data(
+            LOSC_IFO,
+            *LOSC_GW150914_SEGMENT,
+            format=format,
+            version=3,
+        )
         ref = StateVector(
             [127, 127, 127, 127],
             unit='',
