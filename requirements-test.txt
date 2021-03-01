@@ -3,5 +3,6 @@ beautifulsoup4
 freezegun >= 0.3.0
 pytest >= 3.6.3
 pytest-cov >= 2.4.0
+pytest-socket
 pytest-xdist
 requests-mock
