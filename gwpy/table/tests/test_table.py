@@ -769,6 +769,24 @@ class TestEventTable(TestTable):
                 filter_table(table, 'snr>.5')[('time', 'snr')],
             )
 
+            # test compact representation of channel column
+            t2 = self.TABLE.read(fp, compact=True, format='hdf5.snax')
+
+            # group by channel and drop channel column
+            tables = {}
+            t2 = t2.group_by('channel')
+            t2.remove_column('channel')
+            for key, group in zip(t2.groups.keys, t2.groups):
+                channel = t2.meta['channel_map'][key['channel']]
+                tables[channel] = self.TABLE(group, copy=True)
+
+            # verify table groups are identical
+            t_ref = table.copy().group_by('channel')
+            t_ref.remove_column('channel')
+            for key, group in zip(t_ref.groups.keys, t_ref.groups):
+                channel = key['channel']
+                utils.assert_table_equal(group, tables[channel])
+
             # check error handling when missing channels are encountered
             missing = [channel, 'H1:MISSING']
             with pytest.raises(ValueError):

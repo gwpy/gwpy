@@ -35,7 +35,7 @@ __author__ = 'Patrick Godwin <patrick.godwin@ligo.org>'
 @read_with_columns
 @read_with_selection
 @with_read_hdf5
-def table_from_file(source, channels=None, on_missing="error"):
+def table_from_file(source, channels=None, on_missing="error", compact=False):
     """Read an `EventTable` from a SNAX HDF5 file
 
     Parameters
@@ -52,6 +52,11 @@ def table_from_file(source, channels=None, on_missing="error"):
             * ``'warn'``: emit a warning when missing channels are discovered
             * ``'error'``: raise an exception
         default is 'error'.
+
+    compact : `bool`, optional, default: False
+        whether to store a compact integer representation in the channel
+        column rather than the full channel name, instead storing a mapping
+        (`channel_map`) in the table metadata.
 
     Returns
     -------
@@ -93,7 +98,14 @@ def table_from_file(source, channels=None, on_missing="error"):
             join_type="exact",
             metadata_conflicts="error",
         )
-        table["channel"] = channel
+        # determine whether to store a compact
+        # representation of the channel, storing
+        # the mapping to table metadata instead
+        if compact:
+            table["channel"] = hash(channel)
+            table.meta["channel_map"] = {hash(channel): channel}
+        else:
+            table["channel"] = channel
         tables.append(table)
 
     # combine results
