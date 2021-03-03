@@ -37,7 +37,10 @@ def table_from_root(source, treename=None, **kwargs):
     with uproot.open(file_path(source)) as trees:
         # find single tree (if only one tree present)
         if treename is None:
-            names = [name.decode("utf-8") for name in trees]
+            names = [
+                name.decode("utf-8") if isinstance(name, bytes) else name
+                for name in trees
+            ]
             if len(names) == 1:
                 treename = names[0]
             elif not trees:
@@ -52,14 +55,39 @@ def table_from_root(source, treename=None, **kwargs):
                     ),
                 )
 
-        return Table(trees[treename].arrays(namedecode="utf-8"), **kwargs)
+        try:
+            return Table(trees[treename].arrays(library="np"), **kwargs)
+        except TypeError:  # uproot < 4
+            return Table(trees[treename].arrays(namedecode="utf-8"), **kwargs)
+
+
+def _import_uproot_that_can_write_root_files():
+    """uproot v4 can't handle writing files (ATOW),
+    so try it and fall back to uproot3
+    """
+    import uproot
+    try:
+        uproot.create
+    except AttributeError:
+        try:
+            import uproot3 as uproot
+        except ModuleNotFoundError as exc:  # pragma: no cover
+            exc.msg = (
+                "you have uproot {} installed, which does not support writing "
+                "ROOT files (yet), please install uproot3 "
+                "(see https://pypi.org/project/uproot3/)".format(
+                    uproot.__version__,
+                )
+            )
+            raise
+    return uproot
 
 
 def table_to_root(table, filename, treename="tree",
                   overwrite=False, append=False, **kwargs):
     """Write a Table to a ROOT file
     """
-    import uproot
+    uproot = _import_uproot_that_can_write_root_files()
 
     createkw = {k: kwargs.pop(k) for k in {"compression", } if k in kwargs}
     create_func = uproot.recreate if overwrite else uproot.create
