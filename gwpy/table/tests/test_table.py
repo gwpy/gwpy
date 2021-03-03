@@ -46,6 +46,7 @@ from ...timeseries import (TimeSeries, TimeSeriesDict)
 from .. import (Table, EventTable, filters)
 from ..filter import filter_table
 from ..io.hacr import HACR_COLUMNS
+from ..io.root import _import_uproot_that_can_write_root_files
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -53,6 +54,17 @@ TEST_DATA_DIR = os.path.join(os.path.split(__file__)[0], 'data')
 TEST_XML_FILE = os.path.join(
     TEST_DATA_DIR, 'H1-LDAS_STRAIN-968654552-10.xml.gz')
 TEST_OMEGA_FILE = os.path.join(TEST_DATA_DIR, 'omega.txt')
+
+try:
+    uproot = _import_uproot_that_can_write_root_files()
+except ImportError:
+    HAVE_UPROOT_RW = False
+else:
+    HAVE_UPROOT_RW = True
+SKIP_UPROOT_RW = pytest.mark.skipif(
+    not HAVE_UPROOT_RW,
+    reason="uproot>4 doesn't support r/w and no uproot3",
+)
 
 
 # -- mocks --------------------------------------------------------------------
@@ -296,7 +308,7 @@ class TestTable(object):
             t2.sort("instrument")
             utils.assert_table_equal(t2, table)
 
-    @utils.skip_missing_dependency('uproot')
+    @SKIP_UPROOT_RW
     def test_read_write_root(self, table):
         with utils.TemporaryFilename(suffix='.root') as tmp:
             # check write
@@ -323,7 +335,7 @@ class TestTable(object):
                 ),
             )
 
-    @utils.skip_missing_dependency('uproot')
+    @SKIP_UPROOT_RW
     def test_write_root_overwrite(self, table):
         with utils.TemporaryFilename(suffix='.root') as tmp:
             table.write(tmp)
@@ -335,9 +347,8 @@ class TestTable(object):
             # assert works with overwrite=True
             table.write(tmp, overwrite=True)
 
-    @utils.skip_missing_dependency('uproot')
+    @SKIP_UPROOT_RW
     def test_read_root_multiple_trees(self, table):
-        import uproot
         # append hasn't been implemented in uproot 3 yet
         with utils.TemporaryFilename(suffix='.root') as tmp:
             with uproot.create(tmp) as root:
@@ -349,7 +360,7 @@ class TestTable(object):
             assert str(exc.value).startswith('Multiple trees found')
             self.TABLE.read(tmp, treename="a")
 
-    @utils.skip_missing_dependency('uproot')
+    @SKIP_UPROOT_RW
     def test_read_write_root_append(self, table):
         # append hasn't been implemented in uproot 3 yet
         with utils.TemporaryFilename(suffix='.root') as tmp, \
