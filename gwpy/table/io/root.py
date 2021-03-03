@@ -27,6 +27,34 @@ from .utils import (read_with_columns, read_with_selection)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+def _get_treename(source, trees):
+    """Return the name of the only tree in the trees
+
+    Raises
+    ------
+    ValueError
+        if multiple trees are found
+    """
+    if not trees:  # nothing to read?
+        raise ValueError("No trees found in %s" % source)
+
+    # get list of all names
+    names = [
+        name.decode("utf-8") if isinstance(name, bytes) else name
+        for name in trees
+    ]
+    if len(names) == 1:
+        return names[0]
+    raise ValueError(
+        "Multiple trees found in {}, please select one via the "
+        "`treename` keyword argument, e.g. `treename='events'`. "
+        "Available trees are: '{}'.".format(
+            source,
+            "', '".join(names),
+        ),
+    )
+
+
 @read_with_columns
 @read_with_selection
 def table_from_root(source, treename=None, **kwargs):
@@ -34,27 +62,13 @@ def table_from_root(source, treename=None, **kwargs):
     """
     import uproot
 
-    with uproot.open(file_path(source)) as trees:
-        # find single tree (if only one tree present)
+    path = file_path(source)
+    with uproot.open(path) as trees:
+        # find tree name
         if treename is None:
-            names = [
-                name.decode("utf-8") if isinstance(name, bytes) else name
-                for name in trees
-            ]
-            if len(names) == 1:
-                treename = names[0]
-            elif not trees:
-                raise ValueError("No trees found in %s" % source)
-            else:
-                raise ValueError(
-                    "Multiple trees found in {}, please select one via the "
-                    "`treename` keyword argument, e.g. `treename='events'`. "
-                    "Available trees are: '{}'.".format(
-                        source,
-                        "', '".join(names),
-                    ),
-                )
+            treename = _get_treename(path, trees)
 
+        # read branches from tree
         try:
             return Table(trees[treename].arrays(library="np"), **kwargs)
         except TypeError:  # uproot < 4
