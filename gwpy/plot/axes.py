@@ -176,27 +176,38 @@ class Axes(_Axes):
 
     # -- overloaded plotting methods ------------
 
-    def scatter(self, x, y, c=None, **kwargs):
-        # scatter with auto-sorting by colour
-        try:
-            if c is None:
-                raise ValueError
-            c_array = numpy.asanyarray(c, dtype=float)
-        except ValueError:  # no colour array
-            pass
-        else:
-            c_sort = kwargs.pop('c_sort', True)
-            if c_sort:
-                sortidx = c_array.argsort()
-                x = numpy.asarray(x)[sortidx]
-                y = numpy.asarray(y)[sortidx]
-                c = numpy.asarray(c)[sortidx]
+    def scatter(self, x, y, s=None, c=None, **kwargs):
+        # This method overloads Axes.scatter to enable quick
+        # sorting of data by the 'colour' array before scatter
+        # plotting.
 
-        return super().scatter(x, y, c=c, **kwargs)
+        # if we weren't asked to sort, or don't have any colours, don't
+        sort = kwargs.pop("sortbycolor", False)
+        if not sort:
+            return super().scatter(x, y, s=s, c=c, **kwargs)
+
+        # try and sort the colour array by value
+        try:
+            sortidx = numpy.asanyarray(c, dtype=float).argsort()
+        except ValueError as exc:
+            exc.args = (
+                "Axes.scatter argument 'sortbycolor' can only be used "
+                "with a simple array of floats in the colour array 'c'",
+            )
+            raise
+
+        def _sort(arr):
+            if arr is None or isinstance(arr, Number):
+                return arr
+            return numpy.asarray(arr)[sortidx]
+
+        # apply the sorting to each data array, and scatter
+        x, y, c, s = map(_sort, (x, y, c, s))
+        return super().scatter(x, y, s=s, c=c, **kwargs)
 
     scatter.__doc__ = _Axes.scatter.__doc__.replace(
         'marker :',
-        'c_sort : `bool`, optional, default: True\n'
+        'sortbycolor : `bool`, optional, default: False\n'
         '    Sort scatter points by `c` array value, if given.\n\n'
         'marker :',
     )
