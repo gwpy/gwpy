@@ -650,9 +650,7 @@ class DataQualityFlag(object):
             name += ':%d' % int(veto.version)
         except TypeError:
             pass
-        if veto.end_time == 0:
-            veto.end_time = +inf
-        known = Segment(veto.start_time, veto.end_time)
+        known = Segment(veto.start_time, veto.end_time or +inf)
         pad = (veto.start_pad, veto.end_pad)
         return cls(name=name, known=[known], category=veto.category,
                    description=veto.comment, padding=pad)
