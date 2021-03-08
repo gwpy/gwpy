@@ -713,7 +713,8 @@ def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
     return len(args) > 0 and isinstance(args[0], element_types)
 
 
-def is_xml(origin, filepath, fileobj, *args, **kwargs):
+@deprecated_function
+def is_xml(origin, filepath, fileobj, *args, **kwargs):  # pragma: no cover
     """Identify a file object as XML (any format)
     """
     # pylint: disable=unused-argument
