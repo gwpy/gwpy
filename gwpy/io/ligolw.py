@@ -42,6 +42,7 @@ except ImportError:  # no ligo.lw
     LIGOLWContentHandler = None
 
 from .utils import (file_list, FILE_LIKE)
+from ..utils.decorators import deprecated_function
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -264,7 +265,8 @@ def read_ligolw(source, contenthandler=LIGOLWContentHandler, **kwargs):
         types.ToPyType = topytype
 
 
-def with_read_ligolw(func=None, contenthandler=None):
+@deprecated_function
+def with_read_ligolw(func=None, contenthandler=None):  # pragma: no cover
     """Decorate a LIGO_LW-reading function to open a filepath if needed
 
     ``func`` should be written to presume a
