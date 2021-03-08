@@ -23,6 +23,7 @@ an 'io' subdirectory of the containing directory for that class.
 """
 
 import builtins
+import importlib
 import os.path
 import re
 from contextlib import contextmanager
@@ -95,6 +96,42 @@ def ilwdchar_compat(func):
         finally:
             builtins.__import__ = _real_import
     return wrapped
+
+
+def _get_ligolw_types(typename):
+    """Utility function to return a tuple of type objects
+    covering all LIGO_LW libraries
+
+    This is designed purely for use with `isinstance`, and has
+    not been tested for any other purpose.
+
+    Examples
+    --------
+    With both python-ligo-lw and lscsoft-glue installed
+
+    >>> _get_ligolw_types("Document")
+    (<class 'glue.ligolw.ligolw.Document'>, <class 'ligo.lw.ligolw.Document'>)
+
+    With only lscsoft-glue installed:
+
+    >>> _get_ligolw_types("Document")
+    (<class 'glue.ligolw.ligolw.Document'>)
+
+    And with neither installed:
+
+    >>> _get_ligolw_types("Document")
+    ()
+
+    (`isinstance` always returns false when given an empty type tuple)
+    """
+    types = []
+    for pkg in ("glue.ligolw", "ligo.lw"):
+        try:
+            ligolw = importlib.import_module(".ligolw", package=pkg)
+        except ImportError:
+            continue
+        types.append(getattr(ligolw, typename))
+    return tuple(types)
 
 
 # -- hack around around TypeError from LIGOTimeGPS(numpy.int32(...)) ----------
@@ -428,20 +465,14 @@ def open_xmldoc(fobj, **kwargs):
 def get_ligolw_element(xmldoc):
     """Find an existing <LIGO_LW> element in this XML Document
     """
-    from ligo.lw.ligolw import LIGO_LW
-    try:
-        from glue.ligolw.ligolw import LIGO_LW as LIGO_LW2
-    except ImportError:
-        ligolw_types = (LIGO_LW,)
-    else:
-        ligolw_types = (LIGO_LW, LIGO_LW2)
+    from ligo.lw.ligolw import WalkChildren
+    ligolw_types = _get_ligolw_types("LIGO_LW")
 
     if isinstance(xmldoc, ligolw_types):
         return xmldoc
-    else:
-        for node in xmldoc.childNodes:
-            if isinstance(node, ligolw_types):
-                return node
+    for elem in WalkChildren(xmldoc):
+        if isinstance(elem, ligolw_types):
+            return elem
     raise ValueError("Cannot find LIGO_LW element in XML Document")
 
 
@@ -557,8 +588,35 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
 # -- utilities ----------------------------------------------------------------
 
 @ilwdchar_compat
+def iter_tables(source):
+    """Iterate over all tables in the given document(s)
+
+    Parameters
+    ----------
+    source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
+        one or more open files, file paths, or LIGO_LW `Document`s
+
+    Yields
+    ------
+    ligo.lw.table.Table
+        a table structure from the document(s)
+    """
+    from ligo.lw.ligolw import (Stream, WalkChildren)
+
+    # get LIGO_LW object
+    if not isinstance(source, _get_ligolw_types("Element")):
+        filt = get_filtering_contenthandler(Stream)
+        source = read_ligolw(source, contenthandler=filt)
+    llw = get_ligolw_element(source)
+
+    # yield tables
+    for elem in WalkChildren(llw):
+        if elem.tagName == "Table":
+            yield elem
+
+
+@ilwdchar_compat
 def list_tables(source):
-    # pylint: disable=line-too-long
     """List the names of all tables in this file(s)
 
     Parameters
@@ -572,26 +630,7 @@ def list_tables(source):
     >>> print(list_tables('H1-LDAS_STRAIN-968654552-10.xml.gz'))
     ['process', 'process_params', 'sngl_burst', 'search_summary', 'segment_definer', 'segment_summary', 'segment']
     """  # noqa: E501
-    try:
-        from ligo.lw.ligolw import (Document, Stream)
-    except ImportError:  # no python-ligo-lw
-        from glue.ligolw.ligolw import Document, Stream
-
-    # read file object
-    if isinstance(source, Document):
-        xmldoc = source
-    else:
-        filt = get_filtering_contenthandler(Stream)
-        xmldoc = read_ligolw(source, contenthandler=filt)
-
-    # get list of table names
-    tables = []
-    for tbl in xmldoc.childNodes[0].childNodes:
-        try:
-            tables.append(tbl.TableName(tbl.Name))
-        except AttributeError:  # not a table
-            continue
-    return tables
+    return [tbl.TableName(tbl.Name) for tbl in iter_tables(source)]
 
 
 @ilwdchar_compat
@@ -700,16 +739,8 @@ def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
                 )
         finally:
             fileobj.seek(loc)
-    try:
-        from ligo.lw.ligolw import Element
-    except ImportError:
-        return False
-    try:
-        from glue.ligolw.ligolw import Element as GlueElement
-    except ImportError:
-        element_types = (Element,)
-    else:
-        element_types = (Element, GlueElement)
+
+    element_types = _get_ligolw_types("Element")
     return len(args) > 0 and isinstance(args[0], element_types)
 
 
