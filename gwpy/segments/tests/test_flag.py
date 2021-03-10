@@ -19,6 +19,7 @@
 """Tests for :mod:`gwpy.segments`
 """
 
+import importlib
 import os.path
 import re
 import tempfile
@@ -438,8 +439,12 @@ class TestDataQualityFlag(object):
             flag.pad(*PADDING, kwarg='test')
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    def test_from_veto_def(self):
-        from ligo.lw.lsctables import VetoDef
+    @pytest.mark.parametrize("lsctables", (
+        pytest.param("glue.ligolw.lsctables", id="glue.ligolw"),
+        pytest.param("ligo.lw.lsctables", id="python-ligo-lw"),
+    ))
+    def test_from_veto_def(self, lsctables):
+        VetoDef = importlib.import_module(lsctables).VetoDef
 
         def veto_def(ifo, name, version, **kwargs):
             vdef = VetoDef()
