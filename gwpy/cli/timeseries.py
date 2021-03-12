@@ -100,11 +100,8 @@ class TimeSeries(TimeDomainProduct):
             nlegargs = 0    # don't use  them
 
         if self.args.overlay_times:
-
-            min_t0 = self.timeseries[0].t0
-            for ts in self.timeseries:
-                min_to = min(min_t0, ts.t0)
-
+            starts = [ts.t0.value for ts in self.timeseries]
+            min_t0 = min(starts)
             for ts in self.timeseries:
                 ts.t0 = min_t0
 

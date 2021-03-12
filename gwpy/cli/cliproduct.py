@@ -527,7 +527,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         self.set_legend()
         self.set_title(self.args.title)
         self.set_suptitle(self.args.suptitle)
-        self.set_grid(self.args.nogrid)
+        self.set_grid(not self.args.nogrid)
 
     def set_axes_properties(self):
         """Set properties for each axis (scale, limits, label)
@@ -646,8 +646,13 @@ class CliProduct(object, metaclass=abc.ABCMeta):
     def set_grid(self, enable):
         """Set the grid parameters for this plot.
         """
-        self.ax.grid(b=enable, which='major', color='k', linestyle='solid')
-        self.ax.grid(b=enable, which='minor', color='0.06', linestyle='dotted')
+        if enable:
+            self.ax.grid(b=True, which='major', color='k', linestyle='solid')
+            self.ax.grid(b=enable, which='minor', color='0.06',
+                         linestyle='dotted')
+        else:
+            self.ax.grid(b=False)
+
 
     def save(self, outfile):
         """Save this product to the target `outfile`.
