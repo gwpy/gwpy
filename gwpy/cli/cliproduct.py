@@ -653,7 +653,6 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         else:
             self.ax.grid(b=False)
 
-
     def save(self, outfile):
         """Save this product to the target `outfile`.
         """
