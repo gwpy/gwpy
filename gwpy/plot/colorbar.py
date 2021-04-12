@@ -59,7 +59,7 @@ def process_colorbar_kwargs(figure, mappable=None, ax=None, use_axesgrid=True,
 
     norm, kwargs = format_norm(kwargs, mappable.norm)
     mappable.set_norm(norm)
-    mappable.set_cmap(kwargs.setdefault('cmap', mappable.get_cmap()))
+    mappable.set_cmap(kwargs.pop('cmap', mappable.get_cmap()))
 
     # -- set tick formatting
 

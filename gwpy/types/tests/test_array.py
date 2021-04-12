@@ -237,7 +237,7 @@ class TestArray(object):
     # -- test methods ---------------------------
 
     def test_tostring(self, array):
-        assert array.tostring() == array.value.tostring()
+        assert array.tostring() == array.value.tobytes()
 
     def test_abs(self, array):
         utils.assert_quantity_equal(array.abs(), numpy.abs(array))
