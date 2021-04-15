@@ -19,10 +19,8 @@ step.
 
 # Development status
 
-[![Linux](https://img.shields.io/circleci/project/github/gwpy/gwpy/master.svg?label=Linux)](https://circleci.com/gh/gwpy/gwpy)
-[![OSX](https://img.shields.io/travis/gwpy/gwpy/master.svg?label=macOS)](https://travis-ci.com/gwpy/gwpy)
-[![Windows](https://img.shields.io/appveyor/ci/gwpy/gwpy/master.svg?label=Windows)](https://ci.appveyor.com/project/gwpy/gwpy/branch/master)
-[![codecov](https://codecov.io/gh/gwpy/gwpy/branch/master/graph/badge.svg)](https://codecov.io/gh/gwpy/gwpy)
+[![Build status](https://github.com/gwpy/gwpy/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/gwpy/gwpy/actions/workflows/build.yml)
+[![Coverage status](https://codecov.io/gh/gwpy/gwpy/branch/master/graph/badge.svg)](https://codecov.io/gh/gwpy/gwpy)
 [![Maintainability](https://api.codeclimate.com/v1/badges/2cf14445b3e070133745/maintainability)](https://codeclimate.com/github/gwpy/gwpy/maintainability)
 
 # Installation

@@ -1,0 +1,6 @@
+# extra requirements to be conda installed,
+# designed to be parsed with /ci/parse-conda-requirements.py
+# and then resolved via `conda install`
+python-framel >=8.40.1
+python-ldas-tools-framecpp ; sys_platform != 'win32'
+python-nds2-client

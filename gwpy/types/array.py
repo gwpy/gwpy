@@ -272,8 +272,8 @@ class Array(Quantity):
     dumps.__doc__ = numpy.ndarray.dumps.__doc__
 
     def tostring(self, order='C'):
-        return super(Quantity, self).tostring(order=order)
-    tostring.__doc__ = numpy.ndarray.tostring.__doc__
+        return super(Quantity, self).tobytes(order=order)
+    tostring.__doc__ = numpy.ndarray.tobytes.__doc__
 
     # -- new properties -------------------------
 

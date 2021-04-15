@@ -34,6 +34,7 @@ from scipy import signal
 
 from astropy import units
 
+from ...io.nds2 import NDSWarning
 from ...frequencyseries import (FrequencySeries, SpectralVariance)
 from ...segments import (Segment, SegmentList, DataQualityFlag)
 from ...signal import filter_design
@@ -592,13 +593,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     def test_get(self, losc_16384):
         # get using datafind (maybe)
-        try:
-            ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                     frametype_match=r'C01\Z')
-        except (ImportError, RuntimeError) as e:  # pragma: no-cover
-            pytest.skip(str(e))
-        utils.assert_quantity_sub_equal(ts, losc_16384,
-                                        exclude=['name', 'channel', 'unit'])
+        with pytest.warns(NDSWarning):
+            try:
+                ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
+                                         frametype_match=r'C01\Z')
+            except (ImportError, RuntimeError) as e:  # pragma: no-cover
+                pytest.skip(str(e))
+            utils.assert_quantity_sub_equal(
+                ts, losc_16384, exclude=['name', 'channel', 'unit'])
 
         # get using NDS2 (if datafind could have been used to start with)
         try:

@@ -218,7 +218,7 @@ class Plot(figure.Figure):
     def _parse_subplotpars(kwargs):
         # dynamically set the subplot positions based on the figure size
         # -- only if the user hasn't customised the subplot params
-        figsize = kwargs.get('figsize', rcParams['figure.figsize'])
+        figsize = kwargs.get('figsize') or rcParams['figure.figsize']
         subplotpars = get_subplot_params(figsize)
         use_subplotpars = 'subplotpars' not in kwargs and all([
             rcParams['figure.subplot.%s' % pos] ==

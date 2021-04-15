@@ -76,22 +76,51 @@ class TestAxes(AxesTestBase):
         utils.assert_array_equal(linex, [1, 2, 3])
         utils.assert_array_equal(liney, [4, 5, 6])
 
-    @pytest.mark.parametrize('c_sort', (False, True))
-    def test_scatter(self, ax, c_sort):
+    @pytest.mark.parametrize('sortbycolor', (False, True))
+    def test_scatter(self, ax, sortbycolor):
         x = numpy.arange(10)
         y = numpy.arange(10)
-        z = numpy.random.random(10)
-        coll = ax.scatter(x, y, c=z, c_sort=c_sort)
-        if c_sort:
-            utils.assert_array_equal(coll.get_array(), z[numpy.argsort(z)])
-        else:
-            utils.assert_array_equal(coll.get_array(), z)
+        c = numpy.random.random(10)
+        coll = ax.scatter(x, y, c=c, sortbycolor=sortbycolor)
+        if sortbycolor:  # sort the colours now
+            c = c[numpy.argsort(c)]
+        # check that the colour array is in the right order
+        utils.assert_array_equal(coll.get_array(), c)
 
+    @pytest.mark.parametrize('sortbycolor', (False, True))
+    def test_scatter_no_color(self, ax, sortbycolor):
         # check that c=None works
-        ax.scatter(x, y, c=None)
+        x = numpy.arange(10)
+        y = numpy.arange(10)
+        ax.scatter(x, y, c=None, sortbycolor=sortbycolor)
 
+    @pytest.mark.parametrize('sortbycolor', (False, True))
+    def test_scatter_non_array(self, ax, sortbycolor):
         # check that using non-array data works
-        ax.scatter([1], [1], c=[1])
+        ax.scatter([1], [1], c=[1], sortbycolor=sortbycolor)
+
+    @pytest.mark.parametrize('sortbycolor', (False, True))
+    def test_scatter_positional(self, ax, sortbycolor):
+        # check that using positional arguments works
+        x = numpy.arange(10)
+        y = numpy.arange(10)
+        s = numpy.random.random(10)
+        c = numpy.random.random(10)
+        ax.scatter(x, y, s, c, sortbycolor=sortbycolor)
+
+    @pytest.mark.parametrize('sortbycolor', (False, True))
+    def test_scatter_errors(self, ax, sortbycolor):
+        # check that errors are handled properly
+        x = 1
+        y = 'B'
+        c = 'something else'
+        with pytest.raises(ValueError) as exc:
+            ax.scatter(x, y, c=c, sortbycolor=sortbycolor)
+        if sortbycolor:  # gwpy error
+            msg = "Axes.scatter argument 'sortbycolor'"
+        else:  # matplotlib error
+            msg = "'c' argument must be a "
+        assert str(exc.value).startswith(msg)
 
     def test_imshow(self, ax):
         # standard imshow call
