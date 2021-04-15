@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Joseph Areeda (2017-2020)
+# Copyright (C) Joseph Areeda (2017-2021)
 #
 # This file is part of GWpy.
 #

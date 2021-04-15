@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) Duncan Macleod (2019-2020)
+# Copyright (C) Duncan Macleod (2019-2021)
 #
 # This file is part of GWpy.
 #
