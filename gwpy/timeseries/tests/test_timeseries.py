@@ -591,29 +591,32 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_quantity_sub_equal(ts, losc_16384,
                                         exclude=['name', 'channel', 'unit'])
 
-    def test_get(self, losc_16384):
-        # get using datafind (maybe)
-        with pytest.warns(NDSWarning):
-            try:
-                ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                         frametype_match=r'C01\Z')
-            except (ImportError, RuntimeError) as e:  # pragma: no-cover
-                pytest.skip(str(e))
-            utils.assert_quantity_sub_equal(
-                ts, losc_16384, exclude=['name', 'channel', 'unit'])
-
-        # get using NDS2 (if datafind could have been used to start with)
+    @mock.patch.dict(
+        os.environ,
+        {"LIGO_DATAFIND_SERVER": "datafind.gw-openscience.org:80"},
+    )
+    def test_get_datafind(self, losc_16384):
         try:
-            dfs = os.environ.pop('LIGO_DATAFIND_SERVER')
-        except KeyError:
-            dfs = None
-        else:
-            ts2 = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
-            utils.assert_quantity_sub_equal(ts, ts2,
-                                            exclude=['channel', 'unit'])
-        finally:
-            if dfs is not None:
-                os.environ['LIGO_DATAFIND_SERVER'] = dfs
+            ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
+                                     frametype_match=r'C01\Z')
+        except (ImportError, RuntimeError) as e:  # pragma: no-cover
+            pytest.skip(str(e))
+        utils.assert_quantity_sub_equal(
+            ts,
+            losc_16384,
+            exclude=['name', 'channel', 'unit'],
+        )
+
+    @mock.patch.dict(os.environ)
+    def test_get_nds2(self, losc_16384):
+        # get using NDS2 (if datafind could have been used to start with)
+        dfs = os.environ.pop('LIGO_DATAFIND_SERVER', None)
+        ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
+        utils.assert_quantity_sub_equal(
+            ts,
+            losc_16384,
+            exclude=['name', 'channel', 'unit'],
+        )
 
     # -- signal processing methods --------------
 
