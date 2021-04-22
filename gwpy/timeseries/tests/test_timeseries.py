@@ -690,8 +690,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     def test_psd_default_overlap(self, losc):
         utils.assert_quantity_sub_equal(
-            losc.psd(.5, window='hann'),
-            losc.psd(.5, .25, window='hann'),
+            losc.psd(.5, method="median", window="hann"),
+            losc.psd(.5, .25, method="median", window="hann"),
         )
 
     @SKIP_LAL
@@ -713,7 +713,11 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_psd(self, noisy_sinusoid, method):
         fftlength = .5
         overlap = .25
-        fs = noisy_sinusoid.psd(fftlength=fftlength, overlap=overlap)
+        fs = noisy_sinusoid.psd(
+            fftlength=fftlength,
+            overlap=overlap,
+            method=method,
+        )
         assert fs.unit == noisy_sinusoid.unit ** 2 / "Hz"
         assert fs.max() == fs.value_at(500)
         assert fs.size == fftlength * noisy_sinusoid.sample_rate.value // 2 + 1
@@ -752,15 +756,20 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert psd.max() == psd.value_at(500)
 
     def test_asd(self, losc):
-        fs = losc.asd(1)
-        utils.assert_quantity_sub_equal(fs, losc.psd(1) ** (1/2.))
+        kw = {
+            "method": "median",
+        }
+        utils.assert_quantity_sub_equal(
+            losc.asd(1, **kw),
+            losc.psd(1, **kw) ** (1/2.),
+        )
 
     def test_csd(self, noisy_sinusoid, corrupt_noisy_sinusoid):
         # test that csd(self) is the same as psd()
         fs = noisy_sinusoid.csd(noisy_sinusoid)
         utils.assert_quantity_sub_equal(
             fs,
-            noisy_sinusoid.psd(),
+            noisy_sinusoid.psd(method="welch"),
             exclude=['name'],
         )
 
@@ -828,20 +837,30 @@ class TestTimeSeries(_TestTimeSeriesBase):
                                         almost_equal=True)
 
     def test_spectrogram_fftlength(self, losc):
-        sg = losc.spectrogram(1, fftlength=0.5)
+        sg = losc.spectrogram(1, fftlength=0.5, method="median")
         assert sg.shape == (abs(losc.span),
                             0.5 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 2 * units.Hertz
         assert sg.dt == 1 * units.second
 
     def test_spectrogram_overlap(self, losc):
-        sg = losc.spectrogram(1, fftlength=0.5, window="hann")
-        sg2 = losc.spectrogram(1, fftlength=0.5, window="hann", overlap=.25)
+        kw = {
+            "fftlength": 0.5,
+            "window": "hann",
+            "method": "median",
+        }
+        sg = losc.spectrogram(1, **kw)
+        sg2 = losc.spectrogram(1, overlap=.25, **kw)
         utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
     def test_spectrogram_multiprocessing(self, losc):
-        sg = losc.spectrogram(1, fftlength=0.5)
-        sg2 = losc.spectrogram(1, fftlength=0.5, nproc=2)
+        kw = {
+            "fftlength": 0.5,
+            "window": "hann",
+            "method": "median",
+        }
+        sg = losc.spectrogram(1, **kw)
+        sg2 = losc.spectrogram(1, nproc=2, **kw)
         utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
     @pytest.mark.parametrize('library', [
@@ -911,7 +930,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_array_equal(sxx.T, fgram)
 
     def test_spectral_variance(self, losc):
-        variance = losc.spectral_variance(.5)
+        variance = losc.spectral_variance(.5, method="median")
         assert isinstance(variance, SpectralVariance)
         assert variance.x0 == 0 * units.Hz
         assert variance.dx == 2 * units.Hz
@@ -1171,7 +1190,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # when the input is stationary Gaussian noise, the output should have
         # zero mean and unit variance
-        whitened = noise.whiten(detrend='linear')
+        whitened = noise.whiten(detrend='linear', method="median")
         assert whitened.size == noise.size
         nptest.assert_almost_equal(whitened.mean().value, 0.0, decimal=2)
         nptest.assert_almost_equal(whitened.std().value, 1.0, decimal=2)
@@ -1181,7 +1200,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         tmax = data.times[data.argmax()]
         assert not numpy.isclose(tmax.value, glitchtime)
 
-        whitened = data.whiten(detrend='linear')
+        whitened = data.whiten(detrend='linear', method="median")
         tmax = whitened.times[whitened.argmax()]
         nptest.assert_almost_equal(tmax.value, glitchtime)
 
@@ -1211,7 +1230,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
         # check that, without a signal present, we only see background
-        snr = noise.correlate(glitch, whiten=True)
+        snr = noise.correlate(glitch, whiten=True, method="median")
         tmax = snr.times[snr.argmax()]
         assert snr.size == noise.size
         assert not numpy.isclose(tmax.value, glitchtime)
@@ -1220,7 +1239,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # inject and recover the glitch
         data = noise.inject(glitch * 1e-4)
-        snr = data.correlate(glitch, whiten=True)
+        snr = data.correlate(glitch, whiten=True, method="median")
         tmax = snr.times[snr.argmax()]
         nptest.assert_almost_equal(tmax.value, glitchtime)
 
@@ -1306,7 +1325,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_q_transform_nan(self):
         data = TimeSeries(numpy.empty(256*10) * numpy.nan, sample_rate=256)
         with pytest.raises(ValueError) as exc:
-            data.q_transform()
+            data.q_transform(method="median")
         assert str(exc.value) == 'Input signal contains non-numerical values'
 
     def test_boolean_statetimeseries(self, array):
