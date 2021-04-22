@@ -20,6 +20,7 @@
 """
 
 import os.path
+import subprocess
 import tempfile
 from contextlib import contextmanager
 from distutils.version import LooseVersion
@@ -73,6 +74,31 @@ def skip_minimum_version(module, minversion):
     return pytest.mark.skipif(
         module_older_than(module, minversion),
         reason='requires {} >= {}'.format(module, minversion))
+
+
+def _has_kerberos_credential():
+    """Return `True` if the current user has a valid kerberos credential
+
+    This function just calls ``klist -s`` and returns `True` if the
+    command returns a zero exit code, and `False` if it doesn't, or
+    the call fails in any other way.
+    """
+    try:
+        subprocess.check_call(
+            ["klist", "-s"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+    return True
+
+
+#: skip a test function if no kerberos credential is found
+skip_kerberos_credential = pytest.mark.skipif(
+    not _has_kerberos_credential(),
+    reason="no kerberos credential",
+)
 
 
 # -- assertions ---------------------------------------------------------------
