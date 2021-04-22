@@ -231,7 +231,7 @@ class TimeSeries(TimeSeriesBase):
             nfreqs = (nfft + 1) // 2
         else:
             nfreqs = nfft // 2 + 1
-        ffts = Spectrogram(numpy.zeros((navg, nfreqs), dtype=numpy.complex),
+        ffts = Spectrogram(numpy.zeros((navg, nfreqs), dtype=numpy.complex128),
                            channel=self.channel, epoch=self.epoch, f0=0,
                            df=1 / fftlength, dt=1, copy=True)
         # stride through TimeSeries, recording FFTs as columns of Spectrogram
