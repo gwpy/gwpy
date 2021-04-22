@@ -648,6 +648,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     @utils.skip_missing_dependency('nds2')
+    @utils.skip_kerberos_credential
     @mock.patch.dict(os.environ)
     def test_get_nds2(self, losc_16384):
         # get using NDS2 (if datafind could have been used to start with)
