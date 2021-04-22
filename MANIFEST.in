@@ -3,5 +3,4 @@ recursive-include gwpy/testing/data *gwf *xml.gz *txt *hdf
 recursive-include examples *py
 include requirements*.txt
 include setup_utils.py
-include versioneer.py
 include gwpy/_version.py
