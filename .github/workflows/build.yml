@@ -89,20 +89,17 @@ jobs:
     - name: Conda info
       run: conda info --all
 
-    - name: Install dependencies
+    - name: Install dependencies with conda
       run: |
-        # parse requirements files to install as much as possible with conda
+        # parse requirements to install as much as possible with conda
         python ./ci/parse-conda-requirements.py \
-            requirements-dev.txt \
-            requirements-conda.txt \
-            -o environment.txt \
-            -p ${{ matrix.python-version }}
+            --all \
+            --output environment.txt \
+            --python-version ${{ matrix.python-version }}
         echo "-----------------"
         cat environment.txt
         echo "-----------------"
         conda install --quiet --yes --name test --file environment.txt
-        # install anything we missed with conda using regular pip
-        python -m pip install -r requirements-dev.txt
 
     - name: Install extra dependencies (Linux)
       if: matrix.os == 'Ubuntu'
@@ -110,11 +107,15 @@ jobs:
         # update repos
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q -q update
         # install apt requirements
-        xargs -a <(awk '! /^ *(#|$)/' requirements-apt.txt) -r -- \
-            sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install \
+            cm-super-minimal \
+            dvipng \
+            texlive-latex-base \
+            texlive-latex-extra \
+        ;
 
     - name: Install GWpy
-      run: python -m pip install . --no-build-isolation -vv
+      run: python -m pip install .[dev] --no-build-isolation -vv
 
     - name: Package list
       run: conda list --name test

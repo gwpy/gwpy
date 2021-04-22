@@ -60,7 +60,7 @@ warnings.filterwarnings('ignore', message='.*gwpy.plot.*',
 
 # extension modules
 # DEVNOTE: please make sure and add 3rd-party dependencies to
-#          setup.py and requirements-dev.txt
+#          setup.cfg's [options.extras_require]/docs
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
