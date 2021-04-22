@@ -1,5 +1,0 @@
-# GWpy extra requirements for Debian/Ubuntu
-cm-super-minimal
-dvipng
-texlive-latex-base
-texlive-latex-extra
