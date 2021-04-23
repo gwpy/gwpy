@@ -42,6 +42,15 @@ matplotlib.use('agg')
 
 GWPY_VERSION = gwpy.__version__
 
+# parse version number to get git reference
+_setuptools_scm_version_regex = re.compile(
+    r"\+g(\w+)(?:\Z|\.)",
+)
+if match := _setuptools_scm_version_regex.search(GWPY_VERSION):
+    GWPY_GIT_REF, = match.groups()
+else:
+    GWPY_GIT_REF = 'v{}'.format(GWPY_VERSION)
+
 SPHINX_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # ignore warnings that aren't useful for documentation
@@ -93,15 +102,18 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'GWpy'
-copyright = u'2013, Duncan Macleod'
+project = 'GWpy'
+copyright = ' and '.join((
+    '2013,2017-2021 Cardiff University',
+    '2013-2017 Lousiana State University',
+))
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = ".".join(GWPY_VERSION.split(".", 2)[:2])
+version = GWPY_VERSION.split('.dev', 1)[0]
 # The full version, including alpha/beta/rc tags.
 release = GWPY_VERSION
 
@@ -375,7 +387,7 @@ def linkcode_resolve(domain, info):
         return None
 
     return ("http://github.com/gwpy/gwpy/tree/%s/gwpy/%s%s"
-            % (GWPY_VERSION['full-revisionid'], fn, linespec))
+            % (GWPY_GIT_REF, fn, linespec))
 
 
 # -- build CLI examples -------------------------------------------------------
