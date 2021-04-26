@@ -30,6 +30,8 @@ jobs:
     steps:
     - name: Get source code
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -81,22 +83,13 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install GWpy
-      run: python -m pip install gwpy-*.tar.*
-      # need bash to resolve wildcards
-      shell: bash
-
-    - name: Install test requirements
-      shell: bash
+    - name: Install GWpy with test extras
       run: |
-        # extract requirements-test.txt from the tarball
-        if [ "$(uname)" = "Darwin" ]; then
-            tar -xf gwpy-*.tar.* --strip-components=1 */requirements-test.txt
-        else
-            tar -xf gwpy-*.tar.* --strip-components=1 --wildcards */requirements-test.txt
-        fi
-        # install the test requirements
-        python -m pip install -r requirements-test.txt
+        TARBALL=$(ls gwpy-*.tar.*)
+        python -m pip install ${TARBALL}[test]
+
+    - name: Package list
+      run: python -m pip list installed
 
     - name: Run test suite
       run: |
