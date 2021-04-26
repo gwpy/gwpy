@@ -531,12 +531,12 @@ def setup_static_content(app):
     # add stylesheets
     cssdir = os.path.join(staticdir, 'css')
     for cssf in glob.glob(os.path.join(cssdir, '*.css')):
-        app.add_stylesheet(os.path.sep.join(cssf.rsplit(os.path.sep, 2)[-2:]))
+        app.add_js_file(os.path.sep.join(cssf.rsplit(os.path.sep, 2)[-2:]))
 
     # add custom javascript
     jsdir = os.path.join(staticdir, 'js')
     for jsf in glob.glob(os.path.join(jsdir, '*.js')):
-        app.add_javascript(os.path.sep.join(jsf.rsplit(os.path.sep, 2)[-2:]))
+        app.add_js_file(os.path.sep.join(jsf.rsplit(os.path.sep, 2)[-2:]))
 
 
 # -- setup --------------------------------------------------------------------
