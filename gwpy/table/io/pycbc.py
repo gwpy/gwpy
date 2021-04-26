@@ -141,8 +141,10 @@ def _get_columns(h5group):
     """
     columns = set()
     for name in sorted(h5group):
-        if (not isinstance(h5group[name], h5py.Dataset) or
-                name == 'template_boundaries'):
+        if (
+            not isinstance(h5group[name], h5py.Dataset)
+            or name == 'template_boundaries'
+        ):
             continue
         if name.endswith('_template') and name[:-9] in columns:
             continue

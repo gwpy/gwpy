@@ -129,8 +129,10 @@ def parse_unit(name, parse_strict='warn', format='gwpy'):
         try:
             return units.Unit(name, parse_strict='raise')
         except ValueError as exc:
-            if (parse_strict == 'raise' or
-                    'did not parse as unit' not in str(exc)):
+            if (
+                parse_strict == 'raise'
+                or 'did not parse as unit' not in str(exc)
+            ):
                 raise
             # try again using out own lenient parser
             GWpyFormat.warn = parse_strict != 'silent'

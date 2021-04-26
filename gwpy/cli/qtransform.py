@@ -126,8 +126,12 @@ class Qtransform(Spectrogram):
         # save output x for individual tres calulation
         args.nx = xpix
         self.args.tres = search / xpix / 2
-        self.log(3, 'Max time resolution (tres) set to {:.4f}'.format(
-                self.args.tres))
+        self.log(
+            3,
+            'Max time resolution (tres) set to {:.4f}'.format(
+                self.args.tres,
+            ),
+        )
 
         args.start = [[int(gps - search/2)]]
         if args.epoch is None:
@@ -169,10 +173,11 @@ class Qtransform(Spectrogram):
             if isinstance(x, Quantity):
                 x = x.value
             elif isinstance(x, str):
-                warnings.warn('WARNING: fformat called with a' +
-                              ' string. This has ' +
-                              'been depricated and may disappear ' +
-                              'in a future release.')
+                warnings.warn(
+                    'fformat called with a string. '
+                    'This has been deprecated and may disappear '
+                    'in a future release.',
+                )
                 x = float(x)
             return '{0:.2f}'.format(x)
 

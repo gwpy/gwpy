@@ -148,15 +148,19 @@ class GravitySpyTable(EventTable):
         images = images_for_download.values.flatten()
         images_for_download_ext = images_db[cols_for_download_ext]
         duration = np.atleast_2d(
-                                 duration_values.repeat(
-                                   len(images_for_download_ext), 0).flatten(
-                                     )).T
+            duration_values.repeat(
+                len(images_for_download_ext),
+                0,
+            ).flatten(),
+        ).T
         images_for_download_ext = images_for_download_ext.values.repeat(
             len(cols_for_download),
             0,
         )
         images_for_for_download_path = np.array([[download_location]]).repeat(
-                                       len(images_for_download_ext), 0)
+            len(images_for_download_ext),
+            0,
+        )
         images = np.hstack((np.atleast_2d(images).T,
                            images_for_download_ext, duration,
                            images_for_for_download_path))
@@ -216,7 +220,7 @@ class GravitySpyTable(EventTable):
             'era': map_era_to_url[era],
             'ifo': "{}".format(", ".join(
                 map(repr, [ifos[i:i+2] for i in range(0, len(ifos), 2)]),
-             )),
+            )),
             'database': 'similarity_index_o3',
         }
 

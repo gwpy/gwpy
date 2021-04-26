@@ -1087,8 +1087,9 @@ class TimeSeries(TimeSeriesBase):
 
         # parse filter
         form, filt = filter_design.parse_filter(
-                filt, analog=kwargs.pop('analog', False),
-                sample_rate=self.sample_rate.to('Hz').value,
+            filt,
+            analog=kwargs.pop('analog', False),
+            sample_rate=self.sample_rate.to('Hz').value,
         )
         if form == 'zpk':
             sos = signal.zpk2sos(*filt)
@@ -1477,9 +1478,11 @@ class TimeSeries(TimeSeriesBase):
             for the underlying heterodyne detection method
         """
         # stride through the TimeSeries and heterodyne at a single frequency
-        phase = (2 * numpy.pi * f *
-                 self.dt.decompose().value *
-                 numpy.arange(0, self.size))
+        phase = (
+            2 * numpy.pi * f
+            * self.dt.decompose().value
+            * numpy.arange(0, self.size)
+        )
         out = self.heterodyne(phase, stride=stride, singlesided=True)
         if exp:
             return out

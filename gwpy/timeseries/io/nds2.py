@@ -118,8 +118,7 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
     print_verbose('done', verbose=verbose)
 
     # handle minute trend timing
-    if (any(c.endswith('m-trend') for c in names) and
-            (start % 60 or end % 60)):
+    if any(c.endswith('m-trend') for c in names) and (start % 60 or end % 60):
         warnings.warn("Requested at least one minute trend, but "
                       "start and stop GPS times are not multiples of "
                       "60. Times will be expanded outwards to compensate")
