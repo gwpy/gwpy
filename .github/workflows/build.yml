@@ -112,6 +112,33 @@ jobs:
             texlive-latex-extra \
         ;
 
+    - name: Install CVMFS (Linux)
+      if: matrix.os == 'Ubuntu'
+      run: |
+        # configure CVMFS Apt repo
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install lsb-release
+        curl -LO https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest_all.deb
+        sudo dpkg -i cvmfs-release-latest_all.deb
+        rm -f cvmfs-release-latest_all.deb
+        # configure CVMFS-contrib Apt repo
+        curl -LO https://ecsft.cern.ch/dist/cvmfs/cvmfs-contrib-release/cvmfs-contrib-release-latest_all.deb
+        sudo dpkg -i cvmfs-contrib-release-latest_all.deb
+        rm -f cvmfs-contrib-release-latest_all.deb
+        # install cvmfs
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q -q update
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install \
+            cvmfs \
+            cvmfs-config-osg \
+        ;
+        # configure CVMFS client
+        sudo cvmfs_config setup
+        sudo bash -c 'cat > /etc/cvmfs/default.local' << EOF
+        CVMFS_REPOSITORIES=gwosc.osgstorage.org
+        CVMFS_QUOTA_LIMIT=20000
+        CVMFS_HTTP_PROXY=DIRECT
+        EOF
+        sudo cvmfs_config probe
+
     - name: Install GWpy
       run: python -m pip install .[dev] --no-build-isolation -vv
 
