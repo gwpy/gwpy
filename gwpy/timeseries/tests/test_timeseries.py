@@ -48,6 +48,10 @@ from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
 
+SKIP_CVMFS_GWOSC = pytest.mark.skipif(
+    not os.path.isdir('/cvmfs/gwosc.osgstorage.org/'),
+    reason="GWOSC CVMFS repository not available",
+)
 SKIP_FRAMECPP = utils.skip_missing_dependency('LDAStools.frameCPP')
 SKIP_FRAMEL = utils.skip_missing_dependency('framel')
 SKIP_LAL = utils.skip_missing_dependency('lal')
@@ -565,23 +569,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.gwpy')
             assert 'no data received' in str(exc.value)
 
-    def _find_or_skip(self, *args, **kwargs):
-        """Execute `self.TEST_CLASS.find()` catching credential errors
-        """
-        try:
-            return self.TEST_CLASS.find(*args, **kwargs)
-        except RuntimeError as exc:  # pragma: no-cover
-            if "credential" in str(exc):
-                pytest.skip(str(exc))
-            raise
-
+    @SKIP_CVMFS_GWOSC
     @SKIP_FRAMECPP
     @mock.patch.dict(
         "os.environ",
         {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_find(self, losc_16384):
-        ts = self._find_or_skip(
+        ts = self.TEST_CLASS.find(
             GWOSC_GW150914_CHANNEL,
             *GWOSC_GW150914_SEGMENT,
             frametype=GWOSC_GW150914_FRAMETYPE,
@@ -605,13 +600,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 observatory='X',
             )
 
+    @SKIP_CVMFS_GWOSC
     @SKIP_FRAMECPP
     @mock.patch.dict(
         "os.environ",
         {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_find_best_frametype_in_find(self, losc_16384):
-        ts = self._find_or_skip(
+        ts = self.TEST_CLASS.find(
             GWOSC_GW150914_CHANNEL,
             *GWOSC_GW150914_SEGMENT,
         )
@@ -621,6 +617,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=['name', 'channel', 'unit'],
         )
 
+    @SKIP_CVMFS_GWOSC
     @mock.patch.dict(
         # force 'import nds2' to fail so that we are actually testing
         # the gwdatafind API or nothing
