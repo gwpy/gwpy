@@ -32,7 +32,6 @@ from scipy import signal
 
 from astropy import units
 
-from ...io.nds2 import NDSWarning
 from ...frequencyseries import (FrequencySeries, SpectralVariance)
 from ...segments import (Segment, SegmentList, DataQualityFlag)
 from ...signal import filter_design
@@ -49,6 +48,10 @@ from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
 
+SKIP_CVMFS_GWOSC = pytest.mark.skipif(
+    not os.path.isdir('/cvmfs/gwosc.osgstorage.org/'),
+    reason="GWOSC CVMFS repository not available",
+)
 SKIP_FRAMECPP = utils.skip_missing_dependency('LDAStools.frameCPP')
 SKIP_FRAMEL = utils.skip_missing_dependency('framel')
 SKIP_LAL = utils.skip_missing_dependency('lal')
@@ -70,8 +73,6 @@ GWF_APIS = [
     pytest.param('framel', marks=SKIP_FRAMEL),
 ]
 
-FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C02'
-FIND_FRAMETYPE = 'L1_HOFT_C02'
 
 LIVETIME = DataQualityFlag(
     name='X1:TEST-FLAG:1',
@@ -83,10 +84,14 @@ LIVETIME = DataQualityFlag(
     isgood=True,
 )
 
-LOSC_IFO = 'L1'
-LOSC_GW150914 = 1126259462
-LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
-LOSC_GW150914_DQ_BITS = {
+GWOSC_DATAFIND_SERVER = "datafind.gw-openscience.org"
+GWOSC_GW150914_IFO = "L1"
+GWOSC_GW150914_CHANNEL = "L1:GWOSC-16KHZ_R1_STRAIN"
+NDS2_GW150914_CHANNEL = "L1:DCS-CALIB_STRAIN_C02"
+GWOSC_GW150914_FRAMETYPE = "L1_LOSC_16_V1"
+GWOSC_GW150914 = 1126259462
+GWOSC_GW150914_SEGMENT = Segment(GWOSC_GW150914-2, GWOSC_GW150914+2)
+GWOSC_GW150914_DQ_BITS = {
     'hdf5': [
         'data present',
         'passes cbc CAT1 test',
@@ -119,16 +124,16 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @pytest_skip_network_error
     def losc(self):
         return self.TEST_CLASS.fetch_open_data(
-            LOSC_IFO,
-            *LOSC_GW150914_SEGMENT,
+            GWOSC_GW150914_IFO,
+            *GWOSC_GW150914_SEGMENT,
         )
 
     @pytest.fixture(scope='class')
     @pytest_skip_network_error
     def losc_16384(self):
         return self.TEST_CLASS.fetch_open_data(
-            LOSC_IFO,
-            *LOSC_GW150914_SEGMENT,
+            GWOSC_GW150914_IFO,
+            *GWOSC_GW150914_SEGMENT,
             sample_rate=16384,
         )
 
@@ -475,7 +480,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     # -- test remote data access ----------------
 
-    @utils.skip_minimum_version("gwosc", "0.4.0")
     @pytest.mark.parametrize('format', [
         'hdf5',
         pytest.param('gwf', marks=SKIP_FRAMECPP),
@@ -483,8 +487,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @pytest_skip_network_error
     def test_fetch_open_data(self, losc, format):
         ts = self.TEST_CLASS.fetch_open_data(
-            LOSC_IFO,
-            *LOSC_GW150914_SEGMENT,
+            GWOSC_GW150914_IFO,
+            *GWOSC_GW150914_SEGMENT,
             format=format,
             verbose=True,
         )
@@ -493,14 +497,26 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # try again with 16384 Hz data
         ts = self.TEST_CLASS.fetch_open_data(
-            LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, sample_rate=16384)
+            GWOSC_GW150914_IFO,
+            *GWOSC_GW150914_SEGMENT,
+            format=format,
+            sample_rate=16384,
+        )
         assert ts.sample_rate == 16384 * units.Hz
 
         # make sure errors happen
         with pytest.raises(ValueError) as exc:
-            self.TEST_CLASS.fetch_open_data(LOSC_IFO, 0, 1, format=format)
+            self.TEST_CLASS.fetch_open_data(
+                GWOSC_GW150914_IFO,
+                0,
+                1,
+                format=format,
+            )
         assert str(exc.value) == (
-            "Cannot find a LOSC dataset for %s covering [0, 1)" % LOSC_IFO)
+            "Cannot find a LOSC dataset for {} covering [0, 1)".format(
+                GWOSC_GW150914_IFO,
+            )
+        )
 
     @utils.skip_missing_dependency('nds2')
     @pytest.mark.parametrize('protocol', (1, 2))
@@ -553,67 +569,95 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.gwpy')
             assert 'no data received' in str(exc.value)
 
-    def _find_or_skip(self, *args, **kwargs):
-        """Execute `self.TEST_CLASS.find()` catching credential errors
-        """
-        try:
-            return self.TEST_CLASS.find(*args, **kwargs)
-        except RuntimeError as exc:  # pragma: no-cover
-            if "credential" in str(exc):
-                pytest.skip(str(exc))
-            raise
-
+    @SKIP_CVMFS_GWOSC
     @SKIP_FRAMECPP
-    @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
-                        reason='No LIGO datafind server configured '
-                               'on this host')
+    @mock.patch.dict(
+        "os.environ",
+        {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+    )
     def test_find(self, losc_16384):
-        ts = self._find_or_skip(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                frametype=FIND_FRAMETYPE)
+        ts = self.TEST_CLASS.find(
+            GWOSC_GW150914_CHANNEL,
+            *GWOSC_GW150914_SEGMENT,
+            frametype=GWOSC_GW150914_FRAMETYPE,
+        )
         utils.assert_quantity_sub_equal(ts, losc_16384,
                                         exclude=['name', 'channel', 'unit'])
 
         # test observatory
-        ts2 = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                   frametype=FIND_FRAMETYPE,
-                                   observatory=FIND_CHANNEL[0])
+        ts2 = self.TEST_CLASS.find(
+            GWOSC_GW150914_CHANNEL,
+            *GWOSC_GW150914_SEGMENT,
+            frametype=GWOSC_GW150914_FRAMETYPE,
+            observatory=GWOSC_GW150914_IFO[0],
+        )
         utils.assert_quantity_sub_equal(ts, ts2)
         with pytest.raises(RuntimeError):
-            self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                 frametype=FIND_FRAMETYPE, observatory='X')
+            self.TEST_CLASS.find(
+                GWOSC_GW150914_CHANNEL,
+                *GWOSC_GW150914_SEGMENT,
+                frametype=GWOSC_GW150914_FRAMETYPE,
+                observatory='X',
+            )
 
+    @SKIP_CVMFS_GWOSC
     @SKIP_FRAMECPP
-    @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
-                        reason='No LIGO datafind server configured '
-                               'on this host')
+    @mock.patch.dict(
+        "os.environ",
+        {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+    )
     def test_find_best_frametype_in_find(self, losc_16384):
-        ts = self._find_or_skip(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
-        utils.assert_quantity_sub_equal(ts, losc_16384,
-                                        exclude=['name', 'channel', 'unit'])
+        ts = self.TEST_CLASS.find(
+            GWOSC_GW150914_CHANNEL,
+            *GWOSC_GW150914_SEGMENT,
+        )
+        utils.assert_quantity_sub_equal(
+            ts,
+            losc_16384,
+            exclude=['name', 'channel', 'unit'],
+        )
 
-    def test_get(self, losc_16384):
-        # get using datafind (maybe)
-        with pytest.warns(NDSWarning):
-            try:
-                ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                         frametype_match=r'C01\Z')
-            except (ImportError, RuntimeError) as e:  # pragma: no-cover
-                pytest.skip(str(e))
-            utils.assert_quantity_sub_equal(
-                ts, losc_16384, exclude=['name', 'channel', 'unit'])
-
-        # get using NDS2 (if datafind could have been used to start with)
+    @SKIP_CVMFS_GWOSC
+    @mock.patch.dict(
+        # force 'import nds2' to fail so that we are actually testing
+        # the gwdatafind API or nothing
+        "sys.modules",
+        {"nds2": None},
+    )
+    @mock.patch.dict(
+        "os.environ",
+        {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+    )
+    def test_get_datafind(self, losc_16384):
         try:
-            dfs = os.environ.pop('LIGO_DATAFIND_SERVER')
-        except KeyError:
-            dfs = None
-        else:
-            ts2 = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
-            utils.assert_quantity_sub_equal(ts, ts2,
-                                            exclude=['channel', 'unit'])
-        finally:
-            if dfs is not None:
-                os.environ['LIGO_DATAFIND_SERVER'] = dfs
+            ts = self.TEST_CLASS.get(
+                GWOSC_GW150914_CHANNEL,
+                *GWOSC_GW150914_SEGMENT,
+                frametype_match=r'V1\Z',
+            )
+        except (ImportError, RuntimeError) as e:  # pragma: no-cover
+            pytest.skip(str(e))
+        utils.assert_quantity_sub_equal(
+            ts,
+            losc_16384,
+            exclude=['name', 'channel', 'unit'],
+        )
+
+    @utils.skip_missing_dependency('nds2')
+    @utils.skip_kerberos_credential
+    @mock.patch.dict(os.environ)
+    def test_get_nds2(self, losc_16384):
+        # get using NDS2 (if datafind could have been used to start with)
+        os.environ.pop('LIGO_DATAFIND_SERVER', None)
+        ts = self.TEST_CLASS.get(
+            NDS2_GW150914_CHANNEL,
+            *GWOSC_GW150914_SEGMENT,
+        )
+        utils.assert_quantity_sub_equal(
+            ts,
+            losc_16384,
+            exclude=['name', 'channel', 'unit'],
+        )
 
     # -- signal processing methods --------------
 
