@@ -522,8 +522,11 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
             target, contenthandler=kwargs.pop('contenthandler',
                                               LIGOLWContentHandler))
     # fail on existing document and not overwriting
-    elif (not overwrite and isinstance(target, str) and
-          os.path.isfile(target)):
+    elif (
+        not overwrite
+        and isinstance(target, str)
+        and os.path.isfile(target)
+    ):
         raise IOError("File exists: {}".format(target))
     else:  # or create a new document
         xmldoc = Document()
@@ -681,12 +684,18 @@ def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
             line1 = fileobj.readline().lower()
             line2 = fileobj.readline().lower()
             try:
-                return (line1.startswith(XML_SIGNATURE) and
-                        line2.startswith((LIGOLW_SIGNATURE, LIGOLW_ELEMENT)))
+                return (
+                    line1.startswith(XML_SIGNATURE)
+                    and line2.startswith((LIGOLW_SIGNATURE, LIGOLW_ELEMENT))
+                )
             except TypeError:  # bytes vs str
-                return (line1.startswith(XML_SIGNATURE.decode('utf-8')) and
-                        line2.startswith((LIGOLW_SIGNATURE.decode('utf-8'),
-                                          LIGOLW_ELEMENT.decode('utf-8'))))
+                return (
+                    line1.startswith(XML_SIGNATURE.decode('utf-8'))
+                    and line2.startswith((
+                        LIGOLW_SIGNATURE.decode('utf-8'),
+                        LIGOLW_ELEMENT.decode('utf-8'),
+                    ))
+                )
         finally:
             fileobj.seek(loc)
     try:

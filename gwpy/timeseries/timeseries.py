@@ -231,7 +231,7 @@ class TimeSeries(TimeSeriesBase):
             nfreqs = (nfft + 1) // 2
         else:
             nfreqs = nfft // 2 + 1
-        ffts = Spectrogram(numpy.zeros((navg, nfreqs), dtype=numpy.complex),
+        ffts = Spectrogram(numpy.zeros((navg, nfreqs), dtype=numpy.complex128),
                            channel=self.channel, epoch=self.epoch, f0=0,
                            df=1 / fftlength, dt=1, copy=True)
         # stride through TimeSeries, recording FFTs as columns of Spectrogram
@@ -1074,8 +1074,9 @@ class TimeSeries(TimeSeriesBase):
 
         # parse filter
         form, filt = filter_design.parse_filter(
-                filt, analog=kwargs.pop('analog', False),
-                sample_rate=self.sample_rate.to('Hz').value,
+            filt,
+            analog=kwargs.pop('analog', False),
+            sample_rate=self.sample_rate.to('Hz').value,
         )
         if form == 'zpk':
             sos = signal.zpk2sos(*filt)
@@ -1464,9 +1465,11 @@ class TimeSeries(TimeSeriesBase):
             for the underlying heterodyne detection method
         """
         # stride through the TimeSeries and heterodyne at a single frequency
-        phase = (2 * numpy.pi * f *
-                 self.dt.decompose().value *
-                 numpy.arange(0, self.size))
+        phase = (
+            2 * numpy.pi * f
+            * self.dt.decompose().value
+            * numpy.arange(0, self.size)
+        )
         out = self.heterodyne(phase, stride=stride, singlesided=True)
         if exp:
             return out

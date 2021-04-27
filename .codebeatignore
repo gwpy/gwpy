@@ -1,4 +1,3 @@
-versioneer.py
 docs/*
 examples/*
 gwpy/_version.py

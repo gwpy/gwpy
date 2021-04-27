@@ -21,59 +21,8 @@
 
 import re
 import subprocess
-import sys
 from datetime import date
 from itertools import groupby
-
-import versioneer
-
-CMDCLASS = versioneer.get_cmdclass()
-VERSION = versioneer.get_version()
-
-# -- setup_requires handling --------------------------------------------------
-
-SETUP_REQUIRES = {
-    'test': [
-        'pytest_runner',
-    ],
-    'build_sphinx': [  # list should match requirements-doc.txt
-        'sphinx >= 1.6.1',
-        'numpydoc >= 0.8.0',
-        'sphinx-bootstrap-theme >= 0.6',
-        'sphinxcontrib-programoutput',
-        'sphinx-automodapi',
-        'requests',
-    ],
-}
-
-if {'build_sphinx'}.intersection(sys.argv):
-    try:
-        from sphinx.setup_command import BuildDoc
-    except ImportError as exc:
-        exc.msg = 'build_sphinx command requires {0}'.format(
-            SETUP_REQUIRES['build_sphinx'][0].replace(' ', ''))
-        exc.args = (exc.msg,)
-        raise
-    CMDCLASS['build_sphinx'] = BuildDoc
-
-
-def get_setup_requires():
-    """Return the list of packages required for this setup.py run
-    """
-    # don't force requirements if just asking for help
-    if {'--help', '--help-commands'}.intersection(sys.argv):
-        return list()
-
-    # otherwise collect all requirements for all known commands
-    reqlist = []
-    for cmd, dependencies in SETUP_REQUIRES.items():
-        if cmd in sys.argv:
-            reqlist.extend(dependencies)
-
-    return reqlist
-
-
-# -- copyright utility --------------------------------------------------------
 
 COPYRIGHT_REGEX = re.compile(
     r"Copyright[\S \t]+\((?P<years>\d\d\d\d([, \d-]+)?)\)",

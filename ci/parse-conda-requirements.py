@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Parse a requirements.txt-format file for use with Conda
+"""Parse setup.cfg for package requirements for use with Conda
 """
 
 import argparse
@@ -12,6 +12,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from configparser import ConfigParser
 from distutils.spawn import find_executable
 
 import pkg_resources
@@ -33,28 +34,40 @@ LOGGER = logging.getLogger("condaparser")
 VERSION_OPERATOR = re.compile('[><=!]')
 
 
-def parse_requirements(file):
-    for line in file:
-        if line.startswith("-r "):
-            name = line[3:].rstrip()
-            with open(name, "r") as file2:
-                yield from parse_requirements(file2)
-        else:
-            yield from pkg_resources.parse_requirements(line)
+def parse_requirements(conf, section, opt):
+    for line in conf[section][opt].strip().splitlines():
+        yield from pkg_resources.parse_requirements(line)
 
 
 def create_parser():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument(
-        'filename',
-        nargs='+',
-        help='path of requirments file to parse',
+        'extras_name',
+        nargs='*',
+        default=[],
+        help='name of setuptools \'extras\' to parse',
         )
+    parser.add_argument(
+        '-a',
+        '--all',
+        action="store_true",
+        default=False,
+        help='include all extras',
+    )
+    parser.add_argument(
+        '-c',
+        '--config-file',
+        default='setup.cfg',
+        help='path of setup.cfg file',
+    )
     parser.add_argument(
         '-p',
         '--python-version',
         default='{0.major}.{0.minor}'.format(sys.version_info),
-        help='python version to use (default: %(default)s)',
+        help='python version to use',
         )
     parser.add_argument(
         '-o',
@@ -69,18 +82,28 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     requirements = ["python={0.python_version}.*".format(args)]
-    for filename in args.filename:
-        LOGGER.info("Processing {}".format(filename))
-        with open(filename, "r") as reqf:
-            for item in parse_requirements(reqf):
-                # if environment markers don't pass, skip
-                if item.marker and not item.marker.evaluate():
-                    continue
-                # if requirement is a URL, skip
-                if item.url:
-                    continue
-                name = CONDA_PACKAGE_MAP.get(item.name, item.name)
-                requirements.append('{}{}'.format(name, item.specifier))
+    conf = ConfigParser()
+    conf.read(args.config_file)
+
+    if args.all:  # use all extras
+        args.extras_name = conf["options.extras_require"].keys()
+    options = [
+        ("options", "setup_requires"),
+        ("options", "install_requires"),
+    ] + [("options.extras_require", extra) for extra in args.extras_name]
+
+    for sect, opt in options:
+        LOGGER.info("Processing {}/{}".format(sect, opt))
+        for item in parse_requirements(conf, sect, opt):
+            # if environment markers don't pass, skip
+            if item.marker and not item.marker.evaluate():
+                continue
+            # if requirement is a URL, skip
+            if item.url:
+                continue
+            name = CONDA_PACKAGE_MAP.get(item.name, item.name)
+            requirements.append('{}{}'.format(name, item.specifier))
+            LOGGER.info("  parsed {}".format(requirements[-1]))
 
     tmp = tempfile.mktemp()
 

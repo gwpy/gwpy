@@ -205,10 +205,12 @@ def _flatten(container):
 def is_filter_tuple(tup):
     """Return whether a `tuple` matches the format for a column filter
     """
-    return isinstance(tup, (tuple, list)) and (
-        len(tup) == 3 and
-        isinstance(tup[0], str) and
-        callable(tup[1]))
+    return (
+        isinstance(tup, (tuple, list))
+        and len(tup) == 3
+        and isinstance(tup[0], str)
+        and callable(tup[1])
+    )
 
 
 # -- filter -------------------------------------------------------------------

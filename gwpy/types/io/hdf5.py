@@ -100,8 +100,7 @@ class IgnoredAttribute(ValueError):
 def _format_metadata_attribute(value):
     """Format a value for writing to HDF5 as a `h5py.Dataset` attribute
     """
-    if (value is None or
-            (isinstance(value, Index) and value.regular)):
+    if value is None or (isinstance(value, Index) and value.regular):
         raise IgnoredAttribute
 
     # map type to something HDF5 can handle

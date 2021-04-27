@@ -1,9 +1,3 @@
 scanner:
   diff_only: True
-
-pycodestyle:
-  exclude:
-    - docs/conf.py
-    - versioneer.py
-    - gwpy/_version.py
-    - gwpy/utils/sphinx/epydoc.py
+  linter: flake8

@@ -32,20 +32,23 @@ from astropy import units
 from ...detector import Channel
 from ...time import (Time, LIGOTimeGPS)
 from ...testing import (mocks, utils)
+from ...testing.errors import pytest_skip_network_error
 from ...types import Array2D
 from .. import (StateVector, StateVectorDict, StateVectorList,
                 StateTimeSeries, StateTimeSeriesDict, Bits)
 from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
-from .test_timeseries import (LOSC_IFO, LOSC_GW150914_SEGMENT,
-                              LOSC_FETCH_ERROR)
+from .test_timeseries import (
+    GWOSC_GW150914_IFO,
+    GWOSC_GW150914_SEGMENT,
+)
 
-LOSC_GW150914_DQ_NAME = {
+GWOSC_GW150914_DQ_NAME = {
     'hdf5': 'Data quality',
     'gwf': 'L1:GWOSC-4KHZ_R1_DQMASK',
 }
-LOSC_GW150914_DQ_BITS = {
+GWOSC_GW150914_DQ_BITS = {
     'hdf5': [
         'Passes DATA test',
         'Passes CBC_CAT1 test',
@@ -310,25 +313,26 @@ class TestStateVector(_TestTimeSeriesBase):
 
     # -- data access ----------------------------
 
-    @utils.skip_minimum_version("gwosc", "0.4.0")
     @pytest.mark.parametrize('format', [
         'hdf5',
         pytest.param(  # only frameCPP actually reads units properly
             'gwf', marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
     ])
+    @pytest_skip_network_error
     def test_fetch_open_data(self, format):
-        try:
-            sv = self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, version=3)
-        except LOSC_FETCH_ERROR as e:  # pragma: no-cover
-            pytest.skip(str(e))
+        sv = self.TEST_CLASS.fetch_open_data(
+            GWOSC_GW150914_IFO,
+            *GWOSC_GW150914_SEGMENT,
+            format=format,
+            version=3,
+        )
         ref = StateVector(
             [127, 127, 127, 127],
             unit='',
-            t0=LOSC_GW150914_SEGMENT[0],
+            t0=GWOSC_GW150914_SEGMENT[0],
             dt=1,
-            name=LOSC_GW150914_DQ_NAME[format],
-            bits=LOSC_GW150914_DQ_BITS[format],
+            name=GWOSC_GW150914_DQ_NAME[format],
+            bits=GWOSC_GW150914_DQ_BITS[format],
         )
         utils.assert_quantity_sub_equal(sv, ref, exclude=['channel', 'bits'])
         assert sorted(map(str, sv.bits)) == sorted(map(str, ref.bits))

@@ -38,10 +38,10 @@ def _math(s):
 
 def _render_simple(values, ndec=2, thresh=100001):
     return (
-        values.size and  # is not empty, and
-        not all(values == 0) and  # not all zeros, and
-        values.max() < thresh and  # max below very large number, and
-        numpy.array_equal(values, values.round(ndec))  # all 2 dec. places
+        values.size  # is not empty, and
+        and not all(values == 0)  # not all zeros, and
+        and values.max() < thresh  # max below very large number, and
+        and numpy.array_equal(values, values.round(ndec))  # all 2 dec. places
     )
 
 
@@ -89,9 +89,9 @@ class LogFormatter(mticker.LogFormatterMathtext):
         # sub-ticks, then there is more than a decade on the axis, so
         # (for base 10) include half-decade ticks
         if (
-                self._num_ticks() == 1 and
-                self._sublabels == {1} and
-                self._base == 10
+                self._num_ticks() == 1
+                and self._sublabels == {1}
+                and self._base == 10
         ):
             self._sublabels = {1., 5., 10.}
 
@@ -118,9 +118,9 @@ class LogFormatter(mticker.LogFormatterMathtext):
         coeff = numpy.round(x / b ** exponent)
         nticks = self._num_ticks()
         if (
-                nticks >= 1 and
-                self._sublabels is not None and
-                coeff not in self._sublabels
+                nticks >= 1
+                and self._sublabels is not None
+                and coeff not in self._sublabels
         ):
             return ''
 

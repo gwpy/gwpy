@@ -81,9 +81,9 @@ def _is_flag_group(obj):
     """
     import h5py
     return (
-        isinstance(obj, h5py.Group) and
-        isinstance(obj.get("active"), h5py.Dataset) and
-        isinstance(obj.get("known"), h5py.Dataset)
+        isinstance(obj, h5py.Group)
+        and isinstance(obj.get("active"), h5py.Dataset)
+        and isinstance(obj.get("known"), h5py.Dataset)
     )
 
 

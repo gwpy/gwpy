@@ -116,9 +116,17 @@ def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):
 
     # calculate integral pre-factor
     prefactor = (
-        (1.77**2 * 5 * constants.c ** (1/3.) *
-         (mchirp * constants.G / constants.c ** 2) ** (5/3.)) /
-        (96 * pi ** (4/3.) * snr ** 2)
+        (  # numerator
+            1.77**2
+            * 5
+            * constants.c ** (1/3.)
+            * (mchirp * constants.G / constants.c ** 2) ** (5/3.)
+        )  # denominator
+        / (
+            96
+            * pi ** (4/3.)
+            * snr ** 2
+        )
     )
 
     # calculate inspiral range ASD in m^2/Hz
@@ -245,8 +253,10 @@ def burst_range_spectrum(psd, snr=8, energy=1e-2):
         the burst range `FrequencySeries` [Mpc (default)]
     """
     # calculate frequency dependent range in parsecs
-    a = (constants.G * energy * constants.M_sun * 0.4 /
-         (pi**2 * constants.c))**(1/2.)
+    a = (
+        constants.G * energy * constants.M_sun * 0.4
+        / (pi**2 * constants.c)
+    ) ** (1/2.)
     dspec = psd ** (-1/2.) * a / (snr * psd.frequencies)
 
     # convert to output unit

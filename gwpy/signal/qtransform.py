@@ -256,8 +256,8 @@ class QPlane(QBase):
         last = None
         for i in range(nfreq):
             this = (
-                minf * exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep) //
-                fstepmin * fstepmin
+                minf * exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep)
+                // fstepmin * fstepmin
             )
             if this != last:  # yield only unique elements
                 yield this
@@ -385,8 +385,9 @@ class QTile(QBase):
     def get_data_indices(self):
         """Returns the index array of interesting frequencies for this row
         """
-        return numpy.round(self._get_indices() + 1 +
-                           self.frequency * self.duration).astype(int)
+        return numpy.round(
+            self._get_indices() + 1 + self.frequency * self.duration,
+        ).astype(int)
 
     @property
     def padding(self):

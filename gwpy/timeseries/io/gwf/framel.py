@@ -154,9 +154,9 @@ def _channel_data_to_write(timeseries, type_):
         "x_unit": str(timeseries.xunit),
         "y_unit": str(timeseries.unit),
         "kind": (
-            type_ or
-            getattr(timeseries.channel, "_ctype", "proc") or
-            "proc"
+            type_
+            or getattr(timeseries.channel, "_ctype", "proc")
+            or "proc"
         ).upper(),
         "type": 1,
         "subType": 0,

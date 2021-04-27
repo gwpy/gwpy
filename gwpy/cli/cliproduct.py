@@ -557,10 +557,12 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         max_ = getattr(self.args, '{}max'.format(axis))
 
         # parse limits
-        if scale == 'auto-gps' and (
-                min_ is not None and
-                max_ is not None and
-                max_ < 1e8):
+        if (
+            scale == 'auto-gps'
+            and min_ is not None
+            and max_ is not None
+            and max_ < 1e8
+        ):
             limits = (min_, min_ + max_)
         else:
             limits = (min_, max_)
@@ -744,7 +746,10 @@ class CliProduct(object, metaclass=abc.ABCMeta):
             for segment in segments:
                 seg_name = segment.replace('{ifo}', ifo)
                 seg_data = DataQualityFlag.query_dqsegdb(
-                        seg_name, start, end)
+                    seg_name,
+                    start,
+                    end,
+                )
 
                 self.plot.add_segments_bar(seg_data, label=seg_name)
 

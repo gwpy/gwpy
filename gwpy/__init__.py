@@ -28,14 +28,14 @@ and frequency-domain data produced by the `LIGO <http://www.ligo.org>`_ and
 with easy-to-follow tutorials at each step.
 """
 
-from ._version import get_versions
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__credits__ = "The LIGO Scientific Collaboration and the Virgo Collaboration"
+
 from . import (
     plot,  # registers gwpy.plot.Axes as default rectilinear axes
 )
 
-# set package metadata
-__version__ = get_versions()['version']
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__credits__ = "The LIGO Scientific Collaboration and the Virgo Collaboration"
-
-del get_versions
+try:
+    from ._version import version as __version__
+except ModuleNotFoundError:  # development mode
+    __version__ = ''
