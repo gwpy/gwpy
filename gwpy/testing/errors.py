@@ -27,6 +27,7 @@ from urllib.error import URLError
 import pytest
 
 NETWORK_ERROR = (
+    ConnectionError,
     socket.timeout,
     SSLError,
     URLError,
