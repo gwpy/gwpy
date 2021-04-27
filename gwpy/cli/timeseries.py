@@ -66,7 +66,7 @@ class TimeSeries(TimeDomainProduct):
         """Generate the plot from time series and arguments
         """
         plot = Plot(figsize=self.figsize, dpi=self.dpi)
-        ax = plot.gca(xscale='auto-gps')
+        ax = plot.add_subplot(xscale='auto-gps')
 
         # handle user specified plot labels
         if self.args.legend:

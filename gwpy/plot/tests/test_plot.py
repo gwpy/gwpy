@@ -120,7 +120,7 @@ class TestPlot(FigureTestBase):
         assert cbar.mappable is image
 
     def test_add_segments_bar(self, fig):
-        ax = fig.gca(xscale='auto-gps', epoch=150)
+        ax = fig.add_subplot(xscale='auto-gps', epoch=150)
         ax.set_xlim(100, 200)
         ax.set_xlabel('test')
         segs = SegmentList([Segment(10, 110), Segment(150, 400)])
@@ -139,7 +139,7 @@ class TestPlot(FigureTestBase):
             fig.add_segments_bar(segs, location='left')
 
     def test_add_state_segments(self, fig):
-        fig.gca(xscale='auto-gps')
+        fig.add_subplot(xscale='auto-gps')
         segs = SegmentList([Segment(10, 110), Segment(150, 400)])
         with pytest.deprecated_call():
             fig.add_state_segments(segs)
