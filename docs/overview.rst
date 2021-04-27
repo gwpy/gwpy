@@ -48,7 +48,7 @@ and visualisation:
 
    from gwpy.plot import Plot
    plot = Plot(figsize=(12, 4))
-   ax = plot.gca(xscale='auto-gps')
+   ax = plot.add_subplot(xscale='auto-gps')
    ax.plot(h1b, color='gwpy:ligo-hanford', label='LIGO-Hanford')
    ax.plot(l1b, color='gwpy:ligo-livingston', label='LIGO-Livingston')
    ax.set_epoch(1126259462.427)
