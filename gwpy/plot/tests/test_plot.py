@@ -47,7 +47,7 @@ class TestPlot(FigureTestBase):
     def test_init_empty(self):
         plot = self.FIGURE_CLASS(geometry=(2, 2))
         assert len(plot.axes) == 4
-        assert plot.axes[-1].get_geometry() == (2, 2, 4)
+        assert plot.axes[-1].get_subplotspec().get_geometry() == (2, 2, 3, 3)
 
     def test_init_with_data(self):
         # list
@@ -79,7 +79,7 @@ class TestPlot(FigureTestBase):
         plot = self.FIGURE_CLASS(a, b, separate=True, sharex=True, sharey=True)
         assert len(plot.axes) == 2
         for i, ax in enumerate(plot.axes):
-            assert ax.get_geometry() == (2, 1, i+1)
+            assert ax.get_subplotspec().get_geometry() == (2, 1, i, i)
             assert len(ax.lines) == 1
         assert plot.axes[1]._sharex is plot.axes[0]
         plot.close()
