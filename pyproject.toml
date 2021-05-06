@@ -8,3 +8,11 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
 write_to = "gwpy/_version.py"
+
+[tool.pytest.ini_options]
+addopts = "-r a --color=yes"
+filterwarnings = [
+	"error",
+	"ignore:`np.int` is a deprecated alias::pycbc..*",
+	"ignore:PY_SSIZE_T_CLEAN will be required",
+]
