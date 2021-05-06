@@ -109,8 +109,12 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
 
         if stride:
             specgram = self.timeseries[0].spectrogram(
-                stride, fftlength=fftlength, overlap=overlap,
-                window=args.window)
+                stride,
+                fftlength=fftlength,
+                overlap=overlap,
+                method=args.method,
+                window=args.window,
+            )
             nfft = stride * (stride // (fftlength - overlap))
             self.log(3, 'Spectrogram calc, stride: %s, fftlength: %s, '
                         'overlap: %sf, #fft: %d' % (stride, fftlength,
