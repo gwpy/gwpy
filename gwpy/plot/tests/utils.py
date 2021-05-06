@@ -67,5 +67,5 @@ class AxesTestBase(_Base):
     @pytest.fixture(scope='function')
     def ax(cls):
         fig = pyplot.figure(FigureClass=getattr(cls, 'FIGURE_CLASS', Plot))
-        yield fig.gca(projection=cls.AXES_CLASS.name)
+        yield fig.add_subplot(projection=cls.AXES_CLASS.name)
         cls.save_and_close(fig)
