@@ -273,7 +273,6 @@ def test_write_tables(ilwdchar_compat):
 
         # check overwrite=True works
         io_ligolw.write_tables(tmp, [stab], overwrite=True)
-        print(open(tmp, 'rb').read())
         xmldoc = io_ligolw.open_xmldoc(tmp)
         assert io_ligolw.list_tables(xmldoc) == ['segment']
         stab2 = io_ligolw.read_table(xmldoc, 'segment')
