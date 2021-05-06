@@ -50,7 +50,12 @@ def psd():
                                format='hdf5')
     except ImportError as e:  # pragma: no-cover
         pytest.skip(str(e))
-    return data.psd(.4, overlap=.2, window=('kaiser', 24))
+    return data.psd(
+        .4,
+        overlap=.2,
+        method="welch",
+        window=('kaiser', 24),
+    )
 
 
 @pytest.fixture(scope='module')
@@ -113,7 +118,14 @@ def test_burst_range(psd):
 ])
 def test_range_timeseries(hoft, rangekwargs):
     trends = astro.range_timeseries(
-        hoft, 0.5, fftlength=0.25, overlap=0.125, nproc=2, **rangekwargs)
+        hoft,
+        0.5,
+        fftlength=0.25,
+        overlap=0.125,
+        method="welch",
+        nproc=2,
+        **rangekwargs,
+    )
     assert isinstance(trends, TimeSeries)
     assert trends.size == 2
     assert trends.unit == 'Mpc'
@@ -126,7 +138,14 @@ def test_range_timeseries(hoft, rangekwargs):
 ])
 def test_range_spectrogram(hoft, rangekwargs, outunit):
     spec = astro.range_spectrogram(
-        hoft, 0.5, fftlength=0.25, overlap=0.125, nproc=2, **rangekwargs)
+        hoft,
+        0.5,
+        fftlength=0.25,
+        overlap=0.125,
+        method="welch",
+        nproc=2,
+        **rangekwargs,
+    )
     assert isinstance(spec, Spectrogram)
     assert spec.shape[0] == 2
     assert spec.unit == outunit
