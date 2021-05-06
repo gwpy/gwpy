@@ -821,6 +821,8 @@ class FFTMixin(object, metaclass=abc.ABCMeta):
 
     This just adds FFT-based command line options
     """
+    DEFAULT_FFTLENGTH = 1.
+
     @classmethod
     def init_data_options(cls, parser):
         """Set up data input and signal processing options including FFTs
@@ -833,7 +835,8 @@ class FFTMixin(object, metaclass=abc.ABCMeta):
         """Add an `~argparse.ArgumentGroup` for FFT options
         """
         group = parser.add_argument_group('Fourier transform options')
-        group.add_argument('--secpfft', type=float, default=1.,
+        group.add_argument('--secpfft', type=float,
+                           default=cls.DEFAULT_FFTLENGTH,
                            help='length of FFT in seconds')
         group.add_argument('--overlap', type=float,
                            help='overlap as fraction of FFT length [0-1)')
