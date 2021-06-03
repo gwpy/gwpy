@@ -81,7 +81,7 @@ def _import_uproot_that_can_write_root_files():
     """
     import uproot
     try:
-        uproot.create
+        uproot.newtree
     except AttributeError:
         try:
             import uproot3 as uproot
