@@ -49,7 +49,7 @@ from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
 
 SKIP_CVMFS_GWOSC = pytest.mark.skipif(
-    not os.path.isdir('/cvmfs/gwosc.osgstorage.org/'),
+    not os.path.isdir('/cvmfs/gwosc.osgstorage.org/gwdata'),
     reason="GWOSC CVMFS repository not available",
 )
 SKIP_FRAMECPP = utils.skip_missing_dependency('LDAStools.frameCPP')
