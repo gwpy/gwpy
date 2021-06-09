@@ -139,13 +139,22 @@ class _Nds2Enum(enum.IntFlag):
     def find(cls, name):
         """Returns the NDS2 type corresponding to the given name
         """
+        name = str(name)
+        # if given a number, use it
+        if name.isdigit():
+            return cls(int(name))
+        # otherwise we might have been given a registered name
         try:
-            return cls(name)
-        except ValueError as exc:
-            try:
-                return cls[str(name).replace('-', '').upper()]
-            except KeyError:
-                raise exc
+            return cls[name.upper()]
+        except KeyError:
+            # otherwise otherwise check the NDS2 names
+            for item in cls:
+                if name.lower() == item.nds2name.lower():
+                    return item
+        # bail out
+        raise ValueError(
+            "{!r} is not a valid {}".format(name, cls.__name__),
+        )
 
 
 Nds2ChannelType = _Nds2Enum(
