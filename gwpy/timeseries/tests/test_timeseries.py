@@ -122,6 +122,7 @@ def _gwosc_cvmfs(func):
     """Decorate ``func`` with all necessary CVMFS-related decorators
     """
     for dec in (
+        pytest.mark.cvmfs,
         pytest_skip_cvmfs_read_error,
         SKIP_CVMFS_GWOSC,
         SKIP_FRAMECPP,
