@@ -49,49 +49,95 @@ DEFAULT_HOSTS = OrderedDict([
     ('C0', ('nds40.ligo.caltech.edu', 31200)),
 ])
 
+# -- NDS2 types ---------------------------------------------------------------
+
+# -- correct as of nds2-client 0.16.6
+# channel type
+_NDS2_CHANNEL_TYPE = {
+    "UNKNOWN": (0, "UNKNOWN"),
+    "ONLINE": (1, "online"),
+    "RAW": (2, "raw"),
+    "RDS": (4, "reduced"),
+    "STREND": (8, "s-trend"),
+    "MTREND": (16, "m-trend"),
+    "TEST_POINT": (32, "test-pt"),
+    "STATIC": (64, "static"),
+}
+# data type
+_NDS2_DATA_TYPE = {
+    "UNKNOWN": (0, "UNKNOWN"),
+    "INT16": (1, "int_2"),
+    "INT32": (2, "int_4"),
+    "INT64": (4, "int_8"),
+    "FLOAT32": (8, "real_2"),
+    "FLOAT64": (16, "real_4"),
+    "COMPLEX32": (32, "complex_8"),
+    "UINT32": (64, "uint_4"),
+}
+
+# try and override dicts with actual from nds2
+try:
+    import nds2
+except ModuleNotFoundError:  # nds2 not found, that's ok
+    pass
+else:
+    def _nds2_attr_dict(prefix, to_string):
+        """Regenerate the relevant nds2 type dict from `nds2.channel` itself
+        """
+        chan = nds2.channel
+        for name in filter(
+            operator.methodcaller('startswith', prefix),
+            chan.__dict__,
+        ):
+            attr = getattr(chan, name)
+            yield name[len(prefix):], (attr, to_string(attr))
+
+    _NDS2_CHANNEL_TYPE = dict(_nds2_attr_dict(
+        "CHANNEL_TYPE_",
+        nds2.channel.channel_type_to_string,
+    ))
+    _NDS2_DATA_TYPE = dict(_nds2_attr_dict(
+        "DATA_TYPE_",
+        nds2.channel.data_type_to_string,
+    ))
+
 
 # -- enums --------------------------------------------------------------------
 
-class Nds2Enum(enum.Enum):  # pylint:  disable=too-few-public-methods
-    """`~enum.Enum` providing `any` property with logical OR of members
+class _Nds2Enum(enum.IntFlag):
+    """Base class for NDS2 enums
     """
+    def __new__(cls, value, nds2name):
+        obj = int.__new__(cls, value)
+        obj._value_ = value
+        obj.nds2name = nds2name
+        return obj
+
     @classmethod
     def any(cls):
         """The logical OR of all members in this enum
         """
-        return reduce(operator.or_, (x.value for x in cls))
+        return reduce(operator.or_, cls).value
 
-
-NDS2_TYPE_NAME = {
-    0: 'unknown',
-    1: 'online',
-    2: 'raw',
-    4: 'reduced',
-    8: 's-trend',
-    16: 'm-trend',
-    32: 'test-pt',
-    64: 'static',
-}
-
-
-class Nds2ChannelType(Nds2Enum):
-    """`~enum.Enum` of NDS2 channel types
-    """
-    @property
-    def name(self):
-        """The NDS2 string name for this channel type
+    @classmethod
+    def nds2names(cls):
+        """The list of all recognised NDS2 names for this type
         """
-        return NDS2_TYPE_NAME[self.value]
+        return [x.nds2name for x in cls]
 
     @classmethod
     def names(cls):
-        """The list of all recognised channel type names
+        """DEPRECATED: see ``.nds2names()``
         """
-        return [x.name for x in cls]
+        warnings.warn(
+            "{0}.names has been renamed {0}.nds2names".format(cls.__name__),
+            DeprecationWarning,
+        )
+        return cls.nds2names()
 
     @classmethod
     def find(cls, name):
-        """Returns the NDS2 channel type corresponding to the given name
+        """Returns the NDS2 type corresponding to the given name
         """
         try:
             return cls(name)
@@ -101,27 +147,21 @@ class Nds2ChannelType(Nds2Enum):
             except KeyError:
                 raise exc
 
-    UNKNOWN = 0
-    ONLINE = 1
-    RAW = 2
-    RDS = 4
-    STREND = 8
-    MTREND = 16
-    TEST_POINT = 32
-    STATIC = 64
+
+Nds2ChannelType = _Nds2Enum(
+    "Nds2ChannelType",
+    _NDS2_CHANNEL_TYPE,
+)
 
 
-class Nds2DataType(Nds2Enum, NumpyTypeEnum):
-    """`~enum.Enum` of NDS2 data types
-    """
-    UNKNOWN = 0
-    INT16 = 1
-    INT32 = 2
-    INT64 = 4
-    FLOAT32 = 8
-    FLOAT64 = 16
-    COMPLEX32 = 32
-    UINT32 = 64
+class _Nds2DataType(NumpyTypeEnum, _Nds2Enum):
+    pass
+
+
+Nds2DataType = _Nds2DataType(
+    "Nds2DataType",
+    _NDS2_DATA_TYPE,
+)
 
 
 # -- warning suppression ------------------------------------------------------

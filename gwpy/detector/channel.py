@@ -265,7 +265,7 @@ class Channel(object):
         if type_ is None:
             self._type = None
         else:
-            self._type = io_nds2.Nds2ChannelType.find(type_).name
+            self._type = io_nds2.Nds2ChannelType.find(type_).nds2name
 
     @property
     def ndstype(self):
@@ -659,7 +659,7 @@ class ChannelList(list):
             namestr = namestr.strip('\' \n')
             if ',' not in namestr:
                 break
-            for nds2type in io_nds2.Nds2ChannelType.names() + ['']:
+            for nds2type in io_nds2.Nds2ChannelType.nds2names() + ['']:
                 if nds2type and ',%s' % nds2type in namestr:
                     try:
                         channel, ctype, namestr = namestr.split(',', 2)
