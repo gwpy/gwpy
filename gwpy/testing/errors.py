@@ -70,3 +70,24 @@ def pytest_skip_network_error(func):
             pytest.skip(str(exc))
 
     return wrapper
+
+
+def pytest_skip_cvmfs_read_error(func):
+    """Execute `func` but skip if a CVMFS file fails to open
+
+    This is most likely indicative of a broken CVMFS mount, which is not
+    GWpy's problem.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except RuntimeError as exc:  # pragma: no cover
+            # if function failed to read a CVMFS file, skip
+            msg = str(exc)
+            if msg.startswith("Unable to open file: /cvmfs"):
+                pytest.skip(msg)
+            # otherwise raise the original error
+            raise
+
+    return wrapper

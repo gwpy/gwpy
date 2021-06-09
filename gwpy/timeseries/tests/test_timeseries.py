@@ -39,7 +39,10 @@ from ...signal.window import planck
 from ...table import EventTable
 from ...spectrogram import Spectrogram
 from ...testing import (mocks, utils)
-from ...testing.errors import pytest_skip_network_error
+from ...testing.errors import (
+    pytest_skip_cvmfs_read_error,
+    pytest_skip_network_error,
+)
 from ...time import LIGOTimeGPS
 from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
@@ -570,6 +573,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             assert 'no data received' in str(exc.value)
 
     @SKIP_CVMFS_GWOSC
+    @pytest_skip_cvmfs_read_error
     @SKIP_FRAMECPP
     @mock.patch.dict(
         "os.environ",
@@ -601,6 +605,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             )
 
     @SKIP_CVMFS_GWOSC
+    @pytest_skip_cvmfs_read_error
     @SKIP_FRAMECPP
     @mock.patch.dict(
         "os.environ",
