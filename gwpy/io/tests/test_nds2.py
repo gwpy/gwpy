@@ -62,11 +62,20 @@ class TestNds2ChannelType(_TestNds2Enum):
         _raw_names = sorted(v[1] for v in io_nds2._NDS2_CHANNEL_TYPE.values())
         assert sorted(self.TEST_CLASS.nds2names()) == _raw_names
 
-    @pytest.mark.parametrize('input_', ['m-trend', 'MTREND'])
-    def test_find(self, input_):
+    @pytest.mark.parametrize(('input_', 'expected'), (
+        (TEST_CLASS.MTREND.value, TEST_CLASS.MTREND),
+        (TEST_CLASS.MTREND.name, TEST_CLASS.MTREND),
+        (TEST_CLASS.MTREND.nds2name, TEST_CLASS.MTREND),
+        ('mtrend', TEST_CLASS.MTREND),
+        ('rds', TEST_CLASS.RDS),
+        ('RDS', TEST_CLASS.RDS),
+        ('reduced', TEST_CLASS.RDS),
+        ('REDUCED', TEST_CLASS.RDS),
+    ))
+    def test_find(self, input_, expected):
         """Test :meth:`gwpy.io.nds2.Nds2ChannelType.find`
         """
-        assert self.TEST_CLASS.find(input_) == self.TEST_CLASS.MTREND
+        assert self.TEST_CLASS.find(input_) == expected
 
 
 class TestNds2DataType(_TestNds2Enum, _TestNumpyTypeEnum):
