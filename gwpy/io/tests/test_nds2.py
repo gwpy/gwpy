@@ -55,12 +55,12 @@ class TestNds2ChannelType(_TestNds2Enum):
     """
     TEST_CLASS = io_nds2.Nds2ChannelType
 
-    def test_name(self):
-        assert self.TEST_CLASS.MTREND.name == 'm-trend'
+    def test_nds2name(self):
+        assert self.TEST_CLASS.MTREND.nds2name == 'm-trend'
 
-    def test_names(self):
-        assert sorted(self.TEST_CLASS.names()) == sorted(
-            io_nds2.NDS2_TYPE_NAME.values())
+    def test_nds2names(self):
+        _raw_names = sorted(v[1] for v in io_nds2._NDS2_CHANNEL_TYPE.values())
+        assert sorted(self.TEST_CLASS.nds2names()) == _raw_names
 
     @pytest.mark.parametrize('input_', ['m-trend', 'MTREND'])
     def test_find(self, input_):
