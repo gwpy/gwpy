@@ -39,7 +39,10 @@ from ...signal.window import planck
 from ...table import EventTable
 from ...spectrogram import Spectrogram
 from ...testing import (mocks, utils)
-from ...testing.errors import pytest_skip_network_error
+from ...testing.errors import (
+    pytest_skip_cvmfs_read_error,
+    pytest_skip_network_error,
+)
 from ...time import LIGOTimeGPS
 from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
@@ -113,6 +116,18 @@ GWOSC_GW150914_DQ_BITS = {
 }
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+
+def _gwosc_cvmfs(func):
+    """Decorate ``func`` with all necessary CVMFS-related decorators
+    """
+    for dec in (
+        pytest_skip_cvmfs_read_error,
+        SKIP_CVMFS_GWOSC,
+        SKIP_FRAMECPP,
+    ):
+        func = dec(func)
+    return func
 
 
 class TestTimeSeries(_TestTimeSeriesBase):
@@ -569,8 +584,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.gwpy')
             assert 'no data received' in str(exc.value)
 
-    @SKIP_CVMFS_GWOSC
-    @SKIP_FRAMECPP
+    @_gwosc_cvmfs
     @mock.patch.dict(
         "os.environ",
         {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
@@ -600,8 +614,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 observatory='X',
             )
 
-    @SKIP_CVMFS_GWOSC
-    @SKIP_FRAMECPP
+    @_gwosc_cvmfs
     @mock.patch.dict(
         "os.environ",
         {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
@@ -617,7 +630,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=['name', 'channel', 'unit'],
         )
 
-    @SKIP_CVMFS_GWOSC
+    @_gwosc_cvmfs
     @mock.patch.dict(
         # force 'import nds2' to fail so that we are actually testing
         # the gwdatafind API or nothing
