@@ -103,23 +103,6 @@ def _preformat_psd(func):
     return decorated_func
 
 
-def _deprecated_sensemon_call(name, sensemon_func):
-    @deprecated_function(
-        message=(
-            "the {} function currently uses the LIGO SenseMon (LIGO-T030276) "
-            "estimation, but will be upgraded in gwpy-2.1.0 to use a model "
-            "with cosmological corrections; to keep using the SenseMon "
-            "estimation, please modify your usage to call "
-            "gwpy.astro.{{0.__name__}}.".format(name)
-        ),
-    )
-    @wraps(sensemon_func)
-    def _new_func(*args, **kwargs):
-        return sensemon_func(*args, **kwargs)
-    _new_func.__name__ = name
-    return _new_func
-
-
 @_preformat_psd
 def sensemon_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):
     """Approximate the inspiral sensitive distance PSD from a GW strain PSD
@@ -258,15 +241,22 @@ def sensemon_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
     ) ** (1/2.)).to('Mpc')
 
 
-inspiral_range_psd = _deprecated_sensemon_call(
-    "inspiral_range_psd",
+_DEPRECATED_SENSEMON_MESSAGE = (
+    "the {} function currently uses the LIGO SenseMon (LIGO-T030276) "
+    "estimation, but will be upgraded in gwpy-2.1.0 to use a model "
+    "with cosmological corrections; to keep using the SenseMon "
+    "estimation, please modify your usage to call "
+    "gwpy.astro.{{0.__name__}}."
+)
+inspiral_range_psd = deprecated_function(
     sensemon_range_psd,
+    _DEPRECATED_SENSEMON_MESSAGE.format("inspiral_range_psd"),
 )
 
 
-inspiral_range = _deprecated_sensemon_call(
-    "inspiral_range",
+inspiral_range = deprecated_function(
     sensemon_range,
+    _DEPRECATED_SENSEMON_MESSAGE.format("inspiral_range"),
 )
 
 
