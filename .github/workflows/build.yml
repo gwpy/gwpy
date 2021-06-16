@@ -14,9 +14,11 @@ on:
   push:
     branches:
       - master
+      - release/**
   pull_request:
     branches:
       - master
+      - release/**
 
 jobs:
   conda:
@@ -48,13 +50,32 @@ jobs:
         fetch-depth: 0
 
     - name: Cache conda packages
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       env:
         # increment to reset cache
         CACHE_NUMBER: 0
       with:
         path: ~/conda_pkgs_dir
-        key: ${{ runner.os }}-conda-${{ matrix.python-version}}-${{ env.CACHE_NUMBER }}
+        key: ${{ runner.os }}-conda-${{ matrix.python-version }}-${{ env.CACHE_NUMBER }}
+        restore-keys: ${{ runner.os }}-conda-${{ matrix.python-version }}-
+
+    - name: Cache apt (Linux)
+      if: matrix.os == 'Ubuntu'
+      uses: actions/cache@v2
+      env:
+        # increment to reset cache
+        CACHE_NUMBER: 0
+      with:
+        path: ~/apt-cache
+        key: ${{ matrix.os }}-apt-${{ env.CACHE_NUMBER }}
+        restore-keys: ${{ matrix.os }}-apt-
+
+    - name: Configure apt (Linux)
+      if: matrix.os == 'Ubuntu'
+      run: |
+        APT_CACHE_DIR=$(readlink -f ~/apt-cache)
+        mkdir -pv "${APT_CACHE_DIR}/archive/partial"
+        echo "Dir::Cache \"${APT_CACHE_DIR}\";" | sudo tee /etc/apt/apt.conf.d/99cache.conf
 
     - name: Configure conda
       uses: conda-incubator/setup-miniconda@v2
@@ -68,23 +89,60 @@ jobs:
     - name: Conda info
       run: conda info --all
 
-    - name: Install dependencies
+    - name: Install dependencies with conda
       run: |
-        # parse requirements files to install as much as possible with conda
+        # parse requirements to install as much as possible with conda
         python ./ci/parse-conda-requirements.py \
-            requirements-dev.txt \
-            requirements-conda.txt \
-            -o environment.txt \
-            -p ${{ matrix.python-version }}
+            --all \
+            --output environment.txt \
+            --python-version ${{ matrix.python-version }}
         echo "-----------------"
         cat environment.txt
         echo "-----------------"
         conda install --quiet --yes --name test --file environment.txt
-        # install anything we missed with conda using regular pip
-        python -m pip install -r requirements-dev.txt
+
+    - name: Install extra dependencies (Linux)
+      if: matrix.os == 'Ubuntu'
+      run: |
+        # update repos
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q -q update
+        # install apt requirements
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install \
+            cm-super-minimal \
+            dvipng \
+            texlive-latex-base \
+            texlive-latex-extra \
+        ;
+
+    - name: Install CVMFS (Linux)
+      if: matrix.os == 'Ubuntu'
+      run: |
+        # configure CVMFS Apt repo
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install lsb-release
+        curl -LO https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest_all.deb
+        sudo dpkg -i cvmfs-release-latest_all.deb
+        rm -f cvmfs-release-latest_all.deb
+        # configure CVMFS-contrib Apt repo
+        curl -LO https://ecsft.cern.ch/dist/cvmfs/cvmfs-contrib-release/cvmfs-contrib-release-latest_all.deb
+        sudo dpkg -i cvmfs-contrib-release-latest_all.deb
+        rm -f cvmfs-contrib-release-latest_all.deb
+        # install cvmfs
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q -q update
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install \
+            cvmfs \
+            cvmfs-config-osg \
+        ;
+        # configure CVMFS client
+        sudo cvmfs_config setup
+        sudo bash -c 'cat > /etc/cvmfs/default.local' << EOF
+        CVMFS_REPOSITORIES=gwosc.osgstorage.org
+        CVMFS_QUOTA_LIMIT=20000
+        CVMFS_HTTP_PROXY=DIRECT
+        EOF
+        sudo cvmfs_config probe
 
     - name: Install GWpy
-      run: python -m pip install . --no-build-isolation -vv
+      run: python -m pip install .[dev] --no-build-isolation -vv
 
     - name: Package list
       run: conda list --name test

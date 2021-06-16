@@ -275,16 +275,20 @@ def is_cache(cache):
     if isinstance(cache, (str,) + FILE_LIKE):
         try:
             return bool(len(read_cache(cache)))
-        except (TypeError, ValueError, UnicodeDecodeError, ImportError):
-            # failed to parse cache
+        except (
+            OSError,  # failed to read file
+            TypeError,  # failed to parse a line as a cache entry
+            UnicodeDecodeError,  # failed to decode file
+            ValueError,  # failed to parse a line as a cache entry
+        ):
             return False
     if HAS_CACHE and isinstance(cache, Cache):
         return True
-    if (isinstance(cache, (list, tuple)) and cache and
-            all(map(is_cache_entry, cache))):
-        return True
-
-    return False
+    return bool(
+        isinstance(cache, (list, tuple))
+        and cache
+        and all(map(is_cache_entry, cache))
+    )
 
 
 def is_cache_entry(path):

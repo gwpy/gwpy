@@ -17,9 +17,11 @@ on:
   push:
     branches:
       - master
+      - release/**
   pull_request:
     branches:
       - master
+      - release/**
 
 jobs:
   minmax-dependencies:
@@ -49,18 +51,32 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Extract requirements
+      run: |
+        EXTRAS="'test'"
+        [[ ${{ matrix.experimental }} == true ]] && EXTRAS="${EXTRAS},'dev'"
+        python3 -c "
+        import configparser;
+        conf = configparser.ConfigParser();
+        conf.read('setup.cfg');
+        for opt in ('setup_requires', 'install_requires'):
+            print(conf['options'][opt].strip())
+        for extra in (${EXTRAS},):
+            print(conf['options.extras_require'][extra].strip())
+        " | sort -u > requirements.txt
+
     - name: Install minimal dependencies
       if: matrix.experimental != true
       run: |
-        sed -i.tmp 's/>=/==/' requirements*.txt
-        python -m pip install -r requirements.txt -r requirements-test.txt
+        sed -i 's/>=/==/' requirements.txt
+        python -m pip install -r requirements.txt --upgrade-strategy=only-if-needed
 
     - name: Install experimental dependencies
       if: matrix.experimental == true
       run: |
         sudo apt-get -y -q install libkrb5-dev
         python -m pip install -U pip wheel
-        python -m pip install -r requirements-dev.txt --upgrade --upgrade-strategy=eager --pre
+        python -m pip install -r requirements.txt --upgrade --upgrade-strategy=eager --pre
 
     - name: Install GWpy
       run: python -m pip install . --no-build-isolation -vv

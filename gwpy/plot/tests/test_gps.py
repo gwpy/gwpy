@@ -148,7 +148,7 @@ def test_gps_scale(scale):
     u = Unit(scale[:-1])
 
     fig = pyplot.figure()
-    ax = fig.gca(xscale=scale)
+    ax = fig.add_subplot(xscale=scale)
     if scale == 'years':
         x = numpy.arange(50)
     else:
@@ -177,7 +177,7 @@ def test_gps_scale(scale):
 ])
 def test_auto_gps_scale(scale, unit):
     fig = pyplot.figure()
-    ax = fig.gca(xscale='auto-gps')
+    ax = fig.add_subplot(xscale='auto-gps')
     ax.plot(numpy.arange(1e2) * scale, numpy.arange(1e2))
     xscale = ax.get_xaxis()._scale
     transform = xscale.get_transform()

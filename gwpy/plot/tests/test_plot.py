@@ -47,7 +47,7 @@ class TestPlot(FigureTestBase):
     def test_init_empty(self):
         plot = self.FIGURE_CLASS(geometry=(2, 2))
         assert len(plot.axes) == 4
-        assert plot.axes[-1].get_geometry() == (2, 2, 4)
+        assert plot.axes[-1].get_subplotspec().get_geometry() == (2, 2, 3, 3)
 
     def test_init_with_data(self):
         # list
@@ -79,7 +79,7 @@ class TestPlot(FigureTestBase):
         plot = self.FIGURE_CLASS(a, b, separate=True, sharex=True, sharey=True)
         assert len(plot.axes) == 2
         for i, ax in enumerate(plot.axes):
-            assert ax.get_geometry() == (2, 1, i+1)
+            assert ax.get_subplotspec().get_geometry() == (2, 1, i, i)
             assert len(ax.lines) == 1
         assert plot.axes[1]._sharex is plot.axes[0]
         plot.close()
@@ -120,7 +120,7 @@ class TestPlot(FigureTestBase):
         assert cbar.mappable is image
 
     def test_add_segments_bar(self, fig):
-        ax = fig.gca(xscale='auto-gps', epoch=150)
+        ax = fig.add_subplot(xscale='auto-gps', epoch=150)
         ax.set_xlim(100, 200)
         ax.set_xlabel('test')
         segs = SegmentList([Segment(10, 110), Segment(150, 400)])
@@ -139,7 +139,7 @@ class TestPlot(FigureTestBase):
             fig.add_segments_bar(segs, location='left')
 
     def test_add_state_segments(self, fig):
-        fig.gca(xscale='auto-gps')
+        fig.add_subplot(xscale='auto-gps')
         segs = SegmentList([Segment(10, 110), Segment(150, 400)])
         with pytest.deprecated_call():
             fig.add_state_segments(segs)

@@ -68,8 +68,10 @@ def open_data_source(source):
         pass
 
     # import cache from file
-    if (isinstance(source, str) and
-            source.endswith(('.lcf', '.cache'))):
+    if (
+        isinstance(source, str)
+        and source.endswith(('.lcf', '.cache'))
+    ):
         source = lal.CacheImport(source)
 
     # reformat cache (or any list of files) as a lal cache object
@@ -203,9 +205,9 @@ def write(
     for series in tsdict.values():
         # get type
         ctype = (
-                type or
-                getattr(series.channel, "_ctype", "proc") or
-                "proc"
+            type
+            or getattr(series.channel, "_ctype", "proc")
+            or "proc"
         ).title()
 
         # convert to LAL

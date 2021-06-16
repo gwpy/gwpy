@@ -164,9 +164,17 @@ def sensemon_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):
     mchirp = (mass1 * mass2) ** (3/5.) / mtotal ** (1/5.)
     # calculate integrand with pre-factor
     prefactor = (
-        ((16 if horizon else 1.77**2) * 5 * constants.c ** (1/3.) *
-         (mchirp * constants.G / constants.c ** 2) ** (5/3.)) /
-        (96 * pi ** (4/3.) * snr ** 2)
+        (  # numerator
+            (16 if horizon else 1.77**2)
+            * 5
+            * constants.c ** (1/3.)
+            * (mchirp * constants.G / constants.c ** 2) ** (5/3.)
+        )  # denominator
+        / (
+            96
+            * pi ** (4/3.)
+            * snr ** 2
+        )
     )
     return (  # inspiral range PSD, avoiding DC value
         1 / psd[frange] * psd.frequencies[frange] ** (-7/3.) * prefactor
@@ -286,8 +294,10 @@ def burst_range_spectrum(psd, snr=8, energy=1e-2):
     """
     frange = (psd.frequencies > 0)
     # calculate frequency dependent range in parsecs
-    a = (constants.G * energy * constants.M_sun * 0.4 /
-         (pi**2 * constants.c))**(1/2.)
+    a = (
+        constants.G * energy * constants.M_sun * 0.4
+        / (pi**2 * constants.c)
+    ) ** (1/2.)
     return (  # burst range spectrum, avoiding DC value
         psd[frange] ** (-1/2.) * a / (snr * psd.frequencies[frange])
     ).to('Mpc')

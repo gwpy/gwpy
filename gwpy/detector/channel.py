@@ -265,7 +265,7 @@ class Channel(object):
         if type_ is None:
             self._type = None
         else:
-            self._type = io_nds2.Nds2ChannelType.find(type_).name
+            self._type = io_nds2.Nds2ChannelType.find(type_).nds2name
 
     @property
     def ndstype(self):
@@ -659,7 +659,7 @@ class ChannelList(list):
             namestr = namestr.strip('\' \n')
             if ',' not in namestr:
                 break
-            for nds2type in io_nds2.Nds2ChannelType.names() + ['']:
+            for nds2type in io_nds2.Nds2ChannelType.nds2names() + ['']:
                 if nds2type and ',%s' % nds2type in namestr:
                     try:
                         channel, ctype, namestr = namestr.split(',', 2)
@@ -743,19 +743,21 @@ class ChannelList(list):
             sample_rate = (sample_rate.value if
                            isinstance(sample_rate, units.Quantity) else
                            float(sample_rate))
-            matched = [entry for entry in matched if entry.sample_rate and
-                       entry.sample_rate.value == sample_rate]
+            matched = [entry for entry in matched if entry.sample_rate
+                       and entry.sample_rate.value == sample_rate]
 
         if sample_range is not None:
-            matched = [entry for entry in matched if
-                       sample_range[0] <= entry.sample_rate.value <=
-                       sample_range[1]]
+            matched = [
+                e for e in matched
+                if sample_range[0] <= e.sample_rate.value <= sample_range[1]
+            ]
 
         for attr, val in others.items():
             if val is not None:
-                matched = [entry for entry in matched if
-                           (hasattr(entry, attr) and
-                            getattr(entry, attr) == val)]
+                matched = [
+                    e for e in matched
+                    if hasattr(e, attr) and getattr(e, attr) == val
+                ]
 
         return self.__class__(matched)
 

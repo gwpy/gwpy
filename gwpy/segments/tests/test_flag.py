@@ -19,13 +19,13 @@
 """Tests for :mod:`gwpy.segments`
 """
 
+import importlib
 import os.path
 import re
 import tempfile
 from io import BytesIO
-from ssl import SSLError
 from unittest import mock
-from urllib.error import (URLError, HTTPError)
+from urllib.error import HTTPError
 
 import pytest
 
@@ -37,6 +37,7 @@ from ...plot import SegmentAxes
 from ...segments import (Segment, SegmentList,
                          DataQualityFlag, DataQualityDict)
 from ...testing import (mocks, utils)
+from ...testing.errors import pytest_skip_network_error
 from ...utils.misc import null_context
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -438,8 +439,12 @@ class TestDataQualityFlag(object):
             flag.pad(*PADDING, kwarg='test')
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    def test_from_veto_def(self):
-        from ligo.lw.lsctables import VetoDef
+    @pytest.mark.parametrize("lsctables", (
+        pytest.param("glue.ligolw.lsctables", id="glue.ligolw"),
+        pytest.param("ligo.lw.lsctables", id="python-ligo-lw"),
+    ))
+    def test_from_veto_def(self, lsctables):
+        VetoDef = importlib.import_module(lsctables).VetoDef
 
         def veto_def(ifo, name, version, **kwargs):
             vdef = VetoDef()
@@ -628,12 +633,13 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(result.known, RESULT.known & segs)
         utils.assert_segmentlist_equal(result.active, RESULT.active & segs)
 
+    @pytest_skip_network_error
     def test_fetch_open_data(self):
-        try:
-            segs = self.TEST_CLASS.fetch_open_data(
-                'H1_DATA', 946339215, 946368015)
-        except (URLError, SSLError) as exc:  # pragma: no-cover
-            pytest.skip(str(exc))
+        segs = self.TEST_CLASS.fetch_open_data(
+            'H1_DATA',
+            946339215,
+            946368015,
+        )
         assert segs.ifo == 'H1'
         assert segs.name == 'H1:DATA'
         assert segs.label == 'H1_DATA'

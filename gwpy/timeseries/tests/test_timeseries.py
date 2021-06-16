@@ -21,9 +21,7 @@
 
 import os.path
 from itertools import (chain, product)
-from ssl import SSLError
 from unittest import mock
-from urllib.error import URLError
 
 import pytest
 
@@ -41,6 +39,10 @@ from ...signal.window import planck
 from ...table import EventTable
 from ...spectrogram import Spectrogram
 from ...testing import (mocks, utils)
+from ...testing.errors import (
+    pytest_skip_cvmfs_read_error,
+    pytest_skip_network_error,
+)
 from ...time import LIGOTimeGPS
 from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
@@ -49,6 +51,10 @@ from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
 
+SKIP_CVMFS_GWOSC = pytest.mark.skipif(
+    not os.path.isdir('/cvmfs/gwosc.osgstorage.org/'),
+    reason="GWOSC CVMFS repository not available",
+)
 SKIP_FRAMECPP = utils.skip_missing_dependency('LDAStools.frameCPP')
 SKIP_FRAMEL = utils.skip_missing_dependency('framel')
 SKIP_LAL = utils.skip_missing_dependency('lal')
@@ -70,8 +76,6 @@ GWF_APIS = [
     pytest.param('framel', marks=SKIP_FRAMEL),
 ]
 
-FIND_CHANNEL = 'L1:DCS-CALIB_STRAIN_C02'
-FIND_FRAMETYPE = 'L1_HOFT_C02'
 
 LIVETIME = DataQualityFlag(
     name='X1:TEST-FLAG:1',
@@ -83,10 +87,14 @@ LIVETIME = DataQualityFlag(
     isgood=True,
 )
 
-LOSC_IFO = 'L1'
-LOSC_GW150914 = 1126259462
-LOSC_GW150914_SEGMENT = Segment(LOSC_GW150914-2, LOSC_GW150914+2)
-LOSC_GW150914_DQ_BITS = {
+GWOSC_DATAFIND_SERVER = "datafind.gw-openscience.org"
+GWOSC_GW150914_IFO = "L1"
+GWOSC_GW150914_CHANNEL = "L1:GWOSC-16KHZ_R1_STRAIN"
+NDS2_GW150914_CHANNEL = "L1:DCS-CALIB_STRAIN_C02"
+GWOSC_GW150914_FRAMETYPE = "L1_LOSC_16_V1"
+GWOSC_GW150914 = 1126259462
+GWOSC_GW150914_SEGMENT = Segment(GWOSC_GW150914-2, GWOSC_GW150914+2)
+GWOSC_GW150914_DQ_BITS = {
     'hdf5': [
         'data present',
         'passes cbc CAT1 test',
@@ -107,9 +115,19 @@ LOSC_GW150914_DQ_BITS = {
     ],
 }
 
-LOSC_FETCH_ERROR = (URLError, SSLError)
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+
+def _gwosc_cvmfs(func):
+    """Decorate ``func`` with all necessary CVMFS-related decorators
+    """
+    for dec in (
+        pytest_skip_cvmfs_read_error,
+        SKIP_CVMFS_GWOSC,
+        SKIP_FRAMECPP,
+    ):
+        func = dec(func)
+    return func
 
 
 class TestTimeSeries(_TestTimeSeriesBase):
@@ -118,20 +136,21 @@ class TestTimeSeries(_TestTimeSeriesBase):
     # -- fixtures -------------------------------
 
     @pytest.fixture(scope='class')
+    @pytest_skip_network_error
     def losc(self):
-        try:
-            return self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT)
-        except LOSC_FETCH_ERROR as e:  # pragma: no-cover
-            pytest.skip(str(e))
+        return self.TEST_CLASS.fetch_open_data(
+            GWOSC_GW150914_IFO,
+            *GWOSC_GW150914_SEGMENT,
+        )
 
     @pytest.fixture(scope='class')
+    @pytest_skip_network_error
     def losc_16384(self):
-        try:
-            return self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, sample_rate=16384)
-        except LOSC_FETCH_ERROR as e:  # pragma: no-cover
-            pytest.skip(str(e))
+        return self.TEST_CLASS.fetch_open_data(
+            GWOSC_GW150914_IFO,
+            *GWOSC_GW150914_SEGMENT,
+            sample_rate=16384,
+        )
 
     # -- test class functionality ---------------
 
@@ -319,10 +338,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
         import platform
         import sys
         if (
-            api == "framecpp" and
-            ctype == "sim" and
-            sys.version_info[0] >= 3 and
-            "debian" in platform.platform()
+            api == "framecpp"
+            and ctype == "sim"
+            and sys.version_info[0] >= 3
+            and "debian" in platform.platform()
         ):
             pytest.xfail(
                 "reading Sim data with "
@@ -476,30 +495,43 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     # -- test remote data access ----------------
 
-    @utils.skip_minimum_version("gwosc", "0.4.0")
     @pytest.mark.parametrize('format', [
         'hdf5',
         pytest.param('gwf', marks=SKIP_FRAMECPP),
     ])
+    @pytest_skip_network_error
     def test_fetch_open_data(self, losc, format):
-        try:
-            ts = self.TEST_CLASS.fetch_open_data(
-                LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, verbose=True)
-        except LOSC_FETCH_ERROR as e:  # pragma: no-cover
-            pytest.skip(str(e))
+        ts = self.TEST_CLASS.fetch_open_data(
+            GWOSC_GW150914_IFO,
+            *GWOSC_GW150914_SEGMENT,
+            format=format,
+            verbose=True,
+        )
         utils.assert_quantity_sub_equal(ts, losc,
                                         exclude=['name', 'unit', 'channel'])
 
         # try again with 16384 Hz data
         ts = self.TEST_CLASS.fetch_open_data(
-            LOSC_IFO, *LOSC_GW150914_SEGMENT, format=format, sample_rate=16384)
+            GWOSC_GW150914_IFO,
+            *GWOSC_GW150914_SEGMENT,
+            format=format,
+            sample_rate=16384,
+        )
         assert ts.sample_rate == 16384 * units.Hz
 
         # make sure errors happen
         with pytest.raises(ValueError) as exc:
-            self.TEST_CLASS.fetch_open_data(LOSC_IFO, 0, 1, format=format)
+            self.TEST_CLASS.fetch_open_data(
+                GWOSC_GW150914_IFO,
+                0,
+                1,
+                format=format,
+            )
         assert str(exc.value) == (
-            "Cannot find a LOSC dataset for %s covering [0, 1)" % LOSC_IFO)
+            "Cannot find a LOSC dataset for {} covering [0, 1)".format(
+                GWOSC_GW150914_IFO,
+            )
+        )
 
     @utils.skip_missing_dependency('nds2')
     @pytest.mark.parametrize('protocol', (1, 2))
@@ -552,66 +584,93 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.gwpy')
             assert 'no data received' in str(exc.value)
 
-    def _find_or_skip(self, *args, **kwargs):
-        """Execute `self.TEST_CLASS.find()` catching credential errors
-        """
-        try:
-            return self.TEST_CLASS.find(*args, **kwargs)
-        except RuntimeError as exc:  # pragma: no-cover
-            if "credential" in str(exc):
-                pytest.skip(str(exc))
-            raise
-
-    @SKIP_FRAMECPP
-    @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
-                        reason='No LIGO datafind server configured '
-                               'on this host')
+    @_gwosc_cvmfs
+    @mock.patch.dict(
+        "os.environ",
+        {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+    )
     def test_find(self, losc_16384):
-        ts = self._find_or_skip(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                frametype=FIND_FRAMETYPE)
+        ts = self.TEST_CLASS.find(
+            GWOSC_GW150914_CHANNEL,
+            *GWOSC_GW150914_SEGMENT,
+            frametype=GWOSC_GW150914_FRAMETYPE,
+        )
         utils.assert_quantity_sub_equal(ts, losc_16384,
                                         exclude=['name', 'channel', 'unit'])
 
         # test observatory
-        ts2 = self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                   frametype=FIND_FRAMETYPE,
-                                   observatory=FIND_CHANNEL[0])
+        ts2 = self.TEST_CLASS.find(
+            GWOSC_GW150914_CHANNEL,
+            *GWOSC_GW150914_SEGMENT,
+            frametype=GWOSC_GW150914_FRAMETYPE,
+            observatory=GWOSC_GW150914_IFO[0],
+        )
         utils.assert_quantity_sub_equal(ts, ts2)
         with pytest.raises(RuntimeError):
-            self.TEST_CLASS.find(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                 frametype=FIND_FRAMETYPE, observatory='X')
+            self.TEST_CLASS.find(
+                GWOSC_GW150914_CHANNEL,
+                *GWOSC_GW150914_SEGMENT,
+                frametype=GWOSC_GW150914_FRAMETYPE,
+                observatory='X',
+            )
 
-    @SKIP_FRAMECPP
-    @pytest.mark.skipif('LIGO_DATAFIND_SERVER' not in os.environ,
-                        reason='No LIGO datafind server configured '
-                               'on this host')
+    @_gwosc_cvmfs
+    @mock.patch.dict(
+        "os.environ",
+        {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+    )
     def test_find_best_frametype_in_find(self, losc_16384):
-        ts = self._find_or_skip(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
-        utils.assert_quantity_sub_equal(ts, losc_16384,
-                                        exclude=['name', 'channel', 'unit'])
+        ts = self.TEST_CLASS.find(
+            GWOSC_GW150914_CHANNEL,
+            *GWOSC_GW150914_SEGMENT,
+        )
+        utils.assert_quantity_sub_equal(
+            ts,
+            losc_16384,
+            exclude=['name', 'channel', 'unit'],
+        )
 
-    def test_get(self, losc_16384):
-        # get using datafind (maybe)
+    @_gwosc_cvmfs
+    @mock.patch.dict(
+        # force 'import nds2' to fail so that we are actually testing
+        # the gwdatafind API or nothing
+        "sys.modules",
+        {"nds2": None},
+    )
+    @mock.patch.dict(
+        "os.environ",
+        {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+    )
+    def test_get_datafind(self, losc_16384):
         try:
-            ts = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT,
-                                     frametype_match=r'C01\Z')
+            ts = self.TEST_CLASS.get(
+                GWOSC_GW150914_CHANNEL,
+                *GWOSC_GW150914_SEGMENT,
+                frametype_match=r'V1\Z',
+            )
         except (ImportError, RuntimeError) as e:  # pragma: no-cover
             pytest.skip(str(e))
-        utils.assert_quantity_sub_equal(ts, losc_16384,
-                                        exclude=['name', 'channel', 'unit'])
+        utils.assert_quantity_sub_equal(
+            ts,
+            losc_16384,
+            exclude=['name', 'channel', 'unit'],
+        )
 
+    @utils.skip_missing_dependency('nds2')
+    @utils.skip_kerberos_credential
+    @mock.patch.dict(os.environ)
+    def test_get_nds2(self, losc_16384):
         # get using NDS2 (if datafind could have been used to start with)
-        try:
-            dfs = os.environ.pop('LIGO_DATAFIND_SERVER')
-        except KeyError:
-            dfs = None
-        else:
-            ts2 = self.TEST_CLASS.get(FIND_CHANNEL, *LOSC_GW150914_SEGMENT)
-            utils.assert_quantity_sub_equal(ts, ts2,
-                                            exclude=['channel', 'unit'])
-        finally:
-            if dfs is not None:
-                os.environ['LIGO_DATAFIND_SERVER'] = dfs
+        os.environ.pop('LIGO_DATAFIND_SERVER', None)
+        ts = self.TEST_CLASS.get(
+            NDS2_GW150914_CHANNEL,
+            *GWOSC_GW150914_SEGMENT,
+        )
+        utils.assert_quantity_sub_equal(
+            ts,
+            losc_16384,
+            exclude=['name', 'channel', 'unit'],
+        )
 
     # -- signal processing methods --------------
 
@@ -644,8 +703,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     def test_psd_default_overlap(self, losc):
         utils.assert_quantity_sub_equal(
-            losc.psd(.5, window='hann'),
-            losc.psd(.5, .25, window='hann'),
+            losc.psd(.5, method="median", window="hann"),
+            losc.psd(.5, .25, method="median", window="hann"),
         )
 
     @SKIP_LAL
@@ -667,7 +726,11 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_psd(self, noisy_sinusoid, method):
         fftlength = .5
         overlap = .25
-        fs = noisy_sinusoid.psd(fftlength=fftlength, overlap=overlap)
+        fs = noisy_sinusoid.psd(
+            fftlength=fftlength,
+            overlap=overlap,
+            method=method,
+        )
         assert fs.unit == noisy_sinusoid.unit ** 2 / "Hz"
         assert fs.max() == fs.value_at(500)
         assert fs.size == fftlength * noisy_sinusoid.sample_rate.value // 2 + 1
@@ -706,15 +769,20 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert psd.max() == psd.value_at(500)
 
     def test_asd(self, losc):
-        fs = losc.asd(1)
-        utils.assert_quantity_sub_equal(fs, losc.psd(1) ** (1/2.))
+        kw = {
+            "method": "median",
+        }
+        utils.assert_quantity_sub_equal(
+            losc.asd(1, **kw),
+            losc.psd(1, **kw) ** (1/2.),
+        )
 
     def test_csd(self, noisy_sinusoid, corrupt_noisy_sinusoid):
         # test that csd(self) is the same as psd()
         fs = noisy_sinusoid.csd(noisy_sinusoid)
         utils.assert_quantity_sub_equal(
             fs,
-            noisy_sinusoid.psd(),
+            noisy_sinusoid.psd(method="welch"),
             exclude=['name'],
         )
 
@@ -782,20 +850,30 @@ class TestTimeSeries(_TestTimeSeriesBase):
                                         almost_equal=True)
 
     def test_spectrogram_fftlength(self, losc):
-        sg = losc.spectrogram(1, fftlength=0.5)
+        sg = losc.spectrogram(1, fftlength=0.5, method="median")
         assert sg.shape == (abs(losc.span),
                             0.5 * losc.sample_rate.value // 2 + 1)
         assert sg.df == 2 * units.Hertz
         assert sg.dt == 1 * units.second
 
     def test_spectrogram_overlap(self, losc):
-        sg = losc.spectrogram(1, fftlength=0.5, window="hann")
-        sg2 = losc.spectrogram(1, fftlength=0.5, window="hann", overlap=.25)
+        kw = {
+            "fftlength": 0.5,
+            "window": "hann",
+            "method": "median",
+        }
+        sg = losc.spectrogram(1, **kw)
+        sg2 = losc.spectrogram(1, overlap=.25, **kw)
         utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
     def test_spectrogram_multiprocessing(self, losc):
-        sg = losc.spectrogram(1, fftlength=0.5)
-        sg2 = losc.spectrogram(1, fftlength=0.5, nproc=2)
+        kw = {
+            "fftlength": 0.5,
+            "window": "hann",
+            "method": "median",
+        }
+        sg = losc.spectrogram(1, **kw)
+        sg2 = losc.spectrogram(1, nproc=2, **kw)
         utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
     @pytest.mark.parametrize('library', [
@@ -865,7 +943,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_array_equal(sxx.T, fgram)
 
     def test_spectral_variance(self, losc):
-        variance = losc.spectral_variance(.5)
+        variance = losc.spectral_variance(.5, method="median")
         assert isinstance(variance, SpectralVariance)
         assert variance.x0 == 0 * units.Hz
         assert variance.dx == 2 * units.Hz
@@ -1125,7 +1203,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # when the input is stationary Gaussian noise, the output should have
         # zero mean and unit variance
-        whitened = noise.whiten(detrend='linear')
+        whitened = noise.whiten(detrend='linear', method="median")
         assert whitened.size == noise.size
         nptest.assert_almost_equal(whitened.mean().value, 0.0, decimal=2)
         nptest.assert_almost_equal(whitened.std().value, 1.0, decimal=2)
@@ -1135,7 +1213,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         tmax = data.times[data.argmax()]
         assert not numpy.isclose(tmax.value, glitchtime)
 
-        whitened = data.whiten(detrend='linear')
+        whitened = data.whiten(detrend='linear', method="median")
         tmax = whitened.times[whitened.argmax()]
         nptest.assert_almost_equal(tmax.value, glitchtime)
 
@@ -1153,15 +1231,19 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_correlate(self):
         # create noise and a glitch template at 1000 Hz
         noise = self.TEST_CLASS(
-            numpy.random.normal(size=16384 * 64), sample_rate=16384, epoch=-32
-            ).zpk([], [1], 1)
+            numpy.random.normal(size=16384 * 64),
+            sample_rate=16384,
+            epoch=-32,
+        ).zpk([], [1], 1)
         glitchtime = -16.5
         glitch = self.TEST_CLASS(
             signal.gausspulse(numpy.arange(-1, 1, 1./16384), bw=100),
-            sample_rate=16384, epoch=glitchtime-1)
+            sample_rate=16384,
+            epoch=glitchtime-1,
+        )
 
         # check that, without a signal present, we only see background
-        snr = noise.correlate(glitch, whiten=True)
+        snr = noise.correlate(glitch, whiten=True, method="median")
         tmax = snr.times[snr.argmax()]
         assert snr.size == noise.size
         assert not numpy.isclose(tmax.value, glitchtime)
@@ -1170,7 +1252,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # inject and recover the glitch
         data = noise.inject(glitch * 1e-4)
-        snr = data.correlate(glitch, whiten=True)
+        snr = data.correlate(glitch, whiten=True, method="median")
         tmax = snr.times[snr.argmax()]
         nptest.assert_almost_equal(tmax.value, glitchtime)
 
@@ -1256,7 +1338,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_q_transform_nan(self):
         data = TimeSeries(numpy.empty(256*10) * numpy.nan, sample_rate=256)
         with pytest.raises(ValueError) as exc:
-            data.q_transform()
+            data.q_transform(method="median")
         assert str(exc.value) == 'Input signal contains non-numerical values'
 
     def test_boolean_statetimeseries(self, array):
@@ -1266,22 +1348,18 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert comp.name == '%s >= 2.0' % (array.name)
         assert (array == array).name == '{0} == {0}'.format(array.name)
 
+    @pytest_skip_network_error
     def test_coherence(self):
-        try:
-            tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
-            tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        except LOSC_FETCH_ERROR as exc:  # pragma: no-cover
-            pytest.skip(str(exc))
+        tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+        tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
         coh = tsh.coherence(tsl, fftlength=1.0)
         assert coh.df == 1 * units.Hz
         assert coh.frequencies[coh.argmax()] == 60 * units.Hz
 
+    @pytest_skip_network_error
     def test_coherence_spectrogram(self):
-        try:
-            tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
-            tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        except LOSC_FETCH_ERROR as exc:  # pragma: no-cover
-            pytest.skip(str(exc))
+        tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+        tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
         cohsg = tsh.coherence_spectrogram(tsl, 4, fftlength=1.0)
         assert cohsg.t0 == tsh.t0
         assert cohsg.dt == 4 * units.second

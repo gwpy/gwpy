@@ -80,8 +80,10 @@ def _rates_preprocess(func):
         end = kwargs.get('end')
 
         # get timecolumn if we are going to need it
-        if ((timecolumn is None and (start is None or end is None)) or
-                not self.colnames):
+        if (
+            (timecolumn is None and (start is None or end is None))
+            or not self.colnames
+        ):
             try:
                 kwargs['timecolumn'] = self._get_time_column()
             except ValueError as exc:

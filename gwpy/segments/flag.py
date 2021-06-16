@@ -650,9 +650,7 @@ class DataQualityFlag(object):
             name += ':%d' % int(veto.version)
         except TypeError:
             pass
-        if veto.end_time == 0:
-            veto.end_time = +inf
-        known = Segment(veto.start_time, veto.end_time)
+        known = Segment(veto.start_time, veto.end_time or +inf)
         pad = (veto.start_pad, veto.end_pad)
         return cls(name=name, known=[known], category=veto.category,
                    description=veto.comment, padding=pad)
@@ -851,22 +849,35 @@ class DataQualityFlag(object):
         return self
 
     def __repr__(self):
-        indent = " " * len("<%s(" % self.__class__.__name__)
-        known = str(self.known).replace("\n",
-                                        "\n%s      " % indent).split('\n')
-        if len(known) > 10:
-            known = known[:3] + ['%s      ...' % indent] + known[-3:]
-        active = str(self.active).replace("\n",
-                                          "\n%s       " % indent).split('\n')
-        if len(active) > 10:
-            active = active[:3] + ['%s        ...' % indent] + active[-3:]
-        return ("<{1}({2},\n{0}known={3},\n{0}active={4},\n"
-                "{0}description={5})>".format(indent, self.__class__.__name__,
-                                              (self.name and repr(self.name) or
-                                               'No name'),
-                                              '\n'.join(known),
-                                              '\n'.join(active),
-                                              repr(self.description)))
+        prefix = "<{}(".format(type(self).__name__)
+        suffix = ")>"
+        indent = " " * len(prefix)
+
+        # format segment lists
+        known = str(self.known).replace(
+            "\n",
+            "\n{}      ".format(indent),
+        ).split("\n")
+        if len(known) > 10:  # use ellipsis
+            known = known[:3] + ['{}      ...'.format(indent)] + known[-3:]
+        active = str(self.active).replace(
+            "\n",
+            "\n{}       ".format(indent),
+        ).split('\n')
+        if len(active) > 10:  # use ellipsis
+            active = active[:3] + ['{}      ...'.format(indent)] + active[-3:]
+
+        # print the thing
+        return "".join((
+            prefix,
+            "\n{}".format(indent).join([
+                "{},".format(repr(self.name)),
+                "known={}".format("\n".join(known)),
+                "active={}".format("\n".join(active)),
+                "description={}".format(repr(self.description)),
+            ]),
+            suffix,
+        ))
 
     def copy(self):
         """Build an exact copy of this flag.
@@ -1714,8 +1725,10 @@ class DataQualityDict(OrderedDict):
         return self
 
     def __and__(self, other):
-        if (sum(len(s.active) for s in self.values()) <=
-                sum(len(s.active) for s in other.values())):
+        if (
+            sum(len(s.active) for s in self.values())
+            <= sum(len(s.active) for s in other.values())
+        ):
             return self.copy(deep=True).__iand__(other)
         return other.copy(deep=True).__iand__(self)
 
@@ -1728,8 +1741,10 @@ class DataQualityDict(OrderedDict):
         return self
 
     def __or__(self, other):
-        if (sum(len(s.active) for s in self.values()) >=
-                sum(len(s.active) for s in other.values())):
+        if (
+            sum(len(s.active) for s in self.values())
+            >= sum(len(s.active) for s in other.values())
+        ):
             return self.copy(deep=True).__ior__(other)
         return other.copy(deep=True).__ior__(self)
 

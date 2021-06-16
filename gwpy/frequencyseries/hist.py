@@ -336,9 +336,7 @@ class SpectralVariance(Array2D):
             cumsumvals = numpy.cumsum(self.value[i, :])
 
             # Find value nearest requested percentile
-            abs_cumsumvals_minus_percentile = numpy.abs(cumsumvals -
-                                                        percentile)
-            minindex = abs_cumsumvals_minus_percentile.argmin()
+            minindex = numpy.abs(cumsumvals - percentile).argmin()
             val = self.bins[minindex]
             out[i] = val
 
@@ -351,8 +349,10 @@ class SpectralVariance(Array2D):
             raise TypeError("plotting a {0} with {1}() is not "
                             "supported".format(type(self).__name__, method))
         bins = self.bins.value
-        if (numpy.all(bins > 0) and
-                numpy.allclose(numpy.diff(numpy.log10(bins), n=2), 0)):
+        if (
+            numpy.all(bins > 0)
+            and numpy.allclose(numpy.diff(numpy.log10(bins), n=2), 0)
+        ):
             kwargs.setdefault('yscale', 'log')
         kwargs.update(method=method, xscale=xscale)
         return super().plot(**kwargs)

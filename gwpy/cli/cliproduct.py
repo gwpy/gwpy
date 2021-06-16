@@ -557,10 +557,12 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         max_ = getattr(self.args, '{}max'.format(axis))
 
         # parse limits
-        if scale == 'auto-gps' and (
-                min_ is not None and
-                max_ is not None and
-                max_ < 1e8):
+        if (
+            scale == 'auto-gps'
+            and min_ is not None
+            and max_ is not None
+            and max_ < 1e8
+        ):
             limits = (min_, min_ + max_)
         else:
             limits = (min_, max_)
@@ -646,8 +648,13 @@ class CliProduct(object, metaclass=abc.ABCMeta):
     def set_grid(self, enable):
         """Set the grid parameters for this plot.
         """
-        self.ax.grid(b=enable, which='major', color='k', linestyle='solid')
-        self.ax.grid(b=enable, which='minor', color='0.06', linestyle='dotted')
+        if enable:
+            self.ax.grid(b=True, which='major',
+                         color='k', linestyle='solid')
+            self.ax.grid(b=True, which='minor',
+                         color='0.06', linestyle='dotted')
+        else:
+            self.ax.grid(b=False)
 
     def save(self, outfile):
         """Save this product to the target `outfile`.
@@ -729,9 +736,9 @@ class CliProduct(object, metaclass=abc.ABCMeta):
             start = None
             end = 0
             for ts in self.timeseries:
-                if start:
+                if start is not None:
                     start = min(ts.t0, start)
-                    end = max(ts.t0+ts.duration, end)
+                    end = max(ts.t0 + ts.duration, end)
                 else:
                     start = ts.t0
                     end = start + ts.duration
@@ -739,7 +746,10 @@ class CliProduct(object, metaclass=abc.ABCMeta):
             for segment in segments:
                 seg_name = segment.replace('{ifo}', ifo)
                 seg_data = DataQualityFlag.query_dqsegdb(
-                        seg_name, start, end)
+                    seg_name,
+                    start,
+                    end,
+                )
 
                 self.plot.add_segments_bar(seg_data, label=seg_name)
 

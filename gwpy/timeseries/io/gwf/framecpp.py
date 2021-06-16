@@ -494,9 +494,13 @@ def write(tsdict, outfile,
         start = to_gps(start or min(starts))
         end = to_gps(end or max(ends))
     duration = end - start
-    ifos = {ts.channel.ifo for ts in tsdict.values() if
-            ts.channel and ts.channel.ifo and
-            ts.channel.ifo in io_framecpp.DetectorLocation.__members__}
+    ifos = {
+        ts.channel.ifo for ts in tsdict.values() if (
+            ts.channel
+            and ts.channel.ifo
+            and ts.channel.ifo in io_framecpp.DetectorLocation.__members__
+        )
+    }
 
     # create frame
     frame = io_gwf.create_frame(
@@ -510,9 +514,9 @@ def write(tsdict, outfile,
     # append channels
     for i, key in enumerate(tsdict):
         ctype = (
-            type or
-            getattr(tsdict[key].channel, "_ctype", "proc").lower() or
-            "proc"
+            type
+            or getattr(tsdict[key].channel, "_ctype", "proc").lower()
+            or "proc"
         )
         if ctype == 'adc':
             kw = {"channelid": i}

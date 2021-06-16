@@ -522,8 +522,11 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
             target, contenthandler=kwargs.pop('contenthandler',
                                               LIGOLWContentHandler))
     # fail on existing document and not overwriting
-    elif (not overwrite and isinstance(target, str) and
-          os.path.isfile(target)):
+    elif (
+        not overwrite
+        and isinstance(target, str)
+        and os.path.isfile(target)
+    ):
         raise IOError("File exists: {}".format(target))
     else:  # or create a new document
         xmldoc = Document()
@@ -531,13 +534,22 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
     # convert table to format
     write_tables_to_document(xmldoc, tables, overwrite=overwrite)
 
-    # write file
-    if isinstance(target, str):
-        kwargs.setdefault('gz', target.endswith('.gz'))
-        ligolw_utils.write_filename(xmldoc, target, **kwargs)
-    elif isinstance(target, FILE_LIKE):
-        kwargs.setdefault('gz', target.name.endswith('.gz'))
-        ligolw_utils.write_fileobj(xmldoc, target, **kwargs)
+    # find writer function and target filename
+    if isinstance(target, FILE_LIKE):
+        writer = ligolw_utils.write_fileobj
+        name = target.name
+    else:
+        writer = ligolw_utils.write_filename
+        name = str(target)
+
+    # handle gzip compression kwargs
+    if name.endswith('.gz') and writer.__module__.startswith('glue'):
+        kwargs.setdefault('gz', True)
+    elif name.endswith('.gz'):
+        kwargs.setdefault('compress', 'gz')
+
+    # write XML
+    writer(xmldoc, target, **kwargs)
 
 
 # -- utilities ----------------------------------------------------------------
@@ -672,12 +684,18 @@ def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
             line1 = fileobj.readline().lower()
             line2 = fileobj.readline().lower()
             try:
-                return (line1.startswith(XML_SIGNATURE) and
-                        line2.startswith((LIGOLW_SIGNATURE, LIGOLW_ELEMENT)))
+                return (
+                    line1.startswith(XML_SIGNATURE)
+                    and line2.startswith((LIGOLW_SIGNATURE, LIGOLW_ELEMENT))
+                )
             except TypeError:  # bytes vs str
-                return (line1.startswith(XML_SIGNATURE.decode('utf-8')) and
-                        line2.startswith((LIGOLW_SIGNATURE.decode('utf-8'),
-                                          LIGOLW_ELEMENT.decode('utf-8'))))
+                return (
+                    line1.startswith(XML_SIGNATURE.decode('utf-8'))
+                    and line2.startswith((
+                        LIGOLW_SIGNATURE.decode('utf-8'),
+                        LIGOLW_ELEMENT.decode('utf-8'),
+                    ))
+                )
         finally:
             fileobj.seek(loc)
     try:

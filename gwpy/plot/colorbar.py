@@ -59,7 +59,7 @@ def process_colorbar_kwargs(figure, mappable=None, ax=None, use_axesgrid=True,
 
     norm, kwargs = format_norm(kwargs, mappable.norm)
     mappable.set_norm(norm)
-    mappable.set_cmap(kwargs.setdefault('cmap', mappable.get_cmap()))
+    mappable.set_cmap(kwargs.pop('cmap', mappable.get_cmap()))
 
     # -- set tick formatting
 
@@ -184,7 +184,7 @@ def _make_axes_inset(ax, location='right', **kwargs):
     inset_kw['loc'], inset_kw['bbox_to_anchor'] = {
         'left': (LOC_CODES['lower right'], (-pad, 0., 1., 1.)),
         'right': (LOC_CODES['lower left'], (1+pad, 0., 1., 1.)),
-        'bottom': (LOC_CODES['upper left'], (0., -pad,  1., 1.)),
+        'bottom': (LOC_CODES['upper left'], (0., -pad, 1., 1.)),
         'top': (LOC_CODES['lower left'], (0., 1+pad, 1., 1.)),
     }[location]
 
