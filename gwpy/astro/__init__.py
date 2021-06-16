@@ -31,10 +31,12 @@ distance range of a detector
 
 .. autosummary::
 
-   ~gwpy.astro.inspiral_range
-   ~gwpy.astro.inspiral_range_spectrum
    ~gwpy.astro.burst_range
    ~gwpy.astro.burst_range_spectrum
+   ~gwpy.astro.inspiral_range
+   ~gwpy.astro.inspiral_range_psd
+   ~gwpy.astro.sensemon_range
+   ~gwpy.astro.sensemon_range_psd
    ~gwpy.astro.range_timeseries
    ~gwpy.astro.range_spectrogram
 
@@ -47,6 +49,8 @@ from .range import (
     burst_range_spectrum,
     inspiral_range,
     inspiral_range_psd,
+    sensemon_range,
+    sensemon_range_psd,
     range_timeseries,
     range_spectrogram,
 )
