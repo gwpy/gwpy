@@ -243,7 +243,7 @@ def sensemon_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
 
 _DEPRECATED_SENSEMON_MESSAGE = (
     "the {} function currently uses the LIGO SenseMon (LIGO-T030276) "
-    "estimation, but will be upgraded in gwpy-2.1.0 to use a model "
+    "estimation, but will be upgraded in gwpy-2.2.0 to use a model "
     "with cosmological corrections; to keep using the SenseMon "
     "estimation, please modify your usage to call "
     "gwpy.astro.{{0.__name__}}."
