@@ -841,6 +841,7 @@ class FFTMixin(object, metaclass=abc.ABCMeta):
                            help='window function to use when overlapping FFTs')
         group.add_argument('--average-method', dest='method',
                            default=DEFAULT_FFT_METHOD,
+                           choices=('median', 'welch', 'bartlett'),
                            help='FFT averaging method')
         return group
 
