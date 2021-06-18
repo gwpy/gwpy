@@ -73,7 +73,7 @@ class BodePlot(Plot):
     frequencies : `numpy.ndarray`, optional
         list of frequencies (in Hertz) at which to plot
 
-    db : `bool`, optional, default: `True`
+    dB : `bool`, optional, default: `True`
         if `True`, display magnitude in decibels, otherwise display
         amplitude.
 
