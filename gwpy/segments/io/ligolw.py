@@ -24,7 +24,7 @@ from functools import reduce
 
 from astropy.io import registry as io_registry
 
-from ...io.ligolw import (is_xml, build_content_handler, read_ligolw,
+from ...io.ligolw import (is_ligolw, build_content_handler, read_ligolw,
                           write_tables, patch_ligotimegps)
 from ...segments import (DataQualityFlag, DataQualityDict)
 
@@ -139,9 +139,9 @@ def write_ligolw(flags, target, attrs=None, ilwdchar_compat=None, **kwargs):
 # register methods for DataQualityDict
 io_registry.register_reader('ligolw', DataQualityFlag, read_ligolw_flag)
 io_registry.register_writer('ligolw', DataQualityFlag, write_ligolw)
-io_registry.register_identifier('ligolw', DataQualityFlag, is_xml)
+io_registry.register_identifier('ligolw', DataQualityFlag, is_ligolw)
 
 # register methods for DataQualityDict
 io_registry.register_reader('ligolw', DataQualityDict, read_ligolw_dict)
 io_registry.register_writer('ligolw', DataQualityDict, write_ligolw)
-io_registry.register_identifier('ligolw', DataQualityDict, is_xml)
+io_registry.register_identifier('ligolw', DataQualityDict, is_ligolw)
