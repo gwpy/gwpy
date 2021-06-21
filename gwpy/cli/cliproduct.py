@@ -36,6 +36,7 @@ from ..signal import filter_design
 from ..signal.window import recommended_overlap
 from ..time import to_gps
 from ..timeseries import TimeSeriesDict
+from ..timeseries.timeseries import DEFAULT_FFT_METHOD
 from ..plot.gps import (GPS_SCALES, GPSTransform)
 from ..plot.tex import label_to_latex
 from ..segments import DataQualityFlag
@@ -838,6 +839,10 @@ class FFTMixin(object, metaclass=abc.ABCMeta):
                            help='overlap as fraction of FFT length [0-1)')
         group.add_argument('--window', type=str, default='hann',
                            help='window function to use when overlapping FFTs')
+        group.add_argument('--average-method', dest='method',
+                           default=DEFAULT_FFT_METHOD,
+                           choices=('median', 'welch', 'bartlett'),
+                           help='FFT averaging method')
         return group
 
     @classmethod

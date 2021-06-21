@@ -88,6 +88,7 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
 
         fftlength = float(args.secpfft)
         overlap = args.overlap
+        method = args.method
         self.log(2, "Calculating spectrum secpfft: {0}, overlap: {1}".format(
             fftlength, overlap))
         overlap *= fftlength
@@ -121,7 +122,11 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
                 if len(self.start_list) > 1:
                     label += ', {0}'.format(series.epoch.gps)
 
-            asd = series.asd(fftlength=fftlength, overlap=overlap)
+            asd = series.asd(
+                fftlength=fftlength,
+                overlap=overlap,
+                method=method,
+            )
             self.spectra.append(asd)
 
             if self.usetex:
