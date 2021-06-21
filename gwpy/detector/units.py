@@ -23,6 +23,7 @@ import re
 import warnings
 
 from astropy import units
+from astropy.units import imperial as units_imperial
 from astropy.units.format.generic import Generic
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -145,7 +146,7 @@ def parse_unit(name, parse_strict='warn', format='gwpy'):
 # pylint: disable=no-member,invalid-name
 
 # enable imperial units
-units.add_enabled_units(units.imperial)
+units.add_enabled_units(units_imperial)
 
 # -- custom units settings
 # the following happens in two sets
@@ -188,11 +189,11 @@ units.def_unit((['torr'], ['torr']), represents=101325/760.*units.pascal,
                prefixes=True, namespace=_ns)
 
 # pounds per square inch gauge
-units.def_unit('psig', represents=units.imperial.psi, prefixes=True,
+units.def_unit('psig', represents=units_imperial.psi, prefixes=True,
                namespace=_ns, doc='Pound per square inch gauge: pressure')
 
 # cubic feet
-units.def_unit('cf', represents=units.imperial.foot**3, namespace=_ns)
+units.def_unit('cf', represents=units_imperial.foot**3, namespace=_ns)
 
 # cubic feet per minute
 units.def_unit('cfm', represents=_ns['cf']/units.minute, namespace=_ns)
