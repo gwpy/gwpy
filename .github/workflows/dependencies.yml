@@ -24,6 +24,8 @@ on:
       - main
       - master
       - release/**
+  schedule:
+    - cron: "0 0 * * *"
 
 jobs:
   minmax-dependencies:
