@@ -26,6 +26,7 @@ from contextlib import contextmanager
 from distutils.version import LooseVersion
 from importlib import import_module
 from itertools import zip_longest
+from pathlib import Path
 
 import pytest
 
@@ -33,6 +34,8 @@ import numpy
 from numpy.testing import (assert_array_equal, assert_allclose)
 
 from astropy.time import Time
+
+from ..utils.decorators import deprecated_function
 
 # -- useful constants ---------------------------------------------------------
 
@@ -265,6 +268,7 @@ def assert_zpk_equal(a, b, almost_equal=False):
 # -- I/O helpers --------------------------------------------------------------
 
 @contextmanager
+@deprecated_function
 def TemporaryFilename(*args, **kwargs):  # pylint: disable=invalid-name
     """Create and return a temporary filename
 
@@ -335,18 +339,20 @@ def test_read_write(data, format,
 
     DataClass = type(data)
 
-    with TemporaryFilename(suffix=extension) as fp:
-        data.write(fp, *write_args, format=format, **write_kw)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir) / "test.{}".format(extension)
+
+        data.write(tmp, *write_args, format=format, **write_kw)
 
         # try again with automatic format identification
         if autoidentify:
-            data.write(fp, *write_args, **write_kw)
+            data.write(str(tmp), *write_args, **write_kw)
 
         # read the data back and check that its the same
-        new = DataClass.read(fp, *read_args, format=format, **read_kw)
+        new = DataClass.read(tmp, *read_args, format=format, **read_kw)
         assert_equal(new, data, **assert_kw)
 
         # try again with automatic format identification
         if autoidentify:
-            new = DataClass.read(fp, *read_args, **read_kw)
+            new = DataClass.read(str(tmp), *read_args, **read_kw)
             assert_equal(new, data, **assert_kw)
