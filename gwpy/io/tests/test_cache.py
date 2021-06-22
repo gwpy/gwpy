@@ -67,48 +67,51 @@ def segments():
         "{0} {1[0]} {2} 0 0".format(CACHE[0], SEGMENTS[0], abs(SEGMENTS[0])),
         id="ffl"),
 ])
-def test_read_write_cache(cache, tmpfile, format, entry1):
+def test_read_write_cache(cache, tmp_path, format, entry1):
+    tmp = tmp_path / "test.lcf"
+
     # write cache using filename
-    io_cache.write_cache(cache, tmpfile, format=format)
+    io_cache.write_cache(cache, tmp, format=format)
 
     # check that first line is proper LAL format
-    with open(tmpfile, "r") as tmp:
-        assert tmp.readline().strip() == entry1
+    with tmp.open("r") as tmpf:
+        assert tmpf.readline().strip() == entry1
 
     # now read it back ans check we get the same answer
-    assert io_cache.read_cache(tmpfile) == cache
+    assert io_cache.read_cache(tmp) == cache
 
     # check read/write with a file object
-    with open(tmpfile, "w") as tmp:
-        io_cache.write_cache(cache, tmp, format=format)
-    with open(tmpfile, "r") as tmp:
-        assert io_cache.read_cache(tmp) == cache
+    with tmp.open("w") as tmpf:
+        io_cache.write_cache(cache, tmpf, format=format)
+    with tmp.open("r") as tmpf:
+        assert io_cache.read_cache(tmpf) == cache
 
     # check sieving and sorting works
     assert io_cache.read_cache(
-        tmpfile,
+        tmp,
         sort=lambda e: -io_cache.filename_metadata(e)[2][0],
         segment=Segment(0, 2),
     ) == cache[1::-1]
 
 
 @skip_missing_dependency('lal.utils')
-def test_write_cache_cacheentry(cache, tmpfile):
+def test_write_cache_cacheentry(cache, tmp_path):
     from lal.utils import CacheEntry
+    tmp = tmp_path / "test.lcf"
     lcache = list(map(CacheEntry.from_T050017, cache))
-    with open(tmpfile, 'w') as f:
-        io_cache.write_cache(lcache, f, format=None)
+    with tmp.open("w") as tmpf:
+        io_cache.write_cache(lcache, tmpf, format=None)
 
     # check first line looks like a LAL-format cache entry
-    with open(tmpfile, "r") as tmp:
-        assert tmp.readline().strip() == "A B {0[0]} {1} {2}".format(
+    with tmp.open("r") as tmpf:
+        assert tmpf.readline().strip() == "A B {0[0]} {1} {2}".format(
             SEGMENTS[0],
             abs(SEGMENTS[0]),
             CACHE[0],
         )
 
     # read from file name
-    assert io_cache.read_cache(tmpfile) == cache
+    assert io_cache.read_cache(tmp) == cache
 
 
 @pytest.mark.parametrize('input_, result', [
