@@ -45,23 +45,22 @@ TEST_RESULTS = {
 # -- utilities ----------------------------------------------------------------
 
 @pytest.fixture(scope='module')
-def psd():
-    try:
-        data = TimeSeries.read(utils.TEST_HDF5_FILE, 'L1:LDAS-STRAIN',
-                               format='hdf5')
-    except ImportError as e:  # pragma: no-cover
-        pytest.skip(str(e))
-    return data.psd(.4, overlap=.2, window=('kaiser', 24))
+def hoft():
+    return TimeSeries.read(
+        utils.TEST_HDF5_FILE,
+        "L1:LDAS-STRAIN",
+        format="hdf5",
+    )
 
 
 @pytest.fixture(scope='module')
-def hoft():
-    try:
-        data = TimeSeries.read(utils.TEST_HDF5_FILE, 'L1:LDAS-STRAIN',
-                               format='hdf5')
-    except ImportError as e:  # pragma: no-cover
-        pytest.skip(str(e))
-    return data
+def psd(hoft):
+    return hoft.psd(
+        .4,
+        overlap=.2,
+        method="welch",
+        window=('kaiser', 24),
+    )
 
 
 # -- gwpy.astro.range ---------------------------------------------------------
