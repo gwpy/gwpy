@@ -19,7 +19,6 @@
 """Unit tests for :mod:`gwpy.cli`
 """
 
-import os
 from argparse import ArgumentParser
 from unittest import mock
 
@@ -252,14 +251,14 @@ class _TestCliProduct(object):
         assert ax.get_ylabel() == params.get('ylabel', plotprod.get_ylabel())
 
     @utils.skip_missing_dependency('nds2')
-    def test_run(self, prod):
+    def test_run(self, tmp_path, prod):
         conn, _ = mock_nds2_connection()
-        with mock.patch('nds2.connection') as mocker, \
-                utils.TemporaryFilename(suffix='.png') as tmp:
+        tmp = tmp_path / "plot.png"
+        with mock.patch('nds2.connection') as mocker:
             mocker.return_value = conn
-            prod.args.out = tmp
+            prod.args.out = str(tmp)
             prod.run()
-            assert os.path.isfile(tmp)
+            assert tmp.is_file()
             assert prod.plot_num == 1
             assert not prod.has_more_plots()
 

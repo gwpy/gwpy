@@ -19,13 +19,11 @@
 """Tests for `gwpy-plot` command line module `gwpy.cli.gwpy_plot`
 """
 
-from pathlib import Path
 from unittest import mock
 
 import pytest
 
 from ...testing.utils import (
-    TemporaryFilename,
     skip_missing_dependency,
 )
 from .. import (
@@ -44,18 +42,19 @@ def test_gwpy_plot_help(mode):
 
 
 @skip_missing_dependency('nds2')
-def test_gwpy_plot_timeseries():
+def test_gwpy_plot_timeseries(tmp_path):
+    tmp = tmp_path / "plot.png"
     with mock.patch(
         'nds2.connection',
         return_value=mock_nds2_connection()[0],
-    ), TemporaryFilename(suffix=".png") as tmp:
+    ):
         args = [
             "timeseries",
             "--chan", "X1:TEST-CHANNEL",
             "--start", 0,
             "--nds2-server", "nds.test.gwpy",  # don't use datafind
-            "--out", tmp,
+            "--out", str(tmp),
         ]
         exitcode = gwpy_plot.main(args)
         assert not exitcode  # passed
-        assert Path(tmp).is_file()  # plot was created
+        assert tmp.is_file()  # plot was created
