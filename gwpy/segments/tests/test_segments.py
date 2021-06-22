@@ -26,7 +26,9 @@ import h5py
 from astropy.table import Table
 
 from ...testing.utils import (
-    assert_segmentlist_equal, assert_table_equal, TemporaryFilename)
+    assert_segmentlist_equal,
+    assert_table_equal
+)
 from ...time import LIGOTimeGPS
 from .. import (Segment, SegmentList)
 
@@ -100,63 +102,61 @@ class TestSegmentList(object):
 
     # -- test I/O -------------------------------
 
-    def test_read_write_segwizard(self, segmentlist):
-        with TemporaryFilename(suffix='.txt') as tmp:
-            # check write/read returns the same list
-            segmentlist.write(tmp)
-            sl2 = self.TEST_CLASS.read(tmp, coalesce=False)
-            assert_segmentlist_equal(sl2, segmentlist)
-            assert isinstance(sl2[0][0], LIGOTimeGPS)
+    def test_read_write_segwizard(self, segmentlist, tmp_path):
+        tmp = tmp_path / "segments.txt"
+        # check write/read returns the same list
+        segmentlist.write(tmp)
+        sl2 = self.TEST_CLASS.read(tmp, coalesce=False)
+        assert_segmentlist_equal(sl2, segmentlist)
+        assert isinstance(sl2[0][0], LIGOTimeGPS)
 
-            # check that coalesceing does what its supposed to
-            c = type(segmentlist)(segmentlist).coalesce()
-            sl2 = self.TEST_CLASS.read(tmp, coalesce=True)
-            assert_segmentlist_equal(sl2, c)
+        # check that coalesceing does what its supposed to
+        c = type(segmentlist)(segmentlist).coalesce()
+        sl2 = self.TEST_CLASS.read(str(tmp), coalesce=True)
+        assert_segmentlist_equal(sl2, c)
 
-            # check gpstype kwarg
-            sl2 = self.TEST_CLASS.read(tmp, gpstype=float)
-            assert isinstance(sl2[0][0], float)
+        # check gpstype kwarg
+        sl2 = self.TEST_CLASS.read(tmp, gpstype=float)
+        assert isinstance(sl2[0][0], float)
 
-    def test_read_write_segwizard_strict(self):
-        with TemporaryFilename(suffix='.txt') as tmp:
-            with open(tmp, "w") as tmpf:
-                print("0 0 1 .5", file=tmpf)
-            with pytest.raises(ValueError):
-                self.TEST_CLASS.read(tmp, strict=True, format='segwizard')
-            sl = self.TEST_CLASS.read(tmp, strict=False, format='segwizard')
-            assert_segmentlist_equal(sl, [(0, 1)])
+    def test_read_write_segwizard_strict(self, tmp_path):
+        tmp = tmp_path / "segments.txt"
+        tmp.write_text("0 0 1 .5")
+        with pytest.raises(ValueError):
+            self.TEST_CLASS.read(tmp, strict=True, format='segwizard')
+        sl = self.TEST_CLASS.read(tmp, strict=False, format='segwizard')
+        assert_segmentlist_equal(sl, [(0, 1)])
 
-    def test_read_write_segwizard_twocol(self):
-        with TemporaryFilename(suffix='.txt') as tmp:
-            with open(tmp, "w") as tmpf:
-                print("0 1", file=tmpf)
-                print("2 3", file=tmpf)
-            sl = self.TEST_CLASS.read(tmp, format='segwizard')
-            assert_segmentlist_equal(sl, [(0, 1), (2, 3)])
+    def test_read_write_segwizard_twocol(self, tmp_path):
+        tmp = tmp_path / "segments.txt"
+        tmp.write_text("0 1\n2 3")
+        sl = self.TEST_CLASS.read(tmp, format='segwizard')
+        assert_segmentlist_equal(sl, [(0, 1), (2, 3)])
 
     @pytest.mark.parametrize('ext', ('.hdf5', '.h5'))
-    def test_read_write_hdf5(self, segmentlist, ext):
-        with TemporaryFilename(suffix=ext) as fp:
-            # check basic write/read with auto-path discovery
-            segmentlist.write(fp, 'test-segmentlist')
-            sl2 = self.TEST_CLASS.read(fp)
+    def test_read_write_hdf5(self, segmentlist, tmp_path, ext):
+        tmp = tmp_path / "segments{}".format(ext)
+
+        # check basic write/read with auto-path discovery
+        segmentlist.write(tmp, 'test-segmentlist')
+        sl2 = self.TEST_CLASS.read(tmp)
+        assert_segmentlist_equal(sl2, segmentlist)
+        assert isinstance(sl2[0][0], LIGOTimeGPS)
+
+        sl2 = self.TEST_CLASS.read(tmp, path='test-segmentlist')
+        assert_segmentlist_equal(sl2, segmentlist)
+
+        # check we can read directly from the h5 object
+        with h5py.File(tmp, "r") as h5f:
+            sl2 = self.TEST_CLASS.read(h5f["test-segmentlist"])
             assert_segmentlist_equal(sl2, segmentlist)
-            assert isinstance(sl2[0][0], LIGOTimeGPS)
 
-            sl2 = self.TEST_CLASS.read(fp, path='test-segmentlist')
-            assert_segmentlist_equal(sl2, segmentlist)
+        # check overwrite kwarg
+        with pytest.raises(IOError):
+            segmentlist.write(tmp, 'test-segmentlist')
+        segmentlist.write(tmp, 'test-segmentlist', overwrite=True)
 
-            # check we can read directly from the h5 object
-            with h5py.File(fp, "r") as h5f:
-                sl2 = self.TEST_CLASS.read(h5f["test-segmentlist"])
-                assert_segmentlist_equal(sl2, segmentlist)
-
-            # check overwrite kwarg
-            with pytest.raises(IOError):
-                segmentlist.write(fp, 'test-segmentlist')
-            segmentlist.write(fp, 'test-segmentlist', overwrite=True)
-
-            # check gpstype kwarg
-            sl2 = self.TEST_CLASS.read(fp, gpstype=float)
-            assert_segmentlist_equal(sl2, segmentlist)
-            assert isinstance(sl2[0][0], float)
+        # check gpstype kwarg
+        sl2 = self.TEST_CLASS.read(tmp, gpstype=float)
+        assert_segmentlist_equal(sl2, segmentlist)
+        assert isinstance(sl2[0][0], float)
