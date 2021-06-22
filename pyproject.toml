@@ -8,3 +8,14 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
 write_to = "gwpy/_version.py"
+
+[tool.pytest.ini_options]
+addopts = "-r a"
+filterwarnings = [
+	# https://github.com/gwastro/pycbc/pull/3701
+	"ignore:`np.int` is a deprecated alias::pycbc..*",
+	# https://git.ligo.org/lscsoft/glue/-/merge_requests/69
+	"ignore:PY_SSIZE_T_CLEAN will be required",
+	# https://github.com/pyreadline/pyreadline/issues/65
+	"ignore:Using or importing the ABCs::pyreadline",
+]
