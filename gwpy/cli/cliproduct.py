@@ -483,15 +483,13 @@ class CliProduct(object, metaclass=abc.ABCMeta):
                                         ftype='butter', output='sos')
 
         if sos is not None:
-            ret = data.filter(sos)
-        elif notch:
-            ret = data
+            data = data.filter(sos)
 
         for freq in notch or []:
             sos = filter_design.notch(freq, data.sample_rate)
-            ret = ret.filter(sos)
+            data = data.filter(sos)
 
-        return ret
+        return data
 
     # -- plotting -------------------------------
 
