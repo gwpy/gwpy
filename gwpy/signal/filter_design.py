@@ -566,7 +566,7 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
                        pass_zero=False, **kwargs)
 
 
-def notch(frequency, sample_rate, type='iir', **kwargs):
+def notch(frequency, sample_rate, type='iir', output='zpk', **kwargs):
     """Design a ZPK notch filter for the given frequency and sampling rate
 
     Parameters
@@ -578,18 +578,21 @@ def notch(frequency, sample_rate, type='iir', **kwargs):
         filter will be applied
     type : `str`, optional, default: 'iir'
         type of filter to apply, currently only 'iir' is supported
+    output : `str`, optional, default: 'zpk'
+        output format for notch
     **kwargs
         other keyword arguments to pass to `scipy.signal.iirdesign`
 
     Returns
     -------
-    zpk : `tuple` of `complex` or `float`
-       the filter components in digital zero-pole-gain format
+    filter
+        the formatted filter; the output format for an IIR filter depends
+        on the input arguments, default is a tuple of `(zeros, poles, gain)`
 
     See also
     --------
     scipy.signal.iirdesign
-        for details on the IIR filter design method
+        for details on the IIR filter design method and the output formats
 
     Notes
     -----
@@ -622,7 +625,7 @@ def notch(frequency, sample_rate, type='iir', **kwargs):
         kwargs.setdefault('gpass', 1)
         kwargs.setdefault('gstop', 10)
         kwargs.setdefault('ftype', 'ellip')
-        return signal.iirdesign([low1, high1], [low2, high2], output='zpk',
+        return signal.iirdesign([low1, high1], [low2, high2], output=output,
                                 **kwargs)
     else:
         raise NotImplementedError("Generating %r notch filters has not been "
