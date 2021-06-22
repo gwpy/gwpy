@@ -149,6 +149,8 @@ precision = 1
 [tool.pytest.ini_options]
 addopts = "-r a"
 filterwarnings = [
+  # fail tests on any warnings
+  "error",
   # https://github.com/gwastro/pycbc/pull/3701
   "ignore:`np.int` is a deprecated alias::pycbc..*",
   # https://git.ligo.org/lscsoft/glue/-/merge_requests/69
