@@ -70,16 +70,6 @@ DEFAULT_SEGMENT_SERVER = os.getenv('DEFAULT_SEGMENT_SERVER',
 
 # -- utilities ----------------------------------------------------------------
 
-def _select_query_method(cls, url):
-    """Select the correct query method based on the URL
-
-    Works for `DataQualityFlag` and `DataQualityDict`
-    """
-    if urlparse(url).netloc.startswith('geosegdb.'):  # only DB2 server
-        return cls.query_segdb
-    return cls.query_dqsegdb
-
-
 def _parse_query_segments(args, func):
     """Parse *args for query_dqsegdb() or query_segdb()
 
@@ -362,95 +352,6 @@ class DataQualityFlag(object):
     # -- classmethods ---------------------------
 
     @classmethod
-    def query(cls, flag, *args, **kwargs):
-        """Query for segments of a given flag
-
-        This method intelligently selects the `~DataQualityFlag.query_segdb`
-        or the `~DataQualityFlag.query_dqsegdb` methods based on the
-        ``url`` kwarg given.
-
-        Parameters
-        ----------
-        flag : `str`
-            The name of the flag for which to query
-
-        *args
-            Either, two `float`-like numbers indicating the
-            GPS [start, stop) interval, or a `SegmentList`
-            defining a number of summary segments
-
-        url : `str`, optional
-            URL of the segment database, defaults to
-            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
-            ``'https://segments.ligo.org'``
-
-        See also
-        --------
-        DataQualityFlag.query_segdb
-        DataQualityFlag.query_dqsegdb
-            for details on the actual query engine, and documentation of
-            other keyword arguments appropriate for each query
-
-        Returns
-        -------
-        flag : `DataQualityFlag`
-            A new `DataQualityFlag`, with the `known` and `active` lists
-            filled appropriately.
-        """
-        query_ = _select_query_method(
-            cls, kwargs.get('url', DEFAULT_SEGMENT_SERVER))
-        return query_(flag, *args, **kwargs)
-
-    @classmethod
-    def query_segdb(cls, flag, *args, **kwargs):
-        """Query the initial LIGO segment database for the given flag
-
-        Parameters
-        ----------
-        flag : `str`
-            The name of the flag for which to query
-
-        *args
-            Either, two `float`-like numbers indicating the
-            GPS [start, stop) interval, or a `SegmentList`
-            defining a number of summary segments
-
-        url : `str`, optional
-            URL of the segment database, defaults to
-            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
-            ``'https://segments.ligo.org'``
-
-        Returns
-        -------
-        flag : `DataQualityFlag`
-            A new `DataQualityFlag`, with the `known` and `active` lists
-            filled appropriately.
-        """
-        warnings.warn("query_segdb is deprecated and will be removed in a "
-                      "future release", DeprecationWarning)
-
-        # parse arguments
-        qsegs = _parse_query_segments(args, cls.query_segdb)
-
-        # process query
-        try:
-            flags = DataQualityDict.query_segdb([flag], qsegs, **kwargs)
-        except TypeError as exc:
-            if 'DataQualityDict' in str(exc):
-                raise TypeError(str(exc).replace('DataQualityDict',
-                                                 cls.__name__))
-            else:
-                raise
-        if len(flags) > 1:
-            raise RuntimeError("Multiple flags returned for single query, "
-                               "something went wrong:\n    %s"
-                               % '\n    '.join(flags.keys()))
-        elif len(flags) == 0:
-            raise RuntimeError("No flags returned for single query, "
-                               "something went wrong.")
-        return flags[flag]
-
-    @classmethod
     def query_dqsegdb(cls, flag, *args, **kwargs):
         """Query the advanced LIGO DQSegDB for the given flag
 
@@ -517,6 +418,9 @@ class DataQualityFlag(object):
             out.isgood = new.isgood
 
         return out
+
+    # alias for compatibility
+    query = query_dqsegdb
 
     @classmethod
     def fetch_open_data(cls, flag, start, end, **kwargs):
@@ -1069,135 +973,6 @@ class DataQualityDict(OrderedDict):
     # -- classmethods ---------------------------
 
     @classmethod
-    def query(cls, flags, *args, **kwargs):
-        """Query for segments of a set of flags.
-
-        This method intelligently selects the `~DataQualityDict.query_segdb`
-        or the `~DataQualityDict.query_dqsegdb` methods based on the
-        ``url`` kwarg given.
-
-        Parameters
-        ----------
-        flags : `iterable`
-            A list of flag names for which to query.
-
-        *args
-            Either, two `float`-like numbers indicating the
-            GPS [start, stop) interval, or a `SegmentList`
-            defining a number of summary segments
-
-        url : `str`, optional
-            URL of the segment database, defaults to
-            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
-            ``'https://segments.ligo.org'``
-
-        See also
-        --------
-        DataQualityDict.query_segdb
-        DataQualityDict.query_dqsegdb
-            for details on the actual query engine, and documentation of
-            other keyword arguments appropriate for each query
-
-        Returns
-        -------
-        flagdict : `DataQualityDict`
-            A `dict` of `(name, DataQualityFlag)` pairs
-        """
-        query_ = _select_query_method(
-            cls, kwargs.get('url', DEFAULT_SEGMENT_SERVER))
-        return query_(flags, *args, **kwargs)
-
-    @classmethod
-    def query_segdb(cls, flags, *args, **kwargs):
-        """Query the inital LIGO segment database for a list of flags.
-
-        Parameters
-        ----------
-        flags : `iterable`
-            A list of flag names for which to query.
-        *args
-            Either, two `float`-like numbers indicating the
-            GPS [start, stop) interval, or a `SegmentList`
-            defining a number of summary segments.
-        url : `str`, optional
-            URL of the segment database, defaults to
-            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
-            ``'https://segments.ligo.org'``
-
-        Returns
-        -------
-        flagdict : `DataQualityDict`
-            An ordered `DataQualityDict` of (name, `DataQualityFlag`)
-            pairs.
-        """
-        warnings.warn("query_segdb is deprecated and will be removed in a "
-                      "future release", DeprecationWarning)
-
-        # parse segments
-        qsegs = _parse_query_segments(args, cls.query_segdb)
-
-        url = kwargs.pop('url', DEFAULT_SEGMENT_SERVER)
-        if kwargs.pop('on_error', None) is not None:
-            warnings.warn("DataQualityDict.query_segdb doesn't accept the "
-                          "on_error keyword argument")
-        if kwargs.keys():
-            raise TypeError("DataQualityDict.query_segdb has no keyword "
-                            "argument '%s'" % list(kwargs.keys()[0]))
-
-        # process query
-        from glue.segmentdb import (segmentdb_utils as segdb_utils,
-                                    query_engine as segdb_engine)
-        connection = segdb_utils.setup_database(url)
-        engine = segdb_engine.LdbdQueryEngine(connection)
-        segdefs = []
-        for flag in flags:
-            dqflag = DataQualityFlag(name=flag)
-            ifo = dqflag.ifo
-            name = dqflag.tag
-            if dqflag.version is None:
-                vers = '*'
-            else:
-                vers = dqflag.version
-            for gpsstart, gpsend in qsegs:
-                if float(gpsend) == +inf:
-                    gpsend = int(to_gps('now'))
-                gpsstart = float(gpsstart)
-                if not gpsstart.is_integer():
-                    raise ValueError("Segment database queries can only"
-                                     "operate on integer GPS times")
-                gpsend = float(gpsend)
-                if not gpsend.is_integer():
-                    raise ValueError("Segment database queries can only"
-                                     "operate on integer GPS times")
-                segdefs += segdb_utils.expand_version_number(
-                    engine, (ifo, name, vers, gpsstart, gpsend, 0, 0))
-        segs = segdb_utils.query_segments(engine, 'segment', segdefs)
-        segsum = segdb_utils.query_segments(engine, 'segment_summary', segdefs)
-        # build output
-        out = cls()
-        for definition, segments, summary in zip(segdefs, segs, segsum):
-            # parse flag name
-            flag = ':'.join(map(str, definition[:3]))
-            name = flag.rsplit(':', 1)[0]
-            # if versionless
-            if flag.endswith('*'):
-                flag = name
-                key = name
-            # if asked for versionless, but returned a version
-            elif flag not in flags and name in flags:
-                key = name
-            # other
-            else:
-                key = flag
-            # define flag
-            if key not in out:
-                out[key] = DataQualityFlag(name=flag)
-            # add segments
-            out[key].known.extend(summary)
-            out[key].active.extend(segments)
-        return out
-
-    @classmethod
     def query_dqsegdb(cls, flags, *args, **kwargs):
         """Query the advanced LIGO DQSegDB for a list of flags.
 
@@ -1266,6 +1041,9 @@ class DataQualityDict(OrderedDict):
             else:
                 new[flag] = result
         return new
+
+    # alias for compatibility
+    query = query_dqsegdb
 
     @classmethod
     def read(cls, source, names=None, format=None, **kwargs):

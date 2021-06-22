@@ -36,7 +36,7 @@ from matplotlib import rc_context
 from ...plot import SegmentAxes
 from ...segments import (Segment, SegmentList,
                          DataQualityFlag, DataQualityDict)
-from ...testing import (mocks, utils)
+from ...testing import utils
 from ...testing.errors import pytest_skip_network_error
 from ...utils.misc import null_context
 
@@ -150,46 +150,6 @@ QUERY_RESULT['Y1:TEST-FLAG2:4'] = DataQualityFlag(
 
 QUERY_RESULTC = type(QUERY_RESULT)({x: y.copy().coalesce() for
                                     x, y in QUERY_RESULT.items()})
-
-
-def query_segdb(query_func, *args, **kwargs):
-    """Mock a query to an S6-style DB2 database
-    """
-    try:
-        with mock.patch('glue.segmentdb.segmentdb_utils.setup_database'), \
-             mock.patch('glue.segmentdb.segmentdb_utils.expand_version_number',
-                        mocks.segdb_expand_version_number(1, 4)), \
-             mock.patch('glue.segmentdb.segmentdb_utils.query_segments',
-                        mocks.segdb_query_segments(QUERY_RESULT)):
-            return query_func(*args, **kwargs)
-    except ImportError as e:  # pragma: no-cover
-        pytest.skip(str(e))
-
-
-def segdb_expand_version_number(min_, max_):
-    def expand_version_number(engine, segdef):
-        ifo, name, version, start_time, end_time, start_pad, end_pad = segdef
-        if version != '*':
-            return [segdef]
-        return [[ifo, name, v, start_time, end_time, start_pad, end_pad] for
-                v in range(min_, max_+1)[::-1]]
-
-    return expand_version_number
-
-
-def segdb_query_segments(result):
-    def query_segments(engine, tablename, segdefs):
-        out = []
-        for ifo, flag, version, start, end, startpad, endpad in segdefs:
-            flag = '%s:%s:%d' % (ifo, flag, version)
-            if flag not in result:
-                out.append([])
-            if tablename == 'segment':
-                out.append(result[flag].active)
-            else:
-                out.append(result[flag].known)
-        return out
-    return query_segments
 
 
 def dqsegdb2_query_segments(result, deactivated=False,
@@ -558,32 +518,6 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(result.known, RESULT.known)
         utils.assert_segmentlist_equal(result.active, RESULT.active)
 
-    def test_query_segdb(self):
-        with pytest.deprecated_call():
-            result = query_segdb(self.TEST_CLASS.query_segdb,
-                                 QUERY_FLAGS[0], 0, 10)
-        RESULT = QUERY_RESULT[QUERY_FLAGS[0]]
-
-        assert isinstance(result, self.TEST_CLASS)
-        utils.assert_segmentlist_equal(result.known, RESULT.known)
-        utils.assert_segmentlist_equal(result.active, RESULT.active)
-
-        with pytest.deprecated_call():
-            result2 = query_segdb(self.TEST_CLASS.query_segdb,
-                                  QUERY_FLAGS[0], (0, 10))
-        utils.assert_flag_equal(result, result2)
-
-        with pytest.deprecated_call():
-            result2 = query_segdb(self.TEST_CLASS.query_segdb,
-                                  QUERY_FLAGS[0], SegmentList([(0, 10)]))
-        utils.assert_flag_equal(result, result2)
-
-        with pytest.deprecated_call():
-            with pytest.raises(ValueError):
-                self.TEST_CLASS.query_segdb(QUERY_FLAGS[0], 1, 2, 3)
-            with pytest.raises(ValueError):
-                self.TEST_CLASS.query_segdb(QUERY_FLAGS[0], (1, 2, 3))
-
     @pytest.mark.parametrize('name, flag', [
         (QUERY_FLAGS[0], QUERY_FLAGS[0]),  # regular query
         (QUERY_FLAGS[0].rsplit(':', 1)[0], QUERY_FLAGS[0]),  # versionless
@@ -901,13 +835,6 @@ class TestDataQualityDict(object):
         assert len(record) == 1  # check on_error='ignore' didn't warn
         with pytest.raises(ValueError):
             self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS, 0, 10, on_error='blah')
-
-    def test_query_segdb(self):
-        with pytest.deprecated_call():
-            result = query_segdb(self.TEST_CLASS.query_segdb,
-                                 QUERY_FLAGS, 0, 10)
-        assert isinstance(result, self.TEST_CLASS)
-        utils.assert_dict_equal(result, QUERY_RESULT, utils.assert_flag_equal)
 
     def test_populate(self):
         def fake():

@@ -85,32 +85,6 @@ def dqsegdb_cascaded_query(result, deactivated=False,
     return cascaded_query
 
 
-def segdb_expand_version_number(min_, max_):
-    def expand_version_number(engine, segdef):
-        ifo, name, version, start_time, end_time, start_pad, end_pad = segdef
-        if version != '*':
-            return [segdef]
-        return [[ifo, name, v, start_time, end_time, start_pad, end_pad] for
-                v in range(min_, max_+1)[::-1]]
-
-    return expand_version_number
-
-
-def segdb_query_segments(result):
-    def query_segments(engine, tablename, segdefs):
-        out = []
-        for ifo, flag, version, start, end, startpad, endpad in segdefs:
-            flag = '%s:%s:%d' % (ifo, flag, version)
-            if flag not in result:
-                out.append([])
-            if tablename == 'segment':
-                out.append(result[flag].active)
-            else:
-                out.append(result[flag].known)
-        return out
-    return query_segments
-
-
 # -- NDS2 ---------------------------------------------------------------------
 
 def nds2_buffer(channel, data, epoch, sample_rate, unit,
