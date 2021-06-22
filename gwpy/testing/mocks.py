@@ -21,68 +21,11 @@
 
 import inspect
 from unittest import mock
-from urllib.error import HTTPError
 
 from ..detector import Channel
 from ..time import LIGOTimeGPS
-from ..segments import (Segment, SegmentList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-
-# -- DQSEGDB calls ------------------------------------------------------------
-
-def dqsegdb_query_times(result, deactivated=False,
-                        active_indicates_ifo_badness=False, **kwargs):
-    """Build a mock of `dqsegdb.apicalls.dqsegdbQueryTimes` for testing
-    """
-
-    def query_times(protocol, server, ifo, name, version, request, start, end):
-        flag = '%s:%s:%d' % (ifo, name, version)
-        span = SegmentList([Segment(start, end)])
-        if flag not in result:
-            raise HTTPError('test-url/', 404, 'Not found', None, None)
-        return {
-            'ifo': ifo,
-            'name': name,
-            'version': version,
-            'known': list(map(tuple, result[flag].known & span)),
-            'active': list(map(tuple, result[flag].active & span)),
-            'query_information': {},
-            'metadata': kwargs,
-        }, 'BOGUS_QUERY_STRING'
-
-    return query_times
-
-
-def dqsegdb_cascaded_query(result, deactivated=False,
-                           active_indicates_ifo_badness=False,
-                           **kwargs):
-    """Build a mock of `dqsegdb.apicalls.dqsegdbCascadedQuery` for testing
-    """
-
-    def cascaded_query(protocol, server, ifo, name, request, start, end):
-        # this is a bit hacky, but it's just for tests
-        flag = [x for x in result if
-                x.rsplit(':', 1)[0] == '%s:%s' % (ifo, name)][0]
-        version = int(flag.split(':')[-1])
-        return (
-            {'known': list(map(tuple, result[flag].known)),
-             'active': list(map(tuple, result[flag].active)),
-             'ifo': ifo,
-             'name': 'RESULT',
-             'version': 1},
-            [{'ifo': ifo,
-              'name': name,
-              'version': version,
-              'known': list(map(tuple, result[flag].known)),
-              'active': list(map(tuple, result[flag].active)),
-              'query_information': {},
-              'metadata': kwargs}],
-            {},
-        )
-
-    return cascaded_query
 
 
 # -- NDS2 ---------------------------------------------------------------------
