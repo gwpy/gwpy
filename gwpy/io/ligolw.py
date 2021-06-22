@@ -692,7 +692,7 @@ def to_table_type(val, cls, colname):
                         ilwdchar_compat=_is_glue_ligolw_object(cls))
     # otherwise map to numpy or python types
     try:
-        return numpy.typeDict[numpytypes[llwtype]](val)
+        return numpy.sctypeDict[numpytypes[llwtype]](val)
     except KeyError:
         return pytypes[llwtype](val)
 
