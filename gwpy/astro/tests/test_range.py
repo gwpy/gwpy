@@ -29,6 +29,7 @@ from ...testing import utils
 from ...timeseries import TimeSeries
 from ...frequencyseries import FrequencySeries
 from ...spectrogram import Spectrogram
+from ...utils.misc import null_context
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
@@ -112,8 +113,18 @@ def test_burst_range(psd):
     {'energy': 1e-2},
 ])
 def test_range_timeseries(hoft, rangekwargs):
-    trends = astro.range_timeseries(
-        hoft, 0.5, fftlength=0.25, overlap=0.125, nproc=2, **rangekwargs)
+    with (
+        null_context() if 'energy' in rangekwargs
+        else pytest.warns(DeprecationWarning)
+    ):
+        trends = astro.range_timeseries(
+            hoft,
+            0.5,
+            fftlength=0.25,
+            overlap=0.125,
+            nproc=2,
+            **rangekwargs,
+        )
     assert isinstance(trends, TimeSeries)
     assert trends.size == 2
     assert trends.unit == 'Mpc'
@@ -125,8 +136,18 @@ def test_range_timeseries(hoft, rangekwargs):
     ({'energy': 1e-2}, units.Mpc),
 ])
 def test_range_spectrogram(hoft, rangekwargs, outunit):
-    spec = astro.range_spectrogram(
-        hoft, 0.5, fftlength=0.25, overlap=0.125, nproc=2, **rangekwargs)
+    with (
+        null_context() if 'energy' in rangekwargs
+        else pytest.warns(DeprecationWarning)
+    ):
+        spec = astro.range_spectrogram(
+            hoft,
+            0.5,
+            fftlength=0.25,
+            overlap=0.125,
+            nproc=2,
+            **rangekwargs,
+        )
     assert isinstance(spec, Spectrogram)
     assert spec.shape[0] == 2
     assert spec.unit == outunit
