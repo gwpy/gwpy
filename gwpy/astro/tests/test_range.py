@@ -122,6 +122,7 @@ def test_range_timeseries(hoft, rangekwargs):
             0.5,
             fftlength=0.25,
             overlap=0.125,
+            method="welch",
             nproc=2,
             **rangekwargs,
         )
@@ -145,6 +146,7 @@ def test_range_spectrogram(hoft, rangekwargs, outunit):
             0.5,
             fftlength=0.25,
             overlap=0.125,
+            method="welch",
             nproc=2,
             **rangekwargs,
         )
