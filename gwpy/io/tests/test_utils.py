@@ -25,7 +25,7 @@ from pathlib import Path
 
 import pytest
 
-from ...testing.utils import (TemporaryFilename, skip_missing_dependency)
+from ...testing.utils import skip_missing_dependency
 from .. import (
     cache as io_cache,
     utils as io_utils,
@@ -36,23 +36,24 @@ from .test_cache import cache  # noqa: F401
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def test_gopen():
+def test_gopen(tmp_path):
+    tmp = tmp_path / "test.tmp"
     # test simple use
-    with TemporaryFilename() as tmp:
-        with open(tmp, 'w') as f:
-            f.write('blah blah blah')
-        with io_utils.gopen(tmp) as f2:
-            assert f2.read() == 'blah blah blah'
+    with tmp.open('w') as f:
+        f.write('blah blah blah')
+    with io_utils.gopen(tmp) as f2:
+        assert f2.read() == 'blah blah blah'
 
-    # test gzip file (with and without extension)
-    for suffix in ('.txt.gz', ''):
-        with TemporaryFilename(suffix=suffix) as tmp:
-            text = b'blah blah blah'
-            with gzip.open(tmp, 'wb') as fobj:
-                fobj.write(text)
-            with io_utils.gopen(tmp, mode='rb') as fobj2:
-                assert isinstance(fobj2, gzip.GzipFile)
-                assert fobj2.read() == text
+
+@pytest.mark.parametrize("suffix", (".txt.gz", ""))
+def test_gopen_gzip(tmp_path, suffix):
+    tmp = tmp_path / "test{}".format(suffix)
+    text = b'blah blah blah'
+    with gzip.open(tmp, 'wb') as fobj:
+        fobj.write(text)
+    with io_utils.gopen(tmp, mode='rb') as fobj2:
+        assert isinstance(fobj2, gzip.GzipFile)
+        assert fobj2.read() == text
 
 
 def test_identify_factory():
