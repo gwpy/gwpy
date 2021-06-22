@@ -36,7 +36,7 @@ __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 # -- test results -------------------------------------------------------------
 
 TEST_RESULTS = {
-    'inspiral_range': 19.634311605544845 * units.Mpc,
+    'sensemon_range': 19.634311605544845 * units.Mpc,
     'burst_range': 13.81353542862508 * units.Mpc,
 }
 
@@ -65,25 +65,25 @@ def hoft():
 
 # -- gwpy.astro.range ---------------------------------------------------------
 
-def test_inspiral_range_psd(psd):
-    """Test for :func:`gwpy.astro.inspiral_range_psd`
+def test_sensemon_range_psd(psd):
+    """Test for :func:`gwpy.astro.sensemon_range_psd`
     """
     fisco = astro.range._get_isco_frequency(1.4, 1.4).value
     frange = (psd.frequencies.value < fisco)
-    r = astro.inspiral_range_psd(psd[frange])
+    r = astro.sensemon_range_psd(psd[frange])
     assert isinstance(r, FrequencySeries)
     utils.assert_quantity_almost_equal(
         trapz(r, r.frequencies) ** (1/2.),
-        TEST_RESULTS['inspiral_range'],
+        TEST_RESULTS['sensemon_range'],
     )
     assert r.f0.value > 0
 
 
-def test_inspiral_range(psd):
-    """Test for :func:`gwpy.astro.inspiral_range`
+def test_sensemon_range(psd):
+    """Test for :func:`gwpy.astro.sensemon_range`
     """
-    r = astro.inspiral_range(psd)
-    utils.assert_quantity_almost_equal(r, TEST_RESULTS['inspiral_range'])
+    r = astro.sensemon_range(psd)
+    utils.assert_quantity_almost_equal(r, TEST_RESULTS['sensemon_range'])
 
 
 def test_burst_range_spectrum(psd):
