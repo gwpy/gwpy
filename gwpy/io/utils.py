@@ -20,6 +20,7 @@
 """
 
 import gzip
+import os
 import tempfile
 from urllib.parse import urlparse
 
@@ -176,8 +177,11 @@ def file_path(fobj):
     Examples
     --------
     >>> from gwpy.io.utils import file_path
+    >>> import pathlib
     >>> file_path("test.txt")
     'test.txt'
+    >>> file_path(pathlib.Path('dir') / 'test.txt')
+    'dir/test.txt'
     >>> file_path(open("test.txt", "r"))
     'test.txt'
     >>> file_path("file:///home/user/test.txt")
@@ -187,6 +191,8 @@ def file_path(fobj):
         return urlparse(fobj).path
     if isinstance(fobj, str):
         return fobj
+    if isinstance(fobj, os.PathLike):
+        return str(fobj)
     if (isinstance(fobj, FILE_LIKE) and hasattr(fobj, "name")):
         return fobj.name
     try:
