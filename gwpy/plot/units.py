@@ -34,6 +34,6 @@ class LatexInlineDimensional(LatexInline):
         u = '[{0}]'.format(super().to_string(unit))
 
         if unit.physical_type not in {None, 'unknown', 'dimensionless'}:
-            ptype = cls._latex_escape(unit.physical_type.title())
-            return '{0} {1}'.format(ptype, u)
+            ptype = str(unit.physical_type).split('/', 1)[0].title()
+            return '{0} {1}'.format(cls._latex_escape(ptype), u)
         return u
