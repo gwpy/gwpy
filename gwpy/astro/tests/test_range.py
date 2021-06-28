@@ -29,6 +29,7 @@ from ...testing import utils
 from ...timeseries import TimeSeries
 from ...frequencyseries import FrequencySeries
 from ...spectrogram import Spectrogram
+from ...utils.misc import null_context
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
@@ -36,7 +37,7 @@ __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 # -- test results -------------------------------------------------------------
 
 TEST_RESULTS = {
-    'inspiral_range': 19.634311605544845 * units.Mpc,
+    'sensemon_range': 19.634311605544845 * units.Mpc,
     'burst_range': 13.81353542862508 * units.Mpc,
 }
 
@@ -44,46 +45,45 @@ TEST_RESULTS = {
 # -- utilities ----------------------------------------------------------------
 
 @pytest.fixture(scope='module')
-def psd():
-    try:
-        data = TimeSeries.read(utils.TEST_HDF5_FILE, 'L1:LDAS-STRAIN',
-                               format='hdf5')
-    except ImportError as e:  # pragma: no-cover
-        pytest.skip(str(e))
-    return data.psd(.4, overlap=.2, window=('kaiser', 24))
+def hoft():
+    return TimeSeries.read(
+        utils.TEST_HDF5_FILE,
+        "L1:LDAS-STRAIN",
+        format="hdf5",
+    )
 
 
 @pytest.fixture(scope='module')
-def hoft():
-    try:
-        data = TimeSeries.read(utils.TEST_HDF5_FILE, 'L1:LDAS-STRAIN',
-                               format='hdf5')
-    except ImportError as e:  # pragma: no-cover
-        pytest.skip(str(e))
-    return data
+def psd(hoft):
+    return hoft.psd(
+        .4,
+        overlap=.2,
+        method="welch",
+        window=('kaiser', 24),
+    )
 
 
 # -- gwpy.astro.range ---------------------------------------------------------
 
-def test_inspiral_range_psd(psd):
-    """Test for :func:`gwpy.astro.inspiral_range_psd`
+def test_sensemon_range_psd(psd):
+    """Test for :func:`gwpy.astro.sensemon_range_psd`
     """
     fisco = astro.range._get_isco_frequency(1.4, 1.4).value
     frange = (psd.frequencies.value < fisco)
-    r = astro.inspiral_range_psd(psd[frange])
+    r = astro.sensemon_range_psd(psd[frange])
     assert isinstance(r, FrequencySeries)
     utils.assert_quantity_almost_equal(
         trapz(r, r.frequencies) ** (1/2.),
-        TEST_RESULTS['inspiral_range'],
+        TEST_RESULTS['sensemon_range'],
     )
     assert r.f0.value > 0
 
 
-def test_inspiral_range(psd):
-    """Test for :func:`gwpy.astro.inspiral_range`
+def test_sensemon_range(psd):
+    """Test for :func:`gwpy.astro.sensemon_range`
     """
-    r = astro.inspiral_range(psd)
-    utils.assert_quantity_almost_equal(r, TEST_RESULTS['inspiral_range'])
+    r = astro.sensemon_range(psd)
+    utils.assert_quantity_almost_equal(r, TEST_RESULTS['sensemon_range'])
 
 
 def test_burst_range_spectrum(psd):
@@ -112,8 +112,19 @@ def test_burst_range(psd):
     {'energy': 1e-2},
 ])
 def test_range_timeseries(hoft, rangekwargs):
-    trends = astro.range_timeseries(
-        hoft, 0.5, fftlength=0.25, overlap=0.125, nproc=2, **rangekwargs)
+    with (
+        null_context() if 'energy' in rangekwargs
+        else pytest.warns(DeprecationWarning)
+    ):
+        trends = astro.range_timeseries(
+            hoft,
+            0.5,
+            fftlength=0.25,
+            overlap=0.125,
+            method="welch",
+            nproc=2,
+            **rangekwargs,
+        )
     assert isinstance(trends, TimeSeries)
     assert trends.size == 2
     assert trends.unit == 'Mpc'
@@ -125,8 +136,19 @@ def test_range_timeseries(hoft, rangekwargs):
     ({'energy': 1e-2}, units.Mpc),
 ])
 def test_range_spectrogram(hoft, rangekwargs, outunit):
-    spec = astro.range_spectrogram(
-        hoft, 0.5, fftlength=0.25, overlap=0.125, nproc=2, **rangekwargs)
+    with (
+        null_context() if 'energy' in rangekwargs
+        else pytest.warns(DeprecationWarning)
+    ):
+        spec = astro.range_spectrogram(
+            hoft,
+            0.5,
+            fftlength=0.25,
+            overlap=0.125,
+            method="welch",
+            nproc=2,
+            **rangekwargs,
+        )
     assert isinstance(spec, Spectrogram)
     assert spec.shape[0] == 2
     assert spec.unit == outunit
