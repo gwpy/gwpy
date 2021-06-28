@@ -9,10 +9,12 @@ name: Lint
 on:
   push:
     branches:
+      - main
       - master
       - release/**
   pull_request:
     branches:
+      - main
       - master
       - release/**
 

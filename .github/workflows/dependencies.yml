@@ -16,12 +16,16 @@ name: Dependencies
 on:
   push:
     branches:
+      - main
       - master
       - release/**
   pull_request:
     branches:
+      - main
       - master
       - release/**
+  schedule:
+    - cron: "0 0 * * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
