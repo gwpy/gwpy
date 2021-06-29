@@ -24,6 +24,7 @@ an 'io' subdirectory of the containing directory for that class.
 
 import builtins
 import importlib
+import os
 import os.path
 import re
 from contextlib import contextmanager
@@ -430,7 +431,6 @@ def open_xmldoc(fobj, **kwargs):
 
     **kwargs
         other keyword arguments to pass to
-        :func:`~ligo.lw.utils.load_filename`, or
         :func:`~ligo.lw.utils.load_fileobj` as appropriate
 
     Returns
@@ -441,24 +441,35 @@ def open_xmldoc(fobj, **kwargs):
     """
     from ligo.lw.ligolw import (Document, LIGOLWContentHandler)
     from ligo.lw.lsctables import use_in
-    from ligo.lw.utils import (load_filename, load_fileobj)
+    from ligo.lw.utils import load_fileobj
 
     use_in(kwargs.setdefault('contenthandler', LIGOLWContentHandler))
 
-    try:  # try and load existing file
-        if isinstance(fobj, str):
-            return load_filename(fobj, **kwargs)
-        if isinstance(fobj, FILE_LIKE):
-            return load_fileobj(fobj, **kwargs)[0]
-    except (OSError, IOError):  # or just create a new Document
-        return Document()
+    # read from an existing Path/filename
+    if not isinstance(fobj, FILE_LIKE):
+        try:
+            with open(fobj, "rb") as fobj2:
+                return open_xmldoc(fobj2, **kwargs)
+        except (OSError, IOError):
+            # or just create a new Document
+            return Document()
+
+    try:
+        out = load_fileobj(fobj, **kwargs)
     except LigolwElementError as exc:
         if LIGO_LW_COMPAT_ERROR.search(str(exc)):
+            # handle ligo.lw/glue.ligolw compatibility issue
             try:
-                return open_xmldoc(fobj, ilwdchar_compat=True, **kwargs)
+                # load_fileobj will have closed the file, so we need to
+                # go back to the origin and reopen it
+                return open_xmldoc(fobj.name, ilwdchar_compat=True, **kwargs)
             except Exception:  # for any reason, raise original
                 pass
         raise
+
+    if isinstance(out, tuple):  # glue.ligolw.utils.load_fileobj returns tuple
+        out = out[0]
+    return out
 
 
 @ilwdchar_compat
@@ -540,7 +551,6 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
 
     **kwargs
         other keyword arguments to pass to
-        :func:`~ligo.lw.utils.load_filename`, or
         :func:`~ligo.lw.utils.load_fileobj` as appropriate
     """
     from ligo.lw.ligolw import (Document, LIGO_LW, LIGOLWContentHandler)
@@ -552,13 +562,14 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
     # open existing document, if possible
     elif append:
         xmldoc = open_xmldoc(
-            target, contenthandler=kwargs.pop('contenthandler',
-                                              LIGOLWContentHandler))
+            target,
+            contenthandler=kwargs.pop('contenthandler', LIGOLWContentHandler),
+        )
     # fail on existing document and not overwriting
     elif (
         not overwrite
-        and isinstance(target, str)
-        and os.path.isfile(target)
+        and isinstance(target, (str, os.PathLike))
+        and os.path.exists(target)
     ):
         raise IOError("File exists: {}".format(target))
     else:  # or create a new document
@@ -573,7 +584,7 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
         name = target.name
     else:
         writer = ligolw_utils.write_filename
-        name = str(target)
+        name = target = str(target)
 
     # handle gzip compression kwargs
     if name.endswith('.gz') and writer.__module__.startswith('glue'):
