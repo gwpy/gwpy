@@ -22,7 +22,10 @@
 import json
 
 from ...io import registry
-from ...io.utils import identify_factory
+from ...io.utils import (
+    identify_factory,
+    with_open,
+)
 from .. import DataQualityFlag
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -30,19 +33,11 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # -- read ---------------------------------------------------------------------
 
+@with_open
 def read_json_flag(fobj):
     """Read a `DataQualityFlag` from a segments-web.ligo.org JSON file
     """
-    # read from filename
-    if isinstance(fobj, str):
-        with open(fobj, 'r') as fobj2:
-            return read_json_flag(fobj2)
-
-    # read from open file
-    txt = fobj.read()
-    if isinstance(txt, bytes):
-        txt = txt.decode('utf-8')
-    data = json.loads(txt)
+    data = json.load(fobj)
 
     # format flag
     name = '{ifo}:{name}:{version}'.format(**data)
@@ -63,6 +58,7 @@ def read_json_flag(fobj):
 
 # -- write --------------------------------------------------------------------
 
+@with_open(mode="w", pos=1)
 def write_json_flag(flag, fobj, **kwargs):
     """Write a `DataQualityFlag` to a JSON file
 
@@ -82,11 +78,6 @@ def write_json_flag(flag, fobj, **kwargs):
     json.dump
         for details on acceptable keyword arguments
     """
-    # write to filename
-    if isinstance(fobj, str):
-        with open(fobj, 'w') as fobj2:
-            return write_json_flag(flag, fobj2, **kwargs)
-
     # build json packet
     data = {}
     data['ifo'] = flag.ifo

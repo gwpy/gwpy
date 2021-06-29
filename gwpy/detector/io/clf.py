@@ -72,7 +72,11 @@ from collections import OrderedDict
 from numpy import inf
 
 from ...io import registry
-from ...io.utils import (FILE_LIKE, file_list, identify_factory)
+from ...io.utils import (
+    file_list,
+    identify_factory,
+    with_open,
+)
 from .. import (Channel, ChannelList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -134,13 +138,10 @@ def read_channel_list_file(*source):
     return out
 
 
+@with_open(mode="w", pos=1)
 def write_channel_list_file(channels, fobj):
     """Write a `~gwpy.detector.ChannelList` to a INI-format channel list file
     """
-    if not isinstance(fobj, FILE_LIKE):
-        with open(fobj, "w") as fobj:
-            return write_channel_list_file(channels, fobj)
-
     out = configparser.ConfigParser(dict_type=OrderedDict)
     for channel in channels:
         group = channel.group

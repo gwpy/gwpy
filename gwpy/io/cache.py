@@ -28,7 +28,11 @@ import warnings
 from collections import (namedtuple, OrderedDict)
 
 from ..time import LIGOTimeGPS
-from .utils import (FILE_LIKE, file_path)
+from .utils import (
+    FILE_LIKE,
+    file_path,
+    with_open,
+)
 
 try:
     from lal.utils import CacheEntry
@@ -147,12 +151,13 @@ def _iter_cache(cachefile, gpstype=LIGOTimeGPS):
                 raise
 
 
+@with_open
 def read_cache(cachefile, coltype=LIGOTimeGPS, sort=None, segment=None):
     """Read a LAL- or FFL-format cache file as a list of file paths
 
     Parameters
     ----------
-    cachefile : `str`, `file`
+    cachefile : `str`, `pathlib.Path`, `file`
         Input file or file path to read.
 
     coltype : `LIGOTimeGPS`, `int`, optional
@@ -170,12 +175,6 @@ def read_cache(cachefile, coltype=LIGOTimeGPS, sort=None, segment=None):
     paths : `list` of `str`
         A list of file paths as read from the cache file.
     """
-    # open file
-    if not isinstance(cachefile, FILE_LIKE):
-        with open(file_path(cachefile), 'r') as fobj:
-            return read_cache(fobj, coltype=coltype, sort=sort,
-                              segment=segment)
-
     # read file
     cache = [x.path for x in _iter_cache(cachefile, gpstype=coltype)]
 
@@ -220,6 +219,7 @@ def open_cache(*args, **kwargs):  # pragma: no cover
     return read_cache(*args, **kwargs)
 
 
+@with_open(mode="w", pos=1)
 def write_cache(cache, fobj, format=None):
     """Write a `list` of cache entries to a file
 
@@ -228,7 +228,7 @@ def write_cache(cache, fobj, format=None):
     cache : `list` of `str`
         The list of file paths to write
 
-    fobj : `file`, `str`
+    fobj : `file`, `str`, `pathlib.Path`
         The open file object, or file path to write to.
 
     format : `str`, optional
@@ -238,11 +238,6 @@ def write_cache(cache, fobj, format=None):
         - ``'lal'`` : write a LAL-format cache
         - ``'ffl'`` : write an FFL-format cache
     """
-    # open file
-    if isinstance(fobj, str):
-        with open(fobj, 'w') as fobj2:
-            return write_cache(cache, fobj2, format=format)
-
     if format is None:
         formatter = str
     elif format.lower() == "lal":

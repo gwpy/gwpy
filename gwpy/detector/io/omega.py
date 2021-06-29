@@ -25,7 +25,7 @@ from collections import OrderedDict
 
 from astropy.io import registry
 
-from ...io.cache import FILE_LIKE
+from ...io.utils import with_open
 from .. import (Channel, ChannelList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -36,6 +36,7 @@ WPIPELINE = OMEGA_LOCATION and os.path.join(OMEGA_LOCATION, 'bin', 'wpipeline')
 
 # -- read ---------------------------------------------------------------------
 
+@with_open
 def read_omega_scan_config(source):
     """Parse an Omega-scan configuration file into a `ChannelList`
 
@@ -56,30 +57,18 @@ def read_omega_scan_config(source):
     """
     out = ChannelList()
     append = out.append
-    if isinstance(source, FILE_LIKE):
-        close = False
-    else:
-        source = open(source, 'r')
-        close = True
-    try:
-        section = None
-        while True:
-            try:
-                line = next(source)
-            except StopIteration:
-                break
-            if line == '' or line == '\n' or line.startswith('#'):
-                continue
-            elif line.startswith('['):
-                section = line[1:-2]
-            elif line.startswith('{'):
-                append(parse_omega_channel(source, section))
-            else:
-                raise RuntimeError("Failed to parse Omega config line:\n%s"
-                                   % line)
-    finally:
-        if close:
-            source.close()
+    section = None
+    for line in map(str.strip, source):
+        if not line or line.startswith('#'):
+            continue
+        if line.startswith('['):
+            section = line[1:-1]
+        elif line.startswith('{'):
+            append(parse_omega_channel(source, section))
+        else:
+            raise RuntimeError(
+                "Failed to parse Omega config line: {!r}".format(line),
+            )
     return out
 
 
@@ -130,33 +119,25 @@ def omega_param(val):
 
 # -- write --------------------------------------------------------------------
 
+@with_open(mode="w", pos=1)
 def write_omega_scan_config(channellist, fobj, header=True):
     """Write a `ChannelList` to an Omega-pipeline scan configuration file
 
     This method is dumb and assumes the channels are sorted in the right
     order already
     """
-    if isinstance(fobj, FILE_LIKE):
-        close = False
-    else:
-        fobj = open(fobj, 'w')
-        close = True
-    try:
+    # print header
+    if header:
+        print('# Q Scan configuration file', file=fobj)
+        print('# Generated with GWpy from a ChannelList', file=fobj)
+    group = None
+    for channel in channellist:
         # print header
-        if header:
-            print('# Q Scan configuration file', file=fobj)
-            print('# Generated with GWpy from a ChannelList', file=fobj)
-        group = None
-        for channel in channellist:
-            # print header
-            if channel.group != group:
-                group = channel.group
-                print('\n[%s]' % group, file=fobj)
-            print("", file=fobj)
-            print_omega_channel(channel, file=fobj)
-    finally:
-        if close:
-            fobj.close()
+        if channel.group != group:
+            group = channel.group
+            print('\n[%s]' % group, file=fobj)
+        print("", file=fobj)
+        print_omega_channel(channel, file=fobj)
 
 
 # pylint: disable=redefined-builtin

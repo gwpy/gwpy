@@ -23,7 +23,10 @@ import re
 
 from .. import (Segment, SegmentList)
 from ...io import registry
-from ...io.utils import identify_factory
+from ...io.utils import (
+    identify_factory,
+    with_open,
+)
 from ...time import LIGOTimeGPS
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -43,6 +46,7 @@ FOUR_COL_REGEX = re.compile(
 
 # -- read ---------------------------------------------------------------------
 
+@with_open
 def from_segwizard(source, gpstype=LIGOTimeGPS, strict=True):
     """Read segments from a segwizard format file into a `SegmentList`
 
@@ -68,11 +72,6 @@ def from_segwizard(source, gpstype=LIGOTimeGPS, strict=True):
     This method is adapted from original code written by Kipp Cannon and
     distributed under GPLv3.
     """
-    # read file path
-    if isinstance(source, str):
-        with open(source, 'r') as fobj:
-            return from_segwizard(fobj, gpstype=gpstype, strict=strict)
-
     # read file object
     out = SegmentList()
     fmt_pat = None
@@ -115,7 +114,7 @@ def _format_segment(tokens, strict=True, gpstype=LIGOTimeGPS):
 
 # -- write --------------------------------------------------------------------
 
-# pylint: disable=inconsistent-return-statements
+@with_open(mode="w", pos=1)
 def to_segwizard(segs, target, header=True, coltype=LIGOTimeGPS):
     """Write the given `SegmentList` to a file in SegWizard format.
 
@@ -138,11 +137,6 @@ def to_segwizard(segs, target, header=True, coltype=LIGOTimeGPS):
     This method is adapted from original code written by Kipp Cannon and
     distributed under GPLv3.
     """
-    # write file path
-    if isinstance(target, str):
-        with open(target, 'w') as fobj:
-            return to_segwizard(segs, fobj, header=header, coltype=coltype)
-
     # write file object
     if header:
         print('# seg\tstart\tstop\tduration', file=target)
