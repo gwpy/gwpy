@@ -22,6 +22,7 @@
 import gzip
 import os
 import tempfile
+from functools import wraps
 from urllib.parse import urlparse
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -97,6 +98,55 @@ def gopen(name, *args, **kwargs):
         fobj.close()  # GzipFile won't close orig file when it closes
         return gzip.open(name, *args, **kwargs)
     return fobj
+
+
+def with_open(func=None, mode="r", pos=0):
+    """Decorate a function to ensure the chosen argument is an open file
+
+    Parameters
+    ----------
+    func : `callable`
+        the function to decorate
+
+    mode : `str`, optional
+        the mode with which to open files
+
+    pos : `int`, optional
+        which argument to look at
+
+    Examples
+    --------
+    To ensure that the first argument is an open read-only file, just use
+    the decorator without functional parentheses or arguments:
+
+    >>> @with_open
+    >>> def my_func(pathorfile, *args, **kwargs)
+    >>>     ...
+
+    To ensure that the second argument (position 1) is a file open for writing:
+
+    >>> @with_open(mode="w", pos=1)
+    >>> def my_func(stuff, pathorfile, *args, **kwargs)
+    >>>     stuff.write_to(pathorfile, *args, **kwargs)
+    """
+    def _decorator(func):
+        @wraps(func)
+        def wrapped_func(*args, **kwargs):
+            # if the relevant positional argument isn't an open
+            # file, or something that looks like one, ...
+            if not isinstance(args[pos], FILE_LIKE):
+                # open the file, ...
+                with open(args[pos], mode=mode) as fobj:
+                    # replace the argument with the open file, ...
+                    args = list(args)
+                    args[pos] = fobj
+                    # and re-execute the function call
+                    return func(*args, **kwargs)
+            return func(*args, **kwargs)
+        return wrapped_func
+    if func:
+        return _decorator(func)
+    return _decorator
 
 
 # -- file list utilities ------------------------------------------------------
