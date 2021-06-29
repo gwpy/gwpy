@@ -189,9 +189,7 @@ def file_path(fobj):
     """
     if isinstance(fobj, str) and fobj.startswith("file:"):
         return urlparse(fobj).path
-    if isinstance(fobj, str):
-        return fobj
-    if isinstance(fobj, os.PathLike):
+    if isinstance(fobj, (str, os.PathLike)):
         return str(fobj)
     if (isinstance(fobj, FILE_LIKE) and hasattr(fobj, "name")):
         return fobj.name

@@ -21,6 +21,7 @@
 
 import gzip
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -99,25 +100,32 @@ def test_file_list_error():
         io_utils.file_list(1)
 
 
-def test_file_path():
-    # check file_path(<str>)
-    assert io_utils.file_path('test.txt') == 'test.txt'
+@pytest.mark.parametrize(("input_", "expected"), (
+    ("test.txt", "test.txt"),
+    ("file:///test/path.txt", "/test/path.txt"),
+    (Path("test.txt"), "test.txt"),
+))
+def test_file_path(input_, expected):
+    assert io_utils.file_path(input_) == expected
 
-    # check file_path(<file>)
+
+def test_file_path_file():
+    """Check that :func:`gwpy.io.utils.file_path` can handle open files
+    """
     with tempfile.NamedTemporaryFile() as f:
         assert io_utils.file_path(f) == f.name
 
 
-def test_file_path_url():
-    assert io_utils.file_path("file:///test/path.txt") == "/test/path.txt"
-
-
-def test_file_path_errors():
-    # check that anything else fails
-    with pytest.raises(ValueError):
-        io_utils.file_path(1)
-    with pytest.raises(ValueError):
-        io_utils.file_path(['test.txt'])
+@pytest.mark.parametrize("badthing", (
+    1,
+    ["test.txt"],
+))
+def test_file_path_errors(badthing):
+    """Check that :func:`gwpy.io.utils.file_path` fails when expected
+    """
+    with pytest.raises(ValueError) as exc:
+        io_utils.file_path(badthing)
+    assert str(exc.value).startswith("Cannot parse file name for")
 
 
 @skip_missing_dependency("lal")
