@@ -67,14 +67,14 @@ def identify_factory(*extensions):
 def gopen(name, *args, **kwargs):
     """Open a file handling optional gzipping
 
-    If ``name`` endswith ``'.gz'``, or if the GZIP file signature is
+    If ``name`` ends with ``'.gz'``, or if the GZIP file signature is
     found at the beginning of the file, the file will be opened with
     `gzip.open`, otherwise a regular file will be returned from `open`.
 
     Parameters
     ----------
-    name : `str`
-        path (name) of file to open.
+    name : `str`, `pathlib.Path`
+        path or name of file to open.
 
     *args, **kwargs
         other arguments to pass to either `open` for regular files, or
@@ -86,7 +86,7 @@ def gopen(name, *args, **kwargs):
         the open file object
     """
     # filename declares gzip
-    if name.endswith('.gz'):
+    if str(name).endswith('.gz'):
         return gzip.open(name, *args, **kwargs)
 
     # open regular file
