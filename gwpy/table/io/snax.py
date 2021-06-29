@@ -19,6 +19,8 @@
 """Read events from SNAX
 """
 
+import warnings
+
 from astropy.io.misc.hdf5 import read_table_hdf5
 from astropy.table import vstack
 
@@ -33,7 +35,7 @@ __author__ = 'Patrick Godwin <patrick.godwin@ligo.org>'
 @read_with_columns
 @read_with_selection
 @with_read_hdf5
-def table_from_file(source, channel):
+def table_from_file(source, channels=None, on_missing="error", compact=False):
     """Read an `EventTable` from a SNAX HDF5 file
 
     Parameters
@@ -41,18 +43,73 @@ def table_from_file(source, channel):
     source : `h5py.File`
         the file path of open `h5py` object from which to read the data
 
-    channel : `str`
-        the channel to read data from
+    channels : `str` or `list`, optional
+        the channel(s) to read data from. if no channels selected,
+        read in all channels
+
+    on_missing: `str`, optional
+        how to proceed when channels requested are missing. choose one from:
+            * ``'warn'``: emit a warning when missing channels are discovered
+            * ``'error'``: raise an exception
+        default is 'error'.
+
+    compact : `bool`, optional, default: False
+        whether to store a compact integer representation in the channel
+        column rather than the full channel name, instead storing a mapping
+        (`channel_map`) in the table metadata.
 
     Returns
     -------
     table : `~gwpy.table.EventTable`
     """
-    return vstack(
-        list(map(read_table_hdf5, source[channel].values())),
-        join_type="exact",
-        metadata_conflicts="error",
-    )
+    # format channels appropriately
+    if isinstance(channels, str):
+        channels = [channels]
+
+    # only query channels contained in file
+    # if channels not specified, load all of them
+    if channels is None:
+        channels = source.keys()
+    else:
+        channels = set(channels)
+        found = set(source.keys())
+        missing = channels - found
+        # check whether missing channels should
+        # be an error or simply a warning
+        if missing:
+            msg = "requested channels not found in SNAX file: '{}'".format(
+                "', '".join(missing),
+            )
+            if on_missing == "error":
+                raise ValueError(msg)
+            elif on_missing == "warn":
+                warnings.warn(msg)
+            else:
+                raise ValueError(
+                    'on_missing argument must be one of "warn" or "error"')
+        channels = channels & found
+
+    # read data, adding in 'channel' column
+    # to preserve uniqueness across channels
+    tables = []
+    for channel in channels:
+        table = vstack(
+            list(map(read_table_hdf5, source[channel].values())),
+            join_type="exact",
+            metadata_conflicts="error",
+        )
+        # determine whether to store a compact
+        # representation of the channel, storing
+        # the mapping to table metadata instead
+        if compact:
+            table["channel"] = hash(channel)
+            table.meta["channel_map"] = {hash(channel): channel}
+        else:
+            table["channel"] = channel
+        tables.append(table)
+
+    # combine results
+    return vstack(tables, join_type="exact", metadata_conflicts="error")
 
 
 # register for unified I/O

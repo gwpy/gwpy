@@ -738,20 +738,28 @@ class TestEventTable(TestTable):
         table = self.create(
             100, names=['time', 'snr', 'frequency'])
         fp = os.path.join(tempfile.mkdtemp(), 'SNAX-0-0.h5')
+        channel = 'H1:FAKE'
         try:
             # write table in snax format (by hand)
             with h5py.File(fp, 'w') as h5f:
-                group = h5f.create_group('H1:FAKE')
+                group = h5f.create_group(channel)
                 group.create_dataset(data=table, name='0.0_20.0')
 
-            # check that we can read
-            t2 = self.TABLE.read(fp, 'H1:FAKE', format='hdf5.snax')
+            # manually add 'channel' column to table
+            table["channel"] = channel
+
+            # check reading capabilities with and
+            # without specifying channels
+            t2 = self.TABLE.read(fp, format='hdf5.snax')
+            utils.assert_table_equal(table, t2)
+
+            t2 = self.TABLE.read(fp, channels=channel, format='hdf5.snax')
             utils.assert_table_equal(table, t2)
 
             # test with selection and columns
             t2 = self.TABLE.read(
                 fp,
-                'H1:FAKE',
+                channels=channel,
                 format='hdf5.snax',
                 selection='snr>.5',
                 columns=('time', 'snr'),
@@ -760,6 +768,37 @@ class TestEventTable(TestTable):
                 t2,
                 filter_table(table, 'snr>.5')[('time', 'snr')],
             )
+
+            # test compact representation of channel column
+            t2 = self.TABLE.read(fp, compact=True, format='hdf5.snax')
+
+            # group by channel and drop channel column
+            tables = {}
+            t2 = t2.group_by('channel')
+            t2.remove_column('channel')
+            for key, group in zip(t2.groups.keys, t2.groups):
+                channel = t2.meta['channel_map'][key['channel']]
+                tables[channel] = self.TABLE(group, copy=True)
+
+            # verify table groups are identical
+            t_ref = table.copy().group_by('channel')
+            t_ref.remove_column('channel')
+            for key, group in zip(t_ref.groups.keys, t_ref.groups):
+                channel = key['channel']
+                utils.assert_table_equal(group, tables[channel])
+
+            # check error handling when missing channels are encountered
+            missing = [channel, 'H1:MISSING']
+            with pytest.raises(ValueError):
+                self.TABLE.read(fp, channels=missing, format='hdf5.snax')
+
+            with pytest.warns(UserWarning):
+                self.TABLE.read(
+                    fp,
+                    channels=missing,
+                    format='hdf5.snax',
+                    on_missing='warn',
+                )
 
         finally:
             if os.path.isdir(os.path.dirname(fp)):

@@ -281,13 +281,17 @@ This search writes files on the LIGO Data Grid (LIGO.ORG-authenticated users onl
 Reading
 -------
 
-To read an `EventTable` from a ``snax`` format HDF5 file, specify a ``channel`` and use the ``format='hdf5.snax'`` keyword::
+To read an `EventTable` from a ``snax`` format HDF5 file, use the ``format='hdf5.snax'`` keyword::
 
-   >>> t = EventTable.read('H-GSTLAL_IDQ_FEATURES-1255853400-20.h5', 'H1:CAL-DELTAL_EXTERNAL_DQ', format='hdf5.snax')
+   >>> t = EventTable.read('H-SNAX_FEATURES-1255853400-20.h5', format='hdf5.snax')
+
+By default, all channels contained in the file are read in. To restrict the returned channels, use the ``channels`` keyword argument::
+
+   >>> t = EventTable.read('H-SNAX_FEATURES-1255853400-20.h5', format='hdf5.snax', channels='H1:CAL-DELTAL_EXTERNAL_DQ')
 
 To restrict the returned columns, use the ``columns`` keyword argument::
 
-   >>> t = EventTable.read('H-GSTLAL_IDQ_FEATURES-1255853400-20.h5', 'H1:CAL-DELTAL_EXTERNAL_DQ', format='hdf5.snax', columns=['time', 'snr'])
+   >>> t = EventTable.read('H-SNAX_FEATURES-1255853400-20.h5', format='hdf5.snax', columns=['channel', 'time', 'snr'])
 
 Writing
 -------
