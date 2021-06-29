@@ -35,6 +35,7 @@ class TestCliQtransform(_TestCliSpectrogram):
     TEST_ARGS = [
         '--chan', 'X1:TEST-CHANNEL', '--gps', '5', '--search', '10',
         '--nds2-server', 'nds.test.gwpy', '--outdir', os.path.curdir,
+        '--average-method', 'median',
     ]
 
     def test_finalize_arguments(self, prod):

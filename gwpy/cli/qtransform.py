@@ -27,11 +27,12 @@ from astropy.units import Quantity
 
 from ..segments import Segment
 from ..time import to_gps
-from .spectrogram import (FFTMixin, Spectrogram)
+from .spectrogram import Spectrogram
 
 
 class Qtransform(Spectrogram):
     """Plot the Q-transform (Omega)"""
+    DEFAULT_FFTLENGTH = None
     MAX_DATASETS = 1
     action = 'qtransform'
 
@@ -53,8 +54,7 @@ class Qtransform(Spectrogram):
 
     @classmethod
     def init_data_options(cls, parser):
-        # call super of FFTMixin to skip setting FFT arguments
-        super(FFTMixin, cls).init_data_options(parser)
+        super().init_data_options(parser)
         cls.arg_qxform(parser)
 
     @classmethod
@@ -185,7 +185,7 @@ class Qtransform(Spectrogram):
         bits.append(('tres', '{:.3g}'.format(self.qxfrm_args['tres'])))
         if self.qxfrm_args.get('qrange'):
             bits.append(('q-range', fformat(self.qxfrm_args['qrange'])))
-        if self.qxfrm_args['whiten']:
+        if self.qxfrm_args['whiten'] is not None:
             bits.append(('whitened',))
         bits.extend([
             ('f-range', fformat(self.result.yspan)),
@@ -199,8 +199,16 @@ class Qtransform(Spectrogram):
         spectrogram"""
         args = self.args
 
-        asd = self.timeseries[0].asd().value
-        if (asd.min() == 0):
+        fftlength = args.secpfft
+        overlap = args.overlap * fftlength if fftlength else None
+        method = args.method
+        asd = self.timeseries[0].asd(
+            fftlength=fftlength,
+            overlap=overlap,
+            method=method,
+        )
+
+        if (asd.value.min() == 0):
             self.log(0, 'Input data has a zero in ASD. '
                      'Q-transform not possible.')
             self.got_error = True
@@ -208,6 +216,10 @@ class Qtransform(Spectrogram):
         else:
             gps = self.qxfrm_args['gps']
             outseg = Segment(gps, gps).protract(args.plot[self.plot_num])
+
+            # use the precomputed ASD as the whitener if needed
+            if self.qxfrm_args.get("whiten"):
+                self.qxfrm_args["whiten"] = asd
 
             # This section tries to optimize the amount of data that is
             # processed and the time resolution needed to create a good
