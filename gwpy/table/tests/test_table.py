@@ -608,6 +608,15 @@ class TestEventTable(TestTable):
             clustertable.cluster('time', 'amplitude', 0)
         assert str(exc.value) == 'Window must be a positive value'
 
+    def test_cluster_multiple(self, clustertable):
+        # check that after clustering a table, clustering the table a
+        # second time with the same parameters returns the same result
+        t_clustered = clustertable.cluster('time', 'amplitude', 0.6)
+        utils.assert_table_equal(
+            t_clustered,
+            t_clustered.cluster('time', 'amplitude', 0.6),
+        )
+
     # -- test I/O -------------------------------
 
     def test_read_write_hdf5(self, table, tmp_path):
