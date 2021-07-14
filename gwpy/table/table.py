@@ -163,7 +163,7 @@ class EventTable(Table):
         """
         tcols = [
             "time",  # standard
-            "tc",  # GWOSC catalogues
+            "gps",  # GWOSC catalogues
             "peakGPS",  # gravityspy
         ]
         for col in tcols:
