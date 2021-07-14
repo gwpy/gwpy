@@ -397,19 +397,47 @@ class TestEventTable(TestTable):
     TABLE = EventTable
 
     def test_get_time_column(self, table):
-        with pytest.raises(ValueError) as exc:
-            self.TABLE()._get_time_column()
-        assert str(exc.value).startswith('cannot identify time column')
+        """Check that `_get_time_colum` works on name
+        """
+        assert table._get_time_column() == "time"
 
-        # table from fixture has 'time' column
-        assert table._get_time_column() == 'time'
+    def test_get_time_column_case(self, table):
+        """Check that `_get_time_colum` works on name case-insensitively
+        """
+        table.rename_column("time", "TiMe")
+        assert table._get_time_column() == 'TiMe'
 
+    def test_get_time_column_gps_type(self):
+        """Check that `_get_time_column` works on dtype
+        """
         # check that single GPS column can be identified
-        t = self.create(10, ('blah', 'blah2'), dtypes=(float, LIGOTimeGPS))
-        assert t._get_time_column() == 'blah2'
+        t = self.create(1, ("a", "b"), dtypes=(float, LIGOTimeGPS))
+        assert t._get_time_column() == "b"
 
+    def test_get_time_column_error_no_match(self, table):
+        """Check that `_get_time_column` raises the right exception
+        when no matches are found
+        """
+        t = self.create(1, ("a",))
+        with pytest.raises(ValueError) as exc:
+            t._get_time_column()
+        assert " no columns named 'time'" in str(exc.value)
+
+    def test_get_time_column_error_multiple_match(self):
         # check that two GPS columns causes issues
-        t.add_column(t['blah2'], name='blah3')
+        t = self.create(
+            10,
+            ("a", "b", "c"),
+            dtypes=(float, LIGOTimeGPS, LIGOTimeGPS),
+        )
+        with pytest.raises(ValueError) as exc:
+            t._get_time_column()
+        assert " multiple columns named 'time'" in str(exc.value)
+
+    def test_get_time_column_error_empty(self):
+        """Check that `_get_time_column` errors properly on an empty table
+        """
+        t = self.create(0, ("a",))
         with pytest.raises(ValueError):
             t._get_time_column()
 

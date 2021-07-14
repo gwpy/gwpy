@@ -38,6 +38,12 @@ from .filter import (filter_table, parse_operator)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['EventColumn', 'EventTable']
 
+TIME_LIKE_COLUMN_NAMES = [
+    "time",  # standard
+    "gps",  # GWOSC catalogues
+    "peakGPS",  # gravityspy
+]
+
 
 # -- utilities ----------------------------------------------------------------
 
@@ -151,35 +157,51 @@ class EventTable(Table):
     """
     # -- utilities ------------------------------
 
+    def _is_time_column(self, name):
+        """Return `True` if a column in this table represents 'time'
+
+        This method checks the name of the column against a hardcoded list
+        of time-like names, then checks the `dtype` of the column (or the
+        first element in the column) against a hardcoded list of time-like
+        dtypes (`gwpy.time.gps_types`).
+        """
+        # if the name looks like a time column, accept that
+        if name.lower() in TIME_LIKE_COLUMN_NAMES:
+            return True
+
+        # if the dtype of this column looks right, accept that
+        if self[name].dtype in gps_types:
+            return True
+        try:
+            return isinstance(self[name][0], gps_types)
+        except IndexError:
+            return False
+
     def _get_time_column(self):
         """Return the name of the 'time' column in this table.
 
         This method tries the following:
 
-        - look for a column named 'time'
+        - look for a single column named 'time', 'gps', or 'peakGPS'
         - look for a single column with a GPS type (e.g. `LIGOTimeGPS`)
 
         So, its not foolproof.
+
+        Raises a `ValueError` if either 0 or multiple matches are found.
         """
-        tcols = [
-            "time",  # standard
-            "gps",  # GWOSC catalogues
-            "peakGPS",  # gravityspy
-        ]
-        for col in tcols:
-            if col in self.columns:
-                return col
+        matches = list(filter(self._is_time_column, self.columns))
         try:
-            time, = [name for name in self.columns if
-                     isinstance(self[name][0], gps_types)]
-        except (ValueError, IndexError):
-            msg = (
-                "cannot identify time column for table, no column "
-                "named {0}, or {1!r}, and none with GPS dtypes".format(
-                    ", ".join(map(repr, tcols[:-1])),
-                    tcols[-1],
-                )
+            time, = matches
+        except ValueError:
+            tcolnames = ", or ".join(
+                ", ".join(map(repr, TIME_LIKE_COLUMN_NAMES)).rsplit(", ", 1),
             )
+            msg = (
+                "cannot identify time column for table, no columns "
+                "named {}, or with a GPS dtype".format(tcolnames)
+            )
+            if len(matches) > 1:
+                msg = msg.replace("no columns", "multiple columns")
             raise ValueError(msg)
         return time
 
@@ -623,11 +645,8 @@ class EventTable(Table):
         from ..plot import Plot
         from ..plot.tex import label_to_latex
 
-        try:
-            tcol = self._get_time_column()
-        except ValueError:
-            tcol = None
-        if args[0].name == tcol:  # map X column to GPS axis
+        if self._is_time_column(args[0].name):
+            # map X column to GPS axis
             kwargs.setdefault('figsize', (12, 6))
             kwargs.setdefault('xscale', 'auto-gps')
 
