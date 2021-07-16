@@ -645,32 +645,79 @@ class Series(Array):
         `~Series.unit` match.
         """
         if isinstance(other, type(self)):
-            # check step size, if possible
-            try:
-                if not self.dx == other.dx:
-                    raise ValueError("%s sample sizes do not match: "
-                                     "%s vs %s." % (type(self).__name__,
-                                                    self.dx, other.dx))
-            except AttributeError:
-                raise ValueError("Series with irregular xindexes cannot "
-                                 "be compatible")
-            # check units
-            if not self.unit == other.unit and not (
-                    self.unit in [dimensionless_unscaled, None]
-                    and other.unit in [dimensionless_unscaled, None]
+            return self._is_compatible_gwpy(other)
+        return self._is_compatible_numpy(other)
+
+    def _compatibility_error(self, other, attr, name):
+        return ValueError(
+            "{} {} do not match: {} vs {}".format(
+                type(self).__name__,
+                name,
+                getattr(self, attr, "none"),
+                getattr(other, attr, "none")
+            ),
+        )
+
+    def _compare_index(self, other, axis="x"):
+        """Compare index attributes/arrays between self and other
+
+        Raises
+        ------
+        ValueError
+            if ``dx`` doesn't match, or ``xindex`` doesn't match
+            (as appropriate)
+        """
+        try:  # check step size, if possible
+            _delta = "d{}".format(axis)
+            deltaa = getattr(self, _delta)
+            deltab = getattr(other, _delta)
+            if deltaa != deltab:
+                raise self._compatibility_error(
+                    other,
+                    _delta,
+                    "{}-axis sample sizes".format(axis),
+                )
+        except AttributeError:  # irregular index
+            _index = "_{}index".format(axis)
+            idxa = getattr(self, _index, None)
+            idxb = getattr(self, _index, None)
+            if (
+                idxa is None  # index on 'other' but not on 'self'
+                or idxb is None  # index on 'self' but not on 'other'
+                or not numpy.array_equal(idxa, idxb)  # indexes don't match
             ):
-                raise ValueError("%s units do not match: %s vs %s."
-                                 % (type(self).__name__, str(self.unit),
-                                    str(other.unit)))
-        else:
-            # assume an array-like object, and just check that the shape
-            # and dtype match
-            arr = numpy.asarray(other)
-            if arr.ndim != self.ndim:
-                raise ValueError("Dimensionality does not match")
-            if arr.dtype != self.dtype:
-                warn("Array data types do not match: %s vs %s"
-                     % (self.dtype, other.dtype))
+                raise self._compatibility_error(
+                    other,
+                    _index,
+                    "{}-axis indexes".format(axis),
+                )
+
+    def _is_compatible_gwpy(self, other):
+        """Check whether this series and another series are compatible
+        """
+        self._compare_index(other, axis="x")
+
+        # check units
+        if not (
+            self.unit == other.unit
+            or {self.unit, other.unit}.issubset(
+                {dimensionless_unscaled, None},
+            )
+        ):
+            raise self._compatibility_error(other, "unit", "units")
+
+        # compatibility!
+        return True
+
+    def _is_compatible_numpy(self, other):
+        """Check whether this series and a numpy.ndarray are compatible
+        """
+        arr = numpy.asarray(other)
+        if arr.ndim != self.ndim:
+            raise ValueError("Dimensionality does not match")
+        if arr.dtype != self.dtype:
+            warn("Array data types do not match: %s vs %s"
+                 % (self.dtype, other.dtype))
         return True
 
     def append(self, other, inplace=True, pad=None, gap=None, resize=True):

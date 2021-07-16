@@ -147,7 +147,7 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
     def test_override_unit(self):
         return NotImplemented
 
-    def test_is_compatible(self):
+    def test_is_compatible_error_unit(self):
         return NotImplemented
 
     def test_to_from_pycbc(self):
