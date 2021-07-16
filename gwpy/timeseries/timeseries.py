@@ -1157,42 +1157,17 @@ class TimeSeries(TimeSeriesBase):
 
         See also
         --------
-        matplotlib.mlab.cohere
+        scipy.signal.coherence
             for details of the coherence calculator
         """
-        from matplotlib import mlab
-        from ..frequencyseries import FrequencySeries
-        # check sampling rates
-        if self.sample_rate.to('Hertz') != other.sample_rate.to('Hertz'):
-            sampling = min(self.sample_rate.value, other.sample_rate.value)
-            # resample higher rate series
-            if self.sample_rate.value == sampling:
-                other = other.resample(sampling)
-                self_ = self
-            else:
-                self_ = self.resample(sampling)
-        else:
-            sampling = self.sample_rate.value
-            self_ = self
-        # check fft lengths
-        if overlap is None:
-            overlap = 0
-        else:
-            overlap = int((overlap * self_.sample_rate).decompose().value)
-        if fftlength is None:
-            fftlength = int(self_.size/2. + overlap/2.)
-        else:
-            fftlength = int((fftlength * self_.sample_rate).decompose().value)
-        if window is not None:
-            kwargs['window'] = signal.get_window(window, fftlength)
-        coh, freqs = mlab.cohere(self_.value, other.value, NFFT=fftlength,
-                                 Fs=sampling, noverlap=overlap, **kwargs)
-        out = coh.view(FrequencySeries)
-        out.xindex = freqs
-        out.epoch = self.epoch
-        out.name = 'Coherence between %s and %s' % (self.name, other.name)
-        out.unit = 'coherence'
-        return out
+        return spectral.psd(
+            (self, other),
+            spectral.coherence,
+            fftlength=fftlength,
+            overlap=overlap,
+            window=window,
+            **kwargs
+        )
 
     def auto_coherence(self, dt, fftlength=None, overlap=None,
                        window='hann', **kwargs):
