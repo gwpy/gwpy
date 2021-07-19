@@ -73,16 +73,6 @@ def register_method(func, name=None, deprecated=False):
 def get_method(name):
     """Return the PSD method registered with the given name.
     """
-    if name is None:
-        import warnings
-        warnings.warn(
-            "the default spectral averaging method is currently 'welch' "
-            "(mean averages of overlapping periodograms), but this will "
-            "change to 'median' as of gwpy-2.1.0",
-            DeprecationWarning,
-        )
-        name = "welch"
-
     # find method
     name = _format_name(name)
     try:
