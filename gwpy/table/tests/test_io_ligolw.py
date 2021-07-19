@@ -72,3 +72,19 @@ def test_to_astropy_table_empty():
     assert set(tab.colnames) == {"peak", "ifo"}
     assert tab['peak'].dtype.type is numpy.object_
     assert tab['ifo'].dtype.type is numpy.unicode_
+
+
+@skip_missing_dependency('ligo.lw.lsctables')
+def test_read_process_table():
+    """Regression test against gwpy/gwpy#1367
+    """
+    from ligo.lw.lsctables import (New, ProcessTable)
+    llwtable = New(
+        ProcessTable,
+        columns=["ifos", "username"],
+    )
+    llwtable.appendRow(instruments=("G1", "H1"), username="testuser")
+    llwtable.appendRow(instruments=("H1", "L1"), username="testuser")
+    tab = EventTable(llwtable)
+    assert len(tab) == 2
+    assert tab[0]["ifos"] == "G1,H1"
