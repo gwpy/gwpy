@@ -169,3 +169,46 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
         timeseries, segmentlength, noverlap=noverlap,
         name=str(timeseries.name)+'---'+str(other.name),
         sdfunc=scipy.signal.csd, **kwargs)
+
+
+def coherence(timeseries, other, segmentlength, noverlap=None, **kwargs):
+    """Calculate the coherence between two `TimeSeries` using Welch's method
+
+    Parameters
+    ----------
+    timeseries : `~gwpy.timeseries.TimeSeries`
+        time-series of data
+
+    other : `~gwpy.timeseries.TimeSeries`
+        time-series of data
+
+    segmentlength : `int`
+        number of samples in single average.
+
+    noverlap : `int`
+        number of samples to overlap between segments, defaults to 50%.
+
+    **kwargs
+        other keyword arguments are passed to :meth:`scipy.signal.coherence`
+
+    Returns
+    -------
+    spectrum : `~gwpy.frequencyseries.FrequencySeries`
+        average power `FrequencySeries`
+
+    See also
+    --------
+    scipy.signal.coherence
+    """
+    # calculate CSD
+    kwargs.setdefault('y', other.value)
+    out = _spectral_density(
+        timeseries,
+        segmentlength,
+        noverlap=noverlap,
+        name="Coherence between {} and {}".format(timeseries.name, other.name),
+        sdfunc=scipy.signal.coherence,
+        **kwargs,
+    )
+    out.override_unit("coherence")
+    return out
