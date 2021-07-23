@@ -8,7 +8,7 @@ publication, please acknowledge this by citing the
 
 .. tabbed:: BibTeX
 
-   .. code-block::
+   .. code-block:: bibtex
 
       @article{gwpy,
           title = "{GWpy: A Python package for gravitational-wave astrophysics}",
