@@ -1523,7 +1523,7 @@ class TimeSeries(TimeSeriesBase):
         >>> import numpy
         >>> f0 = 123.456789  # signal frequency (Hz)
         >>> fdot = -9.87654321e-7  # signal frequency derivative (Hz/s)
-        >>> fpeoch = 1131350417  # phase epoch
+        >>> fepoch = 1131350417  # phase epoch
         >>> amp = 1.5e-22  # signal amplitude
         >>> phase0 = 0.4  # signal phase at the phase epoch
         >>> times = data.times.value - fepoch
