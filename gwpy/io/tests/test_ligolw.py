@@ -133,14 +133,26 @@ def test_read_table_multiple(llwdoc_with_tables):
     assert "'process', 'sngl_ringdown'" in str(exc.value)
 
 
-def test_open_xmldoc(llwdoc):
-    from ligo.lw.ligolw import Document
-    assert isinstance(io_ligolw.open_xmldoc(tempfile.mktemp()), Document)
+def test_open_xmldoc(tmp_path, llwdoc_with_tables):
+    tmp = tmp_path / "test.xml"
+    # write a LIGO_LW file
+    with open(tmp, "w") as fobj:
+        llwdoc_with_tables.write(fobj)
+    # and check that we can read it again (from Path, str, and file)
+    for obj in (tmp, str(tmp), open(tmp, "rb")):
+        copy = io_ligolw.open_xmldoc(obj)
+        # and that the contents are the same
+        assert (
+            copy.childNodes[0].childNodes
+            == llwdoc_with_tables.childNodes[0].childNodes
+        )
 
-    with tempfile.TemporaryFile(mode='w') as f:
-        llwdoc.write(f)
-        f.seek(0)
-        assert isinstance(io_ligolw.open_xmldoc(f), Document)
+
+def test_open_xmldoc_new(tmp_path, llwdoc):
+    from ligo.lw.ligolw import Document
+    new = io_ligolw.open_xmldoc(tmp_path / "new.xml")
+    assert isinstance(new, Document)
+    assert not new.childNodes  # empty
 
 
 def test_get_ligolw_element(llwdoc):
