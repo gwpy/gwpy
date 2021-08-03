@@ -30,6 +30,8 @@ use('agg', force=True)
 
 # register custom fixtures for all test modules
 from .testing.fixtures import *  # noqa: E402,F401,F403
+# define marks (registered below)
+from .testing.marks import _register_marks  # noqa: E402
 
 # set random seed to 1 for reproducability
 numpy.random.seed(1)
@@ -46,3 +48,9 @@ warnings.filterwarnings('ignore', message=".*non-GUI backend.*")
 rcParams.update({
     'text.usetex': False,  # TeX is slow most of the time
 })
+
+
+# -- pytest configuration
+
+def pytest_configure(config):
+    _register_marks(config)
