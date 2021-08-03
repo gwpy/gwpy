@@ -19,7 +19,7 @@ The recommended way of installing GWpy is with `Conda <https://conda.io>`__:
 
 .. code-block:: bash
 
-   $ conda install -c conda-forge gwpy
+   conda install -c conda-forge gwpy
 
 
 .. _gwpy-install-pip:
@@ -30,7 +30,7 @@ Pip
 
 .. code-block:: bash
 
-    $ python -m pip install gwpy
+    python -m pip install gwpy
 
 Supported python versions: 3.6+.
 

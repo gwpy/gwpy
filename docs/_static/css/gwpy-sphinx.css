@@ -20,175 +20,59 @@
  * This file contains sphinx-specific extensions to the core GWpy CSS
  */
 
-/* -- layout -------------------------------------------------------------- */
-
-body {
-		font-size: 15px;
-		font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+/* remove top-margin from h1 */
+.md-typeset h1 {
+		margin: 0;
 }
 
-.navbar + .container {
-		padding-top: 20px;
+/* insert top padding for captions in left bar */
+.caption {
+		padding: 1em 0 .1em 0;
 }
 
-/* -- navbar -------------------------------------------------------------- */
-
-.navbar {
-		background-color: #333;
+/* formatting for classes and functions */
+.sig {
+		font-family: "Roboto Mono", "Courier New", Courier, monospace;
 }
-
-/* -- footer -------------------------------------------------------------- */
-
-html {
-		position: relative;
-		min-height: 100%;
+.sig-name,
+.sig-prename {
+		font-weight: bold;
 }
-
-body {
-		margin-bottom: 140px;
+.sig-param {
+		font-style: normal;
 }
-
-.footer {
-		position: absolute;
-		bottom: 0;
-		width: 100%;
-		height: 100px;
-		background-color: #eee;
-		padding-top: 20px;
-		padding-bottom: 20px;
+.field-list p {
+		margin: 1em 0 0;
 }
-
-/* -- side-bar formatting ------------------------------------------------- */
-
-.bs-sidenav {
-		background-color: transparent;
-		border: 0;
-		border-radius: 0;
-		border-right: 1px solid #eee;
+.field-list p strong {
+		font-family: "Roboto Mono", "Courier New", Courier, monospace;
 }
-
-/* -- headers ------------------------------------------------------------- */
-
-h1 {
-		font-size: 32px;
+.field-list blockquote {
+		margin: 0;
+		border-left: 0;
 }
-h2 {
-		font-size: 28px;
+dl.field-list > dt {
+		padding-left: 0;
 }
-h3 {
-		font-size: 24px;
+.md-typeset blockquote {
+		padding-left: 1em;
 }
-
-/* -- links --------------------------------------------------------------- */
-
-a.external,
-a.external:hover,
-a.external:focus {
-		color: #337ab7;
-}
-
-.alert a.external,
-.alert a.external:hover,
-.alert a.external:focus {
-		color: inherit;
-		text-decoration: underline;
-}
-
-/* -- tables -------------------------------------------------------------- */
-
-table > thead > tr > th,
-.table > thead > tr > th,
-table > tbody > tr > th,
-.table > tbody > tr > th,
-table > tfoot > tr > th,
-.table > tfoot > tr > th,
-table > thead > tr > td,
-.table > thead > tr > td,
-table > tbody > tr > td,
-.table > tbody > tr > td,
-table > tfoot > tr > td,
-.table > tfoot > tr > td {
+dl .attribute,
+dl .method {
 		border-top: 1px solid #ecf0f1;
+		padding-top: 1em;
 }
 
-table a {
-		text-decoration: none !important;
+/* formatting for tables */
+.longtable tr,
+.longtable tr:first-child {
+		border: solid;
+		border-width: 1px 0;
+		border-color: #ecf0f1;
 }
-
-/* -- code formatting ----------------------------------------------------- */
-
-pre {
-		background-color: #333;
+.longtable tr td {
+		padding: 8px;
 }
-
-code {
-	padding: 0px
-}
-
-.alert-info code {
-		color: #fccfcf;
-}
-
-/* -- autoclass formatting ------------------------------------------------ */
-
-/* class title */
-dl.class > dt > em,
-dl.class > dt > code {
-		font-size: 150%;
-}
-dl.class > dt > code.descclassname {
-		padding-right: 0px;
-}
-dl.class > dt > code:descname {
-		padding-left: 0px;
-}
-
-/* class documentation */
-dl.method > dd,
-dl.classmethod > dd,
-dl.attribute > dd {
-		margin-left: 40px;
-}
-
-/* parameter lists */
-dl.class table.field-list,
-dl.function table.field-list,
-dl.method table.field-list {
-		margin-bottom: 0px;
-}
-
-dl.class table.field-list th,
-dl.function table.field-list th,
-dl.method table.field-list th {
-		padding-left: 0px;
-}
-
-dl.class table.field-list blockquote,
-dl.function table.field-list blockquote,
-dl.data table.field-list blockquote,
-dl.method table.field-list blockquote {
-		border-left: none;
-		margin-bottom: 0px;
-		padding: 0px 30px 10px;
-		font-size: inherit;
-}
-
-/* table inside method */
-dl.classmethod table {
+.longtable tr td:first-child {
 		width: auto;
-}
-
-dl.classmethod table th:first-child,
-dl.classmethod table td:first-child, {
-		padding-left: 0px;
-}
-
-.class .rubric,
-.classmethod .rubric,
-.method .rubric {
-		margin-top: 10px;
-}
-
-div.seealso dd {
-		margin-left: 20px;
 }
