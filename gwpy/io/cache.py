@@ -26,7 +26,6 @@ relevant data, and sieving large file lists, easier for the user.
 import os.path
 import warnings
 from collections import (namedtuple, OrderedDict)
-from pathlib import Path
 
 from ..time import LIGOTimeGPS
 from .utils import (FILE_LIKE, file_path)
@@ -66,7 +65,7 @@ def _format_entry_lal(entry):
 
 def _parse_entry_lal(line, gpstype=LIGOTimeGPS):
     from ..segments import Segment
-    obs, desc, start, dur, path = map(str, line)
+    obs, desc, start, dur, path = line
     start = gpstype(start)
     end = start + float(dur)
     return _CacheEntry(obs, desc, Segment(start, end), path)
@@ -79,11 +78,11 @@ def _format_entry_ffl(entry):
 
 def _parse_entry_ffl(line, gpstype=LIGOTimeGPS):
     from ..segments import Segment
-    path, start, dur, _, _ = map(str, line)
+    path, start, dur, _, _ = line
     start = gpstype(start)
     end = start + float(dur)
     try:
-        observatory, description = Path(path).name.split('-', 2)[:2]
+        observatory, description = os.path.basename(path).split('-', 2)[:2]
     except ValueError:
         return _CacheEntry(None, None, Segment(start, end), path)
     return _CacheEntry(observatory, description, Segment(start, end), path)
@@ -112,10 +111,10 @@ class _CacheEntry(namedtuple(
             return cls(*filename_metadata(path) + (path,))
 
         try:
-            return _parse_entry_ffl(parts)
+            return _parse_entry_ffl(parts, gpstype=gpstype)
         except (RuntimeError, TypeError, ValueError) as exc:
             try:
-                return _parse_entry_lal(parts)
+                return _parse_entry_lal(parts, gpstype=gpstype)
             except ValueError:
                 pass
             exc.args = ("Cannot identify format for cache entry {!r}".format(
@@ -136,13 +135,13 @@ def _iter_cache(cachefile, gpstype=LIGOTimeGPS):
         path = None
     for line in cachefile:
         try:
-            yield _CacheEntry.parse(line, gpstype=LIGOTimeGPS)
+            yield _CacheEntry.parse(line, gpstype=gpstype)
         except ValueError:
             # virgo FFL format (seemingly) supports nested FFL files
             parts = line.split()
             if len(parts) == 3 and os.path.abspath(parts[0]) != path:
                 with open(parts[0], 'r') as cache2:
-                    for entry in _iter_cache(cache2):
+                    for entry in _iter_cache(cache2, gpstype=gpstype):
                         yield entry
             else:
                 raise
@@ -190,13 +189,16 @@ def read_cache(cachefile, coltype=LIGOTimeGPS, sort=None, segment=None):
     return cache
 
 
-def read_cache_entry(line):
+def read_cache_entry(line, gpstype=LIGOTimeGPS):
     """Read a file path from a line in a cache file.
 
     Parameters
     ----------
     line : `str`, `bytes`
         Line of text to parse
+
+    gpstype : `LIGOTimeGPS`, `int`, optional
+        Type for GPS times.
 
     Returns
     -------
@@ -208,7 +210,7 @@ def read_cache_entry(line):
     ValueError
         if the line cannot be parsed successfully
     """
-    return _CacheEntry.parse(line).path
+    return _CacheEntry.parse(line, gpstype=gpstype).path
 
 
 def open_cache(*args, **kwargs):  # pragma: no cover
@@ -356,7 +358,7 @@ def filename_metadata(filename):
     ("A", "B", Segment(0.456, 1.801))
     """
     from ..segments import Segment
-    name = Path(filename).name
+    name = os.path.basename(filename)
     try:
         obs, desc, start, dur = name.split('-')
     except ValueError as exc:
