@@ -24,7 +24,7 @@ import re
 import shutil
 import subprocess
 import warnings
-from configparser import (ConfigParser, NoOptionError)
+from configparser import ConfigParser
 from pathlib import Path
 from string import Template
 
@@ -110,6 +110,7 @@ exclude_patterns = [
     "references.rst",
     "_build",
     "_generated",
+    "cli/examples/examples.rst",
 ]
 templates_path = [
     "_templates",
@@ -282,6 +283,13 @@ def linkcode_resolve(domain, info):
 
 # -- build CLI examples
 
+CLI_INDEX_TEMPLATE = Template("""
+.. toctree::
+   :numbered:
+
+   ${examples}
+""".strip())
+
 CLI_TEMPLATE = Template("""
 .. _gwpy-cli-example-${tag}:
 
@@ -298,22 +306,29 @@ ${description}
 .. image:: ${png}
    :align: center
    :alt: ${title}
-""")
+""".strip())
+
+
+def _new_or_different(content, target):
+    """Return `True` if a target file doesn't exist, or doesn't have the
+    specified content
+    """
+    try:
+        return Path(target).read_text() != content
+    except FileNotFoundError:
+        return True
 
 
 def _build_cli_example(config, section, outdir, logger):
     """Render a :mod:`gwpy.cli` example as RST to be processed by Sphinx.
     """
     raw = config.get(section, 'command')
-    try:
-        title = config.get(section, 'title')
-    except NoOptionError:
-        title = ' '.join(map(str.title, section.split('-')))
-    try:
-        desc = config.get(section, 'description')
-    except NoOptionError:
-        desc = ''
-
+    title = config.get(
+        section,
+        'title',
+        ' '.join(map(str.title, section.split('-'))),
+    )
+    desc = config.get(section, 'description', '')
     outf = outdir / "{}.png".format(section)
 
     # build command-line strings for display and subprocess call
@@ -322,7 +337,11 @@ def _build_cli_example(config, section, outdir, logger):
         ' --',
         ' \\\n       --',
     )
-    cmdo = '{0} --out {1}'.format(cmd, outf)  # include --out for actual run
+    cmdtorun = "{} -m gwpy.cli.gwpy_plot {} --out {}".format(
+        sys.executable,
+        raw,
+        outf,
+    )
 
     rst = CLI_TEMPLATE.substitute(
         title=title,
@@ -335,15 +354,10 @@ def _build_cli_example(config, section, outdir, logger):
 
     # only write RST if new or changed
     rstfile = outf.with_suffix(".rst")
-    if (
-        not rstfile.is_file()
-        or not outf.is_file()
-        or rstfile.open("r").read() != rst
-    ):
-        with rstfile.open("w") as f:
-            f.write(rst)
+    if _new_or_different(rst, rstfile) or not outf.is_file():
+        rstfile.write_text(rst)
         logger.debug("[cli] wrote {}".format(rstfile))
-        return rstfile, cmdo
+        return rstfile, cmdtorun
     return rstfile, None
 
 
@@ -374,10 +388,10 @@ def build_cli_examples(_):
         # because that's where the toctree is included
         rsts.append(rst.relative_to(clidir))
 
-    with (exdir / "examples.rst").open("w") as f:
-        print(".. toctree::\n", file=f)
-        for rst in rsts:
-            print("   {0}".format(rst.with_suffix("")), file=f)
+    rst = CLI_INDEX_TEMPLATE.substitute(
+        examples="\n   ".join((str(rst.with_suffix("")) for rst in rsts)),
+    )
+    (exdir / "examples.rst").write_text(rst)
 
 
 # -- examples
