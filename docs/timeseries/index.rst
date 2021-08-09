@@ -3,22 +3,42 @@
 .. currentmodule:: gwpy.timeseries
 
 ################
-Time-domain data
+Time Series data
 ################
 
-================
-The `TimeSeries`
-================
+Gravitational-wave detectors are time-domain instruments, recording
+gravitational-wave amplitude as a differential change in the lengths
+of each of the interferometer arms.
+The primary output of these detectors is a single time-stream of
+gravitational-wave strain (also referred to as *h(t)*).
 
-Gravitational-wave detectors are time-domain instruments, attempting to record gravitational-wave amplitude as a differential change in the lengths of each of the interferometer arms.
-The primary output of these detectors is a single time-stream of gravitational-wave strain.
+Alongside the strain data, thousands of instrumental control and
+error signals and environmental monitors are recorded in real-time and
+archived for off-line study.
+These data are colloquially called the *auxiliary channels*.
 
-Alongside these data, thousands of auxiliary instrumental control and error signals and environmental monitors are recorded in real-time and archived for off-line study.
+=======================
+The :class:`TimeSeries`
+=======================
 
-GWpy provides the `TimeSeries` object as a way of representing these and similar time-domain data.
-The `TimeSeries` is built from the :class:`numpy.ndarray`, and so many of the methods and applications of this object should be familiar to :mod:`numpy` users.
+.. code-block:: python
+   :caption: Importing the `TimeSeries`
+   :name: gwpy-timeseries-import
 
-For example, to create a simple `TimeSeries` filled with :mod:`~numpy.random` data::
+   from gwpy.timeseries import TimeSeries
+
+GWpy provides the `TimeSeries` object as a way of representing time series
+data.
+The `TimeSeries` is built on top of the :class:`numpy.ndarray`, and so many
+methods and applications of this object should be familiar to
+:mod:`numpy` users.
+
+For example, to create a simple `TimeSeries` filled with
+:mod:`~numpy.random` data:
+
+.. code-block:: python
+   :caption: Creating a `TimeSeries` with random data
+   :name: gwpy-timeseries-random
 
    >>> from numpy.random import random
    >>> from gwpy.timeseries import TimeSeries
@@ -32,9 +52,11 @@ For example, to create a simple `TimeSeries` filled with :mod:`~numpy.random` da
               name: None,
               channel: None)
 
-Here we see the random data we have created, as well as the associated metadata common to any time-domain data:
+Here we see the random data we have created, as well as the associated
+metadata common to any time series data:
 
 .. autosummary::
+   :caption: Attributes of the `TimeSeries`
 
    ~TimeSeries.unit
    ~TimeSeries.t0
@@ -46,30 +68,27 @@ Here we see the random data we have created, as well as the associated metadata 
 Associated classes
 ==================
 
-Alongside the `TimeSeries` class, `gwpy.timeseries` module provides a small set of related classes for handling bit-vector data, and collections of data:
+Alongside the `TimeSeries` class, `gwpy.timeseries` module provides a
+small set of related classes for handling collections of data:
 
 .. autosummary::
    :nosignatures:
-   :toctree: ../api/
+   :caption: `TimeSeries` container classes
 
-   TimeSeries
-   StateVector
    TimeSeriesDict
-   StateVectorDict
+   TimeSeriesList
 
 ================================
-Reading/writing time-domain data
+Reading/writing time series data
 ================================
 
 .. toctree::
    :maxdepth: 2
 
-   remote-access
-   datafind
    io
 
 =========================
-Plotting time-domain data
+Plotting time series data
 =========================
 
 .. toctree::
@@ -90,6 +109,3 @@ The above documentation references the following objects:
    TimeSeries
    TimeSeriesDict
    TimeSeriesList
-   StateVector
-   StateVectorDict
-   StateTimeSeries
