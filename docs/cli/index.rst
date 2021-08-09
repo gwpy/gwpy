@@ -67,4 +67,14 @@ the image and allow interactive manipulations, (zoom, pan, etc).
 Examples
 ========
 
-.. include:: /cli/examples/examples.rst
+.. examples.rst index is dynamically generated
+.. include:: examples/examples.rst
+
+.. add a hidden toctree to stop sphinx complaining
+.. that the examples RST files aren't included in a toctree
+.. when they clearly are
+.. toctree::
+   :hidden:
+   :glob:
+
+   examples/*
