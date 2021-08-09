@@ -47,7 +47,7 @@ specifying, ``norm='log'``:
    :include-source:
 
    from gwpy.timeseries import TimeSeries
-   data = TimeSeries.fetch_open_data('L1', 1187008866, 1187008898, tag='C00')
+   data = TimeSeries.fetch_open_data('L1', 1187008866, 1187008898)
    specgram = data.spectrogram2(fftlength=.5, overlap=.25,
                                 window='hann') ** (1/2.)
    plot = specgram.plot(yscale='log', ylim=(30, 1400))

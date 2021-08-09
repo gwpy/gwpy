@@ -35,8 +35,8 @@ __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 # around the GW170817 BNS merger:
 
 from gwpy.timeseries import TimeSeries
-h1 = TimeSeries.fetch_open_data('H1', 1187006834, 1187010930, tag='C02')
-l1 = TimeSeries.fetch_open_data('L1', 1187006834, 1187010930, tag='C02')
+h1 = TimeSeries.fetch_open_data('H1', 1187006834, 1187010930)
+l1 = TimeSeries.fetch_open_data('L1', 1187006834, 1187010930)
 
 # Then, we can measure the inspiral range directly:
 

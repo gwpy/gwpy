@@ -468,25 +468,6 @@ class TimeSeriesBase(Series):
         ``format``-dependent, because they are recorded differently by LOSC
         in different formats.
 
-        For events published in O2 and later, LOSC typically provides
-        multiple data sets containing the original (``'C00'``) and cleaned
-        (``'CLN'``) data.
-        To select both data sets and plot a comparison, for example:
-
-        >>> orig = TimeSeries.fetch_open_data('H1', 1187008870, 1187008896,
-        ...                                   tag='C00')
-        >>> cln = TimeSeries.fetch_open_data('H1', 1187008870, 1187008896,
-        ...                                  tag='CLN')
-        >>> origasd = orig.asd(fftlength=4, overlap=2)
-        >>> clnasd = cln.asd(fftlength=4, overlap=2)
-        >>> plot = origasd.plot(label='Un-cleaned')
-        >>> ax = plot.gca()
-        >>> ax.plot(clnasd, label='Cleaned')
-        >>> ax.set_xlim(10, 1400)
-        >>> ax.set_ylim(1e-24, 1e-20)
-        >>> ax.legend()
-        >>> plot.show()
-
         Notes
         -----
         `StateVector` data are not available in ``txt.gz`` format.
