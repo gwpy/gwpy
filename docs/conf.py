@@ -418,11 +418,9 @@ def write_citing_rst(app):
     """
     logger = logging.getLogger('zenodo')
     citing = SPHINX_DIR / "citing.rst"
-    with citing.with_suffix(".rst.in").open("r") as fobj:
-        content = fobj.read()
+    content = citing.with_suffix(".rst.in").read_text()
     content += '\n' + zenodo.format_citations(597016)
-    with citing.open("w") as f:
-        f.write(content)
+    citing.write_text(content)
     logger.info('[zenodo] wrote {0}'.format(citing))
 
 

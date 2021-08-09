@@ -79,8 +79,7 @@ def example_context():
 @pytest.mark.parametrize('script', EXAMPLES)
 def test_example(script):
     with cwd(script.parent):
-        with script.open('r') as example:
-            raw = example.read()
+        raw = script.read_text()
         code = compile(raw, str(script), "exec")
         try:
             exec(code, globals())
