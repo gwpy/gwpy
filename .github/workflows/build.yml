@@ -154,7 +154,7 @@ jobs:
       run: conda list --name test
 
     - name: Run test suite
-      run: python -m pytest -ra --color yes --cov gwpy --pyargs gwpy --cov-report=xml --junitxml=pytest.xml
+      run: python -m pytest -ra --color yes --cov gwpy --cov-report=xml --junitxml=pytest.xml gwpy/ examples/
 
     - name: Coverage report
       run: python -m coverage report --show-missing
