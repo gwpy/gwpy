@@ -55,30 +55,20 @@ Working with data
 
 .. toctree::
    :maxdepth: 2
-   :caption: Time-domain data
+   :caption: Data structures
 
    timeseries/index
-   signal/index
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Frequency-domain data
-
    spectrum/index
    spectrogram/index
-
-.. toctree::
-   :maxdepth: 2
-   :caption: State information and segments
-
-   segments/index
    timeseries/statevector
+   segments/index
+   table/index
 
 .. toctree::
    :maxdepth: 2
-   :caption: Tabular data and events
+   :caption: Data manipulation
 
-   table/index
+   signal/index
 
 .. toctree::
    :maxdepth: 2
