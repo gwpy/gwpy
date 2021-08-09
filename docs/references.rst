@@ -44,6 +44,12 @@
 
 .. -- Extra software ----------------------------
 
+.. |cWB| replace:: cWB
+.. _cWB: https://gwburst.gitlab.io/documentation/latest/html/
+
+.. |cWBl| replace:: coherent WaveBurst (cWB)
+.. _cWBl: https://gwburst.gitlab.io/documentation/latest/html/
+
 .. |framel| replace:: `framel`
 .. _framel: http://lappweb.in2p3.fr/virgo/FrameL/
 
@@ -71,7 +77,7 @@
 .. |python-ligo-lw| replace:: `python-ligo-lw`
 .. _python-ligo-lw: https://git.ligo.org/kipp.cannon/python-ligo-lw
 
-.. |pycbc| replace:: `pycbc`
+.. |pycbc| replace:: PyCBC
 .. _pycbc: https://pycbc.org/
 
 .. |sphinx| replace:: `sphinx`
