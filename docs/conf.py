@@ -326,9 +326,9 @@ def _build_cli_example(config, section, outdir, logger):
     title = config.get(
         section,
         'title',
-        ' '.join(map(str.title, section.split('-'))),
+        fallback=' '.join(map(str.title, section.split('-'))),
     )
-    desc = config.get(section, 'description', '')
+    desc = config.get(section, 'description', fallback='')
     outf = outdir / "{}.png".format(section)
 
     # build command-line strings for display and subprocess call
