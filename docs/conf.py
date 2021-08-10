@@ -79,7 +79,7 @@ copyright = ' and '.join((
     '2013, 2017-2021 Cardiff University',
     '2013-2017 Lousiana State University',
 ))
-version = GWPY_VERSION.split('.dev', 1)[0]
+version = "dev" if ".dev" in GWPY_VERSION else GWPY_VERSION
 release = GWPY_VERSION
 
 # extension modules
