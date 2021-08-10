@@ -54,6 +54,7 @@ class TestGravitySpyTable(_TestEventTable):
         table = self.TABLE.search(
             gravityspy_id="8FHTgA8MEu",
             howmany=1,
-            remote_timeout=60,
+            ifos="H1L1",
+            timeout=60,
         )
         utils.assert_table_equal(table, self.TABLE(JSON_RESPONSE))
