@@ -361,7 +361,7 @@ def _parse_ifos_and_trends(chans):
     for name in chans:
         chan = Channel(name)
         try:
-            found.add((chan.ifo[0], chan.trend))
+            found.add((chan.ifo[0], chan.type))
         except TypeError:  # chan.ifo is None
             raise ValueError("Cannot parse interferometer prefix from channel "
                              "name %r, cannot proceed with find()" % str(chan))
@@ -504,8 +504,8 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     # create set() of GWF channel names, and dict map back to user names
     #    this allows users to use nds-style names in this query, e.g.
     #    'X1:TEST.mean,m-trend', and still get results
-    chans = {Channel(c).name: c for c in channels}
-    names = set(chans.keys())
+    channels = {c: Channel(c).name for c in channels}
+    names = {val: key for key, val in channels.items()}
 
     # format GPS time(s)
     if isinstance(gpstime, (list, tuple)):
@@ -525,7 +525,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     match = defaultdict(list)
     searched = set()
 
-    for ifo, trend in _parse_ifos_and_trends(chans):
+    for ifo, trend in _parse_ifos_and_trends(channels):
         # find all types (prioritising trends if we need to)
         types = find_types(
             ifo,
@@ -568,12 +568,12 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
                         found += 1
 
                         # record the match using the user-given channel name
-                        match[chans[n]].append((ftype, path, gaps))
+                        match[names[n]].append((ftype, path, gaps))
 
                         # if only matching once, don't search other types
                         # for this channel
                         if not return_all:
-                            names.remove(n)
+                            names.pop(n)
 
                         if found == nchan:  # all channels have been found
                             break
