@@ -76,3 +76,17 @@ dl .method {
 .longtable tr td:first-child {
 		width: auto;
 }
+
+/* formatting for code blocks */
+.literal-block-wrapper.container {
+		margin: 1em 0;
+		padding-left: 0;
+		padding-right: 0;
+}
+.literal-block-wrapper .highlight {
+		margin: 0;
+}
+.code-block-caption {
+		font-size: .64rem;
+		text-align: -webkit-center;
+}
