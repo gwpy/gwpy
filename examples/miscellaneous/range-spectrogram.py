@@ -33,7 +33,7 @@ __author__ = 'Alex Urban <alexander.urban@ligo.org>'
 # around the GW170817 BNS merger:
 
 from gwpy.timeseries import TimeSeries
-l1 = TimeSeries.fetch_open_data('L1', 1187006834, 1187010930, tag='C02')
+l1 = TimeSeries.fetch_open_data('L1', 1187006834, 1187010930)
 
 # Then, we can calculate a `Spectrogram` of the inspiral range
 # amplitude spectrum:
