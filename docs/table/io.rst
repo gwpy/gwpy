@@ -162,6 +162,62 @@ using the ``selection`` keyword:
 
 .. _gwpy-table-io-formats:
 
+***************************
+Accessing GravitySpy events
+***************************
+
+|GravitySpy|_ is a citizen-science project that enables the public to
+characterize and classify glitches in IGWN detector data.
+The :class:`GravitySpyTable` subclass of :class:`EventTable` provides
+methods to query GravitySpy for various tables of classified events.
+
+=====================
+Full database queries
+=====================
+
+The :meth:`GravitySpyTable.fetch` method (inherited directly from
+`EventTable <EventTable.fetch>`) enables querying the Gravity Spy database
+directly:
+
+.. code-block:: python
+
+   >>> from gwpy.table import GravitySpyTable
+   >>> blips = GravitySpyTable.fetch(
+   ...     "gravityspy",
+   ...     "glitches",
+   ...     selection="Label=Blip",
+   ... )
+
+.. warning::
+
+   Login credentials are required to support this query.
+   IGWN members with LIGO.ORG credentials can find the required
+   credentials at https://secrets.ligo.org/secrets/144/.
+
+===================
+Similarity searches
+===================
+
+The :meth:`GravitySpyTable.search` method enables performing a
+`Similarity Search <https://gravityspytools.ciera.northwestern.edu/search/>`__
+given the ID of a Gravity Spy event:
+
+.. code-block:: python
+
+   >>> from gwpy.table import GravitySpyTable
+   >>> similar = GravitySpyTable.search("8FHTgA8MEu", howmany=5)
+   >>> print(similar)
+   ifo  peak_frequency  links_subjects ml_label searchedID ...
+   --- ---------------- -------------- -------- ---------- ...
+    H1 84.4759674072266      5740011.0 Scratchy 8FHTgA8MEu ...
+    L1   128.8896484375     20892636.0 Scratchy 8FHTgA8MEu ...
+    L1 73.4049224853516     20892632.0 Scratchy 8FHTgA8MEu ...
+    L1 75.5168914794922     20892526.0 Scratchy 8FHTgA8MEu ...
+    L1 144.991333007812      8644242.0 Scratchy 8FHTgA8MEu ...
+
+This has download 5 similarly *Scratchy* glitches from the LIGO-Hanford
+(`'H1'`) and LIGO-Livingston (`'L1'`) observatories.
+
 *********************
 Built-in file formats
 *********************
