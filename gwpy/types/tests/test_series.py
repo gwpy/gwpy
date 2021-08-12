@@ -196,21 +196,41 @@ class TestSeries(_TestArray):
     def test_is_compatible(self, array):
         """Test the `Series.is_compatible` method
         """
-        a2 = self.create(name='TEST CASE 2')
-        assert array.is_compatible(a2)
+        other = self.create(name='TEST CASE 2')
+        assert array.is_compatible(other)
 
-        a3 = self.create(dx=2)
-        with pytest.raises(ValueError):
-            array.is_compatible(a3)
+    def test_is_compatible_error_dx(self, array):
+        """Check that `Series.is_compatible` errors with mismatching ``dx``
+        """
+        other = self.create(dx=2)
+        with pytest.raises(ValueError) as exc:
+            array.is_compatible(other)
+        assert "sample sizes do not match" in str(exc.value)
 
-        a4 = self.create(unit='m')
-        with pytest.raises(ValueError):
-            array.is_compatible(a4)
+    def test_is_compatible_error_unit(self, array):
+        """Check that `Series.is_compatible` errors with mismatching ``unit``
+        """
+        other = self.create(unit='m')
+        with pytest.raises(ValueError) as exc:
+            array.is_compatible(other)
+        assert "units do not match" in str(exc.value)
 
+    def test_is_compatible_xindex(self):
+        """Check that irregular arrays are compatible if their xindexes match
+        """
         x = numpy.logspace(0, 2, num=self.data.shape[0])
-        a5 = self.create(xindex=x)
-        with pytest.raises(ValueError):
-            array.is_compatible(a5)
+        a = self.create(xindex=x)
+        b = self.create(xindex=x)
+        assert a.is_compatible(b)
+
+    def test_is_compatible_error_xindex(self, array):
+        """Check that `Series.is_compatible` errors with mismatching indexes
+        """
+        x = numpy.logspace(0, 2, num=self.data.shape[0])
+        other = self.create(xindex=x)
+        with pytest.raises(ValueError) as exc:
+            array.is_compatible(other)
+        assert "indexes do not match" in str(exc.value)
 
     def test_is_contiguous(self, array):
         a2 = self.create(x0=array.xspan[1])
