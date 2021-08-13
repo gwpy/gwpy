@@ -538,7 +538,7 @@ class DataQualityFlag(object):
             timeout for download (seconds)
 
         host : `str`, optional
-            URL of LOSC host, default: ``'losc.ligo.org'``
+            URL of GWOSC host, default: ``'https://gw-openscience.org'``
 
         Returns
         -------

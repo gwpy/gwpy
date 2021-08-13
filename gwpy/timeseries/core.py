@@ -401,7 +401,7 @@ class TimeSeriesBase(Series):
 
         sample_rate : `float`, optional,
             the sample rate of desired data; most data are stored
-            by LOSC at 4096 Hz, however there may be event-related
+            by GWOSC at 4096 Hz, however there may be event-related
             data releases with a 16384 Hz rate, default: `4096`
 
         tag : `str`, optional
@@ -419,7 +419,7 @@ class TimeSeriesBase(Series):
             - ``'gwf'`` - requires |LDAStools.frameCPP|_
 
         host : `str`, optional
-            HTTP host name of LOSC server to access
+            HTTP host name of GWOSC server to access
 
         verbose : `bool`, optional, default: `False`
             print verbose output while fetching data
@@ -465,7 +465,7 @@ class TimeSeriesBase(Series):
                                epoch=1126259446.0))
 
         For the `StateVector`, the naming of the bits will be
-        ``format``-dependent, because they are recorded differently by LOSC
+        ``format``-dependent, because they are recorded differently by GWOSC
         in different formats.
 
         Notes

@@ -520,19 +520,17 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
         assert ts.sample_rate == 16384 * units.Hz
 
-        # make sure errors happen
-        with pytest.raises(ValueError) as exc:
+    @pytest_skip_network_error
+    def test_fetch_open_data_error(self):
+        """Test that TimeSeries.fetch_open_data raises errors it receives
+        from the `gwosc` module.
+        """
+        with pytest.raises(ValueError):
             self.TEST_CLASS.fetch_open_data(
                 GWOSC_GW150914_IFO,
                 0,
                 1,
-                format=format,
             )
-        assert str(exc.value) == (
-            "Cannot find a LOSC dataset for {} covering [0, 1)".format(
-                GWOSC_GW150914_IFO,
-            )
-        )
 
     @utils.skip_missing_dependency('nds2')
     @pytest.mark.parametrize('protocol', (1, 2))
