@@ -234,7 +234,7 @@ GWpy allows storing data in HDF5 format files, using a custom specification for 
 
 .. warning::
 
-   To read GWOSC (LOSC) data from HDF5, please see
+   To read GWOSC data from HDF5, please see
    :ref:`gwpy-timeseries-io-hdf5-gwosc`.
 
 Reading
@@ -302,19 +302,22 @@ with `format='hdf5'`.
 Reading
 -------
 
-GWpy can read data from GWOSC (LOSC) HDF5 files using the `format='hdf5.losc'`
+GWpy can read data from GWOSC HDF5 files using the `format='hdf5.gwosc'`
 keyword:
 
 .. code-block:: python
 
-   >>> data = TimeSeries.read('H-H1_GWOSC_16KHZ_R1-1187056280-4096.hdf5',
-   ...                        format='hdf5.losc')
+   >>> data = TimeSeries.read(
+   ...     "H-H1_GWOSC_16KHZ_R1-1187056280-4096.hdf5",
+   ...     format="hdf5.gwosc",
+   ... )
 
-By default, `TimeSeries.read` will return the contents of the
-``/strain/Strain`` dataset, while `StateVector.read` will return those of
-``/quality/simple``.
+By default, :meth:`TimeSeries.read` will return the contents of the
+``/strain/Strain`` dataset, while :meth:`StateVector.read` will return those
+of ``/quality/simple``.
 
-As with regular HDF5, the ``start`` and ``end`` keyword arguments can be used to downselect data to a specific ``[start, end)`` time segment when reading.
+As with regular HDF5, the ``start`` and ``end`` keyword arguments can be used
+to downselect data to a specific ``[start, end)`` time segment when reading.
 
 
 .. _gwpy-timeseries-io-wav:

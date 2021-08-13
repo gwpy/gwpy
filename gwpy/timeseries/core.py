@@ -472,11 +472,21 @@ class TimeSeriesBase(Series):
         -----
         `StateVector` data are not available in ``txt.gz`` format.
         """
-        from .io.losc import fetch_losc_data
-        return fetch_losc_data(ifo, start, end, sample_rate=sample_rate,
-                               tag=tag, version=version, format=format,
-                               verbose=verbose, cache=cache,
-                               host=host, cls=cls, **kwargs)
+        from .io.losc import fetch_gwosc_data
+        return fetch_gwosc_data(
+            ifo,
+            start,
+            end,
+            sample_rate=sample_rate,
+            tag=tag,
+            version=version,
+            format=format,
+            verbose=verbose,
+            cache=cache,
+            host=host,
+            cls=cls,
+            **kwargs,
+        )
 
     @classmethod
     def find(cls, channel, start, end, frametype=None, pad=None,
