@@ -138,7 +138,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.fixture(scope='class')
     @pytest_skip_network_error
-    def losc(self):
+    def gw150914(self):
         return self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
             *GWOSC_GW150914_SEGMENT,
@@ -146,7 +146,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.fixture(scope='class')
     @pytest_skip_network_error
-    def losc_16384(self):
+    def gw150914_16384(self):
         return self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
             *GWOSC_GW150914_SEGMENT,
@@ -291,9 +291,9 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @pytest.mark.parametrize('api', [
         pytest.param('framecpp', marks=SKIP_FRAMECPP),
     ])
-    def test_read_write_gwf_error(self, api, losc):
+    def test_read_write_gwf_error(self, api, gw150914):
         with utils.TemporaryFilename(suffix=".gwf") as tmp:
-            losc.write(tmp, format="gwf.{}".format(api))
+            gw150914.write(tmp, format="gwf.{}".format(api))
             with pytest.raises(ValueError) as exc:
                 self.TEST_CLASS.read(tmp, "another channel",
                                      format="gwf.{}".format(api))
@@ -303,11 +303,15 @@ class TestTimeSeries(_TestTimeSeriesBase):
             )
 
             with pytest.raises(ValueError) as exc:
-                self.TEST_CLASS.read(tmp, losc.name,
-                                     start=losc.span[0]-1, end=losc.span[0],
-                                     format="gwf.{}".format(api))
+                self.TEST_CLASS.read(
+                    tmp,
+                    gw150914.name,
+                    start=gw150914.span[0]-1,
+                    end=gw150914.span[0],
+                    format="gwf.{}".format(api),
+                )
             assert str(exc.value).startswith(
-                "Failed to read {0!r} from {1!r}".format(losc.name, tmp)
+                "Failed to read {0!r} from {1!r}".format(gw150914.name, tmp)
             )
 
     @SKIP_LALFRAME
@@ -331,7 +335,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @SKIP_FRAMECPP  # we need framecpp to extract frdata types
     @pytest.mark.parametrize("ctype", ("adc", "proc", "sim", None))
     @pytest.mark.parametrize("api", GWF_APIS)
-    def test_write_gwf_type(self, losc, api, ctype):
+    def test_write_gwf_type(self, gw150914, api, ctype):
         from ...io.gwf import get_channel_type
 
         # on debian, python=3, python-ldas-tools-framecpp < 2.6.9,
@@ -353,10 +357,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
         expected_ctype = ctype if ctype else "proc"
 
         with utils.TemporaryFilename(suffix=".gwf") as tmp:
-            losc.write(tmp, type=ctype, format=fmt)
-            assert get_channel_type(losc.name, tmp) == expected_ctype
+            gw150914.write(tmp, type=ctype, format=fmt)
+            assert get_channel_type(gw150914.name, tmp) == expected_ctype
             try:
-                new = type(losc).read(tmp, losc.name, format=fmt)
+                new = type(gw150914).read(tmp, gw150914.name, format=fmt)
             except OverflowError:
                 # python-ldas-tools-framecpp < 2.6.9
                 if api == "framecpp" and ctype == "sim":
@@ -367,7 +371,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 raise
         # epoch seems to mismatch at O(1e-12), which is unfortunate
         utils.assert_quantity_sub_equal(
-            losc,
+            gw150914,
             new,
             exclude=("channel", "x0"),
         )
@@ -501,14 +505,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
         pytest.param('gwf', marks=SKIP_FRAMECPP),
     ])
     @pytest_skip_network_error
-    def test_fetch_open_data(self, losc, format):
+    def test_fetch_open_data(self, gw150914, format):
         ts = self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
             *GWOSC_GW150914_SEGMENT,
             format=format,
             verbose=True,
         )
-        utils.assert_quantity_sub_equal(ts, losc,
+        utils.assert_quantity_sub_equal(ts, gw150914,
                                         exclude=['name', 'unit', 'channel'])
 
         # try again with 16384 Hz data
@@ -588,13 +592,13 @@ class TestTimeSeries(_TestTimeSeriesBase):
         "os.environ",
         {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
-    def test_find(self, losc_16384):
+    def test_find(self, gw150914_16384):
         ts = self.TEST_CLASS.find(
             GWOSC_GW150914_CHANNEL,
             *GWOSC_GW150914_SEGMENT,
             frametype=GWOSC_GW150914_FRAMETYPE,
         )
-        utils.assert_quantity_sub_equal(ts, losc_16384,
+        utils.assert_quantity_sub_equal(ts, gw150914_16384,
                                         exclude=['name', 'channel', 'unit'])
 
         # test observatory
@@ -618,14 +622,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
         "os.environ",
         {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
-    def test_find_best_frametype_in_find(self, losc_16384):
+    def test_find_best_frametype_in_find(self, gw150914_16384):
         ts = self.TEST_CLASS.find(
             GWOSC_GW150914_CHANNEL,
             *GWOSC_GW150914_SEGMENT,
         )
         utils.assert_quantity_sub_equal(
             ts,
-            losc_16384,
+            gw150914_16384,
             exclude=['name', 'channel', 'unit'],
         )
 
@@ -640,7 +644,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         "os.environ",
         {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
-    def test_get_datafind(self, losc_16384):
+    def test_get_datafind(self, gw150914_16384):
         try:
             ts = self.TEST_CLASS.get(
                 GWOSC_GW150914_CHANNEL,
@@ -651,14 +655,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(
             ts,
-            losc_16384,
+            gw150914_16384,
             exclude=['name', 'channel', 'unit'],
         )
 
     @utils.skip_missing_dependency('nds2')
     @utils.skip_kerberos_credential
     @mock.patch.dict(os.environ)
-    def test_get_nds2(self, losc_16384):
+    def test_get_nds2(self, gw150914_16384):
         # get using NDS2 (if datafind could have been used to start with)
         os.environ.pop('LIGO_DATAFIND_SERVER', None)
         ts = self.TEST_CLASS.get(
@@ -667,59 +671,59 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
         utils.assert_quantity_sub_equal(
             ts,
-            losc_16384,
+            gw150914_16384,
             exclude=['name', 'channel', 'unit'],
         )
 
     # -- signal processing methods --------------
 
-    def test_fft(self, losc):
-        fs = losc.fft()
+    def test_fft(self, gw150914):
+        fs = gw150914.fft()
         assert isinstance(fs, FrequencySeries)
-        assert fs.size == losc.size // 2 + 1
+        assert fs.size == gw150914.size // 2 + 1
         assert fs.f0 == 0 * units.Hz
-        assert fs.df == 1 / losc.duration
-        assert fs.channel is losc.channel
+        assert fs.df == 1 / gw150914.duration
+        assert fs.channel is gw150914.channel
         nptest.assert_almost_equal(
             fs.value.max(), 9.793003238789471e-20+3.5377863373683966e-21j)
 
         # test with nfft arg
-        fs = losc.fft(nfft=256)
+        fs = gw150914.fft(nfft=256)
         assert fs.size == 129
-        assert fs.dx == losc.sample_rate / 256
+        assert fs.dx == gw150914.sample_rate / 256
 
-    def test_average_fft(self, losc):
+    def test_average_fft(self, gw150914):
         # test all defaults
-        fs = losc.average_fft()
-        utils.assert_quantity_sub_equal(fs, losc.detrend().fft())
+        fs = gw150914.average_fft()
+        utils.assert_quantity_sub_equal(fs, gw150914.detrend().fft())
 
         # test fftlength
-        fs = losc.average_fft(fftlength=0.5)
-        assert fs.size == 0.5 * losc.sample_rate.value // 2 + 1
+        fs = gw150914.average_fft(fftlength=0.5)
+        assert fs.size == 0.5 * gw150914.sample_rate.value // 2 + 1
         assert fs.df == 2 * units.Hertz
 
-        fs = losc.average_fft(fftlength=0.4, overlap=0.2)
+        fs = gw150914.average_fft(fftlength=0.4, overlap=0.2)
 
-    def test_psd_default_overlap(self, losc):
+    def test_psd_default_overlap(self, gw150914):
         utils.assert_quantity_sub_equal(
-            losc.psd(.5, method="median", window="hann"),
-            losc.psd(.5, .25, method="median", window="hann"),
+            gw150914.psd(.5, method="median", window="hann"),
+            gw150914.psd(.5, .25, method="median", window="hann"),
         )
 
     @SKIP_LAL
-    def test_psd_lal_median_mean(self, losc):
+    def test_psd_lal_median_mean(self, gw150914):
         # check that warnings and errors get raised in the right place
         # for a median-mean PSD with the wrong data size or parameters
 
         # single segment should raise error
         with pytest.raises(ValueError), pytest.deprecated_call():
-            losc.psd(abs(losc.span), method='lal_median_mean')
+            gw150914.psd(abs(gw150914.span), method='lal_median_mean')
 
         # odd number of segments should warn
         # pytest hides the second DeprecationWarning that should have been
         # triggered here, for some reason
         with pytest.warns(UserWarning):
-            losc.psd(1, .5, method='lal_median_mean')
+            gw150914.psd(1, .5, method='lal_median_mean')
 
     @pytest.mark.parametrize('method', ('welch', 'bartlett', 'median'))
     def test_psd(self, noisy_sinusoid, method):
@@ -767,13 +771,13 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert psd.unit == noisy_sinusoid.unit ** 2 / "Hz"
         assert psd.max() == psd.value_at(500)
 
-    def test_asd(self, losc):
+    def test_asd(self, gw150914):
         kw = {
             "method": "median",
         }
         utils.assert_quantity_sub_equal(
-            losc.asd(1, **kw),
-            losc.psd(1, **kw) ** (1/2.),
+            gw150914.asd(1, **kw),
+            gw150914.psd(1, **kw) ** (1/2.),
         )
 
     def test_csd(self, noisy_sinusoid, corrupt_noisy_sinusoid):
@@ -814,9 +818,9 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @pytest.mark.parametrize(
         'window', (None, 'hann', ('kaiser', 24), 'array'),
     )
-    def test_spectrogram(self, losc, method, window):
+    def test_spectrogram(self, gw150914, method, window):
         # generate window for 'array'
-        win = self._window_helper(losc, 1) if window == 'array' else window
+        win = self._window_helper(gw150914, 1) if window == 'array' else window
 
         if method.startswith(("lal", "pycbc")):
             ctx = pytest.deprecated_call
@@ -825,61 +829,61 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # generate spectrogram
         with ctx():
-            sg = losc.spectrogram(1, method=method, window=win)
+            sg = gw150914.spectrogram(1, method=method, window=win)
 
         # validate
         assert isinstance(sg, Spectrogram)
-        assert sg.shape == (abs(losc.span),
-                            losc.sample_rate.value // 2 + 1)
+        assert sg.shape == (abs(gw150914.span),
+                            gw150914.sample_rate.value // 2 + 1)
         assert sg.f0 == 0 * units.Hz
         assert sg.df == 1 * units.Hz
-        assert sg.channel is losc.channel
-        assert sg.unit == losc.unit ** 2 / units.Hz
-        assert sg.epoch == losc.epoch
-        assert sg.span == losc.span
+        assert sg.channel is gw150914.channel
+        assert sg.unit == gw150914.unit ** 2 / units.Hz
+        assert sg.epoch == gw150914.epoch
+        assert sg.span == gw150914.span
 
         # check the first time-bin is the same result as .psd()
-        n = int(losc.sample_rate.value)
+        n = int(gw150914.sample_rate.value)
         if window == 'hann' and not method.endswith('bartlett'):
             n *= 1.5  # default is 50% overlap
         with ctx():
-            psd = losc[:int(n)].psd(fftlength=1, method=method, window=win)
+            psd = gw150914[:int(n)].psd(fftlength=1, method=method, window=win)
         # FIXME: epoch should not be excluded here (probably)
         utils.assert_quantity_sub_equal(sg[0], psd, exclude=['epoch'],
                                         almost_equal=True)
 
-    def test_spectrogram_fftlength(self, losc):
-        sg = losc.spectrogram(1, fftlength=0.5, method="median")
-        assert sg.shape == (abs(losc.span),
-                            0.5 * losc.sample_rate.value // 2 + 1)
+    def test_spectrogram_fftlength(self, gw150914):
+        sg = gw150914.spectrogram(1, fftlength=0.5, method="median")
+        assert sg.shape == (abs(gw150914.span),
+                            0.5 * gw150914.sample_rate.value // 2 + 1)
         assert sg.df == 2 * units.Hertz
         assert sg.dt == 1 * units.second
 
-    def test_spectrogram_overlap(self, losc):
+    def test_spectrogram_overlap(self, gw150914):
         kw = {
             "fftlength": 0.5,
             "window": "hann",
             "method": "median",
         }
-        sg = losc.spectrogram(1, **kw)
-        sg2 = losc.spectrogram(1, overlap=.25, **kw)
+        sg = gw150914.spectrogram(1, **kw)
+        sg2 = gw150914.spectrogram(1, overlap=.25, **kw)
         utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
-    def test_spectrogram_multiprocessing(self, losc):
+    def test_spectrogram_multiprocessing(self, gw150914):
         kw = {
             "fftlength": 0.5,
             "window": "hann",
             "method": "median",
         }
-        sg = losc.spectrogram(1, **kw)
-        sg2 = losc.spectrogram(1, nproc=2, **kw)
+        sg = gw150914.spectrogram(1, **kw)
+        sg2 = gw150914.spectrogram(1, nproc=2, **kw)
         utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
     @pytest.mark.parametrize('library', [
         pytest.param('lal', marks=SKIP_LAL),
         pytest.param('pycbc', marks=SKIP_PYCBC_PSD),
     ])
-    def test_spectrogram_median_mean(self, losc, library):
+    def test_spectrogram_median_mean(self, gw150914, library):
         method = '{0}-median-mean'.format(library)
 
         # median-mean warn on LAL if not given the correct data for an
@@ -892,123 +896,145 @@ class TestTimeSeries(_TestTimeSeriesBase):
             warn_ctx = pytest.deprecated_call()
 
         with warn_ctx:
-            sg = losc.spectrogram(1.5, fftlength=.5, overlap=0, method=method)
+            sg = gw150914.spectrogram(
+                1.5,
+                fftlength=.5,
+                overlap=0,
+                method=method,
+            )
 
         assert sg.dt == 1.5 * units.second
         assert sg.df == 2 * units.Hertz
 
-    def test_spectrogram2(self, losc):
+    def test_spectrogram2(self, gw150914):
         # test defaults
-        sg = losc.spectrogram2(1, overlap=0)
+        sg = gw150914.spectrogram2(1, overlap=0)
         utils.assert_quantity_sub_equal(
-            sg, losc.spectrogram(1, fftlength=1, overlap=0,
-                                 method='scipy-welch', window='hann'))
+            sg,
+            gw150914.spectrogram(
+                1,
+                fftlength=1,
+                overlap=0,
+                method='scipy-welch',
+                window='hann',
+            ),
+        )
 
         # test fftlength
-        sg = losc.spectrogram2(0.5)
-        assert sg.shape == (16, 0.5 * losc.sample_rate.value // 2 + 1)
+        sg = gw150914.spectrogram2(0.5)
+        assert sg.shape == (16, 0.5 * gw150914.sample_rate.value // 2 + 1)
         assert sg.df == 2 * units.Hertz
         assert sg.dt == 0.25 * units.second
         # test overlap
-        sg = losc.spectrogram2(fftlength=0.25, overlap=0.24)
-        assert sg.shape == (399, 0.25 * losc.sample_rate.value // 2 + 1)
+        sg = gw150914.spectrogram2(fftlength=0.25, overlap=0.24)
+        assert sg.shape == (399, 0.25 * gw150914.sample_rate.value // 2 + 1)
         assert sg.df == 4 * units.Hertz
         # note: bizarre stride length because 4096/100 gets rounded
         assert sg.dt == 0.010009765625 * units.second
 
-    def test_fftgram(self, losc):
-        fgram = losc.fftgram(1)
-        fs = int(losc.sample_rate.value)
+    def test_fftgram(self, gw150914):
+        fgram = gw150914.fftgram(1)
+        fs = int(gw150914.sample_rate.value)
         f, t, sxx = signal.spectrogram(
-            losc, fs,
+            gw150914, fs,
             window='hann',
             nperseg=fs,
             mode='complex',
         )
-        utils.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
+        utils.assert_array_equal(gw150914.t0.value + t, fgram.xindex.value)
         utils.assert_array_equal(f, fgram.yindex.value)
         utils.assert_array_equal(sxx.T, fgram)
 
-        fgram = losc.fftgram(1, overlap=0.5)
+        fgram = gw150914.fftgram(1, overlap=0.5)
         f, t, sxx = signal.spectrogram(
-            losc, fs,
+            gw150914, fs,
             window='hann',
             nperseg=fs,
             noverlap=fs//2,
             mode='complex',
         )
-        utils.assert_array_equal(losc.t0.value + t, fgram.xindex.value)
+        utils.assert_array_equal(gw150914.t0.value + t, fgram.xindex.value)
         utils.assert_array_equal(f, fgram.yindex.value)
         utils.assert_array_equal(sxx.T, fgram)
 
-    def test_spectral_variance(self, losc):
-        variance = losc.spectral_variance(.5, method="median")
+    def test_spectral_variance(self, gw150914):
+        variance = gw150914.spectral_variance(.5, method="median")
         assert isinstance(variance, SpectralVariance)
         assert variance.x0 == 0 * units.Hz
         assert variance.dx == 2 * units.Hz
         assert variance.max() == 8
 
-    def test_rayleigh_spectrum(self, losc):
+    def test_rayleigh_spectrum(self, gw150914):
         # assert single FFT creates Rayleigh of 0
-        ray = losc.rayleigh_spectrum()
+        ray = gw150914.rayleigh_spectrum()
         assert isinstance(ray, FrequencySeries)
         assert ray.unit is units.Unit('')
-        assert ray.name == 'Rayleigh spectrum of %s' % losc.name
-        assert ray.epoch == losc.epoch
-        assert ray.channel is losc.channel
+        assert ray.name == 'Rayleigh spectrum of %s' % gw150914.name
+        assert ray.epoch == gw150914.epoch
+        assert ray.channel is gw150914.channel
         assert ray.f0 == 0 * units.Hz
-        assert ray.df == 1 / losc.duration
+        assert ray.df == 1 / gw150914.duration
         assert ray.sum().value == 0
 
         # actually test properly
-        ray = losc.rayleigh_spectrum(.5)  # no overlap
+        ray = gw150914.rayleigh_spectrum(.5)  # no overlap
         assert ray.df == 2 * units.Hz
         nptest.assert_almost_equal(ray.max().value, 2.1239253590490157)
         assert ray.frequencies[ray.argmax()] == 1322 * units.Hz
 
-        ray = losc.rayleigh_spectrum(.5, .25)  # 50 % overlap
+        ray = gw150914.rayleigh_spectrum(.5, .25)  # 50 % overlap
         nptest.assert_almost_equal(ray.max().value, 1.8814775174483833)
         assert ray.frequencies[ray.argmax()] == 136 * units.Hz
 
-    def test_csd_spectrogram(self, losc):
+    def test_csd_spectrogram(self, gw150914):
         # test defaults
-        sg = losc.csd_spectrogram(losc, 1)
+        sg = gw150914.csd_spectrogram(gw150914, 1)
         assert isinstance(sg, Spectrogram)
-        assert sg.shape == (4, losc.sample_rate.value // 2 + 1)
+        assert sg.shape == (4, gw150914.sample_rate.value // 2 + 1)
         assert sg.f0 == 0 * units.Hz
         assert sg.df == 1 * units.Hz
-        assert sg.channel is losc.channel
-        assert sg.unit == losc.unit ** 2 / units.Hertz
-        assert sg.epoch == losc.epoch
-        assert sg.span == losc.span
+        assert sg.channel is gw150914.channel
+        assert sg.unit == gw150914.unit ** 2 / units.Hertz
+        assert sg.epoch == gw150914.epoch
+        assert sg.span == gw150914.span
 
         # check the same result as CSD
-        losc1 = losc[:int(losc.sample_rate.value)]
-        csd = losc1.csd(losc1)
+        cropped = gw150914[:int(gw150914.sample_rate.value)]
+        csd = cropped.csd(cropped)
         utils.assert_quantity_sub_equal(sg[0], csd, exclude=['name', 'epoch'])
 
         # test fftlength
-        sg = losc.csd_spectrogram(losc, 1, fftlength=0.5)
-        assert sg.shape == (4, 0.5 * losc.sample_rate.value // 2 + 1)
+        sg = gw150914.csd_spectrogram(gw150914, 1, fftlength=0.5)
+        assert sg.shape == (4, 0.5 * gw150914.sample_rate.value // 2 + 1)
         assert sg.df == 2 * units.Hertz
         assert sg.dt == 1 * units.second
 
         # test overlap
-        sg = losc.csd_spectrogram(losc, 0.5, fftlength=0.25, overlap=0.125)
-        assert sg.shape == (8, 0.25 * losc.sample_rate.value // 2 + 1)
+        sg = gw150914.csd_spectrogram(
+            gw150914,
+            0.5,
+            fftlength=0.25,
+            overlap=0.125,
+        )
+        assert sg.shape == (8, 0.25 * gw150914.sample_rate.value // 2 + 1)
         assert sg.df == 4 * units.Hertz
         assert sg.dt == 0.5 * units.second
 
         # test multiprocessing
-        sg2 = losc.csd_spectrogram(losc, 0.5, fftlength=0.25,
-                                   overlap=0.125, nproc=2)
+        sg2 = gw150914.csd_spectrogram(
+            gw150914,
+            0.5,
+            fftlength=0.25,
+            overlap=0.125,
+            nproc=2,
+        )
         utils.assert_quantity_sub_equal(sg, sg2)
 
-    def test_resample(self, losc):
+    def test_resample(self, gw150914):
         """Test :meth:`gwpy.timeseries.TimeSeries.resample`
         """
         # test IIR decimation
-        l2 = losc.resample(1024, ftype='iir')
+        l2 = gw150914.resample(1024, ftype='iir')
         # FIXME: this test needs to be more robust
         assert l2.sample_rate == 1024 * units.Hz
 
@@ -1018,8 +1044,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
             new = data.resample(data.sample_rate)
             assert data is new
 
-    def test_rms(self, losc):
-        rms = losc.rms(1.)
+    def test_rms(self, gw150914):
+        rms = gw150914.rms(1.)
         assert rms.sample_rate == 1 * units.Hz
 
     @mock.patch('gwpy.segments.DataQualityFlag.query',
@@ -1255,80 +1281,94 @@ class TestTimeSeries(_TestTimeSeriesBase):
         tmax = snr.times[snr.argmax()]
         nptest.assert_almost_equal(tmax.value, glitchtime)
 
-    def test_detrend(self, losc):
-        assert not numpy.isclose(losc.value.mean(), 0.0, atol=1e-21)
-        detrended = losc.detrend()
+    def test_detrend(self, gw150914):
+        assert not numpy.isclose(gw150914.value.mean(), 0.0, atol=1e-21)
+        detrended = gw150914.detrend()
         assert numpy.isclose(detrended.value.mean(), 0.0)
 
-    def test_filter(self, losc):
+    def test_filter(self, gw150914):
         zpk = [], [], 1
-        fts = losc.filter(zpk, analog=True)
-        utils.assert_quantity_sub_equal(losc, fts)
+        fts = gw150914.filter(zpk, analog=True)
+        utils.assert_quantity_sub_equal(gw150914, fts)
 
         # check SOS filters can be used directly
-        zpk = filter_design.highpass(50, sample_rate=losc.sample_rate)
+        zpk = filter_design.highpass(50, sample_rate=gw150914.sample_rate)
         sos = signal.zpk2sos(*zpk)
-        utils.assert_quantity_almost_equal(losc.filter(zpk), losc.filter(sos))
+        utils.assert_quantity_almost_equal(
+            gw150914.filter(zpk),
+            gw150914.filter(sos),
+        )
 
-    def test_zpk(self, losc):
+    def test_zpk(self, gw150914):
         zpk = [10, 10], [1, 1], 100
         utils.assert_quantity_sub_equal(
-            losc.zpk(*zpk), losc.filter(*zpk, analog=True))
+            gw150914.zpk(*zpk), gw150914.filter(*zpk, analog=True))
 
-    def test_notch(self, losc):
+    def test_notch(self, gw150914):
         # test notch runs end-to-end
-        losc.notch(60)
+        gw150914.notch(60)
 
         # test breaks when you try and 'fir' notch
         with pytest.raises(NotImplementedError):
-            losc.notch(10, type='fir')
+            gw150914.notch(10, type='fir')
 
-    def test_q_gram(self, losc):
+    def test_q_gram(self, gw150914):
         # test simple q-transform
-        qgram = losc.q_gram()
+        qgram = gw150914.q_gram()
         assert isinstance(qgram, EventTable)
         assert qgram.meta['q'] == 45.25483399593904
         assert qgram['energy'].min() >= 5.5**2 / 2
         nptest.assert_almost_equal(qgram['energy'].max(), 10559.25, decimal=2)
 
-    def test_q_transform(self, losc):
+    def test_q_transform(self, gw150914):
         # test simple q-transform
-        qspecgram = losc.q_transform(method='scipy-welch', fftlength=2)
+        qspecgram = gw150914.q_transform(method='scipy-welch', fftlength=2)
         assert isinstance(qspecgram, Spectrogram)
         assert qspecgram.shape == (1000, 2403)
         assert qspecgram.q == 5.65685424949238
         nptest.assert_almost_equal(qspecgram.value.max(), 155.93567, decimal=5)
 
         # test whitening args
-        asd = losc.asd(2, 1, method='scipy-welch')
-        qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
+        asd = gw150914.asd(2, 1, method='scipy-welch')
+        qsg2 = gw150914.q_transform(method='scipy-welch', whiten=asd)
         utils.assert_quantity_sub_equal(qspecgram, qsg2, almost_equal=True)
 
-        asd = losc.asd(.5, .25, method='scipy-welch')
-        qsg2 = losc.q_transform(method='scipy-welch', whiten=asd)
-        qsg3 = losc.q_transform(method='scipy-welch',
-                                fftlength=.5, overlap=.25)
+        asd = gw150914.asd(.5, .25, method='scipy-welch')
+        qsg2 = gw150914.q_transform(method='scipy-welch', whiten=asd)
+        qsg3 = gw150914.q_transform(
+            method='scipy-welch',
+            fftlength=.5,
+            overlap=.25,
+        )
         utils.assert_quantity_sub_equal(qsg2, qsg3, almost_equal=True)
 
         # make sure frequency too high presents warning
         with pytest.warns(UserWarning):
-            qspecgram = losc.q_transform(method='scipy-welch',
-                                         frange=(0, 10000))
+            qspecgram = gw150914.q_transform(
+                method='scipy-welch',
+                frange=(0, 10000),
+            )
             nptest.assert_almost_equal(
-                qspecgram.yspan[1], 1291.5316, decimal=4)
+                qspecgram.yspan[1],
+                1291.5316,
+                decimal=4,
+            )
 
         # test other normalisations work (or don't)
-        q2 = losc.q_transform(method='scipy-welch', norm='median')
+        q2 = gw150914.q_transform(method='scipy-welch', norm='median')
         utils.assert_quantity_sub_equal(qspecgram, q2, almost_equal=True)
-        losc.q_transform(method='scipy-welch', norm='mean')
-        losc.q_transform(method='scipy-welch', norm=False)
+        gw150914.q_transform(method='scipy-welch', norm='mean')
+        gw150914.q_transform(method='scipy-welch', norm=False)
         with pytest.raises(ValueError):
-            losc.q_transform(method='scipy-welch', norm='blah')
+            gw150914.q_transform(method='scipy-welch', norm='blah')
 
-    def test_q_transform_logf(self, losc):
+    def test_q_transform_logf(self, gw150914):
         # test q-transform with log frequency spacing
-        qspecgram = losc.q_transform(method='scipy-welch', fftlength=2,
-                                     logf=True)
+        qspecgram = gw150914.q_transform(
+            method='scipy-welch',
+            fftlength=2,
+            logf=True,
+        )
         assert isinstance(qspecgram, Spectrogram)
         assert qspecgram.shape == (1000, 500)
         assert qspecgram.q == 5.65685424949238
