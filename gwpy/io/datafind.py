@@ -38,6 +38,7 @@ import os
 import os.path
 import re
 import warnings
+from collections import defaultdict
 from functools import wraps
 from http.client import HTTPException
 
@@ -45,6 +46,7 @@ from ligo.segments import (
     segment as LigoSegment,
     segmentlist as LigoSegmentList,
 )
+
 from ..time import to_gps
 from .cache import (cache_segments, read_cache_entry, _iter_cache)
 from .gwf import (num_channels, iter_channel_names)
@@ -53,21 +55,23 @@ from .utils import file_path
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # special-case frame types
-SECOND_TREND_TYPE = re.compile(r'\A(.*_)?T\Z')  # T or anything ending in _T
-MINUTE_TREND_TYPE = re.compile(r'\A(.*_)?M\Z')  # M or anything ending in _M
-GRB_TYPE = re.compile(r'^(?!.*_GRB\d{6}([A-Z])?$)')
-HIGH_PRIORITY_TYPE = re.compile(
-    r'\A[A-Z]\d_HOFT_C\d\d(_T\d{7}_v\d)?\Z'  # X1_HOFT_CXY
-)
-LOW_PRIORITY_TYPE = re.compile(
-    r'(_GRB\d{6}([A-Z])?\Z|'  # endswith _GRBYYMMDD{A}
-    r'_bck\Z|'  # endswith _bck
-    r'\AT1200307_V4_EARLY_RECOLORED_V2\Z)'  # annoying recoloured HOFT type
-)
+LIGO_SECOND_TREND_TYPE = re.compile(r'\A(.*_)?T\Z')  # T or *_T
+LIGO_MINUTE_TREND_TYPE = re.compile(r'\A(.*_)?M\Z')  # M or *_M
+VIRGO_SECOND_TREND_TYPE = re.compile(r"\A(.*_)?[Tt]rend\Z")  # trend or *_trend
+GRB_TYPE = re.compile(r'^(?!.*_GRB\d{6}([A-Z])?$)')  # *_GRBYYMMDD{A}
+HIGH_PRIORITY_TYPE = re.compile("({})".format("|".join((
+    r'\A[A-Z]\d_HOFT_C\d\d(_T\d{7}_v\d)?\Z',  # X1_HOFT_CXY
+    r'\AV1Online\Z',
+    r'\AV1O[0-9]+([A-Z]+)?Repro[0-9]+[A-Z]+\Z',  # V1OXReproXY
+))))
+LOW_PRIORITY_TYPE = re.compile("({})".format("|".join((
+    r'_GRB\d{6}([A-Z])?\Z',  # endswith _GRBYYMMDD{A}
+    r'_bck\Z',  # endswith _bck
+    r'\AT1200307_V4_EARLY_RECOLORED_V2\Z',  # annoying recoloured HOFT type
+))))
 
 
 # -- utilities ----------------------------------------------------------------
-
 
 class FflConnection(object):
     """API for Virgo FFL queries that mimics `gwdatafind.http.HTTPConnection`
@@ -132,7 +136,10 @@ class FflConnection(object):
             def _update_metadata(entry):
                 return type(entry)(site, tag, entry.segment, entry.path)
             with open(path, 'r') as fobj:
-                cache = list(map(_update_metadata, _iter_cache(fobj)))
+                cache = list(map(
+                    _update_metadata,
+                    _iter_cache(fobj, gpstype=float),
+                ))
             self.cache[key] = newm, cache
         return self.cache[key][-1]
 
@@ -227,7 +234,9 @@ class FflConnection(object):
         except KeyError:
             try:
                 path = self.ffl_path(site, frametype)
-                urls = [read_cache_entry(self._read_last_line(path))]
+                urls = [
+                    read_cache_entry(self._read_last_line(path), gpstype=float)
+                ]
             except (KeyError, OSError):
                 urls = []
         if urls or on_missing == 'ignore':
@@ -270,8 +279,9 @@ def _type_priority(ifo, ftype, trend=None):
     """
     # if looking for a trend channel, prioritise the matching type
     for trendname, trend_regex in [
-            ('m-trend', MINUTE_TREND_TYPE),
-            ('s-trend', SECOND_TREND_TYPE),
+            ('m-trend', LIGO_MINUTE_TREND_TYPE),
+            ('s-trend', LIGO_SECOND_TREND_TYPE),
+            ('s-trend', VIRGO_SECOND_TREND_TYPE),
     ]:
         if trend == trendname and trend_regex.match(ftype):
             return 0, len(ftype)
@@ -281,8 +291,9 @@ def _type_priority(ifo, ftype, trend=None):
             HIGH_PRIORITY_TYPE: 1,
             re.compile(r'[A-Z]\d_C'): 6,
             LOW_PRIORITY_TYPE: 10,
-            MINUTE_TREND_TYPE: 10,
-            SECOND_TREND_TYPE: 10,
+            LIGO_MINUTE_TREND_TYPE: 10,
+            LIGO_SECOND_TREND_TYPE: 10,
+            VIRGO_SECOND_TREND_TYPE: 10,
     }.items():
         if reg.search(ftype):
             return prio, len(ftype)
@@ -340,6 +351,74 @@ def with_connection(func):
             kwargs['connection'] = reconnect(kwargs['connection'])
             return func(*args, **kwargs)
     return wrapped
+
+
+def _parse_ifos_and_trends(chans):
+    """Parse ``(ifo, trend)`` pairs from this list of channels
+    """
+    from ..detector import Channel
+    found = set()
+    for name in chans:
+        chan = Channel(name)
+        try:
+            found.add((chan.ifo[0], chan.type))
+        except TypeError:  # chan.ifo is None
+            raise ValueError("Cannot parse interferometer prefix from channel "
+                             "name %r, cannot proceed with find()" % str(chan))
+    return found
+
+
+def _find_gaps(ifo, frametype, segment, on_gaps, connection):
+    """Discover gaps in a datafind/ffl archive for the given ifo/type
+
+    Returns
+    -------
+    gaps : `int`
+        the cumulative size of all gaps in the relevant archive
+    """
+    if segment is None:
+        return 0
+    cache = find_urls(
+        ifo,
+        frametype,
+        *segment,
+        on_gaps=on_gaps,
+        connection=connection,
+    )
+    csegs = cache_segments(cache)
+    return max(0, abs(segment) - abs(csegs))
+
+
+def _error_missing_channels(required, found, gpstime, allow_tape):
+    """Raise an exception if required channels are not found
+    """
+    missing = set(required) - set(found)
+
+    if not missing:  # success
+        return
+
+    # failure
+    msg = "Cannot locate the following channel(s) in any known frametype"
+    if gpstime:
+        msg += " at GPS=%d" % gpstime
+    msg += ":\n    {}".format('\n    '.join(missing))
+    if not allow_tape:
+        msg += ("\n[files on tape have not been checked, use "
+                "allow_tape=True for a complete search]")
+    raise ValueError(msg)
+
+
+def _rank_types(match):
+    """Rank and sort the matched frametypes according to some criteria
+
+    ``matches`` is a dict of (channel, [(type, gwf, gapsize), ...])
+    entries.
+    """
+    paths = set(typetuple[1] for key in match for typetuple in match[key])
+    rank = {path: (on_tape(path), num_channels(path)) for path in paths}
+    # deprioritise types on tape and those with lots of channels
+    for key in match:
+        match[key].sort(key=lambda x: (-x[2],) + rank[x[1]])
 
 
 # -- user methods -------------------------------------------------------------
@@ -425,8 +504,8 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     # create set() of GWF channel names, and dict map back to user names
     #    this allows users to use nds-style names in this query, e.g.
     #    'X1:TEST.mean,m-trend', and still get results
-    chans = {Channel(c).name: c for c in channels}
-    names = set(chans.keys())
+    channels = {c: Channel(c).name for c in channels}
+    names = {val: key for key, val in channels.items()}
 
     # format GPS time(s)
     if isinstance(gpstime, (list, tuple)):
@@ -443,108 +522,93 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
 
     # -- go
 
-    match = {}
-    ifos = set()  # record IFOs we have queried to prevent duplication
+    match = defaultdict(list)
+    searched = set()
 
-    # loop over set of names, which should get smaller as names are searched
-    while names:
-        # parse first channel name (to get IFO and channel type)
-        try:
-            name = next(iter(names))
-        except KeyError:
-            break
-        else:
-            chan = Channel(chans[name])
-
-        # parse IFO ID
-        try:
-            ifo = chan.ifo[0]
-        except TypeError:  # chan.ifo is None
-            raise ValueError("Cannot parse interferometer prefix from channel "
-                             "name %r, cannot proceed with find()" % str(chan))
-
-        # if we've already gone through the types for this IFO, skip
-        if ifo in ifos:
-            names.pop()
-            continue
-        ifos.add(ifo)
-
-        types = find_types(ifo, match=frametype_match, trend=chan.type,
-                           connection=connection)
+    for ifo, trend in _parse_ifos_and_trends(channels):
+        # find all types (prioritising trends if we need to)
+        types = find_types(
+            ifo,
+            match=frametype_match,
+            trend=trend,
+            connection=connection,
+        )
 
         # loop over types testing each in turn
         for ftype in types:
+
+            # if we've already search this type for this IFO,
+            # don't do it again
+            if (ifo, ftype) in searched:
+                continue
+
             # find instance of this frametype
             try:
-                path = find_latest(ifo, ftype, gpstime=gpstime,
-                                   allow_tape=allow_tape,
-                                   connection=connection, on_missing='ignore')
+                path = find_latest(
+                    ifo,
+                    ftype,
+                    gpstime=gpstime,
+                    allow_tape=allow_tape,
+                    connection=connection,
+                    on_missing='ignore',
+                )
             except (RuntimeError, IOError, IndexError):  # something went wrong
                 continue
 
             # check for gaps in the record for this type
-            if gpssegment is None:
-                gaps = 0
-            else:
-                cache = find_urls(ifo, ftype, *gpssegment, on_gaps=on_gaps,
-                                  connection=connection)
-                csegs = cache_segments(cache)
-                gaps = abs(gpssegment) - abs(csegs)
+            gaps = _find_gaps(ifo, ftype, gpssegment, on_gaps, connection)
 
             # search the TOC for one frame file and match any channels
-            i = 0
+            found = 0
             nchan = len(names)
-            for n in iter_channel_names(path):
-                if n in names:
-                    i += 1
-                    c = chans[n]  # map back to user-given channel name
-                    try:
-                        match[c].append((ftype, path, -gaps))
-                    except KeyError:
-                        match[c] = [(ftype, path, -gaps)]
-                    if not return_all:  # match once only
-                        names.remove(n)
-                    if not names or n == nchan:  # break out of TOC loop
-                        break
+            try:
+                for n in iter_channel_names(path):
+                    if n in names:  # frametype includes this channel!
+                        # count how many channels we have found in this type
+                        found += 1
 
-            if not names:  # break out of ftype loop if all names matched
+                        # record the match using the user-given channel name
+                        match[names[n]].append((ftype, path, gaps))
+
+                        # if only matching once, don't search other types
+                        # for this channel
+                        if not return_all:
+                            names.pop(n)
+
+                        if found == nchan:  # all channels have been found
+                            break
+            except RuntimeError as exc:  # failed to open file (probably)
+                warnings.warn(
+                    "failed to read channels for type {!r}: {}:".format(
+                        ftype,
+                        str(exc),
+                    ),
+                )
+                continue
+
+            # record this type as having been searched
+            searched.add((ifo, ftype))
+
+            if not names:  # if all channels matched, stop
                 break
 
-        try:
-            names.pop()
-        except KeyError:  # done
-            break
+    # raise exception if one or more channels were not found
+    _error_missing_channels(channels, match.keys(), gpstime, allow_tape)
 
-    # raise exception if nothing found
-    missing = set(channels) - set(match.keys())
-    if missing:
-        msg = "Cannot locate the following channel(s) in any known frametype"
-        if gpstime:
-            msg += " at GPS=%d" % gpstime
-        msg += ":\n    {}".format('\n    '.join(missing))
-        if not allow_tape:
-            msg += ("\n[files on tape have not been checked, use "
-                    "allow_tape=True for a complete search]")
-        raise ValueError(msg)
+    # rank types (and pick best if required)
+    _rank_types(match)
 
-    # if matching all types, rank based on coverage, tape, and TOC size
-    if return_all:
-        paths = set(p[1] for key in match for p in match[key])
-        rank = {path: (on_tape(path), num_channels(path)) for path in paths}
-        # deprioritise types on tape and those with lots of channels
-        for key in match:
-            match[key].sort(key=lambda x: (x[2],) + rank[x[1]])
-        # remove instance paths (just leave channel and list of frametypes)
-        ftypes = {key: list(list(zip(*match[key]))[0]) for key in match}
-    else:
-        ftypes = {key: match[key][0][0] for key in match}
+    # and format as a dict for each channel
+    output = {key: list(list(zip(*match[key]))[0]) for key in match}
+    if not return_all:  # reduce the list-of-one to a single element
+        output = {key: val[0] for key, val in output.items()}
 
-    # if given a list of channels, return a dict
+    # if given a list of channels, return the dict
     if isinstance(channel, (list, tuple)):
-        return ftypes
+        return output
 
-    # otherwise just return a list for this type
-    return ftypes[str(channel)]
+    # otherwise just return the result for the given channel
+    return output[str(channel)]
 
 
 @with_connection

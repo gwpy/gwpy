@@ -52,6 +52,7 @@ __all__ = []
 # methods to exclude from get_as_columns conversions
 GET_AS_EXCLUDE = [
     'column',
+    'username',
     'table',
     'time_slide_id',
 ]

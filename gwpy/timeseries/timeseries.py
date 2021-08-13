@@ -36,7 +36,7 @@ from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-DEFAULT_FFT_METHOD = None
+DEFAULT_FFT_METHOD = "median"
 
 
 # -- utilities ----------------------------------------------------------------
@@ -272,7 +272,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method (default: ``'welch'``),
+            FFT-averaging method (default: ``'median'``),
             see *Notes* for more details
 
         **kwargs
@@ -319,7 +319,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method (default: ``'welch'``),
+            FFT-averaging method (default: ``'median'``),
             see *Notes* for more details
 
         Returns
@@ -409,7 +409,7 @@ class TimeSeries(TimeSeriesBase):
             formats
 
         method : `str`, optional
-            FFT-averaging method (default: ``'welch'``),
+            FFT-averaging method (default: ``'median'``),
             see *Notes* for more details
 
         nproc : `int`
@@ -567,7 +567,7 @@ class TimeSeries(TimeSeriesBase):
             number of seconds in single FFT
 
         method : `str`, optional
-            FFT-averaging method (default: ``'welch'``),
+            FFT-averaging method (default: ``'median'``),
             see *Notes* for more details
 
         overlap : `float`, optional
@@ -1068,7 +1068,7 @@ class TimeSeries(TimeSeriesBase):
         >>> notches = [filter_design.notch(f, 4096.) for f in (60, 120, 180)]
         >>> zpk = filter_design.concatenate_zpks(bp, *notches)
 
-        And then can download some data from LOSC to apply it using
+        And then can download some data from GWOSC to apply it using
         `TimeSeries.filter`:
 
         >>> from gwpy.timeseries import TimeSeries
@@ -1157,42 +1157,17 @@ class TimeSeries(TimeSeriesBase):
 
         See also
         --------
-        matplotlib.mlab.cohere
+        scipy.signal.coherence
             for details of the coherence calculator
         """
-        from matplotlib import mlab
-        from ..frequencyseries import FrequencySeries
-        # check sampling rates
-        if self.sample_rate.to('Hertz') != other.sample_rate.to('Hertz'):
-            sampling = min(self.sample_rate.value, other.sample_rate.value)
-            # resample higher rate series
-            if self.sample_rate.value == sampling:
-                other = other.resample(sampling)
-                self_ = self
-            else:
-                self_ = self.resample(sampling)
-        else:
-            sampling = self.sample_rate.value
-            self_ = self
-        # check fft lengths
-        if overlap is None:
-            overlap = 0
-        else:
-            overlap = int((overlap * self_.sample_rate).decompose().value)
-        if fftlength is None:
-            fftlength = int(self_.size/2. + overlap/2.)
-        else:
-            fftlength = int((fftlength * self_.sample_rate).decompose().value)
-        if window is not None:
-            kwargs['window'] = signal.get_window(window, fftlength)
-        coh, freqs = mlab.cohere(self_.value, other.value, NFFT=fftlength,
-                                 Fs=sampling, noverlap=overlap, **kwargs)
-        out = coh.view(FrequencySeries)
-        out.xindex = freqs
-        out.epoch = self.epoch
-        out.name = 'Coherence between %s and %s' % (self.name, other.name)
-        out.unit = 'coherence'
-        return out
+        return spectral.psd(
+            (self, other),
+            spectral.coherence,
+            fftlength=fftlength,
+            overlap=overlap,
+            window=window,
+            **kwargs
+        )
 
     def auto_coherence(self, dt, fftlength=None, overlap=None,
                        window='hann', **kwargs):
@@ -1452,7 +1427,7 @@ class TimeSeries(TimeSeriesBase):
         --------
         Demodulation is useful when trying to examine steady sinusoidal
         signals we know to be contained within data. For instance,
-        we can download some data from LOSC to look at trends of the
+        we can download some data from GWOSC to look at trends of the
         amplitude and phase of LIGO Livingston's calibration line at 331.3 Hz:
 
         >>> from gwpy.timeseries import TimeSeries
@@ -1548,7 +1523,7 @@ class TimeSeries(TimeSeriesBase):
         >>> import numpy
         >>> f0 = 123.456789  # signal frequency (Hz)
         >>> fdot = -9.87654321e-7  # signal frequency derivative (Hz/s)
-        >>> fpeoch = 1131350417  # phase epoch
+        >>> fepoch = 1131350417  # phase epoch
         >>> amp = 1.5e-22  # signal amplitude
         >>> phase0 = 0.4  # signal phase at the phase epoch
         >>> times = data.times.value - fepoch
@@ -1695,7 +1670,7 @@ class TimeSeries(TimeSeriesBase):
             recommended overlap for the given window (if given), or 0
 
         method : `str`, optional
-            FFT-averaging method (default: ``'welch'``)
+            FFT-averaging method (default: ``'median'``)
 
         window : `str`, `numpy.ndarray`, optional
             window function to apply to timeseries prior to FFT,

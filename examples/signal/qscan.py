@@ -41,7 +41,7 @@ __currentmodule__ = 'gwpy.timeseries'
 from gwosc import datasets
 from gwpy.timeseries import TimeSeries
 gps = datasets.event_gps('GW170817')
-data = TimeSeries.fetch_open_data('L1', gps-34, gps+34, tag='C00')
+data = TimeSeries.fetch_open_data('L1', gps-34, gps+34)
 
 # We can Q-transform these data and scan over time-frequency planes to
 # find the one with the most significant tile near the time of merger:

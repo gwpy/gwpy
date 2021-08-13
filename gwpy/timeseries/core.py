@@ -401,7 +401,7 @@ class TimeSeriesBase(Series):
 
         sample_rate : `float`, optional,
             the sample rate of desired data; most data are stored
-            by LOSC at 4096 Hz, however there may be event-related
+            by GWOSC at 4096 Hz, however there may be event-related
             data releases with a 16384 Hz rate, default: `4096`
 
         tag : `str`, optional
@@ -419,7 +419,7 @@ class TimeSeriesBase(Series):
             - ``'gwf'`` - requires |LDAStools.frameCPP|_
 
         host : `str`, optional
-            HTTP host name of LOSC server to access
+            HTTP host name of GWOSC server to access
 
         verbose : `bool`, optional, default: `False`
             print verbose output while fetching data
@@ -465,37 +465,28 @@ class TimeSeriesBase(Series):
                                epoch=1126259446.0))
 
         For the `StateVector`, the naming of the bits will be
-        ``format``-dependent, because they are recorded differently by LOSC
+        ``format``-dependent, because they are recorded differently by GWOSC
         in different formats.
-
-        For events published in O2 and later, LOSC typically provides
-        multiple data sets containing the original (``'C00'``) and cleaned
-        (``'CLN'``) data.
-        To select both data sets and plot a comparison, for example:
-
-        >>> orig = TimeSeries.fetch_open_data('H1', 1187008870, 1187008896,
-        ...                                   tag='C00')
-        >>> cln = TimeSeries.fetch_open_data('H1', 1187008870, 1187008896,
-        ...                                  tag='CLN')
-        >>> origasd = orig.asd(fftlength=4, overlap=2)
-        >>> clnasd = cln.asd(fftlength=4, overlap=2)
-        >>> plot = origasd.plot(label='Un-cleaned')
-        >>> ax = plot.gca()
-        >>> ax.plot(clnasd, label='Cleaned')
-        >>> ax.set_xlim(10, 1400)
-        >>> ax.set_ylim(1e-24, 1e-20)
-        >>> ax.legend()
-        >>> plot.show()
 
         Notes
         -----
         `StateVector` data are not available in ``txt.gz`` format.
         """
-        from .io.losc import fetch_losc_data
-        return fetch_losc_data(ifo, start, end, sample_rate=sample_rate,
-                               tag=tag, version=version, format=format,
-                               verbose=verbose, cache=cache,
-                               host=host, cls=cls, **kwargs)
+        from .io.losc import fetch_gwosc_data
+        return fetch_gwosc_data(
+            ifo,
+            start,
+            end,
+            sample_rate=sample_rate,
+            tag=tag,
+            version=version,
+            format=format,
+            verbose=verbose,
+            cache=cache,
+            host=host,
+            cls=cls,
+            **kwargs,
+        )
 
     @classmethod
     def find(cls, channel, start, end, frametype=None, pad=None,

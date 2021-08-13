@@ -3,6 +3,9 @@
 .. |astropy| replace:: `astropy`
 .. _astropy: http://www.astropy.org/
 
+.. |CVMFS| replace:: CVMFS
+.. _CVMFS: https://cvmfs.readthedocs.io/
+
 .. |dateutil| replace:: `dateutil`
 .. _dateutil: https://dateutil.readthedocs.io
 
@@ -41,6 +44,12 @@
 
 .. -- Extra software ----------------------------
 
+.. |cWB| replace:: cWB
+.. _cWB: https://gwburst.gitlab.io/documentation/latest/html/
+
+.. |cWBl| replace:: coherent WaveBurst (cWB)
+.. _cWBl: https://gwburst.gitlab.io/documentation/latest/html/
+
 .. |framel| replace:: `framel`
 .. _framel: http://lappweb.in2p3.fr/virgo/FrameL/
 
@@ -68,7 +77,7 @@
 .. |python-ligo-lw| replace:: `python-ligo-lw`
 .. _python-ligo-lw: https://git.ligo.org/kipp.cannon/python-ligo-lw
 
-.. |pycbc| replace:: `pycbc`
+.. |pycbc| replace:: PyCBC
 .. _pycbc: https://pycbc.org/
 
 .. |sphinx| replace:: `sphinx`
@@ -91,8 +100,25 @@
 
 .. -- Other references --------------------------
 
-.. |GWOSC| replace:: The Gravitational-Wave Open Science Centre (GWOSC)
+.. |GWOSCl| replace:: The Gravitational-Wave Open Science Centre (GWOSC)
+.. _GWOSCl: https://www.gw-openscience.org/
+
+.. |GWOSC| replace:: GWOSC
 .. _GWOSC: https://www.gw-openscience.org/
+
+.. |GWOSC_AUX_RELEASE| replace:: Auxiliary Channel Three Hour Release
+.. _GWOSC_AUX_RELEASE: https://www.gw-openscience.org/auxiliary/GW170814/
 
 .. |LIGO-T050017| replace:: LIGO-T050017
 .. _LIGO-T050017: https://dcc.ligo.org/LIGO-T050017/public
+
+.. -- Event science summaries -------------------
+
+.. |GW150914| replace:: GW150914
+.. _GW150914: https://www.ligo.org/science/Publication-GW150914/
+
+.. |GW170814| replace:: GW170814
+.. _GW170814: https://www.ligo.org/science/Publication-GW170814/
+
+.. |GW200105| replace:: GW200105
+.. _GW200105: https://www.ligo.org/science/Publication-NSBHDiscovery/

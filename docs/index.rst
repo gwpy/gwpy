@@ -1,6 +1,10 @@
-.. image:: gwpy-docs-logo.png
+#########
+|_title_|
+#########
 
-.. title:: Docs
+.. |_title_| image:: gwpy-docs-logo.png
+
+.. title:: GWpy docs
 
 .. ifconfig:: '+' in release
 
@@ -21,9 +25,12 @@ and frequency-domain data produced by the `LIGO <http://www.ligo.org>`_ and
 `Virgo <http://www.ego-gw.it>`_ instruments and their analysis,
 with easy-to-follow tutorials at each step.
 
-.. image:: https://badge.fury.io/py/gwpy.svg
-    :target: https://badge.fury.io/py/gwpy
-    :alt: GWpy PyPI release badge
+.. image:: https://img.shields.io/conda/vn/conda-forge/gwpy
+    :target: https://anaconda.org/conda-forge/gwpy/
+    :alt: GWpy Conda-forge version badge
+.. image:: https://img.shields.io/pypi/v/gwpy
+    :target: https://pypi.org/project/gwpy/
+    :alt: GWpy PyPI version badge
 .. image:: https://zenodo.org/badge/9979119.svg
     :target: https://zenodo.org/badge/latestdoi/9979119
     :alt: GWpy DOI badge
@@ -31,86 +38,75 @@ with easy-to-follow tutorials at each step.
     :target: https://choosealicense.com/licenses/gpl-3.0/
     :alt: GWpy license badge
 
+***********
 First steps
-~~~~~~~~~~~
+***********
 
 .. toctree::
    :maxdepth: 1
 
    What is GWpy? <overview>
-   How do I install GWpy? <install/index>
+   How do I install GWpy? <install>
    Citing GWpy <citing>
 
+*****************
 Working with data
-~~~~~~~~~~~~~~~~~
-
-**Working with interferometer data**
+*****************
 
 .. toctree::
    :maxdepth: 2
+   :caption: Data structures
 
    timeseries/index
-   signal/index
-
-**Working with state information and segments**
-
-.. toctree::
-   :maxdepth: 2
-
-   segments/index
-   timeseries/statevector
-
-**Working with frequency-domain data**
-
-.. toctree::
-   :maxdepth: 2
-
    spectrum/index
    spectrogram/index
-
-**Working with tabular data and events**
-
-.. toctree::
-   :maxdepth: 2
-
+   timeseries/statevector
+   segments/index
    table/index
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Data manipulation
 
-**Visualising data**
+   signal/index
 
 .. toctree::
    :maxdepth: 2
+   :caption: Visualising data
 
    plot/index
    cli/index
 
-**Other utilities**
-
 .. toctree::
    :maxdepth: 1
+   :caption: Other utilities
 
    detector/channel
    time/index
    astro/index
    env
 
-**Developer notes**
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+
+   examples/timeseries/index
+   examples/signal/index
+   examples/frequencyseries/index
+   examples/spectrogram/index
+   examples/segments/index
+   examples/table/index
+   examples/miscellaneous/index
 
 .. toctree::
    :maxdepth: 1
+   :caption:  Developer notes
 
    dev/release
 
-.. ----------------------------------------------------------------
-.. other sections (not directly linked, but need for cross-linking)
-
-.. toctree::
-   :hidden:
-
-   examples/index
-
+******************
 Indices and tables
-~~~~~~~~~~~~~~~~~~
+******************
 
 .. toctree::
 

@@ -30,6 +30,7 @@ from ...utils.decorators import deprecated_function
 from ._registry import (get_method, register_method)
 from ._scipy import (
     bartlett,
+    coherence,
     csd,
     median,
     rayleigh,

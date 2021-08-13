@@ -104,8 +104,11 @@ class TestSpectralVariance(_TestArray2D):
         assert array.y0 == self.bins[0]
         assert array.dy == self.bins[1] - self.bins[0]
 
-    def test_is_compatible(self, array):
-        return super(_TestArray2D, self).test_is_compatible(array)
+    def test_is_compatible_yindex(self, array):
+        return NotImplemented
+
+    def test_is_compatible_error_yindex(self, array):
+        return NotImplemented
 
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):

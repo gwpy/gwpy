@@ -18,7 +18,7 @@
 
 """Read and write HDF5 files in the LIGO Open Science Center format
 
-For more details, see https://losc.ligo.org
+For more details, see :ref:`gwpy-table-io`.
 """
 
 import os.path
@@ -40,6 +40,7 @@ from ...detector.units import parse_unit
 from ...segments import Segment
 from ...time import to_gps
 from ...utils.env import bool_env
+from ...utils.decorators import deprecated_function
 
 DQMASK_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*DQMASK\Z")
 STRAIN_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*STRAIN\Z")
@@ -62,8 +63,8 @@ def _download_file(url, cache=None, verbose=False):
     return get_readable_fileobj(url, cache=cache, show_progress=verbose)
 
 
-def _fetch_losc_data_file(url, *args, **kwargs):
-    """Internal function for fetching a single LOSC file and returning a Series
+def _fetch_gwosc_data_file(url, *args, **kwargs):
+    """Internal function for fetching a single GWOSC file and returning a Series
     """
     cls = kwargs.pop('cls', TimeSeries)
     cache = kwargs.pop('cache', None)
@@ -75,9 +76,9 @@ def _fetch_losc_data_file(url, *args, **kwargs):
     else:
         ext = os.path.splitext(url)[-1]
     if ext == '.hdf5':
-        kwargs.setdefault('format', 'hdf5.losc')
+        kwargs.setdefault('format', 'hdf5.gwosc')
     elif ext == '.txt':
-        kwargs.setdefault('format', 'ascii.losc')
+        kwargs.setdefault('format', 'ascii.gwosc')
     elif ext == '.gwf':
         kwargs.setdefault('format', 'gwf')
 
@@ -92,7 +93,7 @@ def _fetch_losc_data_file(url, *args, **kwargs):
         except Exception as exc:
             if verbose:
                 print('')
-            exc.args = ("Failed to read LOSC data from %r: %s"
+            exc.args = ("Failed to read GWOSC data from %r: %s"
                         % (url, str(exc)),)
             raise
         else:
@@ -105,7 +106,7 @@ def _fetch_losc_data_file(url, *args, **kwargs):
                         bits[int(a)] = b
                     series.bits = bits
                     series.override_unit('')
-                except (TypeError, ValueError):  # don't care, bad LOSC
+                except (TypeError, ValueError):  # don't care, bad GWOSC
                     pass
 
             if verbose:
@@ -128,8 +129,8 @@ def _overlapping(files):
 
 # -- remote data access (the main event) --------------------------------------
 
-def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
-    """Fetch LOSC data for a given detector
+def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
+    """Fetch GWOSC data for a given detector
 
     This function is for internal purposes only, all users should instead
     use the interface provided by `TimeSeries.fetch_open_data` (and similar
@@ -178,7 +179,7 @@ def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
     for url in cache:
         keep = file_segment(url) & span
         kwargs["start"], kwargs["end"] = keep
-        new = _fetch_losc_data_file(url, *args, **kwargs)
+        new = _fetch_gwosc_data_file(url, *args, **kwargs)
         if is_gwf and (not args or args[0] is None):
             args = (new.name,)
         if out is None:
@@ -191,9 +192,14 @@ def fetch_losc_data(detector, start, end, cls=TimeSeries, **kwargs):
 # -- I/O ----------------------------------------------------------------------
 
 @io_hdf5.with_read_hdf5
-def read_losc_hdf5(h5f, path='strain/Strain',
-                   start=None, end=None, copy=False):
-    """Read a `TimeSeries` from a LOSC-format HDF file.
+def read_gwosc_hdf5(
+    h5f,
+    path='strain/Strain',
+    start=None,
+    end=None,
+    copy=False,
+):
+    """Read a `TimeSeries` from a GWOSC-format HDF file.
 
     Parameters
     ----------
@@ -223,9 +229,14 @@ def read_losc_hdf5(h5f, path='strain/Strain',
 
 
 @io_hdf5.with_read_hdf5
-def read_losc_hdf5_state(f, path='quality/simple', start=None, end=None,
-                         copy=False):
-    """Read a `StateVector` from a LOSC-format HDF file.
+def read_gwosc_hdf5_state(
+    f,
+    path='quality/simple',
+    start=None,
+    end=None,
+    copy=False,
+):
+    """Read a `StateVector` from a GWOSC-format HDF file.
 
     Parameters
     ----------
@@ -269,7 +280,7 @@ def read_losc_hdf5_state(f, path='quality/simple', start=None, end=None,
 
 
 def _gwf_channel(path, series_class=TimeSeries, verbose=False):
-    """Find the right channel name for a LOSC GWF file
+    """Find the right channel name for a GWOSC GWF file
     """
     channels = list(io_gwf.iter_channel_names(file_path(path)))
     if issubclass(series_class, StateVector):
@@ -283,5 +294,21 @@ def _gwf_channel(path, series_class=TimeSeries, verbose=False):
 
 
 # register
-registry.register_reader('hdf5.losc', TimeSeries, read_losc_hdf5)
-registry.register_reader('hdf5.losc', StateVector, read_losc_hdf5_state)
+registry.register_reader('hdf5.gwosc', TimeSeries, read_gwosc_hdf5)
+registry.register_reader('hdf5.gwosc', StateVector, read_gwosc_hdf5_state)
+
+# register the old names with deprecation warnings
+_LOSC_IO_DEPRECATION_MESSAGE = (
+    "the `hdf5.losc` I/O format was renamed `hdf5.gwosc`, support "
+    "for `hdf5.losc` will be removed in a future GWpy version"
+)
+registry.register_reader(
+    'hdf5.losc',
+    TimeSeries,
+    deprecated_function(read_gwosc_hdf5, _LOSC_IO_DEPRECATION_MESSAGE),
+)
+registry.register_reader(
+    'hdf5.losc',
+    StateVector,
+    deprecated_function(read_gwosc_hdf5_state, _LOSC_IO_DEPRECATION_MESSAGE),
+)

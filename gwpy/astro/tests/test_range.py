@@ -37,8 +37,8 @@ __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 # -- test results -------------------------------------------------------------
 
 TEST_RESULTS = {
-    'sensemon_range': 19.634311605544845 * units.Mpc,
-    'burst_range': 13.81353542862508 * units.Mpc,
+    'sensemon_range': 19.332958991178117 * units.Mpc,
+    'burst_range': 13.592140825568954 * units.Mpc,
 }
 
 
@@ -58,7 +58,7 @@ def psd(hoft):
     return hoft.psd(
         .4,
         overlap=.2,
-        method="welch",
+        method="median",
         window=('kaiser', 24),
     )
 
@@ -121,7 +121,7 @@ def test_range_timeseries(hoft, rangekwargs):
             0.5,
             fftlength=0.25,
             overlap=0.125,
-            method="welch",
+            method="median",
             nproc=2,
             **rangekwargs,
         )
@@ -145,7 +145,7 @@ def test_range_spectrogram(hoft, rangekwargs, outunit):
             0.5,
             fftlength=0.25,
             overlap=0.125,
-            method="welch",
+            method="median",
             nproc=2,
             **rangekwargs,
         )

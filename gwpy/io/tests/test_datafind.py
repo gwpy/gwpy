@@ -351,15 +351,18 @@ def test_find_best_frametype(connection):
     reason='No LIGO datafind server configured on this host',
 )
 @pytest.mark.parametrize('channel, expected', [
-    ('H1:GDS-CALIB_STRAIN', ['H1_HOFT_C00', 'H1_ER_C00_L1']),
-    ('L1:IMC-ODC_CHANNEL_OUT_DQ', ['L1_R']),
-    ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend', ['H1_T']),
-    ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend', ['H1_M'])
+    ('H1:GDS-CALIB_STRAIN', {'H1_HOFT_C00', 'H1_ER_C00_L1'}),
+    ('L1:IMC-PWR_IN_OUT_DQ', {'L1_R'}),
+    ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend', {'H1_T'}),
+    ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend', {'H1_M'}),
 ])
 def test_find_best_frametype_ligo(channel, expected):
     try:
         ft = io_datafind.find_best_frametype(
-            channel, 1143504017, 1143504017+100)
+            channel,
+            1262276680,  # GW200105 -4s
+            1262276688,  # GW200105 +4s
+        )
     except ValueError as exc:  # pragma: no-cover
         if str(exc).lower().startswith('cannot locate'):
             pytest.skip(str(exc))

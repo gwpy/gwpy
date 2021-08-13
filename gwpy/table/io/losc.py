@@ -35,6 +35,9 @@ from .utils import (
     read_with_selection,
 )
 
+#: suffix indicating a unit name
+UNIT_SUFFIX = "_unit"
+
 #: custom GWOSC unit mapping
 UNITS = {
     "M_sun X c^2": units.M_sun * constants.c ** 2,
@@ -57,14 +60,20 @@ _FILL_VALUE = OrderedDict([
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def _parse_unit(parameter):
+def _get_unit(colname, unitdict):
+    """Return the unit (name) for a column, or `None` if a match isn't found.
+
+    The return types is either `astropy.units.Unit` or `str`, it doesn't
+    matter because setting `column.unit` will automatically convert things
+    into `astropy.units.Unit` for us.
+    """
+    if colname.endswith(("_lower", "_upper")):
+        colname = colname.rsplit("_", 1)[0]
     try:
-        unit = parameter
+        rawunit = unitdict[colname]
     except KeyError:
-        return
-    if unit in UNITS:
-        return UNITS[unit]
-    return unit
+        return None
+    return UNITS.get(rawunit, rawunit)
 
 
 def _mask_replace(value, dtype):
@@ -104,16 +113,23 @@ def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
     catalog = fetch_catalog_json(catalog, host=host)
     data = catalog["events"]
 
-    parameters = set(key for event in data.values() for key in event)
-    parameters = [x for x in parameters if not x.endswith('unit')]
+    # get the list of all parameters
+    parameters = set(
+        key for event in data.values() for key in event
+        if not key.endswith(UNIT_SUFFIX)
+    )
 
+    # get the list of all units
     unitlist = {}
     for event in data.values():
-        dictpartial = {k: v for k, v in event.items() if k.endswith('unit')}
+        dictpartial = {
+            k[:-len(UNIT_SUFFIX)]: v for k, v in event.items()
+            if k.endswith(UNIT_SUFFIX)
+        }
         unitlist.update(dictpartial)
 
     # unpack the catalogue data into a dict of columns
-    names = ["name"] + parameters
+    names = ["name"] + list(parameters)
     cols = {n: [] for n in names}
     for event, plist in data.items():
         cols["name"].append(event)
@@ -139,9 +155,7 @@ def fetch_catalog(catalog, host=DEFAULT_GWOSC_URL):
     for name in parameters:
         tab[name].mask = mask[name]
         tab[name].description = name
-        if (name+'_unit') in unitlist:
-            unit = _parse_unit(unitlist[name+'_unit'])
-            tab[name].unit = unit
+        tab[name].unit = _get_unit(name, unitlist)
 
     # add an index on the event name
     tab.add_index('name')

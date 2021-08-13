@@ -102,38 +102,3 @@ on its own axes, with ``sharex=True`` given to link the time scales for each
 
    >>> plot = Plot(l1hoft, h1hoft, separate=True, sharex=True)
    >>> plot.show()
-
-========================
-Plotting a `StateVector`
-========================
-
-A `StateVector` can be trivially plotted in two ways, specified by the
-``format`` keyword argument of the :meth:`~StateVector.plot` method:
-
-.. table:: Keyword arguments for `StateVector.plot`
-   :align: left
-   :name: statevector-plot-kwargs
-
-   ================  =============================================================
-   Format            Description
-   ================  =============================================================
-   ``'segments'``    A bit-wise representation of each bit in the vector (default)
-   ``'timeseries'``  A standard time-series representation
-   ================  =============================================================
-
-.. plot::
-   :include-source:
-   :context: close-figs
-
-   >>> h1state = StateVector.fetch_open_data('H1', 'Sep 14 2015 09:50:29', 'Sep 14 2015 09:51:01')
-   >>> plot = h1state.plot(insetlabels=True)
-   >>> plot.show()
-
-For a ``format='segments'`` display the :attr:`~StateVector.bits` attribute
-of the `StateVector` is used to identify and label each of the binary bits
-in the vector.
-Also, the ``insetlabels=True`` keyword was given to display the bit labels
-inside the axes (otherwise they would be cut off the side of the figure).
-That each of the segment bars is green for the full 32-second duration
-indicates that each of the statements (e.g. '*passes cbc CAT1 test*') is
-true throughout this time interval.

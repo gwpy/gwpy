@@ -193,17 +193,22 @@ class TestArray2D(_TestSeries):
             exclude=['epoch'],
         )
 
-    def test_is_compatible(self, array):
-        super().test_is_compatible(array)
+    def test_is_compatible_yindex(self):
+        """Check that irregular arrays are compatible if their yindexes match
+        """
+        y = numpy.logspace(0, 2, num=self.data.shape[1])
+        a = self.create(yindex=y)
+        b = self.create(yindex=y)
+        assert a.is_compatible(b)
 
-        a2 = self.create(dy=2)
-        with pytest.raises(ValueError):
-            array.is_compatible(a2)
-
-        y = numpy.logspace(0, 2, num=self.data.shape[0])
-        a2 = self.create(yindex=y)
-        with pytest.raises(ValueError):
-            array.is_compatible(a2)
+    def test_is_compatible_error_yindex(self, array):
+        """Check that `Array2D.is_compatible` errors with mismatching indexes
+        """
+        y = numpy.logspace(0, 2, num=self.data.shape[1])
+        other = self.create(yindex=y)
+        with pytest.raises(ValueError) as exc:
+            array.is_compatible(other)
+        assert "indexes do not match" in str(exc.value)
 
     def test_value_at(self, array):
         assert array.value_at(2, 3) == self.data[2][3] * array.unit
