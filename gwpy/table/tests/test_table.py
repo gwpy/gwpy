@@ -447,6 +447,16 @@ class TestEventTable(TestTable):
         utils.assert_table_equal(
             midf, table.filter('frequency > 100').filter('frequency < 1000'))
 
+    def test_filter_function_multiple(self, table):
+        """Test that `EventTable.filter` works with a filter function
+        that requires multiple columns
+        """
+        def my_filter(table, threshold):
+            return table["snr"] * table["frequency"] > threshold
+
+        filtered = table.filter((("snr", "frequency"), my_filter, 100000))
+        assert len(filtered) == 64
+
     def test_filter_in_segmentlist(self, table):
         # check filtering on segments works
         segs = SegmentList([Segment(100, 200), Segment(400, 500)])

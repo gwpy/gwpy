@@ -707,7 +707,7 @@ class EventTable(Table):
         Custom operations can be defined using filter tuple definitions:
 
         >>> from gwpy.table.filters import in_segmentlist
-        >>> filter(my_table, ('time', in_segmentlist, segs))
+        >>> table.filter(('time', in_segmentlist, segs))
         """
         return filter_table(self, *column_filters)
 

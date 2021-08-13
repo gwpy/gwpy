@@ -205,12 +205,14 @@ def _flatten(container):
 def is_filter_tuple(tup):
     """Return whether a `tuple` matches the format for a column filter
     """
-    return (
-        isinstance(tup, (tuple, list))
-        and len(tup) == 3
-        and isinstance(tup[0], str)
-        and callable(tup[1])
-    )
+    try:
+        names, func, args = tup
+        return (
+            (isinstance(names, str) or all(isinstance(x, str) for x in names))
+            and callable(func)
+        )
+    except (TypeError, ValueError):
+        return False
 
 
 # -- filter -------------------------------------------------------------------
@@ -230,7 +232,7 @@ def filter_table(table, *column_filters):
         a column slice filter definition, in one of two formats:
 
         - `str` - e.g. ``'snr > 10``
-        - `tuple` - ``(<column>, <operator>, <operand>)``, e.g.
+        - `tuple` - ``(<column(s)>, <operator>, <operand>)``, e.g.
           ``('snr', operator.gt, 10)``
 
         multiple filters can be given and will be applied in order
@@ -251,6 +253,6 @@ def filter_table(table, *column_filters):
     """
     keep = numpy.ones(len(table), dtype=bool)
     for name, op_func, operand in parse_column_filters(*column_filters):
-        col = table[name].view(numpy.ndarray)
+        col = table[name]
         keep &= op_func(col, operand)
     return table[keep]
