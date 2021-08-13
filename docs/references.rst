@@ -114,6 +114,40 @@
 
 .. -- Event science summaries -------------------
 
+.. catalogues
+
+.. |GWTCl| replace:: Gravitational-Wave Transient Catalogue (GWTC)
+.. _GWTCl: https://www.gw-openscience.org/eventapi/html/GWTC/
+
+.. |GWTC| replace:: GWTC
+.. _GWTC: https://www.gw-openscience.org/eventapi/html/GWTC/
+
+.. |GWTC-1l| replace:: Gravitational-Wave Transient Catalogue (GWTC) 1
+.. _GWTC-1l: https://www.gw-openscience.org/GWTC-1/
+
+.. |GWTC-1| replace:: GWTC-1
+.. _GWTC-1: https://www.gw-openscience.org/GWTC-1/
+
+.. |GWTC-2l| replace:: Gravitational-Wave Transient Catalogue (GWTC) 2
+.. _GWTC-2l: https://www.gw-openscience.org/GWTC-2/
+
+.. |GWTC-2| replace:: GWTC-2
+.. _GWTC-2: https://www.gw-openscience.org/GWTC-2/
+
+.. |GWTC-2.1l| replace:: Gravitational-Wave Transient Catalogue (GWTC) 2.1
+.. _GWTC-2.1l: https://www.gw-openscience.org/GWTC-2.1/
+
+.. |GWTC-2.1| replace:: GWTC-2.1
+.. _GWTC-2.1: https://www.gw-openscience.org/GWTC-2.1/
+
+.. |GWTC-3l| replace:: Gravitational-Wave Transient Catalogue (GWTC) 3
+.. _GWTC-3l: https://www.gw-openscience.org/GWTC-3/
+
+.. |GWTC-3| replace:: GWTC-3
+.. _GWTC-3: https://www.gw-openscience.org/GWTC-3/
+
+.. events
+
 .. |GW150914| replace:: GW150914
 .. _GW150914: https://www.ligo.org/science/Publication-GW150914/
 
