@@ -312,6 +312,10 @@ def read_frdata(frdata, epoch, start, end, scaled=True,
         slope = None
         bias = None
     else:
+        # workaround https://git.ligo.org/ldastools/LDAS_Tools/-/issues/114
+        # by forcing the default slope to 1.
+        if bias == slope == 0.:
+            slope = 1.
         null_scaling = slope == 1. and bias == 0.
 
     out = None
