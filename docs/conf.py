@@ -35,7 +35,10 @@ from sphinx.util import logging
 from numpydoc import docscrape_sphinx
 
 import gwpy
-from gwpy.utils.sphinx import zenodo
+from gwpy.utils.sphinx import (
+    ex2rst,
+    zenodo,
+)
 
 SPHINX_DIR = Path(__file__).parent.absolute()
 STATIC_DIRNAME = "_static"
@@ -404,6 +407,18 @@ def build_cli_examples(_):
 
 # -- examples
 
+def _build_example(example, outdir, logger):
+    # render the example
+    rst = ex2rst.ex2rst(example)
+
+    # if it has changed, write it (prevents sphinx from
+    # unnecessarily reprocessing)
+    target = outdir / example.with_suffix(".rst").name
+    if _new_or_different(rst, target):
+        target.write_text(rst)
+        logger.debug('[examples] wrote {0}'.format(target))
+
+
 def build_examples(_):
     """Render all examples as RST to be processed by Sphinx.
     """
@@ -413,7 +428,6 @@ def build_examples(_):
     srcdir = SPHINX_DIR.parent / "examples"
     outdir = SPHINX_DIR / "examples"
     outdir.mkdir(exist_ok=True)
-    ex2rst = str(SPHINX_DIR / "ex2rst.py")
 
     # find all examples
     for exdir in next(os.walk(srcdir))[1]:
@@ -428,8 +442,7 @@ def build_examples(_):
         # render python script as RST
         for expy in (srcdir / exdir).glob("*.py"):
             target = subdir / expy.with_suffix(".rst").name
-            subprocess.check_call([sys.executable, ex2rst, expy, target])
-            logger.debug('[examples] wrote {0}'.format(target))
+            _build_example(expy, subdir, logger)
         logger.info('[examples] converted all in examples/{0}'.format(exdir))
 
 
