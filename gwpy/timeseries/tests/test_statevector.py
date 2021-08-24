@@ -280,7 +280,7 @@ class TestStateVector(_TestTimeSeriesBase):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot()
             # make sure there were no lines drawn
-            assert plot.gca().lines == []
+            assert len(plot.gca().lines) == 0
             # assert one collection for each of known and active segmentlists
             assert len(plot.gca().collections) == len(array.bits) * 2
             plot.save(BytesIO(), format='png')
