@@ -144,7 +144,7 @@ class TestSpectrogram(_TestArray2D):
         with rc_context(rc={'text.usetex': False}):
             plot = array.plot(method=method)
             ax = plot.gca()
-            assert ax.lines == []
+            assert len(ax.lines) == 0
             if method == 'imshow':
                 assert len(ax.images) == 1
             else:
