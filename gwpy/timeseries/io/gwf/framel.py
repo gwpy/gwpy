@@ -25,7 +25,10 @@ import warnings
 
 import framel
 
-from ....io.utils import file_list
+from ....io.utils import (
+    file_list,
+    file_path,
+)
 from ....segments import Segment
 from ... import TimeSeries
 
@@ -142,7 +145,7 @@ def write(
             series.crop(start=start, end=end),
             type,
         ))
-    return framel.frputvect(outfile, channellist)
+    return framel.frputvect(file_path(outfile), channellist)
 
 
 def _channel_data_to_write(timeseries, type_):

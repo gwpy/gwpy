@@ -225,4 +225,4 @@ def write(
         add_(frame, lalseries)
 
     # write frame
-    lalframe.FrameWrite(frame, outfile)
+    lalframe.FrameWrite(frame, file_path(outfile))
