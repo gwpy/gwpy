@@ -215,7 +215,7 @@ class TestTable(object):
                                   'one sngl_burst table')
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    def test_read_write_ligolw_ilwdchar_compat(self):
+    def test_read_write_ligolw_ilwdchar_compat(self, tmp_path):
         from glue.ligolw.ilwd import get_ilwdchar_class
         from glue.ligolw.lsctables import SnglBurstTable
 
@@ -226,66 +226,81 @@ class TestTable(object):
             ["peak", "snr", "central_freq", "event_id"],
             ["f8", "f4", "f4", "i8"],
         )
-        with tempfile.NamedTemporaryFile(suffix=".xml") as tmp:
-            # write table with ilwdchar_compat=True
-            table.write(tmp, format="ligolw", tablename="sngl_burst",
-                        ilwdchar_compat=True)
 
-            # read raw ligolw and check type is correct
-            llw = io_ligolw.read_table(tmp, tablename="sngl_burst",
-                                       ilwdchar_compat=True)
-            assert type(llw.getColumnByName("event_id")[0]) is eid_type
+        # write table with ilwdchar_compat=True
+        tmp = tmp_path / "tmp.xml"
+        table.write(
+            tmp,
+            format="ligolw",
+            tablename="sngl_burst",
+            ilwdchar_compat=True,
+        )
 
-            # reset IDs to 0
-            SnglBurstTable.reset_next_id()
+        # read raw ligolw and check type is correct
+        llw = io_ligolw.read_table(
+            tmp,
+            tablename="sngl_burst",
+            ilwdchar_compat=True,
+        )
+        assert type(llw.getColumnByName("event_id")[0]) is eid_type
 
-            # read without explicit use of ilwdchar_compat
-            t2 = self.TABLE.read(tmp, columns=table.colnames)
-            assert type(t2[0]["event_id"]) is eid_type
+        # reset IDs to 0
+        SnglBurstTable.reset_next_id()
 
-            # read again with explicit use of ilwdchar_compat
-            SnglBurstTable.reset_next_id()
-            utils.assert_table_equal(
-                self.TABLE.read(tmp, columns=table.colnames,
-                                ilwdchar_compat=True),
-                t2,
-            )
+        # read without explicit use of ilwdchar_compat
+        t2 = self.TABLE.read(tmp, columns=table.colnames)
+        assert type(t2[0]["event_id"]) is eid_type
 
-            # and check that ilwdchar_compat=True, use_numpy_dtypes=True works
-            SnglBurstTable.reset_next_id()
-            utils.assert_table_equal(
-                self.TABLE.read(tmp, columns=table.colnames,
-                                ilwdchar_compat=True, use_numpy_dtypes=True),
-                table,
-                almost_equal=True,
-            )
+        # read again with explicit use of ilwdchar_compat
+        SnglBurstTable.reset_next_id()
+        utils.assert_table_equal(
+            self.TABLE.read(
+                tmp,
+                columns=table.colnames,
+                ilwdchar_compat=True,
+            ),
+            t2,
+        )
+
+        # and check that ilwdchar_compat=True, use_numpy_dtypes=True works
+        SnglBurstTable.reset_next_id()
+        utils.assert_table_equal(
+            self.TABLE.read(tmp, columns=table.colnames,
+                            ilwdchar_compat=True, use_numpy_dtypes=True),
+            table,
+            almost_equal=True,
+        )
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    def test_read_write_ligolw_property_columns(self):
+    def test_read_write_ligolw_property_columns(self, tmp_path):
         table = self.create(100, ['peak', 'snr', 'central_freq'],
                             ['f8', 'f4', 'f4'])
-        with tempfile.NamedTemporaryFile(suffix='.xml') as f:
-            # write table
-            table.write(f, format='ligolw', tablename='sngl_burst')
 
-            # read raw ligolw and check gpsproperty was unpacked properly
-            llw = io_ligolw.read_table(f, tablename='sngl_burst')
-            for col in ('peak_time', 'peak_time_ns'):
-                assert col in llw.columnnames
-            with io_ligolw.patch_ligotimegps():
-                utils.assert_array_equal(
-                    asarray([row.peak for row in llw]),
-                    table['peak'],
-                )
+        # write table
+        tmp = tmp_path / "test.xml"
+        table.write(tmp, format='ligolw', tablename='sngl_burst')
 
-            # read table and assert gpsproperty was repacked properly
-            t2 = self.TABLE.read(f, columns=table.colnames,
-                                 use_numpy_dtypes=True)
-            utils.assert_table_equal(t2, table, almost_equal=True)
+        # read raw ligolw and check gpsproperty was unpacked properly
+        llw = io_ligolw.read_table(tmp, tablename='sngl_burst')
+        for col in ('peak_time', 'peak_time_ns'):
+            assert col in llw.columnnames
+        with io_ligolw.patch_ligotimegps():
+            utils.assert_array_equal(
+                asarray([row.peak for row in llw]),
+                table['peak'],
+            )
+
+        # read table and assert gpsproperty was repacked properly
+        t2 = self.TABLE.read(
+            tmp,
+            columns=table.colnames,
+            use_numpy_dtypes=True,
+        )
+        utils.assert_table_equal(t2, table, almost_equal=True)
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
     @pytest.mark.parametrize('ilwdchar_compat', (False, True))
-    def test_read_ligolw_get_as_exclude(self, ilwdchar_compat):
+    def test_read_ligolw_get_as_exclude(self, tmp_path, ilwdchar_compat):
         table = self.TABLE(
             rows=[
                 ("H1", 0.0, 4, 0),
@@ -294,20 +309,25 @@ class TestTable(object):
             ],
             names=("instrument", "offset", "process_id", "time_slide_id"),
         )
-        with tempfile.NamedTemporaryFile(suffix=".xml") as f:
-            table.write(
-                f,
-                format="ligolw",
-                tablename="time_slide",
-                ilwdchar_compat=ilwdchar_compat,
-            )
-            t2 = table.read(
-                f,
-                tablename="time_slide",
-                use_numpy_dtypes=ilwdchar_compat,
-            )
-            t2.sort("instrument")
-            utils.assert_table_equal(t2, table)
+
+        # write a file
+        tmp = tmp_path / "test.xml"
+        table.write(
+            tmp,
+            format="ligolw",
+            tablename="time_slide",
+            ilwdchar_compat=ilwdchar_compat,
+        )
+
+        # read it back and assert that we the `instrument` table is
+        # read properly
+        t2 = table.read(
+            tmp,
+            tablename="time_slide",
+            use_numpy_dtypes=ilwdchar_compat,
+        )
+        t2.sort("instrument")
+        utils.assert_table_equal(t2, table)
 
     @SKIP_UPROOT_RW
     def test_read_write_root(self, table, tmp_path):
