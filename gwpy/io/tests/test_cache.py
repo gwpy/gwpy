@@ -143,20 +143,28 @@ def test_is_cache_glue():
 
 
 @skip_missing_dependency('lal.utils')
-def test_is_cache_file():
-
-    # check file(path) is return as True if parsed as Cache
+def test_is_cache_file(tmp_path):
+    """Check that `gwpy.io.cache.is_cache` returns `True` when it should
+    """
+    # write a cache file
     e = io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt')
-    with tempfile.NamedTemporaryFile() as f:
-        # empty file should return False
-        assert io_cache.is_cache(f) is False
-        assert io_cache.is_cache(f.name) is False
+    tmp = tmp_path / "tmpfile"
+    io_cache.write_cache([e], tmp)
 
-        # cache file should return True
-        io_cache.write_cache([e], f)
-        f.seek(0)
-        assert io_cache.is_cache(f) is True
-        assert io_cache.is_cache(f.name) is True
+    # check that we can identify it properly
+    assert io_cache.is_cache(tmp)  # file name
+    with tmp.open("r") as tmpf:
+        assert io_cache.is_cache(tmpf)  # open file object
+
+
+@skip_missing_dependency('lal.utils')
+def test_is_cache_file_empty(tmp_path):
+    """Check that `gwpy.io.cache.is_cache` returns False when it should
+    """
+    tmp = tmp_path / "tmpfile"
+    assert not io_cache.is_cache(tmp)  # FileNotFoundError
+    tmp.touch()
+    assert not io_cache.is_cache(tmp)  # empty file
 
 
 def test_is_cache_entry():

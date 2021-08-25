@@ -23,7 +23,7 @@ and associated metadata for those files, designed to make identifying
 relevant data, and sieving large file lists, easier for the user.
 """
 
-import os.path
+import os
 import warnings
 from collections import (namedtuple, OrderedDict)
 
@@ -269,7 +269,7 @@ def is_cache(cache):
         `True` if the input object is a cache, or a file in LAL cache format,
         otherwise `False`
     """
-    if isinstance(cache, (str,) + FILE_LIKE):
+    if isinstance(cache, (str, os.PathLike) + FILE_LIKE):
         try:
             return bool(len(read_cache(cache)))
         except (
