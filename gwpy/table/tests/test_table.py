@@ -139,79 +139,80 @@ class TestTable(object):
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
     @pytest.mark.parametrize('ext', ['xml', 'xml.gz'])
-    def test_read_write_ligolw(self, ext):
+    def test_read_write_ligolw(self, tmp_path, ext):
         table = self.create(
             100, ['peak_time', 'peak_time_ns', 'snr', 'central_freq'],
             ['i4', 'i4', 'f4', 'f4'])
-        with utils.TemporaryFilename(suffix='.{}'.format(ext)) as tmp:
-            def _read(*args, **kwargs):
-                kwargs.setdefault('format', 'ligolw')
-                kwargs.setdefault('tablename', 'sngl_burst')
-                return self.TABLE.read(tmp, *args, **kwargs)
+        tmp = tmp_path / "table.{}".format(ext)
 
-            def _write(*args, **kwargs):
-                kwargs.setdefault('format', 'ligolw')
-                kwargs.setdefault('tablename', 'sngl_burst')
-                return table.write(tmp, *args, **kwargs)
+        def _read(*args, **kwargs):
+            kwargs.setdefault('format', 'ligolw')
+            kwargs.setdefault('tablename', 'sngl_burst')
+            return self.TABLE.read(tmp, *args, **kwargs)
 
-            # check simple write (using open file descriptor, not file path)
-            with open(tmp, 'w+b') as f:
-                table.write(f, format='ligolw', tablename='sngl_burst')
+        def _write(*args, **kwargs):
+            kwargs.setdefault('format', 'ligolw')
+            kwargs.setdefault('tablename', 'sngl_burst')
+            return table.write(tmp, *args, **kwargs)
 
-            # check simple read
-            t2 = _read()
-            utils.assert_table_equal(table, t2, almost_equal=True)
-            assert t2.meta.get('tablename', None) == 'sngl_burst'
+        # check simple write (using open file descriptor, not file path)
+        with tmp.open("w+b") as f:
+            table.write(f, format='ligolw', tablename='sngl_burst')
 
-            # check numpy type casting works
-            from ligo.lw.lsctables import LIGOTimeGPS as LigolwGPS
-            t3 = _read(columns=['peak'])
-            assert isinstance(t3['peak'][0], LigolwGPS)
-            t3 = _read(columns=['peak'], use_numpy_dtypes=True)
-            assert t3['peak'].dtype == dtype('float64')
-            utils.assert_array_equal(
-                t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
+        # check simple read
+        t2 = _read()
+        utils.assert_table_equal(table, t2, almost_equal=True)
+        assert t2.meta.get('tablename', None) == 'sngl_burst'
 
-            # check reading multiple tables works
-            t3 = self.TABLE.read([tmp, tmp], format='ligolw',
-                                 tablename='sngl_burst')
-            utils.assert_table_equal(vstack((t2, t2)), t3)
+        # check numpy type casting works
+        from ligo.lw.lsctables import LIGOTimeGPS as LigolwGPS
+        t3 = _read(columns=['peak'])
+        assert isinstance(t3['peak'][0], LigolwGPS)
+        t3 = _read(columns=['peak'], use_numpy_dtypes=True)
+        assert t3['peak'].dtype == dtype('float64')
+        utils.assert_array_equal(
+            t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
 
-            # check writing to existing file raises IOError
-            with pytest.raises(IOError) as exc:
-                _write()
-            assert str(exc.value) == 'File exists: %s' % tmp
+        # check reading multiple tables works
+        t3 = self.TABLE.read([tmp, tmp], format='ligolw',
+                             tablename='sngl_burst')
+        utils.assert_table_equal(vstack((t2, t2)), t3)
 
-            # check overwrite=True, append=False rewrites table
-            _write(overwrite=True)
-            t3 = _read()
-            utils.assert_table_equal(t2, t3)
+        # check writing to existing file raises IOError
+        with pytest.raises(IOError) as exc:
+            _write()
+        assert str(exc.value) == 'File exists: %s' % tmp
 
-            # check append=True duplicates table
-            _write(append=True)
-            t3 = _read()
-            utils.assert_table_equal(vstack((t2, t2)), t3)
+        # check overwrite=True, append=False rewrites table
+        _write(overwrite=True)
+        t3 = _read()
+        utils.assert_table_equal(t2, t3)
 
-            # check overwrite=True, append=True rewrites table
-            _write(append=True, overwrite=True)
-            t3 = _read()
-            utils.assert_table_equal(t2, t3)
+        # check append=True duplicates table
+        _write(append=True)
+        t3 = _read()
+        utils.assert_table_equal(vstack((t2, t2)), t3)
 
-            # write another table and check we can still get back the first
-            insp = self.create(10, ['end_time', 'snr', 'chisq_dof'])
-            insp.write(tmp, format='ligolw', tablename='sngl_inspiral',
-                       append=True)
-            t3 = _read()
-            utils.assert_table_equal(t2, t3)
+        # check overwrite=True, append=True rewrites table
+        _write(append=True, overwrite=True)
+        t3 = _read()
+        utils.assert_table_equal(t2, t3)
 
-            # write another table with append=False and check the first table
-            # is gone
-            insp.write(tmp, format='ligolw', tablename='sngl_inspiral',
-                       append=False, overwrite=True)
-            with pytest.raises(ValueError) as exc:
-                _read()
-            assert str(exc.value) == ('document must contain exactly '
-                                      'one sngl_burst table')
+        # write another table and check we can still get back the first
+        insp = self.create(10, ['end_time', 'snr', 'chisq_dof'])
+        insp.write(tmp, format='ligolw', tablename='sngl_inspiral',
+                   append=True)
+        t3 = _read()
+        utils.assert_table_equal(t2, t3)
+
+        # write another table with append=False and check the first table
+        # is gone
+        insp.write(tmp, format='ligolw', tablename='sngl_inspiral',
+                   append=False, overwrite=True)
+        with pytest.raises(ValueError) as exc:
+            _read()
+        assert str(exc.value) == ('document must contain exactly '
+                                  'one sngl_burst table')
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
     def test_read_write_ligolw_ilwdchar_compat(self):
@@ -309,88 +310,89 @@ class TestTable(object):
             utils.assert_table_equal(t2, table)
 
     @SKIP_UPROOT_RW
-    def test_read_write_root(self, table):
-        with utils.TemporaryFilename(suffix='.root') as tmp:
-            # check write
+    def test_read_write_root(self, table, tmp_path):
+        tmp = tmp_path / "table.root"
+
+        # check write
+        table.write(tmp)
+
+        # check read gives back same table
+        t2 = self.TABLE.read(tmp)
+        utils.assert_table_equal(table, t2)
+
+        # test selections work
+        segs = SegmentList([Segment(100, 200), Segment(400, 500)])
+        t2 = self.TABLE.read(
+            tmp,
+            selection=['200 < frequency < 500',
+                       ('time', filters.in_segmentlist, segs)],
+        )
+        utils.assert_table_equal(
+            t2,
+            filter_table(
+                table,
+                'frequency > 200',
+                'frequency < 500',
+                ('time', filters.in_segmentlist, segs),
+            ),
+        )
+
+    @SKIP_UPROOT_RW
+    def test_write_root_overwrite(self, table, tmp_path):
+        tmp = tmp_path / "table.root"
+        table.write(tmp)
+
+        # assert failure with overwrite=False (default)
+        with pytest.raises(OSError):
             table.write(tmp)
 
-            # check read gives back same table
-            t2 = self.TABLE.read(tmp)
-            utils.assert_table_equal(table, t2)
-
-            # test selections work
-            segs = SegmentList([Segment(100, 200), Segment(400, 500)])
-            t2 = self.TABLE.read(
-                tmp,
-                selection=['200 < frequency < 500',
-                           ('time', filters.in_segmentlist, segs)],
-            )
-            utils.assert_table_equal(
-                t2,
-                filter_table(
-                    table,
-                    'frequency > 200',
-                    'frequency < 500',
-                    ('time', filters.in_segmentlist, segs),
-                ),
-            )
+        # assert works with overwrite=True
+        table.write(tmp, overwrite=True)
 
     @SKIP_UPROOT_RW
-    def test_write_root_overwrite(self, table):
-        with utils.TemporaryFilename(suffix='.root') as tmp:
-            table.write(tmp)
-
-            # assert failure with overwrite=False (default)
-            with pytest.raises(OSError):
-                table.write(tmp)
-
-            # assert works with overwrite=True
-            table.write(tmp, overwrite=True)
+    def test_read_root_multiple_trees(self, table, tmp_path):
+        tmp = tmp_path / "table.root"
+        with uproot.create(tmp) as root:
+            root["a"] = uproot.newtree({"branch": "int32"})
+            root["a"].extend({"branch": asarray([1, 2, 3, 4, 5])})
+            root["b"] = uproot.newtree()
+        with pytest.raises(ValueError) as exc:
+            self.TABLE.read(tmp)
+        assert str(exc.value).startswith('Multiple trees found')
+        self.TABLE.read(tmp, treename="a")
 
     @SKIP_UPROOT_RW
-    def test_read_root_multiple_trees(self, table):
+    def test_read_write_root_append(self, table, tmp_path):
+        tmp = tmp_path / "table.root"
         # append hasn't been implemented in uproot 3 yet
-        with utils.TemporaryFilename(suffix='.root') as tmp:
-            with uproot.create(tmp) as root:
-                root["a"] = uproot.newtree({"branch": "int32"})
-                root["a"].extend({"branch": asarray([1, 2, 3, 4, 5])})
-                root["b"] = uproot.newtree()
-            with pytest.raises(ValueError) as exc:
-                self.TABLE.read(tmp)
-            assert str(exc.value).startswith('Multiple trees found')
-            self.TABLE.read(tmp, treename="a")
-
-    @SKIP_UPROOT_RW
-    def test_read_write_root_append(self, table):
-        # append hasn't been implemented in uproot 3 yet
-        with utils.TemporaryFilename(suffix='.root') as tmp, \
-             pytest.raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             table.write(tmp, treename="test2", append=True)
 
     @utils.skip_missing_dependency('LDAStools.frameCPP')
-    def test_read_write_gwf(self):
+    def test_read_write_gwf(self, tmp_path):
         table = self.create(100, ['time', 'blah', 'frequency'])
         columns = table.dtype.names
-        with utils.TemporaryFilename(suffix='.gwf') as tmp:
-            # check write
-            try:
-                table.write(tmp, 'test_read_write_gwf')
-            except TypeError as exc:  # pragma: no-cover
-                if 'ParamList' in str(exc):  # frameCPP broken (2.6.7)
-                    pytest.skip(
-                        "bug in python-ldas-tools-framecpp: {!s}".format(exc),
-                    )
-                raise
+        tmp = tmp_path / "table.gwf"
 
-            # check read gives back same table
-            t2 = self.TABLE.read(tmp, 'test_read_write_gwf', columns=columns)
-            utils.assert_table_equal(table, t2, meta=False, almost_equal=True)
+        # check write
+        try:
+            table.write(tmp, 'test_read_write_gwf')
+        except TypeError as exc:  # pragma: no-cover
+            if 'ParamList' in str(exc):  # frameCPP broken (2.6.7)
+                pytest.skip(
+                    "bug in python-ldas-tools-framecpp: {!s}".format(exc),
+                )
+            raise
 
-            # check selections works
-            t3 = self.TABLE.read(tmp, 'test_read_write_gwf',
-                                 columns=columns, selection='frequency>500')
-            utils.assert_table_equal(
-                filter_table(t2, 'frequency>500'), t3)
+        # check read gives back same table
+        t2 = self.TABLE.read(tmp, 'test_read_write_gwf', columns=columns)
+        utils.assert_table_equal(table, t2, meta=False, almost_equal=True)
+
+        # check selections works
+        t3 = self.TABLE.read(tmp, 'test_read_write_gwf',
+                             columns=columns, selection='frequency>500')
+        utils.assert_table_equal(
+            filter_table(t2, 'frequency>500'), t3)
 
 
 class TestEventTable(TestTable):
@@ -590,62 +592,64 @@ class TestEventTable(TestTable):
 
     # -- test I/O -------------------------------
 
-    def test_read_write_hdf5(self, table):
+    def test_read_write_hdf5(self, table, tmp_path):
         # check that our overrides of astropy's H5 reader
         # didn't break everything
-        with utils.TemporaryFilename(suffix=".h5") as tmp:
-            table.write(tmp, path="/data")
-            t2 = self.TABLE.read(tmp, path="/data")
-            utils.assert_table_equal(t2, table)
+        tmp = tmp_path / "table.h5"
+        table.write(tmp, path="/data")
+        t2 = self.TABLE.read(tmp, path="/data")
+        utils.assert_table_equal(t2, table)
 
-            t2 = self.TABLE.read(
-                tmp,
-                path="/data",
-                selection="frequency>500",
-                columns=["time", "snr"],
-            )
-            utils.assert_table_equal(
-                t2,
-                filter_table(table, "frequency>500")[("time", "snr")],
-            )
+        t2 = self.TABLE.read(
+            tmp,
+            path="/data",
+            selection="frequency>500",
+            columns=["time", "snr"],
+        )
+        utils.assert_table_equal(
+            t2,
+            filter_table(table, "frequency>500")[("time", "snr")],
+        )
 
     @pytest.mark.parametrize('fmtname', ('Omega', 'cWB'))
-    def test_read_write_ascii(self, table, fmtname):
+    def test_read_write_ascii(self, table, tmp_path, fmtname):
         fmt = 'ascii.{}'.format(fmtname.lower())
-        with utils.TemporaryFilename(suffix='.txt') as tmp:
-            # check write/read returns the same table
-            with open(tmp, 'w') as fobj:
-                table.write(fobj, format=fmt)
-            t2 = self.TABLE.read(tmp, format=fmt)
-            utils.assert_table_equal(table, t2, almost_equal=True)
+        tmp = tmp_path / "table.txt"
 
-            # check that we can use selections and column filtering
-            t2 = self.TABLE.read(
-                tmp,
-                format=fmt,
-                selection="frequency>500",
-                columns=["time", "snr"],
-            )
-            utils.assert_table_equal(
-                t2,
-                filter_table(table, "frequency>500")[("time", "snr")],
-                almost_equal=True,
-            )
+        # check write/read returns the same table
+        with tmp.open("w") as fobj:
+            table.write(fobj, format=fmt)
+        t2 = self.TABLE.read(tmp, format=fmt)
+        utils.assert_table_equal(table, t2, almost_equal=True)
+
+        # check that we can use selections and column filtering
+        t2 = self.TABLE.read(
+            tmp,
+            format=fmt,
+            selection="frequency>500",
+            columns=["time", "snr"],
+        )
+        utils.assert_table_equal(
+            t2,
+            filter_table(table, "frequency>500")[("time", "snr")],
+            almost_equal=True,
+        )
 
     @pytest.mark.parametrize('fmtname', ('Omega', 'cWB'))
-    def test_read_write_ascii_error(self, table, fmtname):
-        with utils.TemporaryFilename(suffix='.txt') as tmp:
-            with open(tmp, 'w'):
-                pass  # write empty file
-            # assert reading blank file doesn't work with column name error
-            with pytest.raises(InconsistentTableError) as exc:
-                self.TABLE.read(
-                    tmp,
-                    format="ascii.{}".format(fmtname.lower()),
-                )
-            assert str(exc.value) == (
-                'No column names found in {} header'.format(fmtname)
+    def test_read_write_ascii_error(self, table, tmp_path, fmtname):
+        tmp = tmp_path / "table.txt"
+        with tmp.open("w"):
+            pass  # write empty file
+
+        # assert reading blank file doesn't work with column name error
+        with pytest.raises(InconsistentTableError) as exc:
+            self.TABLE.read(
+                tmp,
+                format="ascii.{}".format(fmtname.lower()),
             )
+        assert str(exc.value) == (
+            'No column names found in {} header'.format(fmtname)
+        )
 
     def test_read_pycbc_live(self):
         table = self.create(

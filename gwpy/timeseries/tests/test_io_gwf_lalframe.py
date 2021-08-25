@@ -31,7 +31,6 @@ from ...testing.utils import (
     assert_dict_equal,
     assert_quantity_sub_equal,
     skip_missing_dependency,
-    TemporaryFilename,
     TEST_GWF_FILE,
 )
 from ...timeseries import TimeSeries
@@ -85,10 +84,10 @@ def test_open_data_source_glue():
     return _test_open_data_source(cache)
 
 
-def test_open_data_source_cache():
-    with TemporaryFilename(".lcf") as cache:
-        write_cache([TEST_GWF_FILE], cache, format="lal")
-        return _test_open_data_source(cache)
+def test_open_data_source_cache(tmp_path):
+    tmp = tmp_path / "test.lcf"
+    write_cache([TEST_GWF_FILE], tmp, format="lal")
+    return _test_open_data_source(tmp)
 
 
 def test_open_data_source_error():
@@ -147,27 +146,27 @@ def test_read_deprecated_scaled():
         )
 
 
-def test_write():
+def test_write(tmp_path):
     # read the data first
     data = gwpy_lalframe.read(TEST_GWF_FILE, CHANNELS)
 
-    with TemporaryFilename() as tmp:
-        # write the data
-        gwpy_lalframe.write(
-            data,
-            tmp,
-        )
+    # write the data
+    tmp = tmp_path / "test.gwf"
+    gwpy_lalframe.write(
+        data,
+        tmp,
+    )
 
-        # read it back and check things
-        data2 = gwpy_lalframe.read(tmp, CHANNELS)
-        assert_dict_equal(data, data2, assert_quantity_sub_equal)
+    # read it back and check things
+    data2 = gwpy_lalframe.read(tmp, CHANNELS)
+    assert_dict_equal(data, data2, assert_quantity_sub_equal)
 
 
-def test_write_no_ifo():
+def test_write_no_ifo(tmp_path):
     # create timeseries with no IFO
     data = TimeSeries([1, 2, 3, 4, 5])
-    with TemporaryFilename() as tmp:
-        gwpy_lalframe.write(
-            {None: data},
-            tmp
-        )
+    tmp = tmp_path / "test.gwf"
+    gwpy_lalframe.write(
+        {None: data},
+        tmp
+    )

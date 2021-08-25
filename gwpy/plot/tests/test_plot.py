@@ -19,8 +19,6 @@
 """Unit tests for :mod:`gwpy.plot`
 """
 
-import os.path
-
 import pytest
 
 import numpy
@@ -92,10 +90,10 @@ class TestPlot(FigureTestBase):
         utils.assert_array_equal(image.get_array(), array.value.T)
         plot.close()
 
-    def test_save(self, fig):
-        with utils.TemporaryFilename(suffix='.png') as tmp:
-            fig.save(tmp)
-            assert os.path.isfile(tmp)
+    def test_save(self, fig, tmp_path):
+        tmp = tmp_path / "plot.png"
+        fig.save(str(tmp))
+        assert tmp.is_file()
 
     def test_get_axes(self, fig):
         fig.add_subplot(2, 1, 1, projection='rectilinear')

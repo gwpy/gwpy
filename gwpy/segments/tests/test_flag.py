@@ -508,20 +508,20 @@ class TestDataQualityFlag(object):
                 _read_write(autoidentify=True)
             _read_write(autoidentify=True, write_kw={'overwrite': True})
 
-    def test_read_write_hdf5(self, flag):
-        with utils.TemporaryFilename(suffix=".h5") as fp:
-            flag.write(fp, path="test")
-            f2 = self.TEST_CLASS.read(fp, path="test", format="hdf5")
-            utils.assert_flag_equal(f2, flag)
+    def test_read_write_hdf5(self, flag, tmp_path):
+        tmp = tmp_path / "test.h5"
+        flag.write(tmp, path="test")
+        f2 = self.TEST_CLASS.read(tmp, path="test", format="hdf5")
+        utils.assert_flag_equal(f2, flag)
 
-            # test direct access from dataset
-            with h5py.File(fp, "r") as h5f:
-                f2 = self.TEST_CLASS.read(h5f["test"])
-                utils.assert_flag_equal(f2, flag)
+        # test direct access from dataset
+        with h5py.File(tmp, "r") as h5f:
+            f2 = self.TEST_CLASS.read(h5f["test"])
+        utils.assert_flag_equal(f2, flag)
 
-            # test auto-discover of single dataset
-            f2 = self.TEST_CLASS.read(fp)
-            utils.assert_flag_equal(f2, flag)
+        # test auto-discover of single dataset
+        f2 = self.TEST_CLASS.read(tmp)
+        utils.assert_flag_equal(f2, flag)
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
     @pytest.mark.parametrize("ilwdchar_compat", [False, True])

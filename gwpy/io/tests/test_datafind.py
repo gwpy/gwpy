@@ -31,7 +31,6 @@ import gwdatafind
 
 from ...testing.utils import (
     TEST_GWF_FILE,
-    TemporaryFilename,
     skip_missing_dependency,
 )
 from .. import datafind as io_datafind
@@ -145,12 +144,12 @@ class TestFflConnection(object):
         conn._read_ffl_cache('X', 'test')
         mopen.assert_called_once()
 
-    def test_read_last_line(self, _):
-        with TemporaryFilename() as tmp:
-            with open(tmp, 'w') as fobj:
-                print('line1', file=fobj)
-                print('line2', file=fobj)
-            assert self.TEST_CLASS._read_last_line(tmp) == 'line2'
+    def test_read_last_line(self, _, tmp_path):
+        tmp = tmp_path / "tmp"
+        with tmp.open("w") as fobj:
+            print('line1', file=fobj)
+            print('line2', file=fobj)
+        assert self.TEST_CLASS._read_last_line(tmp) == 'line2'
 
     @mock.patch('gwpy.io.datafind.FflConnection._read_last_line',
                 return_value='X-TEST-0-1.gwf 0 1 0 0')

@@ -27,7 +27,7 @@ import pytest
 
 import numpy
 
-from ...testing.utils import (skip_missing_dependency, TemporaryFilename)
+from ...testing.utils import skip_missing_dependency
 from .. import ligolw as io_ligolw
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -260,7 +260,7 @@ def test_write_tables_to_document(llwdoc_with_tables):
 
 
 @parametrize_ilwdchar_compat
-def test_write_tables(ilwdchar_compat):
+def test_write_tables(ilwdchar_compat, tmp_path):
     stab = new_table(
         'segment',
         [{'segment': (1, 2)}, {'segment': (3, 4)}, {'segment': (5, 6)}],
@@ -274,38 +274,38 @@ def test_write_tables(ilwdchar_compat):
         ilwdchar_compat=ilwdchar_compat,
     )
 
-    with TemporaryFilename() as tmp:
-        # write writing works
+    tmp = tmp_path / "test.xml"
+
+    # write writing works
+    io_ligolw.write_tables(tmp, [stab, ptab])
+    assert io_ligolw.list_tables(tmp) == ['segment', 'process']
+
+    # check writing to existing file raises IOError
+    with pytest.raises(IOError):
         io_ligolw.write_tables(tmp, [stab, ptab])
-        assert io_ligolw.list_tables(tmp) == ['segment', 'process']
 
-        # check writing to existing file raises IOError
-        with pytest.raises(IOError):
-            io_ligolw.write_tables(tmp, [stab, ptab])
+    # check overwrite=True works
+    io_ligolw.write_tables(tmp, [stab], overwrite=True)
+    xmldoc = io_ligolw.open_xmldoc(tmp)
+    assert io_ligolw.list_tables(xmldoc) == ['segment']
+    stab2 = io_ligolw.read_table(xmldoc, 'segment')
+    assert len(stab2) == len(stab)
 
-        # check overwrite=True works
-        io_ligolw.write_tables(tmp, [stab], overwrite=True)
-        print(open(tmp, 'rb').read())
-        xmldoc = io_ligolw.open_xmldoc(tmp)
-        assert io_ligolw.list_tables(xmldoc) == ['segment']
-        stab2 = io_ligolw.read_table(xmldoc, 'segment')
-        assert len(stab2) == len(stab)
+    io_ligolw.write_tables(tmp, [stab, ptab], overwrite=True)  # rewrite
 
-        io_ligolw.write_tables(tmp, [stab, ptab], overwrite=True)  # rewrite
+    # check append=True works
+    io_ligolw.write_tables(tmp, [stab], append=True)
+    xmldoc = io_ligolw.open_xmldoc(tmp)
+    assert sorted(io_ligolw.list_tables(xmldoc)) == ['process', 'segment']
+    stab2 = io_ligolw.read_table(xmldoc, 'segment')
+    assert len(stab2) == len(stab) * 2
 
-        # check append=True works
-        io_ligolw.write_tables(tmp, [stab], append=True)
-        xmldoc = io_ligolw.open_xmldoc(tmp)
-        assert sorted(io_ligolw.list_tables(xmldoc)) == ['process', 'segment']
-        stab2 = io_ligolw.read_table(xmldoc, 'segment')
-        assert len(stab2) == len(stab) * 2
-
-        # check append=True, overwrite=True works
-        io_ligolw.write_tables(tmp, [stab], append=True, overwrite=True)
-        xmldoc = io_ligolw.open_xmldoc(tmp)
-        assert sorted(io_ligolw.list_tables(xmldoc)) == ['process', 'segment']
-        stab2 = io_ligolw.read_table(xmldoc, 'segment')
-        assert len(stab2) == len(stab)
+    # check append=True, overwrite=True works
+    io_ligolw.write_tables(tmp, [stab], append=True, overwrite=True)
+    xmldoc = io_ligolw.open_xmldoc(tmp)
+    assert sorted(io_ligolw.list_tables(xmldoc)) == ['process', 'segment']
+    stab2 = io_ligolw.read_table(xmldoc, 'segment')
+    assert len(stab2) == len(stab)
 
 
 def test_is_ligolw_false():

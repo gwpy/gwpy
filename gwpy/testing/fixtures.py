@@ -32,12 +32,14 @@ from matplotlib import rc_context
 
 from ..plot.tex import HAS_TEX
 from ..timeseries import TimeSeries
+from ..utils.decorators import deprecated_function
 from .utils import TemporaryFilename
 
 
 # -- I/O ---------------------------------------------------------------------
 
 @pytest.fixture
+@deprecated_function
 def tmpfile():
     """Return a temporary filename using `tempfile.mktemp`.
 

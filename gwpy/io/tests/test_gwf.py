@@ -19,12 +19,13 @@
 """Unit tests for :mod:`gwpy.io.gwf`
 """
 
-from urllib.parse import urljoin
-
 import pytest
 
-from ...testing.utils import (TEST_GWF_FILE, skip_missing_dependency,
-                              TemporaryFilename, assert_segmentlist_equal)
+from ...testing.utils import (
+    TEST_GWF_FILE,
+    assert_segmentlist_equal,
+    skip_missing_dependency,
+)
 from .. import gwf as io_gwf
 from ..cache import file_segment
 
@@ -43,16 +44,31 @@ def test_identify_gwf():
 
 
 @skip_missing_dependency('LDAStools.frameCPP')
-def test_open_gwf():
+def test_open_gwf_r(tmp_path):
     from LDAStools import frameCPP
     assert isinstance(io_gwf.open_gwf(TEST_GWF_FILE), frameCPP.IFrameFStream)
-    with TemporaryFilename() as tmp:
-        assert isinstance(io_gwf.open_gwf(tmp, mode='w'),
-                          frameCPP.OFrameFStream)
-        # check that we can use a file:// URL as well
-        url = urljoin('file:', tmp)
-        assert isinstance(io_gwf.open_gwf(url, mode='w'),
-                          frameCPP.OFrameFStream)
+
+
+@skip_missing_dependency('LDAStools.frameCPP')
+def test_open_gwf_w(tmp_path):
+    from LDAStools import frameCPP
+    tmp = tmp_path / "test.gwf"
+    assert isinstance(io_gwf.open_gwf(tmp, mode='w'), frameCPP.OFrameFStream)
+
+
+@skip_missing_dependency('LDAStools.frameCPP')
+def test_open_gwf_w_file_url(tmp_path):
+    from LDAStools import frameCPP
+    # check that we can use a file:// URL as well
+    tmp = tmp_path / "test.gwf"
+    assert isinstance(
+        io_gwf.open_gwf(tmp.as_uri(), mode='w'),
+        frameCPP.OFrameFStream,
+    )
+
+
+@skip_missing_dependency('LDAStools.frameCPP')
+def test_open_gwf_a_error():
     with pytest.raises(ValueError):
         io_gwf.open_gwf('test', mode='a')
 

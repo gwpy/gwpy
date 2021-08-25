@@ -240,10 +240,10 @@ class TestFrequencySeries(_TestSeries):
 
     @staticmethod
     @pytest.fixture
-    def ligolw(tmpfile):
-        with open(tmpfile, 'w+') as fobj:
-            fobj.write(LIGO_LW_ARRAY)
-        return tmpfile
+    def ligolw(tmp_path):
+        tmp = tmp_path / "test.xml"
+        tmp.write_text(LIGO_LW_ARRAY)
+        return tmp
 
     @utils.skip_missing_dependency('lal')
     @utils.skip_missing_dependency('ligo.lw')

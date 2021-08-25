@@ -23,7 +23,7 @@ import pytest
 
 from astropy.table import (Table, vstack)
 
-from ...testing.utils import (assert_table_equal, TemporaryFilename)
+from ...testing.utils import assert_table_equal
 from .. import (
     mp as io_mp,
 )
@@ -32,19 +32,17 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 @pytest.fixture
-def tmp1():
-    with TemporaryFilename(suffix='.csv') as tmp:
-        with open(tmp, "w") as tmpf:
-            tmpf.write("a,b,c\n1,2,3\n4,5,6")
-        yield tmp
+def tmp1(tmp_path):
+    tmp = tmp_path / "tmp1.csv"
+    tmp.write_text("a,b,c\n1,2,3\n4,5,6")
+    yield str(tmp)
 
 
 @pytest.fixture
-def tmp2():
-    with TemporaryFilename(suffix='.csv') as tmp:
-        with open(tmp, "w") as tmpf:
-            tmpf.write("a,b,c\n7,8,9\n10,11,12")
-        yield tmp
+def tmp2(tmp_path):
+    tmp = tmp_path / "tmp2.csv"
+    tmp.write_text("a,b,c\n7,8,9\n10,11,12")
+    yield tmp
 
 
 def test_read_multi_single(tmp1):

@@ -468,73 +468,73 @@ class TestChannelList(object):
             utils.assert_segmentlist_equal(avail[self.NAMES[0]],
                                            [(0, 10), (20, 30)])
 
-    def test_read_write_omega_config(self):
+    def test_read_write_omega_config(self, tmp_path):
+        tmp = tmp_path / "config.ini"
         # write OMEGA_CONFIG to file and read it back
-        with utils.TemporaryFilename(suffix='.txt') as tmp:
-            with open(tmp, 'w') as f:
-                f.write(OMEGA_CONFIG)
-            cl = self.TEST_CLASS.read(tmp, format='omega-scan')
-            assert len(cl) == 2
-            assert cl[0].name == 'L1:GDS-CALIB_STRAIN'
-            assert cl[0].sample_rate == 4096 * units.Hertz
-            assert cl[0].frametype == 'L1_HOFT_C00'
-            assert cl[0].params == {
-                'channelName': 'L1:GDS-CALIB_STRAIN',
-                'frameType': 'L1_HOFT_C00',
-                'sampleFrequency': 4096,
-                'searchTimeRange': 64,
-                'searchFrequencyRange': (0, float('inf')),
-                'searchQRange': (4, 96),
-                'searchMaximumEnergyLoss': 0.2,
-                'whiteNoiseFalseRate': 1e-3,
-                'searchWindowDuration': 0.5,
-                'plotTimeRanges': (1, 4, 16),
-                'plotFrequencyRange': (),
-                'plotNormalizedEnergyRange': (0, 25.5),
-                'alwaysPlotFlag': 1,
-            }
-            assert cl[1].name == 'L1:PEM-CS_SEIS_LVEA_VERTEX_Z_DQ'
-            assert cl[1].frametype == 'L1_R'
+        with open(tmp, 'w') as f:
+            f.write(OMEGA_CONFIG)
+        cl = self.TEST_CLASS.read(tmp, format='omega-scan')
+        assert len(cl) == 2
+        assert cl[0].name == 'L1:GDS-CALIB_STRAIN'
+        assert cl[0].sample_rate == 4096 * units.Hertz
+        assert cl[0].frametype == 'L1_HOFT_C00'
+        assert cl[0].params == {
+            'channelName': 'L1:GDS-CALIB_STRAIN',
+            'frameType': 'L1_HOFT_C00',
+            'sampleFrequency': 4096,
+            'searchTimeRange': 64,
+            'searchFrequencyRange': (0, float('inf')),
+            'searchQRange': (4, 96),
+            'searchMaximumEnergyLoss': 0.2,
+            'whiteNoiseFalseRate': 1e-3,
+            'searchWindowDuration': 0.5,
+            'plotTimeRanges': (1, 4, 16),
+            'plotFrequencyRange': (),
+            'plotNormalizedEnergyRange': (0, 25.5),
+            'alwaysPlotFlag': 1,
+        }
+        assert cl[1].name == 'L1:PEM-CS_SEIS_LVEA_VERTEX_Z_DQ'
+        assert cl[1].frametype == 'L1_R'
 
-            # write omega config again using ChannelList.write and read it back
-            # and check that the two lists match
-            with open(tmp, 'w') as f:
-                cl.write(f, format='omega-scan')
-            cl2 = type(cl).read(tmp, format='omega-scan')
-            assert cl == cl2
+        # write omega config again using ChannelList.write and read it back
+        # and check that the two lists match
+        with open(tmp, 'w') as f:
+            cl.write(f, format='omega-scan')
+        cl2 = type(cl).read(tmp, format='omega-scan')
+        assert cl == cl2
 
-    def test_read_write_clf(self):
+    def test_read_write_clf(self, tmp_path):
+        tmp = tmp_path / "config.clf"
         # write clf to file and read it back
-        with utils.TemporaryFilename(suffix='.ini') as tmp:
-            with open(tmp, 'w') as f:
-                f.write(CLF)
-            cl = ChannelList.read(tmp)
-            assert len(cl) == 4
-            a = cl[0]
-            assert a.name == 'H1:GDS-CALIB_STRAIN'
-            assert a.sample_rate == 16384 * units.Hz
-            assert a.frametype == 'H1_HOFT_C00'
-            assert a.frequency_range[0] == 4. * units.Hz
-            assert a.frequency_range[1] == float('inf') * units.Hz
-            assert a.safe is False
-            assert a.params == {'qhigh': '150', 'safe': 'unsafe',
-                                'fidelity': 'clean'}
-            b = cl[1]
-            assert b.name == 'H1:ISI-GND_STS_HAM2_X_DQ'
-            assert b.frequency_range[0] == .1 * units.Hz
-            assert b.frequency_range[1] == 60. * units.Hz
-            c = cl[2]
-            assert c.name == 'H1:ISI-GND_STS_HAM2_Y_DQ'
-            assert c.sample_rate == 256 * units.Hz
-            assert c.safe is False
-            d = cl[3]
-            assert d.name == 'H1:ISI-GND_STS_HAM2_Z_DQ'
-            assert d.safe is True
-            assert d.params['fidelity'] == 'glitchy'
+        with open(tmp, 'w') as f:
+            f.write(CLF)
+        cl = ChannelList.read(tmp)
+        assert len(cl) == 4
+        a = cl[0]
+        assert a.name == 'H1:GDS-CALIB_STRAIN'
+        assert a.sample_rate == 16384 * units.Hz
+        assert a.frametype == 'H1_HOFT_C00'
+        assert a.frequency_range[0] == 4. * units.Hz
+        assert a.frequency_range[1] == float('inf') * units.Hz
+        assert a.safe is False
+        assert a.params == {'qhigh': '150', 'safe': 'unsafe',
+                            'fidelity': 'clean'}
+        b = cl[1]
+        assert b.name == 'H1:ISI-GND_STS_HAM2_X_DQ'
+        assert b.frequency_range[0] == .1 * units.Hz
+        assert b.frequency_range[1] == 60. * units.Hz
+        c = cl[2]
+        assert c.name == 'H1:ISI-GND_STS_HAM2_Y_DQ'
+        assert c.sample_rate == 256 * units.Hz
+        assert c.safe is False
+        d = cl[3]
+        assert d.name == 'H1:ISI-GND_STS_HAM2_Z_DQ'
+        assert d.safe is True
+        assert d.params['fidelity'] == 'glitchy'
 
-            # write omega config again using ChannelList.write and read it back
-            # and check that the two lists match
-            with open(tmp, 'w') as f:
-                cl.write(f)
-            cl2 = type(cl).read(tmp)
-            assert cl == cl2
+        # write clf again using ChannelList.write and read it back
+        # and check that the two lists match
+        with open(tmp, 'w') as f:
+            cl.write(f)
+        cl2 = type(cl).read(tmp)
+        assert cl == cl2

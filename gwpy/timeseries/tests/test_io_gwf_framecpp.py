@@ -24,10 +24,7 @@ import pytest
 import numpy
 
 from ...detector import Channel
-from ...testing.utils import (
-    assert_quantity_sub_equal,
-    TemporaryFilename,
-)
+from ...testing.utils import assert_quantity_sub_equal
 from ...timeseries import TimeSeries
 
 frameCPP = pytest.importorskip("LDAStools.frameCPP")  # noqa: F401
@@ -49,23 +46,23 @@ def int32ts():
     return ts
 
 
-def test_read_scaled_false(int32ts):
-    with TemporaryFilename() as tmpf:
-        int32ts.write(tmpf, format="gwf.framecpp", type="adc")
-        new = type(int32ts).read(tmpf, "test", type="adc", scaled=False)
+def test_read_scaled_false(int32ts, tmp_path):
+    tmp = tmp_path / "test.gwf"
+    int32ts.write(tmp, format="gwf.framecpp", type="adc")
+    new = type(int32ts).read(tmp, "test", type="adc", scaled=False)
     assert new.dtype == int32ts.dtype
     assert new.unit == "ct"
 
 
-def test_read_scaled_type_change(int32ts):
-    with TemporaryFilename() as tmpf:
-        int32ts.write(tmpf, format="gwf.framecpp", type="adc")
-        new = type(int32ts).read(tmpf, "test", type="adc")
+def test_read_scaled_type_change(int32ts, tmp_path):
+    tmp = tmp_path / "test.gwf"
+    int32ts.write(tmp, format="gwf.framecpp", type="adc")
+    new = type(int32ts).read(tmp, "test", type="adc")
     assert new.dtype == numpy.dtype("float64")
     assert_quantity_sub_equal(int32ts, new)
 
 
-def test_read_write_frvect_name():
+def test_read_write_frvect_name(tmp_path):
     """Test against regression of https://github.com/gwpy/gwpy/issues/1206
     """
     data = TimeSeries(
@@ -73,7 +70,7 @@ def test_read_write_frvect_name():
         channel="X1:TEST",
         name="test",
     )
-    with TemporaryFilename() as tmpf:
-        data.write(tmpf, format="gwf.framecpp", type="proc")
-        new = type(data).read(tmpf, "test")
+    tmp = tmp_path / "test.gwf"
+    data.write(tmp, format="gwf.framecpp", type="proc")
+    new = type(data).read(tmp, "test")
     assert_quantity_sub_equal(data, new, exclude=('channel',))

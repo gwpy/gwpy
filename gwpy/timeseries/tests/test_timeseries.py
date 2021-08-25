@@ -182,7 +182,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             assert_kw={'exclude': ['name', 'channel', 'unit']})
 
     @pytest.mark.parametrize('api', GWF_APIS)
-    def test_read_write_gwf(self, api):
+    def test_read_write_gwf(self, tmp_path, api):
         array = self.create(name='TEST')
 
         # map API to format name
@@ -201,118 +201,118 @@ class TestTimeSeries(_TestTimeSeriesBase):
             pytest.skip(str(e))
 
         # test read keyword arguments
-        with utils.TemporaryFilename() as tmp:
-            array.write(tmp, format=fmt)
+        tmp = tmp_path / "test.gwf"
+        array.write(tmp, format=fmt)
 
-            def read_(**kwargs):
-                return type(array).read(tmp, array.name, format=fmt,
-                                        **kwargs)
+        def read_(**kwargs):
+            return type(array).read(tmp, array.name, format=fmt,
+                                    **kwargs)
 
-            # test start, end
-            start, end = array.span.contract(10)
-            t = read_(start=start, end=end)
-            utils.assert_quantity_sub_equal(t, array.crop(start, end),
-                                            exclude=['channel'])
-            assert t.span == (start, end)
-            t = read_(start=start)
-            utils.assert_quantity_sub_equal(t, array.crop(start=start),
-                                            exclude=['channel'])
-            t = read_(end=end)
-            utils.assert_quantity_sub_equal(t, array.crop(end=end),
-                                            exclude=['channel'])
+        # test start, end
+        start, end = array.span.contract(10)
+        t = read_(start=start, end=end)
+        utils.assert_quantity_sub_equal(t, array.crop(start, end),
+                                        exclude=['channel'])
+        assert t.span == (start, end)
+        t = read_(start=start)
+        utils.assert_quantity_sub_equal(t, array.crop(start=start),
+                                        exclude=['channel'])
+        t = read_(end=end)
+        utils.assert_quantity_sub_equal(t, array.crop(end=end),
+                                        exclude=['channel'])
 
     @pytest.mark.parametrize('api', GWF_APIS)
-    def test_read_write_gwf_deprecated_kwargs(self, api):
+    def test_read_write_gwf_deprecated_kwargs(self, tmp_path, api):
         fmt = "gwf" if api is None else "gwf." + api
         array = self.create(name='TEST')
-        with utils.TemporaryFilename() as tmp:
-            array.write(tmp, format=fmt)
+        tmp = tmp_path / "test.gwf"
+        array.write(tmp, format=fmt)
 
-            # test dtype - DEPRECATED
-            with pytest.deprecated_call():
-                t = self.TEST_CLASS.read(
-                    tmp,
-                    array.name,
-                    format=fmt,
-                    dtype='float32',
-                )
-            assert t.dtype is numpy.dtype('float32')
-            with pytest.deprecated_call():
-                t = self.TEST_CLASS.read(
-                    tmp,
-                    array.name,
-                    format=fmt,
-                    dtype={array.name: 'float64'},
-                )
-            assert t.dtype is numpy.dtype('float64')
+        # test dtype - DEPRECATED
+        with pytest.deprecated_call():
+            t = self.TEST_CLASS.read(
+                tmp,
+                array.name,
+                format=fmt,
+                dtype='float32',
+            )
+        assert t.dtype is numpy.dtype('float32')
+        with pytest.deprecated_call():
+            t = self.TEST_CLASS.read(
+                tmp,
+                array.name,
+                format=fmt,
+                dtype={array.name: 'float64'},
+            )
+        assert t.dtype is numpy.dtype('float64')
 
     @pytest.mark.parametrize('api', GWF_APIS)
-    def test_read_write_gwf_gps_errors(self, api):
+    def test_read_write_gwf_gps_errors(self, tmp_path, api):
         fmt = "gwf" if api is None else "gwf." + api
         array = self.create(name='TEST')
-        with utils.TemporaryFilename() as tmp:
-            array.write(tmp, format=fmt)
+        tmp = tmp_path / "test.gwf"
+        array.write(tmp, format=fmt)
 
-            # check that reading past the end of the array fails
-            with pytest.raises((ValueError, RuntimeError)):
-                self.TEST_CLASS.read(
-                    tmp,
-                    array.name,
-                    format=fmt,
-                    start=array.span[1],
-                )
+        # check that reading past the end of the array fails
+        with pytest.raises((ValueError, RuntimeError)):
+            self.TEST_CLASS.read(
+                tmp,
+                array.name,
+                format=fmt,
+                start=array.span[1],
+            )
 
-            # check that reading before the start of the array also fails
-            with pytest.raises((ValueError, RuntimeError)):
-                self.TEST_CLASS.read(
-                    tmp,
-                    array.name,
-                    format=fmt,
-                    end=array.span[0]-1,
-                )
+        # check that reading before the start of the array also fails
+        with pytest.raises((ValueError, RuntimeError)):
+            self.TEST_CLASS.read(
+                tmp,
+                array.name,
+                format=fmt,
+                end=array.span[0]-1,
+            )
 
     @pytest.mark.parametrize('api', GWF_APIS)
-    def test_read_write_gwf_multiple(self, api):
+    def test_read_write_gwf_multiple(self, tmp_path, api):
         fmt = "gwf" if api is None else "gwf." + api
         a1 = self.create(name='TEST')
         a2 = self.create(name='TEST', t0=a1.span[1], dt=a1.dx)
 
-        with utils.TemporaryFilename() as tmp1, \
-                utils.TemporaryFilename() as tmp2:
-            a1.write(tmp1, format=fmt)
-            a2.write(tmp2, format=fmt)
-            cache = [tmp1, tmp2]
+        tmp1 = tmp_path / "test1.gwf"
+        tmp2 = tmp_path / "test3.gwf"
+        a1.write(tmp1, format=fmt)
+        a2.write(tmp2, format=fmt)
+        cache = [tmp1, tmp2]
 
-            comb = self.TEST_CLASS.read(cache, 'TEST', format=fmt, nproc=2)
-            utils.assert_quantity_sub_equal(
-                comb, a1.append(a2, inplace=False),
-                exclude=['channel'])
+        comb = self.TEST_CLASS.read(cache, 'TEST', format=fmt, nproc=2)
+        utils.assert_quantity_sub_equal(
+            comb, a1.append(a2, inplace=False),
+            exclude=['channel'])
 
     @pytest.mark.parametrize('api', [
         pytest.param('framecpp', marks=SKIP_FRAMECPP),
     ])
-    def test_read_write_gwf_error(self, api, gw150914):
-        with utils.TemporaryFilename(suffix=".gwf") as tmp:
-            gw150914.write(tmp, format="gwf.{}".format(api))
-            with pytest.raises(ValueError) as exc:
-                self.TEST_CLASS.read(tmp, "another channel",
-                                     format="gwf.{}".format(api))
-            assert str(exc.value) == (
-                "no Fr{Adc,Proc,Sim}Data structures with the "
-                "name another channel"
-            )
+    def test_read_write_gwf_error(self, tmp_path, api, gw150914):
+        tmp = tmp_path / "test.gwf"
+        gw150914.write(tmp, format="gwf.{}".format(api))
+        with pytest.raises(ValueError) as exc:
+            self.TEST_CLASS.read(tmp, "another channel",
+                                 format="gwf.{}".format(api))
+        assert str(exc.value) == (
+            "no Fr{Adc,Proc,Sim}Data structures with the "
+            "name another channel"
+        )
 
-            with pytest.raises(ValueError) as exc:
-                self.TEST_CLASS.read(
-                    tmp,
-                    gw150914.name,
-                    start=gw150914.span[0]-1,
-                    end=gw150914.span[0],
-                    format="gwf.{}".format(api),
-                )
-            assert str(exc.value).startswith(
-                "Failed to read {0!r} from {1!r}".format(gw150914.name, tmp)
+        with pytest.raises(ValueError) as exc:
+            self.TEST_CLASS.read(
+                tmp,
+                gw150914.name,
+                start=gw150914.span[0]-1,
+                end=gw150914.span[0],
+                format="gwf.{}".format(api),
             )
+        assert str(exc.value).startswith(
+            "Failed to read {0!r} from {1!r}".format(gw150914.name, str(tmp))
+        )
 
     @SKIP_LALFRAME
     def test_read_gwf_scaled_lalframe(self):
@@ -335,7 +335,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @SKIP_FRAMECPP  # we need framecpp to extract frdata types
     @pytest.mark.parametrize("ctype", ("adc", "proc", "sim", None))
     @pytest.mark.parametrize("api", GWF_APIS)
-    def test_write_gwf_type(self, gw150914, api, ctype):
+    def test_write_gwf_type(self, gw150914, tmp_path, api, ctype):
         from ...io.gwf import get_channel_type
 
         # on debian, python=3, python-ldas-tools-framecpp < 2.6.9,
@@ -356,19 +356,20 @@ class TestTimeSeries(_TestTimeSeriesBase):
         fmt = "gwf" if api is None else "gwf." + api
         expected_ctype = ctype if ctype else "proc"
 
-        with utils.TemporaryFilename(suffix=".gwf") as tmp:
-            gw150914.write(tmp, type=ctype, format=fmt)
-            assert get_channel_type(gw150914.name, tmp) == expected_ctype
-            try:
-                new = type(gw150914).read(tmp, gw150914.name, format=fmt)
-            except OverflowError:
-                # python-ldas-tools-framecpp < 2.6.9
-                if api == "framecpp" and ctype == "sim":
-                    pytest.xfail(
-                        "reading Sim data with "
-                        "python-ldas-tools-framecpp < 2.6.9 is broken"
-                    )
-                raise
+        tmp = tmp_path / "test.gwf"
+        gw150914.write(tmp, type=ctype, format=fmt)
+        assert get_channel_type(gw150914.name, tmp) == expected_ctype
+        try:
+            new = type(gw150914).read(tmp, gw150914.name, format=fmt)
+        except OverflowError:
+            # python-ldas-tools-framecpp < 2.6.9
+            if api == "framecpp" and ctype == "sim":
+                pytest.xfail(
+                    "reading Sim data with "
+                    "python-ldas-tools-framecpp < 2.6.9 is broken"
+                )
+            raise
+
         # epoch seems to mismatch at O(1e-12), which is unfortunate
         utils.assert_quantity_sub_equal(
             gw150914,
@@ -382,36 +383,36 @@ class TestTimeSeries(_TestTimeSeriesBase):
         'test',
         'X1:TEST-CHANNEL',
     ])
-    def test_read_write_hdf5(self, ext, channel):
+    def test_read_write_hdf5(self, tmp_path, ext, channel):
         array = self.create()
         array.channel = channel
 
-        with utils.TemporaryFilename(suffix='.%s' % ext) as tmp:
-            # check array with no name fails
-            with pytest.raises(ValueError) as exc:
-                array.write(tmp, overwrite=True)
-            assert str(exc.value).startswith('Cannot determine HDF5 path')
-            array.name = 'TEST'
-
-            # write array (with auto-identify)
+        tmp = tmp_path / "test.{}".format(ext)
+        # check array with no name fails
+        with pytest.raises(ValueError) as exc:
             array.write(tmp, overwrite=True)
+        assert str(exc.value).startswith('Cannot determine HDF5 path')
+        array.name = 'TEST'
 
-            # check reading gives the same data (with/without auto-identify)
-            ts = type(array).read(tmp, format='hdf5')
-            utils.assert_quantity_sub_equal(array, ts)
-            ts = type(array).read(tmp)
-            utils.assert_quantity_sub_equal(array, ts)
+        # write array (with auto-identify)
+        array.write(tmp, overwrite=True)
 
-            # check that we can't then write the same data again
-            with pytest.raises(IOError):
-                array.write(tmp)
-            with pytest.raises((IOError, OSError, RuntimeError, ValueError)):
-                array.write(tmp, append=True)
+        # check reading gives the same data (with/without auto-identify)
+        ts = type(array).read(tmp, format='hdf5')
+        utils.assert_quantity_sub_equal(array, ts)
+        ts = type(array).read(tmp)
+        utils.assert_quantity_sub_equal(array, ts)
 
-            # check reading with start/end works
-            start, end = array.span.contract(25)
-            t = type(array).read(tmp, start=start, end=end)
-            utils.assert_quantity_sub_equal(t, array.crop(start, end))
+        # check that we can't then write the same data again
+        with pytest.raises(IOError):
+            array.write(tmp)
+        with pytest.raises((IOError, OSError, RuntimeError, ValueError)):
+            array.write(tmp, append=True)
+
+        # check reading with start/end works
+        start, end = array.span.contract(25)
+        t = type(array).read(tmp, start=start, end=end)
+        utils.assert_quantity_sub_equal(t, array.crop(start, end))
 
     def test_read_write_wav(self):
         array = self.create(dtype='float32')
@@ -1415,24 +1416,24 @@ class TestTimeSeriesDict(_TestTimeSeriesBaseDict):
     ENTRY_CLASS = TimeSeries
 
     @SKIP_FRAMEL
-    def test_read_write_gwf(self, instance):
-        with utils.TemporaryFilename(suffix='.gwf') as tmp:
-            instance.write(tmp)
-            new = self.TEST_CLASS.read(tmp, instance.keys())
-            for key in new:
-                utils.assert_quantity_sub_equal(new[key], instance[key],
-                                                exclude=['channel'])
+    def test_read_write_gwf(self, instance, tmp_path):
+        tmp = tmp_path / "test.gwf"
+        instance.write(tmp)
+        new = self.TEST_CLASS.read(tmp, instance.keys())
+        for key in new:
+            utils.assert_quantity_sub_equal(new[key], instance[key],
+                                            exclude=['channel'])
 
-    def test_read_write_hdf5(self, instance):
-        with utils.TemporaryFilename(suffix='.hdf5') as tmp:
-            instance.write(tmp, overwrite=True)
-            new = self.TEST_CLASS.read(tmp, instance.keys())
-            for key in new:
-                utils.assert_quantity_sub_equal(new[key], instance[key])
-            # check auto-detection of names
-            new = self.TEST_CLASS.read(tmp)
-            for key in new:
-                utils.assert_quantity_sub_equal(new[key], instance[key])
+    def test_read_write_hdf5(self, instance, tmp_path):
+        tmp = tmp_path / "test.h5"
+        instance.write(tmp, overwrite=True)
+        new = self.TEST_CLASS.read(tmp, instance.keys())
+        for key in new:
+            utils.assert_quantity_sub_equal(new[key], instance[key])
+        # check auto-detection of names
+        new = self.TEST_CLASS.read(tmp)
+        for key in new:
+            utils.assert_quantity_sub_equal(new[key], instance[key])
 
 
 # -- TimeSeriesList -----------------------------------------------------------
