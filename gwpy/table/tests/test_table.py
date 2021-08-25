@@ -21,8 +21,6 @@
 
 import os.path
 import re
-import shutil
-import tempfile
 from io import BytesIO
 from unittest import mock
 
@@ -858,75 +856,103 @@ class TestEventTable(TestTable):
             filter_table(pycbclivetable, 'snr>.5')[("a", "b", "snr")],
         )
 
-    def test_read_snax(self):
-        table = self.create(
-            100, names=['time', 'snr', 'frequency'])
-        fp = os.path.join(tempfile.mkdtemp(), 'SNAX-0-0.h5')
+    @pytest.fixture
+    def snaxtable(self):
         channel = 'H1:FAKE'
-        try:
-            # write table in snax format (by hand)
-            with h5py.File(fp, 'w') as h5f:
-                group = h5f.create_group(channel)
-                group.create_dataset(data=table, name='0.0_20.0')
+        table = self.create(
+            100,
+            names=[
+                'time',
+                'snr',
+                'frequency',
+            ],
+        )
+        table["channel"] = channel
+        return table
 
-            # manually add 'channel' column to table
-            table["channel"] = channel
+    @staticmethod
+    @pytest.fixture
+    def snaxfile(snaxtable, tmp_path):
+        tmp = tmp_path / "SNAX-0-0.h5"
+        channel = snaxtable[0]["channel"]
+        tmptable = snaxtable.copy()
+        tmptable.remove_column("channel")
+        with h5py.File(tmp, "w") as h5f:
+            group = h5f.create_group(channel)
+            group.create_dataset(data=tmptable, name='0.0_20.0')
+        return tmp
 
-            # check reading capabilities with and
-            # without specifying channels
-            t2 = self.TABLE.read(fp, format='hdf5.snax')
-            utils.assert_table_equal(table, t2)
+    def test_read_snax(self, snaxtable, snaxfile):
+        """Check that we can read a SNAX-format HDF5 file
+        """
+        table = self.TABLE.read(snaxfile, format='hdf5.snax')
+        utils.assert_table_equal(snaxtable, table)
 
-            t2 = self.TABLE.read(fp, channels=channel, format='hdf5.snax')
-            utils.assert_table_equal(table, t2)
+    def test_read_snax_channel(self, snaxtable, snaxfile):
+        """Check that we can read a SNAX-format HDF5 file specifying
+        the channel
+        """
+        table = self.TABLE.read(
+            snaxfile,
+            format='hdf5.snax',
+            channels="H1:FAKE",
+        )
+        utils.assert_table_equal(snaxtable, table)
 
-            # test with selection and columns
-            t2 = self.TABLE.read(
-                fp,
-                channels=channel,
+    def test_read_snax_selection_columns(self, snaxtable, snaxfile):
+        """Check that the selection and columns kwargs work when
+        reading from a SNAX-format file
+        """
+        # test with selection and columns
+        table = self.TABLE.read(
+            snaxfile,
+            channels="H1:FAKE",
+            format='hdf5.snax',
+            selection='snr>.5',
+            columns=('time', 'snr'),
+        )
+        utils.assert_table_equal(
+            table,
+            filter_table(snaxtable, 'snr>.5')[('time', 'snr')],
+        )
+
+    def test_read_snax_compact(self, snaxtable, snaxfile):
+        """Check that the selection and columns kwargs work when
+        reading from a SNAX-format file
+        """
+        # test compact representation of channel column
+        t2 = self.TABLE.read(snaxfile, compact=True, format='hdf5.snax')
+
+        # group by channel and drop channel column
+        tables = {}
+        t2 = t2.group_by('channel')
+        t2.remove_column('channel')
+        for key, group in zip(t2.groups.keys, t2.groups):
+            channel = t2.meta['channel_map'][key['channel']]
+            tables[channel] = self.TABLE(group, copy=True)
+
+        # verify table groups are identical
+        t_ref = snaxtable.copy().group_by('channel')
+        t_ref.remove_column('channel')
+        for key, group in zip(t_ref.groups.keys, t_ref.groups):
+            channel = key['channel']
+            utils.assert_table_equal(group, tables[channel])
+
+    def test_read_snax_errors(self, snaxtable, snaxfile):
+        """Check error handling when reading from a SNAX-format file
+        """
+        missing = ["H1:FAKE", 'H1:MISSING']
+        with pytest.raises(ValueError):
+            self.TABLE.read(snaxfile, channels=missing, format='hdf5.snax')
+
+        with pytest.warns(UserWarning):
+            table = self.TABLE.read(
+                snaxfile,
+                channels=missing,
                 format='hdf5.snax',
-                selection='snr>.5',
-                columns=('time', 'snr'),
+                on_missing='warn',
             )
-            utils.assert_table_equal(
-                t2,
-                filter_table(table, 'snr>.5')[('time', 'snr')],
-            )
-
-            # test compact representation of channel column
-            t2 = self.TABLE.read(fp, compact=True, format='hdf5.snax')
-
-            # group by channel and drop channel column
-            tables = {}
-            t2 = t2.group_by('channel')
-            t2.remove_column('channel')
-            for key, group in zip(t2.groups.keys, t2.groups):
-                channel = t2.meta['channel_map'][key['channel']]
-                tables[channel] = self.TABLE(group, copy=True)
-
-            # verify table groups are identical
-            t_ref = table.copy().group_by('channel')
-            t_ref.remove_column('channel')
-            for key, group in zip(t_ref.groups.keys, t_ref.groups):
-                channel = key['channel']
-                utils.assert_table_equal(group, tables[channel])
-
-            # check error handling when missing channels are encountered
-            missing = [channel, 'H1:MISSING']
-            with pytest.raises(ValueError):
-                self.TABLE.read(fp, channels=missing, format='hdf5.snax')
-
-            with pytest.warns(UserWarning):
-                self.TABLE.read(
-                    fp,
-                    channels=missing,
-                    format='hdf5.snax',
-                    on_missing='warn',
-                )
-
-        finally:
-            if os.path.isdir(os.path.dirname(fp)):
-                shutil.rmtree(os.path.dirname(fp))
+        utils.assert_table_equal(snaxtable, table)
 
     @pytest.fixture(scope="module")
     def hacr_table(self):
