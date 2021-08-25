@@ -145,7 +145,7 @@ html_theme_options = {
     "color_primary": "blue-grey",
     "color_accent": "deep-orange",
     "version_dropdown": True,
-    "version_json": "versions.json",
+    "version_json": "../versions.json",
 }
 html_favicon = str(Path(STATIC_DIRNAME) / "favicon.png")
 html_logo = str(Path(STATIC_DIRNAME) / "favicon.png")
