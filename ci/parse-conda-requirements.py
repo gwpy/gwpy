@@ -129,7 +129,7 @@ if __name__ == "__main__":
     # conda search failed, which means one or more packages are missing
     if pfind.returncode:
         LOGGER.warning(
-            "conda install failed, attempting to filter out messages",
+            "conda install failed, attempting to filter out missing packages",
         )
         if isinstance(out, bytes):
             out = out.decode('utf-8')
@@ -137,7 +137,7 @@ if __name__ == "__main__":
         try:
             missing = [pkg.split('[', 1)[0].lower() for
                        pkg in json.loads(out)['packages']]
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, KeyError):
             # run it all again so that it fails out in the open
             LOGGER.critical("filtering failed...")
             cmd.remove("--json")
