@@ -671,120 +671,192 @@ class TestEventTable(TestTable):
             'No column names found in {} header'.format(fmtname)
         )
 
-    def test_read_pycbc_live(self):
-        table = self.create(
-            100, names=['a', 'b', 'c', 'chisq', 'd', 'e', 'f',
-                        'mass1', 'mass2', 'snr'])
-        loudest = (table['snr'] > 500).nonzero()[0]
-        psd = FrequencySeries(random.randn(1000), df=1)
-        fp = os.path.join(tempfile.mkdtemp(), 'X1-Live-0-0.hdf')
-        try:
-            # write table in pycbc_live format (by hand)
-            with h5py.File(fp, 'w') as h5f:
-                group = h5f.create_group('X1')
-                for col in table.columns:
-                    group.create_dataset(data=table[col], name=col)
-                group.create_dataset('loudest', data=loudest)
-                group.create_dataset('psd', data=psd.value)
-                group['psd'].attrs['delta_f'] = psd.df.to('Hz').value
+    @pytest.fixture
+    def pycbclivetable(self):
+        return self.create(
+            100,
+            names=[
+                'a',
+                'b',
+                'c',
+                'chisq',
+                'd',
+                'e',
+                'f',
+                'mass1',
+                'mass2',
+                'snr',
+            ],
+        )
 
-            # check that we can read
-            t2 = self.TABLE.read(fp, format="hdf5.pycbc_live")
-            utils.assert_table_equal(table, t2)
-            # and check metadata was recorded correctly
-            assert t2.meta['ifo'] == 'X1'
+    @staticmethod
+    @pytest.fixture
+    def pycbclivepsd():
+        return FrequencySeries(random.randn(1000), df=1)
 
-            # check keyword arguments result in same table
-            t2 = self.TABLE.read(fp, format='hdf5.pycbc_live', ifo='X1')
-            utils.assert_table_equal(table, t2)
+    @pytest.fixture
+    def pycbclivefile(self, tmp_path, pycbclivetable, pycbclivepsd):
+        # create table
+        loudest = (pycbclivetable['snr'] > 500).nonzero()[0]
 
-            # assert loudest works
-            t2 = self.TABLE.read(fp, format="hdf5.pycbc_live", loudest=True)
-            utils.assert_table_equal(table.filter('snr > 500'), t2)
+        # manually create pycbc_live-format HDF5 file
+        tmp = tmp_path / "X1-Live-0-0.hdf"
+        # write table in pycbc_live format (by hand)
+        with h5py.File(tmp, "w") as h5f:
+            group = h5f.create_group('X1')
+            for col in pycbclivetable.columns:
+                group.create_dataset(data=pycbclivetable[col], name=col)
+            group.create_dataset('loudest', data=loudest)
+            group.create_dataset('psd', data=pycbclivepsd.value)
+            group['psd'].attrs['delta_f'] = pycbclivepsd.df.to('Hz').value
+        return tmp
 
-            # check extended_metadata=True works (default)
-            t2 = self.TABLE.read(
-                fp,
-                format="hdf5.pycbc_live",
-                extended_metadata=True,
-            )
-            utils.assert_table_equal(table, t2)
-            utils.assert_array_equal(t2.meta['loudest'], loudest)
-            utils.assert_quantity_sub_equal(
-                t2.meta['psd'], psd,
-                exclude=['name', 'channel', 'unit', 'epoch'])
+    def test_read_pycbc_live(self, pycbclivetable, pycbclivefile):
+        """Check that we can read a PyCBC-Live file
+        """
+        table = self.TABLE.read(pycbclivefile, format="hdf5.pycbc_live")
+        utils.assert_table_equal(pycbclivetable, table)
+        assert table.meta['ifo'] == 'X1'
 
-            # check extended_metadata=False works
-            t2 = self.TABLE.read(
-                fp,
-                format="hdf5.pycbc_live",
-                extended_metadata=False,
-            )
-            assert t2.meta == {'ifo': 'X1'}
+    def test_read_pycbc_live_kwargs(self, pycbclivetable, pycbclivefile):
+        """Check that we can read a PyCBC-Live file using keywords
+        """
+        table = self.TABLE.read(
+            pycbclivefile,
+            format='hdf5.pycbc_live',
+            ifo='X1',
+        )
+        utils.assert_table_equal(pycbclivetable, table)
 
-            # double-check that loudest and extended_metadata=False work
-            t2 = self.TABLE.read(
-                fp,
-                format="hdf5.pycbc_live",
-                loudest=True,
-                extended_metadata=False,
-            )
-            utils.assert_table_equal(table.filter('snr > 500'), t2)
-            assert t2.meta == {'ifo': 'X1'}
+    def test_read_pycbc_live_loudest(self, pycbclivetable, pycbclivefile):
+        """Check that we can read the `loudest` table from a PyCBC-Live file
+        """
+        table = self.TABLE.read(
+            pycbclivefile,
+            format="hdf5.pycbc_live",
+            loudest=True,
+        )
+        utils.assert_table_equal(pycbclivetable.filter('snr > 500'), table)
 
-            # add another IFO, then assert that reading the table without
-            # specifying the IFO fails
-            with h5py.File(fp, "r+") as h5f:
-                h5f.create_group('Z1')
-            with pytest.raises(ValueError) as exc:
-                self.TABLE.read(fp, format="hdf5.pycbc_live")
-            assert str(exc.value).startswith(
-                'PyCBC live HDF5 file contains dataset groups')
+    def test_read_pycbc_live_extended_metadata(
+            self,
+            pycbclivetable,
+            pycbclivepsd,
+            pycbclivefile,
+    ):
+        """Check that we can read extended metadata from a PyCBC-Live file
+        """
+        table = self.TABLE.read(
+            pycbclivefile,
+            format="hdf5.pycbc_live",
+            extended_metadata=True,  # default
+        )
+        utils.assert_table_equal(pycbclivetable, table)
+        utils.assert_array_equal(
+            table.meta['loudest'],
+            (pycbclivetable['snr'] > 500).nonzero()[0],
+        )
+        utils.assert_quantity_sub_equal(
+            table.meta['psd'],
+            pycbclivepsd,
+            exclude=['name', 'channel', 'unit', 'epoch'])
 
-            # but check that we can still read the original
-            t2 = self.TABLE.read(fp, format='hdf5.pycbc_live', ifo='X1')
-            utils.assert_table_equal(table, t2)
+    def test_read_pycbc_live_extended_metadata_false(
+            self,
+            pycbclivetable,
+            pycbclivefile,
+    ):
+        """Check that we can read a PyCBC-Live file without extended metadata
+        """
+        # check extended_metadata=False works
+        table = self.TABLE.read(
+            pycbclivefile,
+            format="hdf5.pycbc_live",
+            extended_metadata=False,
+        )
+        assert table.meta == {'ifo': 'X1'}
 
-            # assert processed colums works
-            t2 = self.TABLE.read(
-                fp,
-                format="hdf5.pycbc_live",
-                ifo="X1",
-                columns=["mchirp", "new_snr"],
-            )
-            mchirp = (table['mass1'] * table['mass2']) ** (3/5.) / (
-                table['mass1'] + table['mass2']) ** (1/5.)
-            utils.assert_array_equal(t2['mchirp'], mchirp)
+    def test_read_pycbc_live_multiple_ifos(
+            self,
+            pycbclivetable,
+            pycbclivefile,
+    ):
+        """Check that we can handle multiple IFOs in a PyCBC-Live file
+        """
+        with h5py.File(pycbclivefile, "r+") as h5f:
+            h5f.create_group('Z1')
+        with pytest.raises(ValueError) as exc:
+            self.TABLE.read(pycbclivefile, format="hdf5.pycbc_live")
+        assert str(exc.value).startswith(
+            'PyCBC live HDF5 file contains dataset groups')
 
-            # test with selection and columns
-            t2 = self.TABLE.read(
-                fp,
-                format='hdf5.pycbc_live',
-                ifo='X1',
-                selection='snr>.5',
-                columns=("a", "b", "mass1"),
-            )
-            utils.assert_table_equal(
-                t2,
-                filter_table(table, 'snr>.5')[("a", "b", "mass1")],
-            )
+        # but check that we can still read the original
+        table = self.TABLE.read(
+            pycbclivefile,
+            format='hdf5.pycbc_live',
+            ifo='X1',
+        )
+        utils.assert_table_equal(pycbclivetable, table)
 
-            # regression test: gwpy/gwpy#1081
-            t2 = self.TABLE.read(
-                fp,
-                format='hdf5.pycbc_live',
-                ifo='X1',
-                selection='snr>.5',
-                columns=("a", "b", "snr"),
-            )
-            utils.assert_table_equal(
-                t2,
-                filter_table(table, 'snr>.5')[("a", "b", "snr")],
-            )
+    def test_read_pycbc_live_processed_columns(
+            self,
+            pycbclivetable,
+            pycbclivefile,
+    ):
+        """Check that we can read processed columns from a PyCBC-Live file
+        """
+        # assert processed colums works
+        table = self.TABLE.read(
+            pycbclivefile,
+            format="hdf5.pycbc_live",
+            ifo="X1",
+            columns=["mchirp", "new_snr"],
+        )
+        mchirp = (
+            (pycbclivetable['mass1'] * pycbclivetable['mass2']) ** (3/5.)
+            / (pycbclivetable['mass1'] + pycbclivetable['mass2']) ** (1/5.)
+        )
+        utils.assert_array_equal(table['mchirp'], mchirp)
 
-        finally:
-            if os.path.isdir(os.path.dirname(fp)):
-                shutil.rmtree(os.path.dirname(fp))
+    def test_read_pycbc_live_selection_columns(
+            self,
+            pycbclivetable,
+            pycbclivefile,
+    ):
+        """Check that the selection and columns kwargs work when
+        reading from a PyCBC-Live file
+        """
+        # test with selection and columns
+        table = self.TABLE.read(
+            pycbclivefile,
+            format='hdf5.pycbc_live',
+            ifo='X1',
+            selection='snr>.5',
+            columns=("a", "b", "mass1"),
+        )
+        utils.assert_table_equal(
+            table,
+            filter_table(pycbclivetable, 'snr>.5')[("a", "b", "mass1")],
+        )
+
+    def test_read_pycbc_live_regression_1081(
+            self,
+            pycbclivetable,
+            pycbclivefile,
+    ):
+        """Check against regression of gwpy/gwpy#1081
+        """
+        table = self.TABLE.read(
+            pycbclivefile,
+            format='hdf5.pycbc_live',
+            ifo='X1',
+            selection='snr>.5',
+            columns=("a", "b", "snr"),
+        )
+        utils.assert_table_equal(
+            table,
+            filter_table(pycbclivetable, 'snr>.5')[("a", "b", "snr")],
+        )
 
     def test_read_snax(self):
         table = self.create(
