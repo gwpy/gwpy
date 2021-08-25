@@ -20,9 +20,7 @@
 """
 
 import importlib
-import os.path
 import re
-import tempfile
 from io import BytesIO
 from unittest import mock
 from urllib.error import HTTPError
@@ -70,15 +68,11 @@ VETO_DEFINER_FILE = """<?xml version='1.0' encoding='utf-8'?>
 """  # noqa: E501
 
 
-@pytest.fixture(scope='module')
-def veto_definer():
-    with tempfile.NamedTemporaryFile(suffix='.xml', mode='w',
-                                     delete=False) as f:
-        f.write(VETO_DEFINER_FILE)
-        f.seek(0)
-        yield f.name
-    if os.path.isfile(f.name):
-        os.remove(f.name)
+@pytest.fixture
+def veto_definer(tmp_path):
+    tmp = tmp_path / "veto-definer.xml"
+    tmp.write_text(VETO_DEFINER_FILE)
+    return tmp
 
 
 # -- test data ----------------------------------------------------------------
@@ -534,17 +528,17 @@ class TestDataQualityFlag(object):
         )
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    def test_write_ligolw_attrs(self, flag):
+    def test_write_ligolw_attrs(self, tmp_path, flag):
         from gwpy.io.ligolw import read_table
-        with tempfile.NamedTemporaryFile(suffix='.xml') as f:
-            flag.write(
-                f,
-                format='ligolw',
-                attrs={'process_id': 100},
-                ilwdchar_compat=False,
-            )
-            segdeftab = read_table(f, 'segment_definer')
-            assert int(segdeftab[0].process_id) == 100
+        tmp = tmp_path / "tmp.xml"
+        flag.write(
+            tmp,
+            format='ligolw',
+            attrs={'process_id': 100},
+            ilwdchar_compat=False,
+        )
+        segdeftab = read_table(tmp, 'segment_definer')
+        assert int(segdeftab[0].process_id) == 100
 
     # -- test queries ---------------------------
 
