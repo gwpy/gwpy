@@ -62,6 +62,9 @@ LIGO_LW_MODULE_REGEX = re.compile(r"\Aligo.lw")
 # with the new library
 _compat_errors = {
     r"invalid Column \'process_id\'",
+    r"invalid Column \'coinc_event_id'",
+    r"invalid Column \'coinc_def_id'",
+    r"invalid Column \'event_id'",
     r"invalid type \'ilwd:char\'"
 }
 LIGO_LW_COMPAT_ERROR = re.compile("({})".format("|".join(_compat_errors)))
