@@ -23,6 +23,7 @@ import os
 import re
 import warnings
 from contextlib import contextmanager
+from functools import wraps
 from pathlib import Path
 
 import pytest
@@ -30,18 +31,11 @@ import pytest
 from matplotlib import use
 
 from gwpy.io.nds2 import NDSWarning
+from gwpy.testing.errors import pytest_skip_network_error
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-pytest.importorskip("matplotlib", minversion="2.2.0")
-
 use('agg')  # force non-interactive backend
-
-# acceptable authentication failures
-NDS2_AUTH_FAILURES = {
-    re.compile("failed to establish a connection", re.I),
-    re.compile("error authenticating against", re.I),
-}
 
 # find all examples
 EXAMPLE_BASE = Path(__file__).parent
@@ -62,35 +56,85 @@ def cwd(path):
         os.chdir(str(oldpwd))
 
 
+# -- fixtures ---------------
+
 @pytest.fixture(autouse=True)
-def example_context():
+def close_figures():
     from matplotlib import pyplot
     try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings('error', category=NDSWarning)
-            warnings.filterwarnings('ignore', message=".*non-GUI backend.*")
-            warnings.filterwarnings("ignore", message="numpy.ufunc size")
-            yield
+        yield
     finally:
         # close all open figures regardless of test status
         pyplot.close('all')
 
 
-@pytest.mark.parametrize('script', EXAMPLES)
-def test_example(script):
-    with cwd(script.parent):
-        raw = script.read_text()
-        code = compile(raw, str(script), "exec")
+# acceptable authentication failures
+NDS2_AUTH_FAILURES = [
+    "failed to establish a connection",
+    "error authenticating against",
+]
+NDS2_SKIP = re.compile(
+    "({})".format("|".join(NDS2_AUTH_FAILURES)),
+    re.I,
+)
+
+
+def skip_nds_authentication_error(func):
+    """Ignore NDS2 authentication errors
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
         try:
-            exec(code, globals())
+            with warnings.catch_warnings():  # force NDS warnings as errors
+                for msg in NDS2_AUTH_FAILURES:
+                    warnings.filterwarnings(
+                        "error",
+                        message=msg,
+                        category=NDSWarning,
+                    )
+                return func(*args, **kwargs)  # run the test
         except NDSWarning as exc:  # pragma: no-cover
             # if we can't authenticate, dont worry
-            for msg in NDS2_AUTH_FAILURES:
-                if msg.match(str(exc)):
-                    pytest.skip(str(exc))
+            if NDS2_SKIP.match(str(exc)):
+                pytest.skip(str(exc))
             raise
+
+    return wrapper
+
+
+def skip_missing_optional_dependency(func):
+    """Ignore missing optional dependencies
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)  # run the test
         except ImportError as exc:  # pragma: no-cover
             # needs an optional dependency
             if "gwpy" in str(exc):
                 raise
             pytest.skip(str(exc))
+
+    return wrapper
+
+
+# -- test -------------------
+
+@pytest.mark.parametrize('script', EXAMPLES)
+@pytest.mark.filterwarnings(
+    "ignore:Matplotlib is currently using agg",
+)
+@pytest_skip_network_error  # if there are network errors, we don't care
+@skip_nds_authentication_error
+@skip_missing_optional_dependency
+def test_example(script):
+    # read example code from file
+    code = compile(
+        script.read_text(),
+        str(script),
+        "exec",
+    )
+
+    # in the directory of the script, run it
+    with cwd(script.parent):
+        exec(code, globals())

@@ -18,4 +18,6 @@ filterwarnings = [
 	"ignore:PY_SSIZE_T_CLEAN will be required",
 	# https://github.com/pyreadline/pyreadline/issues/65
 	"ignore:Using or importing the ABCs::pyreadline",
+	# ignore numpy ndarray size warnings
+	"ignore:numpy.ndarray size changed, may indicate binary incompatibility",
 ]
