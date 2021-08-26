@@ -1114,6 +1114,55 @@ class TimeSeries(TimeSeriesBase):
         new._unit = self.unit
         return new
 
+    def transferfunction(self, other, fftlength=None, overlap=None,
+                         window='hann', **kwargs):
+        """Calculate the transfer function between this `TimeSeries`
+        and another. This transfer function is the 'A-channel', serving
+        as the reference (denominator) while the other time series is
+        the test (numerator)
+
+        Parameters
+        ----------
+        other : `TimeSeries`
+            `TimeSeries` signal to calculate the transfer function with
+
+        fftlength : `float`, optional
+            number of seconds in single FFT, defaults to a single FFT
+            covering the full duration
+
+        overlap : `float`, optional
+            number of seconds of overlap between FFTs, defaults to the
+            recommended overlap for the given window (if given), or 0
+
+        window : `str`, `numpy.ndarray`, optional
+            window function to apply to timeseries prior to FFT,
+            see :func:`scipy.signal.get_window` for details on acceptable
+            formats
+
+        **kwargs
+            any other keyword arguments accepted by
+            :func:`matplotlib.mlab.csd` or :func:`matplotlib.mlab.psd`
+            except ``NFFT``, ``window``, and ``noverlap`` which are
+            superceded by the above keyword arguments
+
+        Returns
+        -------
+        transferfunction : `~gwpy.frequencyseries.FrequencySeries`
+            the transfer function `FrequencySeries` of this `TimeSeries`
+            with the other
+
+        Notes
+        -----
+        If `self` and `other` have difference
+        :attr:`TimeSeries.sample_rate` values, the higher sampled
+        `TimeSeries` will be down-sampled to match the lower.
+        """
+        csd = other.csd(self, fftlength=fftlength, overlap=overlap,
+                        window=window, **kwargs)
+        psd = self.psd(fftlength=fftlength, overlap=overlap, window=window,
+                       **kwargs)
+        return csd / psd
+
     def coherence(self, other, fftlength=None, overlap=None,
                   window='hann', **kwargs):
         """Calculate the frequency-coherence between this `TimeSeries`
