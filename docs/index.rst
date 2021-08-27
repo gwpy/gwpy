@@ -6,7 +6,7 @@
 
 .. title:: GWpy docs
 
-.. ifconfig:: '+' in release
+.. ifconfig:: 'dev' in release
 
    .. warning::
 
