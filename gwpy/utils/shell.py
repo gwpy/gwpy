@@ -28,6 +28,12 @@ from .decorators import deprecated_function
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+@deprecated_function(
+    message=(
+        "gwpy.utils.shell.which is deprecated in favour of shutil.which from "
+        "the Python standard library, and will be removed in a future release"
+    ),
+)
 def which(program):
     """Find full path of executable program
 
