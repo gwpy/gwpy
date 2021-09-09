@@ -1114,12 +1114,13 @@ class TimeSeries(TimeSeriesBase):
         new._unit = self.unit
         return new
 
-    def transferfunction(self, other, fftlength=None, overlap=None,
-                         window='hann', **kwargs):
-        """Calculate the transfer function between this `TimeSeries`
-        and another. This transfer function is the 'A-channel', serving
-        as the reference (denominator) while the other time series is
-        the test (numerator)
+    def transfer_function(self, other, fftlength=None, overlap=None,
+                          window='hann', **kwargs):
+        """Calculate the transfer function between this `TimeSeries` and
+        another.
+
+        This `TimeSeries` is the 'A-channel', serving as the reference
+        (denominator) while the other time series is the test (numerator)
 
         Parameters
         ----------
@@ -1141,13 +1142,11 @@ class TimeSeries(TimeSeriesBase):
 
         **kwargs
             any other keyword arguments accepted by
-            :func:`matplotlib.mlab.csd` or :func:`matplotlib.mlab.psd`
-            except ``NFFT``, ``window``, and ``noverlap`` which are
-            superceded by the above keyword arguments
+            :meth:`TimeSeries.csd` or :meth:`TimeSeries.psd`
 
         Returns
         -------
-        transferfunction : `~gwpy.frequencyseries.FrequencySeries`
+        transfer_function : `~gwpy.frequencyseries.FrequencySeries`
             the transfer function `FrequencySeries` of this `TimeSeries`
             with the other
 

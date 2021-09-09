@@ -1407,10 +1407,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert (array == array).name == '{0} == {0}'.format(array.name)
 
     @pytest_skip_network_error
-    def test_transferfunction(self):
+    def test_transfer_function(self):
         tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
         tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        tf = tsh.transferfunction(tsl, fftlength=1.0, overlap=0.5)
+        tf = tsh.transfer_function(tsl, fftlength=1.0, overlap=0.5)
         assert tf.df == 1 * units.Hz
         assert tf.frequencies[abs(tf).argmax()] == 516 * units.Hz
 

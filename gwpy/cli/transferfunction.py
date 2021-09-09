@@ -105,9 +105,9 @@ class TransferFunction(Spectrum):
             refts = groups[seg].pop(self.ref_chan)
             for name in groups[seg]:
                 series = groups[seg][name]
-                tf = series.transferfunction(refts, fftlength=fftlength,
-                                             overlap=overlap,
-                                             window=args.window)
+                tf = series.transfer_function(refts, fftlength=fftlength,
+                                              overlap=overlap,
+                                              window=args.window)
 
                 label = name
                 if len(self.start_list) > 1:
