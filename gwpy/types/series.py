@@ -992,7 +992,9 @@ class Series(Array):
             if not irregular:
                 idx0 = int((xtype(start) - x0) // self.dx.value)
             else:
-                idx0 = numpy.searchsorted(self.xindex.value, xtype(start), side="left")
+                idx0 = numpy.searchsorted(
+                    self.xindex.value, xtype(start), side="left"
+                )
 
         # find end index
         if end is None:
@@ -1007,7 +1009,9 @@ class Series(Array):
                     idx1 = None
                 else:
                     idx1 = (
-                        numpy.searchsorted(self.xindex.value, xtype(end), side="left") - 1
+                        numpy.searchsorted(
+                            self.xindex.value, xtype(end), side="left"
+                        ) - 1
                     )
 
         # crop
