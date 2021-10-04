@@ -979,11 +979,12 @@ class Series(Array):
             end = None
 
         # check if series is irregular
-        try:
-            _ = self.dx
-            irregular = False
-        except AttributeError:
-            irregular = True
+       try:
+           self.dx
+       except AttributeError:
+           irregular = True
+       else:
+           irregular = False
 
         # find start index
         if start is None:
