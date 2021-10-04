@@ -1012,7 +1012,7 @@ class Series(Array):
                     idx1 = (
                         numpy.searchsorted(
                             self.xindex.value, xtype(end), side="left"
-                        ) - 1
+                        )
                     )
 
         # crop
