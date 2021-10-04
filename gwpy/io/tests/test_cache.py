@@ -264,6 +264,28 @@ def test_sieve(cache, segments):
     assert io_cache.sieve(cache, segments[0]) == cache[:2]
 
 
+def test_sieve_strict():
+    """Check that the ``strict`` keyword does its job in :func:`sieve()`
+    """
+    cache = [
+        "A-B-0-1.txt",
+        "A-B-1-1.txt",
+        "A-B-2-1.txt",
+        "somethingelse.txt",
+    ]
+
+    # check that strict=True raises an error
+    with pytest.raises(ValueError):
+        io_cache.sieve(cache, Segment(0, 2), strict=True)
+
+    # but strict=False only emits a warning
+    with pytest.warns(UserWarning):
+        assert (
+            io_cache.sieve(cache, Segment(0, 2), strict=False)
+            == cache[:2]
+        )
+
+
 def test_file_list():
     with pytest.deprecated_call():
         assert io_cache.file_list("1,2,3") == ["1", "2", "3"]
