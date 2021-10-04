@@ -193,6 +193,25 @@ class TestSeries(_TestArray):
         with pytest.warns(UserWarning):
             array.crop(array.xspan[0], array.xspan[1]+1)
 
+    def test_crop_irregular(self):
+        """The cropping on an irregularly spaced series.
+        """
+        x = numpy.linspace(0, 100, num=self.data.shape[0])
+
+        # add shift to second half of times to create irregular space
+        x[x > 50] += 1
+
+        series = self.create(xindex=x)
+
+        cropped = series.crop(end=75)
+        utils.assert_quantity_equal(series[x < 75], cropped)
+
+        cropped = series.crop(start=25)
+        utils.assert_quantity_equal(series[x > 25], cropped)
+
+        cropped = series.crop(start=25, end=75)
+        utils.assert_quantity_equal(series[(x > 25) & (x < 75)], cropped)
+
     def test_is_compatible(self, array):
         """Test the `Series.is_compatible` method
         """
