@@ -95,9 +95,6 @@
 .. |uproot| replace:: `uproot`
 .. _uproot: https://uproot.readthedocs.io/
 
-.. |uproot3| replace:: `uproot3`
-.. _uproot3: https://github.com/scikit-hep/uproot3
-
 .. -- Other references --------------------------
 
 .. |GWOSCl| replace:: The Gravitational-Wave Open Science Centre (GWOSC)

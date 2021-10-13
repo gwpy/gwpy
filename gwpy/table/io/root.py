@@ -75,33 +75,11 @@ def table_from_root(source, treename=None, **kwargs):
             return Table(trees[treename].arrays(namedecode="utf-8"), **kwargs)
 
 
-def _import_uproot_that_can_write_root_files():
-    """uproot v4 can't handle writing files (ATOW),
-    so try it and fall back to uproot3
-    """
-    import uproot
-    try:
-        uproot.newtree
-    except AttributeError:
-        try:
-            import uproot3 as uproot
-        except ModuleNotFoundError as exc:  # pragma: no cover
-            exc.msg = (
-                "you have uproot {} installed, which does not support writing "
-                "ROOT files (yet), please install uproot3 "
-                "(see https://pypi.org/project/uproot3/)".format(
-                    uproot.__version__,
-                )
-            )
-            raise
-    return uproot
-
-
 def table_to_root(table, filename, treename="tree",
                   overwrite=False, append=False, **kwargs):
     """Write a Table to a ROOT file
     """
-    uproot = _import_uproot_that_can_write_root_files()
+    import uproot
 
     createkw = {k: kwargs.pop(k) for k in {"compression", } if k in kwargs}
     create_func = uproot.recreate if overwrite else uproot.create
@@ -111,11 +89,14 @@ def table_to_root(table, filename, treename="tree",
             "uproot currently doesn't support appending to existing files",
         )
 
-    tree = uproot.newtree(dict(table.dtype.descr), **kwargs)
 
     with create_func(filename, **createkw) as outf:
-        outf[treename] = tree
-        outf[treename].extend(dict(table.columns))
+        tree = outf.mktree(
+            treename,
+            dict(table.dtype.descr),
+            **kwargs,
+        )
+        tree.extend(dict(table.columns))
 
 
 # register I/O
