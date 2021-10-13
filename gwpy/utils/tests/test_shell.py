@@ -32,26 +32,42 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 def test_shell_call():
-    out, err = shell.call([sys.executable, "--version"])
+    with pytest.warns(DeprecationWarning):
+        out, err = shell.call([sys.executable, "--version"])
     assert out.rstrip() == 'Python {}'.format(platform.python_version())
     assert err.rstrip() == ''
 
 
 def test_shell_call_shell():
-    out, err = shell.call("echo This works")
+    with pytest.warns(DeprecationWarning):
+        out, err = shell.call("echo This works")
     assert out.rstrip() == "This works"
     assert err.rstrip() == ""
 
 
-def test_shell_call_errors():
-    with pytest.raises(OSError):
+def test_shell_call_error_no_exe():
+    with pytest.raises(OSError), pytest.warns(DeprecationWarning):
         shell.call(['this-command-doesnt-exist'])
-    with pytest.raises(subprocess.CalledProcessError):
+
+
+def test_shell_call_error_shell_no_exe():
+    with pytest.raises(subprocess.CalledProcessError), \
+         pytest.warns(DeprecationWarning):
         shell.call('this-command-doesnt-exist')
-    with pytest.raises(subprocess.CalledProcessError):
+
+
+def test_shell_call_error_shell_failure():
+    with pytest.raises(subprocess.CalledProcessError), \
+         pytest.warns(DeprecationWarning):
         shell.call('python --blah')
-    with pytest.warns(UserWarning):
+
+
+def test_shell_call_error_warn():
+    with pytest.warns(Warning) as rec:
         shell.call('python --blah', on_error='warn')
+    assert len(rec) == 2
+    assert rec[0].category is DeprecationWarning
+    assert rec[1].category is UserWarning
 
 
 def test_which():

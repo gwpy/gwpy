@@ -23,6 +23,8 @@ import warnings
 from distutils.spawn import find_executable
 from subprocess import (Popen, PIPE, CalledProcessError)
 
+from .decorators import deprecated_function
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
@@ -50,6 +52,13 @@ def which(program):
     return exe
 
 
+@deprecated_function(
+    message=(
+        "gwpy.utils.shell.call is deprecated in favour of subprocess.call "
+        "from the Python standard library, and will be removed in a "
+        "future release."
+    ),
+)
 def call(cmd, stdout=PIPE, stderr=PIPE, on_error='raise', **kwargs):
     """Call out to the shell using `subprocess.Popen`
 
