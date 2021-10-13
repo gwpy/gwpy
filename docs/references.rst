@@ -120,5 +120,8 @@
 .. |GW170814| replace:: GW170814
 .. _GW170814: https://www.ligo.org/science/Publication-GW170814/
 
+.. |GW170817| replace:: GW170817
+.. _GW170817: https://www.ligo.org/science/Publication-GW170817BNS/
+
 .. |GW200105| replace:: GW200105
 .. _GW200105: https://www.ligo.org/science/Publication-NSBHDiscovery/
