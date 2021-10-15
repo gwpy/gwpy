@@ -13,7 +13,7 @@ import subprocess
 import sys
 import tempfile
 from configparser import ConfigParser
-from distutils.spawn import find_executable
+from shutil import which
 
 import pkg_resources
 
@@ -26,7 +26,11 @@ except ImportError:
 else:
     coloredlogs.install(fmt=LOGGING_FORMAT, level=logging.INFO)
 
-CONDA = find_executable("conda") or os.environ.get("CONDA_EXE", "conda")
+CONDA = (
+    which("mamba")
+    or which("conda")
+    or os.environ.get("CONDA_EXE", "conda")
+)
 CONDA_PACKAGE_MAP = {
     "matplotlib": "matplotlib-base",
 }
