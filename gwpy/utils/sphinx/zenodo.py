@@ -71,7 +71,9 @@ def format_citations(zid, url='https://zenodo.org/', hits=10, tag_prefix='v'):
            'q=conceptrecid:"{id}"&'
            'sort=-version&'
            'all_versions=True'.format(id=zid, url=url, hits=hits))
-    metadata = requests.get(url).json()
+    resp = requests.get(url)  # make the request
+    resp.raise_for_status()  # make sure it worked
+    metadata = resp.json()  # parse the response
 
     lines = []
     for i, hit in enumerate(metadata['hits']['hits']):
