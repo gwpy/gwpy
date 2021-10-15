@@ -978,19 +978,42 @@ class Series(Array):
                  % type(self).__name__)
             end = None
 
+        # check if series is irregular
+        try:
+            self.dx
+        except AttributeError:
+            irregular = True
+        else:
+            irregular = False
+
         # find start index
         if start is None:
             idx0 = None
         else:
-            idx0 = int((xtype(start) - x0) // self.dx.value)
+            if not irregular:
+                idx0 = int((xtype(start) - x0) // self.dx.value)
+            else:
+                idx0 = numpy.searchsorted(
+                    self.xindex.value, xtype(start), side="left"
+                )
 
         # find end index
         if end is None:
             idx1 = None
         else:
-            idx1 = int((xtype(end) - x0) // self.dx.value)
-            if idx1 >= self.size:
-                idx1 = None
+            if not irregular:
+                idx1 = int((xtype(end) - x0) // self.dx.value)
+                if idx1 >= self.size:
+                    idx1 = None
+            else:
+                if xtype(end) >= self.xindex.value[-1]:
+                    idx1 = None
+                else:
+                    idx1 = (
+                        numpy.searchsorted(
+                            self.xindex.value, xtype(end), side="left"
+                        )
+                    )
 
         # crop
         if copy:
