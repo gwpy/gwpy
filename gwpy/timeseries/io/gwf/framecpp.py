@@ -295,13 +295,9 @@ def read_frdata(frdata, epoch, start, end, scaled=True,
         ``[start, end)`` interval.
     """
     datastart = epoch + frdata.GetTimeOffset()
-    try:
-        trange = frdata.GetTRange()
-    except AttributeError:  # not proc channel
-        trange = 0.
 
     # check overlap with user-requested span
-    if (end and datastart >= end) or (trange and datastart + trange < start):
+    if end and datastart >= end:
         raise _Skip()
 
     # get scaling
