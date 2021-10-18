@@ -368,11 +368,31 @@ class TestTable(object):
         assert str(exc.value).startswith('Multiple trees found')
         self.TABLE.read(tmp, treename="a")
 
+    @utils.skip_missing_dependency('uproot')
     def test_read_write_root_append(self, table, tmp_path):
         tmp = tmp_path / "table.root"
-        # append hasn't been implemented in uproot 3 yet
-        with pytest.raises(NotImplementedError):
-            table.write(tmp, treename="test2", append=True)
+        # write one tree
+        table.write(tmp, treename="a")
+        # write a second tree
+        table.write(tmp, treename="b", append=True)
+        # check that we can read both trees
+        self.TABLE.read(tmp, treename="a")
+        self.TABLE.read(tmp, treename="b")
+
+    @utils.skip_missing_dependency('uproot')
+    def test_read_write_root_append_overwrite(self, table, tmp_path):
+        tmp = tmp_path / "table.root"
+        # write one tree
+        table.write(tmp, treename="a")
+        # write a second tree
+        table.write(tmp, treename="b", append=True)
+        # overwrite the first tree
+        t2 = table[:50]
+        t2.write(tmp, treename="a", overwrite=True, append=True)
+        # check that we can read the original 'b' tree and the new
+        # 'a' tree
+        utils.assert_table_equal(table, self.TABLE.read(tmp, treename="b"))
+        utils.assert_table_equal(t2, self.TABLE.read(tmp, treename="a"))
 
     @utils.skip_missing_dependency('LDAStools.frameCPP')
     def test_read_write_gwf(self, tmp_path):
