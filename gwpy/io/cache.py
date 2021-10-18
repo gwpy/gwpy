@@ -152,7 +152,13 @@ def _iter_cache(cachefile, gpstype=LIGOTimeGPS):
 
 
 @with_open
-def read_cache(cachefile, coltype=LIGOTimeGPS, sort=None, segment=None):
+def read_cache(
+    cachefile,
+    coltype=LIGOTimeGPS,
+    sort=None,
+    segment=None,
+    strict=False,
+):
     """Read a LAL- or FFL-format cache file as a list of file paths
 
     Parameters
@@ -170,6 +176,11 @@ def read_cache(cachefile, coltype=LIGOTimeGPS, sort=None, segment=None):
         A GPS `[start, stop)` interval, if given only files overlapping this
         interval will be returned.
 
+    strict : `bool`, optional
+        If `False` warn about entries that don't follow the LIGO-T050017
+        standard, then skip them; if `True` all errors are raised as
+        exceptions.
+
     Returns
     -------
     paths : `list` of `str`
@@ -180,7 +191,7 @@ def read_cache(cachefile, coltype=LIGOTimeGPS, sort=None, segment=None):
 
     # sieve and sort
     if segment:
-        cache = sieve(cache, segment=segment)
+        cache = sieve(cache, segment=segment, strict=strict)
     if sort:
         cache.sort(key=sort)
 
@@ -458,7 +469,7 @@ def find_contiguous(*caches):
         yield sieve(flat, segment=segment)
 
 
-def sieve(cache, segment=None):
+def sieve(cache, segment=None, strict=True):
     """Filter the cache to find those entries that overlap ``segment``
 
     Parameters
@@ -468,8 +479,32 @@ def sieve(cache, segment=None):
 
     segment : `~gwpy.segments.Segment`
         The ``[start, stop)`` interval to match against.
+
+    strict : `bool`, optional
+        If `True` raise all exceptions, if `False` emit warnings when
+        the file segment cannot be determined.
+
+    Warns
+    -----
+    UserWarning
+        For any files for which the file segment cannot be determined,
+        if ``strict=False`` is given; these files are excluded from the
+        sieved cache.
     """
-    return type(cache)(e for e in cache if segment.intersects(file_segment(e)))
+    out = type(cache)()
+    for e in cache:
+        try:  # try and get the segment for this entry
+            seg = file_segment(e)
+        except ValueError as exc:
+            # if running in 'strict' mode, raise all errors
+            if strict:
+                raise
+            # otherwise warn and ignore
+            warnings.warn(str(exc))
+            continue
+        if segment.intersects(seg):  # if overlaps, keep it
+            out.append(e)
+    return out
 
 
 # -- moved functions ----------------------------------------------------------

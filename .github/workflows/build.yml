@@ -87,8 +87,9 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: test
-        channels: conda-forge
+        miniforge-variant: Mambaforge
         python-version: ${{ matrix.python-version }}
+        use-mamba: true
         # this is needed for caching to work properly:
         use-only-tar-bz2: true
 
@@ -105,7 +106,7 @@ jobs:
         echo "-----------------"
         cat environment.txt
         echo "-----------------"
-        conda install --quiet --yes --name test --file environment.txt
+        mamba install --quiet --yes --name test --file environment.txt
 
     - name: Install extra dependencies (Linux)
       if: matrix.os == 'Ubuntu'
@@ -154,7 +155,7 @@ jobs:
       run: conda list --name test
 
     - name: Run test suite
-      run: python -m pytest -ra --color yes --cov gwpy --cov-report=xml --junitxml=pytest.xml gwpy/ examples/
+      run: python -m pytest -ra --color yes --cov gwpy --cov-report=xml --junitxml=pytest.xml --numprocesses=auto gwpy/ examples/
 
     - name: Coverage report
       run: python -m coverage report --show-missing

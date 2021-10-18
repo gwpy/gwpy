@@ -24,18 +24,22 @@ on understanding the quality of the data searched.
 Alongside the strain *h(t)* data, |GWOSC|_ also
 releases a *Data Quality* :ref:`state vector <gwpy-statevector>`.
 We can use this to check on the quality of the data from the LIGO Livingston
-detector around GW170817.
+detector around |GW170817|_.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First, we can import the `StateVector` class:
 from gwpy.timeseries import StateVector
 
 # and download the state information surrounding GW170817:
-data = StateVector.fetch_open_data('L1', 1187008882-100, 1187008882+100,
-                                   verbose=True, tag='C00')
+data = StateVector.fetch_open_data(
+    "L1",
+    1187008882 - 100,
+    1187008882 + 100,
+    verbose=True,
+)
 
 # Finally, we make a :meth:`~StateVector.plot`, passing `insetlabels=True` to
 # display the bit names inside the axes:
@@ -50,4 +54,5 @@ plot.show()
 # there was a data quality issue recorded that would negatively impact a
 # search for generic gravitational-wave transients (bursts).
 # For more details on this _glitch_, and on how it was excised, please see
-# `Abbott et al. 2017 <https://doi.org/10.1103/PhysRevLett.119.161101>`__.
+# the `Science Summary for GW170817
+# <https://www.ligo.org/science/Publication-GW170817BNS/>`__.
