@@ -25,6 +25,7 @@ import warnings
 
 import framel
 
+from ....io.gwf import _series_name
 from ....io.utils import (
     file_list,
     file_path,
@@ -150,7 +151,7 @@ def write(
 
 def _channel_data_to_write(timeseries, type_):
     return {
-        "name": str(timeseries.name),
+        "name": _series_name(timeseries),
         "data": timeseries.value,
         "start": timeseries.x0.to("s").value,
         "dx": timeseries.dx.to("s").value,
