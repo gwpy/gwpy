@@ -721,7 +721,7 @@ class TimeSeriesBase(Series):
         # create TimeSeries
         create = find_typed_function(self.dtype, 'Create', 'TimeSeries')
         lalts = create(
-            self.name,
+            self.name or str(self.channel or "") or None,
             LIGOTimeGPS(to_gps(self.epoch.gps)),
             0,
             self.dt.value,
