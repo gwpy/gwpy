@@ -1160,7 +1160,13 @@ class TimeSeries(TimeSeriesBase):
                         window=window, **kwargs)
         psd = self.psd(fftlength=fftlength, overlap=overlap, window=window,
                        **kwargs)
-        return csd / psd
+
+        # Take the minimum of the frequencyseries csd and psd because the
+        # sample rate of different channels might yield different length
+        # objects
+        size = min(csd.size, psd.size)
+
+        return csd[:size] / psd[:size]
 
     def coherence(self, other, fftlength=None, overlap=None,
                   window='hann', **kwargs):
