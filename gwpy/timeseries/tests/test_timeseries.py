@@ -377,6 +377,24 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=("channel", "x0"),
         )
 
+    @pytest.mark.parametrize("api", GWF_APIS)
+    def test_write_gwf_channel_name(self, tmp_path, api):
+        """Test that writing GWF when `channel` is set but `name` is not
+        uses the `channel` name
+        """
+        array = self.create(channel="data")
+        assert not array.name
+        tmp = tmp_path / "test.gwf"
+        fmt = "gwf" if api is None else "gwf." + api
+        array.write(tmp, format=fmt)
+        array2 = type(array).read(tmp, str(array.channel), format="gwf")
+        assert array2.name == str(array.channel)
+        utils.assert_quantity_sub_equal(
+            array,
+            array2,
+            exclude=("name", "channel"),
+        )
+
     @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
     @pytest.mark.parametrize('channel', [
         None,
