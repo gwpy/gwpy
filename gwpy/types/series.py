@@ -664,8 +664,8 @@ class Series(Array):
         Raises
         ------
         ValueError
-            if ``dx`` doesn't match, or ``xindex`` doesn't match
-            (as appropriate)
+            if ``dx`` doesn't match, or ``xindex`` values are not present/are
+            identical (as appropriate)
         """
         try:  # check step size, if possible
             _delta = "d{}".format(axis)
@@ -680,11 +680,11 @@ class Series(Array):
         except AttributeError:  # irregular index
             _index = "_{}index".format(axis)
             idxa = getattr(self, _index, None)
-            idxb = getattr(self, _index, None)
+            idxb = getattr(other, _index, None)
             if (
-                idxa is None  # index on 'other' but not on 'self'
-                or idxb is None  # index on 'self' but not on 'other'
-                or not numpy.array_equal(idxa, idxb)  # indexes don't match
+                idxa is None  # no index on 'self'
+                or idxb is None  # no index on 'other'
+                or numpy.array_equal(idxa, idxb)  # indexes are identical
             ):
                 raise self._compatibility_error(
                     other,
