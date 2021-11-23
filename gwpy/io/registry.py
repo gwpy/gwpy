@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -26,12 +27,18 @@ import sys
 from functools import wraps
 
 from astropy.io.registry import (  # noqa: F401
-    _get_valid_format as get_format,
     get_reader,
     register_identifier as astropy_register_identifier,
     register_reader,
     register_writer,
 )
+try:
+    from astropy.io.registry.compat import default_registry
+except ModuleNotFoundError:  # astropy < 5
+    from astropy.io.registry import _get_valid_format as get_format
+else:
+    get_format = default_registry._get_valid_format
+
 from astropy.utils.data import get_readable_fileobj
 
 from .utils import (file_list, FILE_LIKE)
