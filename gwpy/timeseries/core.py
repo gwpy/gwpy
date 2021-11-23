@@ -790,6 +790,14 @@ class TimeSeriesBase(Series):
             out.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
         return out
 
+    # Quantity overrides __eq__ and __ne__ in a way that doesn't work for us,
+    # so we just undo that
+    def __eq__(self, other):
+        return numpy.ndarray.__eq__(self, other)
+
+    def __ne__(self, other):
+        return numpy.ndarray.__ne__(self, other)
+
 
 # -- TimeSeriesBaseDict -------------------------------------------------------
 
