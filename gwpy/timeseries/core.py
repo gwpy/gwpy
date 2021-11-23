@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -788,26 +789,6 @@ class TimeSeriesBase(Series):
             vname = value.name if isinstance(value, type(self)) else value
             out.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
         return out
-
-    def __array_wrap__(self, obj, context=None):
-        # if output type is boolean, return a `StateTimeSeries`
-        if obj.dtype == numpy.dtype(bool):
-            from .statevector import StateTimeSeries
-            ufunc = context[0]
-            value = context[1][-1]
-            try:
-                op_ = _UFUNC_STRING[ufunc.__name__]
-            except KeyError:
-                op_ = ufunc.__name__
-            result = obj.view(StateTimeSeries)
-            result.override_unit('')
-            oname = obj.name if isinstance(obj, type(self)) else obj
-            vname = value.name if isinstance(value, type(self)) else value
-            result.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
-        # otherwise, return a regular TimeSeries
-        else:
-            result = super().__array_wrap__(obj, context=context)
-        return result
 
 
 # -- TimeSeriesBaseDict -------------------------------------------------------
