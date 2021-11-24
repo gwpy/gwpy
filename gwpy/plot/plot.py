@@ -519,7 +519,7 @@ class Plot(figure.Figure):
 
         # plot segments
         segax.plot(segments, **plotargs)
-        segax.grid(b=False, which='both', axis='y')
+        segax.grid(False, which='both', axis='y')
         segax.autoscale(axis='y', tight=True)
 
         return segax
