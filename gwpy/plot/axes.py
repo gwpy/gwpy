@@ -28,7 +28,10 @@ import numpy
 
 from astropy.time import Time
 
-from matplotlib import rcParams
+from matplotlib import (
+    __version__ as matplotlib_version,
+    rcParams,
+)
 from matplotlib.artist import allow_rasterization
 from matplotlib.axes import Axes as _Axes
 from matplotlib.axes._base import _process_plot_var_args
@@ -78,7 +81,14 @@ def xlim_as_gps(func):
 
 def restore_grid(func):
     """Wrap ``func`` to preserve the Axes current grid settings.
+
+    Prior to matplotlib 3.7.0 (unreleased ATOW) pcolor() and pcolormesh()
+    automatically removed a grid on a set of Axes. This decorator just
+    undoes that.
     """
+    if matplotlib_version >= "3.7.0":
+        return func
+
     @wraps(func)
     def wrapped_func(self, *args, **kwargs):
         try:
@@ -91,6 +101,11 @@ def restore_grid(func):
         except KeyError:  # matplotlib < 3.3.3
             grid = (self.xaxis._gridOnMinor, self.xaxis._gridOnMajor,
                     self.yaxis._gridOnMinor, self.yaxis._gridOnMajor)
+        # matplotlib >=3.5.0,<3.7.0 presents a warning if you have a grid
+        # that it won't be automatically removed, so we forcibly remove it
+        # ahead of time, knowing that if we had one, we will restore it
+        # in the 'finally' block below.
+        self.grid(False)
         try:
             return func(self, *args, **kwargs)
         finally:
