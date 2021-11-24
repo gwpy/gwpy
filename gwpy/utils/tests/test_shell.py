@@ -71,6 +71,7 @@ def test_shell_call_error_warn():
 
 
 def test_which():
-    assert shell.which('python') == find_executable('python')
-    with pytest.raises(ValueError):
+    with pytest.warns(DeprecationWarning):
+        assert shell.which('python') == find_executable('python')
+    with pytest.raises(ValueError), pytest.warns(DeprecationWarning):
         shell.which('gwpy-no-executable')
