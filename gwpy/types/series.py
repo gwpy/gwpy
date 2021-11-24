@@ -684,7 +684,7 @@ class Series(Array):
             if (
                 idxa is None  # no index on 'self'
                 or idxb is None  # no index on 'other'
-                or numpy.array_equal(idxa, idxb)  # indexes are identical
+                or not numpy.array_equal(idxa, idxb)  # indexes don't match
             ):
                 raise self._compatibility_error(
                     other,
