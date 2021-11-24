@@ -1243,7 +1243,7 @@ class DataQualityDict(OrderedDict):
         outq = Queue()
         for i in range(len(flags)):
             t = _QueryDQSegDBThread(inq, outq, qsegs, **kwargs)
-            t.setDaemon(True)
+            t.daemon = True
             t.start()
         for i, flag in enumerate(flags):
             inq.put((i, flag))
