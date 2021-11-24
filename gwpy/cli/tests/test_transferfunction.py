@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Copyright (C) Evan Goetz (2021)
 #
 # This file is part of GWpy.
 #
@@ -21,6 +22,8 @@
 from ... import cli
 from .base import _TestCliProduct
 from .test_spectrum import TestCliSpectrum as _TestCliSpectrum
+
+__author__ = 'Evan Goetz <evan.goetz@ligo.org>'
 
 
 class TestCliTransferFunction(_TestCliSpectrum):
