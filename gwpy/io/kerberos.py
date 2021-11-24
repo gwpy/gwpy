@@ -31,8 +31,6 @@ import subprocess
 import sys
 from collections import OrderedDict
 
-from ..utils.shell import which
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 __all__ = ['kinit']
@@ -49,12 +47,18 @@ class KerberosError(RuntimeError):
     pass
 
 
-def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
-          krb5ccname=None, verbose=None):
-    """Initialise a kerberos (krb5) ticket.
+def kinit(
+        username=None,
+        password=None,
+        realm=None,
+        exe="kinit",
+        keytab=None,
+        krb5ccname=None,
+        verbose=None,
+):
+    """Initialise a kerberos ticket using the ``kinit`` command-line tool.
 
-    This allows authenticated connections to, amongst others, NDS2
-    services.
+    This allows authenticated connections to, amongst others, NDS2 services.
 
     Parameters
     ----------
@@ -103,10 +107,6 @@ def kinit(username=None, password=None, realm=None, exe=None, keytab=None,
     >>> kinit(keytab='~/.kerberos/ligo.org.keytab', verbose=True)
     Kerberos ticket generated for albert.einstein@LIGO.ORG
     """
-    # get kinit path
-    if exe is None:
-        exe = which('kinit')
-
     # get keytab
     if keytab is None:
         keytab = os.environ.get('KRB5_KTNAME', None)

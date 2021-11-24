@@ -26,18 +26,28 @@ import pytest
 from .. import tex as plot_tex
 
 
-def which_patcher(error=False):
-    def which_(arg):
-        if error:
-            raise ValueError
-        return arg
-    return which_
+def _which(arg):
+    """Fake which to force pdflatex to being not found
+    """
+    if arg == "pdflatex":
+        return None
+    return arg
 
 
-@pytest.mark.parametrize('error', (False, True))
-def test_has_tex(error):
-    with mock.patch('gwpy.plot.tex.which', side_effect=which_patcher(error)):
-        assert plot_tex.has_tex() is not error
+@mock.patch("gwpy.plot.tex.which", return_value="path")
+def test_has_tex_true(_):
+    """Test that `gwpy.plot.tex.has_tex` returns `True` when
+    all of the necessary executables are found
+    """
+    assert plot_tex.has_tex()
+
+
+@mock.patch("gwpy.plot.tex.which", _which)
+def test_has_tex_false():
+    """Test that `gwpy.plot.tex.has_tex` returns `False` when
+    any one of the necessary executables is missing.
+    """
+    assert not plot_tex.has_tex()
 
 
 @pytest.mark.parametrize('in_, out', [

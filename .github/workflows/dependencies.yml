@@ -43,7 +43,7 @@ jobs:
             python-version: "3.6"
             experimental: false
           - name: "Experimental"
-            python-version: "3.x"
+            python-version: "3.9"
             experimental: true
 
     runs-on: ubuntu-latest

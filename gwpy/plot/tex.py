@@ -20,8 +20,7 @@
 """
 
 import re
-
-from ..utils.shell import which
+from shutil import which
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -44,9 +43,7 @@ def has_tex():
         `False`
     """
     for exe in ('latex', 'pdflatex', 'dvipng'):
-        try:
-            which(exe)
-        except (ValueError, KeyError):
+        if which(exe) is None:
             return False
     return True
 

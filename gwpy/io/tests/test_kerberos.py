@@ -80,11 +80,10 @@ def test_parse_keytab(check_output):
 
 
 @mock.patch('sys.stdout.isatty', return_value=True)
-@mock.patch('gwpy.io.kerberos.which', return_value='/bin/kinit')
 @mock.patch('gwpy.io.kerberos.input', return_value='rainer.weiss')
 @mock.patch('getpass.getpass', return_value='test')
 @mock.patch('subprocess.Popen')
-def test_kinit_up(popen, getpass, input_, which, _, capsys):
+def test_kinit_up(popen, getpass, input_, _, capsys):
     """Test `gwpy.io.kerberos.kinit` with username and password given
     """
     proc = popen.return_value
@@ -92,7 +91,6 @@ def test_kinit_up(popen, getpass, input_, which, _, capsys):
 
     # basic call should prompt for username and password
     io_kerberos.kinit()
-    which.assert_called_with('kinit')
     input_.assert_called_with(
         "Please provide username for the LIGO.ORG kerberos realm: ",
     )
@@ -100,7 +98,7 @@ def test_kinit_up(popen, getpass, input_, which, _, capsys):
         prompt="Password for rainer.weiss@LIGO.ORG: ",
     )
     popen.assert_called_with(
-        ['/bin/kinit', 'rainer.weiss@LIGO.ORG'],
+        ['kinit', 'rainer.weiss@LIGO.ORG'],
         stdin=-1,
         stdout=-1,
         env=None,

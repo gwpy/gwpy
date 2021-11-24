@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -201,9 +202,6 @@ class StateTimeSeries(TimeSeriesBase):
         if out.ndim:
             return out.view(bool)
         return out
-
-    def __array_wrap__(self, obj, context=None):
-        return super().__array_wrap__(obj, context=context).view(bool)
 
     def diff(self, n=1, axis=-1):
         slice1 = (slice(1, None),)
