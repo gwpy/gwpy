@@ -45,9 +45,9 @@ class HandlerLine2D(legend_handler.HandlerLine2D):
         self._linewidth = linewidth
 
     def create_artists(self, *args, **kwargs):
-        line, marker = super().create_artists(
+        artists = super().create_artists(
             *args,
             **kwargs
         )
-        line.set_linewidth(self._linewidth)
-        return line, marker
+        artists[0].set_linewidth(self._linewidth)
+        return artists
