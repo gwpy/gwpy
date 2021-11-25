@@ -21,94 +21,11 @@
 
 import inspect
 from unittest import mock
-from urllib.error import HTTPError
 
 from ..detector import Channel
 from ..time import LIGOTimeGPS
-from ..segments import (Segment, SegmentList)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-
-# -- DQSEGDB calls ------------------------------------------------------------
-
-def dqsegdb_query_times(result, deactivated=False,
-                        active_indicates_ifo_badness=False, **kwargs):
-    """Build a mock of `dqsegdb.apicalls.dqsegdbQueryTimes` for testing
-    """
-
-    def query_times(protocol, server, ifo, name, version, request, start, end):
-        flag = '%s:%s:%d' % (ifo, name, version)
-        span = SegmentList([Segment(start, end)])
-        if flag not in result:
-            raise HTTPError('test-url/', 404, 'Not found', None, None)
-        return {
-            'ifo': ifo,
-            'name': name,
-            'version': version,
-            'known': list(map(tuple, result[flag].known & span)),
-            'active': list(map(tuple, result[flag].active & span)),
-            'query_information': {},
-            'metadata': kwargs,
-        }, 'BOGUS_QUERY_STRING'
-
-    return query_times
-
-
-def dqsegdb_cascaded_query(result, deactivated=False,
-                           active_indicates_ifo_badness=False,
-                           **kwargs):
-    """Build a mock of `dqsegdb.apicalls.dqsegdbCascadedQuery` for testing
-    """
-
-    def cascaded_query(protocol, server, ifo, name, request, start, end):
-        # this is a bit hacky, but it's just for tests
-        flag = [x for x in result if
-                x.rsplit(':', 1)[0] == '%s:%s' % (ifo, name)][0]
-        version = int(flag.split(':')[-1])
-        return (
-            {'known': list(map(tuple, result[flag].known)),
-             'active': list(map(tuple, result[flag].active)),
-             'ifo': ifo,
-             'name': 'RESULT',
-             'version': 1},
-            [{'ifo': ifo,
-              'name': name,
-              'version': version,
-              'known': list(map(tuple, result[flag].known)),
-              'active': list(map(tuple, result[flag].active)),
-              'query_information': {},
-              'metadata': kwargs}],
-            {},
-        )
-
-    return cascaded_query
-
-
-def segdb_expand_version_number(min_, max_):
-    def expand_version_number(engine, segdef):
-        ifo, name, version, start_time, end_time, start_pad, end_pad = segdef
-        if version != '*':
-            return [segdef]
-        return [[ifo, name, v, start_time, end_time, start_pad, end_pad] for
-                v in range(min_, max_+1)[::-1]]
-
-    return expand_version_number
-
-
-def segdb_query_segments(result):
-    def query_segments(engine, tablename, segdefs):
-        out = []
-        for ifo, flag, version, start, end, startpad, endpad in segdefs:
-            flag = '%s:%s:%d' % (ifo, flag, version)
-            if flag not in result:
-                out.append([])
-            if tablename == 'segment':
-                out.append(result[flag].active)
-            else:
-                out.append(result[flag].known)
-        return out
-    return query_segments
 
 
 # -- NDS2 ---------------------------------------------------------------------
