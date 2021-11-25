@@ -702,6 +702,6 @@ def _series_name(series):
     """
     return (
         series.name
-        or str(series.channel)
-        or ""
+        or str(series.channel or "")
+        or None
     )

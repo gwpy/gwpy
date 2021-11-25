@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -23,6 +24,15 @@ import re
 
 from astropy.io import registry as io_registry
 from astropy.table import Table
+
+# NOTE: this block should be replaced with a custom UnifedInputRegistry
+#       once we can require astropy >= 5
+try:
+    from astropy.io.registry.compat import default_registry
+except ModuleNotFoundError:  # astropy < 5
+    from astropy.io.registry import _is_best_match
+else:
+    _is_best_match = default_registry._is_best_match
 
 _FETCHERS = {}
 
@@ -78,11 +88,11 @@ def get_fetcher(data_format, data_class):
     # this is a copy of astropy.io.regsitry.get_reader
     fetchers = [(fmt, cls) for fmt, cls in _FETCHERS if fmt == data_format]
     for fetch_fmt, fetch_cls in fetchers:
-        if io_registry._is_best_match(data_class, fetch_cls, fetchers):
+        if _is_best_match(data_class, fetch_cls, fetchers):
             return _FETCHERS[(fetch_fmt, fetch_cls)][0]
     else:
         formats = [fmt for fmt, cls in _FETCHERS if
-                   io_registry._is_best_match(fmt, cls, fetchers)]
+                   _is_best_match(fmt, cls, fetchers)]
         formatstr = '\n'.join(sorted(formats))
         raise io_registry.IORegistryError(
             "No fetcher definer for format '{0}' and class '{1}'.\n"
