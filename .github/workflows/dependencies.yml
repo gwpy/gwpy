@@ -40,7 +40,7 @@ jobs:
       matrix:
         include:
           - name: "Minimum"
-            python-version: "3.6"
+            python-version: "3.7"
             experimental: false
           - name: "Experimental"
             python-version: "3.9"
