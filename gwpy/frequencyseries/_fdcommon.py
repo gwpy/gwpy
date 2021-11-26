@@ -43,8 +43,10 @@ def fdfilter(data, *filt, **kwargs):
     analog = kwargs.pop('analog', False)
     fs = kwargs.pop('sample_rate', None)
     if kwargs:
-        raise TypeError("filter() got an unexpected keyword argument '%s'"
-                        % list(kwargs.keys())[0])
+        raise TypeError(
+            "filter() got an unexpected keyword argument "
+            f"'{list(kwargs).pop()}'"
+        )
 
     # parse filter
     if fs is None:
