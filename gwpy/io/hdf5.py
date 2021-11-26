@@ -121,7 +121,7 @@ def with_write_hdf5(func):
             append = kwargs.get('append', False)
             overwrite = kwargs.get('overwrite', False)
             if os.path.exists(fobj) and not (overwrite or append):
-                raise IOError("File exists: %s" % fobj)
+                raise IOError(f"File exists: {fobj}")
             with h5py.File(fobj, 'a' if append else 'w') as h5f:
                 return func(obj, h5f, *args, **kwargs)
         return func(obj, fobj, *args, **kwargs)
@@ -162,6 +162,8 @@ def create_dataset(parent, path, overwrite=False, **kwargs):
         return parent.create_dataset(path, **kwargs)
     except RuntimeError as exc:
         if str(exc) == 'Unable to create link (Name already exists)':
-            exc.args = ('{0}: {1!r}, pass overwrite=True '
-                        'to ignore existing datasets'.format(str(exc), path),)
+            exc.args = (
+                f"{exc}: '{path}', pass overwrite=True to ignore "
+                f"existing datasets",
+            )
         raise

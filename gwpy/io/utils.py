@@ -197,8 +197,8 @@ def file_list(flist):
         return [file_path(flist)]
     except ValueError as exc:
         exc.args = (
-            "Could not parse input {!r} as one or more "
-            "file-like objects".format(flist),
+            f"Could not parse input {flist!r} as "
+            "one or more file-like objects",
         )
         raise
 
@@ -246,4 +246,4 @@ def file_path(fobj):
     try:
         return fobj.path
     except AttributeError:
-        raise ValueError("Cannot parse file name for {!r}".format(fobj))
+        raise ValueError(f"Cannot parse file name for {fobj!r}")

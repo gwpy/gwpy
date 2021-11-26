@@ -99,7 +99,7 @@ class FflConnection(object):
 
     @classmethod
     def _is_ffl_file(cls, path):
-        return path.endswith('.{0}'.format(cls._EXTENSION))
+        return path.endswith(f".{cls._EXTENSION}")
 
     def _find_paths(self):
         _is_ffl = self._is_ffl_file
@@ -220,7 +220,7 @@ class FflConnection(object):
             return urls
 
         # handle missing data
-        msg = 'Missing segments: \n{0}'.format('\n'.join(map(str, missing)))
+        msg = "Missing segments: \n" + "\n".join(map(str, missing))
         if on_gaps == 'warn':
             warnings.warn(msg)
             return urls
@@ -363,8 +363,10 @@ def _parse_ifos_and_trends(chans):
         try:
             found.add((chan.ifo[0], chan.type))
         except TypeError:  # chan.ifo is None
-            raise ValueError("Cannot parse interferometer prefix from channel "
-                             "name %r, cannot proceed with find()" % str(chan))
+            raise ValueError(
+                "Cannot parse interferometer prefix from channel name "
+                f"'{chan}', cannot proceed with find()",
+            )
     return found
 
 
@@ -400,8 +402,8 @@ def _error_missing_channels(required, found, gpstime, allow_tape):
     # failure
     msg = "Cannot locate the following channel(s) in any known frametype"
     if gpstime:
-        msg += " at GPS=%d" % gpstime
-    msg += ":\n    {}".format('\n    '.join(missing))
+        msg += f" at GPS={gpstime}"
+    msg += ":\n    " + "\n    ".join(missing)
     if not allow_tape:
         msg += ("\n[files on tape have not been checked, use "
                 "allow_tape=True for a complete search]")
@@ -579,10 +581,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
                             break
             except RuntimeError as exc:  # failed to open file (probably)
                 warnings.warn(
-                    "failed to read channels for type {!r}: {}:".format(
-                        ftype,
-                        str(exc),
-                    ),
+                    f"failed to read channels for type {ftype!r}: {exc}:",
                 )
                 continue
 
@@ -730,12 +729,12 @@ def find_latest(observatory, frametype, gpstime=None, allow_tape=False,
             path = connection.find_latest(observatory, frametype,
                                           on_missing='ignore')[-1]
     except (IndexError, RuntimeError):
-        raise RuntimeError(
-            "no files found for {}-{}".format(observatory, frametype))
+        raise RuntimeError(f"no files found for {observatory}-{frametype}")
 
     path = file_path(path)
     if not allow_tape and on_tape(path):
-        raise IOError("Latest frame file for {}-{} is on tape "
-                      "(pass allow_tape=True to force): "
-                      "{}".format(observatory, frametype, path))
+        raise IOError(
+            f"Latest frame file for {observatory}-{frametype} is on tape "
+            f"(pass allow_tape=True to force): {path}",
+        )
     return path

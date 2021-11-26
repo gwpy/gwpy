@@ -47,7 +47,7 @@ def test_gopen(tmp_path):
 
 @pytest.mark.parametrize("suffix", (".txt.gz", ""))
 def test_gopen_gzip(tmp_path, suffix):
-    tmp = tmp_path / "test{}".format(suffix)
+    tmp = tmp_path / f"test{suffix}"
     text = b'blah blah blah'
     with gzip.open(tmp, 'wb') as fobj:
         fobj.write(text)

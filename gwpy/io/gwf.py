@@ -470,8 +470,9 @@ def get_channel_type(channel, framefile):
     for name, type_ in _iter_channels(framefile):
         if channel == name:
             return type_
-    raise ValueError("%s not found in table-of-contents for %s"
-                     % (channel, framefile))
+    raise ValueError(
+        f"'{channel}' not found in table-of-contents for {framefile}",
+    )
 
 
 def channel_in_frame(channel, framefile):
@@ -559,7 +560,7 @@ def _iter_channels(framefile):
     toc = framefile.GetTOC()
     for typename in ('Sim', 'Proc', 'ADC'):
         typen = typename.lower()
-        for name in getattr(toc, 'Get{0}'.format(typename))():
+        for name in getattr(toc, f"Get{typename}")():
             yield name, typen
 
 
@@ -604,7 +605,7 @@ def _gwf_channel_segments(path, channel, warn=True):
     nano = toc.GetGTimeN()
     dur = toc.GetDt()
 
-    readers = [getattr(stream, 'ReadFr{0}Data'.format(type_.title())) for
+    readers = [getattr(stream, f"ReadFr{type_.title()}Data") for
                type_ in ("proc", "sim", "adc")]
 
     # for each segment, try and read the data for this channel
@@ -621,8 +622,7 @@ def _gwf_channel_segments(path, channel, warn=True):
         else:  # none of the readers worked for this channel, warn
             if warn:
                 warnings.warn(
-                    "{0!r} not found in frame {1} of {2}".format(
-                        channel, i, path),
+                    f"'{channel}' not found in frame {i} of {path}",
                 )
 
 

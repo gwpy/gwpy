@@ -146,12 +146,13 @@ def kinit(
         realm = 'LIGO.ORG'
     if username is None:
         verbose = True
-        username = input("Please provide username for the {} kerberos "
-                         "realm: ".format(realm))
-    identity = '{}@{}'.format(username, realm)
+        username = input(
+            f"Please provide username for the {realm} kerberos realm: ",
+        )
+    identity = f"{username}@{realm}"
     if not keytab and password is None:
         verbose = True
-        password = getpass.getpass(prompt="Password for {}: ".format(identity))
+        password = getpass.getpass(prompt=f"Password for {identity}: ")
 
     # format kinit command
     if keytab:
@@ -173,7 +174,7 @@ def kinit(
     if retcode:
         raise subprocess.CalledProcessError(kget.returncode, ' '.join(cmd))
     if verbose:
-        print("Kerberos ticket generated for {}".format(identity))
+        print(f"Kerberos ticket generated for {identity}")
 
 
 def parse_keytab(keytab):
@@ -203,7 +204,7 @@ def parse_keytab(keytab):
     except OSError:
         raise KerberosError("Failed to locate klist, cannot read keytab")
     except subprocess.CalledProcessError:
-        raise KerberosError("Cannot read keytab {!r}".format(keytab))
+        raise KerberosError(f"Cannot read keytab '{keytab}'")
     principals = []
     for line in out.splitlines():
         if isinstance(line, bytes):
