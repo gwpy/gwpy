@@ -32,8 +32,6 @@ Pip
 
     python -m pip install gwpy
 
-Supported python versions: 3.6+.
-
 
 ============
 Requirements
