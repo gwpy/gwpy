@@ -70,9 +70,7 @@ def read_multi(flatten, cls, source, *args, **kwargs):
 
     # raise IndexError early when reading from empty cache
     if not files:
-        raise IndexError(
-            "cannot read {} from empty source list".format(cls.__name__),
-        )
+        raise IndexError(f"cannot read {cls.__name__} from empty source list")
 
     # determine input format (so we don't have to do it multiple times)
     if kwargs.get('format', None) is None:
@@ -83,7 +81,7 @@ def read_multi(flatten, cls, source, *args, **kwargs):
 
     # format verbosity
     if verbose is True:
-        verbose = 'Reading ({})'.format(kwargs['format'])
+        verbose = f"Reading ({format})"
 
     # bundle inputs
     inputs = [(f, cls, nproc, args, kwargs) for f in files]
@@ -95,7 +93,7 @@ def read_multi(flatten, cls, source, *args, **kwargs):
     # raise exceptions (from multiprocessing, single process raises inline)
     for fobj, exc in output:
         if isinstance(exc, Exception):
-            exc.args = ('Failed to read %s: %s' % (fobj, str(exc)),)
+            exc.args = (f"Failed to read {fobj}: {exc}",)
             raise exc
 
     # return combined object
