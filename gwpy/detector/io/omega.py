@@ -67,7 +67,7 @@ def read_omega_scan_config(source):
             append(parse_omega_channel(source, section))
         else:
             raise RuntimeError(
-                "Failed to parse Omega config line: {!r}".format(line),
+                f"Failed to parse Omega config line: {line!r}",
             )
     return out
 
@@ -135,7 +135,7 @@ def write_omega_scan_config(channellist, fobj, header=True):
         # print header
         if channel.group != group:
             group = channel.group
-            print('\n[%s]' % group, file=fobj)
+            print(f'\n[{group}]', file=fobj)
         print("", file=fobj)
         print_omega_channel(channel, file=fobj)
 
@@ -166,16 +166,16 @@ def print_omega_channel(channel, file=sys.stdout):
     # write params
     for key in ['channelName', 'frameType']:
         if key not in params:
-            raise KeyError("No %r defined for %s" % (key, str(channel)))
+            raise KeyError(f"No {key!r} defined for {channel}")
     for key, value in params.items():
-        key = '%s:' % str(key)
+        key = f'{key}:'
         if isinstance(value, tuple):
-            value = '[%s]' % ' '.join(map(str, value))
+            value = f"[{' '.join(map(str, value))}]"
         elif isinstance(value, float) and value.is_integer():
             value = int(value)
         elif isinstance(value, str):
             value = repr(value)
-        print('  {0: <30}  {1}'.format(key, value), file=file)
+        print(f'  {key: <30}  {value}', file=file)
     print('}', file=file)
 
 

@@ -177,7 +177,7 @@ class TestChannel(object):
         if type_ == 'RAISE':  # check invalid raises correct exception
             with pytest.raises(ValueError) as exc:
                 c = self.TEST_CLASS('', type=arg)
-            assert str(exc.value) == '%r is not a valid Nds2ChannelType' % arg
+            assert str(exc.value) == f'{arg!r} is not a valid Nds2ChannelType'
         else:
             c = self.TEST_CLASS('', type=arg)
             assert getattr(c, 'type') == type_
@@ -206,7 +206,7 @@ class TestChannel(object):
         if url is not None and not str(url).startswith(('http', 'file')):
             with pytest.raises(ValueError) as exc:
                 new = self.TEST_CLASS('test', url=url)
-            assert str(exc.value) == "Invalid URL %r" % url
+            assert str(exc.value) == f"Invalid URL {url!r}"
         else:
             new = self.TEST_CLASS('test', url=url)
             assert new.url == url
@@ -331,7 +331,7 @@ class TestChannel(object):
             results = []
 
         # mock response and test parsing
-        url = "https://cis.ligo.org/api/channel/?q={}".format(name)
+        url = f"https://cis.ligo.org/api/channel/?q={name}"
         with requests_mock.Mocker() as rmock:
             # mock the request to get the list of IdPs
             from ciecplib.utils import DEFAULT_IDPLIST_URL
@@ -352,7 +352,7 @@ class TestChannel(object):
             else:
                 with pytest.raises(ValueError) as exc:
                     self.TEST_CLASS.query(name, kerberos=True)
-                assert str(exc.value) == 'No channels found matching %r' % name
+                assert str(exc.value) == f'No channels found matching {name!r}'
 
     @pytest.mark.parametrize('name', ('X1:TEST-CHANNEL', 'Y1:TEST_CHANNEL'))
     @utils.skip_missing_dependency('nds2')
