@@ -55,19 +55,18 @@ class TestCliQtransform(_TestCliSpectrogram):
         _float_reg = r"[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?"
         title_reg = re.compile(
             r"\A"
-            r"q: {float}, "
-            r"tres: {float}, "
+            fr"q: {_float_reg}, "
+            fr"tres: {_float_reg}, "
             r"whitened, "
-            r"f-range: \[{float}, {float}\], "
-            r"e-range: \[{float}, {float}\]"
-            r"\Z".format(float=_float_reg),
+            fr"f-range: \[{_float_reg}, {_float_reg}\], "
+            fr"e-range: \[{_float_reg}, {_float_reg}\]"
+            r"\Z",
             re.I,
         )
         assert title_reg.match(dataprod.get_title())
 
     def test_get_suptitle(self, prod):
-        assert prod.get_suptitle() == 'Q-transform: {0}'.format(
-            prod.chan_list[0])
+        assert prod.get_suptitle() == f'Q-transform: {prod.chan_list[0]}'
 
     @skip_missing_dependency('nds2')
     def test_run(self, prod):

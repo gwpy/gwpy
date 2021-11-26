@@ -46,7 +46,7 @@ PROG_START = time.time()    # verbose enough times major ops
 
 INTERACTIVE = hasattr(sys, 'ps1')
 
-EPILOG = """
+EPILOG = f"""
 Examples:
 
     $ gwpy-plot timeseries --chan H1:GDS-CALIB_STRAIN --start 1126259457
@@ -55,11 +55,9 @@ Examples:
 
     $ gwpy-plot coherencegram --chan H1:GDS-CALIB_STRAIN H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ --start 1126260017 --duration 600
 
-Written by {author}.
+Written by {__author__}.
 Report bugs to https://github.com/gwpy/gwpy/issues/.
-""".format(  # noqa: E501
-    author=__author__,
-)
+"""  # noqa: E501
 
 
 # -- init command line --------------------------------------------------------
@@ -132,11 +130,11 @@ def main(args=None):
     # parse the command line and create a product object
     args = parse_command_line(args=args)
     prod = PRODUCTS[args.mode](args)
-    prod.log(2, ('{0} created'.format(prod.action)))
+    prod.log(2, f'{prod.action} created')
 
     # log how long it took us to get here
     setup_time = time.time() - PROG_START
-    prod.log(2, 'Setup time %.1f sec' % setup_time)
+    prod.log(2, f'Setup time {setup_time:.1f} sec')
 
     # -- generate the plot
     prod.run()
@@ -153,7 +151,7 @@ def main(args=None):
         ax = plot.gca()  # noqa: F841
 
     run_time = time.time() - PROG_START
-    prod.log(1, 'Program run time: %.1f' % run_time)
+    prod.log(1, f'Program run time: {run_time:.1f}')
     if prod.got_error:
         return 2     # make sure when running batch they can test for error
 

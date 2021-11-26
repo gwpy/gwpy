@@ -33,12 +33,11 @@ class TestCliSpectrum(_TestFrequencyDomainProduct):
         epoch = prod.start_list[0]
         utc = Time(epoch, format='gps', scale='utc').iso
         t = ', '.join([
-            '{0} | {1} ({2})'.format(utc, epoch, prod.duration),
-            'fftlength={0}'.format(prod.args.secpfft),
-            'overlap={0}'.format(prod.args.overlap),
+            f'{utc} | {epoch} ({prod.duration})',
+            f'fftlength={prod.args.secpfft}',
+            f'overlap={prod.args.overlap}',
         ])
         assert prod.get_title() == t
 
     def test_get_suptitle(self, prod):
-        assert prod.get_suptitle() == 'Spectrum: {0}'.format(
-            prod.chan_list[0])
+        assert prod.get_suptitle() == f'Spectrum: {prod.chan_list[0]}'

@@ -58,7 +58,7 @@ def timer(func):
     def timed_func(self, *args, **kwargs):  # pylint: disable=missing-docstring
         _start = time.time()
         out = func(self, *args, **kwargs)
-        self.log(2, '{0} took {1:.1f} sec'.format(name, time.time() - _start))
+        self.log(2, f'{name} took {time.time() - _start:.1f} sec')
         return out
 
     return timed_func
@@ -352,39 +352,39 @@ class CliProduct(object, metaclass=abc.ABCMeta):
 
     @classmethod
     def _arg_axis(cls, axis, parser, **defaults):
-        name = '{} axis'.format(axis.title())
-        group = parser.add_argument_group('{0} options'.format(name))
+        name = f'{axis.title()} axis'
+        group = parser.add_argument_group(f'{name} options')
 
         # label
-        group.add_argument('--{0}label'.format(axis),
+        group.add_argument(f'--{axis}label',
                            default=defaults.get('label'),
-                           dest='{0}label'.format(axis),
-                           help='{0} label'.format(name))
+                           dest=f'{axis}label',
+                           help=f'{name} label')
 
         # min and max
         for extrema in ('min', 'max'):
             opt = axis + extrema
-            group.add_argument('--{0}'.format(opt), type=float,
+            group.add_argument(f'--{opt}', type=float,
                                default=defaults.get(extrema), dest=opt,
-                               help='{0} value for {1}'.format(extrema, name))
+                               help=f'{extrema} value for {name}')
 
         # scale
         scaleg = group.add_mutually_exclusive_group()
-        scaleg.add_argument('--{0}scale'.format(axis), type=str,
+        scaleg.add_argument(f'--{axis}scale', type=str,
                             default=defaults.get('scale'),
-                            dest='{0}scale'.format(axis),
-                            help='scale for {0}'.format(name))
+                            dest=f'{axis}scale',
+                            help=f'scale for {name}')
         if defaults.get('scale') == 'log':
-            scaleg.add_argument('--nolog{0}'.format(axis),
+            scaleg.add_argument(f'--nolog{axis}',
                                 action='store_const',
-                                dest='{0}scale'.format(axis),
+                                dest=f'{axis}scale',
                                 const=None, default='log',
-                                help='use logarithmic {0}'.format(name))
+                                help=f'use logarithmic {name}')
         else:
-            scaleg.add_argument('--log{0}'.format(axis), action='store_const',
-                                dest='{0}scale'.format(axis),
+            scaleg.add_argument(f'--log{axis}', action='store_const',
+                                dest=f'{axis}scale',
                                 const='log', default=None,
-                                help='use logarithmic {0}'.format(name))
+                                help=f'use logarithmic {name}')
         return group
 
     def _finalize_arguments(self, args):
@@ -402,17 +402,18 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """
         # validate number of data sets requested
         if len(self.chan_list) < self.MIN_CHANNELS:
-            raise ValueError('this product requires at least {0} '
-                             'channels'.format(self.MIN_CHANNELS))
+            raise ValueError(
+                f'this product requires at least {self.MIN_CHANNELS} channels'
+            )
         if self.n_datasets < self.MIN_DATASETS:
             raise ValueError(
-                '%d datasets are required for this plot but only %d are '
-                'supplied' % (self.MIN_DATASETS, self.n_datasets)
+                f'{self.MIN_DATASETS} are required for this plot but only '
+                f'{self.n_datasets} are supplied'
             )
         if self.n_datasets > self.MAX_DATASETS:
             raise ValueError(
-                'A maximum of %d datasets allowed for this plot but %d '
-                'specified' % (self.MAX_DATASETS, self.n_datasets)
+                f'A maximum of {self.MAX_DATASETS} datasets allowed for this '
+                f'plot but {self.n_datasets} specified'
             )
 
     # -- data transfer --------------------------
@@ -456,10 +457,12 @@ class CliProduct(object, metaclass=abc.ABCMeta):
                 self.timeseries.append(data)
 
         # report what we have if they asked for it
-        self.log(3, ('Channels: %s' % self.chan_list))
-        self.log(3, ('Start times: %s, duration %s' % (
-            self.start_list, self.duration)))
-        self.log(3, ('Number of time series: %d' % len(self.timeseries)))
+        self.log(3, f'Channels: {self.chan_list}')
+        self.log(
+            3,
+            f'Start times: {self.start_list}, duration {self.duration}',
+        )
+        self.log(3, f'Number of time series: {len(self.timeseries)}')
 
     @staticmethod
     def _filter_timeseries(data, highpass=None, lowpass=None, notch=None):
@@ -507,13 +510,13 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         notch = self.args.notch
         filt = ''
         if highpass and lowpass:
-            filt += "band pass (%.1f-%.1f)" % (highpass, lowpass)
+            filt += f"band pass ({highpass:.1f}-{lowpass:.1f})"
         elif highpass:
-            filt += "high pass (%.1f) " % highpass
+            filt += f"high pass ({highpass:.1f}) "
         elif lowpass:
-            filt += "low pass (%.1f) " % lowpass
+            filt += f"low pass ({lowpass:.1f}) "
         if notch:
-            filt += ', notch ({0})'.format(', '.join(map(str, notch)))
+            filt += f", notch ({', '.join(map(str, notch))})"
         return filt
 
     def get_suptitle(self):
@@ -546,16 +549,16 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """Generic method to set properties for X/Y axis
         """
         def _get(param):
-            return getattr(self.ax, 'get_{0}{1}'.format(axis, param))()
+            return getattr(self.ax, f'get_{axis}{param}')()
 
         def _set(param, *args, **kwargs):
-            return getattr(self.ax, 'set_{0}{1}'.format(axis, param))(
+            return getattr(self.ax, f'set_{axis}{param}')(
                 *args, **kwargs)
 
-        scale = getattr(self.args, '{}scale'.format(axis))
-        label = getattr(self.args, '{}label'.format(axis))
-        min_ = getattr(self.args, '{}min'.format(axis))
-        max_ = getattr(self.args, '{}max'.format(axis))
+        scale = getattr(self.args, f'{axis}scale')
+        label = getattr(self.args, f'{axis}label')
+        min_ = getattr(self.args, f'{axis}min')
+        max_ = getattr(self.args, f'{axis}max')
 
         # parse limits
         if (
@@ -582,7 +585,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
 
         # set label
         if label is None:
-            label = getattr(self, 'get_{}label'.format(axis))()
+            label = getattr(self, f'get_{axis}label')()
         if label:
             if self.usetex:
                 label = label_to_latex(label)
@@ -592,10 +595,13 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         limits = _get('lim')
         scale = _get('scale')
         label = _get('label')
-        self.log(2, '{0}-axis parameters | scale: {1} | '
-                    'limits: {2[0]!s} - {2[1]!s}'.format(
-                        axis.upper(), scale, limits))
-        self.log(3, ('{0}-axis label: {1}'.format(axis.upper(), label)))
+        self.log(
+            2,
+            f'{axis.upper()}-axis parameters | '
+            f'scale: {scale} | '
+            f'limits: {limits[0]!s} - {limits[1]!s}'
+        )
+        self.log(3, (f'{axis.upper()}-axis label: {label}'))
 
     def set_xaxis_properties(self):
         """Set properties for X-axis
@@ -634,7 +640,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
             title_line = label_to_latex(title_line)
         if title_line:
             self.ax.set_title(title_line, fontsize=12)
-            self.log(3, ('Title is: %s' % title_line))
+            self.log(3, f'Title is: {title_line}')
 
     def set_suptitle(self, suptitle):
         """Set the super title for this plot.
@@ -644,7 +650,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         if self.usetex:
             suptitle = label_to_latex(suptitle)
         self.plot.suptitle(suptitle, fontsize=18)
-        self.log(3, ('Super title is: %s' % suptitle))
+        self.log(3, f'Super title is: {suptitle}')
 
     def set_grid(self, enable):
         """Set the grid parameters for this plot.
@@ -661,7 +667,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """Save this product to the target `outfile`.
         """
         self.plot.savefig(outfile, edgecolor='white', bbox_inches='tight')
-        self.log(3, ('wrote %s' % outfile))
+        self.log(3, f'wrote {outfile}')
 
     def has_more_plots(self):
         """Determine whether this product has more plots to be created.
@@ -681,12 +687,12 @@ class CliProduct(object, metaclass=abc.ABCMeta):
     def run(self):
         """Make the plot.
         """
-        self.log(3, ('Verbosity level: %d' % self.verbose))
+        self.log(3, f'Verbosity level: {self.verbose}')
 
         self.log(3, 'Arguments:')
         argsd = vars(self.args)
         for key in sorted(argsd):
-            self.log(3, '{0:>15s} = {1}'.format(key, argsd[key]))
+            self.log(3, f'{key:>15s} = {argsd[key]}')
 
         # grab the data
         self.get_data()
@@ -852,42 +858,42 @@ class FFTMixin(object, metaclass=abc.ABCMeta):
     def _arg_faxis(cls, axis, parser, **defaults):
         defaults.setdefault('scale', 'log')
         axis = axis.lower()
-        name = '{0} axis'.format(axis.title())
-        group = parser.add_argument_group('{0} options'.format(name))
+        name = f'{axis.title()} axis'
+        group = parser.add_argument_group(f'{name} options')
 
         # label
-        group.add_argument('--{0}label'.format(axis),
+        group.add_argument(f'--{axis}label',
                            default=defaults.get('label'),
-                           dest='{0}label'.format(axis),
-                           help='{0} label'.format(name))
+                           dest=f'{axis}label',
+                           help=f'{name} label')
 
         # min and max
         for extrema in ('min', 'max'):
             meg = group.add_mutually_exclusive_group()
             for ax_ in (axis, 'f'):
                 meg.add_argument(
-                    '--{0}{1}'.format(ax_, extrema), type=float,
+                    f'--{ax_}{extrema}', type=float,
                     default=defaults.get(extrema),
-                    dest='{0}{1}'.format(axis, extrema),
-                    help='{0} value for {1}'.format(extrema, name))
+                    dest=f'{axis}{extrema}',
+                    help=f'{extrema} value for {name}')
 
         # scale
         scaleg = group.add_mutually_exclusive_group()
-        scaleg.add_argument('--{0}scale'.format(axis), type=str,
+        scaleg.add_argument(f'--{axis}scale', type=str,
                             default=defaults.get('scale'),
-                            dest='{0}scale'.format(axis),
-                            help='scale for {0}'.format(name))
+                            dest=f'{axis}scale',
+                            help=f'scale for {name}')
         for ax_ in (axis, 'f'):
             if defaults.get('scale') == 'log':
                 scaleg.add_argument(
-                    '--nolog{0}'.format(ax_), action='store_const',
-                    dest='{0}scale'.format(axis), const=None, default='log',
-                    help='use linear {0}'.format(name))
+                    f'--nolog{ax_}', action='store_const',
+                    dest=f'{axis}scale', const=None, default='log',
+                    help=f'use linear {name}')
             else:
                 scaleg.add_argument(
-                    '--log{0}'.format(ax_), action='store_const',
-                    dest='{0}scale'.format(axis), const='log', default=None,
-                    help='use logarithmic {0}'.format(name))
+                    f'--log{ax_}', action='store_const',
+                    dest=f'{axis}scale', const='log', default=None,
+                    help='use logarithmic {name}')
 
         return group
 
@@ -945,8 +951,7 @@ class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
             unit = trans.get_unit_name()
             utc = re.sub(r'\.0+', '',
                          Time(epoch, format='gps', scale='utc').iso)
-            return 'Time ({unit}) from {utc} ({gps})'.format(
-                unit=unit, gps=epoch, utc=utc)
+            return f'Time ({unit}) from {utc} ({epoch})'
         return ''
 
 

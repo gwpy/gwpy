@@ -36,8 +36,10 @@ class TestCliCoherencegram(_TestCliSpectrogram):
         assert prod.args.imax == 1.
 
     def test_get_suptitle(self, prod):
-        t = 'Coherence spectrogram: {0} vs {1}'.format(*prod.chan_list)
-        assert prod.get_suptitle() == t
+        assert prod.get_suptitle() == (
+            'Coherence spectrogram: '
+            f'{prod.chan_list[0]} vs {prod.chan_list[1]}'
+        )
 
     def test_init(self, prod):
         assert prod.chan_list == ['X1:TEST-CHANNEL', 'Y1:TEST-CHANNEL']

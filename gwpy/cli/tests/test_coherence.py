@@ -36,5 +36,4 @@ class TestCliCoherence(_TestCliSpectrum):
         assert prod.ref_chan == prod.chan_list[0]
 
     def test_get_suptitle(self, prod):
-        assert prod.get_suptitle() == 'Coherence: {0}'.format(
-            prod.chan_list[0])
+        assert prod.get_suptitle() == f'Coherence: {prod.chan_list[0]}'

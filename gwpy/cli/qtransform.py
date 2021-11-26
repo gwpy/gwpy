@@ -128,9 +128,7 @@ class Qtransform(Spectrogram):
         self.args.tres = search / xpix / 2
         self.log(
             3,
-            'Max time resolution (tres) set to {:.4f}'.format(
-                self.args.tres,
-            ),
+            f'Max time resolution (tres) set to {self.args.tres:.4f}',
         )
 
         args.start = [[int(gps - search/2)]]
@@ -162,14 +160,14 @@ class Qtransform(Spectrogram):
         return 'Normalized energy'
 
     def get_suptitle(self):
-        return 'Q-transform: {0}'.format(self.chan_list[0])
+        return f'Q-transform: {self.chan_list[0]}'
 
     def get_title(self):
         """Default title for plot
         """
         def fformat(x):  # float format
             if isinstance(x, (list, tuple)):
-                return '[{0}]'.format(', '.join(map(fformat, x)))
+                return f"[{', '.join(map(fformat, x))}]"
             if isinstance(x, Quantity):
                 x = x.value
             elif isinstance(x, str):
@@ -179,18 +177,17 @@ class Qtransform(Spectrogram):
                     'in a future release.',
                 )
                 x = float(x)
-            return '{0:.2f}'.format(x)
+            return f'{x:.2f}'
 
         bits = [('Q', fformat(self.result.q))]
-        bits.append(('tres', '{:.3g}'.format(self.qxfrm_args['tres'])))
+        bits.append(('tres', f"{self.qxfrm_args['tres']:.3g}"))
         if self.qxfrm_args.get('qrange'):
             bits.append(('q-range', fformat(self.qxfrm_args['qrange'])))
         if self.qxfrm_args['whiten'] is not None:
             bits.append(('whitened',))
         bits.extend([
             ('f-range', fformat(self.result.yspan)),
-            ('e-range', '[{:.3g}, {:.3g}]'.format(self.result.min(),
-                                                  self.result.max())),
+            ('e-range', f'[{self.result.min():.3g}, {self.result.max():.3g}]'),
         ])
         return ', '.join([': '.join(bit) for bit in bits])
 
@@ -235,9 +232,9 @@ class Qtransform(Spectrogram):
             self.qxfrm_args['search'] = int(len(proc_ts) * proc_ts.dt.value)
 
             self.log(3, 'Q-transform arguments:')
-            self.log(3, '{0:>15s} = {1}'.format('outseg', outseg))
-            for key in sorted(self.qxfrm_args):
-                self.log(3, '{0:>15s} = {1}'.format(key, self.qxfrm_args[key]))
+            self.log(3, f'         outseg = {outseg}')
+            for key, val in sorted(self.qxfrm_args.items()):
+                self.log(3, f'{key:>15s} = {val}')
 
             qtrans = proc_ts.q_transform(outseg=outseg, **self.qxfrm_args)
 
@@ -258,7 +255,10 @@ class Qtransform(Spectrogram):
     def save(self, outdir):  # pylint: disable=arguments-differ
         cname = re.sub('[-_:]', '_', self.timeseries[0].channel.name).replace(
             '_', '-', 1)
-        png = '{0}-{1}-{2}.png'.format(cname, float(self.args.gps),
-                                       self.args.plot[self.plot_num])
+        png = (
+            f'{cname}-'
+            f'{float(self.args.gps)}-'
+            f'{self.args.plot[self.plot_num]}.png'
+        )
         outfile = os.path.join(outdir, png)
         return super().save(outfile)
