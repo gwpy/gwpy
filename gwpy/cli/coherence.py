@@ -68,7 +68,7 @@ class Coherence(Spectrum):
     def get_suptitle(self):
         """Start of default super title, first channel is appended to it
         """
-        return 'Coherence: {0}'.format(self.ref_chan)
+        return f'Coherence: {self.ref_chan}'
 
     def make_plot(self):
         """Generate the coherence plot from all time series
@@ -110,7 +110,7 @@ class Coherence(Spectrum):
 
                 label = name
                 if len(self.start_list) > 1:
-                    label += ', {0}'.format(series.epoch.gps)
+                    label += f', {series.epoch.gps}'
                 if self.usetex:
                     label = label_to_latex(label)
 

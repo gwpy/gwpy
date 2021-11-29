@@ -39,10 +39,9 @@ class TestCliSpectrogram(_TestFFTMixin, _TestTimeDomainProduct,
 
     def test_get_title(self, prod):
         assert prod.get_title() == ', '.join([
-            'fftlength={0}'.format(prod.args.secpfft),
-            'overlap={0}'.format(prod.args.overlap),
+            f'fftlength={prod.args.secpfft}',
+            f'overlap={prod.args.overlap}',
         ])
 
     def test_get_suptitle(self, prod):
-        assert prod.get_suptitle() == 'Spectrogram: {0}'.format(
-            prod.chan_list[0])
+        assert prod.get_suptitle() == f'Spectrogram: {prod.chan_list[0]}'

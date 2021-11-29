@@ -62,22 +62,21 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
         """Text for y-axis label
         """
         if len(self.units) == 1:
-            return r'ASD $\left({0}\right)$'.format(
-                self.units[0].to_string('latex').strip('$'))
+            u = self.units[0].to_string('latex').strip('$')
+            return fr'ASD $\left({u}\right)$'
         return 'ASD'
 
     def get_suptitle(self):
         """Start of default super title, first channel is appended to it
         """
-        return 'Spectrum: {0}'.format(self.chan_list[0])
+        return f'Spectrum: {self.chan_list[0]}'
 
     def get_title(self):
         gps = self.start_list[0]
         utc = Time(gps, format='gps', scale='utc').iso
-        tstr = '{0} | {1} ({2})'.format(utc, gps, self.duration)
+        tstr = f'{utc} | {gps} ({self.duration})'
 
-        fftstr = 'fftlength={0}, overlap={1}'.format(self.args.secpfft,
-                                                     self.args.overlap)
+        fftstr = f'fftlength={self.args.secpfft}, overlap={self.args.overlap}'
 
         return ', '.join([tstr, fftstr])
 
@@ -89,8 +88,10 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
         fftlength = float(args.secpfft)
         overlap = args.overlap
         method = args.method
-        self.log(2, "Calculating spectrum secpfft: {0}, overlap: {1}".format(
-            fftlength, overlap))
+        self.log(
+            2,
+            f"Calculating spectrum secpfft: {fftlength}, overlap: {overlap}",
+        )
         overlap *= fftlength
 
         # create plot
@@ -106,10 +107,8 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
             warnings.warn(
                 'The number of legends specified must match the number of '
                 'time series (channels * start times). '
-                'There are {:d} series and {:d} legends'.format(
-                    len(self.timeseries),
-                    len(self.args.legend),
-                ),
+                f'There are {len(self.timeseries)} series '
+                f'and {len(self.args.legend)} legends'
             )
             nlegargs = 0  # don't use  themm
 
@@ -120,7 +119,7 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
             else:
                 label = series.channel.name
                 if len(self.start_list) > 1:
-                    label += ', {0}'.format(series.epoch.gps)
+                    label += f', {series.epoch.gps}'
 
             asd = series.asd(
                 fftlength=fftlength,

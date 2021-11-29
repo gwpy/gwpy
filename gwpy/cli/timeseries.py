@@ -49,16 +49,16 @@ class TimeSeries(TimeDomainProduct):
     def get_suptitle(self):
         """Start of default super title, first channel is appended to it
         """
-        return 'Time series: {0}'.format(self.chan_list[0])
+        return f'Time series: {self.chan_list[0]}'
 
     def get_title(self):
         suffix = super().get_title()
         # limit significant digits for minute trends
         rates = {ts.sample_rate.round(3) for ts in self.timeseries}
-        fss = '({0})'.format('), ('.join(map(str, rates)))
+        fss = f"({'), ('.join(map(str, rates))})"
         return ', '.join([
-            'Fs: {0}'.format(fss),
-            'duration: {0}'.format(self.duration),
+            f'Fs: {fss}',
+            f'duration: {self.duration}',
             suffix,
         ])
 
@@ -77,10 +77,8 @@ class TimeSeries(TimeDomainProduct):
             warnings.warn(
                 'The number of legends specified must match the number of '
                 'time series (channels * start times). '
-                'There are {:d} series and {:d} legends'.format(
-                    len(self.timeseries),
-                    len(self.args.legend),
-                ),
+                f'There are {len(self.timeseries)} series '
+                f'and {len(self.args.legend)} legends'
             )
             nlegargs = 0    # don't use  them
 

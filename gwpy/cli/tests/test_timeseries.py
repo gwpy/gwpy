@@ -29,10 +29,8 @@ class TestCliTimeSeries(_TestTimeDomainProduct):
 
     def test_get_title(self, prod):
         update_namespace(prod.args, highpass=10, lowpass=100)
-        t = 'Fs: (), duration: {0}, band pass (10.0-100.0)'.format(
-            prod.args.duration)
+        t = f'Fs: (), duration: {prod.args.duration}, band pass (10.0-100.0)'
         assert prod.get_title() == t
 
     def test_get_suptitle(self, prod):
-        assert prod.get_suptitle() == 'Time series: {0}'.format(
-            prod.chan_list[0])
+        assert prod.get_suptitle() == f'Time series: {prod.chan_list[0]}'

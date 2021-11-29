@@ -57,22 +57,22 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         return 'Frequency (Hz)'
 
     def get_title(self):
-        return 'fftlength={0}, overlap={1}'.format(self.args.secpfft,
-                                                   self.args.overlap)
+        return f'fftlength={self.args.secpfft}, overlap={self.args.overlap}'
 
     def get_suptitle(self):
-        return 'Spectrogram: {0}'.format(self.chan_list[0])
+        return f'Spectrogram: {self.chan_list[0]}'
 
     def get_color_label(self):
         """Text for colorbar label
         """
         if self.args.norm:
-            return 'Normalized to {}'.format(self.args.norm)
+            return f'Normalized to {self.args.norm}'
         if len(self.units) == 1 and self.usetex:
-            return r'ASD $\left({0}\right)$'.format(
-                self.units[0].to_string('latex').strip('$'))
-        elif len(self.units) == 1:
-            return 'ASD ({0})'.format(self.units[0].to_string('generic'))
+            u = self.units[0].to_string('latex').strip('$')
+            return fr'ASD $\left({u}\right)$'
+        if len(self.units) == 1:
+            u = self.units[0].to_string('generic')
+            return f'ASD ({u})'
         return super().get_color_label()
 
     def get_stride(self):
@@ -116,15 +116,20 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
                 window=args.window,
             )
             nfft = stride * (stride // (fftlength - overlap))
-            self.log(3, 'Spectrogram calc, stride: %s, fftlength: %s, '
-                        'overlap: %sf, #fft: %d' % (stride, fftlength,
-                                                    overlap, nfft))
+            self.log(
+                3,
+                f'Spectrogram calc, stride: {stride}, fftlength: {fftlength}, '
+                f'overlap: {overlap}, #fft: {nfft}'
+            )
         else:
             specgram = self.timeseries[0].spectrogram2(
                 fftlength=fftlength, overlap=overlap, window=args.window)
             nfft = specgram.shape[0]
-            self.log(3, 'HR-Spectrogram calc, fftlength: %s, overlap: %s, '
-                        '#fft: %d' % (fftlength, overlap, nfft))
+            self.log(
+                3,
+                f'HR-Spectrogram calc, fftlength: {fftlength}, '
+                f'overlap: {overlap}, #fft: {nfft}'
+            )
 
         return specgram ** (1/2.)   # ASD
 
@@ -138,9 +143,8 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         inmin = self.timeseries[0].min().value
         if inmin == self.timeseries[0].max().value:
             if not self.got_error:
-                self.log(0, 'ERROR: Input has constant values [{:g}]. '
-                            'Spectrogram-like products cannot process '
-                            'them.'.format(inmin))
+                self.log(0, f'ERROR: Input has constant values [{inmin:g}]. '
+                            'Spectrogram-like products cannot process them.')
             self.got_error = True
         else:
             # create 'raw' spectrogram
@@ -198,7 +202,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         if imin == 0 and args.color_scale == 'log':
             imin = specgram.value[specgram.value > 0].min()
 
-        self.log(3, ('Colorbar limits set to %f - %f' % (imin, imax)))
+        self.log(3, f'Colorbar limits set to {imin:f} - {imax:f}')
 
         try:
             image = self.ax.images[0]

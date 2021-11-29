@@ -64,11 +64,12 @@ class Coherencegram(Spectrogram):
     def get_suptitle(self):
         """Start of default super title, first channel is appended to it
         """
-        return "Coherence spectrogram: {0} vs {1}".format(*self.chan_list)
+        a, b = self.chan_list
+        return f"Coherence spectrogram: {a} vs {b}"
 
     def get_color_label(self):
         if self.args.norm:
-            return 'Normalized to {}'.format(self.args.norm)
+            return f'Normalized to {self.args.norm}'
         return 'Coherence'
 
     def get_stride(self):
@@ -84,7 +85,7 @@ class Coherencegram(Spectrogram):
         overlap = args.overlap  # fractional overlap
         stride = self.get_stride()
         self.log(2, "Calculating coherence spectrogram, "
-                    "secpfft: %s, overlap: %s" % (fftlength, overlap))
+                    f"secpfft: {fftlength}, overlap: {overlap}")
 
         if overlap is not None:  # overlap in seconds
             overlap *= fftlength
