@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Louisiana State University (2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -52,7 +53,7 @@ GW_OBSERVATORY_COLORS = {_GWO_PREFIX[n]: GWPY_COLORS[n] for n in GWPY_COLORS}
 
 # set named colour upstream in matplotlib, so users can specify as
 # e.g. plot(..., color='gwpy:ligo-hanford')
-color_map.update({'gwpy:{}'.format(n): c for n, c in GWPY_COLORS.items()})
+color_map.update({f"gwpy:{name}": col for name, col in GWPY_COLORS.items()})
 
 
 # -- colour utilities ---------------------------------------------------------
@@ -91,7 +92,7 @@ def format_norm(kwargs, current=None):
     elif norm == 'log':
         norm = colors.LogNorm()
     elif not isinstance(norm, colors.Normalize):
-        raise ValueError("unrecognised value for norm {!r}".format(norm))
+        raise ValueError(f"unrecognised value for norm '{norm}'")
 
     for attr, value in (('vmin', clim[0]), ('vmax', clim[1]), ('clip', clip)):
         if value is not None:

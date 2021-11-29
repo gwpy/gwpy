@@ -181,8 +181,7 @@ class Axes(_Axes):
                 unit = trans.get_unit_name()
                 iso = Time(epoch, format='gps', scale='utc').iso
                 utc = iso.rstrip('0').rstrip('.')
-                ax.set_label_text('Time [{0!s}] from {1!s} UTC ({2!r})'.format(
-                    unit, utc, epoch))
+                ax.set_label_text(f"Time [{unit}] from {utc} UTC ({epoch!r})")
 
         try:
             super().draw(*args, **kwargs)
@@ -538,7 +537,7 @@ class Axes(_Axes):
                 return ((x-w/2., y-h/2.), (x-w/2., y+h/2.),
                         (x+w/2., y+h/2.), (x+w/2., y-h/2.))
         else:
-            raise ValueError("Unrecognised tile anchor {!r}".format(anchor))
+            raise ValueError(f"Unrecognised tile anchor '{anchor}'")
 
         # build collection
         cmap = kwargs.pop('cmap', rcParams['image.cmap'])

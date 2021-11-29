@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -31,9 +32,9 @@ class LatexInlineDimensional(LatexInline):
 
     @classmethod
     def to_string(cls, unit):
-        u = '[{0}]'.format(super().to_string(unit))
+        u = f"[{super().to_string(unit)}]"
 
         if unit.physical_type not in {None, 'unknown', 'dimensionless'}:
             ptype = str(unit.physical_type).split('/', 1)[0].title()
-            return '{0} {1}'.format(cls._latex_escape(ptype), u)
+            return f"{cls._latex_escape(ptype)} {u}"
         return u

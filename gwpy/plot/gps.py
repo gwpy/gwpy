@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -68,9 +69,9 @@ def _truncate(f, n):
 
     From https://stackoverflow.com/a/783927/1307974 (CC-BY-SA)
     """
-    s = "{}".format(f)
+    s = str(f)
     if "e" in s or "E" in s:
-        return "{0:.{1}f}".format(f, n)
+        return f"{f:.{n}f}"
     i, p, d = s.partition(".")
     return ".".join([i, (d+"0"*n)[:n]])
 
@@ -137,13 +138,13 @@ class GPSMixin(object):
         # decompose and check that it's actually a time unit
         dec = unit.decompose()
         if dec.bases != [units.second]:
-            raise ValueError("Cannot set GPS unit to %s" % unit)
+            raise ValueError(f"cannot set GPS unit to '{unit}'")
         # check equivalent units
         for other in TIME_UNITS:
             if other.decompose().scale == dec.scale:
                 self._unit = other
                 return
-        raise ValueError("Unrecognised unit: %s" % unit)
+        raise ValueError("unrecognised unit '{unit}'")
 
     unit = property(fget=get_unit, fset=set_unit,
                     doc=get_unit.__doc__)
@@ -156,7 +157,7 @@ class GPSMixin(object):
         if not self.unit:
             return None
         name = sorted(self.unit.names, key=len)[-1]
-        return '%ss' % name  # pluralise
+        return name + "s"  # pluralise
 
     def get_scale(self):
         """The scale (in seconds) of the current GPS unit.
@@ -399,7 +400,7 @@ class GPSScale(GPSMixin, LinearScale):
         super().__init__(unit=unit, epoch=epoch)
         self.axis = axis
         # set tight scaling on parent axes
-        getattr(axis.axes, 'set_{0}margin'.format(axis.axis_name))(0)
+        getattr(axis.axes, f"set_{axis.axis_name}margin")(0)
 
     def set_default_locators_and_formatters(self, axis):
         axis.set_major_locator(GPSAutoLocator())
@@ -410,10 +411,9 @@ class GPSScale(GPSMixin, LinearScale):
     @staticmethod
     def _lim(axis):
         # if autoscaling and datalim is set, use it
-        autoscale_on_var = "get_autoscale{}_on".format(axis.axis_name)
         dlim = tuple(axis.get_data_interval())
         if (
-                getattr(axis.axes, autoscale_on_var)()
+                getattr(axis.axes, f"get_autoscale{axis.axis_name}_on")()
                 and not numpy.isinf(dlim).any()
         ):
             return dlim
@@ -482,8 +482,7 @@ def _gps_scale_factory(unit):
     class FixedGPSScale(GPSScale):
         """`GPSScale` for a specific GPS time unit
         """
-        name = str('{0}s'.format(unit.long_names[0] if unit.long_names else
-                                 unit.names[0]))
+        name = (unit.long_names or unit.names)[0] + "s"
 
         def __init__(self, axis, epoch=None):
             """
