@@ -118,7 +118,7 @@ def read_channel_list_file(*source):
             try:
                 match = CHANNEL_DEFINITION.match(channel).groupdict()
             except AttributeError as exc:
-                exc.args = ('Cannot parse %r as channel list entry' % channel,)
+                exc.args = (f"Cannot parse {channel!r} as channel list entry",)
                 raise
             # remove Nones from match
             match = dict((k, v) for k, v in match.items() if v is not None)
@@ -150,18 +150,17 @@ def write_channel_list_file(channels, fobj):
         for param, value in channel.params.items():
             out.set(group, param, value)
         if channel.sample_rate is not None:
-            entry = '%s %s' % (str(channel),
-                               str(channel.sample_rate.to('Hz').value))
+            entry = f"{channel} {channel.sample_rate.to('Hz').value}"
         else:
             entry = str(channel)
-        entry += ' %s' % channel.params.get('safe', 'safe')
-        entry += ' %s' % channel.params.get('fidelity', 'clean')
+        entry += f" {channel.params.get('safe', 'safe')}"
+        entry += f" {channel.params.get('fidelity', 'clean')}"
         try:
             clist = out.get(group, 'channels')
         except configparser.NoOptionError:
-            out.set(group, 'channels', '\n%s' % entry)
+            out.set(group, 'channels', f'\n{entry}')
         else:
-            out.set(group, 'channels', clist + '\n%s' % entry)
+            out.set(group, 'channels', clist + f'\n{entry}')
 
     out.write(fobj)
 

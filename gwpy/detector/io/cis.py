@@ -51,7 +51,7 @@ def query(name, kerberos=None):
     channel : `~gwpy.detector.Channel`
         Channel with all details as acquired from the CIS
     """
-    url = '%s/?q=%s' % (CIS_API_URL, name)
+    url = f"{CIS_API_URL}/?q={name}"
     more = True
     out = ChannelList()
     while more:

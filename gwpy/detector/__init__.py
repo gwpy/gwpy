@@ -51,7 +51,7 @@ def get_timezone(ifo):
     try:
         return TIMEZONE[ifo]
     except KeyError as exc:
-        exc.args = ('No time-zone information for %r detector' % ifo,)
+        exc.args = (f'No time-zone information for {ifo!r} detector',)
         raise
 
 

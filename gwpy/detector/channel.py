@@ -140,7 +140,7 @@ class Channel(object):
                 try:
                     setattr(self, key, val)
                 except AttributeError:
-                    setattr(self, '_%s' % key, val)
+                    setattr(self, f'_{key}', val)
 
     # -- properties -----------------------------
 
@@ -312,7 +312,7 @@ class Channel(object):
                 url = urlparse(href)
                 assert url.scheme in ('http', 'https', 'file')
             except (AttributeError, ValueError, AssertionError):
-                raise ValueError("Invalid URL %r" % href)
+                raise ValueError(f"Invalid URL {href!r}")
             self._url = href
 
     @property
@@ -393,7 +393,7 @@ class Channel(object):
         """Name of this channel as stored in the NDS database
         """
         if self.type not in [None, 'raw', 'reduced', 'online']:
-            return '%s,%s' % (self.name, self.type)
+            return f'{self.name},{self.type}'
         return self.name
 
     # -- classmethods ---------------------------
@@ -421,11 +421,13 @@ class Channel(object):
         """
         channellist = ChannelList.query(name, kerberos=kerberos)
         if not channellist:
-            raise ValueError("No channels found matching '%s'" % name)
+            raise ValueError(f"No channels found matching '{name}'")
         if len(channellist) > 1:
-            raise ValueError("%d channels found matching '%s', please refine "
-                             "search, or use `ChannelList.query` to return "
-                             "all results" % (len(channellist), name))
+            raise ValueError(
+                f"{len(channellist)} channels found matching '{name}', "
+                "please refine search, or use `ChannelList.query` to "
+                "return all results"
+            )
         return channellist[0]
 
     @classmethod
@@ -582,11 +584,11 @@ class Channel(object):
         return self.name
 
     def __repr__(self):
-        repr_ = '<Channel("%s"' % (str(self))
+        repr_ = f'<Channel("{self}"'
         if self.type:
-            repr_ += ' [%s]' % self.type
-        repr_ += ', %s' % self.sample_rate
-        return repr_ + ') at %s>' % hex(id(self))
+            repr_ += f' [{self.type}]'
+        repr_ += f', {self.sample_rate}'
+        return repr_ + f') at {hex(id(self))}>'
 
     def __eq__(self, other):
         for attr in ['name', 'sample_rate', 'unit', 'url', 'type', 'dtype']:
@@ -660,13 +662,13 @@ class ChannelList(list):
             if ',' not in namestr:
                 break
             for nds2type in io_nds2.Nds2ChannelType.nds2names() + ['']:
-                if nds2type and ',%s' % nds2type in namestr:
+                if nds2type and f',{nds2type}' in namestr:
                     try:
                         channel, ctype, namestr = namestr.split(',', 2)
                     except ValueError:
                         channel, ctype = namestr.split(',')
                         namestr = ''
-                    out.append('%s,%s' % (channel, ctype))
+                    out.append(f'{channel},{ctype}')
                     break
                 elif nds2type == '' and ',' in namestr:
                     channel, namestr = namestr.split(',', 1)
@@ -729,8 +731,8 @@ class ChannelList(list):
         else:
             flags = 0
         if exact_match:
-            name = name if name.startswith(r'\A') else r"\A%s" % name
-            name = name if name.endswith(r'\Z') else r"%s\Z" % name
+            name = name if name.startswith(r'\A') else fr"\A{name}"
+            name = name if name.endswith(r'\Z') else fr"{name}\Z"
         name_regexp = re.compile(name, flags=flags)
 
         matched = list(self)

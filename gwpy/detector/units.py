@@ -81,9 +81,9 @@ class GWpyFormat(Generic):
             else:
                 if cls.warn:
                     warnings.warn(
-                        '{0} Mathematical operations using this unit should '
-                        'work, but conversions to other units will '
-                        'not.'.format(str(exc).rstrip(' ')),
+                        f"{str(exc).rstrip(' ')} Mathematical operations "
+                        "using this unit should work, but conversions to "
+                        "other units will not.",
                         category=units.UnitsWarning)
                 try:  # return previously created unit
                     return UNRECOGNIZED_UNITS[name]
