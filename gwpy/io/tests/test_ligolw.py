@@ -50,7 +50,7 @@ parametrize_ilwdchar_compat = pytest.mark.parametrize("ilwdchar_compat", [
     params=[
         pytest.param(
             lib,
-            marks=skip_missing_dependency("{}.lsctables".format(lib)))
+            marks=skip_missing_dependency(f"{lib}.lsctables"))
         for lib in LIGOLW_LIBS
     ],
 )

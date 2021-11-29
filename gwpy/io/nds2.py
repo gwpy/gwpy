@@ -130,7 +130,7 @@ class _Nds2Enum(enum.IntFlag):
         """DEPRECATED: see ``.nds2names()``
         """
         warnings.warn(
-            "{0}.names has been renamed {0}.nds2names".format(cls.__name__),
+            f"{cls.__name__}.names has been renamed {cls.__name__}.nds2names",
             DeprecationWarning,
         )
         return cls.nds2names()
@@ -153,7 +153,7 @@ class _Nds2Enum(enum.IntFlag):
                     return item
         # bail out
         raise ValueError(
-            "{!r} is not a valid {}".format(name, cls.__name__),
+            f"'{name}' is not a valid {cls.__name__}",
         )
 
 
@@ -195,8 +195,10 @@ def _get_nds2_name(channel):
     if hasattr(channel, 'ndsname'):  # gwpy.detector.Channel
         return channel.ndsname
     if hasattr(channel, 'channel_type'):  # nds2.channel
-        return '%s,%s' % (channel.name,
-                          channel.channel_type_to_string(channel.channel_type))
+        return ",".join((
+            channel.name,
+            channel.channel_type_to_string(channel.channel_type),
+        ))
     return str(channel)
 
 
@@ -280,7 +282,7 @@ def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
             # hosts already defined (either by NDSSERVER or similar)
             # we should warn the user
             if not hosts:
-                warnings.warn('No default host found for ifo %r' % ifo)
+                warnings.warn(f"No default host found for ifo '{ifo}'")
         else:
             if (host, port) not in hosts:
                 hosts.append((host, port))
@@ -339,8 +341,7 @@ def auth_connect(host, port=None):
     except RuntimeError as exc:
         if 'Request SASL authentication' not in str(exc):
             raise
-    warnings.warn('Error authenticating against {0}:{1}'.format(host, port),
-                  NDSWarning)
+    warnings.warn(f"Error authenticating against {host}:{port}", NDSWarning)
     kinit()
     return connect(host, port)
 
@@ -524,8 +525,7 @@ def _find_channel(connection, name, ctype, dtype, sample_rate, unique=False):
 
     # if not unique result, panic
     if len(found) != 1:
-        raise ValueError("unique NDS2 channel match not found for %r"
-                         % name)
+        raise ValueError(f"unique NDS2 channel match not found for '{name}'")
 
     return found
 
@@ -548,7 +548,7 @@ def _strip_ctype(name, ctype, protocol=2):
                 Nds2ChannelType.STREND.value,
                 Nds2ChannelType.MTREND.value
         ):
-            name += ',{0}'.format(ctypestr)
+            name += f',{ctypestr}'
     return name, ctype
 
 

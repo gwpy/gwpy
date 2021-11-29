@@ -67,7 +67,7 @@ _compat_errors = {
     r"invalid Column \'event_id'",
     r"invalid type \'ilwd:char\'"
 }
-LIGO_LW_COMPAT_ERROR = re.compile("({})".format("|".join(_compat_errors)))
+LIGO_LW_COMPAT_ERROR = re.compile(f"({'|'.join(_compat_errors)})")
 
 
 # -- import hackery to support ligo.lw and glue.ligolw concurrently -----------
@@ -410,11 +410,12 @@ def read_table(source, tablename=None, columns=None, contenthandler=None,
         if not tables:
             raise ValueError("No tables found in LIGO_LW document(s)")
         if len(tables) > 1:
-            tlist = "'{}'".format("', '".join(tables))
-            raise ValueError("Multiple tables found in LIGO_LW document(s), "
-                             "please specify the table to read via the "
-                             "``tablename=`` keyword argument. The following "
-                             "tables were found: {}".format(tlist))
+            raise ValueError(
+                "Multiple tables found in LIGO_LW document(s), please specify "
+                "the table to read via the ``tablename=`` keyword argument. "
+                "The following tables were found: "
+                "'{}'".format("', '".join(tables)),
+            )
         tableclass = lsctables.TableByName[table.Table.TableName(tables[0])]
 
     # extract table
@@ -574,7 +575,7 @@ def write_tables(target, tables, append=False, overwrite=False, **kwargs):
         and isinstance(target, (str, os.PathLike))
         and os.path.exists(target)
     ):
-        raise IOError("File exists: {}".format(target))
+        raise IOError(f"File exists: {target}")
     else:  # or create a new document
         xmldoc = Document()
 
@@ -717,8 +718,9 @@ def _to_ilwd(value, tablename, colname):
     from ligo.lw._ilwd import ilwdchar as IlwdChar
 
     if isinstance(value, IlwdChar) and value.column_name != colname:
-        raise ValueError("ilwdchar '{0!s}' doesn't match column "
-                         "{1!r}".format(value, colname))
+        raise ValueError(
+            f"ilwdchar '{value!s}' doesn't match column {colname!r}",
+        )
     if isinstance(value, IlwdChar):
         return value
     if isinstance(value, Integral):

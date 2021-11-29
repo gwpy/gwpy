@@ -64,7 +64,7 @@ def _preformat_entry(entry):
 
 def _format_entry_lal(entry):
     path, obs, tag, seg = _preformat_entry(entry)
-    return "{} {} {} {} {}".format(obs, tag, seg[0], abs(seg), path)
+    return f"{obs} {tag} {seg[0]} {abs(seg)} {path}"
 
 
 def _parse_entry_lal(line, gpstype=LIGOTimeGPS):
@@ -77,7 +77,7 @@ def _parse_entry_lal(line, gpstype=LIGOTimeGPS):
 
 def _format_entry_ffl(entry):
     path, obs, tag, seg = _preformat_entry(entry)
-    return "{} {} {} 0 0".format(path, seg[0], abs(seg))
+    return f"{path} {seg[0]} {abs(seg)} 0 0"
 
 
 def _parse_entry_ffl(line, gpstype=LIGOTimeGPS):
@@ -121,8 +121,9 @@ class _CacheEntry(namedtuple(
                 return _parse_entry_lal(parts, gpstype=gpstype)
             except ValueError:
                 pass
-            exc.args = ("Cannot identify format for cache entry {!r}".format(
-                line.strip()),)
+            exc.args = (
+                f"Cannot identify format for cache entry {line.strip()!r}",
+            )
             raise
 
 
@@ -256,14 +257,14 @@ def write_cache(cache, fobj, format=None):
     elif format.lower() == "ffl":
         formatter = _format_entry_ffl
     else:
-        raise ValueError("Unrecognised cache format {!r}".format(format))
+        raise ValueError(f"Unrecognised cache format {format!r}")
 
     # write file
     for line in map(formatter, cache):
         try:
             print(line, file=fobj)
         except TypeError:  # bytes-mode
-            fobj.write("{}\n".format(line).encode("utf-8"))
+            fobj.write(f"{line}\n".encode("utf-8"))
 
 
 def is_cache(cache):
@@ -368,8 +369,9 @@ def filename_metadata(filename):
     try:
         obs, desc, start, dur = name.split('-')
     except ValueError as exc:
-        exc.args = ('Failed to parse {!r} as LIGO-T050017-compatible '
-                    'filename'.format(name),)
+        exc.args = (
+            f'Failed to parse {name!r} as a LIGO-T050017-compatible filename',
+        )
         raise
     start = float(start)
     dur = dur.rsplit('.', 1)[0]
