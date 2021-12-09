@@ -25,6 +25,7 @@ from astropy.utils.data import download_file
 
 from gwosc.locate import get_event_urls
 
+from ...testing.errors import pytest_skip_network_error
 from ...utils.env import bool_env
 from .. import (
     StateVector,
@@ -35,6 +36,7 @@ GWPY_CACHE = bool_env("GWPY_CACHE", False)
 
 
 @pytest.fixture(scope="module")
+@pytest_skip_network_error
 def gw150914_hdf5():
     url, = get_event_urls(
         "GW150914",
