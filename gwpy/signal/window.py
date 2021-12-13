@@ -23,7 +23,10 @@ import numpy
 
 from math import ceil
 
-from scipy.signal.windows import windows as scipy_windows
+try:
+    from scipy.signal.windows._windows import _win_equiv as WINDOWS
+except ImportError:  # scipy < 1.8.0
+    from scipy.signal.windows.windows import _win_equiv as WINDOWS
 
 from scipy.special import expit
 
@@ -60,7 +63,7 @@ def canonical_name(name):
         return 'planck'
     try:  # use equivalence introduced in scipy 0.16.0
         # pylint: disable=protected-access
-        return scipy_windows._win_equiv[name.lower()].__name__
+        return WINDOWS[name.lower()].__name__
     except KeyError:  # no match
         raise ValueError('no window function in scipy.signal equivalent to %r'
                          % name,)
