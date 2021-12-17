@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -425,7 +426,7 @@ def read_table(source, tablename=None, **kwargs):
 
 # -- write --------------------------------------------------------------------
 
-def write_table(table, target, tablename=None, ilwdchar_compat=None,
+def write_table(table, target, tablename=None, ilwdchar_compat=False,
                 **kwargs):
     """Write a `~astropy.table.Table` to file in LIGO_LW XML format
 
@@ -443,7 +444,7 @@ def write_table(table, target, tablename=None, ilwdchar_compat=None,
         llwtable = table_to_ligolw(
             table,
             tablename,
-            ilwdchar_compat=ilwdchar_compat or False,
+            ilwdchar_compat=ilwdchar_compat,
         )
     except LigolwElementError as exc:
         if ilwdchar_compat is not None:

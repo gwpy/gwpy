@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -36,7 +37,6 @@ from ...segments import (Segment, SegmentList,
                          DataQualityFlag, DataQualityDict)
 from ...testing import utils
 from ...testing.errors import pytest_skip_network_error
-from ...utils.misc import null_context
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -767,17 +767,11 @@ class TestDataQualityDict(object):
                 _read(on_missing='blah')
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    @pytest.mark.parametrize("ilwdchar_compat", [None, False, True])
+    @pytest.mark.parametrize("ilwdchar_compat", [False, True])
     def test_to_ligolw_tables(self, instance, ilwdchar_compat):
-        if ilwdchar_compat is None:
-            ctx = pytest.warns(PendingDeprecationWarning)
-        else:
-            ctx = null_context()
-        with ctx:
-            tables = instance.to_ligolw_tables(
-                ilwdchar_compat=ilwdchar_compat,
-            )
-
+        tables = instance.to_ligolw_tables(
+            ilwdchar_compat=ilwdchar_compat,
+        )
         if ilwdchar_compat is False:
             mod = "ligo.lw.lsctables"
         else:  # True or None
