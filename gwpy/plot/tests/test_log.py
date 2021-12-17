@@ -24,7 +24,6 @@ from unittest import mock
 import pytest
 
 from matplotlib import (
-    __version__ as mpl_version,
     rc_context,
 )
 
@@ -55,7 +54,7 @@ class TestLogFormatter(object):
             1,
             None,
             r'$\mathdefault{10^{0}}$',
-            r'$\mathdefault{10^{0}}$' if mpl_version > "3.2.1" else "$10^{0}$",
+            r'$\mathdefault{10^{0}}$',
             id="fmt=None",
         ),
         pytest.param(

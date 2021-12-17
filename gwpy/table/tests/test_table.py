@@ -21,8 +21,6 @@
 
 import os.path
 import re
-import shutil
-import tempfile
 from io import BytesIO
 from unittest import mock
 
@@ -215,7 +213,7 @@ class TestTable(object):
                                   'one sngl_burst table')
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    def test_read_write_ligolw_ilwdchar_compat(self):
+    def test_read_write_ligolw_ilwdchar_compat(self, tmp_path):
         from glue.ligolw.ilwd import get_ilwdchar_class
         from glue.ligolw.lsctables import SnglBurstTable
 
@@ -226,66 +224,81 @@ class TestTable(object):
             ["peak", "snr", "central_freq", "event_id"],
             ["f8", "f4", "f4", "i8"],
         )
-        with tempfile.NamedTemporaryFile(suffix=".xml") as tmp:
-            # write table with ilwdchar_compat=True
-            table.write(tmp, format="ligolw", tablename="sngl_burst",
-                        ilwdchar_compat=True)
 
-            # read raw ligolw and check type is correct
-            llw = io_ligolw.read_table(tmp, tablename="sngl_burst",
-                                       ilwdchar_compat=True)
-            assert type(llw.getColumnByName("event_id")[0]) is eid_type
+        # write table with ilwdchar_compat=True
+        tmp = tmp_path / "tmp.xml"
+        table.write(
+            tmp,
+            format="ligolw",
+            tablename="sngl_burst",
+            ilwdchar_compat=True,
+        )
 
-            # reset IDs to 0
-            SnglBurstTable.reset_next_id()
+        # read raw ligolw and check type is correct
+        llw = io_ligolw.read_table(
+            tmp,
+            tablename="sngl_burst",
+            ilwdchar_compat=True,
+        )
+        assert type(llw.getColumnByName("event_id")[0]) is eid_type
 
-            # read without explicit use of ilwdchar_compat
-            t2 = self.TABLE.read(tmp, columns=table.colnames)
-            assert type(t2[0]["event_id"]) is eid_type
+        # reset IDs to 0
+        SnglBurstTable.reset_next_id()
 
-            # read again with explicit use of ilwdchar_compat
-            SnglBurstTable.reset_next_id()
-            utils.assert_table_equal(
-                self.TABLE.read(tmp, columns=table.colnames,
-                                ilwdchar_compat=True),
-                t2,
-            )
+        # read without explicit use of ilwdchar_compat
+        t2 = self.TABLE.read(tmp, columns=table.colnames)
+        assert type(t2[0]["event_id"]) is eid_type
 
-            # and check that ilwdchar_compat=True, use_numpy_dtypes=True works
-            SnglBurstTable.reset_next_id()
-            utils.assert_table_equal(
-                self.TABLE.read(tmp, columns=table.colnames,
-                                ilwdchar_compat=True, use_numpy_dtypes=True),
-                table,
-                almost_equal=True,
-            )
+        # read again with explicit use of ilwdchar_compat
+        SnglBurstTable.reset_next_id()
+        utils.assert_table_equal(
+            self.TABLE.read(
+                tmp,
+                columns=table.colnames,
+                ilwdchar_compat=True,
+            ),
+            t2,
+        )
+
+        # and check that ilwdchar_compat=True, use_numpy_dtypes=True works
+        SnglBurstTable.reset_next_id()
+        utils.assert_table_equal(
+            self.TABLE.read(tmp, columns=table.colnames,
+                            ilwdchar_compat=True, use_numpy_dtypes=True),
+            table,
+            almost_equal=True,
+        )
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    def test_read_write_ligolw_property_columns(self):
+    def test_read_write_ligolw_property_columns(self, tmp_path):
         table = self.create(100, ['peak', 'snr', 'central_freq'],
                             ['f8', 'f4', 'f4'])
-        with tempfile.NamedTemporaryFile(suffix='.xml') as f:
-            # write table
-            table.write(f, format='ligolw', tablename='sngl_burst')
 
-            # read raw ligolw and check gpsproperty was unpacked properly
-            llw = io_ligolw.read_table(f, tablename='sngl_burst')
-            for col in ('peak_time', 'peak_time_ns'):
-                assert col in llw.columnnames
-            with io_ligolw.patch_ligotimegps():
-                utils.assert_array_equal(
-                    asarray([row.peak for row in llw]),
-                    table['peak'],
-                )
+        # write table
+        tmp = tmp_path / "test.xml"
+        table.write(tmp, format='ligolw', tablename='sngl_burst')
 
-            # read table and assert gpsproperty was repacked properly
-            t2 = self.TABLE.read(f, columns=table.colnames,
-                                 use_numpy_dtypes=True)
-            utils.assert_table_equal(t2, table, almost_equal=True)
+        # read raw ligolw and check gpsproperty was unpacked properly
+        llw = io_ligolw.read_table(tmp, tablename='sngl_burst')
+        for col in ('peak_time', 'peak_time_ns'):
+            assert col in llw.columnnames
+        with io_ligolw.patch_ligotimegps():
+            utils.assert_array_equal(
+                asarray([row.peak for row in llw]),
+                table['peak'],
+            )
+
+        # read table and assert gpsproperty was repacked properly
+        t2 = self.TABLE.read(
+            tmp,
+            columns=table.colnames,
+            use_numpy_dtypes=True,
+        )
+        utils.assert_table_equal(t2, table, almost_equal=True)
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
     @pytest.mark.parametrize('ilwdchar_compat', (False, True))
-    def test_read_ligolw_get_as_exclude(self, ilwdchar_compat):
+    def test_read_ligolw_get_as_exclude(self, tmp_path, ilwdchar_compat):
         table = self.TABLE(
             rows=[
                 ("H1", 0.0, 4, 0),
@@ -294,20 +307,25 @@ class TestTable(object):
             ],
             names=("instrument", "offset", "process_id", "time_slide_id"),
         )
-        with tempfile.NamedTemporaryFile(suffix=".xml") as f:
-            table.write(
-                f,
-                format="ligolw",
-                tablename="time_slide",
-                ilwdchar_compat=ilwdchar_compat,
-            )
-            t2 = table.read(
-                f,
-                tablename="time_slide",
-                use_numpy_dtypes=ilwdchar_compat,
-            )
-            t2.sort("instrument")
-            utils.assert_table_equal(t2, table)
+
+        # write a file
+        tmp = tmp_path / "test.xml"
+        table.write(
+            tmp,
+            format="ligolw",
+            tablename="time_slide",
+            ilwdchar_compat=ilwdchar_compat,
+        )
+
+        # read it back and assert that we the `instrument` table is
+        # read properly
+        t2 = table.read(
+            tmp,
+            tablename="time_slide",
+            use_numpy_dtypes=ilwdchar_compat,
+        )
+        t2.sort("instrument")
+        utils.assert_table_equal(t2, table)
 
     @SKIP_UPROOT_RW
     def test_read_write_root(self, table, tmp_path):
@@ -651,190 +669,290 @@ class TestEventTable(TestTable):
             'No column names found in {} header'.format(fmtname)
         )
 
-    def test_read_pycbc_live(self):
-        table = self.create(
-            100, names=['a', 'b', 'c', 'chisq', 'd', 'e', 'f',
-                        'mass1', 'mass2', 'snr'])
-        loudest = (table['snr'] > 500).nonzero()[0]
-        psd = FrequencySeries(random.randn(1000), df=1)
-        fp = os.path.join(tempfile.mkdtemp(), 'X1-Live-0-0.hdf')
-        try:
-            # write table in pycbc_live format (by hand)
-            with h5py.File(fp, 'w') as h5f:
-                group = h5f.create_group('X1')
-                for col in table.columns:
-                    group.create_dataset(data=table[col], name=col)
-                group.create_dataset('loudest', data=loudest)
-                group.create_dataset('psd', data=psd.value)
-                group['psd'].attrs['delta_f'] = psd.df.to('Hz').value
+    @pytest.fixture
+    def pycbclivetable(self):
+        return self.create(
+            100,
+            names=[
+                'a',
+                'b',
+                'c',
+                'chisq',
+                'd',
+                'e',
+                'f',
+                'mass1',
+                'mass2',
+                'snr',
+            ],
+        )
 
-            # check that we can read
-            t2 = self.TABLE.read(fp, format="hdf5.pycbc_live")
-            utils.assert_table_equal(table, t2)
-            # and check metadata was recorded correctly
-            assert t2.meta['ifo'] == 'X1'
+    @staticmethod
+    @pytest.fixture
+    def pycbclivepsd():
+        return FrequencySeries(random.randn(1000), df=1)
 
-            # check keyword arguments result in same table
-            t2 = self.TABLE.read(fp, format='hdf5.pycbc_live', ifo='X1')
-            utils.assert_table_equal(table, t2)
+    @pytest.fixture
+    def pycbclivefile(self, tmp_path, pycbclivetable, pycbclivepsd):
+        # create table
+        loudest = (pycbclivetable['snr'] > 500).nonzero()[0]
 
-            # assert loudest works
-            t2 = self.TABLE.read(fp, format="hdf5.pycbc_live", loudest=True)
-            utils.assert_table_equal(table.filter('snr > 500'), t2)
+        # manually create pycbc_live-format HDF5 file
+        tmp = tmp_path / "X1-Live-0-0.hdf"
+        # write table in pycbc_live format (by hand)
+        with h5py.File(tmp, "w") as h5f:
+            group = h5f.create_group('X1')
+            for col in pycbclivetable.columns:
+                group.create_dataset(data=pycbclivetable[col], name=col)
+            group.create_dataset('loudest', data=loudest)
+            group.create_dataset('psd', data=pycbclivepsd.value)
+            group['psd'].attrs['delta_f'] = pycbclivepsd.df.to('Hz').value
+        return tmp
 
-            # check extended_metadata=True works (default)
-            t2 = self.TABLE.read(
-                fp,
-                format="hdf5.pycbc_live",
-                extended_metadata=True,
-            )
-            utils.assert_table_equal(table, t2)
-            utils.assert_array_equal(t2.meta['loudest'], loudest)
-            utils.assert_quantity_sub_equal(
-                t2.meta['psd'], psd,
-                exclude=['name', 'channel', 'unit', 'epoch'])
+    def test_read_pycbc_live(self, pycbclivetable, pycbclivefile):
+        """Check that we can read a PyCBC-Live file
+        """
+        table = self.TABLE.read(pycbclivefile, format="hdf5.pycbc_live")
+        utils.assert_table_equal(pycbclivetable, table)
+        assert table.meta['ifo'] == 'X1'
 
-            # check extended_metadata=False works
-            t2 = self.TABLE.read(
-                fp,
-                format="hdf5.pycbc_live",
-                extended_metadata=False,
-            )
-            assert t2.meta == {'ifo': 'X1'}
+    def test_read_pycbc_live_kwargs(self, pycbclivetable, pycbclivefile):
+        """Check that we can read a PyCBC-Live file using keywords
+        """
+        table = self.TABLE.read(
+            pycbclivefile,
+            format='hdf5.pycbc_live',
+            ifo='X1',
+        )
+        utils.assert_table_equal(pycbclivetable, table)
 
-            # double-check that loudest and extended_metadata=False work
-            t2 = self.TABLE.read(
-                fp,
-                format="hdf5.pycbc_live",
-                loudest=True,
-                extended_metadata=False,
-            )
-            utils.assert_table_equal(table.filter('snr > 500'), t2)
-            assert t2.meta == {'ifo': 'X1'}
+    def test_read_pycbc_live_loudest(self, pycbclivetable, pycbclivefile):
+        """Check that we can read the `loudest` table from a PyCBC-Live file
+        """
+        table = self.TABLE.read(
+            pycbclivefile,
+            format="hdf5.pycbc_live",
+            loudest=True,
+        )
+        utils.assert_table_equal(pycbclivetable.filter('snr > 500'), table)
 
-            # add another IFO, then assert that reading the table without
-            # specifying the IFO fails
-            with h5py.File(fp, "r+") as h5f:
-                h5f.create_group('Z1')
-            with pytest.raises(ValueError) as exc:
-                self.TABLE.read(fp, format="hdf5.pycbc_live")
-            assert str(exc.value).startswith(
-                'PyCBC live HDF5 file contains dataset groups')
+    def test_read_pycbc_live_extended_metadata(
+            self,
+            pycbclivetable,
+            pycbclivepsd,
+            pycbclivefile,
+    ):
+        """Check that we can read extended metadata from a PyCBC-Live file
+        """
+        table = self.TABLE.read(
+            pycbclivefile,
+            format="hdf5.pycbc_live",
+            extended_metadata=True,  # default
+        )
+        utils.assert_table_equal(pycbclivetable, table)
+        utils.assert_array_equal(
+            table.meta['loudest'],
+            (pycbclivetable['snr'] > 500).nonzero()[0],
+        )
+        utils.assert_quantity_sub_equal(
+            table.meta['psd'],
+            pycbclivepsd,
+            exclude=['name', 'channel', 'unit', 'epoch'])
 
-            # but check that we can still read the original
-            t2 = self.TABLE.read(fp, format='hdf5.pycbc_live', ifo='X1')
-            utils.assert_table_equal(table, t2)
+    def test_read_pycbc_live_extended_metadata_false(
+            self,
+            pycbclivetable,
+            pycbclivefile,
+    ):
+        """Check that we can read a PyCBC-Live file without extended metadata
+        """
+        # check extended_metadata=False works
+        table = self.TABLE.read(
+            pycbclivefile,
+            format="hdf5.pycbc_live",
+            extended_metadata=False,
+        )
+        assert table.meta == {'ifo': 'X1'}
 
-            # assert processed colums works
-            t2 = self.TABLE.read(
-                fp,
-                format="hdf5.pycbc_live",
-                ifo="X1",
-                columns=["mchirp", "new_snr"],
-            )
-            mchirp = (table['mass1'] * table['mass2']) ** (3/5.) / (
-                table['mass1'] + table['mass2']) ** (1/5.)
-            utils.assert_array_equal(t2['mchirp'], mchirp)
+    def test_read_pycbc_live_multiple_ifos(
+            self,
+            pycbclivetable,
+            pycbclivefile,
+    ):
+        """Check that we can handle multiple IFOs in a PyCBC-Live file
+        """
+        with h5py.File(pycbclivefile, "r+") as h5f:
+            h5f.create_group('Z1')
+        with pytest.raises(ValueError) as exc:
+            self.TABLE.read(pycbclivefile, format="hdf5.pycbc_live")
+        assert str(exc.value).startswith(
+            'PyCBC live HDF5 file contains dataset groups')
 
-            # test with selection and columns
-            t2 = self.TABLE.read(
-                fp,
-                format='hdf5.pycbc_live',
-                ifo='X1',
-                selection='snr>.5',
-                columns=("a", "b", "mass1"),
-            )
-            utils.assert_table_equal(
-                t2,
-                filter_table(table, 'snr>.5')[("a", "b", "mass1")],
-            )
+        # but check that we can still read the original
+        table = self.TABLE.read(
+            pycbclivefile,
+            format='hdf5.pycbc_live',
+            ifo='X1',
+        )
+        utils.assert_table_equal(pycbclivetable, table)
 
-            # regression test: gwpy/gwpy#1081
-            t2 = self.TABLE.read(
-                fp,
-                format='hdf5.pycbc_live',
-                ifo='X1',
-                selection='snr>.5',
-                columns=("a", "b", "snr"),
-            )
-            utils.assert_table_equal(
-                t2,
-                filter_table(table, 'snr>.5')[("a", "b", "snr")],
-            )
+    def test_read_pycbc_live_processed_columns(
+            self,
+            pycbclivetable,
+            pycbclivefile,
+    ):
+        """Check that we can read processed columns from a PyCBC-Live file
+        """
+        # assert processed colums works
+        table = self.TABLE.read(
+            pycbclivefile,
+            format="hdf5.pycbc_live",
+            ifo="X1",
+            columns=["mchirp", "new_snr"],
+        )
+        mchirp = (
+            (pycbclivetable['mass1'] * pycbclivetable['mass2']) ** (3/5.)
+            / (pycbclivetable['mass1'] + pycbclivetable['mass2']) ** (1/5.)
+        )
+        utils.assert_array_equal(table['mchirp'], mchirp)
 
-        finally:
-            if os.path.isdir(os.path.dirname(fp)):
-                shutil.rmtree(os.path.dirname(fp))
+    def test_read_pycbc_live_selection_columns(
+            self,
+            pycbclivetable,
+            pycbclivefile,
+    ):
+        """Check that the selection and columns kwargs work when
+        reading from a PyCBC-Live file
+        """
+        # test with selection and columns
+        table = self.TABLE.read(
+            pycbclivefile,
+            format='hdf5.pycbc_live',
+            ifo='X1',
+            selection='snr>.5',
+            columns=("a", "b", "mass1"),
+        )
+        utils.assert_table_equal(
+            table,
+            filter_table(pycbclivetable, 'snr>.5')[("a", "b", "mass1")],
+        )
 
-    def test_read_snax(self):
-        table = self.create(
-            100, names=['time', 'snr', 'frequency'])
-        fp = os.path.join(tempfile.mkdtemp(), 'SNAX-0-0.h5')
+    def test_read_pycbc_live_regression_1081(
+            self,
+            pycbclivetable,
+            pycbclivefile,
+    ):
+        """Check against regression of gwpy/gwpy#1081
+        """
+        table = self.TABLE.read(
+            pycbclivefile,
+            format='hdf5.pycbc_live',
+            ifo='X1',
+            selection='snr>.5',
+            columns=("a", "b", "snr"),
+        )
+        utils.assert_table_equal(
+            table,
+            filter_table(pycbclivetable, 'snr>.5')[("a", "b", "snr")],
+        )
+
+    @pytest.fixture
+    def snaxtable(self):
         channel = 'H1:FAKE'
-        try:
-            # write table in snax format (by hand)
-            with h5py.File(fp, 'w') as h5f:
-                group = h5f.create_group(channel)
-                group.create_dataset(data=table, name='0.0_20.0')
+        table = self.create(
+            100,
+            names=[
+                'time',
+                'snr',
+                'frequency',
+            ],
+        )
+        table["channel"] = channel
+        return table
 
-            # manually add 'channel' column to table
-            table["channel"] = channel
+    @staticmethod
+    @pytest.fixture
+    def snaxfile(snaxtable, tmp_path):
+        tmp = tmp_path / "SNAX-0-0.h5"
+        channel = snaxtable[0]["channel"]
+        tmptable = snaxtable.copy()
+        tmptable.remove_column("channel")
+        with h5py.File(tmp, "w") as h5f:
+            group = h5f.create_group(channel)
+            group.create_dataset(data=tmptable, name='0.0_20.0')
+        return tmp
 
-            # check reading capabilities with and
-            # without specifying channels
-            t2 = self.TABLE.read(fp, format='hdf5.snax')
-            utils.assert_table_equal(table, t2)
+    def test_read_snax(self, snaxtable, snaxfile):
+        """Check that we can read a SNAX-format HDF5 file
+        """
+        table = self.TABLE.read(snaxfile, format='hdf5.snax')
+        utils.assert_table_equal(snaxtable, table)
 
-            t2 = self.TABLE.read(fp, channels=channel, format='hdf5.snax')
-            utils.assert_table_equal(table, t2)
+    def test_read_snax_channel(self, snaxtable, snaxfile):
+        """Check that we can read a SNAX-format HDF5 file specifying
+        the channel
+        """
+        table = self.TABLE.read(
+            snaxfile,
+            format='hdf5.snax',
+            channels="H1:FAKE",
+        )
+        utils.assert_table_equal(snaxtable, table)
 
-            # test with selection and columns
-            t2 = self.TABLE.read(
-                fp,
-                channels=channel,
+    def test_read_snax_selection_columns(self, snaxtable, snaxfile):
+        """Check that the selection and columns kwargs work when
+        reading from a SNAX-format file
+        """
+        # test with selection and columns
+        table = self.TABLE.read(
+            snaxfile,
+            channels="H1:FAKE",
+            format='hdf5.snax',
+            selection='snr>.5',
+            columns=('time', 'snr'),
+        )
+        utils.assert_table_equal(
+            table,
+            filter_table(snaxtable, 'snr>.5')[('time', 'snr')],
+        )
+
+    def test_read_snax_compact(self, snaxtable, snaxfile):
+        """Check that the selection and columns kwargs work when
+        reading from a SNAX-format file
+        """
+        # test compact representation of channel column
+        t2 = self.TABLE.read(snaxfile, compact=True, format='hdf5.snax')
+
+        # group by channel and drop channel column
+        tables = {}
+        t2 = t2.group_by('channel')
+        t2.remove_column('channel')
+        for key, group in zip(t2.groups.keys, t2.groups):
+            channel = t2.meta['channel_map'][key['channel']]
+            tables[channel] = self.TABLE(group, copy=True)
+
+        # verify table groups are identical
+        t_ref = snaxtable.copy().group_by('channel')
+        t_ref.remove_column('channel')
+        for key, group in zip(t_ref.groups.keys, t_ref.groups):
+            channel = key['channel']
+            utils.assert_table_equal(group, tables[channel])
+
+    def test_read_snax_errors(self, snaxtable, snaxfile):
+        """Check error handling when reading from a SNAX-format file
+        """
+        missing = ["H1:FAKE", 'H1:MISSING']
+        with pytest.raises(ValueError):
+            self.TABLE.read(snaxfile, channels=missing, format='hdf5.snax')
+
+        with pytest.warns(UserWarning):
+            table = self.TABLE.read(
+                snaxfile,
+                channels=missing,
                 format='hdf5.snax',
-                selection='snr>.5',
-                columns=('time', 'snr'),
+                on_missing='warn',
             )
-            utils.assert_table_equal(
-                t2,
-                filter_table(table, 'snr>.5')[('time', 'snr')],
-            )
-
-            # test compact representation of channel column
-            t2 = self.TABLE.read(fp, compact=True, format='hdf5.snax')
-
-            # group by channel and drop channel column
-            tables = {}
-            t2 = t2.group_by('channel')
-            t2.remove_column('channel')
-            for key, group in zip(t2.groups.keys, t2.groups):
-                channel = t2.meta['channel_map'][key['channel']]
-                tables[channel] = self.TABLE(group, copy=True)
-
-            # verify table groups are identical
-            t_ref = table.copy().group_by('channel')
-            t_ref.remove_column('channel')
-            for key, group in zip(t_ref.groups.keys, t_ref.groups):
-                channel = key['channel']
-                utils.assert_table_equal(group, tables[channel])
-
-            # check error handling when missing channels are encountered
-            missing = [channel, 'H1:MISSING']
-            with pytest.raises(ValueError):
-                self.TABLE.read(fp, channels=missing, format='hdf5.snax')
-
-            with pytest.warns(UserWarning):
-                self.TABLE.read(
-                    fp,
-                    channels=missing,
-                    format='hdf5.snax',
-                    on_missing='warn',
-                )
-
-        finally:
-            if os.path.isdir(os.path.dirname(fp)):
-                shutil.rmtree(os.path.dirname(fp))
+        utils.assert_table_equal(snaxtable, table)
 
     @pytest.fixture(scope="module")
     def hacr_table(self):

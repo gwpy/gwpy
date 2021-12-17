@@ -19,6 +19,8 @@
 """Read LIGO_LW documents into :class:`~ligo.lw.table.Table` objects.
 """
 
+import importlib
+
 import numpy
 
 try:
@@ -64,18 +66,26 @@ try:
 except ImportError:
     pass
 else:
-    from ligo.lw.ilwd import ilwdchar
-    from ligo.lw._ilwd import ilwdchar as _ilwdchar
-    from glue.ligolw.ilwd import ilwdchar as glue_ilwdchar
-    from glue.ligolw._ilwd import ilwdchar as _glue_ilwdchar
-    ilwdchar_types = (
-        ilwdchar,
-        _ilwdchar,
-        glue_ilwdchar,
-        _glue_ilwdchar,
-    )
-    NUMPY_TYPE_MAP[ilwdchar_types] = numpy.int_
     NUMPY_TYPE_MAP[LIGOTimeGPS] = numpy.float_
+
+
+def _get_ilwdchar_types(library):
+    """Yields all ``ilwdchar`` type objects from the given LIGO_LW library
+    """
+    for modname in ("ilwd", "_ilwd"):
+        try:
+            mod = importlib.import_module(f"{library}.{modname}")
+        except ImportError:
+            continue
+        yield getattr(mod, "ilwdchar")
+
+
+ILWDCHAR_TYPES = tuple(
+    typ
+    for lib in ("glue.ligolw", "ligo.lw")
+    for typ in _get_ilwdchar_types(lib)
+)
+NUMPY_TYPE_MAP[ILWDCHAR_TYPES] = numpy.int_
 
 
 # -- utilities ----------------------------------------------------------------
@@ -249,7 +259,7 @@ def to_astropy_column(llwcol, cls, copy=False, dtype=None,
         return cls(data=llwcol, copy=copy, dtype=dtype, **kwargs)
     except TypeError:
         # numpy tries to cast ilwdchar to int via long, which breaks
-        if dtype is numpy.int_ and isinstance(llwcol[0], ilwdchar_types):
+        if dtype is numpy.int_ and isinstance(llwcol[0], ILWDCHAR_TYPES):
             return cls(data=map(dtype, llwcol),
                        copy=False, dtype=dtype, **kwargs)
         # any other error, raise

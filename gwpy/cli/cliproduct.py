@@ -650,12 +650,12 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """Set the grid parameters for this plot.
         """
         if enable:
-            self.ax.grid(b=True, which='major',
+            self.ax.grid(True, which='major',
                          color='k', linestyle='solid')
-            self.ax.grid(b=True, which='minor',
+            self.ax.grid(True, which='minor',
                          color='0.06', linestyle='dotted')
         else:
-            self.ax.grid(b=False)
+            self.ax.grid(False)
 
     def save(self, outfile):
         """Save this product to the target `outfile`.

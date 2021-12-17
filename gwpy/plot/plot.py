@@ -482,7 +482,6 @@ class Plot(figure.Figure):
         # set options for new axes
         axes_kw = {
             'pad': pad,
-            'add_to_figure': True,
             'sharex': ax if sharex is True else sharex or None,
             'axes_class': get_projection_class('segments'),
         }
@@ -519,7 +518,7 @@ class Plot(figure.Figure):
 
         # plot segments
         segax.plot(segments, **plotargs)
-        segax.grid(b=False, which='both', axis='y')
+        segax.grid(False, which='both', axis='y')
         segax.autoscale(axis='y', tight=True)
 
         return segax

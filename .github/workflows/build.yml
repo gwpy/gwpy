@@ -99,7 +99,11 @@ jobs:
     - name: Install dependencies with conda
       run: |
         # parse requirements to install as much as possible with conda
-        python ./ci/parse-conda-requirements.py \
+        mamba install --quiet --yes --name base \
+            grayskull \
+            setuptools \
+        ;
+        conda run --name base python ./tools/parse-conda-requirements.py \
             --all \
             --output environment.txt \
             --python-version ${{ matrix.python-version }}

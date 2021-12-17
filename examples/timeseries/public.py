@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -17,30 +18,48 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Plotting public LIGO data
+"""Accessing and visualising public GW detector data
 
-I would like to study the gravitational wave strain time-series around the
-time of an interesting simulated signal during the last science run (S6).
-
-These data are public, so we can load them directly from the web.
+Data from the current generation gravitational wave detectors are published
+by |GWOSCl| and freely available to the public.
+In this example we demonstrate how to identify times of a published
+GW detection event, and to download and visualise detector data.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
-# The `TimeSeries` object has a `classmethod` dedicated to fetching open-access
-# data hosted by the LIGO Open Science Center, so we can just import that
-# object
+# Firstly, we can use the |gwosc-mod| Python package to query for the
+# time of the first gravitational-wave detection |GW150914|:
+
+from gwosc.datasets import event_gps
+gps = event_gps("GW150914")
+
+# GWpy's `TimeSeries` class provides an interface to the public |GWOSC|
+# data in the :meth:`~TimeSeries.fetch_open_data` method; to use it we
+# need to first import the `TimeSeries` object:
+
 from gwpy.timeseries import TimeSeries
 
-# then call the `~TimeSeries.fetch_open_data` method, passing it the prefix
-# for the interferometer we want ('L1'), and the GPS start and stop times of
-# our query:
-data = TimeSeries.fetch_open_data('L1', 968654552, 968654562)
+# then call the :meth:`~TimeSeries.fetch_open_data` method, passing it the
+# prefix for the interferometer we want (`'L1'` here for LIGO-Livingston),
+# and the GPS start and stop times of our query (based around the GPS time
+# for GW150914):
+
+data = TimeSeries.fetch_open_data('L1', gps-5, gps+5)
 
 # and then we can make a plot:
+
 plot = data.plot(
-    title='LIGO Livingston Observatory data for HW100916',
-    ylabel='Strain amplitude',
+    title="LIGO Livingston Observatory data for GW150914",
+    ylabel="Strain amplitude",
+    color="gwpy:ligo-livingston",
+    epoch=gps,
 )
 plot.show()
+
+# We can't see anything that looks like a gravitational wave signal in these
+# data, the amplitude is dominated by low-frequency detector noise.
+# Further filtering is required to be able to identify the GW150914 event
+# here, see :ref:`gwpy-example-signal-gw150914` for a more in-depth example of
+# extracting signals from noise.

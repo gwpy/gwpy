@@ -32,7 +32,7 @@ ratings:
   - "**.py"
 
 exclude_paths:
-- "ci/*"
+- "tools/*"
 - "docs/*"
 - "examples/*"
 - "gwpy/_version.py"
