@@ -103,7 +103,7 @@ def read_ligolw_flag(source, name=None, **kwargs):
 
 # -- write --------------------------------------------------------------------
 
-def write_ligolw(flags, target, attrs=None, ilwdchar_compat=False, **kwargs):
+def write_ligolw(flags, target, attrs=None, **kwargs):
     """Write this `DataQualityFlag` to the given LIGO_LW Document
 
     Parameters
@@ -129,8 +129,7 @@ def write_ligolw(flags, target, attrs=None, ilwdchar_compat=False, **kwargs):
         flags = DataQualityDict({flags.name: flags})
     return write_tables(
         target,
-        flags.to_ligolw_tables(ilwdchar_compat=ilwdchar_compat,
-                               **attrs or dict()),
+        flags.to_ligolw_tables(**attrs or dict()),
         **kwargs
     )
 

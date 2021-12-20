@@ -1280,15 +1280,11 @@ class DataQualityDict(OrderedDict):
 
         return out
 
-    def to_ligolw_tables(self, ilwdchar_compat=False, **attrs):
+    def to_ligolw_tables(self, **attrs):
         """Convert this `DataQualityDict` into a trio of LIGO_LW segment tables
 
         Parameters
         ----------
-        ilwdchar_compat : `bool`, optional
-            whether to write in the old format, compatible with
-            ILWD characters (`True`), or to use the new format (`False`)
-
         **attrs
             other attributes to add to all rows in all tables
             (e.g. ``'process_id'``)
@@ -1304,10 +1300,7 @@ class DataQualityDict(OrderedDict):
         segmenttable : :class:`~ligo.lw.lsctables.SegmentTable`
             the ``segment`` table
         """
-        if ilwdchar_compat:
-            from glue.ligolw import lsctables
-        else:
-            from ligo.lw import lsctables
+        from ligo.lw import lsctables
         from ..io.ligolw import to_table_type as to_ligolw_table_type
 
         SegmentDefTable = lsctables.SegmentDefTable

@@ -16,10 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for `io` module
+"""Unit test for `gwpy.io.ligolw` module
 """
 
-import importlib
 import tempfile
 from pathlib import Path
 
@@ -32,67 +31,35 @@ from .. import ligolw as io_ligolw
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-LIGOLW_LIBS = (
-    "glue.ligolw",  # old
-    "ligo.lw",  # new
-)
-
-parametrize_ilwdchar_compat = pytest.mark.parametrize("ilwdchar_compat", [
-    pytest.param(False, marks=skip_missing_dependency("ligo.lw.lsctables")),
-    pytest.param(True, marks=skip_missing_dependency("glue.ligolw.lsctables")),
-])
-
 
 # -- fixtures -----------------------------------------------------------------
 
-@pytest.fixture(
-    scope="function",
-    params=[
-        pytest.param(
-            lib,
-            marks=skip_missing_dependency(f"{lib}.lsctables"))
-        for lib in LIGOLW_LIBS
-    ],
-)
-def ligolw_lib(request):
-    """Parametrize which ligolw library to use
-    """
-    return importlib.import_module(request.param)
-
-
 @pytest.fixture(scope="function")
-def llwdoc(ligolw_lib):
+def llwdoc():
     """Build an empty LIGO_LW Document
     """
-    # build empty LIGO_LW document
-    ligolw_pkg = ligolw_lib.__name__
-    ligolw = importlib.import_module(".ligolw", package=ligolw_pkg)
-    xmldoc = ligolw.Document()
-    xmldoc.appendChild(ligolw.LIGO_LW())
+    try:
+        from ligo.lw.ligolw import (Document, LIGO_LW)
+    except ImportError as exc:
+        pytest.skip(str(exc))
+    xmldoc = Document()
+    xmldoc.appendChild(LIGO_LW())
     return xmldoc
 
 
-@pytest.fixture(scope="function")
-def llwdoc_with_tables(llwdoc):
-    """Build a LIGO_LW Document with some tables
-    """
-    llw = llwdoc.childNodes[-1]  # get ligolw element
-    ilwdchar_compat = llwdoc.__module__.startswith("glue")
-    for t in [
-        new_table('process', ilwdchar_compat=ilwdchar_compat),
-        new_table('sngl_ringdown', ilwdchar_compat=ilwdchar_compat),
-    ]:
-        llw.appendChild(t)
-    return llwdoc
-
-
-@io_ligolw.ilwdchar_compat
 def new_table(tablename, data=None, **new_kw):
-    from ligo.lw import lsctables
+    """Create a new LIGO_LW Table with data
+    """
+    try:
+        from ligo.lw import lsctables
+    except ImportError as exc:
+        pytest.skip(str(exc))
     from ligo.lw.table import Table
 
-    table = lsctables.New(lsctables.TableByName[Table.TableName(tablename)],
-                          **new_kw)
+    table = lsctables.New(
+        lsctables.TableByName[Table.TableName(tablename)],
+        **new_kw,
+    )
     for dat in data or list():
         row = table.RowType()
         for key, val in dat.items():
@@ -101,18 +68,20 @@ def new_table(tablename, data=None, **new_kw):
     return table
 
 
+@pytest.fixture(scope="function")
+def llwdoc_with_tables(llwdoc):
+    """Build a LIGO_LW Document with some tables
+    """
+    llw = llwdoc.childNodes[-1]  # get ligolw element
+    for t in [
+        new_table('process'),
+        new_table('sngl_ringdown'),
+    ]:
+        llw.appendChild(t)
+    return llwdoc
+
+
 # -- tests --------------------------------------------------------------------
-
-@parametrize_ilwdchar_compat
-def test_ilwdchar_compat(ilwdchar_compat):
-    if ilwdchar_compat:
-        from glue.ligolw.table import Table
-    else:
-        from ligo.lw.table import Table
-    # test that our new_table function actually returns properly
-    tab = new_table("sngl_burst", ilwdchar_compat=ilwdchar_compat)
-    assert isinstance(tab, Table)
-
 
 def test_read_table(llwdoc_with_tables):
     tab = io_ligolw.read_table(llwdoc_with_tables, tablename="process")
@@ -194,7 +163,7 @@ def test_list_tables_file(llwdoc_with_tables):
         assert io_ligolw.list_tables(f) == names
 
 
-@skip_missing_dependency('ligo.lw.lsctables')  # check for LAL
+@skip_missing_dependency("ligo.lw.lsctables")
 @pytest.mark.parametrize('value, name, result', [
     (None, 'peak_time', None),
     (1.0, 'peak_time', numpy.int32(1)),
@@ -208,25 +177,6 @@ def test_to_table_type(value, name, result):
     assert out == result
 
 
-@skip_missing_dependency('glue.ligolw.lsctables')
-@pytest.mark.parametrize('value, name, result', [
-    (None, 'peak_time', None),
-    (1.0, 'peak_time', numpy.int32(1)),
-    (1, 'process_id', 'sngl_burst:process_id:1'),
-    (1.0, 'invalidname', 1.0),
-    ('process:process_id:100', 'process_id', 'process:process_id:100'),
-])
-def test_to_table_type_glue_ligolw(value, name, result):
-    from glue.ligolw.lsctables import SnglBurstTable
-    from glue.ligolw.ilwd import ilwdchar
-    from glue.ligolw._ilwd import ilwdchar as IlwdChar
-    out = io_ligolw.to_table_type(value, SnglBurstTable, name)
-    if isinstance(out, IlwdChar):
-        result = ilwdchar(result)
-    assert isinstance(out, type(result))
-    assert out == result
-
-
 def test_write_tables_to_document(llwdoc_with_tables):
     # create new table
     def _new():
@@ -234,7 +184,6 @@ def test_write_tables_to_document(llwdoc_with_tables):
             'segment',
             [{'segment': (1, 2)}, {'segment': (3, 4)}, {'segment': (5, 6)}],
             columns=('start_time', 'start_time_ns', 'end_time', 'end_time_ns'),
-            ilwdchar_compat=llwdoc_with_tables.__module__.startswith("glue"),
         )
 
     # get ligolw element
@@ -259,19 +208,16 @@ def test_write_tables_to_document(llwdoc_with_tables):
     assert len(llw.childNodes[-1]) == 3
 
 
-@parametrize_ilwdchar_compat
-def test_write_tables(ilwdchar_compat, tmp_path):
+def test_write_tables(tmp_path):
     stab = new_table(
         'segment',
         [{'segment': (1, 2)}, {'segment': (3, 4)}, {'segment': (5, 6)}],
         columns=('start_time', 'start_time_ns', 'end_time', 'end_time_ns'),
-        ilwdchar_compat=ilwdchar_compat
     )
     ptab = new_table(
         'process',
         [{'program': 'gwpy'}],
         columns=('program',),
-        ilwdchar_compat=ilwdchar_compat,
     )
 
     tmp = tmp_path / "test.xml"
@@ -308,6 +254,7 @@ def test_write_tables(ilwdchar_compat, tmp_path):
     assert len(stab2) == len(stab)
 
 
+@skip_missing_dependency("ligo.lw.lsctables")
 def test_is_ligolw_false():
     assert not io_ligolw.is_ligolw("read", None, None, 1)
 
