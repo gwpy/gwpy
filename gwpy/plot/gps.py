@@ -144,7 +144,7 @@ class GPSMixin(object):
             if other.decompose().scale == dec.scale:
                 self._unit = other
                 return
-        raise ValueError("unrecognised unit '{unit}'")
+        raise ValueError(f"unrecognised unit '{unit}'")
 
     unit = property(fget=get_unit, fset=set_unit,
                     doc=get_unit.__doc__)
