@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Scott Coughlin (2017-2020)
+# Copyright (C) Scott Coughlin (2017-2021)
+#               Cardiff University (2021)
 #
 # This file is part of GWpy.
 #
@@ -19,21 +20,82 @@
 """Extend :mod:`astropy.table` with the `GravitySpyTable`
 """
 
-import json
-import os
-from urllib.error import HTTPError
+import re
+from json import JSONDecodeError
+from pathlib import Path
 from urllib.parse import urlencode
-from urllib.request import urlopen
 
-import numpy as np
-
-from astropy.utils.data import get_readable_fileobj
+import requests
 
 from ..utils import mp as mp_utils
 from .table import EventTable
 
 __author__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
 __all__ = ['GravitySpyTable']
+
+JSON_CONTENT_TYPE = "application/json"
+
+# default gravity spy remote host
+DEFAULT_HOST = "https://gravityspytools.ciera.northwestern.edu"
+
+# API paths
+SEARCH_PATH = "/search"
+SIMILARITY_SEARCH_PATH = "/similarity_search_restful_API"
+
+# ordered list of image durations supported by gravityspy.
+# NOTE: the index of each element here is the map between
+#       the 'urlX' column in the GravitySpyTable and the
+#       duration of the relevant image, for some reason.
+DURATIONS = (
+    0.5,
+    1.0,
+    2.0,
+    4.0,
+)
+
+# list of ERAs supported by similarity search API
+ERA = {
+    "ALL": (1126400000, 1584057618),
+    "O1": (1126400000, 1137250000),
+    "ER10": (1161907217, 1164499217),
+    "O2a": (1164499217, 1219276818),
+    "ER13": (1228838418, 1229176818),
+    "ER14": (1235750418, 1238112018),
+    "O3": (1238166018, 1272326418),
+    "O3a": (1238166018, 1254009618),
+    "O3b": (1256655642, 1272326418),
+}
+
+# regex to filter columns containing URLs
+URL_COLUMN = re.compile(r"\Aurl[0-9]+\Z")
+
+
+def _image_download_target(
+    row,
+    outdir,
+    training_set=False,
+    labelled_samples=False,
+):
+    """Construct where to download a GravitySpy image
+
+    This returns a `str.format`-style template that just needs
+    the duration to form a complete target path.
+    """
+    ifo = row["ifo"]
+    id_ = row["gravityspy_id"]
+    label = row["ml_label"] if training_set else ""
+    stype = row["sample_type"] if labelled_samples else ""
+    return str(
+        outdir
+        / label
+        / stype
+        / "{}_{}_spectrogram_{{}}.png".format(ifo, id_)
+    )
+
+
+def _download_image(bundle):
+    url, target = bundle
+    return target.write_bytes(requests.get(url).content)
 
 
 class GravitySpyTable(EventTable):
@@ -54,8 +116,15 @@ class GravitySpyTable(EventTable):
 
     # -- i/o ------------------------------------
 
-    def download(self, **kwargs):
-        """If table contains Gravity Spy triggers `EventTable`
+    def download(
+        self,
+        download_path="download",
+        nproc=1,
+        download_durs=DURATIONS,
+        training_set=False,
+        labelled_samples=False,
+    ):
+        """Download image files associated with entries in a `GravitySpyTable`.
 
         Parameters
         ----------
@@ -69,187 +138,129 @@ class GravitySpyTable(EventTable):
             Specify exactly which durations you want to download
             default is to download all the avaialble GSpy durations.
 
-        kwargs: Optional training_set and labelled_samples args
-            that will download images in a special way
-            ./"ml_label"/"sample_type"/"image"
+        training_set : `bool`, optional
+            if `True` download training set data
 
-        Returns
-        -------
-        Folder containing omega scans sorted by label
+        labelled_samples : `bool`, optional
+            if `True` download only labelled samples
         """
-        # back to pandas
-        try:
-            images_db = self.to_pandas()
-        except ImportError as exc:
-            exc.args = ('pandas is required to download triggers',)
-            raise
+        download_path = Path(download_path)
 
-        # Remove any broken links
-        images_db = images_db.loc[images_db.url1 != '']
+        # work out which columns contain URLs
+        url_columns = list(filter(URL_COLUMN.match, self.colnames))
 
-        training_set = kwargs.pop('training_set', 0)
-        labelled_samples = kwargs.pop('labelled_samples', 0)
-        download_location = kwargs.pop('download_path',
-                                       os.path.join('download'))
-        duration_values = np.array([0.5, 1.0, 2.0, 4.0])
-        download_durs = kwargs.pop('download_durs', duration_values)
+        # construct a download target location for each requested image
+        urls = dict()
+        for row in self:
+            if row["url1"] in {None, "", "?"}:  # skip rows without URLs
+                continue
 
-        duration_idx = []
-        for idur in download_durs:
-            duration_idx.append(np.argwhere(duration_values == idur)[0][0])
+            # construct the abstract download target
+            _download_target = _image_download_target(
+                row,
+                download_path,
+                training_set=training_set,
+                labelled_samples=labelled_samples,
+            )
 
-        duration_values = duration_values[duration_idx]
-        duration_values = np.array([duration_values]).astype(str)
+            # and map the remote URL to a concrete target
+            # for each duration requested
+            for col in url_columns:
+                idx = int(col[3:])  # urlXXXX number
+                duration = DURATIONS[idx-1]
+                if duration in download_durs:  # image requested
+                    urls[row[col]] = Path(_download_target.format(duration))
 
-        # labelled_samples are only available when requesting the
-        if labelled_samples:
-            if 'sample_type' not in images_db.columns:
-                raise ValueError('You have requested ml_labelled Samples '
-                                 'for a Table which does not have '
-                                 'this column. Did you fetch a '
-                                 'trainingset* table?')
+        # create all of the directories needed up front
+        for path in urls.values():
+            path.parent.mkdir(exist_ok=True, parents=True)
 
-        # If someone wants labelled samples they are
-        # Definitely asking for the training set but
-        # may hve forgotten
-        if labelled_samples and not training_set:
-            training_set = 1
-
-        # Let us check what columns are needed
-        cols_for_download = ['url1', 'url2', 'url3', 'url4']
-        cols_for_download = [cols_for_download[idx] for idx in duration_idx]
-        cols_for_download_ext = ['ml_label', 'sample_type',
-                                 'ifo', 'gravityspy_id']
-
-        if not training_set:
-            images_db['ml_label'] = ''
-        if not labelled_samples:
-            images_db['sample_type'] = ''
-
-        if not os.path.isdir(download_location):
-            os.makedirs(download_location)
-
-        if training_set:
-            for ilabel in images_db.ml_label.unique():
-                if labelled_samples:
-                    for itype in images_db.sample_type.unique():
-                        if not os.path.isdir(os.path.join(
-                                             download_location,
-                                             ilabel, itype)):
-                            os.makedirs(os.path.join(download_location,
-                                        ilabel, itype))
-                else:
-                    if not os.path.isdir(os.path.join(download_location,
-                                                      ilabel)):
-                        os.makedirs(os.path.join(download_location,
-                                                 ilabel))
-
-        images_for_download = images_db[cols_for_download]
-        images = images_for_download.values.flatten()
-        images_for_download_ext = images_db[cols_for_download_ext]
-        duration = np.atleast_2d(
-            duration_values.repeat(
-                len(images_for_download_ext),
-                0,
-            ).flatten(),
-        ).T
-        images_for_download_ext = images_for_download_ext.values.repeat(
-            len(cols_for_download),
-            0,
-        )
-        images_for_for_download_path = np.array([[download_location]]).repeat(
-            len(images_for_download_ext),
-            0,
-        )
-        images = np.hstack((np.atleast_2d(images).T,
-                           images_for_download_ext, duration,
-                           images_for_for_download_path))
-
-        # calculate maximum number of processes
-        nproc = min(kwargs.pop('nproc', 1), len(images))
-
-        # read files
-        output = mp_utils.multiprocess_with_queues(
+        # download the images
+        mp_utils.multiprocess_with_queues(
             nproc,
-            _download_single_image,
-            [(img, nproc) for img in images],
+            _download_image,
+            urls.items(),
         )
 
-        # raise exceptions (from multiprocessing, single process raises inline)
-        for f, x in output:
-            if isinstance(x, Exception):
-                x.args = ('Failed to read %s: %s' % (f, str(x)),)
-                raise x
+        # and return the list of new files we have
+        return sorted(map(str, urls.values()))
 
     @classmethod
-    def search(cls, gravityspy_id, howmany=10,
-               era='ALL', ifos='H1L1', remote_timeout=20):
-        """perform restful API version of search available here:
-        https://gravityspytools.ciera.northwestern.edu/search/
+    def search(
+        cls,
+        gravityspy_id,
+        howmany=10,
+        era="ALL",
+        ifos=("H1", "L1"),
+        database="similarity_index_o3",
+        host=DEFAULT_HOST,
+        **kwargs,
+    ):
+        """Perform a GravitySpy 'Similarity Search' for the given ID.
 
         Parameters
         ----------
-        gravityspy_id : `str`,
-            This is the unique 10 character hash that identifies
-            a Gravity Spy Image
+        gravityspy_id : `str`
+            the unique 10 character hash that identifies a Gravity Spy image
 
-        howmany : `int`, optional, default: 10
+        howmany : `int`, optional
             number of similar images you would like
+
+        era : `str`, optional
+            which era to search, see online for more information
+
+        ifos : `tuple`, str`, optional
+            the list of interferometers to include in the search
+
+        database : `str`, optional
+            the database to query
+
+        host : `str`, optional
+            the URL (scheme and FQDN) of the Gravity Spy host to query
+
+        **kwargs
+            all other kwargs are passed to `requests.get` to perform
+            the actual remote communication.
 
         Returns
         -------
-        `GravitySpyTable` containing similar events based on
-        an evaluation of the Euclidean distance of the input image
-        to all other images in some Feature Space
+        table : `GravitySpyTable`
+            a `GravitySpyTable` containing similar events based on
+            an evaluation of the Euclidean distance of the input image
+            to all other images in some Feature Space
+
+        Notes
+        -----
+        For an online version, and documentation of the search, see
+
+        https://gravityspytools.ciera.northwestern.edu/search/
         """
-        # Need to build the url call for the restful API
-        base = 'https://gravityspytools.ciera.northwestern.edu' + \
-            '/search/similarity_search_restful_API'
+        base = host + SEARCH_PATH + SIMILARITY_SEARCH_PATH
 
-        map_era_to_url = {
-            'ALL': "event_time BETWEEN 1126400000 AND 1584057618",
-            'O1': "event_time BETWEEN 1126400000 AND 1137250000",
-            'ER10': "event_time BETWEEN 1161907217 AND 1164499217",
-            'O2a': "event_time BETWEEN 1164499217 AND 1219276818",
-            'ER13': "event_time BETWEEN 1228838418 AND 1229176818",
-        }
+        if isinstance(ifos, str):  # 'H1L1' -> ['H1', 'L1']
+            ifos = [ifos[i:i+2] for i in range(0, len(ifos), 2)]
 
-        parts = {
+        query = urlencode({
             'howmany': howmany,
             'imageid': gravityspy_id,
-            'era': map_era_to_url[era],
-            'ifo': "{}".format(", ".join(
-                map(repr, [ifos[i:i+2] for i in range(0, len(ifos), 2)]),
-            )),
-            'database': 'similarity_index_o3',
-        }
+            'era': "event_time BETWEEN {} AND {}".format(*ERA[era]),
+            'ifo': ", ".join(map(repr, ifos)),
+            'database': database,
+        })
+        url = '{}/?{}'.format(base, query)
 
-        search = urlencode(parts)
-
-        url = '{}/?{}'.format(base, search)
-
+        response = requests.get(url, **kwargs)
+        response.raise_for_status()  # check the response
         try:
-            with get_readable_fileobj(url, remote_timeout=remote_timeout) as f:
-                return GravitySpyTable(json.load(f))
-        except HTTPError as exc:
-            if exc.code == 500:
-                exc.msg += ', confirm the gravityspy_id is valid'
-                raise
-
-
-def _get_image(url):
-    name = "{0[3]}_{0[4]}_spectrogram_{0[5]}.png".format(url)
-    outfile = os.path.join(url[6], url[1], url[2], name)
-    with open(outfile, 'wb') as fout:
-        fout.write(urlopen(url[0]).read())
-
-
-def _download_single_image(bundle):
-    url, nproc = bundle
-    try:
-        return url, _get_image(url)
-    except Exception as exc:  # pylint: disable=broad-except
-        if nproc == 1:
+            return GravitySpyTable(response.json())
+        except JSONDecodeError:  # that didn't work
+            # if the response was actually HTML, something terrible happened
+            if response.headers["Content-Type"] != JSON_CONTENT_TYPE:
+                raise requests.HTTPError(
+                    "response from {} was '200 OK' but the content is HTML, "
+                    "please check the request parameters".format(
+                        response.url,
+                    ),
+                    response=response,
+                )
             raise
-        else:
-            return url, exc

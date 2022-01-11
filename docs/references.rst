@@ -100,6 +100,9 @@
 
 .. -- Other references --------------------------
 
+.. |GravitySpy| replace:: Gravity Spy
+.. _GravitySpy: https://gravityspy.org
+
 .. |GWOSCl| replace:: The Gravitational-Wave Open Science Centre (GWOSC)
 .. _GWOSCl: https://www.gw-openscience.org/
 
