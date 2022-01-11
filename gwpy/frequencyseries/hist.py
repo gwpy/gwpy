@@ -145,7 +145,8 @@ class SpectralVariance(Array2D):
     @property
     def T(self):
         raise NotImplementedError(
-            "transposing a {0} is not supported".format(type(self).__name__))
+            f"transposing a {type(self).__name__} is not supported",
+        )
 
     # -- i/O ------------------------------------
 
@@ -308,7 +309,7 @@ class SpectralVariance(Array2D):
                 out[i, :] /= out[i, :].sum()
 
         # return SpectralVariance
-        name = '%s variance' % spectrogram.name
+        name = f"{spectrogram.name} variance"
         new = cls(out, qbins, epoch=spectrogram.epoch, name=name,
                   channel=spectrogram.channel, f0=spectrogram.f0,
                   df=spectrogram.df)
@@ -340,14 +341,16 @@ class SpectralVariance(Array2D):
             val = self.bins[minindex]
             out[i] = val
 
-        name = '%s %s%% percentile' % (self.name, percentile)
+        name = f"{self.name} {percentile}% percentile"
         return FrequencySeries(out, epoch=self.epoch, channel=self.channel,
                                frequencies=self.bins[:-1], name=name)
 
     def plot(self, xscale='log', method='pcolormesh', **kwargs):
         if method == 'imshow':
-            raise TypeError("plotting a {0} with {1}() is not "
-                            "supported".format(type(self).__name__, method))
+            raise TypeError(
+                f"plotting a {type(self).__name__} with {method}() is not "
+                "supported"
+            )
         bins = self.bins.value
         if (
             numpy.all(bins > 0)

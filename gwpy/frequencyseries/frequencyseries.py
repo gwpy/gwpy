@@ -379,8 +379,8 @@ class FrequencySeries(Series):
         # map unit
         try:
             unit = to_lal_unit(self.unit)
-        except ValueError as e:
-            warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(e))
+        except ValueError as exc:
+            warnings.warn(f"{exc}, defaulting to lal.DimensionlessUnit")
             unit = lal.DimensionlessUnit
 
         # convert epoch
