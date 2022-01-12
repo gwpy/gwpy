@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -19,7 +20,6 @@
 """Tests for :mod:`gwpy.segments`
 """
 
-import importlib
 import re
 from io import BytesIO
 from unittest import mock
@@ -36,7 +36,6 @@ from ...segments import (Segment, SegmentList,
                          DataQualityFlag, DataQualityDict)
 from ...testing import utils
 from ...testing.errors import pytest_skip_network_error
-from ...utils.misc import null_context
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -387,12 +386,8 @@ class TestDataQualityFlag(object):
             flag.pad(*PADDING, kwarg='test')
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    @pytest.mark.parametrize("lsctables", (
-        pytest.param("glue.ligolw.lsctables", id="glue.ligolw"),
-        pytest.param("ligo.lw.lsctables", id="python-ligo-lw"),
-    ))
-    def test_from_veto_def(self, lsctables):
-        VetoDef = importlib.import_module(lsctables).VetoDef
+    def test_from_veto_def(self):
+        from ligo.lw.lsctables import VetoDef
 
         def veto_def(ifo, name, version, **kwargs):
             vdef = VetoDef()
@@ -470,13 +465,14 @@ class TestDataQualityFlag(object):
         utils.assert_flag_equal(f2, flag)
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    @pytest.mark.parametrize("ilwdchar_compat", [False, True])
-    def test_read_write_ligolw(self, flag, ilwdchar_compat):
+    def test_read_write_ligolw(self, flag):
         utils.test_read_write(
-            flag, "ligolw", extension="xml",
+            flag,
+            "ligolw",
+            extension="xml",
             assert_equal=utils.assert_flag_equal,
             autoidentify=False,
-            read_kw={}, write_kw={"ilwdchar_compat": ilwdchar_compat},
+            read_kw={},
         )
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
@@ -487,7 +483,6 @@ class TestDataQualityFlag(object):
             tmp,
             format='ligolw',
             attrs={'process_id': 100},
-            ilwdchar_compat=False,
         )
         segdeftab = read_table(tmp, 'segment_definer')
         assert int(segdeftab[0].process_id) == 100
@@ -721,16 +716,16 @@ class TestDataQualityDict(object):
         _read_write(autoidentify=True, write_kw={'overwrite': True})
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    @pytest.mark.parametrize("ilwdchar_compat", [False, True])
-    def test_read_write_ligolw(self, instance, ilwdchar_compat):
+    def test_read_write_ligolw(self, instance):
         def _assert(a, b):
             return utils.assert_dict_equal(a, b, utils.assert_flag_equal)
         utils.test_read_write(
-            instance, "ligolw", extension="xml",
+            instance,
+            "ligolw",
+            extension="xml",
             assert_equal=_assert,
             autoidentify=False,
             read_kw={},
-            write_kw={"ilwdchar_compat": ilwdchar_compat},
         )
 
     def test_read_on_missing(self, instance):
@@ -767,23 +762,8 @@ class TestDataQualityDict(object):
                 _read(on_missing='blah')
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    @pytest.mark.parametrize("ilwdchar_compat", [None, False, True])
-    def test_to_ligolw_tables(self, instance, ilwdchar_compat):
-        if ilwdchar_compat is None:
-            ctx = pytest.warns(PendingDeprecationWarning)
-        else:
-            ctx = null_context()
-        with ctx:
-            tables = instance.to_ligolw_tables(
-                ilwdchar_compat=ilwdchar_compat,
-            )
-
-        if ilwdchar_compat is False:
-            mod = "ligo.lw.lsctables"
-        else:  # True or None
-            mod = "glue.ligolw.lsctables"
-        for tab in tables:
-            assert type(tab).__module__ == mod
+    def test_to_ligolw_tables(self, instance):
+        tables = instance.to_ligolw_tables()
         assert len(tables[0]) == len(instance)  # segdef
         assert len(tables[1]) == sum(len(x.known) for x in instance.values())
         assert len(tables[2]) == sum(len(x.active) for x in instance.values())

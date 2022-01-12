@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -1279,17 +1280,11 @@ class DataQualityDict(OrderedDict):
 
         return out
 
-    def to_ligolw_tables(self, ilwdchar_compat=None, **attrs):
+    def to_ligolw_tables(self, **attrs):
         """Convert this `DataQualityDict` into a trio of LIGO_LW segment tables
 
         Parameters
         ----------
-        ilwdchar_compat : `bool`, optional
-            whether to write in the old format, compatible with
-            ILWD characters (`True`), or to use the new format (`False`);
-            the current default is `True` to maintain backwards
-            compatibility, but this will change for gwpy-1.0.0.
-
         **attrs
             other attributes to add to all rows in all tables
             (e.g. ``'process_id'``)
@@ -1305,18 +1300,7 @@ class DataQualityDict(OrderedDict):
         segmenttable : :class:`~ligo.lw.lsctables.SegmentTable`
             the ``segment`` table
         """
-        if ilwdchar_compat is None:
-            warnings.warn("ilwdchar_compat currently defaults to `True`, "
-                          "but this will change to `False` in the future, to "
-                          "maintain compatibility in future releases, "
-                          "manually specify `ilwdchar_compat=True`",
-                          PendingDeprecationWarning)
-            ilwdchar_compat = True
-
-        if ilwdchar_compat:
-            from glue.ligolw import lsctables
-        else:
-            from ligo.lw import lsctables
+        from ligo.lw import lsctables
         from ..io.ligolw import to_table_type as to_ligolw_table_type
 
         SegmentDefTable = lsctables.SegmentDefTable

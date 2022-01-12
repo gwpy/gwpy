@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -19,8 +20,6 @@
 """Read LIGO_LW documents into :class:`~ligo.lw.table.Table` objects.
 """
 
-import importlib
-
 import numpy
 
 try:
@@ -29,16 +28,9 @@ except ImportError:
     LIGOLW_TABLES = set()
 else:
     LIGOLW_TABLES = set(_TableByName.values())
-try:
-    from glue.ligolw.lsctables import TableByName as _TableByName
-    LIGOLW_TABLES.update(_TableByName.values())
-except ImportError:
-    pass
 
 from ...io import registry
 from ...io.ligolw import (
-    LigolwElementError,
-    ilwdchar_compat,
     is_ligolw,
     patch_ligotimegps,
     read_table as read_ligolw_table,
@@ -69,28 +61,8 @@ else:
     NUMPY_TYPE_MAP[LIGOTimeGPS] = numpy.float_
 
 
-def _get_ilwdchar_types(library):
-    """Yields all ``ilwdchar`` type objects from the given LIGO_LW library
-    """
-    for modname in ("ilwd", "_ilwd"):
-        try:
-            mod = importlib.import_module(f"{library}.{modname}")
-        except ImportError:
-            continue
-        yield getattr(mod, "ilwdchar")
-
-
-ILWDCHAR_TYPES = tuple(
-    typ
-    for lib in ("glue.ligolw", "ligo.lw")
-    for typ in _get_ilwdchar_types(lib)
-)
-NUMPY_TYPE_MAP[ILWDCHAR_TYPES] = numpy.int_
-
-
 # -- utilities ----------------------------------------------------------------
 
-@ilwdchar_compat
 def _get_property_columns(tabletype, columns):
     """Returns list of GPS columns required to read gpsproperties for a table
 
@@ -111,7 +83,6 @@ def _get_property_columns(tabletype, columns):
     return extracols
 
 
-@ilwdchar_compat
 def _get_property_type(tabletype, column):
     """Returns the type of values in the given property
 
@@ -247,26 +218,12 @@ def to_astropy_column(llwcol, cls, copy=False, dtype=None,
             try:
                 dtype = NUMPY_TYPE_MAP[dtype]
             except KeyError:
-                # try subclass matches (mainly for ilwdchar)
-                for key in NUMPY_TYPE_MAP:
-                    if issubclass(dtype, key):
-                        dtype = NUMPY_TYPE_MAP[key]
-                        break
-                else:  # no subclass matches, raise
-                    raise TypeError("no mapping from object type %r to numpy "
-                                    "type" % dtype)
-    try:
-        return cls(data=llwcol, copy=copy, dtype=dtype, **kwargs)
-    except TypeError:
-        # numpy tries to cast ilwdchar to int via long, which breaks
-        if dtype is numpy.int_ and isinstance(llwcol[0], ILWDCHAR_TYPES):
-            return cls(data=map(dtype, llwcol),
-                       copy=False, dtype=dtype, **kwargs)
-        # any other error, raise
-        raise
+                raise TypeError(
+                    f"no mapping from object type '{dtype}' to numpy type",
+                )
+    return cls(data=llwcol, copy=copy, dtype=dtype, **kwargs)
 
 
-@ilwdchar_compat
 def _get_column_dtype(llwcol):
     """Get the data type of a LIGO_LW `Column`
 
@@ -299,7 +256,6 @@ def _get_column_dtype(llwcol):
             return _get_pytype(llwtype)
 
 
-@ilwdchar_compat
 def _get_pytype(llwtype):
     """Returns a dtype-compatible type for the given LIGO_LW type string
     """
@@ -310,7 +266,6 @@ def _get_pytype(llwtype):
         return ToPyType[llwtype]
 
 
-@ilwdchar_compat
 def table_to_ligolw(table, tablename):
     """Convert a `astropy.table.Table` to a :class:`ligo.lw.table.Table`
     """
@@ -425,33 +380,18 @@ def read_table(source, tablename=None, **kwargs):
 
 # -- write --------------------------------------------------------------------
 
-def write_table(table, target, tablename=None, ilwdchar_compat=None,
-                **kwargs):
+def write_table(table, target, tablename=None, **kwargs):
     """Write a `~astropy.table.Table` to file in LIGO_LW XML format
-
-    This method will attempt to write in the new `ligo.lw` format
-    (if ``ilwdchar_compat`` is ``None`` or ``False``),
-    but will fall back to the older `glue.ligolw` (in that order) if that
-    fails (if ``ilwdchar_compat`` is ``None`` or ``True``).
     """
     if tablename is None:  # try and get tablename from metadata
         tablename = table.meta.get('tablename', None)
     if tablename is None:  # panic
         raise ValueError("please pass ``tablename=`` to specify the target "
                          "LIGO_LW Table Name")
-    try:
-        llwtable = table_to_ligolw(
-            table,
-            tablename,
-            ilwdchar_compat=ilwdchar_compat or False,
-        )
-    except LigolwElementError as exc:
-        if ilwdchar_compat is not None:
-            raise
-        try:
-            llwtable = table_to_ligolw(table, tablename, ilwdchar_compat=True)
-        except Exception:
-            raise exc
+    llwtable = table_to_ligolw(
+        table,
+        tablename,
+    )
     return write_ligolw_tables(target, [llwtable], **kwargs)
 
 

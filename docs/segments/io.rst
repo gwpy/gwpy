@@ -91,11 +91,7 @@ Extra attributes can be written to the tables via the ``attrs={}`` keyword, all 
    The |python-ligo-lw| library reads and writes files using an updated
    version of the ``LIGO_LW`` format compared to :mod:`glue.ligolw` used to.
    GWpy should support both format versions natively when _reading_, but
-   when _writing_ you may need to explicitly pass the
-   ``ilwdchar_compat=True`` keyword in order to write using the old
-   format::
-
-       >>> f.write('new-table.xml', ilwdchar_compat=True)
+   only supports writing using the updated format.
 
 
 `DataQualityDict`

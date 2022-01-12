@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -102,7 +103,7 @@ def read_ligolw_flag(source, name=None, **kwargs):
 
 # -- write --------------------------------------------------------------------
 
-def write_ligolw(flags, target, attrs=None, ilwdchar_compat=None, **kwargs):
+def write_ligolw(flags, target, attrs=None, **kwargs):
     """Write this `DataQualityFlag` to the given LIGO_LW Document
 
     Parameters
@@ -128,8 +129,7 @@ def write_ligolw(flags, target, attrs=None, ilwdchar_compat=None, **kwargs):
         flags = DataQualityDict({flags.name: flags})
     return write_tables(
         target,
-        flags.to_ligolw_tables(ilwdchar_compat=ilwdchar_compat,
-                               **attrs or dict()),
+        flags.to_ligolw_tables(**attrs or dict()),
         **kwargs
     )
 

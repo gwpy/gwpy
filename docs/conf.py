@@ -224,6 +224,7 @@ intersphinx_mapping = {
     'gwdatafind': ('https://gwdatafind.readthedocs.io/en/stable/', None),
     'gwosc': ('https://gwosc.readthedocs.io/en/stable/', None),
     'h5py': ('https://docs.h5py.org/en/latest/', None),
+    'ligo.skymap': ('https://lscsoft.docs.ligo.org/ligo.skymap/', None),
     'ligo-segments': ('https://lscsoft.docs.ligo.org/ligo-segments/', None),
     'ligolw': ('https://docs.ligo.org/kipp.cannon/python-ligo-lw/', None),
     'matplotlib': ('https://matplotlib.org/', None),

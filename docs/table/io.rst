@@ -440,12 +440,7 @@ preserving other tables, use *both* ``append=True`` and ``overwrite=True``:
    The |python-ligo-lw| library reads and writes files using an updated
    version of the ``LIGO_LW`` format compared to :mod:`glue.ligolw` used to.
    GWpy should support both format versions natively when _reading_, but
-   when _writing_ you may need to explicitly pass the
-   ``ilwdchar_compat=True`` keyword in order to write using the old
-   format::
-
-       >>> t.write('new-table.xml', format='ligolw', tablename='sngl_burst',
-       ...         ilwdchar_compat=True)
+   only supports writing using the updated format.
 
 
 .. _gwpy-table-io-ascii-cwb:

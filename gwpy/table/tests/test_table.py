@@ -129,7 +129,7 @@ class TestTable(object):
         table = self.create(
             100, ['peak_time', 'peak_time_ns', 'snr', 'central_freq'],
             ['i4', 'i4', 'f4', 'f4'])
-        tmp = tmp_path / "table.{}".format(ext)
+        tmp = tmp_path / f"table.{ext}"
 
         def _read(*args, **kwargs):
             kwargs.setdefault('format', 'ligolw')
@@ -153,8 +153,10 @@ class TestTable(object):
         # check numpy type casting works
         from ligo.lw.lsctables import LIGOTimeGPS as LigolwGPS
         t3 = _read(columns=['peak'])
+        assert len(t3) == 100
         assert isinstance(t3['peak'][0], LigolwGPS)
         t3 = _read(columns=['peak'], use_numpy_dtypes=True)
+        assert len(t3) == 100
         assert t3['peak'].dtype == dtype('float64')
         utils.assert_array_equal(
             t3['peak'], table['peak_time'] + table['peak_time_ns'] * 1e-9)
@@ -201,63 +203,6 @@ class TestTable(object):
                                   'one sngl_burst table')
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    def test_read_write_ligolw_ilwdchar_compat(self, tmp_path):
-        from glue.ligolw.ilwd import get_ilwdchar_class
-        from glue.ligolw.lsctables import SnglBurstTable
-
-        eid_type = get_ilwdchar_class("sngl_burst", "event_id")
-
-        table = self.create(
-            100,
-            ["peak", "snr", "central_freq", "event_id"],
-            ["f8", "f4", "f4", "i8"],
-        )
-
-        # write table with ilwdchar_compat=True
-        tmp = tmp_path / "tmp.xml"
-        table.write(
-            tmp,
-            format="ligolw",
-            tablename="sngl_burst",
-            ilwdchar_compat=True,
-        )
-
-        # read raw ligolw and check type is correct
-        llw = io_ligolw.read_table(
-            tmp,
-            tablename="sngl_burst",
-            ilwdchar_compat=True,
-        )
-        assert type(llw.getColumnByName("event_id")[0]) is eid_type
-
-        # reset IDs to 0
-        SnglBurstTable.reset_next_id()
-
-        # read without explicit use of ilwdchar_compat
-        t2 = self.TABLE.read(tmp, columns=table.colnames)
-        assert type(t2[0]["event_id"]) is eid_type
-
-        # read again with explicit use of ilwdchar_compat
-        SnglBurstTable.reset_next_id()
-        utils.assert_table_equal(
-            self.TABLE.read(
-                tmp,
-                columns=table.colnames,
-                ilwdchar_compat=True,
-            ),
-            t2,
-        )
-
-        # and check that ilwdchar_compat=True, use_numpy_dtypes=True works
-        SnglBurstTable.reset_next_id()
-        utils.assert_table_equal(
-            self.TABLE.read(tmp, columns=table.colnames,
-                            ilwdchar_compat=True, use_numpy_dtypes=True),
-            table,
-            almost_equal=True,
-        )
-
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
     def test_read_write_ligolw_property_columns(self, tmp_path):
         table = self.create(100, ['peak', 'snr', 'central_freq'],
                             ['f8', 'f4', 'f4'])
@@ -285,8 +230,7 @@ class TestTable(object):
         utils.assert_table_equal(t2, table, almost_equal=True)
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
-    @pytest.mark.parametrize('ilwdchar_compat', (False, True))
-    def test_read_ligolw_get_as_exclude(self, tmp_path, ilwdchar_compat):
+    def test_read_ligolw_get_as_exclude(self, tmp_path):
         table = self.TABLE(
             rows=[
                 ("H1", 0.0, 4, 0),
@@ -302,7 +246,6 @@ class TestTable(object):
             tmp,
             format="ligolw",
             tablename="time_slide",
-            ilwdchar_compat=ilwdchar_compat,
         )
 
         # read it back and assert that we the `instrument` table is
@@ -310,7 +253,6 @@ class TestTable(object):
         t2 = table.read(
             tmp,
             tablename="time_slide",
-            use_numpy_dtypes=ilwdchar_compat,
         )
         t2.sort("instrument")
         utils.assert_table_equal(t2, table)
