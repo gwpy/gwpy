@@ -523,14 +523,6 @@ class Plot(figure.Figure):
 
         return segax
 
-    def add_state_segments(self, *args, **kwargs):
-        """DEPRECATED: use :meth:`Plot.add_segments_bar`
-        """
-        warnings.warn('add_state_segments() was renamed add_segments_bar(), '
-                      'this warning will result in an error in the future',
-                      DeprecationWarning)
-        return self.add_segments_bar(*args, **kwargs)
-
 
 # -- utilities ----------------------------------------------------------------
 

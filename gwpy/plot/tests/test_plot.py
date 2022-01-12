@@ -135,9 +135,3 @@ class TestPlot(FigureTestBase):
         # check errors
         with pytest.raises(ValueError):
             fig.add_segments_bar(segs, location='left')
-
-    def test_add_state_segments(self, fig):
-        fig.add_subplot(xscale='auto-gps')
-        segs = SegmentList([Segment(10, 110), Segment(150, 400)])
-        with pytest.deprecated_call():
-            fig.add_state_segments(segs)
