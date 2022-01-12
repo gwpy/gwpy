@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2022)
 #
 # This file is part of GWpy.
 #
@@ -40,7 +41,6 @@ from ...detector.units import parse_unit
 from ...segments import Segment
 from ...time import to_gps
 from ...utils.env import bool_env
-from ...utils.decorators import deprecated_function
 
 DQMASK_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*DQMASK\Z")
 STRAIN_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*STRAIN\Z")
@@ -296,19 +296,3 @@ def _gwf_channel(path, series_class=TimeSeries, verbose=False):
 # register
 registry.register_reader('hdf5.gwosc', TimeSeries, read_gwosc_hdf5)
 registry.register_reader('hdf5.gwosc', StateVector, read_gwosc_hdf5_state)
-
-# register the old names with deprecation warnings
-_LOSC_IO_DEPRECATION_MESSAGE = (
-    "the `hdf5.losc` I/O format was renamed `hdf5.gwosc`, support "
-    "for `hdf5.losc` will be removed in a future GWpy version"
-)
-registry.register_reader(
-    'hdf5.losc',
-    TimeSeries,
-    deprecated_function(read_gwosc_hdf5, _LOSC_IO_DEPRECATION_MESSAGE),
-)
-registry.register_reader(
-    'hdf5.losc',
-    StateVector,
-    deprecated_function(read_gwosc_hdf5_state, _LOSC_IO_DEPRECATION_MESSAGE),
-)
