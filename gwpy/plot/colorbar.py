@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Louisiana State University (2017)
+#               Cardiff University (2017-2022)
 #
 # This file is part of GWpy.
 #
@@ -18,8 +19,6 @@
 
 """Utilities for generating colour bars for figures
 """
-
-import warnings
 
 from matplotlib.axes import SubplotBase
 from matplotlib.colors import LogNorm
@@ -60,24 +59,10 @@ def process_colorbar_kwargs(figure, mappable=None, ax=None, use_axesgrid=True,
     # -- create axes for colorbar (if required)
 
     cax = kwargs.pop('cax', None)
-    if cax is None:
-        # show warning about pending change
-        #     current default is to shrink the axes a wee bit,
-        #     which will change to no shrinking before 1.0
-        if kwargs.get('fraction') is None:
-            warnings.warn("`fraction` was not specified. Currently the "
-                          "default is `0.15`, matching the previous release "
-                          "behaviour, however, this will change to `0.0` in "
-                          "an upcoming release. To keep the current default, "
-                          "manually specify `fraction=0.15`",
-                          PendingDeprecationWarning)
-            kwargs['fraction'] = 0.15
-
-        # create axes if requesting not to resize the parent
-        if use_axesgrid:
-            cax, kwargs = make_axes_axesgrid(ax, **kwargs)
-    else:
-        kwargs.pop('fraction', None)  # don't need this if already have axes
+    if cax is not None:  # cax was given, we don't need fraction
+        kwargs.pop("fraction", None)
+    elif use_axesgrid:
+        cax, kwargs = make_axes_axesgrid(ax, **kwargs)
 
     # pack kwargs
     kwargs.update(ax=ax, cax=cax)
