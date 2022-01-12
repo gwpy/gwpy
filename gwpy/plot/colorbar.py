@@ -48,15 +48,6 @@ def process_colorbar_kwargs(figure, mappable=None, ax=None, use_axesgrid=True,
     # -- format mappable
 
     # parse normalisation
-    log = kwargs.pop('log', None)
-    if log is not None:
-        warnings.warn('the `log` keyword to Plot.colorbar is deprecated, '
-                      'please pass `norm=\'log\'` in the future to '
-                      'request a logarithimic normalisation',
-                      DeprecationWarning)
-    if log:
-        kwargs.setdefault('norm', 'log')
-
     norm, kwargs = format_norm(kwargs, mappable.norm)
     mappable.set_norm(norm)
     mappable.set_cmap(kwargs.pop('cmap', mappable.get_cmap()))
