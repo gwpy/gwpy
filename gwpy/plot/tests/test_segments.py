@@ -69,11 +69,6 @@ class TestSegmentAxes(_TestAxes):
         c = ax.plot_flag(flag, known={'facecolor': 'black'})
         c = ax.plot_flag(flag, known='fancy')
 
-    def test_plot_dqflag(self, ax, flag):
-        with pytest.deprecated_call():
-            ax.plot_dqflag(flag)
-        assert ax.collections  # make sure it plotted something
-
     def test_plot_dict(self, ax, flag):
         dqd = DataQualityDict()
         dqd['a'] = flag
@@ -89,10 +84,6 @@ class TestSegmentAxes(_TestAxes):
         assert colls[0].get_label() == 'Test segments'
         colls = ax.plot_dict(dqd, label='anything')
         assert colls[0].get_label() == 'anything'
-
-    def test_plot_dqdict(self, ax, flag):
-        with pytest.deprecated_call():
-            ax.plot_dqdict(DataQualityDict(a=flag))
 
     def test_plot_segmentlist(self, ax, segments):
         c = ax.plot_segmentlist(segments)
