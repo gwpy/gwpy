@@ -497,12 +497,6 @@ ROOT
 
 **Additional dependencies:** |uproot|_
 
-.. note::
-
-   |uproot|_ version 4 (at time of writing) cannot handle writing ROOT files,
-   so if wish to use this version to read files, you may need to also install
-   |uproot3|_ as well.
-
 Reading
 -------
 

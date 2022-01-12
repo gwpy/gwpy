@@ -44,7 +44,6 @@ from ...timeseries import (TimeSeries, TimeSeriesDict)
 from .. import (Table, EventTable, filters)
 from ..filter import filter_table
 from ..io.hacr import HACR_COLUMNS
-from ..io.root import _import_uproot_that_can_write_root_files
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -52,17 +51,6 @@ TEST_DATA_DIR = os.path.join(os.path.split(__file__)[0], 'data')
 TEST_XML_FILE = os.path.join(
     TEST_DATA_DIR, 'H1-LDAS_STRAIN-968654552-10.xml.gz')
 TEST_OMEGA_FILE = os.path.join(TEST_DATA_DIR, 'omega.txt')
-
-try:
-    uproot = _import_uproot_that_can_write_root_files()
-except ImportError:
-    HAVE_UPROOT_RW = False
-else:
-    HAVE_UPROOT_RW = True
-SKIP_UPROOT_RW = pytest.mark.skipif(
-    not HAVE_UPROOT_RW,
-    reason="uproot>4 doesn't support r/w and no uproot3",
-)
 
 
 # -- mocks --------------------------------------------------------------------
@@ -327,7 +315,7 @@ class TestTable(object):
         t2.sort("instrument")
         utils.assert_table_equal(t2, table)
 
-    @SKIP_UPROOT_RW
+    @utils.skip_missing_dependency('uproot')
     def test_read_write_root(self, table, tmp_path):
         tmp = tmp_path / "table.root"
 
@@ -355,7 +343,7 @@ class TestTable(object):
             ),
         )
 
-    @SKIP_UPROOT_RW
+    @utils.skip_missing_dependency('uproot')
     def test_write_root_overwrite(self, table, tmp_path):
         tmp = tmp_path / "table.root"
         table.write(tmp)
@@ -367,24 +355,44 @@ class TestTable(object):
         # assert works with overwrite=True
         table.write(tmp, overwrite=True)
 
-    @SKIP_UPROOT_RW
-    def test_read_root_multiple_trees(self, table, tmp_path):
+    @utils.skip_missing_dependency('uproot')
+    def test_read_root_multiple_trees(self, tmp_path):
+        uproot = pytest.importorskip("uproot")
         tmp = tmp_path / "table.root"
         with uproot.create(tmp) as root:
-            root["a"] = uproot.newtree({"branch": "int32"})
-            root["a"].extend({"branch": asarray([1, 2, 3, 4, 5])})
-            root["b"] = uproot.newtree()
+            a = root.mktree("a", {"branch": "int32"})
+            a.extend({"branch": asarray([1, 2, 3, 4, 5])})
+            root.mktree("b", {"branch": "int32"})
         with pytest.raises(ValueError) as exc:
             self.TABLE.read(tmp)
         assert str(exc.value).startswith('Multiple trees found')
         self.TABLE.read(tmp, treename="a")
 
-    @SKIP_UPROOT_RW
+    @utils.skip_missing_dependency('uproot')
     def test_read_write_root_append(self, table, tmp_path):
         tmp = tmp_path / "table.root"
-        # append hasn't been implemented in uproot 3 yet
-        with pytest.raises(NotImplementedError):
-            table.write(tmp, treename="test2", append=True)
+        # write one tree
+        table.write(tmp, treename="a")
+        # write a second tree
+        table.write(tmp, treename="b", append=True)
+        # check that we can read both trees
+        self.TABLE.read(tmp, treename="a")
+        self.TABLE.read(tmp, treename="b")
+
+    @utils.skip_missing_dependency('uproot')
+    def test_read_write_root_append_overwrite(self, table, tmp_path):
+        tmp = tmp_path / "table.root"
+        # write one tree
+        table.write(tmp, treename="a")
+        # write a second tree
+        table.write(tmp, treename="b", append=True)
+        # overwrite the first tree
+        t2 = table[:50]
+        t2.write(tmp, treename="a", overwrite=True, append=True)
+        # check that we can read the original 'b' tree and the new
+        # 'a' tree
+        utils.assert_table_equal(table, self.TABLE.read(tmp, treename="b"))
+        utils.assert_table_equal(t2, self.TABLE.read(tmp, treename="a"))
 
     @utils.skip_missing_dependency('LDAStools.frameCPP')
     def test_read_write_gwf(self, tmp_path):
