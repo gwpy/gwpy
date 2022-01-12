@@ -283,13 +283,10 @@ def is_cache(cache):
     """
     if isinstance(cache, (str, os.PathLike) + FILE_LIKE):
         try:
-            return bool(len(read_cache(cache)))
-        except (
-            OSError,  # failed to read file
-            TypeError,  # failed to parse a line as a cache entry
-            UnicodeDecodeError,  # failed to decode file
-            ValueError,  # failed to parse a line as a cache entry
-        ):
+            return bool(len(read_cache(cache, coltype=float)))
+        except Exception:
+            # if parsing the file as a cache fails for _any reason_
+            # presume it isn't a cache file
             return False
     if HAS_CACHE and isinstance(cache, Cache):
         return True

@@ -36,13 +36,14 @@ from ...frequencyseries import (FrequencySeries, SpectralVariance)
 from ...segments import (Segment, SegmentList, DataQualityFlag)
 from ...signal import filter_design
 from ...signal.window import planck
-from ...table import EventTable
 from ...spectrogram import Spectrogram
+from ...table import EventTable
 from ...testing import (mocks, utils)
 from ...testing.errors import (
     pytest_skip_cvmfs_read_error,
     pytest_skip_network_error,
 )
+from ...types import Index
 from ...time import LIGOTimeGPS
 from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
@@ -180,6 +181,20 @@ class TestTimeSeries(_TestTimeSeriesBase):
             array, format,
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['name', 'channel', 'unit']})
+
+    def test_read_ascii_header(self, tmpdir):
+        """Check that ASCII files with headers are read without extra options
+
+        [regression: https://github.com/gwpy/gwpy/issues/1473]
+        """
+        txt = tmpdir / "text.txt"
+        txt.write_text(
+            "# time (s)\tdata (strain)\n0\t1\n1\t2\n2\t3",
+            encoding="utf-8",
+        )
+        data = self.TEST_CLASS.read(txt, format="txt")
+        utils.assert_array_equal(data.times, Index((0, 1, 2), unit="s"))
+        utils.assert_array_equal(data.value, (1, 2, 3))
 
     @pytest.mark.parametrize('api', GWF_APIS)
     def test_read_write_gwf(self, tmp_path, api):
