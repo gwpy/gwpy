@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2019-2020)
+# Copyright (C) Cardiff University (2019-2022)
 #
 # This file is part of GWpy.
 #
@@ -25,7 +25,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 class HandlerLine2D(legend_handler.HandlerLine2D):
-    """Custom Line2D legend handler that draws lines with linewidth 8
+    """Custom Line2D legend handler that draws lines with custom linewidth
 
     Parameters
     ----------
@@ -47,7 +47,7 @@ class HandlerLine2D(legend_handler.HandlerLine2D):
     def create_artists(self, *args, **kwargs):
         artists = super().create_artists(
             *args,
-            **kwargs
+            **kwargs,
         )
         artists[0].set_linewidth(self._linewidth)
         return artists

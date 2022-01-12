@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (C) Cardiff University (2018-2022)
 #
 # This file is part of GWpy.
 #
@@ -251,18 +251,6 @@ class TestAxes(AxesTestBase):
         leg = ax.legend(handler_map=None)
         for line in leg.get_lines():
             assert line.get_linewidth() == rcParams["lines.linewidth"]
-
-    def test_legend_deprecated_linewidth(self, ax):
-        ax.plot(numpy.arange(5), label='test')
-        with pytest.deprecated_call():
-            leg = ax.legend(linewidth=4)
-        assert leg.get_lines()[0].get_linewidth() == 4.
-
-    def test_legend_deprecated_alpha(self, ax):
-        ax.plot(numpy.arange(5), label='test')
-        with pytest.deprecated_call():
-            leg = ax.legend(alpha=.1)
-        assert leg.get_frame().get_alpha() == .1
 
     def test_plot_mmm(self, ax):
         mean_ = Series(numpy.random.random(10))

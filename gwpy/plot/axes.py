@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (C) Cardiff University (2018-2022)
 #
 # This file is part of GWpy.
 #
@@ -19,7 +19,6 @@
 """Extension of `~matplotlib.axes.Axes` for gwpy
 """
 
-import warnings
 from functools import wraps
 from math import log
 from numbers import Number
@@ -525,30 +524,10 @@ class Axes(_Axes):
     # -- overloaded auxiliary methods -----------
 
     def legend(self, *args, **kwargs):
-        # handle deprecated keywords
-        linewidth = kwargs.pop("linewidth", None)
-        if linewidth:
-            warnings.warn(
-                "the linewidth keyword to gwpy.plot.Axes.legend has been "
-                "deprecated and will be removed in a future release; "
-                "please update your code to use a custom legend handler, "
-                "e.g. gwpy.plot.legend.HandlerLine2D.",
-                DeprecationWarning,
-            )
-        alpha = kwargs.pop("alpha", None)
-        if alpha:
-            kwargs.setdefault("framealpha", alpha)
-            warnings.warn(
-                "the alpha keyword to gwpy.plot.Axes.legend has been "
-                "deprecated and will be removed in a future release; "
-                "use framealpha instead.",
-                DeprecationWarning,
-            )
-
-        # build custom handler
+        # build custom handler to render thick lines by default
         handler_map = kwargs.setdefault("handler_map", dict())
         if isinstance(handler_map, dict):
-            handler_map.setdefault(Line2D, HandlerLine2D(linewidth or 6))
+            handler_map.setdefault(Line2D, HandlerLine2D(6))
 
         # create legend
         return super().legend(*args, **kwargs)
