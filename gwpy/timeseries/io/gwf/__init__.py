@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2022)
 #
 # This file is part of GWpy.
 #
@@ -32,7 +33,6 @@ on a system.
 """
 
 import importlib
-import warnings
 
 import numpy
 
@@ -178,7 +178,6 @@ def register_gwf_api(library):
     # -- read -----------------------------------
 
     def read_timeseriesdict(source, channels, start=None, end=None,
-                            dtype=None, resample=None,
                             gap=None, pad=None, nproc=1,
                             series_class=TimeSeries, **kwargs):
         """Read the data for a list of channels from a GWF data source
@@ -222,20 +221,6 @@ def register_gwf_api(library):
         if end:
             end = to_gps(end)
 
-        # parse output format kwargs -- DEPRECATED
-        if resample is not None:
-            warnings.warn('the resample keyword for is deprecated, instead '
-                          'you should manually resample after reading',
-                          DeprecationWarning)
-        if not isinstance(resample, dict):
-            resample = dict((c, resample) for c in channels)
-        if dtype is not None:
-            warnings.warn('the dtype keyword for is deprecated, instead '
-                          'you should manually call astype() after reading',
-                          DeprecationWarning)
-        if not isinstance(dtype, dict):
-            dtype = dict((c, dtype) for c in channels)
-
         # format gap handling
         if gap is None and pad is not None:
             gap = 'pad'
@@ -273,18 +258,6 @@ def register_gwf_api(library):
                                 series_class=series_class, **kwargs),
                        gap=gap, pad=pad, copy=False)
 
-        # apply resampling and dtype-casting -- DEPRECATED
-        for name in out:
-            if (
-                resample.get(name)
-                and resample[name] != out[name].sample_rate.value
-            ):
-                out[name] = out[name].resample(resample[name])
-            if (
-                dtype.get(name) is not None
-                and numpy.dtype(dtype[name]) != out[name].dtype
-            ):
-                out[name] = out[name].astype(dtype[name])
         return out
 
     def read_timeseries(source, channel, *args, **kwargs):

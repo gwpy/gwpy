@@ -238,31 +238,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
                                         exclude=['channel'])
 
     @pytest.mark.parametrize('api', GWF_APIS)
-    def test_read_write_gwf_deprecated_kwargs(self, tmp_path, api):
-        fmt = "gwf" if api is None else "gwf." + api
-        array = self.create(name='TEST')
-        tmp = tmp_path / "test.gwf"
-        array.write(tmp, format=fmt)
-
-        # test dtype - DEPRECATED
-        with pytest.deprecated_call():
-            t = self.TEST_CLASS.read(
-                tmp,
-                array.name,
-                format=fmt,
-                dtype='float32',
-            )
-        assert t.dtype is numpy.dtype('float32')
-        with pytest.deprecated_call():
-            t = self.TEST_CLASS.read(
-                tmp,
-                array.name,
-                format=fmt,
-                dtype={array.name: 'float64'},
-            )
-        assert t.dtype is numpy.dtype('float64')
-
-    @pytest.mark.parametrize('api', GWF_APIS)
     def test_read_write_gwf_gps_errors(self, tmp_path, api):
         fmt = "gwf" if api is None else "gwf." + api
         array = self.create(name='TEST')
