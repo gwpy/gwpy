@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2022)
 #
 # This file is part of GWpy.
 #
@@ -317,11 +318,27 @@ class Spectrogram(Array2D):
         out = self / operand
         return out
 
-    def plot(self, figsize=(12, 6), xscale='auto-gps', **kwargs):
+    def plot(
+        self,
+        method="pcolormesh",
+        figsize=(12, 6),
+        xscale="auto-gps",
+        **kwargs,
+    ):
         """Plot the data for this `Spectrogram`
 
         Parameters
         ----------
+        method : `str`, optional
+            which plotting method to use to render this spectrogram,
+            either ``'pcolormesh'`` (default) or ``'imshow'``
+
+        figsize : `tuple` of `float`, optional
+            ``(width, height)`` (inches) of the output figure
+
+        xscale : `str`, optional
+            the X-axis scale
+
         **kwargs
             all keyword arguments are passed along to underlying
             functions, see below for references
@@ -344,14 +361,12 @@ class Spectrogram(Array2D):
             for documentation of keyword arguments used in rendering the
             `Spectrogram` data
         """
-        if 'imshow' in kwargs:
-            warnings.warn('the imshow keyword for Spectrogram.plot was '
-                          'removed, please pass method=\'imshow\' instead',
-                          DeprecationWarning)
-            kwargs.setdefault('method', 'imshow' if kwargs.pop('imshow') else
-                                        'pcolormesh')
-        kwargs.update(figsize=figsize, xscale=xscale)
-        return super().plot(**kwargs)
+        return super().plot(
+            method=method,
+            figsize=figsize,
+            xscale=xscale,
+            **kwargs,
+        )
 
     @classmethod
     def from_spectra(cls, *spectra, **kwargs):
