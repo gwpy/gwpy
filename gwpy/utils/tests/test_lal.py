@@ -59,19 +59,21 @@ def test_find_typed_function():
             module=lalframe) is lalframe.FrStreamReadREAL4TimeSeries
 
 
-@pytest.mark.parametrize(("in_", "out"), (
-    ("m", "m"),
-    ("Farad", "m^-2 kg^-1 s^4 A^2"),
-    ("m**(1/2)", "m^1/2"),
-    ("km", "10^3 m"),
+@pytest.mark.parametrize(("in_", "out", "scale"), (
+    ("m", "m", 1),
+    ("Farad", "m^-2 kg^-1 s^4 A^2", 1),
+    ("m**(1/2)", "m^1/2", 1),
+    ("km", "10^3 m", 1),
+    ("123 m", "m", 123),
 ))
-def test_to_lal_unit(in_, out):
-    assert utils_lal.to_lal_unit(in_) == lal.Unit(out)
+def test_to_lal_unit(in_, out, scale):
+    assert utils_lal.to_lal_unit(in_) == (lal.Unit(out), scale)
 
 
 def test_to_lal_unit_error():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as exc:
         utils_lal.to_lal_unit('rad/s')
+    assert str(exc.value) == "LAL has no unit corresponding to 'rad'"
 
 
 @pytest.mark.parametrize(("in_", "out"), (
