@@ -691,12 +691,22 @@ class TimeSeriesBase(Series):
     def from_lal(cls, lalts, copy=True):
         """Generate a new TimeSeries from a LAL TimeSeries of any type.
         """
+        # convert the units
         from ..utils.lal import from_lal_unit
         unit = from_lal_unit(lalts.sampleUnits)
-        channel = Channel(lalts.name, sample_rate=1/lalts.deltaT, unit=unit,
-                          dtype=lalts.data.data.dtype)
-        out = cls(lalts.data.data, channel=channel, t0=lalts.epoch,
-                  dt=lalts.deltaT, unit=unit, name=lalts.name, copy=False)
+
+        # create new series
+        out = cls(
+            lalts.data.data,
+            name=lalts.name or None,
+            unit=unit,
+            t0=lalts.epoch,
+            dt=lalts.deltaT,
+            channel=None,
+            copy=False,
+        )
+
+        # return a copy, or the new series
         if copy:
             return out.copy()
         return out

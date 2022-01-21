@@ -125,7 +125,6 @@ def test_read(start, end):
         # check basic parameters
         assert ts.sample_rate.value == 16384
         assert ts.name == name
-        assert ts.channel.name == name
 
         # check data span is what we asked for
         assert ts.xspan == (start, end)
