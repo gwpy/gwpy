@@ -28,8 +28,6 @@ from astropy import units
 from astropy.io import registry as io_registry
 
 from ..types import Series
-from ..detector import Channel
-
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
@@ -349,16 +347,24 @@ class FrequencySeries(Series):
         """Generate a new `FrequencySeries` from a LAL `FrequencySeries`
         of any type.
         """
+        # convert units
         from ..utils.lal import from_lal_unit
         try:
             unit = from_lal_unit(lalfs.sampleUnits)
         except TypeError:
             unit = None
-        channel = Channel(lalfs.name, unit=unit,
-                          dtype=lalfs.data.data.dtype)
-        return cls(lalfs.data.data, channel=channel, f0=lalfs.f0,
-                   df=lalfs.deltaF, epoch=float(lalfs.epoch),
-                   dtype=lalfs.data.data.dtype, copy=copy)
+
+        # create a new series
+        return cls(
+            lalfs.data.data,
+            name=lalfs.name or None,
+            unit=unit,
+            f0=lalfs.f0,
+            df=lalfs.deltaF,
+            epoch=lalfs.epoch,
+            channel=None,
+            copy=copy,
+        )
 
     def to_lal(self):
         """Convert this `FrequencySeries` into a LAL FrequencySeries.

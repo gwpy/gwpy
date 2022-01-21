@@ -189,8 +189,7 @@ class TestFrequencySeries(_TestSeries):
         # check that to + from returns the same array
         lalts = array.to_lal()
         a2 = type(array).from_lal(lalts)
-        utils.assert_quantity_sub_equal(array, a2, exclude=['name', 'channel'])
-        assert a2.name == array.name
+        utils.assert_quantity_sub_equal(array, a2, exclude=['channel'])
 
         # test copy=False
         a2 = type(array).from_lal(lalts, copy=False)
@@ -202,7 +201,7 @@ class TestFrequencySeries(_TestSeries):
             lalts = array.to_lal()
         assert lalts.sampleUnits == lal.DimensionlessUnit
         a2 = self.TEST_CLASS.from_lal(lalts)
-        assert a2.unit is units.dimensionless_unscaled
+        assert a2.unit == units.dimensionless_unscaled
 
     @utils.skip_missing_dependency('lal')
     @utils.skip_missing_dependency('pycbc')
