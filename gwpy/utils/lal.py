@@ -23,6 +23,7 @@ This module requires lal >= 6.14.0
 
 import operator
 from collections import OrderedDict
+from fractions import Fraction
 from functools import reduce
 
 import numpy
@@ -147,23 +148,14 @@ def find_typed_function(pytype, prefix, suffix, module=lal):
 # -- units --------------------------------------------------------------------
 
 LAL_UNIT_INDEX = [  # the order corresponds to how LAL stores compound units
-    lal.MeterUnit,
-    lal.KiloGramUnit,
-    lal.SecondUnit,
-    lal.AmpereUnit,
-    lal.KelvinUnit,
-    lal.StrainUnit,
-    lal.ADCCountUnit,
+    units.meter,
+    units.kilogram,
+    units.second,
+    units.ampere,
+    units.Kelvin,
+    units.Unit('strain'),
+    units.count,
 ]
-
-
-def _lal_unit_from_astropy(u):
-    """Convert an `astropy.units.Unit` into a `lal.Unit`
-    """
-    for lalu in LAL_UNIT_INDEX:
-        if u == units.Unit(str(lalu)):
-            return lalu
-    raise KeyError(str(u))
 
 
 def to_lal_unit(aunit):
@@ -196,18 +188,20 @@ def to_lal_unit(aunit):
     lunit = lal.Unit()
     for base, power in zip(aunit.bases, aunit.powers):
         try:  # try this base
-            lalbase = _lal_unit_from_astropy(base)
-        except KeyError:  # otherwise loop through the equivalent bases
+            i = LAL_UNIT_INDEX.index(base)
+        except IndexError:  # otherwise loop through the equivalent bases
             for eqbase in base.find_equivalent_units():
                 try:
-                    lalbase = _lal_unit_from_astropy(eqbase)
-                except KeyError:
+                    i = LAL_UNIT_INDEX.index(base)
+                except IndexError:
                     continue
                 break
             # if we didn't find anything, raise an exception
             else:
                 raise ValueError("LAL has no unit corresponding to %r" % base)
-        lunit *= lalbase ** power
+        frac = Fraction(power)
+        lunit.unitNumerator[i] = frac.numerator
+        lunit.unitDenominatorMinusOne[i] = frac.denominator - 1
     return lunit
 
 
@@ -231,9 +225,16 @@ def from_lal_unit(lunit):
     ValueError
         if Astropy doesn't understand the base units for the input
     """
-    return reduce(operator.mul, (
-        units.Unit(str(LAL_UNIT_INDEX[i])) ** exp for
-        i, exp in enumerate(lunit.unitNumerator)))
+    return reduce(
+        operator.mul,
+        (
+            LAL_UNIT_INDEX[i] ** Fraction(int(num), int(den + 1))
+            for i, (num, den) in enumerate(zip(
+                lunit.unitNumerator,
+                lunit.unitDenominatorMinusOne,
+            ))
+        ),
+    ) * 10**lunit.powerOfTen
 
 
 def to_lal_ligotimegps(gps):
