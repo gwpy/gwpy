@@ -378,10 +378,11 @@ class FrequencySeries(Series):
 
         # map unit
         try:
-            unit = to_lal_unit(self.unit)
+            unit, scale = to_lal_unit(self.unit)
         except ValueError as exc:
             warnings.warn(f"{exc}, defaulting to lal.DimensionlessUnit")
             unit = lal.DimensionlessUnit
+            scale = 1
 
         # convert epoch
         epoch = lal.LIGOTimeGPS(0 if self.epoch is None else self.epoch.gps)
@@ -390,7 +391,7 @@ class FrequencySeries(Series):
         create = find_typed_function(self.dtype, 'Create', 'FrequencySeries')
         lalfs = create(self.name, epoch, self.f0.value, self.df.value,
                        unit, self.shape[0])
-        lalfs.data.data = self.value
+        lalfs.data.data = self.value * scale
 
         return lalfs
 
