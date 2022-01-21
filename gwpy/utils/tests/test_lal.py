@@ -59,23 +59,29 @@ def test_find_typed_function():
             module=lalframe) is lalframe.FrStreamReadREAL4TimeSeries
 
 
-def test_to_lal_unit():
-    assert utils_lal.to_lal_unit('m') == lal.MeterUnit
-    assert utils_lal.to_lal_unit('Farad') == lal.Unit(
-        'm^-2 kg^-1 s^4 A^2')
+@pytest.mark.parametrize(("in_", "out"), (
+    ("m", "m"),
+    ("Farad", "m^-2 kg^-1 s^4 A^2"),
+    ("m**(1/2)", "m^1/2"),
+    ("km", "10^3 m"),
+))
+def test_to_lal_unit(in_, out):
+    assert utils_lal.to_lal_unit(in_) == lal.Unit(out)
+
+
+def test_to_lal_unit_error():
     with pytest.raises(ValueError):
         utils_lal.to_lal_unit('rad/s')
 
 
-def test_from_lal_unit():
-    try:
-        lalms = lal.MeterUnit / lal.SecondUnit
-    except TypeError as exc:  # pragma: no-cover
-        # see https://git.ligo.org/lscsoft/lalsuite/issues/65
-        pytest.skip(str(exc))
-    assert utils_lal.from_lal_unit(lalms) == units.Unit('m/s')
-    assert utils_lal.from_lal_unit(lal.StrainUnit) == (
-        units.Unit('strain'))
+@pytest.mark.parametrize(("in_", "out"), (
+    ("m s^-1", "m/s"),
+    ("strain", "strain"),
+    ("m^1/2", "m**(1/2.)"),
+    ("10^3 m", "km"),
+))
+def test_from_lal_unit(in_, out):
+    assert utils_lal.from_lal_unit(lal.Unit(in_)) == units.Unit(out)
 
 
 def test_to_lal_ligotimegps():
