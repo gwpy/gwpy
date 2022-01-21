@@ -692,11 +692,7 @@ class TimeSeriesBase(Series):
         """Generate a new TimeSeries from a LAL TimeSeries of any type.
         """
         from ..utils.lal import from_lal_unit
-        try:
-            unit = from_lal_unit(lalts.sampleUnits)
-        except (TypeError, ValueError) as exc:
-            warnings.warn("%s, defaulting to 'dimensionless'" % str(exc))
-            unit = None
+        unit = from_lal_unit(lalts.sampleUnits)
         channel = Channel(lalts.name, sample_rate=1/lalts.deltaT, unit=unit,
                           dtype=lalts.data.data.dtype)
         out = cls(lalts.data.data, channel=channel, t0=lalts.epoch,
