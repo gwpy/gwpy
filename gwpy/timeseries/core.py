@@ -368,10 +368,10 @@ class TimeSeriesBase(Series):
             prefix for the progress meter
 
         type : `int`, optional
-            NDS2 channel type integer
+            NDS2 channel type integer or string name to match
 
         dtype : `type`, `numpy.dtype`, `str`, optional
-            identifier for desired output data type
+            NDS2 data type to match
         """
         return cls.DictClass.fetch(
             [channel], start, end, host=host, port=port, verbose=verbose,
@@ -1068,11 +1068,10 @@ class TimeSeriesBaseDict(OrderedDict):
             access if necessary to retrieve the data
 
         type : `int`, `str`, optional
-            NDS2 channel type integer or string name.
+            NDS2 channel type integer or string name to match.
 
         dtype : `numpy.dtype`, `str`, `type`, or `dict`
-            numeric data type for returned data, e.g. `numpy.float`, or
-            `dict` of (`channel`, `dtype`) pairs
+            NDS2 data type to match
 
         Returns
         -------
@@ -1298,10 +1297,6 @@ class TimeSeriesBaseDict(OrderedDict):
         scaled : `bool`, optional
             apply slope and bias calibration to ADC data, for non-ADC data
             this option has no effect.
-
-        dtype : `numpy.dtype`, `str`, `type`, or `dict`
-            numeric data type for returned data, e.g. `numpy.float`, or
-            `dict` of (`channel`, `dtype`) pairs
 
         nproc : `int`, optional, default: `1`
             number of parallel processes to use, serial process by
