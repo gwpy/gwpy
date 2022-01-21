@@ -156,6 +156,18 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
     def test_to_from_lal(self):
         return NotImplemented
 
+    def test_to_from_lal_no_copy(self):
+        return NotImplemented
+
+    def test_to_from_lal_pow10_units(self):
+        return NotImplemented
+
+    def test_to_from_lal_scaled_units(self):
+        return NotImplemented
+
+    def test_to_from_lal_unrecognised_units(self):
+        return NotImplemented
+
 
 # -- StateTimeSeriesDict ------------------------------------------------------
 
@@ -310,6 +322,9 @@ class TestStateVector(_TestTimeSeriesBase):
             array.resample(array.sample_rate * .75)
         with pytest.raises(ValueError):
             array.resample(array.sample_rate * 1.5)
+
+    def test_to_from_lal_scaled_units(self):
+        return NotImplemented
 
     # -- data access ----------------------------
 
