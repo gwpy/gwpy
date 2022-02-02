@@ -79,10 +79,13 @@ jobs:
         sed -i 's/>=/==/' requirements.txt
         python -m pip install -r requirements.txt --upgrade-strategy=only-if-needed
 
+    - name: Install system packages for experimental dependencies
+      if: matrix.experimental == true
+      run: sudo apt-get -y -q install libkrb5-dev
+
     - name: Install experimental dependencies
       if: matrix.experimental == true
       run: |
-        sudo apt-get -y -q install libkrb5-dev
         python -m pip install -U "pip!=22.0.*" wheel
         python -m pip install -r requirements.txt --upgrade --upgrade-strategy=eager --pre
 
