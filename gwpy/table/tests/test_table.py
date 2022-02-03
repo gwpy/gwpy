@@ -121,6 +121,29 @@ class TestTable(object):
                                [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
                          names=['amplitude', 'time'])
 
+    @classmethod
+    @pytest.fixture()
+    def clustertable_omicron(cls):
+        return cls.TABLE(data=[[15.09375, 15.09375, 18.708007, 18.708496,
+                                23.265625, 23.890625, 23.9375, 23.9375,
+                                23.90625, 23.90625],
+                               [6.08, 5.64, 3.13, 3.21, 8.93, 9.01, 6.38,
+                                8.17, 7.23, 1.11],
+                               [5.92, 5.57, 5.18, 5.13, 5.10, 5.15, 5.44,
+                                5.10, 5.66, 5.78],
+                               [15.0625, 15.0625, 18.707031, 18.708007,
+                                23.25, 23.875, 23.875, 23.875, 23.875,
+                                23.875],
+                               [15.125, 15.125, 18.708985, 18.708985,
+                                23.28125, 23.90625, 24.0, 24.0, 23.9375,
+                                23.9375],
+                               [12.3, 11.15, 12.43, 13.86, 11.18, 11.83,
+                                10.0, 12.51, 12.31, 12.43],
+                               [15.15, 12.43, 13.86, 15.46, 11.83, 12.51,
+                                12.31, 13.23, 15.15, 13.86]],
+                         names=['time', 'amplitude', 'snr', 'tstart', 'tend',
+                                'fstart', 'fend'])
+
     # -- test I/O -------------------------------
 
     @utils.skip_missing_dependency('ligo.lw.lsctables')
@@ -479,8 +502,8 @@ class TestEventTable(TestTable):
         utils.assert_quantity_sub_equal(rate, rate2)
 
     def test_event_rates_start_end(self):
-        """Check that `EventTable.event_rate` can function without explicit time column
-        (and no data) if and only if start/end are both given
+        """Check that `EventTable.event_rate` can function without explicit
+        time column (and no data) if and only if start/end are both given
         """
         t2 = self.create(10, names=['a', 'b'])
         with pytest.raises(ValueError) as exc:
@@ -556,6 +579,88 @@ class TestEventTable(TestTable):
         # check that a non-positive window throws an appropriate ValueError
         with pytest.raises(ValueError) as exc:
             clustertable.cluster('time', 'amplitude', 0)
+        assert str(exc.value) == 'Window must be a positive value'
+
+    def test_cluster_omicron(self, clustertable_omicron):
+        # check that only the tile with the highest snr is returned for
+        # each cluster, the original table is unchanged, and all points
+        # return their intended values
+        t = clustertable_omicron.cluster('omicron', 'snr', 0.1)
+        # Check that the original eventTable has still same size
+        assert len(clustertable_omicron) == 10
+        # Check that the identified clusters match expected ones
+        expected_res = [[15.09375, 18.708007, 23.265625, 23.90625],
+                        [6.08, 3.13, 8.93, 1.11],
+                        [5.92, 5.18, 5.1, 5.78],
+                        [15.0625, 18.707031, 23.25, 23.875],
+                        [15.125, 18.708985, 23.28125, 24.0],
+                        [11.15, 12.43, 11.18, 10.0],
+                        [15.15, 15.46, 11.83, 15.15],
+                        [0, 1, 2, 3]]
+        table_test = EventTable(expected_res,
+                                names=['time', 'amplitude', 'snr', 'tstart',
+                                       'tend', 'fstart', 'fend', 'cluster_id'])
+        utils.assert_array_equal(t, table_test)
+
+    def test_cluster_omicron_comp(self, clustertable_omicron):
+        # comparison of the result using the same table as above
+        # but not using omicron.
+        # Omicron identified one cluster less because it combines 2 into 1,.
+        t = clustertable_omicron.cluster('time', 'snr', 0.6)
+        # Check that the original eventTable has still same size
+        assert len(clustertable_omicron) == 10
+        # Check that the identified clusters match epected ones with
+        # basic method
+        expected_res = [[15.09375, 18.708007, 23.265625, 23.90625],
+                        [6.08, 3.13, 8.93, 1.11],
+                        [5.92, 5.18, 5.1, 5.78],
+                        [15.0625, 18.707031, 23.25, 23.875],
+                        [15.125, 18.708985, 23.28125, 23.9375],
+                        [12.3, 12.43, 11.18, 12.43],
+                        [15.15, 13.86, 11.83, 13.86],
+                        [0, 1, 2, 3]]
+        table_test = EventTable(expected_res,
+                                names=['time', 'amplitude', 'snr', 'tstart',
+                                       'tend', 'fstart', 'fend', 'cluster_id'])
+        utils.assert_array_equal(t, table_test)
+
+        # Check that the identified clusters match expected ones with
+        # omicron method
+        t_omicron = clustertable_omicron.cluster('omicron', 'snr', 0.6)
+        expected_res = [[15.09375, 18.708007, 23.90625],
+                        [6.08, 3.13, 1.11],
+                        [5.92, 5.18, 5.78],
+                        [15.0625, 18.707031, 23.25],
+                        [15.125, 18.708985, 24.0],
+                        [11.15, 12.43, 10.0],
+                        [15.15, 15.46, 15.15],
+                        [0, 1, 2]]
+        table_test = EventTable(expected_res,
+                                names=['time', 'amplitude', 'snr', 'tstart',
+                                       'tend', 'fstart', 'fend', 'cluster_id'])
+        utils.assert_array_equal(t_omicron, table_test)
+
+    def test_single_point_cluster_omicron(self, clustertable_omicron):
+        # check that a large cluster window returns at least one data point
+        t = clustertable_omicron.cluster('omicron', 'snr', 10)
+        # Check that the identified clusters match expected ones
+        expected_res = [[15.09375],
+                        [6.08],
+                        [5.92],
+                        [15.0625],
+                        [24.0],
+                        [10.0],
+                        [15.46],
+                        [0]]
+        table_test = EventTable(expected_res,
+                                names=['time', 'amplitude', 'snr', 'tstart',
+                                       'tend', 'fstart', 'fend', 'cluster_id'])
+        utils.assert_array_equal(t, table_test)
+
+    def test_cluster_omicron_window(self, clustertable_omicron):
+        # check that a non-positive window throws an appropriate ValueError
+        with pytest.raises(ValueError) as exc:
+            clustertable_omicron.cluster('omicron', 'snr', 0)
         assert str(exc.value) == 'Window must be a positive value'
 
     # -- test I/O -------------------------------
