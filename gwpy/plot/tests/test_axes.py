@@ -87,6 +87,14 @@ class TestAxes(AxesTestBase):
         # check that the colour array is in the right order
         utils.assert_array_equal(coll.get_array(), c)
 
+    def test_scatter_c_sort(self, ax):
+        x = numpy.arange(10)
+        y = numpy.arange(10)
+        c = numpy.random.random(10)
+        with pytest.deprecated_call():
+            coll = ax.scatter(x, y, c=c, c_sort=True)
+        utils.assert_array_equal(coll.get_array(), c[numpy.argsort(c)])
+
     @pytest.mark.parametrize('sortbycolor', (False, True))
     def test_scatter_no_color(self, ax, sortbycolor):
         # check that c=None works
@@ -211,14 +219,45 @@ class TestAxes(AxesTestBase):
                 ]),
             )
 
+    @pytest.mark.parametrize("sortbycolor", (False, True))
+    def test_tile_sortbycolor(self, ax, sortbycolor):
+        x = numpy.arange(10)
+        y = numpy.arange(x.size)
+        w = numpy.ones_like(x) * .8
+        h = numpy.ones_like(x) * .8
+
         # check colour works with sorting (by default)
-        c = numpy.arange(x.size)
-        coll2 = ax.tile(x, y, w, h, color=c)
+        c = numpy.random.random(x.size)
+        coll2 = ax.tile(x, y, w, h, color=c, sortbycolor=sortbycolor)
+        if sortbycolor:
+            utils.assert_array_equal(coll2.get_array(), numpy.sort(c))
+        else:
+            utils.assert_array_equal(coll2.get_array(), c)
+
+    def test_tile_c_sort(self, ax):
+        x = numpy.arange(10)
+        y = numpy.arange(x.size)
+        w = numpy.ones_like(x) * .8
+        h = numpy.ones_like(x) * .8
+        c = numpy.random.random(x.size)
+        with pytest.deprecated_call():
+            coll2 = ax.tile(x, y, w, h, color=c, c_sort=True)
         utils.assert_array_equal(coll2.get_array(), numpy.sort(c))
 
+    @pytest.mark.parametrize("anchor", ("lr", "ul", "ur", "center"))
+    def test_tile_anchors(self, ax, anchor):
         # check anchor parsing
-        for anchor in ('lr', 'ul', 'ur', 'center'):
-            ax.tile(x, y, w, h, anchor=anchor)
+        x = numpy.arange(10)
+        y = numpy.arange(x.size)
+        w = numpy.ones_like(x) * .8
+        h = numpy.ones_like(x) * .8
+        ax.tile(x, y, w, h, anchor=anchor)
+
+    def test_tile_anchor_error(self, ax):
+        x = numpy.arange(10)
+        y = numpy.arange(x.size)
+        w = numpy.ones_like(x) * .8
+        h = numpy.ones_like(x) * .8
         with pytest.raises(ValueError):
             ax.tile(x, y, w, h, anchor='blah')
 

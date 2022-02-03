@@ -117,6 +117,44 @@ def restore_grid(func):
     return wrapped_func
 
 
+def deprecate_c_sort(func):
+    """Wrap ``func`` to replace the deprecated ``c_sort`` keyword.
+
+    This was renamed ``sortbycolor``.
+    """
+    @wraps(func)
+    def wrapped(self, *args, **kwargs):
+        if "c_sort" in kwargs:
+            warnings.warn(
+                f"the `c_sort` keyword for {func.__name__} was "
+                "renamed `sortbycolor`, this warning will result "
+                "in an error in future versions of GWpy",
+                DeprecationWarning,
+            )
+            kwargs.setdefault(
+                "sortbycolor",
+                kwargs.pop("c_sort"),
+            )
+        return func(self, *args, **kwargs)
+    return wrapped
+
+
+def _sortby(sortby, *arrays):
+    """Sort a set of arrays by the first one (including the first one)
+    """
+    # try and sort the colour array by value
+    sortidx = numpy.asanyarray(sortby, dtype=float).argsort()
+
+    def _sort(arr):
+        if arr is None or isinstance(arr, Number):
+            return arr
+        return numpy.asarray(arr)[sortidx]
+
+    # apply the sorting to each data array, and scatter
+    for arr in (sortby,) + arrays:
+        yield _sort(arr)
+
+
 # -- new Axes -----------------------------------------------------------------
 
 class Axes(_Axes):
@@ -191,33 +229,23 @@ class Axes(_Axes):
 
     # -- overloaded plotting methods ------------
 
+    @deprecate_c_sort
     def scatter(self, x, y, s=None, c=None, **kwargs):
         # This method overloads Axes.scatter to enable quick
         # sorting of data by the 'colour' array before scatter
         # plotting.
 
-        # if we weren't asked to sort, or don't have any colours, don't
-        sort = kwargs.pop("sortbycolor", False)
-        if not sort:
-            return super().scatter(x, y, s=s, c=c, **kwargs)
+        if kwargs.pop("sortbycolor", False) and c is not None:
+            # try and sort the colour array by value
+            try:
+                c, x, y, s = _sortby(c, x, y, s)
+            except ValueError as exc:
+                exc.args = (
+                    "Axes.scatter argument 'sortbycolor' can only be used "
+                    "with a simple array of floats in the colour array 'c'",
+                )
+                raise
 
-        # try and sort the colour array by value
-        try:
-            sortidx = numpy.asanyarray(c, dtype=float).argsort()
-        except ValueError as exc:
-            exc.args = (
-                "Axes.scatter argument 'sortbycolor' can only be used "
-                "with a simple array of floats in the colour array 'c'",
-            )
-            raise
-
-        def _sort(arr):
-            if arr is None or isinstance(arr, Number):
-                return arr
-            return numpy.asarray(arr)[sortidx]
-
-        # apply the sorting to each data array, and scatter
-        x, y, c, s = map(_sort, (x, y, c, s))
         return super().scatter(x, y, s=s, c=c, **kwargs)
 
     scatter.__doc__ = _Axes.scatter.__doc__.replace(
@@ -430,6 +458,7 @@ class Axes(_Axes):
 
         return out
 
+    @deprecate_c_sort
     def tile(self, x, y, w, h, color=None,
              anchor='center', edgecolors='face', linewidth=0.8,
              **kwargs):
@@ -480,14 +509,16 @@ class Axes(_Axes):
         >>> ax.tile(x, y, w, h, anchor='ll')
         >>> pyplot.show()
         """
-        # get color and sort
-        if color is not None and kwargs.get('c_sort', True):
-            sortidx = color.argsort()
-            x = x[sortidx]
-            y = y[sortidx]
-            w = w[sortidx]
-            h = h[sortidx]
-            color = color[sortidx]
+        if kwargs.pop("sortbycolor", False) and color is not None:
+            # try and sort the colour array by value
+            try:
+                color, x, y, w, h = _sortby(color, x, y, w, h)
+            except ValueError as exc:
+                exc.args = (
+                    "Axes.tile argument 'sortbycolor' can only be used "
+                    "with a simple array of floats in the `color` array",
+                )
+                raise
 
         # define how to make a polygon for each tile
         if anchor == 'll':
