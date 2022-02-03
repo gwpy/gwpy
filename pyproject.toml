@@ -20,4 +20,7 @@ filterwarnings = [
 	"ignore:Using or importing the ABCs::pyreadline",
 	# ignore numpy ndarray size warnings
 	"ignore:numpy.ndarray size changed, may indicate binary incompatibility",
+	# ignore warnings from distutils.version
+	"ignore:distutils Version::matplotlib",
+	"ignore:distutils Version::distutils",  # actually setuptools._distutils
 ]
