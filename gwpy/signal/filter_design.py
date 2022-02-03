@@ -27,7 +27,10 @@ import numpy
 from numpy import fft as npfft
 
 from scipy import signal
-from scipy.signal.ltisys import LinearTimeInvariant
+try:
+    from scipy.signal import LinearTimeInvariant
+except ImportError:  # scipy < 1.8.0
+    from scipy.signal.ltisys import LinearTimeInvariant
 
 from astropy.units import (Unit, Quantity)
 
