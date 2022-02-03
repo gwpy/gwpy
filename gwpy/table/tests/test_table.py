@@ -116,6 +116,11 @@ class TestTable(object):
 
     @classmethod
     @pytest.fixture()
+    def emptytable(cls):
+        return cls.create(0, ['time', 'snr', 'frequency'])
+
+    @classmethod
+    @pytest.fixture()
     def clustertable(cls):
         return cls.TABLE(data=[[11, 1, 1, 10, 1, 1, 9],
                                [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
@@ -557,6 +562,20 @@ class TestEventTable(TestTable):
         with pytest.raises(ValueError) as exc:
             clustertable.cluster('time', 'amplitude', 0)
         assert str(exc.value) == 'Window must be a positive value'
+
+    def test_cluster_multiple(self, clustertable):
+        # check that after clustering a table, clustering the table a
+        # second time with the same parameters returns the same result
+        t_clustered = clustertable.cluster('time', 'amplitude', 0.6)
+        utils.assert_table_equal(
+            t_clustered,
+            t_clustered.cluster('time', 'amplitude', 0.6),
+        )
+
+    def test_cluster_empty(self, emptytable):
+        # check that clustering an empty table is a no-op
+        t = emptytable.cluster('time', 'amplitude', 0.6)
+        utils.assert_table_equal(t, emptytable)
 
     # -- test I/O -------------------------------
 

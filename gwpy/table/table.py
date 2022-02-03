@@ -779,14 +779,23 @@ class EventTable(Table):
         if window <= 0.0:
             raise ValueError('Window must be a positive value')
 
+        # If no rows, no need to cluster
+        if len(self) == 0:
+            return self.copy()
+
         # Generate index and rank vectors that are ordered
         orderidx = numpy.argsort(self[index])
         col = self[index][orderidx]
         param = self[rank][orderidx]
 
         # Find all points where the index vector changes by less than window
-        # and divide the resulting array into clusters of adjacent points
         clusterpoints = numpy.where(numpy.diff(col) <= window)[0]
+
+        # If no such cluster points, no need to cluster
+        if len(clusterpoints) == 0:
+            return self.copy()
+
+        # Divide points into clusters of adjacent points
         sublists = numpy.split(clusterpoints,
                                numpy.where(numpy.diff(clusterpoints) > 1)[0]+1)
 
