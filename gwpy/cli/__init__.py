@@ -30,6 +30,7 @@ from .spectrogram import Spectrogram
 from .coherence import Coherence
 from .coherencegram import Coherencegram
 from .qtransform import Qtransform
+from .transferfunction import TransferFunction
 
 __author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
 
@@ -40,4 +41,5 @@ PRODUCTS = _od((x.action, x) for x in (
     Coherence,
     Coherencegram,
     Qtransform,
+    TransferFunction,
 ))

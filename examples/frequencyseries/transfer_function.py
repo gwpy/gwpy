@@ -50,15 +50,9 @@ data = TimeSeriesDict.get([gndchannel, hpichannel], start, end, verbose=True)
 gnd = data[gndchannel]
 hpi = data[hpichannel]
 
-# Next, we can call the :meth:`~TimeSeries.average_fft` method to calculate
-# an averages, complex-valued FFT for each `TimeSeries`:
-gndfft = gnd.average_fft(100, 50, window='hamming')
-hpifft = hpi.average_fft(100, 50, window='hamming')
-
-# Finally, we can divide one by the other to get the transfer function
-# (up to the lower Nyquist)
-size = min(gndfft.size, hpifft.size)
-tf = hpifft[:size] / gndfft[:size]
+# The transfer function between time series is easily computed with the
+# :meth:`~TimeSeries.transfer_function` method:
+tf = gnd.transfer_function(hpi, 100, 50)
 
 # The `~gwpy.plot.BodePlot` knows how to separate a complex-valued
 # `~gwpy.frequencyseries.FrequencySeries` into magnitude and phase:
