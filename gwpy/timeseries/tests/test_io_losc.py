@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Cardiff University (2021)
+# Copyright (C) Cardiff University (2021-2022)
 #
 # This file is part of GWpy.
 #
@@ -64,24 +64,5 @@ def test_read_hdf5_gwosc_state(gw150914_hdf5):
         gw150914_hdf5,
         format="hdf5.gwosc",
     )
-    assert state.name == "Data quality"
-    assert state.max().value == 127
-
-
-def test_read_hdf5_losc_deprecated(gw150914_hdf5):
-    with pytest.warns(DeprecationWarning):
-        data = TimeSeries.read(
-            gw150914_hdf5,
-            format="hdf5.losc",
-        )
-    assert data.max().value == pytest.approx(-4.60035111e-20)
-
-
-def test_read_hdf5_losc_state_deprecated(gw150914_hdf5):
-    with pytest.warns(DeprecationWarning):
-        state = StateVector.read(
-            gw150914_hdf5,
-            format="hdf5.losc",
-        )
     assert state.name == "Data quality"
     assert state.max().value == 127
