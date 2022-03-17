@@ -287,7 +287,13 @@ class TestTimeSeries(_TestTimeSeriesBase):
             )
 
     @pytest.mark.parametrize('api', GWF_APIS)
-    def test_read_write_gwf_multiple(self, tmp_path, api):
+    @pytest.mark.parametrize('nproc', (1, 2))
+    def test_read_write_gwf_multiple(self, tmp_path, api, nproc):
+        """Check that each GWF API can read a series of files, either in
+        a single process, or in multiple processes
+
+        Regression: https://github.com/gwpy/gwpy/issues/1486
+        """
         fmt = "gwf" if api is None else "gwf." + api
         a1 = self.create(name='TEST')
         a2 = self.create(name='TEST', t0=a1.span[1], dt=a1.dx)
@@ -298,10 +304,19 @@ class TestTimeSeries(_TestTimeSeriesBase):
         a2.write(tmp2, format=fmt)
         cache = [tmp1, tmp2]
 
-        comb = self.TEST_CLASS.read(cache, 'TEST', format=fmt, nproc=2)
+        comb = self.TEST_CLASS.read(
+            cache,
+            'TEST',
+            start=a1.span[0],
+            end=a2.span[1],
+            format=fmt,
+            nproc=nproc,
+        )
         utils.assert_quantity_sub_equal(
-            comb, a1.append(a2, inplace=False),
-            exclude=['channel'])
+            comb,
+            a1.append(a2, inplace=False),
+            exclude=['channel'],
+        )
 
     @pytest.mark.parametrize('api', [
         pytest.param('framecpp', marks=SKIP_FRAMECPP),
