@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2022)
 #
 # This file is part of GWpy.
 #
@@ -18,8 +19,6 @@
 
 """Plotting utilities for segments
 """
-
-import warnings
 
 from matplotlib.artist import allow_rasterization
 from matplotlib.colors import is_color_like
@@ -176,12 +175,6 @@ class SegmentAxes(Axes):
                                       **kwargs))
         return out
 
-    def plot_dqdict(self, *args, **kwargs):
-        warnings.warn('plot_dqdict() was renamed plot_dict; this warning will '
-                      'result in an error in an upcoming release',
-                      DeprecationWarning)
-        return self.plot_dict(*args, **kwargs)
-
     def plot_flag(self, flag, y=None, **kwargs):
         """Plot a `~gwpy.segments.DataQualityFlag` onto these axes.
 
@@ -255,12 +248,6 @@ class SegmentAxes(Axes):
             self.plot_segmentlist(flag.known, y=y, label=name, **known_kw)
 
         return coll  # return active collection
-
-    def plot_dqflag(self, *args, **kwargs):
-        warnings.warn('plot_dqflag() was renamed plot_flag; this warning will '
-                      'result in an error in an upcoming release',
-                      DeprecationWarning)
-        return self.plot_flag(*args, **kwargs)
 
     def plot_segmentlist(self, segmentlist, y=None, height=.8, label=None,
                          collection=True, rasterized=None, **kwargs):
