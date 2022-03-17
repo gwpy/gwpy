@@ -32,7 +32,7 @@ tables of time-stamped GW (or other) events.
 
 # load tables
 from astropy.table import (Column, Table)
-from .table import (EventColumn, EventTable)
+from .table import EventTable
 from .gravityspy import GravitySpyTable
 
 # attach unified I/O

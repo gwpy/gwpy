@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Louisiana State University (2017)
+#               Cardiff University (2017-2022)
 #
 # This file is part of GWpy.
 #
@@ -28,7 +29,7 @@ import numpy
 
 from gwosc.api import DEFAULT_URL as DEFAULT_GWOSC_URL
 
-from astropy.table import (Table, Column, vstack)
+from astropy.table import (Table, vstack)
 from astropy.io import registry
 
 from ..io.mp import read_multi as io_read_multi
@@ -36,7 +37,6 @@ from ..time import gps_types
 from .filter import (filter_table, parse_operator)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__all__ = ['EventColumn', 'EventTable']
 
 TIME_LIKE_COLUMN_NAMES = [
     "time",  # standard
@@ -108,36 +108,6 @@ def _rates_preprocess(func):
 
         return func(self, *args, **kwargs)
     return wrapped_func
-
-
-# -- Column -------------------------------------------------------------------
-
-class EventColumn(Column):
-    """Custom `Column` that allows filtering with segments
-    """
-    def __new__(cls, *args, **kwargs):
-        warnings.warn("the EventColumn is deprecated, and will be removed in "
-                      "a future gwpy release", DeprecationWarning)
-        super().__new__(*args, **kwargs)
-
-    def in_segmentlist(self, segmentlist):
-        """Return the index of values lying inside the given segmentlist
-
-        A `~gwpy.segments.Segment` represents a semi-open interval,
-        so for any segment `[a, b)`, a value `x` is 'in' the segment if
-
-            a <= x < b
-
-        """
-        from .filters import in_segmentlist
-        return in_segmentlist(self, segmentlist)
-
-    def not_in_segmentlist(self, segmentlist):
-        """Return the index of values not lying inside the given segmentlist
-
-        See `~EventColumn.in_segmentlist` for more details
-        """
-        return self.in_segmentlist(~segmentlist)
 
 
 # -- Table --------------------------------------------------------------------
