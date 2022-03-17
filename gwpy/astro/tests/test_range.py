@@ -19,6 +19,8 @@
 """Unit tests for :mod:`gwpy.astro.range`
 """
 
+from unittest import mock
+
 import pytest
 
 from astropy import units
@@ -29,20 +31,18 @@ from ...testing import utils
 from ...timeseries import TimeSeries
 from ...frequencyseries import FrequencySeries
 from ...spectrogram import Spectrogram
-from ...utils.misc import null_context
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
-# -- test results -------------------------------------------------------------
-
 TEST_RESULTS = {
     'sensemon_range': 19.332958991178117 * units.Mpc,
+    'inspiral_range': 18.519899937121536 * units.Mpc,
     'burst_range': 13.592140825568954 * units.Mpc,
 }
 
+SKIP_INSPIRAL_RANGE = utils.skip_missing_dependency("inspiral_range")
 
-# -- utilities ----------------------------------------------------------------
 
 @pytest.fixture(scope='module')
 def hoft():
@@ -63,7 +63,7 @@ def psd(hoft):
     )
 
 
-# -- gwpy.astro.range ---------------------------------------------------------
+# -- sensemon -----------------------------------
 
 def test_sensemon_range_psd(psd):
     """Test for :func:`gwpy.astro.sensemon_range_psd`
@@ -86,6 +86,41 @@ def test_sensemon_range(psd):
     utils.assert_quantity_almost_equal(r, TEST_RESULTS['sensemon_range'])
 
 
+# -- inspiral-range -----------------------------
+
+
+@mock.patch.dict("sys.modules", {"inspiral_range": None})
+def test_inspiral_range_missing_dep(psd):
+    with pytest.raises(ModuleNotFoundError) as exc:
+        astro.inspiral_range(psd)
+    assert "'inspiral-range'" in str(exc.value)
+
+
+@SKIP_INSPIRAL_RANGE
+def test_inspiral_range_psd(psd):
+    """Test for :func:`gwpy.astro.inspiral_range_psd`
+    """
+    frange = (psd.frequencies.value < 4096)
+    r = astro.inspiral_range_psd(psd[frange])
+    assert isinstance(r, FrequencySeries)
+    print(trapz(r, r.frequencies) ** (1/2.))
+    utils.assert_quantity_almost_equal(
+        trapz(r, r.frequencies) ** (1/2.),
+        TEST_RESULTS['inspiral_range'],
+    )
+    assert r.f0.value > 0
+
+
+@SKIP_INSPIRAL_RANGE
+def test_inspiral_range(psd):
+    """Test for :func:`gwpy.astro.inspiral_range`
+    """
+    r = astro.inspiral_range(psd)
+    utils.assert_quantity_almost_equal(r, TEST_RESULTS['inspiral_range'])
+
+
+# -- burst range --------------------------------
+
 def test_burst_range_spectrum(psd):
     """Test for :func:`gwpy.astro.burst_range_spectrum`
     """
@@ -94,7 +129,7 @@ def test_burst_range_spectrum(psd):
     r = astro.burst_range_spectrum(psd[frange])
     assert isinstance(r, FrequencySeries)
     utils.assert_quantity_almost_equal(
-        (trapz(r**3, r.frequencies) / (400 * units.Hz)) ** (1/3.),
+        (trapz(r**3, f[frange]) / (400 * units.Hz)) ** (1/3.),
         TEST_RESULTS['burst_range'],
     )
     assert r.f0.value > 0
@@ -107,24 +142,30 @@ def test_burst_range(psd):
     utils.assert_quantity_almost_equal(r, TEST_RESULTS['burst_range'])
 
 
+# -- timeseries/spectrogram wrappers ------------
+
 @pytest.mark.parametrize('rangekwargs', [
-    {'mass1': 1.4, 'mass2': 1.4},
-    {'energy': 1e-2},
+    pytest.param(
+        {'mass1': 1.4, 'mass2': 1.4},
+        marks=[SKIP_INSPIRAL_RANGE],
+        id="inspiral_range",
+    ),
+    pytest.param(
+        {'mass1': 1.4, 'mass2': 1.4, "range_func": astro.sensemon_range},
+        id="sensemon_range",
+    ),
+    pytest.param({'energy': 1e-2}, id="burst_range"),
 ])
 def test_range_timeseries(hoft, rangekwargs):
-    with (
-        null_context() if 'energy' in rangekwargs
-        else pytest.warns(DeprecationWarning)
-    ):
-        trends = astro.range_timeseries(
-            hoft,
-            0.5,
-            fftlength=0.25,
-            overlap=0.125,
-            method="median",
-            nproc=2,
-            **rangekwargs,
-        )
+    trends = astro.range_timeseries(
+        hoft,
+        0.5,
+        fftlength=0.25,
+        overlap=0.125,
+        method="median",
+        nproc=2,
+        **rangekwargs,
+    )
     assert isinstance(trends, TimeSeries)
     assert trends.size == 2
     assert trends.unit == 'Mpc'
@@ -132,23 +173,29 @@ def test_range_timeseries(hoft, rangekwargs):
 
 
 @pytest.mark.parametrize('rangekwargs, outunit', [
-    ({'mass1': 1.4, 'mass2': 1.4}, units.Mpc ** 2 / units.Hz),
-    ({'energy': 1e-2}, units.Mpc),
+    pytest.param(
+        {'mass1': 1.4, 'mass2': 1.4},
+        units.Mpc ** 2 / units.Hz,
+        marks=[SKIP_INSPIRAL_RANGE],
+        id="inspiral_range",
+    ),
+    pytest.param(
+        {'mass1': 1.4, 'mass2': 1.4, "range_func": astro.sensemon_range_psd},
+        units.Mpc ** 2 / units.Hz,
+        id="sensemon_range",
+    ),
+    pytest.param({'energy': 1e-2}, units.Mpc, id="burst_range"),
 ])
 def test_range_spectrogram(hoft, rangekwargs, outunit):
-    with (
-        null_context() if 'energy' in rangekwargs
-        else pytest.warns(DeprecationWarning)
-    ):
-        spec = astro.range_spectrogram(
-            hoft,
-            0.5,
-            fftlength=0.25,
-            overlap=0.125,
-            method="median",
-            nproc=2,
-            **rangekwargs,
-        )
+    spec = astro.range_spectrogram(
+        hoft,
+        0.5,
+        fftlength=0.25,
+        overlap=0.125,
+        method="median",
+        nproc=2,
+        **rangekwargs,
+    )
     assert isinstance(spec, Spectrogram)
     assert spec.shape[0] == 2
     assert spec.unit == outunit
