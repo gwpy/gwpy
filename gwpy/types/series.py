@@ -769,37 +769,39 @@ class Series(Array):
         if pad is None and gap == 'pad':
             pad = 0.
 
-        # check metadata
-        self.is_compatible(other)
+        # check metadata (do not do this if trying to join to unevenly sampled
+        # discontiguous series')
+        if not (gap == 'ignore' and (not hasattr(self, 'dx') or not hasattr(other, 'dx'))):
+            self.is_compatible(other)
+
         # make copy if needed
         if not inplace:
             self = self.copy()
         # fill gap
-        if self.is_contiguous(other) != 1:
-            if gap == 'pad':
-                ngap = floor(
-                    (other.xspan[0] - self.xspan[1]) / self.dx.value + 0.5)
-                if ngap < 1:
+        if gap != 'ignore':
+            if self.is_contiguous(other) != 1:
+                if gap == 'pad':
+                    ngap = floor(
+                        (other.xspan[0] - self.xspan[1]) / self.dx.value + 0.5)
+                    if ngap < 1:
+                        raise ValueError(
+                            "Cannot append {0} that starts before this one:\n"
+                            "    {0} 1 span: {1}\n    {0} 2 span: {2}".format(
+                                type(self).__name__, self.xspan, other.xspan))
+                    gapshape = list(self.shape)
+                    gapshape[0] = int(ngap)
+                    padding = (numpy.ones(gapshape) * pad).astype(self.dtype)
+                    self.append(padding, inplace=True, resize=resize)
+                elif self.xspan[0] < other.xspan[0] < self.xspan[1]:
                     raise ValueError(
-                        "Cannot append {0} that starts before this one:\n"
+                        "Cannot append overlapping {0}s:\n"
                         "    {0} 1 span: {1}\n    {0} 2 span: {2}".format(
                             type(self).__name__, self.xspan, other.xspan))
-                gapshape = list(self.shape)
-                gapshape[0] = int(ngap)
-                padding = (numpy.ones(gapshape) * pad).astype(self.dtype)
-                self.append(padding, inplace=True, resize=resize)
-            elif gap == 'ignore':
-                pass
-            elif self.xspan[0] < other.xspan[0] < self.xspan[1]:
-                raise ValueError(
-                    "Cannot append overlapping {0}s:\n"
-                    "    {0} 1 span: {1}\n    {0} 2 span: {2}".format(
-                        type(self).__name__, self.xspan, other.xspan))
-            else:
-                raise ValueError(
-                    "Cannot append discontiguous {0}\n"
-                    "    {0} 1 span: {1}\n    {0} 2 span: {2}".format(
-                        type(self).__name__, self.xspan, other.xspan))
+                else:
+                    raise ValueError(
+                        "Cannot append discontiguous {0}\n"
+                        "    {0} 1 span: {1}\n    {0} 2 span: {2}".format(
+                            type(self).__name__, self.xspan, other.xspan))
 
         # check empty other
         if not other.size:
@@ -845,8 +847,22 @@ class Series(Array):
                     self.xindex.resize((s[0],), refcheck=False)
                 except ValueError as exc:
                     if 'cannot resize' in str(exc):
-                        self.xindex = self.xindex.copy()
-                        self.xindex.resize((s[0],))
+                        try:
+                            self.xindex = self.xindex.copy()
+                            self.xindex.resize((s[0],))
+                        except ValueError as exc2:
+                            # trying to join two unevenly sampled arrays
+                            if 'cannot resize' in str(exc2):
+                                xindex = self.xindex.copy()
+                                del self.xindex
+                                self.xindex = (
+                                    numpy.zeros((s[0],)) * xindex.unit
+                                )
+                                del self.dx
+                                self.xindex.info.meta.pop('regular')
+                                self.xindex[:xindex.shape[0]] = xindex
+                            else:
+                                raise
                     else:
                         raise
             else:
@@ -858,10 +874,11 @@ class Series(Array):
                 if not resize:
                     self.x0 = self.x0 + self.dx * other.shape[0]
             else:
-                try:
-                    self.dx = self.xindex[1] - self.xindex[0]
-                except IndexError:
-                    pass
+                if gap != 'ignore':
+                    try:
+                        self.dx = self.xindex[1] - self.xindex[0]
+                    except IndexError:
+                        pass
                 self.x0 = self.xindex[0]
         return self
 
