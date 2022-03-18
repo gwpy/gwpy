@@ -771,7 +771,11 @@ class Series(Array):
 
         # check metadata (do not do this if trying to join to unevenly sampled
         # discontiguous series')
-        if not (gap == 'ignore' and (not hasattr(self, 'dx') or not hasattr(other, 'dx'))):
+        if not (
+            gap == 'ignore' and (
+                not hasattr(self, 'dx') or not hasattr(other, 'dx')
+            )
+        ):
             self.is_compatible(other)
 
         # make copy if needed
