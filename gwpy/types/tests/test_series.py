@@ -316,7 +316,7 @@ class TestSeries(_TestArray):
         z = numpy.zeros((1,) + array.shape[1:])
         utils.assert_array_equal(
             ts4.value, numpy.concatenate((array.value, z, a3.value)))
-            
+
         # gap='ignore' with irregular data
         ts4 = array.copy()
         xindex1 = ts4.xindex.copy()
