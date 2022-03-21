@@ -36,7 +36,7 @@ Step-by-step
 
    .. code-block:: bash
 
-      git push -u origin master
+      git push -u origin main
 
    for major/minor releases, or
 
@@ -67,8 +67,8 @@ Step-by-step
 
       # push maintenance branch
       git push --signed=if-asked origin release/X.Y.x
-      # push master branch
-      git push --signed=if-asked origin master
+      # push main branch
+      git push --signed=if-asked origin main
       # push new tag
       git push --signed=if-asked origin vX.Y.Z
 

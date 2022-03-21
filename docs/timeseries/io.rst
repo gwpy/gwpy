@@ -124,7 +124,7 @@ To read data from a GWF file, pass the input file path (or paths) and the name o
 
 .. note::
 
-   The ``HLV-HW100916-968654552-1.gwf`` file is included with the GWpy source under `/gwpy/testing/data/ <https://github.com/gwpy/gwpy/tree/master/gwpy/testing/data>`_.
+   The ``HLV-HW100916-968654552-1.gwf`` file is included with the GWpy source under `/gwpy/testing/data/ <https://github.com/gwpy/gwpy/tree/main/gwpy/testing/data>`_.
 
 Reading a `StateVector` uses the same syntax:
 
