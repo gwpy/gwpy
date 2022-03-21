@@ -319,13 +319,24 @@ class TestSeries(_TestArray):
             
         # gap='ignore' with irregular data
         ts4 = array.copy()
-        ts4.xindex[int(len(ts4) // 2):] += 1  # make irregular
-        a3 = self.create(x0=ts4.xindex[-1] + 1)  # make discontinguous
-        ts4.xindex[int(len(a3) // 2):] += 1  # make irregular
+        xindex1 = ts4.xindex.copy()
+        xindex1[int(len(ts4) // 2):] += 1
+        ts4.xindex = xindex1.copy()
+        a3 = self.create(x0=ts4.xindex[-1] + 1)
+        xindex2 = a3.xindex.copy()
+        xindex2[int(len(ts4) // 2):] += 1
+        a3.xindex = xindex2.copy()
         ts4.append(a3, gap='ignore')
         with pytest.raises(AttributeError):
             ts4.dx
         assert not ts4.xindex.is_regular()
+        utils.assert_array_equal(
+            ts4.value, numpy.concatenate((array.value, a3.value)))
+        utils.assert_array_equal(
+            ts4.xindex.value, numpy.concatenate(
+                (xindex1.value, xindex2.value)
+            )
+        )
 
     def test_prepend(self, array):
         """Test the `Series.prepend` method
