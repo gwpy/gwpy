@@ -319,13 +319,13 @@ class TestSeries(_TestArray):
 
         # gap='ignore' with irregular data
         ts4 = array.copy()
-        xindex1 = ts4.xindex.copy()
-        xindex1[int(len(ts4) // 2):] += 1 * ts4.xunit
-        ts4.xindex = xindex1.copy()
+        xindex1 = ts4.xindex.value.copy()
+        xindex1[int(len(ts4) // 2):] += 1.0
+        ts4.xindex = xindex1.copy() * ts4.xunit
         a3 = self.create(x0=ts4.xindex[-1] + 1)
-        xindex2 = a3.xindex.copy()
-        xindex2[int(len(ts4) // 2):] += 1 * a3.xunit
-        a3.xindex = xindex2.copy()
+        xindex2 = a3.xindex.value.copy()
+        xindex2[int(len(a3) // 2):] += 1.0
+        a3.xindex = xindex2.copy() * a3.xunit
         ts4.append(a3, gap='ignore')
         with pytest.raises(AttributeError):
             ts4.dx
@@ -334,7 +334,7 @@ class TestSeries(_TestArray):
             ts4.value, numpy.concatenate((array.value, a3.value)))
         utils.assert_array_equal(
             ts4.xindex.value, numpy.concatenate(
-                (xindex1.value, xindex2.value)
+                (xindex1, xindex2)
             )
         )
 
