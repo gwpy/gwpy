@@ -322,7 +322,7 @@ class TestSeries(_TestArray):
         xindex1 = ts4.xindex.value.copy()
         xindex1[int(len(ts4) // 2):] += 1.0
         ts4.xindex = xindex1.copy() * ts4.xunit
-        a3 = self.create(x0=ts4.xindex[-1] + 1)
+        a3 = self.create(x0=(ts4.xindex[-1] + 1 * ts4.xunit))
         xindex2 = a3.xindex.value.copy()
         xindex2[int(len(a3) // 2):] += 1.0
         a3.xindex = xindex2.copy() * a3.xunit
