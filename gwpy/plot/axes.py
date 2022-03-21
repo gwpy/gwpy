@@ -19,6 +19,7 @@
 """Extension of `~matplotlib.axes.Axes` for gwpy
 """
 
+import warnings
 from functools import wraps
 from math import log
 from numbers import Number
