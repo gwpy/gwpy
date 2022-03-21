@@ -320,11 +320,11 @@ class TestSeries(_TestArray):
         # gap='ignore' with irregular data
         ts4 = array.copy()
         xindex1 = ts4.xindex.copy()
-        xindex1[int(len(ts4) // 2):] += 1
+        xindex1[int(len(ts4) // 2):] += 1 * ts4.xunit
         ts4.xindex = xindex1.copy()
         a3 = self.create(x0=ts4.xindex[-1] + 1)
         xindex2 = a3.xindex.copy()
-        xindex2[int(len(ts4) // 2):] += 1
+        xindex2[int(len(ts4) // 2):] += 1 * a3.xunit
         a3.xindex = xindex2.copy()
         ts4.append(a3, gap='ignore')
         with pytest.raises(AttributeError):
