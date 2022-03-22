@@ -19,8 +19,8 @@ step.
 
 # Development status
 
-[![Build status](https://github.com/gwpy/gwpy/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/gwpy/gwpy/actions/workflows/build.yml)
-[![Coverage status](https://codecov.io/gh/gwpy/gwpy/branch/master/graph/badge.svg)](https://codecov.io/gh/gwpy/gwpy)
+[![Build status](https://github.com/gwpy/gwpy/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/gwpy/gwpy/actions?query=branch%3Amain)
+[![Coverage status](https://codecov.io/gh/gwpy/gwpy/branch/main/graph/badge.svg)](https://codecov.io/gh/gwpy/gwpy)
 [![Maintainability](https://api.codeclimate.com/v1/badges/2cf14445b3e070133745/maintainability)](https://codeclimate.com/github/gwpy/gwpy/maintainability)
 
 # Installation
@@ -45,4 +45,4 @@ python -c "import gwpy; print(gwpy.__version__)"
 
 # License
 
-GWpy is released under the GNU General Public License v3.0 or later, see [here](https://choosealicense.com/licenses/gpl-3.0/) for a description of this license, or see the [LICENSE](https://github.com/gwpy/gwpy/blob/master/LICENSE) file for the full text.
+GWpy is released under the GNU General Public License v3.0 or later, see [here](https://choosealicense.com/licenses/gpl-3.0/) for a description of this license, or see the [LICENSE](https://github.com/gwpy/gwpy/blob/main/LICENSE) file for the full text.
