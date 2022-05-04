@@ -1816,10 +1816,6 @@ class TimeSeries(TimeSeriesBase):
             half-width time duration (seconds) in which the timeseries is
             set to zero
 
-        tpad : `int`, optional
-            half-width time duration (seconds) in which the Planck window
-            is tapered
-
         whiten : `bool`, optional
             if True, data will be whitened before gating points are discovered,
             use of this option is highly recommended
