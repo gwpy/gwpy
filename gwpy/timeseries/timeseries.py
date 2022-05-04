@@ -1933,7 +1933,7 @@ class TimeSeries(TimeSeriesBase):
         TimeSeries.whiten
             for the whitening filter used to identify gating points
         """
-        deadtime = self.find_gates(self, tzero=tzero, 
+        deadtime = self.find_gates(tzero=tzero, 
              whiten=whiten, threshold=threshold, 
              cluster_window=cluster_window, **whiten_kwargs)
         return self.mask(deadtime=deadtime, const=0, tpad=tpad)
