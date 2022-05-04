@@ -1806,7 +1806,7 @@ class TimeSeries(TimeSeriesBase):
         return out * numpy.sqrt(2 * in_.dt.decompose().value)
 
     def find_gates(self, tzero=1.0, whiten=True,
-             threshold=50., cluster_window=0.5, **whiten_kwargs):
+                   threshold=50., cluster_window=0.5, **whiten_kwargs):
         """Identify points that should be gates using a provided threshold
         and clustered within a provided time window.
 
@@ -1929,9 +1929,10 @@ class TimeSeries(TimeSeriesBase):
         TimeSeries.whiten
             for the whitening filter used to identify gating points
         """
-        deadtime = self.find_gates(tzero=tzero, 
-             whiten=whiten, threshold=threshold, 
-             cluster_window=cluster_window, **whiten_kwargs)
+        deadtime = self.find_gates(tzero=tzero, whiten=whiten,
+                                   threshold=threshold,
+                                   cluster_window=cluster_window,
+                                   **whiten_kwargs)
         return self.mask(deadtime=deadtime, const=0, tpad=tpad)
 
     def convolve(self, fir, window='hanning'):
