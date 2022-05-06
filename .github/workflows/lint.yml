@@ -55,4 +55,4 @@ jobs:
             "rstcheck" \
         ;
     - name: Lint with rstcheck
-      run: python -m rstcheck . --recursive --report severe
+      run: rstcheck . --recursive --report severe
