@@ -1848,7 +1848,7 @@ class TimeSeries(TimeSeriesBase):
         data = self.whiten(**whiten_kwargs) if whiten else self
         window_samples = cluster_window * sample
         gates = signal.find_peaks(abs(data.value), height=threshold,
-                           distance=window_samples)[0]
+                                  distance=window_samples)[0]
         # represent gates as time segments
         return SegmentList([Segment(
             self.t0.value + (k / sample) - tzero,
@@ -1929,9 +1929,9 @@ class TimeSeries(TimeSeriesBase):
             for the whitening filter used to identify gating points
         """
         gates = self.find_gates(tzero=tzero, whiten=whiten,
-                                   threshold=threshold,
-                                   cluster_window=cluster_window,
-                                   **whiten_kwargs)
+                                threshold=threshold,
+                                cluster_window=cluster_window,
+                                **whiten_kwargs)
         return self.mask(deadtime=gates, const=0, tpad=tpad)
 
     def convolve(self, fir, window='hanning'):
