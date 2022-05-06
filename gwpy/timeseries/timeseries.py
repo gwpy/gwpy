@@ -1837,24 +1837,23 @@ class TimeSeries(TimeSeriesBase):
         out : `~gwpy.segments.SegmentList`
             a list of segments that should be gated based on the
             provided parameters
+
         See also
         --------
         TimeSeries.gate
             for a method that applies the identified gates
         """
-        from scipy.signal import find_peaks
         # Find points to gate based on a threshold
         sample = self.sample_rate.to('Hz').value
         data = self.whiten(**whiten_kwargs) if whiten else self
         window_samples = cluster_window * sample
-        gates = find_peaks(abs(data.value), height=threshold,
+        gates = signal.find_peaks(abs(data.value), height=threshold,
                            distance=window_samples)[0]
         # represent gates as time segments
-        deadtime = SegmentList([Segment(
+        return SegmentList([Segment(
             self.t0.value + (k / sample) - tzero,
             self.t0.value + (k / sample) + tzero,
         ) for k in gates]).coalesce()
-        return deadtime
 
     def gate(self, tzero=1.0, tpad=0.5, whiten=True,
              threshold=50., cluster_window=0.5, **whiten_kwargs):
@@ -1929,11 +1928,11 @@ class TimeSeries(TimeSeriesBase):
         TimeSeries.whiten
             for the whitening filter used to identify gating points
         """
-        deadtime = self.find_gates(tzero=tzero, whiten=whiten,
+        gates = self.find_gates(tzero=tzero, whiten=whiten,
                                    threshold=threshold,
                                    cluster_window=cluster_window,
                                    **whiten_kwargs)
-        return self.mask(deadtime=deadtime, const=0, tpad=tpad)
+        return self.mask(deadtime=gates, const=0, tpad=tpad)
 
     def convolve(self, fir, window='hanning'):
         """Convolve this `TimeSeries` with an FIR filter using the
