@@ -18,6 +18,7 @@ lib64/
 parts/
 sdist/
 var/
+venv/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -44,6 +45,7 @@ pip-delete-this-directory.txt
 *.swp
 .DS_Store
 .idea
+.vscode
 
 # Examples output
 /examples/*.png
