@@ -162,6 +162,20 @@ def _read_ffl(site, tag, basedir=None):
 
 def find_types(site=None, match=_DEFAULT_TYPE_MATCH):
     """Return the list of known data types.
+
+    Parameters
+    ----------
+    site : `str`, optional
+        Observatory ID (e.g. ``'A'`)) to retrict types, if `None` (default)
+        is given, all types are returned.
+
+    match : `str`, optional
+        Regular expression to use to restrict types.
+
+    Returns
+    -------
+    types : `list` of `str`
+        The list of data types matching the criteria.
     """
     ffls = _find_ffls()
     types = [tag for (site_, tag) in ffls if site in (None, site_)]
@@ -181,6 +195,34 @@ def find_urls(
 ):
     """Return the list of all files of the given type in the [start, end)
     GPS interval.
+
+    Parameters
+    ----------
+    site : `str`
+        Observatory ID to search for.
+
+    tag : `str`
+        Data type tag to search for.
+
+    gpsstart : `int`
+        GPS start time of query.
+
+    gpsend : `int`
+        GPS end time of query.
+
+    match : `str`, optional
+        Regular expression to use to retrict returned data URLs.
+
+    on_gaps : `str`, optional
+        What to do if the full GPS interval is not covered, one of
+        ``'warn'`` (emit a `UserWarning`, default),
+        ``'ignore'`` (do nothing),
+        anything else (raise a `RuntimeError`).
+
+    Returns
+    -------
+    urls : `list` of `str`
+        A list of URLs representing discovered data.
     """
     if match:
         match = re.compile(match)
@@ -213,6 +255,26 @@ def find_urls(
 
 def find_latest(site, tag, on_missing="warn"):
     """Return the most recent file of a given type.
+
+    Parameters
+    ----------
+    site : `str`
+        Observatory ID to search for.
+
+    tag : `str`
+        Data type tag to search for.
+
+    on_missing : `str`, optional
+        What to do if a URL is not found for the given site and tag, one of
+        ``'warn'`` (emit a `UserWarning`, default),
+        ``'ignore'`` (do nothing),
+        anything else (raise a `RuntimeError`).
+
+    Returns
+    -------
+    urls : `list` of `str`
+        A list (typically of one item) of URLs representing the latest data
+        for a specific site and tag.
     """
     try:
         fflfile = _ffl_path(site, tag)
