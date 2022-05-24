@@ -75,6 +75,10 @@ jobs:
             pyproject.toml \
             setup.cfg \
         ;
+        # undo the change to python_requires
+        sed -i -E \
+            -e 's/python_requires = ==/python_requires = >=/' \
+            setup.cfg
 
     - name: Install system packages for experimental dependencies
       if: matrix.experimental == true
