@@ -26,7 +26,10 @@ from unittest import mock
 
 import pytest
 
-from .. import ffldatafind
+from .. import (
+    datafind as io_datafind,
+    ffldatafind,
+)
 
 
 # -- test utilities ---------
@@ -152,3 +155,27 @@ def test_find_latest():
         "X",
         "test",
     ) == sorted(x.split()[0] for x in FFLS["test.ffl"])[-1:]
+
+
+# -- test gwpy.io.datafind interface
+
+@mock.patch(
+    "gwpy.io.datafind.iter_channel_names",
+    mock.MagicMock(return_value=["Y1:TEST-CHANNEL"]),
+)
+@mock.patch(
+    "gwpy.io.datafind.on_tape",
+    mock.MagicMock(return_value=False),
+)
+@mock.patch(
+    'gwpy.io.datafind.num_channels',
+    mock.MagicMock(return_value=1),
+)
+def test_datafind_find_frametype():
+    """Test that gwpy.io.datafind.find_frametype ends up calling out
+    to ffldatafind under the right circumstances.
+    """
+    assert io_datafind.find_frametype(
+        "Y1:TEST-CHANNEL",
+        allow_tape=True,
+    ) == "test3"
