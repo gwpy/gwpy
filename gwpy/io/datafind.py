@@ -53,6 +53,8 @@ from .utils import file_path
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+SINGLE_IFO_OBSERVATORY = re.compile("^[A-Z][0-9]$")
+
 # special-case frame types
 LIGO_SECOND_TREND_TYPE = re.compile(r'\A(.*_)?T\Z')  # T or *_T
 LIGO_MINUTE_TREND_TYPE = re.compile(r'\A(.*_)?M\Z')  # M or *_M
@@ -536,7 +538,8 @@ def find_latest(
     --------
     gwdatafind.find_latest
     """
-    observatory = observatory[0]
+    if SINGLE_IFO_OBSERVATORY.match(observatory):
+        observatory = observatory[0]
     try:
         if gpstime is not None:
             gpstime = int(to_gps(gpstime))
