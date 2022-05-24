@@ -133,15 +133,22 @@ def _gwdatafind_module(**datafind_kw):
     module to enable a GWDataFind-like interface for direct FFL data
     discovery at Virgo.
     """
+    # GWDataFind
     if (
         os.getenv('GWDATAFIND_SERVER')
         or os.getenv('LIGO_DATAFIND_SERVER')
         or datafind_kw.get('host')
     ):
         return gwdatafind
-    if os.getenv('VIRGODATA'):
-        return ffldatafind
-    raise RuntimeError("unknown datafind configuration, cannot discover data")
+
+    # FFL
+    try:
+        ffldatafind._get_ffl_basedir()
+    except KeyError:  # failed to discover FFL directories
+        raise RuntimeError(
+            "unknown datafind configuration, cannot discover data",
+        )
+    return ffldatafind
 
 
 def _select_gwdatafind_mod(func):
