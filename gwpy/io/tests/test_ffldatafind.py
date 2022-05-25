@@ -21,7 +21,9 @@
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+import os
 from contextlib import nullcontext
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -57,6 +59,40 @@ def test_read_last_line_oserror(tmp_path):
         assert ffldatafind._read_last_line(path)
 
 
+# -- test ffl utils ---------
+
+@pytest.mark.parametrize(("var", "value", "result"), (
+    ("FFLPATH", "/path/to/ffl", "/path/to/ffl"),
+    ("VIRGODATA", "/virgoData", "/virgoData/ffl"),
+))
+@mock.patch.dict("os.environ", clear=True)
+def test_get_ffl_basedir(var, value, result):
+    """Test that `_get_ffl_basedir` does what it is supposed to.
+    """
+    # note: use str(Path(x)) to convert to Posix->Windows
+    os.environ[var] = str(Path(value))
+    assert ffldatafind._get_ffl_basedir() == str(Path(result))
+
+
+@mock.patch.dict("os.environ", clear=True)
+def test_get_ffl_basedir_error():
+    """Test that `_get_ffl_basedir` errors when the environment isn't right.
+    """
+    with pytest.raises(KeyError):
+        ffldatafind._get_ffl_basedir()
+
+
+@pytest.mark.parametrize(("path", "result"), (
+    ("test.ffl", True),
+    (Path("/path/to/test.ffl"), True),
+    ("test.txt", False),
+))
+def test_is_ffl_file(path, result):
+    """Test that `_is_ffl_file` does what it is supposed to.
+    """
+    assert ffldatafind._is_ffl_file(path) is result
+
+
 # -- test ffl UI ------------
 
 FFLS = {
@@ -75,6 +111,8 @@ FFLS = {
         "/tmp/Y-test3-1-1.gwf 1 1 0 0",
         "/tmp/Y-test3-2-1.gwf 2 1 0 0",
     ],
+    "test-empty.ffl": [],
+    "test-bad.ffl": ["badness"],
 }
 TEST_URLS = [x.split()[0] for x in FFLS["test.ffl"]]
 
@@ -132,20 +170,18 @@ def test_find_urls(match, ctx, result):
     ("warn", pytest.warns(UserWarning)),
     ("raise", pytest.raises(RuntimeError)),
 ))
-def test_find_urls_on_missing(on_gaps, ctx):
-    """Check that the ``on_missing`` keyword in `ffldatafind.find_latest`
+def test_find_urls_on_gaps(on_gaps, ctx):
+    """Check that the ``on_gaps`` keyword in `ffldatafind.find_urls`
     works in each case.
     """
     with ctx:
-        urls = ffldatafind.find_urls(
+        assert ffldatafind.find_urls(
             "X",
             "test",
             100,
             101,
             on_gaps=on_gaps,
-        )
-    if on_gaps != "raise":
-        assert urls == []
+        ) == []
 
 
 def test_find_latest():
@@ -155,6 +191,23 @@ def test_find_latest():
         "X",
         "test",
     ) == sorted(x.split()[0] for x in FFLS["test.ffl"])[-1:]
+
+
+@pytest.mark.parametrize(("on_missing", "ctx"), (
+    ("ignore", nullcontext()),
+    ("warn", pytest.warns(UserWarning)),
+    ("raise", pytest.raises(RuntimeError)),
+))
+def test_find_latest_on_missing(on_missing, ctx):
+    """Check that the ``on_missing`` keyword in `ffldatafind.find_latest`
+    works in each case.
+    """
+    with ctx:
+        assert ffldatafind.find_latest(
+            "BAD",
+            "BAD",
+            on_missing=on_missing,
+        ) == []
 
 
 # -- test gwpy.io.datafind interface
