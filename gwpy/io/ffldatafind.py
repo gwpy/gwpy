@@ -158,6 +158,37 @@ def _read_ffl(site, tag, basedir=None):
         ]
 
 
+def _handle_error(action, message):
+    """Handle error, warn, or ignore for the given state.
+
+    Parameters
+    ----------
+    action : `str`
+        The action to perform, one of
+        ``'warn'`` (emit a `UserWarning`, default),
+        ``'ignore'`` (do nothing),
+        or anything else (raise a `RuntimeError`).
+
+    message : `str`
+        The message to emit with warnings or errors.
+
+    Raises
+    ------
+    RuntimeError
+        If action is not ``'warn'`` or ``'ignore'``.
+    """
+    # if ignore, do nothing
+    if action == "ignore":
+        return
+    # if warn, emit a warning
+    if action == "warn":
+        warn(message, stacklevel=2)
+        return
+
+    # otherwise, raise an error
+    raise RuntimeError(message)
+
+
 # -- ui ---------------------
 
 def find_types(site=None, match=_DEFAULT_TYPE_MATCH):
@@ -237,20 +268,17 @@ def find_urls(
             and (match.search(e.path) if match else True)
         )
     ]
-
     urls = [e.path for e in cache]
-    missing = segmentlist([span]) - cache_segments(cache)
-
-    # no missing data or don't care, return
-    if on_gaps == 'ignore' or not missing:
-        return urls
 
     # handle missing data
-    msg = "Missing segments: \n" + "\n".join(map(str, missing))
-    if on_gaps == 'warn':
-        warn(msg)
-        return urls
-    raise RuntimeError(msg)
+    missing = segmentlist([span]) - cache_segments(cache)
+    if missing:
+        _handle_error(
+            on_gaps,
+            "Missing segments: \n" + "\n".join(map(str, missing)),
+        )
+
+    return urls
 
 
 def find_latest(site, tag, on_missing="warn"):
@@ -283,12 +311,7 @@ def find_latest(site, tag, on_missing="warn"):
     else:
         urls = [read_cache_entry(_read_last_line(fflfile), gpstype=float)]
 
-    if urls or on_missing == 'ignore':
-        return urls
+    if not urls:
+        _handle_error(on_missing, "No files found")
 
-    # handle no files
-    msg = 'No files found'
-    if on_missing == 'warn':
-        warn(msg)
-        return urls
-    raise RuntimeError(msg)
+    return urls
