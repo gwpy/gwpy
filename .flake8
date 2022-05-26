@@ -1,0 +1,30 @@
+; vim: set ft=dosini :
+
+[flake8]
+select =
+	# pycodestyle errors
+	E,
+	# flake8-executable
+	EXE,
+	# pyflakes
+	F,
+	# pycodestyle warnings
+	W,
+ignore =
+	# missing whitespace around arithmetic operator
+	E226,
+	# line break before binary operator, use W504
+	W503,
+exclude =
+	__pycache__,
+	.eggs/,
+	.git/,
+	build/,
+	docs/,
+	gwpy/_version.py,
+	venv/,
+per-file-ignores =
+	# ignore unused import in __init__
+	__init__.py:F401,
+	# ignore import location in example scripts
+	examples/**.py:E402

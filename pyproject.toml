@@ -1,3 +1,5 @@
+# -- build
+
 [build-system]
 requires = [
     "setuptools>=42",
@@ -6,8 +8,23 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools_scm]
-write_to = "gwpy/_version.py"
+# -- coverage.py
+
+[tool.coverage.run]
+source = ["gwpy"]
+omit = [
+	# ignore vendored sphinx extension
+	"gwpy/utils/sphinx/epydoc.py",
+	# don't report coverage for _version.py
+	# (generated automatically by setuptools-scm)
+	"*/_version.py",
+]
+
+[tool.coverage.report]
+# print report with one decimal point
+precision = 1
+
+# -- pytest
 
 [tool.pytest.ini_options]
 addopts = "-r a"
@@ -24,3 +41,8 @@ filterwarnings = [
 	"ignore:distutils Version::matplotlib",
 	"ignore:distutils Version::distutils",  # actually setuptools._distutils
 ]
+
+# -- setuptools-scm
+
+[tool.setuptools_scm]
+write_to = "gwpy/_version.py"
