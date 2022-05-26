@@ -41,7 +41,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 GWDATAFIND_PATH = "gwpy.io.datafind.gwdatafind"
 MOCK_ENV = {
     'VIRGODATA': 'tmp',
-    'LIGO_DATAFIND_SERVER': 'test:80',
+    'GWDATAFIND_SERVER': 'test:80',
 }
 
 

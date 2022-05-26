@@ -639,7 +639,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @_gwosc_cvmfs
     @mock.patch.dict(
         "os.environ",
-        {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_find(self, gw150914_16384):
         ts = self.TEST_CLASS.find(
@@ -669,7 +669,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @_gwosc_cvmfs
     @mock.patch.dict(
         "os.environ",
-        {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_find_best_frametype_in_find(self, gw150914_16384):
         ts = self.TEST_CLASS.find(
@@ -691,7 +691,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     )
     @mock.patch.dict(
         "os.environ",
-        {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_get_datafind(self, gw150914_16384):
         try:
@@ -713,7 +713,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @mock.patch.dict(os.environ)
     def test_get_nds2(self, gw150914_16384):
         # get using NDS2 (if datafind could have been used to start with)
-        os.environ.pop('LIGO_DATAFIND_SERVER', None)
+        os.environ.pop('GWDATAFIND_SERVER', None)
         ts = self.TEST_CLASS.get(
             NDS2_GW150914_CHANNEL,
             *GWOSC_GW150914_SEGMENT,
