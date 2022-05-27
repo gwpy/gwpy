@@ -20,6 +20,7 @@
 """
 
 import os.path
+import warnings
 from itertools import (chain, product)
 from unittest import mock
 
@@ -346,13 +347,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @SKIP_LALFRAME
     def test_read_gwf_scaled_lalframe(self):
-        with pytest.warns(None) as record:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             data = self.TEST_CLASS.read(
                 utils.TEST_GWF_FILE,
                 "L1:LDAS-STRAIN",
                 format="gwf.lalframe",
             )
-        assert not record.list  # no warning
+
         with pytest.warns(UserWarning):
             data2 = self.TEST_CLASS.read(
                 utils.TEST_GWF_FILE,
