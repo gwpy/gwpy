@@ -21,6 +21,7 @@
 """
 
 import re
+import warnings
 from io import BytesIO
 from unittest import mock
 from urllib.error import HTTPError
@@ -753,9 +754,9 @@ class TestDataQualityDict(object):
                 _read(on_missing='warn')
 
             # check on_missing='ignore' does nothing
-            with pytest.warns(None) as record:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
                 _read(on_missing='ignore')
-            assert not record.list
 
             # check on_missing=<anything else> raises exception
             with pytest.raises(ValueError) as exc:
