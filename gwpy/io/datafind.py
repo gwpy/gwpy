@@ -40,6 +40,7 @@ import re
 import warnings
 from collections import defaultdict
 from functools import wraps
+from unittest import mock
 
 import gwdatafind
 
@@ -163,11 +164,11 @@ def _select_gwdatafind_mod(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
         # replace the 'gwdatafind' module in the function namespace
-        # with the right one
-        func.__globals__["gwdatafind"] = _gwdatafind_module(**kwargs)
+        # with the API we need for this call
+        with mock.patch.dict(func.__globals__):
+            func.__globals__["gwdatafind"] = _gwdatafind_module(**kwargs)
+            return func(*args, **kwargs)
 
-        # run the function
-        return func(*args, **kwargs)
     return wrapped
 
 
