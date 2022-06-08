@@ -42,6 +42,31 @@ filterwarnings = [
 	"ignore:distutils Version::distutils",  # actually setuptools._distutils
 ]
 
+# -- rstcheck
+
+[tool.rstcheck]
+ignore_directives = [
+	# sphinx.ext.autosummary
+	"autoclass",
+	"autofunction",
+	"automethod",
+	"automodule",
+	"autosummary",
+	# sphinx-automodapi
+	"automodsumm",
+	# sphinxcontrib-programoutput
+	"command-output",
+	# sphinx.ext.ifconfig
+	"ifconfig",
+	# matplotlib
+	"plot",
+	# sphinx-panels
+	"tabbed",
+]
+# rstcheck doesn't known about our referenced.txt which is implicitly included
+# in all pages via Sphinx's epilog option
+ignore_messages = "(Unknown target name:.*|Undefined substitution referenced: .*)"
+
 # -- setuptools-scm
 
 [tool.setuptools_scm]

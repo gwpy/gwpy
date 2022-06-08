@@ -55,4 +55,4 @@ jobs:
             "rstcheck>=6.0.0" \
         ;
     - name: Lint with rstcheck
-      run: rstcheck . --recursive --report-level severe
+      run: rstcheck . --recursive --report-level error
