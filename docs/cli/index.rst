@@ -1,20 +1,18 @@
-.. include: ..
-
 *******************************
 Command line plotting with GWpy
 *******************************
 
-The `gwpy-plot` command-line script provides a terminal-based user interface
+The ``gwpy-plot`` command-line script provides a terminal-based user interface
 to querying data and generating images.
 Functionality for this tool is primarily inspired by LigoDV-web
 (LDVW, https://ldvw.ligo.caltech.edu), a web tool for viewing LIGO data,
 available to members of the joint LIGO-Virgo collaboration.
-LDVW, written in Java, uses the `gwpy-plot` command-line script provided by
+LDVW, written in Java, uses the ``gwpy-plot`` command-line script provided by
 GWpy to generate the plots based on web-form input from the user.
 
 The basic usage for `gwpy-plot` is as follows:
 
-.. code-block:: sh
+.. code-block:: bash
 
     gwpy-plot <ACTION> --chan <channel-name> --start <gps-start-time> [OPTIONS]
 
@@ -58,12 +56,14 @@ The following table summarises the allowed number of inputs for each action
 By default all data are retrieved using :meth:`TimeSeriesDict.get`, which uses |nds2|_ for data access, but the ``--framcache``
 option allows you to pass your own data via a LAL-format cache file.
 
+=================
 Interactive mode
 =================
 
 The ``--interactive`` argument uses :mod:`~matplotlib.pyplot` to display
 the image and allow interactive manipulations, (zoom, pan, etc).
 
+========
 Examples
 ========
 
