@@ -408,7 +408,7 @@ def build_cli_examples(_):
 
 # -- examples
 
-def _build_example(example, outdir, logger):
+def _render_example(example, outdir, logger):
     # render the example
     rst = ex2rst.ex2rst(example)
 
@@ -420,7 +420,7 @@ def _build_example(example, outdir, logger):
         logger.debug('[examples] wrote {0}'.format(target))
 
 
-def build_examples(_):
+def render_examples(_):
     """Render all examples as RST to be processed by Sphinx.
     """
     logger = logging.getLogger("examples")
@@ -442,8 +442,7 @@ def build_examples(_):
         logger.debug('[examples] copied {0}'.format(index))
         # render python script as RST
         for expy in (srcdir / exdir).glob("*.py"):
-            target = subdir / expy.with_suffix(".rst").name
-            _build_example(expy, subdir, logger)
+            _render_example(expy, subdir, logger)
         logger.info('[examples] converted all in examples/{0}'.format(exdir))
 
 
@@ -483,5 +482,5 @@ def setup_static_content(app):
 def setup(app):
     setup_static_content(app)
     app.connect('builder-inited', write_citing_rst)
-    app.connect('builder-inited', build_examples)
+    app.connect('builder-inited', render_examples)
     app.connect('builder-inited', build_cli_examples)
