@@ -41,6 +41,7 @@ Step-by-step
    for major/minor releases, or
 
    .. code-block:: bash
+
       git push -u origin release/X.Y.x
 
    for bug-fix releases
