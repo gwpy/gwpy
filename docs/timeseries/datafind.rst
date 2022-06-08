@@ -50,8 +50,9 @@ How it works
 Without any customisation, :meth:`TimeSeries.get` will attempt to locate
 data 'by any means necessary'; in practice that is
 
-- if the ``GWDATAFIND_SERVER`` environment variable points to a
-  server URL, use |gwdatafind|_ to identify which data set includes
+- if the ``GWDATAFIND_SERVER`` environment variable (or legacy
+  ``LIGO_DATAFIND_SERVER`` variable) points to a server URL,
+  use |gwdatafind|_ to identify which data set includes
   the channel(s) requested, then locate the files for that data set,
   and then read them,
 - if that doesn't work (for any reason), loop through the NDS2 servers
