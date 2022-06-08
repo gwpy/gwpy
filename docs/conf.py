@@ -123,36 +123,54 @@ templates_path = [
 # epilog
 rst_epilog = "\n.. include:: /references.rst"
 
-# formatting
-#pygments_style = "monokai"
-
 # -- HTML formatting --------
 
-html_theme = "sphinx_material"
+extensions.append("sphinx_immaterial")
+html_theme = "sphinx_immaterial"
 html_theme_options = {
-    "css_minify": True,
-    "globaltoc_collapse": False,
-    "globaltoc_depth": 1,
-    "globaltoc_includehidden": False,
-    "html_minify": False,
-    "master_doc": False,
-    "nav_links": [],
-    "nav_title": "GWpy {}".format(version),
+    # metadata
     "repo_name": "GWpy",
     "repo_type": "github",
     "repo_url": "https://github.com/gwpy/gwpy",
-    "theme_color": "333",
-    "color_primary": "blue-grey",
-    "color_accent": "deep-orange",
+    "edit_uri": "blob/main/docs",
+    "globaltoc_collapse": True,
+    # features
+    "features": [
+        "navigation.sections",
+    ],
+    # colouring and light/dark mode
+    "palette": [
+        {
+            "media": "(prefers-color-scheme: light)",
+            "scheme": "default",
+            "primary": "blue-grey",
+            "accent": "deep-orange",
+            "toggle": {
+                "icon": "material/eye-outline",
+                "name": "Switch to dark mode",
+            },
+        },
+        {
+            "media": "(prefers-color-scheme: dark)",
+            "scheme": "slate",
+            "primary": "amber",
+            "accent": "deep-orange",
+            "toggle": {
+                "icon": "material/eye",
+                "name": "Switch to light mode",
+            },
+        },
+    ],
+    # table of contents
+    "toc_title_is_page_title": True,
+    # version dropdown
     "version_dropdown": True,
     "version_json": "../versions.json",
 }
+html_static_path = [STATIC_DIRNAME]
 html_favicon = str(Path(STATIC_DIRNAME) / "favicon.png")
 html_logo = str(Path(STATIC_DIRNAME) / "favicon.png")
-html_sidebars = {
-    "**": ["localtoc.html", "globaltoc.html", "searchbox.html"],
-}
-html_static_path = [STATIC_DIRNAME]
+html_css_files = ["css/gwpy-sphinx.css"]
 
 # -- extensions config ------
 
@@ -459,28 +477,9 @@ def write_citing_rst(app):
     logger.info('[zenodo] wrote {0}'.format(citing))
 
 
-# -- extra content ----------
-
-def setup_static_content(app):
-    """Configure static content for Sphinx
-    """
-    staticdir = SPHINX_DIR / STATIC_DIRNAME
-
-    # add stylesheets
-    cssdir = staticdir / "css"
-    for cssf in cssdir.glob("*.css"):
-        app.add_css_file(str(cssf.relative_to(staticdir).as_posix()))
-
-    # add custom javascript
-    jsdir = staticdir / "js"
-    for jsf in jsdir.glob("*.js"):
-        app.add_js_file(str(jsf.relative_to(staticdir).as_posix()))
-
-
 # -- setup sphinx -----------
 
 def setup(app):
-    setup_static_content(app)
     app.connect('builder-inited', write_citing_rst)
     app.connect('builder-inited', render_examples)
     app.connect('builder-inited', render_cli_examples)
