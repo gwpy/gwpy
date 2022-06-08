@@ -52,7 +52,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install \
-            "rstcheck>=6.0.0" \
+            "rstcheck[sphinx,toml]>=6.0.0" \
         ;
     - name: Lint with rstcheck
       run: rstcheck . --recursive --report-level error
