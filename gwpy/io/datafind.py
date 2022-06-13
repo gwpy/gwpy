@@ -25,8 +25,9 @@ The functions in this module are highly reliant on having local access to
 files (either directly, or via NFS, or CVMFS).
 
 Data discovery using the DataFind service requires the `gwdatafind` Python
-package, and either the ``LIGO_DATAFIND_SERVER`` environment variable to be
-set, or the ``host`` keyword must be passed to :func:`find_urls` and friends.
+package (a dependency of ``gwpy``), and either the ``GW_DATAFIND_SERVER``
+(or legacy ``LIGO_DATAFIND_SERVER``) environment variable to be set,
+or the ``host`` keyword must be passed to :func:`find_urls` and friends.
 
 Data discovery using the Virgo FFL system requires the ``FFLPATH`` environment
 variable to point to the directory containing FFL files, **or** the
