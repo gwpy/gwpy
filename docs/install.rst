@@ -48,7 +48,7 @@ GWpy has the following strict requirements:
    ==================  ===========================
    |astropy|_          ``>=4.0``
    |dqsegdb2|_
-   |gwdatafind|_
+   |gwdatafind|_       ``>=1.1.0``
    |gwosc-mod|_        ``>=0.5.3``
    |h5py|_             ``>=2.8.0``
    |ligo-segments|_    ``>=1.0.0``
