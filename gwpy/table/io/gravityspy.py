@@ -91,7 +91,7 @@ def get_gravityspy_triggers(tablename, engine=None, **kwargs):
 # -- utilities ----------------------------------------------------------------
 
 def get_connection_str(db='gravityspy',
-                       host='gravityspy.ciera.northwestern.edu',
+                       host='gravityspyplus.ciera.northwestern.edu',
                        user=None,
                        passwd=None):
     """Create string to pass to create_engine
@@ -101,7 +101,7 @@ def get_connection_str(db='gravityspy',
     db : `str`, default: ``gravityspy``
         The name of the SQL database your connecting to.
 
-    host : `str`, default: ``gravityspy.ciera.northwestern.edu``
+    host : `str`, default: ``gravityspyplus.ciera.northwestern.edu``
         The name of the server the database you are connecting to
         lives on.
 
