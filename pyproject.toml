@@ -41,6 +41,7 @@ filterwarnings = [
 	"ignore:distutils Version::matplotlib",
 	"ignore:distutils Version::distutils",  # actually setuptools._distutils
 ]
+xfail_strict = true
 
 # -- rstcheck
 
