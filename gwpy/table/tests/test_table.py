@@ -351,10 +351,17 @@ class TestTable(object):
         try:
             table.write(tmp, 'test_read_write_gwf')
         except TypeError as exc:  # pragma: no-cover
-            if 'ParamList' in str(exc):  # frameCPP broken (2.6.7)
-                pytest.skip(
-                    "bug in python-ldas-tools-framecpp: {!s}".format(exc),
-                )
+            msg = str(exc).splitlines()[0]
+            for err, ref in [
+                ("ParamList_type", 57),
+                ("Unable to translate parameter to Parameters_type", 146),
+            ]:
+                if err in msg:
+                    pytest.skip(
+                        f"bug in python-ldas-tools-framecpp: '{msg}', "
+                        "see https://git.ligo.org/computing/ldastools/"
+                        f"LDAS_Tools/-/issues/{ref}",
+                    )
             raise
 
         # check read gives back same table
