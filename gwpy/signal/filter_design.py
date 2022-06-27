@@ -27,7 +27,6 @@ import numpy
 from numpy import fft as npfft
 
 from scipy import signal
-from scipy.signal.ltisys import LinearTimeInvariant
 
 from astropy.units import (Unit, Quantity)
 
@@ -348,19 +347,18 @@ def parse_filter(args, analog=False, sample_rate=None):
         return 'ba', (b, a)
 
     # parse IIR filter
-    if isinstance(args, LinearTimeInvariant):
-        lti = args
-    elif (
-        isinstance(args, numpy.ndarray)
-        and args.ndim == 2
-        and args.shape[1] == 6
-    ):
-        lti = signal.lti(*signal.sos2zpk(args))
-    else:
-        lti = signal.lti(*args)
-
-    # convert to zpk format
-    lti = lti.to_zpk()
+    try:
+        lti = args.to_zpk()
+    except AttributeError:
+        if (
+            isinstance(args, numpy.ndarray)
+            and args.ndim == 2
+            and args.shape[1] == 6
+        ):
+            lti = signal.lti(*signal.sos2zpk(args))
+        else:
+            lti = signal.lti(*args)
+        lti = lti.to_zpk()
 
     # convert to digital components
     if analog:

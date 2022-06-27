@@ -45,8 +45,8 @@ class _TestNds2Enum(object):
         """
         with pytest.raises(ValueError) as exc:
             self.TEST_CLASS.find('blah')
-        assert str(exc.value) == "'blah' is not a valid {}".format(
-            self.TEST_CLASS.__name__,
+        assert str(exc.value) == (
+            f"'blah' is not a valid {self.TEST_CLASS.__name__}"
         )
 
 

@@ -20,15 +20,16 @@
 """
 
 import os
-from http.client import (HTTPConnection, HTTPException)
-from io import BytesIO
-from itertools import cycle
 from unittest import mock
 
 import pytest
 
 import gwdatafind
 
+from ...testing.errors import (
+    pytest_skip_cvmfs_read_error,
+    pytest_skip_network_error,
+)
 from ...testing.utils import (
     TEST_GWF_FILE,
     skip_missing_dependency,
@@ -37,272 +38,120 @@ from .. import datafind as io_datafind
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-# -- mock the environment -----------------------------------------------------
-
+GWDATAFIND_PATH = "gwpy.io.datafind.gwdatafind"
 MOCK_ENV = {
     'VIRGODATA': 'tmp',
-    'LIGO_DATAFIND_SERVER': 'test:80',
+    'GWDATAFIND_SERVER': 'test:80',
 }
 
-_mock_env = mock.patch.dict("os.environ", MOCK_ENV)
+
+def _mock_gwdatafind(func):
+    """Decorate a function to use a mocked GWDataFind API.
+    """
+    @mock.patch.dict("os.environ", MOCK_ENV)
+    @mock.patch(
+        f"{GWDATAFIND_PATH}.find_types",
+        mock.MagicMock(
+            return_value=[os.path.basename(TEST_GWF_FILE).split("-")[1]],
+        )
+    )
+    @mock.patch(
+        f"{GWDATAFIND_PATH}.find_urls",
+        mock.MagicMock(return_value=[TEST_GWF_FILE]),
+    )
+    @mock.patch(
+        f"{GWDATAFIND_PATH}.find_latest",
+        mock.MagicMock(return_value=[TEST_GWF_FILE]),
+    )
+    @mock.patch(
+        'gwpy.io.datafind.iter_channel_names',
+        mock.MagicMock(return_value=['L1:LDAS-STRAIN', 'H1:LDAS-STRAIN']),
+    )
+    @mock.patch(
+        'gwpy.io.datafind.num_channels',
+        mock.MagicMock(return_value=1),
+    )
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
-# -- utilities ----------------------------------------------------------------
+def _gwosc_gwdatafind(func):
+    """Decorate a function to use the GWOSC GWDataFind server.
 
-def mock_connection(framefile=TEST_GWF_FILE):
-    # create mock up of connection object
-    conn = mock.create_autospec(gwdatafind.http.HTTPConnection)
-    conn.find_types.return_value = [os.path.basename(framefile).split('-')[1]]
-    conn.find_latest.return_value = [framefile]
-    conn.find_urls.return_value = [framefile]
-    conn.host = 'mockhost'
-    conn.port = 80
-    return conn
+    That server returns paths from CVMFS (``/cvmfs/gwosc.osgstorage.org``) so
+    we need to add various protections.
+    """
+    @mock.patch.dict(  # point GWDataFind at GWOSC server
+        "os.environ",
+        {"GWDATAFIND_SERVER": "datafind.gw-openscience.org:80"},
+    )
+    @pytest_skip_cvmfs_read_error  # skip CVMFS problems
+    @pytest_skip_network_error  # skip network problems
+    @pytest.mark.skipif(  # skip missing CVMFS repo
+        not os.path.isdir('/cvmfs/gwosc.osgstorage.org/'),
+        reason="GWOSC CVMFS repository not available",
+    )
+    @pytest.mark.cvmfs  # mark test as requiring cvmfs
+    @skip_missing_dependency('LDAStools.frameCPP')  # skip if no frameCPP
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
 
-
-@pytest.fixture()
-def connection():
-    return mock_connection(TEST_GWF_FILE)
-
-
-_mock_connection = mock.patch(
-    "gwdatafind.connect",
-    mock.MagicMock(return_value=mock_connection(TEST_GWF_FILE)),
-)
-
-_mock_iter_channel_names = mock.patch(
-    'gwpy.io.datafind.iter_channel_names',
-    mock.MagicMock(return_value=['L1:LDAS-STRAIN', 'H1:LDAS-STRAIN']),
-)
-
-_mock_num_channels = mock.patch(
-    'gwpy.io.datafind.num_channels',
-    mock.MagicMock(return_value=1),
-)
-
-# -- FFL tests ----------------------------------------------------------------
-
-FFL_WALK = [
-    (os.curdir, [], ['test.ffl', 'test2.ffl']),
-]
-
-
-@mock.patch.dict("os.environ", MOCK_ENV)
-@mock.patch('os.walk', return_value=FFL_WALK)
-class TestFflConnection(object):
-    TEST_CLASS = io_datafind.FflConnection
-
-    @mock.patch('gwpy.io.datafind.FflConnection._read_last_line',
-                return_value='X-TEST-0-1.gwf 0 1 0 0')
-    def test_init(self, mwalk, mreadlast):
-        conn = self.TEST_CLASS()
-        assert conn.paths == {
-            ('X', 'test'): os.path.join(os.curdir, 'test.ffl'),
-            ('X', 'test2'): os.path.join(os.curdir, 'test2.ffl'),
-        }
-
-    def test_get_ffl_dir(self, _):
-        with mock.patch.dict(os.environ, {'FFLPATH': 'somepath'}):
-            assert self.TEST_CLASS._get_ffl_dir() == 'somepath'
-        with mock.patch.dict(os.environ, {'VIRGODATA': 'somepath'}):
-            assert self.TEST_CLASS._get_ffl_dir() == (
-                os.path.join('somepath', 'ffl'))
-        with mock.patch.dict(os.environ), pytest.raises(KeyError):
-            os.environ.pop('FFLPATH')
-            os.environ.pop('VIRGODATA')
-            self.TEST_CLASS._get_ffl_dir()
-
-    def test_is_ffl_file(self, _):
-        assert self.TEST_CLASS._is_ffl_file('test.ffl')
-        assert not self.TEST_CLASS._is_ffl_file('test.ffl2')
-
-    @mock.patch('gwpy.io.datafind.FflConnection._read_last_line',
-                side_effect=[OSError(), 'X-TEST-0-1.gwf 0 1 0 0'])
-    def test_find_paths(self, mwalk, mreadlast):
-        conn = self.TEST_CLASS()  # find_paths() called by __init__()
-        assert conn.paths == {
-            ('X', 'test2'): os.path.join(os.curdir, 'test2.ffl'),
-        }
-
-    @mock.patch("builtins.open", return_value=BytesIO(b"""
-/path/to/X-TEST-0-1.gwf 0 1 0 0
-/path/to/X-TEST-1-1.gwf 1 1 0 0
-""".lstrip()))
-    @mock.patch('os.path.getmtime', return_value=1)
-    @mock.patch('gwpy.io.datafind.FflConnection._read_last_line',
-                return_value='X-TEST-0-1.gwf 0 1 0 0')
-    def test_read_ffl_cache(self, mwalk, mreadlast, mgetmtime, mopen):
-        conn = self.TEST_CLASS()
-        cache = list(conn._read_ffl_cache('X', 'test'))
-        assert [c.path for c in cache] == [
-            '/path/to/X-TEST-0-1.gwf',
-            '/path/to/X-TEST-1-1.gwf'
-        ]
-        mopen.assert_called_once()
-
-        # check that calling the same again is a no-op
-        conn._read_ffl_cache('X', 'test')
-        mopen.assert_called_once()
-
-    def test_read_last_line(self, _, tmp_path):
-        tmp = tmp_path / "tmp"
-        with tmp.open("w") as fobj:
-            print('line1', file=fobj)
-            print('line2', file=fobj)
-        assert self.TEST_CLASS._read_last_line(tmp) == 'line2'
-
-    @mock.patch('gwpy.io.datafind.FflConnection._read_last_line',
-                return_value='X-TEST-0-1.gwf 0 1 0 0')
-    def test_ffl_path(self, mwalk, mreadlast):
-        conn = self.TEST_CLASS()
-        assert conn.ffl_path('X', 'test') == os.path.join(
-            os.curdir, 'test.ffl')
-        conn.paths = {}
-        assert conn.ffl_path('X', 'test') == os.path.join(
-            os.curdir, 'test.ffl')
-
-    @mock.patch('gwpy.io.datafind.FflConnection._get_site_tag',
-                side_effect=cycle([('X', 'test'), ('Y', 'test2')]))
-    def test_find_types(self, mwalk, msitetag):
-
-        conn = self.TEST_CLASS()
-        assert sorted(conn.find_types(match=None)) == ['test', 'test2']
-        assert conn.find_types('X') == ['test']
-        assert conn.find_types(match='test2') == ['test2']
-
-    @mock.patch("builtins.open", return_value=BytesIO(b"""
-/path/to/X-TEST-0-1.gwf 0 1 0 0
-/path/to/X-TEST-1-1.gwf 1 1 0 0
-/path/to/X-TEST-2-1.gwf 2 1 0 0
-""".lstrip()))
-    @mock.patch('os.path.getmtime', return_value=1)
-    @mock.patch('gwpy.io.datafind.FflConnection._get_site_tag',
-                side_effect=cycle([('X', 'test'), ('Y', 'test2')]))
-    def test_find_urls(self, mwalk, msitetag, getmtime, mopen):
-        conn = self.TEST_CLASS()
-        assert conn.find_urls('X', 'test', 0, 2) == [
-            '/path/to/X-TEST-0-1.gwf',
-            '/path/to/X-TEST-1-1.gwf',
-        ]
-        assert conn.find_urls('X', 'test', 0, 2, match='TEST-0') == [
-            '/path/to/X-TEST-0-1.gwf',
-        ]
-
-        # check exceptions or warnings get raised as designed
-        with pytest.raises(RuntimeError):
-            conn.find_urls('X', 'test', 10, 20, on_gaps='raise')
-        with pytest.warns(UserWarning) as rec:
-            conn.find_urls('X', 'test', 10, 20, on_gaps='warn')
-            conn.find_urls('X', 'test', 10, 20, on_gaps='ignore')
-        assert len(rec) == 1
-
-    @mock.patch('gwpy.io.datafind.FflConnection._read_last_line',
-                return_value='/path/to/file.gwf 0 1 0 0')
-    @mock.patch('gwpy.io.datafind.FflConnection._get_site_tag',
-                side_effect=cycle([('X', 'test'), ('Y', 'test2')]))
-    def test_find_latest(self, mwalk, msitetag, mreadlast):
-        conn = self.TEST_CLASS()
-        assert conn.find_latest('X', 'test') == ['/path/to/file.gwf']
-        mreadlast.assert_called_once()
-        assert conn.find_latest('X', 'test') == ['/path/to/file.gwf']
-        mreadlast.assert_called_once()  # doesn't call again
-
-        # check exceptions or warnings get raised as designed
-        with pytest.raises(RuntimeError):
-            conn.find_latest('Z', 'test3', on_missing='raise')
-        with pytest.warns(UserWarning) as rec:
-            conn.find_latest('Z', 'test3', on_missing='warn')
-            conn.find_latest('Z', 'test3', on_missing='ignore')
-        assert len(rec) == 1
+    return wrapper
 
 
 # -- tests --------------------------------------------------------------------
 
-@mock.patch.dict("os.environ", MOCK_ENV)
-@mock.patch("gwdatafind.connect", return_value="connection")
-def test_with_connection(connect):
-    # mock out the function, and wrap it
-    func = mock.MagicMock()
-    wrapped_func = io_datafind.with_connection(func)
-
-    # call it
-    wrapped_func(1, host="host")
-
-    # check that connect() was called once
-    connect.assert_called_once_with(host="host", port=None)
-    # and that the function was called once with that connection
-    func.assert_called_once_with(1, connection="connection", host="host")
+@mock.patch.dict("os.environ", clear=True)
+def test_gwdatafind_module_error():
+    """Test that _gwdatafind_module() will propagate an exception if
+    it can't work out how to find data.
+    """
+    with pytest.raises(RuntimeError) as exc:
+        io_datafind.find_frametype("TEST")
+    assert str(exc.value).startswith("unknown datafind configuration")
 
 
-@mock.patch.dict("os.environ", MOCK_ENV)
-@mock.patch("gwdatafind.ui.connect", return_value="connection")
-@mock.patch("gwpy.io.datafind.reconnect", lambda x: x)
-def test_with_connection_reconnect(connect):
-    func = mock.MagicMock()
-    # https://stackoverflow.com/questions/22204660/python-mock-wrapsf-problems
-    func.__name__ = "func"
-    func.side_effect = [HTTPException, "return"]
-    wrapped_func = io_datafind.with_connection(func)
+# -- find_frametype
 
-    assert wrapped_func(1, host="host") == "return"
-    assert func.call_count == 2
-
-
-@mock.patch.dict("os.environ", MOCK_ENV)
-def test_reconnect():
-    a = HTTPConnection('127.0.0.1')
-    b = io_datafind.reconnect(a)
-    assert b is not a
-    assert b.host == a.host
-    assert b.port == a.port
-
-    with mock.patch('os.walk', return_value=[]):
-        a = io_datafind.FflConnection()
-        b = io_datafind.reconnect(a)
-        assert b is not a
-        assert b.ffldir == a.ffldir
-
-
-@_mock_connection
-@_mock_env
-@_mock_iter_channel_names
-@_mock_num_channels
+@_mock_gwdatafind
 def test_find_frametype():
-    # simple test
+    """Test that `find_frametype` works with basic input.
+    """
     assert io_datafind.find_frametype(
         'L1:LDAS-STRAIN',
         allow_tape=True,
     ) == 'HW100916'
 
 
-@_mock_connection
-@_mock_env
-@_mock_iter_channel_names
-@_mock_num_channels
+@_mock_gwdatafind
 def test_find_frametype_return_all():
+    """Test that the ``return_all` keyword for `find_frametype` returns a list.
+    """
     assert io_datafind.find_frametype(
         'L1:LDAS-STRAIN',
         return_all=True,
     ) == ['HW100916']
 
 
-@_mock_connection
-@_mock_env
-@_mock_iter_channel_names
-@_mock_num_channels
+@_mock_gwdatafind
 def test_find_frametype_multiple():
-    # test multiple channels
+    """Test that `find_frametype` can handle channels as MIMO.
+    """
     assert io_datafind.find_frametype(
-        ['H1:LDAS-STRAIN'],
+        ['H1:LDAS-STRAIN', 'L1:LDAS-STRAIN'],
         allow_tape=True,
-    ) == {'H1:LDAS-STRAIN': 'HW100916'}
+    ) == {
+        'H1:LDAS-STRAIN': 'HW100916',
+        'L1:LDAS-STRAIN': 'HW100916',
+    }
 
 
-@_mock_connection
-@_mock_env
-@_mock_iter_channel_names
-@_mock_num_channels
-def test_find_frametype_errors():
+@_mock_gwdatafind
+def test_find_frametype_error_not_found():
+    """Test that `find_frametype` raises the right error for a missing channel.
+    """
     # test missing channel raises sensible error
     with pytest.raises(ValueError) as exc:
         io_datafind.find_frametype('X1:TEST', allow_tape=True)
@@ -310,21 +159,24 @@ def test_find_frametype_errors():
         'Cannot locate the following channel(s) '
         'in any known frametype:\n    X1:TEST')
 
-    # test malformed channel name raises sensible error
+
+@_mock_gwdatafind
+def test_find_frametype_error_bad_channel():
+    """Test that `find_frametype` raises the right error when the channel
+    name isn't parsable.
+    """
     with pytest.raises(ValueError) as exc:
         io_datafind.find_frametype('bad channel name')
     assert str(exc.value) == ('Cannot parse interferometer prefix '
                               'from channel name \'bad channel name\','
                               ' cannot proceed with find()')
 
-    # test trend sorting ends up with an error
-    with pytest.raises(ValueError) as exc:
-        io_datafind.find_frametype('X1:TEST.rms,s-trend',
-                                   allow_tape=True)
-    with pytest.raises(ValueError):
-        io_datafind.find_frametype('X1:TEST.rms,m-trend',
-                                   allow_tape=True)
 
+@_mock_gwdatafind
+def test_find_frametype_error_files_on_tape():
+    """Test that `find_frametype` raises the right error when the only
+    discovered data are on tape, and we asked for not on tape.
+    """
     # check that allow_tape errors get handled properly
     with mock.patch('gwpy.io.datafind.on_tape', return_value=True):
         with pytest.raises(ValueError) as exc:
@@ -332,11 +184,12 @@ def test_find_frametype_errors():
         assert '[files on tape have not been checked' in str(exc.value)
 
 
-@_mock_connection
-@_mock_env
-@_mock_iter_channel_names
-@_mock_num_channels
-def test_find_best_frametype(connection):
+# -- find_best_frametype
+
+@_mock_gwdatafind
+def test_find_best_frametype():
+    """Test that `find_best_frametype` works in general.
+    """
     assert io_datafind.find_best_frametype(
         'L1:LDAS-STRAIN',
         968654552,
@@ -344,56 +197,143 @@ def test_find_best_frametype(connection):
     ) == 'HW100916'
 
 
+@_gwosc_gwdatafind
+def test_find_best_frametype_with_gaps():
+    """Test that `find_best_frametype` works across gaps.
+
+    It tries to find something that covers at least some of the gap.
+    """
+    assert io_datafind.find_best_frametype(
+        "L1:GWOSC-4KHZ_R1_STRAIN",
+        1187733504,
+        1187733504 + 4097,  # one second too long
+    ) == "L1_GWOSC_O2_4KHZ_R1"
+
+
+@_gwosc_gwdatafind
+def test_find_best_frametype_with_gaps_multiple():
+    """Test that `find_best_frametype` works across gaps with multiple
+    channels.
+    """
+    assert io_datafind.find_best_frametype(
+        ("L1:GWOSC-4KHZ_R1_STRAIN", "L1:GWOSC-4KHZ_R1_DQMASK"),
+        1187733504,
+        1187733504 + 4097,  # one second too long
+    ) == {
+        "L1:GWOSC-4KHZ_R1_STRAIN": "L1_GWOSC_O2_4KHZ_R1",
+        "L1:GWOSC-4KHZ_R1_DQMASK": "L1_GWOSC_O2_4KHZ_R1",
+    }
+
+
 @skip_missing_dependency('LDAStools.frameCPP')
+@pytest_skip_network_error
 @pytest.mark.skipif(
-    'LIGO_DATAFIND_SERVER' not in os.environ,
-    reason='No LIGO datafind server configured on this host',
+    "GWDATAFIND_SERVER" not in os.environ,
+    reason='No GWDataFind server configured on this host',
 )
 @pytest.mark.parametrize('channel, expected', [
-    ('H1:GDS-CALIB_STRAIN', {'H1_HOFT_C00', 'H1_ER_C00_L1'}),
-    ('L1:IMC-PWR_IN_OUT_DQ', {'L1_R'}),
-    ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend', {'H1_T'}),
-    ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend', {'H1_M'}),
+    ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend', 'H1_T'),
+    ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend', 'H1_M'),
 ])
-def test_find_best_frametype_ligo(channel, expected):
+def test_find_best_frametype_ligo_trend(channel, expected):
+    """Test that `find_best_frametype` correctly matches trends.
+
+    Currently the LIGO trend data are only available from a restricted server,
+    so this test only works on LIGO computing resources.
+    """
+    # check that this server knows about trends and we can authenticate
     try:
-        ft = io_datafind.find_best_frametype(
-            channel,
-            1262276680,  # GW200105 -4s
-            1262276688,  # GW200105 +4s
+        assert expected in gwdatafind.find_types("H"), (
+            f"gwdatafind server doesn't know about {expected}"
         )
-    except ValueError as exc:  # pragma: no-cover
-        if str(exc).lower().startswith('cannot locate'):
-            pytest.skip(str(exc))
-        raise
-    except RuntimeError as exc:  # pragma: no-cover
-        if "credential" in str(exc):
-            pytest.skip(str(exc))
-        raise
-    assert ft in expected
+    except (
+        AssertionError,
+        RuntimeError,
+    ) as exc:
+        pytest.skip(str(exc))
+
+    assert io_datafind.find_best_frametype(
+        channel,
+        1262276680,  # GW200105 -4s
+        1262276688,  # GW200105 +4s
+    ) == expected
 
 
-def test_find_types(connection):
+# -- find_latest
+
+@_mock_gwdatafind
+def test_find_latest():
+    assert io_datafind.find_latest(
+        "HLV",
+        "HW100916",
+    ) == TEST_GWF_FILE
+
+
+@mock.patch(
+    f"{GWDATAFIND_PATH}.find_latest",
+    mock.MagicMock(side_effect=IndexError),
+)
+@_mock_gwdatafind
+def test_find_latest_error():
+    with pytest.raises(RuntimeError) as exc:
+        io_datafind.find_latest("X1", "MISSING")
+    assert str(exc.value) == "no files found for X-MISSING"
+
+
+# -- find_types
+
+@mock.patch.dict("os.environ", MOCK_ENV)
+def test_find_types():
+    """Check that `find_types` works with default arguments.
+    """
     types = ["a", "b", "c"]
-    connection.find_types.return_value = types
-    assert io_datafind.find_types(
-        "X",
-        connection=connection,
-    ) == types
+    with mock.patch(f"{GWDATAFIND_PATH}.find_types", return_value=types):
+        assert io_datafind.find_types(
+            "X",
+        ) == sorted(types)
 
 
-def test_find_types_priority(connection):
+@mock.patch.dict("os.environ", MOCK_ENV)
+def test_find_types_priority():
+    """Check that `find_types` prioritises trends properly.
+    """
     types = ["L1_R", "L1_T", "L1_M"]
-    connection.find_types.return_value = types
-    assert io_datafind.find_types(
-        "X",
-        trend="m-trend",
-        connection=connection,
-    ) == ["L1_M", "L1_R", "L1_T"]
+    with mock.patch(f"{GWDATAFIND_PATH}.find_types", return_value=types):
+        assert io_datafind.find_types(
+            "X",
+            trend="m-trend",
+        ) == ["L1_M", "L1_R", "L1_T"]
 
 
-def test_on_tape():
+# -- utilities --------------
+
+def test_on_tape_false():
+    """Check `on_tape` works with a normal file.
+    """
     assert io_datafind.on_tape(TEST_GWF_FILE) is False
+
+
+def test_on_tape_true():
+    """Test that `on_tape` returns `True` for a file with zero blocks.
+    """
+    with mock.patch("os.stat") as os_stat:
+        os_stat.return_value.st_blocks = 0
+        assert io_datafind.on_tape(TEST_GWF_FILE) is True
+
+
+def test_on_tape_windows():
+    """Test that `on_tape` always returns `False` on Windows.
+    """
+    class _Stat():
+        def __init__(self, path):
+            pass
+
+        @property
+        def st_blocks(self):
+            raise AttributeError("st_blocks")
+
+    with mock.patch("os.stat", _Stat):
+        assert io_datafind.on_tape(TEST_GWF_FILE) is False
 
 
 @pytest.mark.parametrize('ifo, ftype, trend, priority', [
@@ -408,4 +348,6 @@ def test_on_tape():
     ('X1', 'something else', None, 5),  # other
 ])
 def test_type_priority(ifo, ftype, trend, priority):
+    """Test that `_type_priority` works for various cases.
+    """
     assert io_datafind._type_priority(ifo, ftype, trend=trend)[0] == priority

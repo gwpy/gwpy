@@ -111,8 +111,8 @@ def test_get_channel_type():
     with pytest.raises(ValueError) as exc:
         io_gwf.get_channel_type('X1:NOT-IN_FRAME', TEST_GWF_FILE)
     assert str(exc.value) == (
-        'X1:NOT-IN_FRAME not found in table-of-contents for {gwf}'.format(
-            gwf=TEST_GWF_FILE))
+        f"'X1:NOT-IN_FRAME' not found in table-of-contents for {TEST_GWF_FILE}"
+    )
 
 
 @skip_missing_dependency('LDAStools.frameCPP')

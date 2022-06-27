@@ -32,8 +32,6 @@ Pip
 
     python -m pip install gwpy
 
-Supported python versions: 3.6+.
-
 
 ============
 Requirements
@@ -48,15 +46,15 @@ GWpy has the following strict requirements:
    ==================  ===========================
    Name                Constraints
    ==================  ===========================
-   |astropy|_          ``>=3.0.0``
+   |astropy|_          ``>=4.0``
    |dqsegdb2|_
-   |gwdatafind|_
+   |gwdatafind|_       ``>=1.1.0``
    |gwosc-mod|_        ``>=0.5.3``
-   |h5py|_             ``>=2.7.0``
+   |h5py|_             ``>=2.8.0``
    |ligo-segments|_    ``>=1.0.0``
    |ligotimegps|_      ``>=1.2.1``
    |matplotlib|_       ``>=3.1.0``
-   |numpy|_            ``>=1.12.0``
+   |numpy|_            ``>=1.16.0``
    |dateutil|_
    |scipy|_            ``>=1.2.0``
    |tqdm|_             ``>=4.10.0``

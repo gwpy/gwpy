@@ -20,6 +20,7 @@
 """
 
 import os.path
+import warnings
 from itertools import (chain, product)
 from unittest import mock
 
@@ -36,13 +37,14 @@ from ...frequencyseries import (FrequencySeries, SpectralVariance)
 from ...segments import (Segment, SegmentList, DataQualityFlag)
 from ...signal import filter_design
 from ...signal.window import planck
-from ...table import EventTable
 from ...spectrogram import Spectrogram
+from ...table import EventTable
 from ...testing import (mocks, utils)
 from ...testing.errors import (
     pytest_skip_cvmfs_read_error,
     pytest_skip_network_error,
 )
+from ...types import Index
 from ...time import LIGOTimeGPS
 from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
@@ -181,6 +183,20 @@ class TestTimeSeries(_TestTimeSeriesBase):
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={'exclude': ['name', 'channel', 'unit']})
 
+    def test_read_ascii_header(self, tmpdir):
+        """Check that ASCII files with headers are read without extra options
+
+        [regression: https://github.com/gwpy/gwpy/issues/1473]
+        """
+        txt = tmpdir / "text.txt"
+        txt.write_text(
+            "# time (s)\tdata (strain)\n0\t1\n1\t2\n2\t3",
+            encoding="utf-8",
+        )
+        data = self.TEST_CLASS.read(txt, format="txt")
+        utils.assert_array_equal(data.times, Index((0, 1, 2), unit="s"))
+        utils.assert_array_equal(data.value, (1, 2, 3))
+
     @pytest.mark.parametrize('api', GWF_APIS)
     def test_read_write_gwf(self, tmp_path, api):
         array = self.create(name='TEST')
@@ -272,7 +288,13 @@ class TestTimeSeries(_TestTimeSeriesBase):
             )
 
     @pytest.mark.parametrize('api', GWF_APIS)
-    def test_read_write_gwf_multiple(self, tmp_path, api):
+    @pytest.mark.parametrize('nproc', (1, 2))
+    def test_read_write_gwf_multiple(self, tmp_path, api, nproc):
+        """Check that each GWF API can read a series of files, either in
+        a single process, or in multiple processes
+
+        Regression: https://github.com/gwpy/gwpy/issues/1486
+        """
         fmt = "gwf" if api is None else "gwf." + api
         a1 = self.create(name='TEST')
         a2 = self.create(name='TEST', t0=a1.span[1], dt=a1.dx)
@@ -283,10 +305,19 @@ class TestTimeSeries(_TestTimeSeriesBase):
         a2.write(tmp2, format=fmt)
         cache = [tmp1, tmp2]
 
-        comb = self.TEST_CLASS.read(cache, 'TEST', format=fmt, nproc=2)
+        comb = self.TEST_CLASS.read(
+            cache,
+            'TEST',
+            start=a1.span[0],
+            end=a2.span[1],
+            format=fmt,
+            nproc=nproc,
+        )
         utils.assert_quantity_sub_equal(
-            comb, a1.append(a2, inplace=False),
-            exclude=['channel'])
+            comb,
+            a1.append(a2, inplace=False),
+            exclude=['channel'],
+        )
 
     @pytest.mark.parametrize('api', [
         pytest.param('framecpp', marks=SKIP_FRAMECPP),
@@ -316,13 +347,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @SKIP_LALFRAME
     def test_read_gwf_scaled_lalframe(self):
-        with pytest.warns(None) as record:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             data = self.TEST_CLASS.read(
                 utils.TEST_GWF_FILE,
                 "L1:LDAS-STRAIN",
                 format="gwf.lalframe",
             )
-        assert not record.list  # no warning
+
         with pytest.warns(UserWarning):
             data2 = self.TEST_CLASS.read(
                 utils.TEST_GWF_FILE,
@@ -609,7 +641,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @_gwosc_cvmfs
     @mock.patch.dict(
         "os.environ",
-        {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_find(self, gw150914_16384):
         ts = self.TEST_CLASS.find(
@@ -639,7 +671,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @_gwosc_cvmfs
     @mock.patch.dict(
         "os.environ",
-        {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_find_best_frametype_in_find(self, gw150914_16384):
         ts = self.TEST_CLASS.find(
@@ -661,7 +693,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     )
     @mock.patch.dict(
         "os.environ",
-        {"LIGO_DATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_get_datafind(self, gw150914_16384):
         try:
@@ -683,7 +715,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @mock.patch.dict(os.environ)
     def test_get_nds2(self, gw150914_16384):
         # get using NDS2 (if datafind could have been used to start with)
-        os.environ.pop('LIGO_DATAFIND_SERVER', None)
+        os.environ.pop('GWDATAFIND_SERVER', None)
         ts = self.TEST_CLASS.get(
             NDS2_GW150914_CHANNEL,
             *GWOSC_GW150914_SEGMENT,

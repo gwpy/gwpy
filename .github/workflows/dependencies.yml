@@ -40,11 +40,15 @@ jobs:
       matrix:
         include:
           - name: "Minimum"
-            python-version: "3.6"
+            python-version: "3.7"
             experimental: false
+            extras: "test"
+            pip-opts: "--upgrade-strategy=only-if-needed"
           - name: "Experimental"
             python-version: "3.9"
             experimental: true
+            extras: "test,dev"
+            pip-opts: "--upgrade --upgrade-strategy=eager --pre"
 
     runs-on: ubuntu-latest
 
@@ -59,35 +63,29 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Extract requirements
-      run: |
-        EXTRAS="'test'"
-        [[ ${{ matrix.experimental }} == true ]] && EXTRAS="${EXTRAS},'dev'"
-        python3 -c "
-        import configparser;
-        conf = configparser.ConfigParser();
-        conf.read('setup.cfg');
-        for opt in ('setup_requires', 'install_requires'):
-            print(conf['options'][opt].strip())
-        for extra in (${EXTRAS},):
-            print(conf['options.extras_require'][extra].strip())
-        " | sort -u > requirements.txt
-
-    - name: Install minimal dependencies
+    - name: Prepare minimal dependencies
       if: matrix.experimental != true
       run: |
-        sed -i 's/>=/==/' requirements.txt
-        python -m pip install -r requirements.txt --upgrade-strategy=only-if-needed
+        # replace the requirements as follows:
+        #    >=X.Y.Z ---> X.Y.Z  (exact pin to minimum)
+        #    ^X.Y    ---> ~X.Y    (pin to X.Y.*)
+        sed -i -E \
+            -e 's/>=/==/' \
+            -e 's/\^/~/' \
+            pyproject.toml \
+            setup.cfg \
+        ;
+        # undo the change to python_requires
+        sed -i -E \
+            -e 's/python_requires = ==/python_requires = >=/' \
+            setup.cfg
 
-    - name: Install experimental dependencies
+    - name: Install system packages for experimental dependencies
       if: matrix.experimental == true
-      run: |
-        sudo apt-get -y -q install libkrb5-dev
-        python -m pip install -U pip wheel
-        python -m pip install -r requirements.txt --upgrade --upgrade-strategy=eager --pre
+      run: sudo apt-get -y -q install libkrb5-dev
 
-    - name: Install GWpy
-      run: python -m pip install . --no-build-isolation -vv
+    - name: Install GWpy and dependencies
+      run: python -m pip install .[${{ matrix.extras }}] ${{ matrix.pip-opts }}
 
     - name: Package list
       run: python -m pip list installed

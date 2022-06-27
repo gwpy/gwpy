@@ -38,8 +38,8 @@ SEGMENTS = SegmentList(map(Segment, [
     (1, 2),
     (4, 5),
 ]))
-CACHE = [os.path.join('tmp', 'A-B-%d-%d.tmp' % (seg[0], seg[1] - seg[0])) for
-         seg in SEGMENTS]
+CACHE = [os.path.join("tmp", f"A-B-{seg[0]}-{seg[1]-seg[0]}.tmp")
+         for seg in SEGMENTS]
 
 
 # -- fixtures -----------------------------------------------------------------
@@ -60,11 +60,11 @@ def segments():
     (None, CACHE[0]),
     pytest.param(
         "lal",
-        "A B {0[0]} {1} {2}".format(SEGMENTS[0], abs(SEGMENTS[0]), CACHE[0]),
+        f"A B {SEGMENTS[0][0]} {abs(SEGMENTS[0])} {CACHE[0]}",
         id="lal"),
     pytest.param(
         "ffl",
-        "{0} {1[0]} {2} 0 0".format(CACHE[0], SEGMENTS[0], abs(SEGMENTS[0])),
+        f"{CACHE[0]} {SEGMENTS[0][0]} {abs(SEGMENTS[0])} 0 0",
         id="ffl"),
 ])
 def test_read_write_cache(cache, tmp_path, format, entry1):
@@ -104,10 +104,8 @@ def test_write_cache_cacheentry(cache, tmp_path):
 
     # check first line looks like a LAL-format cache entry
     with tmp.open("r") as tmpf:
-        assert tmpf.readline().strip() == "A B {0[0]} {1} {2}".format(
-            SEGMENTS[0],
-            abs(SEGMENTS[0]),
-            CACHE[0],
+        assert tmpf.readline().strip() == (
+            f"A B {SEGMENTS[0][0]} {abs(SEGMENTS[0])} {CACHE[0]}"
         )
 
     # read from file name
@@ -228,8 +226,9 @@ def test_file_segment():
     # test errors
     with pytest.raises(ValueError) as exc:
         io_cache.file_segment('blah')
-    assert str(exc.value) == ('Failed to parse \'blah\' as '
-                              'LIGO-T050017-compatible filename')
+    assert str(exc.value) == (
+        "Failed to parse 'blah' as a LIGO-T050017-compatible filename"
+    )
 
 
 def test_flatten(cache):

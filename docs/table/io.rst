@@ -127,7 +127,7 @@ The full list of available columns can be queried as follows:
                    chirp_mass_lower float64                         chirp_mass_lower
    ...
 
-.. adminition:: GWOSC catalogues
+.. admonition:: GWOSC catalogues
 
    For more details on the GWOSC catalogues, see https://www.gw-openscience.org/catalog/.
 

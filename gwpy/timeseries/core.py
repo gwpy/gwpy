@@ -38,7 +38,6 @@ This module defines the following classes
 user-facing objects.**
 """
 
-import os
 import sys
 import warnings
 from collections import OrderedDict
@@ -1346,10 +1345,7 @@ class TimeSeriesBaseDict(OrderedDict):
                 nds_kw[key] = val
 
         # try and find from frames
-        if not nds_kw and (
-                os.getenv('LIGO_DATAFIND_SERVER')
-                or os.getenv('VIRGODATA')
-        ):
+        if not nds_kw:
             if verbose:
                 gprint("Attempting to access data from frames...")
             try:
