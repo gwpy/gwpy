@@ -29,7 +29,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 def test_canonical_name():
-    assert window.canonical_name('Hanning') == 'hann'
+    assert window.canonical_name('Han') == 'hann'
     with pytest.raises(ValueError) as exc:
         window.canonical_name('blah')
     assert str(exc.value) == ('no window function in scipy.signal '
