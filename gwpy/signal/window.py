@@ -54,7 +54,7 @@ def canonical_name(name):
     Examples
     --------
     >>> from gwpy.signal.window import canonical_name
-    >>> canonical_name('hanning')
+    >>> canonical_name('hann')
     'hann'
     >>> canonical_name('ksr')
     'kaiser'

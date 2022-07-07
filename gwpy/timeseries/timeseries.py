@@ -1655,7 +1655,7 @@ class TimeSeries(TimeSeriesBase):
         return out
 
     def whiten(self, fftlength=None, overlap=0, method=DEFAULT_FFT_METHOD,
-               window='hanning', detrend='constant', asd=None,
+               window='hann', detrend='constant', asd=None,
                fduration=2, highpass=None, **kwargs):
         """Whiten this `TimeSeries` using inverse spectrum truncation
 
@@ -1674,7 +1674,7 @@ class TimeSeries(TimeSeriesBase):
 
         window : `str`, `numpy.ndarray`, optional
             window function to apply to timeseries prior to FFT,
-            default: ``'hanning'``
+            default: ``'hann'``
             see :func:`scipy.signal.get_window` for details on acceptable
             formats
 
@@ -1837,7 +1837,7 @@ class TimeSeries(TimeSeriesBase):
         # return the self-gated timeseries
         return self.mask(deadtime=deadtime, const=0, tpad=tpad)
 
-    def convolve(self, fir, window='hanning'):
+    def convolve(self, fir, window='hann'):
         """Convolve this `TimeSeries` with an FIR filter using the
            overlap-save method
 
@@ -1847,7 +1847,7 @@ class TimeSeries(TimeSeriesBase):
             the time domain filter to convolve with
 
         window : `str`, optional
-            window function to apply to boundaries, default: ``'hanning'``
+            window function to apply to boundaries, default: ``'hann'``
             see :func:`scipy.signal.get_window` for details on acceptable
             formats
 
@@ -1903,7 +1903,7 @@ class TimeSeries(TimeSeriesBase):
         out.__array_finalize__(self)
         return out
 
-    def correlate(self, mfilter, window='hanning', detrend='linear',
+    def correlate(self, mfilter, window='hann', detrend='linear',
                   whiten=False, wduration=2, highpass=None, **asd_kw):
         """Cross-correlate this `TimeSeries` with another signal
 
@@ -1914,7 +1914,7 @@ class TimeSeries(TimeSeriesBase):
 
         window : `str`, optional
             window function to apply to timeseries prior to FFT,
-            default: ``'hanning'``
+            default: ``'hann'``
             see :func:`scipy.signal.get_window` for details on acceptable
             formats
 

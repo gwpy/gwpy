@@ -45,7 +45,7 @@ hoft = TimeSeries.fetch_open_data('H1', 1187007040, 1187009088)
 # a number of ASDs, using the :meth:`~gwpy.timeseries.TimeSeries.spectrogram2`
 # method:
 
-sg = hoft.spectrogram2(fftlength=4, overlap=2, window='hanning') ** (1/2.)
+sg = hoft.spectrogram2(fftlength=4, overlap=2, window='hann') ** (1/2.)
 
 # From this we can trivially extract the median, 5th and 95th percentiles:
 
