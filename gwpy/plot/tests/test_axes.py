@@ -262,9 +262,9 @@ class TestAxes(AxesTestBase):
             ax.tile(x, y, w, h, anchor='blah')
 
     @pytest.mark.parametrize('cb_kw', [
-        {'use_axesgrid': True, 'fraction': 0.},
-        {'use_axesgrid': True, 'fraction': 0.15},
-        {'use_axesgrid': False},
+        {},  # our default
+        {'use_axesgrid': True, 'fraction': 0.15},  # match matplotlib behaviour
+        {'use_axesgrid': False, 'fraction': 0.15},  # matplotlib default
     ])
     def test_colorbar(self, ax, cb_kw):
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
