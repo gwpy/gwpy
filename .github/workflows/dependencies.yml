@@ -45,7 +45,7 @@ jobs:
             extras: "test"
             pip-opts: "--upgrade-strategy=only-if-needed"
           - name: "Experimental"
-            python-version: "3.9"
+            python-version: "3.x"
             experimental: true
             extras: "test,dev"
             pip-opts: "--upgrade --upgrade-strategy=eager --pre"
