@@ -27,7 +27,7 @@ x-axis, y-axis, and optionally colouring:
    >>> ax.set_epoch(968654552)
    >>> ax.set_yscale('log')
    >>> ax.set_ylabel('Frequency [Hz]')
-   >>> plot.add_colorbar(clim=[1, 10], cmap='YlGnBu', log=True, label='Signal-to-noise ratio (SNR)')
+   >>> ax.colorbar(clim=[1, 10], cmap='YlGnBu', norm='log', label='Signal-to-noise ratio (SNR)')
 
 .. _gwpy-table-plot-tiles:
 
@@ -48,7 +48,6 @@ These tiles can be plotted in a similar manner to simple triggers.
    >>> ax.set_epoch(968654552)
    >>> ax.set_yscale('log')
    >>> ax.set_ylabel('Frequency [Hz]')
-   >>> plot.add_colorbar(clim=[1, 10], cmap='YlGnBu', log=True, label='Signal-to-noise ratio (SNR)')
-
+   >>> ax.colorbar(clim=[1, 10], cmap='YlGnBu', norm='log', label='Signal-to-noise ratio (SNR)')
 
 These code snippets are part of the example :ref:`gwpy-example-table-tiles`.
