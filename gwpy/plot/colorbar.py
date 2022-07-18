@@ -34,8 +34,55 @@ LOC_CODES = Legend.codes
 
 # -- custom colorbar generation -----------------------------------------------
 
-def process_colorbar_kwargs(figure, mappable=None, ax=None, use_axesgrid=True,
-                            **kwargs):
+def process_colorbar_kwargs(
+    figure,
+    mappable=None,
+    ax=None,
+    cax=None,
+    use_axesgrid=True,
+    **kwargs,
+):
+    """Internal function to configure the keyword arguments for colorbars.
+
+    The main purpose of this function is to replace the default matplotlib
+    behaviour (resizing the 'parent' axes to make space for the colorbar
+    axes) with our default or creating a new axes alongside the parent
+    axes without resizing.
+
+    Parameters
+    ----------
+    figure : `matplotlib.figure.Figure`
+        The figure on which to draw the new colorbar axes.
+
+    mappable : matplotlib data collection
+        Collection against which to map the colouring, default will
+        be the last added mappable artist (collection or image)
+
+    ax : `matplotlib.axes.Axes`
+        The `Axes` against which to anchor the colorbar Axes.
+
+    cax : `matplotlib.axes.Axes`
+        The `Axes` on which to draw the colorbar.
+
+    use_axesgrid : `boolean`
+        If `True`, use `mpl_toolkits.axes_grid1` to generate the colorbar
+        Axes without resizing the parent Axes.
+        If `False`, use the default Matplotlib behaviour.
+        Only used if `cax=None` is given.
+
+    **kwargs
+        Other keyword arguments to pass to
+        :meth:`matplotlib.figure.Figure.colorbar`
+
+    Returns
+    -------
+    mappable
+        The Collection against which to map the colouring.
+
+    kwargs
+        A dict of keyword arguments to pass to
+        :meth:`matplotlib.figure.Figure.colorbar`.
+    """
     # get mappable and axes objects
     if mappable is None and ax is None:
         mappable = find_mappable(*figure.axes)
@@ -58,11 +105,11 @@ def process_colorbar_kwargs(figure, mappable=None, ax=None, use_axesgrid=True,
 
     # -- create axes for colorbar (if required)
 
-    cax = kwargs.pop('cax', None)
     if cax is not None:  # cax was given, we don't need fraction
         kwargs.pop("fraction", None)
-    elif use_axesgrid:
+    elif use_axesgrid:  # use axesgrid to generate Axes
         cax, kwargs = make_axes_axesgrid(ax, **kwargs)
+    # else: let matplotlib generate the Axes using its own default
 
     # pack kwargs
     kwargs.update(ax=ax, cax=cax)

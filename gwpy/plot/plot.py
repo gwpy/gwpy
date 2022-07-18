@@ -328,12 +328,22 @@ class Plot(figure.Figure):
 
     # -- colour bars ----------------------------
 
-    def colorbar(self, mappable=None, cax=None, ax=None, fraction=0.,
-                 emit=True, **kwargs):
-        """Add a colorbar to the current `Plot`
+    def colorbar(
+        self,
+        mappable=None,
+        cax=None,
+        ax=None,
+        fraction=0.,
+        use_axesgrid=True,
+        emit=True,
+        **kwargs,
+    ):
+        """Add a colorbar to the current `Plot`.
 
-        A colorbar must be associated with an `Axes` on this `Plot`,
-        and an existing mappable element (e.g. an image).
+        This method differs from the default
+        :meth:`matplotlib.figure.Figure.colorbar` in that it doesn't
+        resize the parent `Axes` to accommodate the colorbar, but rather
+        draws a new Axes alongside it.
 
         Parameters
         ----------
@@ -347,8 +357,16 @@ class Plot(figure.Figure):
             Axes relative to which to position colorbar
 
         fraction : `float`, optional
-            Fraction of original axes to use for colorbar, give `fraction=0`
-            to not resize the original axes at all.
+            Fraction of original axes to use for colorbar.
+            The default (``fraction=0``) is to not resize the
+            original axes at all.
+
+        use_axesgrid : `bool`
+            Use :mod:`mpl_toolkits.axes_grid1` to generate the
+            colorbar axes (default: `True`).
+            This takes precedence over the ``use_gridspec``
+            keyword argument from the upstream
+            :meth:`~matplotlib.figure.Figure.colorbar` method.
 
         emit : `bool`, optional
             If `True` update all mappables on `Axes` to match the same
@@ -362,6 +380,11 @@ class Plot(figure.Figure):
         -------
         cbar : `~matplotlib.colorbar.Colorbar`
             the newly added `Colorbar`
+
+        Notes
+        -----
+        To revert to the default matplotlib behaviour, pass
+        ``use_axesgrid=False, fraction=0.15``.
 
         See also
         --------
