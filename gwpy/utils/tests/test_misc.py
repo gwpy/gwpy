@@ -42,7 +42,8 @@ def test_gprint(capsys):
 def test_null_context():
     """Test for :func:`gwpy.utils.misc.null_context`
     """
-    ctx = utils_misc.null_context()
+    with pytest.warns(DeprecationWarning):
+        ctx = utils_misc.null_context()
     with ctx:
         print('this should work')
 
