@@ -181,7 +181,7 @@ def truncate_transfer(transfer, ncorner=None):
     return out
 
 
-def truncate_impulse(impulse, ntaps, window='hanning'):
+def truncate_impulse(impulse, ntaps, window='hann'):
     """Smoothly truncate a time domain impulse response
 
     Parameters
@@ -193,7 +193,7 @@ def truncate_impulse(impulse, ntaps, window='hanning'):
         number of taps in the final filter
 
     window : `str`, `numpy.ndarray`, optional
-        window function to truncate with, default: ``'hanning'``
+        window function to truncate with, default: ``'hann'``
         see :func:`scipy.signal.get_window` for details on acceptable formats
 
     Returns
@@ -211,7 +211,7 @@ def truncate_impulse(impulse, ntaps, window='hanning'):
     return out
 
 
-def fir_from_transfer(transfer, ntaps, window='hanning', ncorner=None):
+def fir_from_transfer(transfer, ntaps, window='hann', ncorner=None):
     """Design a Type II FIR filter given an arbitrary transfer function
 
     Parameters
@@ -223,7 +223,7 @@ def fir_from_transfer(transfer, ntaps, window='hanning', ncorner=None):
         number of taps in the final filter, must be an even number
 
     window : `str`, `numpy.ndarray`, optional
-        window function to truncate with, default: ``'hanning'``
+        window function to truncate with, default: ``'hann'``
         see :func:`scipy.signal.get_window` for details on acceptable formats
 
     ncorner : `int`, optional
