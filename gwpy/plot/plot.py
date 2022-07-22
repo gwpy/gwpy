@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2022)
 #
 # This file is part of GWpy.
 #
@@ -21,7 +22,6 @@
 
 import itertools
 import importlib
-import warnings
 from collections.abc import (KeysView, ValuesView)
 from itertools import zip_longest
 
@@ -427,15 +427,6 @@ class Plot(figure.Figure):
 
         return cbar
 
-    def add_colorbar(self, *args, **kwargs):
-        """DEPRECATED, use `Plot.colorbar` instead
-        """
-        warnings.warn(
-            "{0}.add_colorbar was renamed {0}.colorbar, this warnings will "
-            "result in an error in the future".format(type(self).__name__),
-            DeprecationWarning)
-        return self.colorbar(*args, **kwargs)
-
     # -- extra methods --------------------------
 
     def add_segments_bar(self, segments, ax=None, height=0.14, pad=0.1,
@@ -522,14 +513,6 @@ class Plot(figure.Figure):
         segax.autoscale(axis='y', tight=True)
 
         return segax
-
-    def add_state_segments(self, *args, **kwargs):
-        """DEPRECATED: use :meth:`Plot.add_segments_bar`
-        """
-        warnings.warn('add_state_segments() was renamed add_segments_bar(), '
-                      'this warning will result in an error in the future',
-                      DeprecationWarning)
-        return self.add_segments_bar(*args, **kwargs)
 
 
 # -- utilities ----------------------------------------------------------------

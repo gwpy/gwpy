@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (C) Cardiff University (2018-2022)
 #
 # This file is part of GWpy.
 #
@@ -109,14 +109,6 @@ class TestPlot(FigureTestBase):
         assert cbar.mappable is image
         assert cbar.mappable.get_clim() == (2., 4.)
 
-    def test_add_colorbar(self, fig):
-        ax = fig.gca()
-        array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
-        image = ax.imshow(array)
-        with pytest.deprecated_call():
-            cbar = fig.add_colorbar(vmin=2, vmax=4, fraction=0.)
-        assert cbar.mappable is image
-
     def test_add_segments_bar(self, fig):
         ax = fig.add_subplot(xscale='auto-gps', epoch=150)
         ax.set_xlim(100, 200)
@@ -135,9 +127,3 @@ class TestPlot(FigureTestBase):
         # check errors
         with pytest.raises(ValueError):
             fig.add_segments_bar(segs, location='left')
-
-    def test_add_state_segments(self, fig):
-        fig.add_subplot(xscale='auto-gps')
-        segs = SegmentList([Segment(10, 110), Segment(150, 400)])
-        with pytest.deprecated_call():
-            fig.add_state_segments(segs)
