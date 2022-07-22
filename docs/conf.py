@@ -17,12 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import inspect
 import os.path
 import re
+import shlex
 import shutil
-import subprocess
+import sys
 import warnings
 from configparser import ConfigParser
 from pathlib import Path
@@ -123,36 +123,54 @@ templates_path = [
 # epilog
 rst_epilog = "\n.. include:: /references.rst"
 
-# formatting
-#pygments_style = "monokai"
-
 # -- HTML formatting --------
 
-html_theme = "sphinx_material"
+extensions.append("sphinx_immaterial")
+html_theme = "sphinx_immaterial"
 html_theme_options = {
-    "css_minify": True,
-    "globaltoc_collapse": False,
-    "globaltoc_depth": 1,
-    "globaltoc_includehidden": False,
-    "html_minify": False,
-    "master_doc": False,
-    "nav_links": [],
-    "nav_title": "GWpy {}".format(version),
+    # metadata
     "repo_name": "GWpy",
     "repo_type": "github",
     "repo_url": "https://github.com/gwpy/gwpy",
-    "theme_color": "333",
-    "color_primary": "blue-grey",
-    "color_accent": "deep-orange",
+    "edit_uri": "blob/main/docs",
+    "globaltoc_collapse": True,
+    # features
+    "features": [
+        "navigation.sections",
+    ],
+    # colouring and light/dark mode
+    "palette": [
+        {
+            "media": "(prefers-color-scheme: light)",
+            "scheme": "default",
+            "primary": "blue-grey",
+            "accent": "deep-orange",
+            "toggle": {
+                "icon": "material/eye-outline",
+                "name": "Switch to dark mode",
+            },
+        },
+        {
+            "media": "(prefers-color-scheme: dark)",
+            "scheme": "slate",
+            "primary": "amber",
+            "accent": "deep-orange",
+            "toggle": {
+                "icon": "material/eye",
+                "name": "Switch to light mode",
+            },
+        },
+    ],
+    # table of contents
+    "toc_title_is_page_title": True,
+    # version dropdown
     "version_dropdown": True,
     "version_json": "../versions.json",
 }
+html_static_path = [STATIC_DIRNAME]
 html_favicon = str(Path(STATIC_DIRNAME) / "favicon.png")
 html_logo = str(Path(STATIC_DIRNAME) / "favicon.png")
-html_sidebars = {
-    "**": ["localtoc.html", "globaltoc.html", "searchbox.html"],
-}
-html_static_path = [STATIC_DIRNAME]
+html_css_files = ["css/gwpy-sphinx.css"]
 
 # -- extensions config ------
 
@@ -315,9 +333,14 @@ ${description}
 
    $$ ${command}
 
-.. image:: ${png}
+.. plot::
    :align: center
    :alt: ${title}
+   :context: reset
+   :format: python
+   :include-source: false
+
+   ${code}
 """.strip())
 
 
@@ -331,49 +354,48 @@ def _new_or_different(content, target):
         return True
 
 
-def _build_cli_example(config, section, outdir, logger):
+def _render_cli_example(config, section, outdir, logger):
     """Render a :mod:`gwpy.cli` example as RST to be processed by Sphinx.
     """
-    raw = config.get(section, 'command')
+    raw = config.get(section, 'command') + " --interactive"
     title = config.get(
         section,
         'title',
         fallback=' '.join(map(str.title, section.split('-'))),
     )
     desc = config.get(section, 'description', fallback='')
-    outf = outdir / "{}.png".format(section)
 
-    # build command-line strings for display and subprocess call
-    cmd = 'gwpy-plot {0}'.format(raw)  # exclude --out for display
-    cmds = (cmd + ' --interactive').replace(  # split onto multiple lines
+    # build command-line string for display
+    cmdstr = f"gwpy-plot {raw}".replace(  # split onto multiple lines
         ' --',
         ' \\\n       --',
     )
-    cmdtorun = "{} -m gwpy.cli.gwpy_plot {} --out {}".format(
-        sys.executable,
-        raw,
-        outf,
-    )
+
+    # build code to generate the plot when sphinx runs
+    args = ", ".join(map(repr, shlex.split(raw)))
+    code = "\n   ".join([
+        "from gwpy.cli.gwpy_plot import main as gwpy_plot",
+        f"gwpy_plot([{args}])",
+    ])
 
     rst = CLI_TEMPLATE.substitute(
         title=title,
         titleunderline='#' * len(title),
         description=desc,
         tag=section,
-        png=outf.relative_to(outdir),
-        command=cmds,
+        command=cmdstr,
+        code=code,
     )
 
     # only write RST if new or changed
-    rstfile = outf.with_suffix(".rst")
-    if _new_or_different(rst, rstfile) or not outf.is_file():
+    rstfile = outdir / f"{section}.rst"
+    if _new_or_different(rst, rstfile):
         rstfile.write_text(rst)
-        logger.debug("[cli] wrote {}".format(rstfile))
-        return rstfile, cmdtorun
-    return rstfile, None
+        logger.info("[cli] wrote {}".format(rstfile))
+    return rstfile
 
 
-def build_cli_examples(_):
+def render_cli_examples(_):
     """Render all :mod:`gwpy.cli` examples as RST to be processed by Sphinx.
     """
     logger = logging.getLogger('cli-examples')
@@ -388,14 +410,10 @@ def build_cli_examples(_):
     config = ConfigParser()
     config.read(exini)
 
+    # render examples
     rsts = []
     for sect in config.sections():
-        rst, cmd = _build_cli_example(config, sect, exdir, logger)
-        if cmd:
-            logger.info('[cli] running example {0!r}'.format(sect))
-            logger.debug('[cli] $ {0}'.format(cmd))
-            subprocess.check_call(cmd, shell=True)
-            logger.debug('[cli] wrote {0}'.format(cmd.split()[-1]))
+        rst = _render_cli_example(config, sect, exdir, logger)
         # record the path relative to the /cli/ directory
         # because that's where the toctree is included
         rsts.append(rst.relative_to(clidir))
@@ -408,7 +426,7 @@ def build_cli_examples(_):
 
 # -- examples
 
-def _build_example(example, outdir, logger):
+def _render_example(example, outdir, logger):
     # render the example
     rst = ex2rst.ex2rst(example)
 
@@ -420,7 +438,7 @@ def _build_example(example, outdir, logger):
         logger.debug('[examples] wrote {0}'.format(target))
 
 
-def build_examples(_):
+def render_examples(_):
     """Render all examples as RST to be processed by Sphinx.
     """
     logger = logging.getLogger("examples")
@@ -442,8 +460,7 @@ def build_examples(_):
         logger.debug('[examples] copied {0}'.format(index))
         # render python script as RST
         for expy in (srcdir / exdir).glob("*.py"):
-            target = subdir / expy.with_suffix(".rst").name
-            _build_example(expy, subdir, logger)
+            _render_example(expy, subdir, logger)
         logger.info('[examples] converted all in examples/{0}'.format(exdir))
 
 
@@ -460,28 +477,9 @@ def write_citing_rst(app):
     logger.info('[zenodo] wrote {0}'.format(citing))
 
 
-# -- extra content ----------
-
-def setup_static_content(app):
-    """Configure static content for Sphinx
-    """
-    staticdir = SPHINX_DIR / STATIC_DIRNAME
-
-    # add stylesheets
-    cssdir = staticdir / "css"
-    for cssf in cssdir.glob("*.css"):
-        app.add_css_file(str(cssf.relative_to(staticdir).as_posix()))
-
-    # add custom javascript
-    jsdir = staticdir / "js"
-    for jsf in jsdir.glob("*.js"):
-        app.add_js_file(str(jsf.relative_to(staticdir).as_posix()))
-
-
 # -- setup sphinx -----------
 
 def setup(app):
-    setup_static_content(app)
     app.connect('builder-inited', write_citing_rst)
-    app.connect('builder-inited', build_examples)
-    app.connect('builder-inited', build_cli_examples)
+    app.connect('builder-inited', render_examples)
+    app.connect('builder-inited', render_cli_examples)

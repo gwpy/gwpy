@@ -1,4 +1,5 @@
-/* Copyright (C) Duncan Macleod (2014-2020)
+/* Copyright (C) Louisiana State University (2014-2017)
+ *               Cardiff University (2017-2022)
  *
  * This file is part of GWpy.
  *
@@ -20,73 +21,20 @@
  * This file contains sphinx-specific extensions to the core GWpy CSS
  */
 
-/* remove top-margin from h1 */
-.md-typeset h1 {
-		margin: 0;
-}
-
-/* insert top padding for captions in left bar */
-.caption {
-		padding: 1em 0 .1em 0;
-}
-
-/* formatting for classes and functions */
-.sig {
-		font-family: "Roboto Mono", "Courier New", Courier, monospace;
-}
-.sig-name,
-.sig-prename {
-		font-weight: bold;
-}
-.sig-param {
-		font-style: normal;
-}
-.field-list p {
-		margin: 1em 0 0;
-}
+/* change font for parameter names for callables */
 .field-list p strong {
 		font-family: "Roboto Mono", "Courier New", Courier, monospace;
 }
-.field-list blockquote {
-		margin: 0;
+
+/* remove left border from parameter descriptions for callables
+ * and indent more */
+[dir=ltr] .md-typeset blockquote {
 		border-left: 0;
-}
-dl.field-list > dt {
-		padding-left: 0;
-}
-.md-typeset blockquote {
 		padding-left: 1em;
 }
-dl .attribute,
-dl .method {
-		border-top: 1px solid #ecf0f1;
-		padding-top: 1em;
-}
 
-/* formatting for tables */
-.longtable tr,
-.longtable tr:first-child {
-		border: solid;
-		border-width: 1px 0;
-		border-color: #ecf0f1;
-}
-.longtable tr td {
-		padding: 8px;
-}
-.longtable tr td:first-child {
-		width: auto;
-}
-
-/* formatting for code blocks */
+/* remove padding for code blocks forced in by sphinx-panels */
 .literal-block-wrapper.container {
-		margin: 1em 0;
 		padding-left: 0;
 		padding-right: 0;
-}
-.literal-block-wrapper .highlight {
-		margin: 0;
-}
-.code-block-caption {
-		font-size: .64rem;
-		text-align: -webkit-center;
 }
