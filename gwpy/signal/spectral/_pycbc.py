@@ -21,8 +21,9 @@
 This module is deprecated and will be removed in a future release.
 """
 
+from contextlib import nullcontext
+
 from ...frequencyseries import FrequencySeries
-from ...utils.misc import null_context
 from ._utils import scale_timeseries_unit
 from . import _registry as fft_registry
 
@@ -65,7 +66,7 @@ def welch(timeseries, segmentlength, noverlap=None, scheme=None, **kwargs):
 
     # get scheme
     if scheme is None:
-        scheme = null_context()
+        scheme = nullcontext()
 
     # generate pycbc FrequencySeries
     with scheme:
