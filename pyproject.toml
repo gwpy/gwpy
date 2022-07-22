@@ -162,6 +162,8 @@ filterwarnings = [
   # ignore warnings from distutils.version
   "ignore:distutils Version::matplotlib",
   "ignore:distutils Version::distutils",  # actually setuptools._distutils
+  # https://git.ligo.org/gwinc/inspiral-range/-/issues/12
+  "ignore:Please use `p_roots`::inspiral_range..*",
 ]
 xfail_strict = true
 
