@@ -88,8 +88,10 @@ class SegmentAxes(Axes):
             return self.plot_segmentlistdict
         if isinstance(obj, ligo.segments.segmentlist):
             return self.plot_segmentlist
-        raise TypeError("no known {0}.plot_xxx method for {1}".format(
-            type(self).__name__, type(obj).__name__))
+        raise TypeError(
+            f"no known {type(self).__name__}.plot_xxx method "
+            f"for {type(obj).__name__}",
+        )
 
     def plot(self, *args, **kwargs):
         """Plot data onto these axes

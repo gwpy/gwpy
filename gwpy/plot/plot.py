@@ -78,8 +78,10 @@ def get_backend_mod(name=None):
     """
     if name is None:
         name = get_backend()
-    backend_name = (name[9:] if name.startswith("module://") else
-                    "matplotlib.backends.backend_{}".format(name.lower()))
+    backend_name = (
+        name[9:] if name.startswith("module://")
+        else f"matplotlib.backends.backend_{name.lower()}"
+    )
     return importlib.import_module(backend_name)
 
 
@@ -164,9 +166,10 @@ class Plot(figure.Figure):
         nrows, ncols = geometry
         if axes_groups and nrows * ncols != len(axes_groups):
             # mismatching data and geometry
-            raise ValueError("cannot group data into {0} axes with a "
-                             "{1}x{2} grid".format(len(axes_groups), nrows,
-                                                   ncols))
+            raise ValueError(
+                f"cannot group data into {len(axes_groups)} with "
+                f"a {nrows}x{ncols} grid"
+            )
 
         # create grid spec
         gs = GridSpec(nrows, ncols)
@@ -179,8 +182,10 @@ class Plot(figure.Figure):
         for axis in ('x', 'y'):
             unit = _common_axis_unit(flatdata, axis=axis)
             if unit:
-                axes_kw.setdefault('{}label'.format(axis),
-                                   unit.to_string('latex_inline_dimensional'))
+                axes_kw.setdefault(
+                    f"{axis}label",
+                    unit.to_string('latex_inline_dimensional'),
+                )
 
         # create axes for each group and draw each data object
         for group, (row, col) in zip_longest(
@@ -222,11 +227,14 @@ class Plot(figure.Figure):
         # -- only if the user hasn't customised the subplot params
         figsize = kwargs.get('figsize') or rcParams['figure.figsize']
         subplotpars = get_subplot_params(figsize)
-        use_subplotpars = 'subplotpars' not in kwargs and all([
-            rcParams['figure.subplot.%s' % pos]
-            == MPL_RCPARAMS['figure.subplot.%s' % pos]
-            for pos in ('left', 'bottom', 'right', 'top')
-        ])
+        use_subplotpars = (
+            'subplotpars' not in kwargs
+            and all([
+                rcParams[f"figure.subplot.{pos}"]
+                == MPL_RCPARAMS[f"figure.subplot.{pos}"]
+                for pos in ('left', 'bottom', 'right', 'top')
+            ])
+        )
         if use_subplotpars:
             kwargs['subplotpars'] = subplotpars
 
@@ -602,7 +610,7 @@ def _group_axes_data(inputs, separate=None, flat=False):
 
 def _common_axis_unit(data, axis='x'):
     units = set()
-    uname = '{}unit'.format(axis)
+    uname = f"{axis}unit"
     for x in data:
         units.add(getattr(x, uname, None))
     if len(units) == 1:

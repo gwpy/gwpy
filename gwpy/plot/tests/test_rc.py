@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (C) Cardiff University (2018-2021)
 #
 # This file is part of GWpy.
 #
@@ -26,8 +26,10 @@ from matplotlib import rcParams
 from .. import rc as plot_rc
 
 
-DEFAULT_LRTB = [rcParams['figure.subplot.{0}'.format(x)] for
-                x in ('left', 'right', 'bottom', 'top')]
+DEFAULT_LRTB = [
+    rcParams[f"figure.subplot.{x}"]
+    for x in ('left', 'right', 'bottom', 'top')
+]
 
 
 @pytest.mark.parametrize('figsize, lrbt', [

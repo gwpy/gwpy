@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -32,8 +33,8 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 def _math(s):
     if rcParams["text.usetex"]:
-        return "${}$".format(s)
-    return r"$\mathdefault{%s}$" % s
+        return f"${s}$"
+    return fr"$\mathdefault{{{s}}}$"
 
 
 def _render_simple(values, ndec=2, thresh=100001):
@@ -62,7 +63,7 @@ class LogFormatter(mticker.LogFormatterMathtext):
         self.set_locs(values)
 
         # remove floating-point precision errors
-        values2 = numpy.asanyarray([float("%.12g" % x) for x in values])
+        values2 = numpy.asanyarray([float(f"{x:.12g}") for x in values])
 
         # if can render using just "%s" do it
         if _render_simple(values2):
@@ -126,7 +127,7 @@ class LogFormatter(mticker.LogFormatterMathtext):
 
         # enable custom format
         if fmt:
-            return _math("{}{}".format(sign, fmt % x))
+            return _math(sign + fmt % x)
 
         return super().__call__(x, pos=pos)
 

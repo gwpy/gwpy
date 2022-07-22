@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2021)
 #
 # This file is part of GWpy.
 #
@@ -53,8 +54,9 @@ HAS_TEX = has_tex()
 # -- tex formatting -----------------------------------------------------------
 
 LATEX_CONTROL_CHARS = ["%", "\\", "_", "~", "&", "#"]
-re_latex_control = re.compile(r'(?<!\\)[%s](?!.*{)'
-                              % ''.join(LATEX_CONTROL_CHARS))
+re_latex_control = re.compile(
+    rf"(?<!\\)[{''.join(LATEX_CONTROL_CHARS)}](?!.*{{)",
+)
 
 
 def float_to_latex(x, format="%.2g"):  # pylint: disable=redefined-builtin
@@ -100,8 +102,8 @@ def float_to_latex(x, format="%.2g"):  # pylint: disable=redefined-builtin
     if exponent.startswith('-0'):
         exponent = '-' + exponent[2:]
     if float(mantissa) == 1.0:
-        return r"10^{%s}" % exponent
-    return r"%s\!\!\times\!\!10^{%s}" % (mantissa, exponent)
+        return fr"10^{{{exponent}}}"
+    return fr"{mantissa}\!\!\times\!\!10^{{{exponent}}}"
 
 
 def label_to_latex(text):
@@ -144,7 +146,7 @@ def label_to_latex(text):
         a, b = m.span()
         char = m.group()[0]
         out.append(text[x:a])
-        out.append(r'\%s' % char)
+        out.append(fr"\{char}")
         x = b
     if not x:  # no match
         return text
