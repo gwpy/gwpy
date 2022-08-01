@@ -180,7 +180,7 @@ class TestFrequencySeries(_TestSeries):
         assert newf.f0 == fseries.f0
         utils.assert_allclose(newf.value, numpy.ones(2*int(nyquist/df) + 1))
 
-    @utils.skip_missing_dependency('lal')
+    @pytest.mark.requires("lal")
     def test_to_from_lal(self, array):
         import lal
 
@@ -204,8 +204,7 @@ class TestFrequencySeries(_TestSeries):
         a2 = self.TEST_CLASS.from_lal(lalts)
         assert a2.unit is units.dimensionless_unscaled
 
-    @utils.skip_missing_dependency('lal')
-    @utils.skip_missing_dependency('pycbc')
+    @pytest.mark.requires("lal", "pycbc")
     def test_to_from_pycbc(self, array):
         from pycbc.types import FrequencySeries as PyCBCFrequencySeries
 
@@ -245,8 +244,7 @@ class TestFrequencySeries(_TestSeries):
         tmp.write_text(LIGO_LW_ARRAY)
         return tmp
 
-    @utils.skip_missing_dependency('lal')
-    @utils.skip_missing_dependency('ligo.lw')
+    @pytest.mark.requires("lal", "ligo.lw")
     def test_read_ligolw(self, ligolw):
         array = FrequencySeries.read(ligolw, 'PSD1')
         utils.assert_quantity_equal(
@@ -260,8 +258,7 @@ class TestFrequencySeries(_TestSeries):
         assert numpy.isclose(array.epoch.gps, 1000000000)  # precision gah!
         assert array.unit == units.Hz ** -1
 
-    @utils.skip_missing_dependency('lal')
-    @utils.skip_missing_dependency('ligo.lw')
+    @pytest.mark.requires("lal", "ligo.lw")
     def test_read_ligolw_params(self, ligolw):
         array = FrequencySeries.read(
             ligolw,
@@ -270,7 +267,7 @@ class TestFrequencySeries(_TestSeries):
         assert list(array.value) == [10, 20, 30, 40, 50]
         assert array.epoch is None
 
-    @utils.skip_missing_dependency('ligo.lw')
+    @pytest.mark.requires("ligo.lw")
     def test_read_ligolw_error_multiple_array(self, ligolw):
         # assert errors
         with pytest.raises(ValueError) as exc:  # multiple <Array> hits
@@ -281,13 +278,13 @@ class TestFrequencySeries(_TestSeries):
             FrequencySeries.read(ligolw, "PSD2")
         assert "'epoch" in str(exc.value) and "'name'" not in str(exc.value)
 
-    @utils.skip_missing_dependency('ligo.lw')
+    @pytest.mark.requires("ligo.lw")
     def test_read_ligolw_error_no_array(self, ligolw):
         with pytest.raises(ValueError) as exc:  # no hits
             FrequencySeries.read(ligolw, "blah")
         assert str(exc.value).startswith("no <Array> elements found")
 
-    @utils.skip_missing_dependency('ligo.lw')
+    @pytest.mark.requires("ligo.lw")
     def test_read_ligolw_error_no_match(self, ligolw):
         with pytest.raises(ValueError):  # wrong epoch
             FrequencySeries.read(ligolw, epoch=0)
@@ -299,7 +296,7 @@ class TestFrequencySeries(_TestSeries):
                 f0=0,
             )
 
-    @utils.skip_missing_dependency('ligo.lw')
+    @pytest.mark.requires("ligo.lw")
     def test_read_ligolw_error_no_param(self, ligolw):
         with pytest.raises(ValueError):  # no <Param>
             FrequencySeries.read(
@@ -308,7 +305,7 @@ class TestFrequencySeries(_TestSeries):
                 blah="blah",
             )
 
-    @utils.skip_missing_dependency('ligo.lw')
+    @pytest.mark.requires("ligo.lw")
     def test_read_ligolw_error_dim(self, ligolw):
         with pytest.raises(ValueError):  # wrong dimensionality
             FrequencySeries.read(ligolw, epoch=1000000001)
