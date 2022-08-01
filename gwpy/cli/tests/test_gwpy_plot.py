@@ -23,9 +23,6 @@ from unittest import mock
 
 import pytest
 
-from ...testing.utils import (
-    skip_missing_dependency,
-)
 from .. import (
     PRODUCTS,
     gwpy_plot,
@@ -41,7 +38,7 @@ def test_gwpy_plot_help(mode):
     assert exc.value.code == 0
 
 
-@skip_missing_dependency('nds2')
+@pytest.mark.requires("nds2")
 def test_gwpy_plot_timeseries(tmp_path):
     tmp = tmp_path / "plot.png"
     with mock.patch(

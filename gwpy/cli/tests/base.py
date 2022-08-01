@@ -178,7 +178,7 @@ class _TestCliProduct(object):
         else:
             assert out == ''
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_get_data(self, prod):
         conn, data = mock_nds2_connection()
         with mock.patch('nds2.connection') as mocker:
@@ -250,7 +250,7 @@ class _TestCliProduct(object):
                                  params.get('ymax', ymax))
         assert ax.get_ylabel() == params.get('ylabel', plotprod.get_ylabel())
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_run(self, tmp_path, prod):
         conn, _ = mock_nds2_connection()
         tmp = tmp_path / "plot.png"
