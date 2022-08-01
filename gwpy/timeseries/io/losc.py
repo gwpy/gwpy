@@ -64,7 +64,7 @@ def _download_file(url, cache=None, verbose=False):
 
 
 def _fetch_gwosc_data_file(url, *args, **kwargs):
-    """Internal function for fetching a single GWOSC file and returning a Series
+    """Fetch a single GWOSC file and return a `Series`.
     """
     cls = kwargs.pop('cls', TimeSeries)
     cache = kwargs.pop('cache', None)

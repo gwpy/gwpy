@@ -346,7 +346,8 @@ class FrequencySeries(Series):
 
     @classmethod
     def from_lal(cls, lalfs, copy=True):
-        """Generate a new `FrequencySeries` from a LAL `FrequencySeries` of any type
+        """Generate a new `FrequencySeries` from a LAL `FrequencySeries`
+        of any type.
         """
         from ..utils.lal import from_lal_unit
         try:
