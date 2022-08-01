@@ -25,7 +25,6 @@ import numpy
 from numpy.testing import assert_array_equal
 
 from .. import EventTable
-from ...testing.utils import skip_missing_dependency
 
 
 # -- fixtures -----------------------------------------------------------------
@@ -44,14 +43,14 @@ def llwtable():
 
 # -- test to_astropy_table() via EventTable conversions -----------------------
 
-@skip_missing_dependency('ligo.lw.lsctables')
+@pytest.mark.requires("ligo.lw.lsctables")
 def test_to_astropy_table(llwtable):
     tab = EventTable(llwtable)
     assert set(tab.colnames) == {"peak_frequency", "snr"}
     assert_array_equal(tab["snr"], llwtable.getColumnByName("snr"))
 
 
-@skip_missing_dependency('ligo.lw.lsctables')
+@pytest.mark.requires("ligo.lw.lsctables")
 def test_to_astropy_table_rename(llwtable):
     tab = EventTable(llwtable, rename={"peak_frequency": "frequency"})
     assert set(tab.colnames) == {"frequency", "snr"}
@@ -61,7 +60,7 @@ def test_to_astropy_table_rename(llwtable):
     )
 
 
-@skip_missing_dependency('ligo.lw.lsctables')
+@pytest.mark.requires("ligo.lw.lsctables")
 def test_to_astropy_table_empty():
     from ligo.lw.lsctables import (New, SnglBurstTable)
     llwtable = New(
@@ -74,7 +73,7 @@ def test_to_astropy_table_empty():
     assert tab['ifo'].dtype.type is numpy.unicode_
 
 
-@skip_missing_dependency('ligo.lw.lsctables')
+@pytest.mark.requires("ligo.lw.lsctables")
 def test_read_process_table():
     """Regression test against gwpy/gwpy#1367
     """
