@@ -692,11 +692,7 @@ class TimeSeriesBase(Series):
         """Generate a new TimeSeries from a LAL TimeSeries of any type.
         """
         from ..utils.lal import from_lal_unit
-        try:
-            unit = from_lal_unit(lalts.sampleUnits)
-        except (TypeError, ValueError) as exc:
-            warnings.warn("%s, defaulting to 'dimensionless'" % str(exc))
-            unit = None
+        unit = from_lal_unit(lalts.sampleUnits)
         channel = Channel(lalts.name, sample_rate=1/lalts.deltaT, unit=unit,
                           dtype=lalts.data.data.dtype)
         out = cls(lalts.data.data, channel=channel, t0=lalts.epoch,
@@ -707,16 +703,21 @@ class TimeSeriesBase(Series):
 
     def to_lal(self):
         """Convert this `TimeSeries` into a LAL TimeSeries.
+
+        .. note::
+
+           This operation always copies data to new memory.
         """
         import lal
         from ..utils.lal import (find_typed_function, to_lal_unit)
 
         # map unit
         try:
-            unit = to_lal_unit(self.unit)
-        except ValueError as e:
-            warnings.warn("%s, defaulting to lal.DimensionlessUnit" % str(e))
+            unit, scale = to_lal_unit(self.unit)
+        except ValueError as exc:
+            warnings.warn(f"{exc}, defaulting to lal.DimensionlessUnit")
             unit = lal.DimensionlessUnit
+            scale = 1
 
         # create TimeSeries
         create = find_typed_function(self.dtype, 'Create', 'TimeSeries')
@@ -728,7 +729,12 @@ class TimeSeriesBase(Series):
             unit,
             self.shape[0],
         )
+
+        # assign data
         lalts.data.data = self.value
+        if scale != 1:
+            lalts.data.data *= scale
+
         return lalts
 
     @classmethod

@@ -23,6 +23,7 @@ This module requires lal >= 6.14.0
 
 import operator
 from collections import OrderedDict
+from fractions import Fraction
 from functools import reduce
 
 import numpy
@@ -147,33 +148,18 @@ def find_typed_function(pytype, prefix, suffix, module=lal):
 # -- units --------------------------------------------------------------------
 
 LAL_UNIT_INDEX = [  # the order corresponds to how LAL stores compound units
-    lal.MeterUnit,
-    lal.KiloGramUnit,
-    lal.SecondUnit,
-    lal.AmpereUnit,
-    lal.KelvinUnit,
-    lal.StrainUnit,
-    lal.ADCCountUnit,
+    units.meter,
+    units.kilogram,
+    units.second,
+    units.ampere,
+    units.Kelvin,
+    units.Unit('strain'),
+    units.count,
 ]
 
 
-def _lal_unit_from_astropy(u):
-    """Convert an `astropy.units.Unit` into a `lal.Unit`
-    """
-    for lalu in LAL_UNIT_INDEX:
-        if u == units.Unit(str(lalu)):
-            return lalu
-    raise KeyError(str(u))
-
-
 def to_lal_unit(aunit):
-    """Convert the input unit into a `LALUnit`
-
-    For example::
-
-       >>> u = to_lal_unit('m**2 / kg ** 4')
-       >>> print(u)
-       m^2 kg^-4
+    """Convert the input unit into a `lal.Unit` and a scaling factor.
 
     Parameters
     ----------
@@ -182,33 +168,70 @@ def to_lal_unit(aunit):
 
     Returns
     -------
-    unit : `LALUnit`
-        the LALUnit representation of the input
+    unit : `lal.Unit`
+        the LAL representation of the base unit.
+
+    scale : `float`
+        the linear scaling factor that should be applied to any associated
+        data, see _Notes_ below.
+
+    Notes
+    -----
+    Astropy supports 'scaled' units of the form ``<N> <u>``
+    ere ``<N>`` is a `float` and ``<u>`` the base `astropy.units.Unit`,
+    e.g. ``'123 m'``, e.g:
+
+    >>> from astropy.units import Quantity
+    >>> x = Quantity(4, '123m')
+    >>> print(x)
+    4.0 123 m
+    >>> print(x.decompose())
+    492.0 m
+
+    LAL doesn't support scaled units in this way, so this function simply
+    returns the scaling factor of the unit so that it may be applied
+    manually to any associated data.
+
+    Examples
+    --------
+    >>> print(to_lal_unit('m**2 / kg ** 4'))
+    (m^2 kg^-4, 1.0)
+    >>> print(to_lal_unit('123 m'))
+    (m, 123.0)
 
     Raises
     ------
     ValueError
         if LAL doesn't understand the base units for the input
     """
+    # format incoming unit
     if isinstance(aunit, str):
         aunit = units.Unit(aunit)
     aunit = aunit.decompose()
-    lunit = lal.Unit()
+
+    # handle scaled units
+    pow10 = numpy.log10(aunit.scale)
+    if pow10 and pow10.is_integer():
+        lunit = lal.Unit(f"10^{int(pow10)}")
+        scale = 1
+    else:
+        lunit = lal.Unit()
+        scale = aunit.scale
+
+    # decompose unit into LAL base units
     for base, power in zip(aunit.bases, aunit.powers):
         try:  # try this base
-            lalbase = _lal_unit_from_astropy(base)
-        except KeyError:  # otherwise loop through the equivalent bases
-            for eqbase in base.find_equivalent_units():
-                try:
-                    lalbase = _lal_unit_from_astropy(eqbase)
-                except KeyError:
-                    continue
-                break
-            # if we didn't find anything, raise an exception
-            else:
-                raise ValueError("LAL has no unit corresponding to %r" % base)
-        lunit *= lalbase ** power
-    return lunit
+            i = LAL_UNIT_INDEX.index(base)
+        except ValueError as exc:
+            exc.args = (
+                f"LAL has no unit corresponding to '{base}'",
+            )
+            raise
+        frac = Fraction(power)
+        lunit.unitNumerator[i] = frac.numerator
+        lunit.unitDenominatorMinusOne[i] = frac.denominator - 1
+
+    return lunit, scale
 
 
 def from_lal_unit(lunit):
@@ -231,9 +254,16 @@ def from_lal_unit(lunit):
     ValueError
         if Astropy doesn't understand the base units for the input
     """
-    return reduce(operator.mul, (
-        units.Unit(str(LAL_UNIT_INDEX[i])) ** exp for
-        i, exp in enumerate(lunit.unitNumerator)))
+    return reduce(
+        operator.mul,
+        (
+            LAL_UNIT_INDEX[i] ** Fraction(int(num), int(den + 1))
+            for i, (num, den) in enumerate(zip(
+                lunit.unitNumerator,
+                lunit.unitDenominatorMinusOne,
+            ))
+        ),
+    ) * 10**lunit.powerOfTen
 
 
 def to_lal_ligotimegps(gps):

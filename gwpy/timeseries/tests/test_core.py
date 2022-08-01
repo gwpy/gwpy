@@ -171,27 +171,54 @@ class TestTimeSeriesBase(_TestSeries):
         assert b.dt == 1/128. * units.s
         assert shares_memory(nds_buffer.data, b.value)
 
-    @utils.skip_missing_dependency('lal')
+    @utils.skip_missing_dependency("lal")
     def test_to_from_lal(self, array):
-        import lal
-
         # check that to + from returns the same array
         lalts = array.to_lal()
         a2 = type(array).from_lal(lalts)
         utils.assert_quantity_sub_equal(array, a2, exclude=['name', 'channel'])
         assert a2.name == ''
 
-        # test copy=False
-        a2 = type(array).from_lal(lalts, copy=False)
-        assert shares_memory(a2.value, lalts.data.data)
+    @utils.skip_missing_dependency("lal")
+    @pytest.mark.parametrize("copy", (False, True))
+    def test_to_from_lal_no_copy(self, array, copy):
+        """Check that copy=False shares data
+        """
+        lalts = array.to_lal()
+        a2 = type(array).from_lal(lalts, copy=copy)
+        assert shares_memory(a2.value, lalts.data.data) is not copy
 
-        # test units
+    @utils.skip_missing_dependency("lal")
+    def test_to_from_lal_unrecognised_units(self, array):
+        """Test that unrecognised units get warned, but the operation continues
+        """
+        import lal
         array.override_unit('undef')
         with pytest.warns(UserWarning):
             lalts = array.to_lal()
         assert lalts.sampleUnits == lal.DimensionlessUnit
         a2 = self.TEST_CLASS.from_lal(lalts)
         assert a2.unit == units.dimensionless_unscaled
+
+    @utils.skip_missing_dependency("lal")
+    def test_to_from_lal_pow10_units(self, array):
+        """Test that normal scaled units scale the data properly
+        """
+        import lal
+        array.override_unit("km")
+        lalts = array.to_lal()
+        utils.assert_array_equal(lalts.data.data, array.value)
+        assert lalts.sampleUnits == lal.MeterUnit * 1000.
+
+    @utils.skip_missing_dependency("lal")
+    def test_to_from_lal_scaled_units(self, array):
+        """Test that weird scaled units scale the data properly
+        """
+        import lal
+        array.override_unit("123 m")
+        lalts = array.to_lal()
+        utils.assert_array_equal(lalts.data.data, array.value * 123.)
+        assert lalts.sampleUnits == lal.MeterUnit
 
     @utils.skip_missing_dependency('lal')
     @utils.skip_missing_dependency('pycbc')
