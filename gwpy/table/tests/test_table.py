@@ -541,8 +541,8 @@ class TestEventTable(TestTable):
         utils.assert_quantity_sub_equal(rate, rate2)
 
     def test_event_rates_start_end(self):
-        """Check that `EventTable.event_rate` can function without explicit time column
-        (and no data) if and only if start/end are both given
+        """Check that `EventTable.event_rate` can function without explicit
+        time column (and no data) if and only if start/end are both given.
         """
         t2 = self.create(10, names=['a', 'b'])
         with pytest.raises(ValueError) as exc:

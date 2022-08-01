@@ -21,8 +21,9 @@
 
 import sys
 import math
+import warnings
 from collections import OrderedDict
-from contextlib import contextmanager
+from contextlib import nullcontext
 
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -38,11 +39,16 @@ def gprint(*values, **kwargs):  # pylint: disable=missing-docstring
 gprint.__doc__ = print.__doc__
 
 
-@contextmanager
 def null_context():
     """Null context manager
     """
-    yield
+    warnings.warn(
+        "gwpy.utils.null_context is deprecated and will be removed in "
+        "GWpy 3.1.0, please update your code to use "
+        "contextlib.nullcontext from the Python standard library (>=3.7)",
+        DeprecationWarning,
+    )
+    return nullcontext()
 
 
 def if_not_none(func, value):

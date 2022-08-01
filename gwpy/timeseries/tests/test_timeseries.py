@@ -21,6 +21,7 @@
 
 import os.path
 import warnings
+from contextlib import nullcontext
 from itertools import (chain, product)
 from unittest import mock
 
@@ -46,7 +47,6 @@ from ...testing.errors import (
 )
 from ...types import Index
 from ...time import LIGOTimeGPS
-from ...utils.misc import null_context
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
 from ..io.gwf import get_default_gwf_api
 from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
@@ -608,7 +608,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             utils.assert_quantity_sub_equal(ts, ts2, exclude=['channel'])
 
             # check padding works (with warning for nds2-server connections)
-            ctx = pytest.warns(UserWarning) if protocol > 1 else null_context()
+            ctx = pytest.warns(UserWarning) if protocol > 1 else nullcontext()
             with ctx:
                 ts2 = self.TEST_CLASS.fetch('L1:TEST', *ts.span.protract(10),
                                             pad=-100., host='anything')
@@ -876,7 +876,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         if method.startswith(("lal", "pycbc")):
             ctx = pytest.deprecated_call
         else:
-            ctx = null_context
+            ctx = nullcontext
 
         # generate spectrogram
         with ctx():
