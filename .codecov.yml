@@ -1,15 +1,21 @@
+# see: https://docs.codecov.com/docs/codecovyml-reference
+
 codecov:
-  require_ci_to_pass: true
+  # require all other CI jobs to pass before reporting
+  require_ci_to_pass: yes
 
 coverage:
-  precision: 2
-  range: 50..100
-  round: nearest
+  # show one decimal place in reports
+  precision: 1
   status:
+    # project coverage
     project:
       default:
+        # require no more than a 1% drop compared to the base commit
         target: auto
         threshold: 1
+    # patch coverage
     patch:
       default:
+        # require 90% of changes to be covered
         target: 90
