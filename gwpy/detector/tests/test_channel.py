@@ -312,7 +312,7 @@ class TestChannel(object):
             assert getattr(c, key) == pdict[key]
         assert c.ndsname == name
 
-    @utils.skip_missing_dependency("ciecplib")
+    @pytest.mark.requires("ciecplib")
     @pytest.mark.parametrize('name', ('X1:TEST-CHANNEL', 'Y1:TEST_CHANNEL'))
     def test_query(self, name):
         requests_mock = pytest.importorskip("requests_mock")
@@ -355,7 +355,7 @@ class TestChannel(object):
                 assert str(exc.value) == f'No channels found matching {name!r}'
 
     @pytest.mark.parametrize('name', ('X1:TEST-CHANNEL', 'Y1:TEST_CHANNEL'))
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_query_nds2(self, name):
         # mock NDS2 query
         ndsb = mocks.nds2_buffer('X1:TEST-CHANNEL', [], 0, 64, 'm')
@@ -380,7 +380,7 @@ class TestChannel(object):
                 with pytest.raises(ValueError):
                     c = self.TEST_CLASS.query_nds2(name, host='test')
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_from_nds2(self):
         nds2c = mocks.nds2_channel('X1:TEST-CHANNEL', 64, 'm')
         c = self.TEST_CLASS.from_nds2(nds2c)
@@ -428,7 +428,7 @@ class TestChannelList(object):
         cl = instance.sieve(name='GWPY-CHANNEL', sample_range=[2, 16])
         assert cl == instance[1:]
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_query_nds2(self):
         # mock NDS2 query
         buffers = []
@@ -448,7 +448,7 @@ class TestChannelList(object):
             assert len(
                 self.TEST_CLASS.query_nds2([self.NAMES[-1]], host='test')) == 0
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_query_nds2_availability(self):
         # mock NDS2 connection
         ndsb = mocks.nds2_buffer(self.NAMES[0], [], 0, 64, 'm')
