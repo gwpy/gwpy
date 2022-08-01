@@ -33,7 +33,6 @@ from astropy.time import Time
 from astropy.units import (UnitConversionError, Quantity)
 
 from ... import time
-from ...testing.utils import skip_missing_dependency
 from .. import LIGOTimeGPS
 
 try:
@@ -88,7 +87,7 @@ def _test_with_errors(func, in_, out):
     (Quantity(1167264018, 's'), 1167264018),
     (Decimal('1126259462.391000000'), GW150914),
     pytest.param(GlueGPS(GW150914.gpsSeconds, GW150914.gpsNanoSeconds),
-                 GW150914, marks=skip_missing_dependency('glue')),
+                 GW150914, marks=pytest.mark.requires("glue")),
     (numpy.int32(NOW), NOW),  # fails with lal-6.18.0
     ('now', NOW),
     ('today', TODAY),
@@ -97,7 +96,7 @@ def _test_with_errors(func, in_, out):
     (Quantity(1, 'm'), UnitConversionError),
     ('random string', (ValueError, TypeError)),
     pytest.param('Oct 30 2016 12:34 CST', 1161887657,
-                 marks=skip_missing_dependency('maya')),
+                 marks=pytest.mark.requires("maya")),
 ])
 def test_to_gps(in_, out):
     """Test :func:`gwpy.time.to_gps`
@@ -111,7 +110,7 @@ def test_to_gps(in_, out):
     (1126259462.391, datetime(2015, 9, 14, 9, 50, 45, 391000)),
     ('1.13e9', datetime(2015, 10, 27, 16, 53, 3)),
     pytest.param(GlueGPS(GW150914.gpsSeconds, GW150914.gpsNanoSeconds),
-                 GW150914_DT, marks=skip_missing_dependency('glue')),
+                 GW150914_DT, marks=pytest.mark.requires("glue")),
     ('test', ValueError),
     (1167264017, ValueError),  # gwpy/gwpy#1021
 ])
@@ -126,7 +125,7 @@ def test_from_gps(in_, out):
     (GW150914, GW150914_DT),
     (GW150914_DT, GW150914),
     pytest.param(GlueGPS(float(GW150914)), GW150914_DT,
-                 marks=skip_missing_dependency('glue')),
+                 marks=pytest.mark.requires("glue")),
     ('now', NOW),
     ('today', TODAY),
     ('tomorrow', TOMORROW),
