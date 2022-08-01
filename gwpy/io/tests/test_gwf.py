@@ -24,7 +24,6 @@ import pytest
 from ...testing.utils import (
     TEST_GWF_FILE,
     assert_segmentlist_equal,
-    skip_missing_dependency,
 )
 from .. import gwf as io_gwf
 from ..cache import file_segment
@@ -43,20 +42,20 @@ def test_identify_gwf():
     assert not io_gwf.identify_gwf('read', None, None)
 
 
-@skip_missing_dependency('LDAStools.frameCPP')
+@pytest.mark.requires("LDAStools.frameCPP")
 def test_open_gwf_r(tmp_path):
     from LDAStools import frameCPP
     assert isinstance(io_gwf.open_gwf(TEST_GWF_FILE), frameCPP.IFrameFStream)
 
 
-@skip_missing_dependency('LDAStools.frameCPP')
+@pytest.mark.requires("LDAStools.frameCPP")
 def test_open_gwf_w(tmp_path):
     from LDAStools import frameCPP
     tmp = tmp_path / "test.gwf"
     assert isinstance(io_gwf.open_gwf(tmp, mode='w'), frameCPP.OFrameFStream)
 
 
-@skip_missing_dependency('LDAStools.frameCPP')
+@pytest.mark.requires("LDAStools.frameCPP")
 def test_open_gwf_w_file_url(tmp_path):
     from LDAStools import frameCPP
     # check that we can use a file:// URL as well
@@ -67,13 +66,13 @@ def test_open_gwf_w_file_url(tmp_path):
     )
 
 
-@skip_missing_dependency('LDAStools.frameCPP')
+@pytest.mark.requires("LDAStools.frameCPP")
 def test_open_gwf_a_error():
     with pytest.raises(ValueError):
         io_gwf.open_gwf('test', mode='a')
 
 
-@skip_missing_dependency("LDAStools.frameCPP")
+@pytest.mark.requires("LDAStools.frameCPP")
 def test_create_frvect(noisy_sinusoid):
     vect = io_gwf.create_frvect(noisy_sinusoid)
     assert vect.nData == noisy_sinusoid.size
@@ -86,7 +85,7 @@ def test_create_frvect(noisy_sinusoid):
     assert xdim.startX == noisy_sinusoid.x0.value
 
 
-@skip_missing_dependency('LDAStools.frameCPP')
+@pytest.mark.requires("LDAStools.frameCPP")
 def test_iter_channel_names():
     # maybe need something better?
     from types import GeneratorType
@@ -95,17 +94,17 @@ def test_iter_channel_names():
     assert list(names) == TEST_CHANNELS
 
 
-@skip_missing_dependency('LDAStools.frameCPP')
+@pytest.mark.requires("LDAStools.frameCPP")
 def test_get_channel_names():
     assert io_gwf.get_channel_names(TEST_GWF_FILE) == TEST_CHANNELS
 
 
-@skip_missing_dependency('LDAStools.frameCPP')
+@pytest.mark.requires("LDAStools.frameCPP")
 def test_num_channels():
     assert io_gwf.num_channels(TEST_GWF_FILE) == 3
 
 
-@skip_missing_dependency('LDAStools.frameCPP')
+@pytest.mark.requires("LDAStools.frameCPP")
 def test_get_channel_type():
     assert io_gwf.get_channel_type('L1:LDAS-STRAIN', TEST_GWF_FILE) == 'proc'
     with pytest.raises(ValueError) as exc:
@@ -115,13 +114,13 @@ def test_get_channel_type():
     )
 
 
-@skip_missing_dependency('LDAStools.frameCPP')
+@pytest.mark.requires("LDAStools.frameCPP")
 def test_channel_in_frame():
     assert io_gwf.channel_in_frame('L1:LDAS-STRAIN', TEST_GWF_FILE) is True
     assert io_gwf.channel_in_frame('X1:NOT-IN_FRAME', TEST_GWF_FILE) is False
 
 
-@skip_missing_dependency("LDAStools.frameCPP")
+@pytest.mark.requires("LDAStools.frameCPP")
 def test_data_segments():
     assert_segmentlist_equal(
         io_gwf.data_segments([TEST_GWF_FILE], "L1:LDAS-STRAIN"),

@@ -27,7 +27,6 @@ import pytest
 from ...detector import Channel
 from ...segments import (Segment, SegmentList)
 from ...testing import mocks
-from ...testing.utils import skip_missing_dependency
 from ...utils.tests.test_enum import TestNumpyTypeEnum as _TestNumpyTypeEnum
 from .. import nds2 as io_nds2
 
@@ -170,7 +169,7 @@ def test_host_resolution_order_warning():
     assert len(record) == 1  # make sure only one warning was emitted
 
 
-@skip_missing_dependency('nds2')
+@pytest.mark.requires("nds2")
 @pytest.mark.parametrize('host, port, callport', [
     ('nds.test.gwpy', None, None),
     ('nds.test.gwpy', 31200, 31200),
@@ -187,7 +186,7 @@ def test_connect(connector, host, port, callport):
         connector.assert_called_once_with(host, callport)
 
 
-@skip_missing_dependency('nds2')
+@pytest.mark.requires("nds2")
 @mock.patch('gwpy.io.nds2.connect')
 def test_auth_connect(connect):
     """Test `gwpy.io.nds2.auth_connect`
@@ -196,7 +195,7 @@ def test_auth_connect(connect):
     connect.assert_called_once_with('host', 'port')
 
 
-@skip_missing_dependency('nds2')
+@pytest.mark.requires("nds2")
 @mock.patch('gwpy.io.nds2.kinit')
 @mock.patch(
     'gwpy.io.nds2.connect',
@@ -216,7 +215,7 @@ def test_auth_connect_kinit(connect, kinit):
     connect.assert_called_with('host', 'port')
 
 
-@skip_missing_dependency('nds2')
+@pytest.mark.requires("nds2")
 @mock.patch('gwpy.io.nds2.connect', side_effect=RuntimeError('Anything else'))
 def test_auth_connect_error(connect):
     """Test errors from `gwpy.io.nds2.auth_connect`
@@ -244,7 +243,7 @@ def test_open_connection(auth_connect):
     auth_connect.assert_called_once_with('test', None)
 
 
-@skip_missing_dependency('nds2')
+@pytest.mark.requires("nds2")
 @mock.patch('nds2.connection')
 def test_find_channels(connection):
     """Test `gwpy.io.nds2.find_channels`
@@ -296,7 +295,7 @@ def test_find_channels(connection):
         "unique NDS2 channel match not found for 'X1:test'")
 
 
-@skip_missing_dependency('nds2')
+@pytest.mark.requires("nds2")
 @mock.patch('gwpy.io.nds2.find_channels', return_value=['X1:test'])
 @mock.patch('gwpy.io.nds2.auth_connect')
 def test_get_availability(auth_connect, _):
@@ -338,7 +337,7 @@ def test_minute_trend_times(start, end, out):
     assert io_nds2.minute_trend_times(start, end) == out
 
 
-@skip_missing_dependency('nds2')
+@pytest.mark.requires("nds2")
 def test_get_nds2_name():
     """Test `gwpy.io.nds2._get_nds2_name`
     """
@@ -353,7 +352,7 @@ def test_get_nds2_name():
         assert io_nds2._get_nds2_name(channel) == name
 
 
-@skip_missing_dependency('nds2')
+@pytest.mark.requires("nds2")
 def test_get_nds2_names():
     """Test `gwpy.io.nds2._get_nds2_names`
     """

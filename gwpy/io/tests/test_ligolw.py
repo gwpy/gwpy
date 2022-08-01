@@ -26,7 +26,6 @@ import pytest
 
 import numpy
 
-from ...testing.utils import skip_missing_dependency
 from .. import ligolw as io_ligolw
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -163,7 +162,7 @@ def test_list_tables_file(llwdoc_with_tables):
         assert io_ligolw.list_tables(f) == names
 
 
-@skip_missing_dependency("ligo.lw.lsctables")
+@pytest.mark.requires("ligo.lw.lsctables")
 @pytest.mark.parametrize('value, name, result', [
     (None, 'peak_time', None),
     (1.0, 'peak_time', numpy.int32(1)),
@@ -254,7 +253,7 @@ def test_write_tables(tmp_path):
     assert len(stab2) == len(stab)
 
 
-@skip_missing_dependency("ligo.lw.lsctables")
+@pytest.mark.requires("ligo.lw.lsctables")
 def test_is_ligolw_false():
     assert not io_ligolw.is_ligolw("read", None, None, 1)
 

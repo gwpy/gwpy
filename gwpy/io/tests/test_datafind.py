@@ -32,7 +32,6 @@ from ...testing.errors import (
 )
 from ...testing.utils import (
     TEST_GWF_FILE,
-    skip_missing_dependency,
 )
 from .. import datafind as io_datafind
 
@@ -94,7 +93,7 @@ def _gwosc_gwdatafind(func):
         reason="GWOSC CVMFS repository not available",
     )
     @pytest.mark.cvmfs  # mark test as requiring cvmfs
-    @skip_missing_dependency('LDAStools.frameCPP')  # skip if no frameCPP
+    @pytest.mark.requires("LDAStools.frameCPP")  # skip if no frameCPP
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
 
@@ -225,7 +224,7 @@ def test_find_best_frametype_with_gaps_multiple():
     }
 
 
-@skip_missing_dependency('LDAStools.frameCPP')
+@pytest.mark.requires("LDAStools.frameCPP")
 @pytest_skip_network_error
 @pytest.mark.skipif(
     "GWDATAFIND_SERVER" not in os.environ,
