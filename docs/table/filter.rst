@@ -11,80 +11,146 @@ extract portions of a table based on some criteria, this is called filtering.
 The `EventTable` object comes with a :meth:`~EventTable.filter` method
 that provides an intuitive interface to down-selecting rows in a table.
 
-To demonstrate, first we create a catalogue of gravitational-wave detections using data available from `LOSC <https://losc.ligo.org/>`_::
+To demonstrate, we can download |GWTC-2| from |GWOSC|:
 
-    >>> from gwpy.table import EventTable
-    >>> table = EventTable.read(
-    ...     """name      gps           m1      m2         snr   distance network
-    ...        GW150914  1126259462.00 36.2    23.7       23.7  420      HL
-    ...        LVT151012 1128678900.44 23      13         9.7   440      HL
-    ...        GW151226  1135136350.65 14.2    7.5        13    880      HL
-    ...        GW170104  1167559936.60 31.2    19.4       13    1000     HL
-    ...        GW170814  1186741861.53 30.5    25.3       18    540      HLV""",
-    ...     format='ascii')
+.. code-block:: python
+
+   >>> from gwpy.table import EventTable
+   >>> events = EventTable.fetch_open_data("GWTC-2")
+   >>> print(events)
+          name        chi_eff_upper ...     GPS      final_mass_source_upper
+                                    ...                      solMass
+   ------------------ ------------- ... ------------ -----------------------
+   GW190408_181802-v1          0.14 ... 1238782700.3                     3.9
+          GW190412-v3          0.08 ... 1239082262.2                     3.9
+   GW190413_052954-v1          0.29 ... 1239168612.5                    12.5
+                  ...           ... ...          ...                     ...
+   GW190924_021846-v1           0.3 ... 1253326744.8                     5.2
+   GW190929_012149-v1          0.34 ... 1253755327.5                    33.6
+   GW190930_133541-v1          0.31 ... 1253885759.2                     9.2
+   Length = 39 rows
 
 ==============
 Simple filters
 ==============
 
-We can then filter the table based on ``snr``  to get the really loud events::
+The simplest `EventTable` filter is a `str` statement that provides
+a mathematical operation for a column and a threshold.
+With the above GWTC-2 events, we can use the filter
+``"network_matched_filter_snr > 15"`` to pick out those events with
+high signal power:
 
-    >>> print(table.filter('snr > 15'))
-      name        gps       m1   m2  snr
-    -------- ------------- ---- ---- ----
-    GW150914  1126259462.0 36.2 23.7 23.7
-    GW170814 1186741861.53 30.5 25.3 18.0
+.. code-block:: python
+   :name: gwpy-table-filter-statement-example
+   :caption: Filtering an `EventTable` using a `str` definition
+
+   >>> print(events.filter("network_matched_filter_snr > 15"))
+          name        chi_eff_upper ...     GPS      final_mass_source_upper
+                                    ...                      solMass
+   ------------------ ------------- ... ------------ -----------------------
+          GW190412-v3          0.08 ... 1239082262.2                     3.9
+   GW190521_074359-v1           0.1 ... 1242459857.5                     6.5
+   GW190630_185205-v1          0.12 ... 1245955943.2                     4.4
+          GW190814-v2          0.06 ... 1249852257.0                     1.1
+   GW190828_063405-v1          0.15 ... 1251009263.8                     7.2
 
 ================
 Filter functions
 ================
 
-We can also filter the table to find those events from O1 by defining a
-custom filter function that compares to the start and end GPS times for O1
-(taken from the `LOSC Data Usage Notes <https://losc.ligo.org/data/#yellow_box>`_)::
+More complicated filtering can be achieved by defining a `function` that
+takes in two arguments - the first being the column slice of the input table,
+the second can be whatever you want - and returns a boolean array.
+The :meth:`EventTable.filter` method is then called passing in a filter
+3-`tuple` with these elements
 
-    >>> from gwpy.time import to_gps
-    >>> o1start = to_gps("Sep 2015")
-    >>> o1end = to_gps("Feb 2016")
-    >>> def in_o1(column, interval):
-    ...     return (column >= interval[0]) & (column < interval[1])
-    >>> print(table.filter(('gps', in_o1, (o1start, o1end))))
-       name        gps       m1   m2  snr  network
-    --------- ------------- ---- ---- ---- -------
-     GW150914  1126259462.0 36.2 23.7 23.7      HL
-    LVT151012 1128678900.44 23.0 13.0  9.7      HL
-     GW151226 1135136350.65 14.2  7.5 13.0      HL
+1. the column name (`str`) or a tuple of names
+2. the function to call
+3. the other argument(s) for the function (normally a single value, or a
+   `tuple` of arguments)
+
+If a single column name is given as the first tuple element, the function will
+receive a single `~astropy.table.Column` as the input.
+If a `tuple` of names is given, the input will be a slice of the original table
+containing only the named columns.
+
+Using the same ``events`` table we can define a function to include only
+those events in the first six months of 2019:
+
+.. code-block:: python
+   :name: gwpy-table-filter-function-example
+   :caption: Filtering an `EventTable` using a filter function
+
+   >>> from gwpy.time import to_gps
+   >>> start = to_gps("Jan 2019")
+   >>> end = to_gps("Jul 2019")
+   >>> def q12_2019(column, interval):
+   ...     """Returns `True` if ``interval[0] <= column < interval[1]``
+   ...     """
+   ...     return (column >= interval[0]) & (column < interval[1])
+   >>> print(events.filter(('GPS', q12_2019, (start, end))))
+          name        chi_eff_upper ...     GPS      final_mass_source_upper
+                                    ...                      solMass
+   ------------------ ------------- ... ------------ -----------------------
+   GW190408_181802-v1          0.14 ... 1238782700.3                     3.9
+          GW190412-v3          0.08 ... 1239082262.2                     3.9
+   GW190413_052954-v1          0.29 ... 1239168612.5                    12.5
+                  ...           ... ...          ...                     ...
+   GW190706_222641-v1          0.26 ... 1246487219.3                    18.3
+   GW190707_093326-v1           0.1 ... 1246527224.2                     1.9
+   GW190708_232457-v1           0.1 ... 1246663515.4                     2.5
+   Length = 24 rows
 
 The custom filter function could have been as complicated as we liked, as long
 as the two (and only two) input arguments were the column array for the
 relevant column, and the collection of other arguments to work with.
+For example could filter the table to return only those events with
+high mass ratio:
 
-Similarly, we could filter the catalogue to find only those events that include
-data from the Virgo observatory::
+.. code-block:: python
+   :name: gwpy-table-filter-function-example-2
+   :caption: Filtering an `EventTable` using multiple columns
 
-    >>> import numpy
-    >>> print(table.filter(('network', numpy.char.endswith, 'V')))
-      name        gps       m1   m2  snr  network
-    -------- ------------- ---- ---- ---- -------
-    GW170814 1186741861.53 30.5 25.3 18.0     HLV
+   >>> def high_mass_ratio(table, threshold):
+   ...     """Returns `True` if ``mass_1_source / mass_2_source >= threshold``
+   ...     """
+   ...     return (table['mass_1_source'] / table['mass_2_source']) >= threshold
+   >>> print(events.filter((('mass_1_source', 'mass_2_source'), high_mass_ratio, 3.0)))
+          name        chi_eff_upper ...     GPS      final_mass_source_upper
+                                    ...                      solMass
+   ------------------ ------------- ... ------------ -----------------------
+          GW190412-v3          0.08 ... 1239082262.2                     3.9
+   GW190426_152155-v1          0.32 ... 1240327333.3                    None
+          GW190814-v2          0.06 ... 1249852257.0                     1.1
+   GW190929_012149-v1          0.34 ... 1253755327.5                    33.6
 
 ======================
 Using multiple filters
 ======================
 
-Filters can be trivially chained (either in `str` form, or functional form)::
+Filters can be chained (either in `str` form, or functional form):
 
-    >>> print(table.filter('snr > 15', 'distance > 5000'))
-      name        gps       m1   m2  snr  distance network
-    -------- ------------- ---- ---- ---- -------- -------
-    GW170814 1186741861.53 30.5 25.3 18.0      540     HLV
+.. code-block:: python
+   :name: gwpy-table-filter-chaining
+   :caption: Chaining multiple filters with :meth:`EventTable.filter`
+
+   >>> print(events.filter("network_matched_filter_snr > 15", "luminosity_distance > 1000"))
+          name        chi_eff_upper ...     GPS      final_mass_source_upper
+                                    ...                      solMass
+   ------------------ ------------- ... ------------ -----------------------
+   GW190521_074359-v1           0.1 ... 1242459857.5                     6.5
+   GW190828_063405-v1          0.15 ... 1251009263.8                     7.2
 
 =======
 Gotchas
 =======
 
-The parser used to intrepet simple filters doesn't recognised strings containing alpha-numeric characters as single words, meaning things like LIGO data channel names will get parsed incorrectly if not quoted.
-So, if in doubt, always pass a string in quotes; the quotes will get removed internally by the parser anyway. E.g., use ``channel = "X1:TEST"`` and not ``channel = X1:TEST``.
+The parser used to interpret simple filters doesn't recognise strings
+containing alpha-numeric characters as single words, meaning things like
+LIGO data channel names will get parsed incorrectly if not quoted.
+So, if in doubt, always pass a string in quotes; the quotes will get removed
+internally by the parser anyway. E.g., use ``channel = "X1:TEST"`` and not
+``channel = X1:TEST``.
 
 ================
 Built-in filters

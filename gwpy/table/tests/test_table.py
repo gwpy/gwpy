@@ -424,17 +424,24 @@ class TestEventTable(TestTable):
             t._get_time_column()
 
     def test_filter(self, table):
+        """Test that `EventTable.filter` works with a simple filter statement
+        """
         # check simple filter
         lowf = table.filter('frequency < 100')
         assert isinstance(lowf, type(table))
         assert len(lowf) == 11
         assert isclose(lowf['frequency'].max(), 96.5309156606)
 
-        # check filtering everything returns an empty table
+    def test_filter_empty(self, table):
+        """Test that `EventTable.filter` works with an empty table
+        """
         assert len(table.filter('snr>5', 'snr<=5')) == 0
 
-        # check compounding works
+    def test_filter_chaining(self, table):
+        """Test that chaining filters works with `EventTable.filter`
+        """
         loud = table.filter('snr > 100')
+        lowf = table.filter('frequency < 100')
         lowfloud = table.filter('frequency < 100', 'snr > 100')
         brute = type(table)(
             rows=[tuple(row) for row in lowf if row in loud],
@@ -442,12 +449,38 @@ class TestEventTable(TestTable):
         )
         utils.assert_table_equal(brute, lowfloud)
 
+    def test_filter_range(self, table):
+        """Test that `EventTable.filter` works with a range statement
+        """
         # check double-ended filter
         midf = table.filter('100 < frequency < 1000')
         utils.assert_table_equal(
-            midf, table.filter('frequency > 100').filter('frequency < 1000'))
+            midf,
+            table.filter('frequency > 100').filter('frequency < 1000'),
+        )
+
+    def test_filter_function(self, table):
+        """Test that `EventTable.filter` works with a filter function
+        """
+        def my_filter(column, threshold):
+            return column < threshold
+
+        lowf = table.filter(("frequency", my_filter, 100))
+        assert len(lowf) == 11
+
+    def test_filter_function_multiple(self, table):
+        """Test that `EventTable.filter` works with a filter function
+        that requires multiple columns
+        """
+        def my_filter(table, threshold):
+            return table["snr"] * table["frequency"] > threshold
+
+        filtered = table.filter((("snr", "frequency"), my_filter, 100000))
+        assert len(filtered) == 64
 
     def test_filter_in_segmentlist(self, table):
+        """Test `EventTable.filter` with `in_segmentlist`
+        """
         # check filtering on segments works
         segs = SegmentList([Segment(100, 200), Segment(400, 500)])
         inseg = table.filter(('time', filters.in_segmentlist, segs))
@@ -457,18 +490,28 @@ class TestEventTable(TestTable):
         )
         utils.assert_table_equal(inseg, brute)
 
+    def test_filter_in_segmentlist_empty(self, table):
+        """Test `EventTable.filter` with `in_segmentlist` and an empty table
+        """
         # check empty segmentlist is handled well
         utils.assert_table_equal(
             table.filter(('time', filters.in_segmentlist, SegmentList())),
-            type(table)(names=table.colnames))
+            type(table)(names=table.colnames),
+        )
 
-        # check inverse works
+    def test_filter_not_in_segmentlist(self, table):
+        """Test `EventTable.filter` with `not_in_segmentlist`
+        """
+        segs = SegmentList([Segment(100, 200), Segment(400, 500)])
         notsegs = SegmentList([Segment(0, 1000)]) - segs
+        inseg = table.filter(('time', filters.in_segmentlist, segs))
         utils.assert_table_equal(
-            inseg, table.filter(('time', filters.not_in_segmentlist, notsegs)))
+            inseg, table.filter(('time', filters.not_in_segmentlist, notsegs)),
+        )
         utils.assert_table_equal(
             table,
-            table.filter(('time', filters.not_in_segmentlist, SegmentList())))
+            table.filter(('time', filters.not_in_segmentlist, SegmentList())),
+        )
 
     def test_event_rates(self, table):
         """Test :meth:`gwpy.table.EventTable.event_rate`
