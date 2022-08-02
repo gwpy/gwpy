@@ -60,9 +60,14 @@ class Index(Quantity):
                 numpy.array(start, subok=True, copy=False).dtype,
                 numpy.array(step, subok=True, copy=False).dtype,
             )
-        start = start.astype(dtype, copy=False)
-        step = step.astype(dtype, copy=False)
-        return cls(start + numpy.arange(num, dtype=dtype) * step, copy=False)
+        start = Quantity(start, dtype=dtype, copy=False)
+        step = Quantity(step, dtype=dtype, copy=False).to(start.unit)
+        stop = start + step * num
+        return cls(
+            numpy.arange(start.value, stop.value, step.value, dtype=dtype),
+            unit=start.unit,
+            copy=False,
+        )
 
     @property
     def regular(self):
