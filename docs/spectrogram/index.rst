@@ -6,11 +6,11 @@
 The `Spectrogram`
 #################
 
-While the `~gwpy.timeseries.TimeSeries` allows us to study how the amplitude of a signal changes over time, and the `~gwpy.frequencyseries.FrequencySeries` allows us to study how that amplitude changes over frequency, the time-frequency `~gwpy.spectrogram.Spectrogram` allows us to track the evolution of the `~gwpy.frequencyseries.FrequencySeries` over over time.
+While the `~gwpy.timeseries.TimeSeries` allows us to study how the amplitude of a signal changes over time, and the `~gwpy.frequencyseries.FrequencySeries` allows us to study how that amplitude changes over frequency, the time-frequency `~gwpy.spectrogram.Spectrogram` allows us to track the evolution of the `~gwpy.frequencyseries.FrequencySeries` over time.
 
 This object is a 2-dimensional array, essentially a stacked set of spectra, one per unit time.
 
-As always, a `Spectrogram` can be generated from any abitrary data sequence, but here the required metadata are a combination of those required for the `~gwpy.timeserises.TimeSeries` and `~gwpy.frequencyseries.FrequencySeries`::
+As always, a `Spectrogram` can be generated from any arbitrary data sequence, but here the required metadata are a combination of those required for the `~gwpy.timeserises.TimeSeries` and `~gwpy.frequencyseries.FrequencySeries`::
 
     >>> import numpy
     >>> specgram = Spectrogram(numpy.random.random((100, 1000)), epoch=1000000000, sample_rate=1, f0=0, df=1)
