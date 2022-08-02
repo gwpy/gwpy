@@ -182,15 +182,6 @@ To read multiple channels from one or more GWF files (rather than opening and cl
 
    >>> data = TimeSeriesDict.read('HLV-HW100916-968654552-1.gwf', ['H1:LDAS-STRAIN', 'L1:LDAS-STRAIN'])
 
-In this case the ``resample`` and ``dtype`` keywords can be given as a single value used for all data channels, or a `dict` mapping an argument for each data channel name:
-
-.. code-block:: python
-
-   >>> data = TimeSeriesDict.read('HLV-HW100916-968654552-1.gwf', ['H1:LDAS-STRAIN', 'L1:LDAS-STRAIN'],
-   ...                            resample={'H1:LDAS-STRAIN': 2048})
-
-The above example will resample only the ``'H1:LDAS-STRAIN'`` `TimeSeries` and will not modify that for ``'L1:LDAS-STRAIN'``.
-
 .. note::
 
    A mix of `TimeSeries` and `StateVector` objects can be read by using only `TimeSeriesDict` class, and casting the returned data to a `StateVector` using :meth:`~TimeSeries.view`.
