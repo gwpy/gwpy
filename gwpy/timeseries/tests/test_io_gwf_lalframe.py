@@ -61,9 +61,7 @@ def _test_open_data_source(source):
     """
     stream = gwpy_lalframe.open_data_source(source)
     assert stream.epoch == TEST_GWF_SEGMENT[0]
-    assert TEST_GWF_PATH == Path(
-        urlparse(stream.cache.list.url).path
-    ).absolute()
+    assert Path(urlparse(stream.cache.list.url).path).samefile(TEST_GWF_PATH)
 
 
 @pytest.mark.parametrize("source", [
