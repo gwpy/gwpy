@@ -262,18 +262,14 @@ class TestAxes(AxesTestBase):
             ax.tile(x, y, w, h, anchor='blah')
 
     @pytest.mark.parametrize('cb_kw', [
-        {'use_axesgrid': True, 'fraction': 0.},
-        {'use_axesgrid': True, 'fraction': 0.15},
-        {'use_axesgrid': False},
+        {},  # our default
+        {'use_axesgrid': True, 'fraction': 0.15},  # match matplotlib behaviour
+        {'use_axesgrid': False, 'fraction': 0.15},  # matplotlib default
     ])
     def test_colorbar(self, ax, cb_kw):
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
         mesh = ax.pcolormesh(array)
-        if not cb_kw['use_axesgrid'] and 'fraction' not in cb_kw:
-            with pytest.warns(PendingDeprecationWarning):
-                cbar = ax.colorbar(vmin=2, vmax=4, **cb_kw)
-        else:
-            cbar = ax.colorbar(vmin=2, vmax=4, **cb_kw)
+        cbar = ax.colorbar(vmin=2, vmax=4, **cb_kw)
         assert cbar.mappable is mesh
         assert cbar.mappable.get_clim() == (2., 4.)
 
