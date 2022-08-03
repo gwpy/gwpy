@@ -21,7 +21,7 @@
 
 from collections import OrderedDict
 
-from ..plot import Plot
+from ..plot.bode import BodePlot
 from ..plot.tex import label_to_latex
 from .spectrum import Spectrum
 
@@ -42,12 +42,20 @@ class TransferFunction(Spectrum):
         # deal with channel type appendages
         if ',' in self.ref_chan:
             self.ref_chan = self.ref_chan.split(',')[0]
+        self.plot_dB = self.args.plot_dB
 
     @classmethod
     def arg_channels(cls, parser):
         group = super().arg_channels(parser)
         group.add_argument('--ref', help='Reference channel against which '
                                          'others will be compared')
+        return group
+
+    @classmethod
+    def arg_yaxis(cls, parser):
+        group = super().arg_yaxis(parser)
+        group.add_argument('--plot-dB', action='store_true',
+                           help='Plot transfer function in dB')
         return group
 
     def _finalize_arguments(self, args):
@@ -68,21 +76,21 @@ class TransferFunction(Spectrum):
     def get_suptitle(self):
         """Start of default super title, first channel is appended to it
         """
-        return 'Transfer function: {0}'.format(self.ref_chan)
+        return f"Transfer function: {self.ref_chan}"
 
     def make_plot(self):
-        """Generate the coherence plot from all time series
+        """Generate the transfer function plot from the time series
         """
         args = self.args
 
         fftlength = float(args.secpfft)
         overlap = args.overlap
-        self.log(2, "Calculating spectrum secpfft: %s, overlap: %s" %
-                 (fftlength, overlap))
+        self.log(2, "Calculating transfer function secpfft: "
+                 f"{fftlength}, overlap: {overlap}")
         if overlap is not None:
             overlap *= fftlength
 
-        self.log(3, 'Reference channel: ' + self.ref_chan)
+        self.log(3, f"Reference channel: {self.ref_chan}")
 
         # group data by segment
         groups = OrderedDict()
@@ -96,7 +104,8 @@ class TransferFunction(Spectrum):
 
         # -- plot
 
-        plot = Plot(figsize=self.figsize, dpi=self.dpi)
+        plot = BodePlot(figsize=self.figsize, dpi=self.dpi,
+                        dB=self.plot_dB)
         ax = plot.gca()
         self.spectra = []
 
@@ -111,7 +120,7 @@ class TransferFunction(Spectrum):
 
                 label = name
                 if len(self.start_list) > 1:
-                    label += ', {0}'.format(series.epoch.gps)
+                    label += f', {series.epoch.gps}'
                 if self.usetex:
                     label = label_to_latex(label)
 
