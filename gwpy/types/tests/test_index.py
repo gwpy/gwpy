@@ -27,11 +27,22 @@ from .. import Index
 class TestIndex(object):
     TEST_CLASS = Index
 
+    def test_define_regular(self):
+        """Check for regression against gwpy/gwpy#1506.
+        """
+        a = self.TEST_CLASS.define(
+            units.Quantity(1000000000),
+            units.Quantity(0.01),
+            500,
+        )
+        assert a.is_regular()
+
     def test_is_regular(self):
         a = self.TEST_CLASS([1, 2, 3, 4, 5, 6], 's')
         assert a.is_regular()
         assert a[::-1].is_regular()
 
+    def test_not_is_regular(self):
         b = self.TEST_CLASS([1, 2, 4, 5, 7, 8, 9])
         assert not b.is_regular()
 
