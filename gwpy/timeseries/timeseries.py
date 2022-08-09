@@ -1440,7 +1440,7 @@ class TimeSeries(TimeSeriesBase):
         # the taper window in segments that are too short
         for seg in (span - deadtime):
             k = int((seg[0] - tstart) * sample)
-            N = int(abs(seg) * sample)
+            N = math.ceil(abs(seg) * sample)
             nhalf = min(npad, N)
             window = planck(2*npad, nleft=(int(k != 0) * npad),
                             nright=(int(k + N != self.size) * npad))
