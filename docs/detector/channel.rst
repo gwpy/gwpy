@@ -38,7 +38,7 @@ This new :class:`Channel` has a number of attributes that describe its source, d
 
 and so on.
 
-Alongside nomnitive attributes, each :class:`Channel` has the following attributes:
+Alongside nominative attributes, each :class:`Channel` has the following attributes:
 
 .. autosummary::
 
