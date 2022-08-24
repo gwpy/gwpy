@@ -111,7 +111,7 @@ Union (``|``)
 
    >>> a | b
 
-returns the intersection of both the `~DataQualityFlag.known` and
+returns the union of both the `~DataQualityFlag.known` and
 `~DataQualityFlag.active` segment lists, e.g::
 
    >>> print(a | b)
@@ -163,7 +163,7 @@ Inversion (``~``)
 
    >>> ~a
 
-returns the same `~DataQualityFlag.known` segments, and the inverse `~DataQualityFlag.active` segment lists, e.g::
+returns the same `~DataQualityFlag.known` segments, and the complement `~DataQualityFlag.active` segment lists, e.g::
 
    >>> print(~a)
    <DataQualityFlag(No name,
