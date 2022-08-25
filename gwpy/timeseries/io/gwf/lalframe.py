@@ -153,9 +153,8 @@ def read(source, channels, start=None, end=None, series_class=TimeSeries,
     # read data
     out = series_class.DictClass()
     for name in channels:
-        out[name] = series_class.from_lal(
-            _read_channel(stream, str(name), start=start, duration=duration),
-            copy=False)
+        ts = _read_channel(stream, str(name), start=start, duration=duration)
+        out[name] = series_class.from_lal(ts, copy=False)
         lalframe.FrStreamSeek(stream, epoch)
     return out
 

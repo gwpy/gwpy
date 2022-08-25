@@ -683,12 +683,21 @@ class TimeSeriesBase(Series):
         """Generate a new TimeSeries from a LAL TimeSeries of any type.
         """
         # convert the units
-        from ..utils.lal import from_lal_unit
+        from ..utils.lal import (from_lal_unit, from_lal_type)
         unit = from_lal_unit(lalts.sampleUnits)
+
+        try:
+            dtype = lalts.data.data.dtype
+        except AttributeError:  # no data
+            dtype = from_lal_type(lalts)
+            data = []
+        else:
+            data = lalts.data.data
 
         # create new series
         out = cls(
-            lalts.data.data,
+            data,
+            dtype=dtype,
             name=lalts.name or None,
             unit=unit,
             t0=lalts.epoch,
@@ -697,7 +706,6 @@ class TimeSeriesBase(Series):
             copy=False,
         )
 
-        # return a copy, or the new series
         if copy:
             return out.copy()
         return out

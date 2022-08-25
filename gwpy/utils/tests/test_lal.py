@@ -52,11 +52,45 @@ def test_find_typed_function():
     try:
         import lalframe
     except ImportError:  # no lalframe
-        pass
-    else:
-        utils_lal.find_typed_function(
-            'REAL4', 'FrStreamRead', 'TimeSeries',
-            module=lalframe) is lalframe.FrStreamReadREAL4TimeSeries
+        return
+    utils_lal.find_typed_function(
+        'REAL4', 'FrStreamRead', 'TimeSeries',
+        module=lalframe) is lalframe.FrStreamReadREAL4TimeSeries
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    [
+        numpy.int16,
+        numpy.int32,
+        numpy.int64,
+        numpy.uint16,
+        numpy.uint32,
+        numpy.uint64,
+        numpy.float32,
+        numpy.float64,
+        numpy.complex64,
+        numpy.complex128,
+    ]
+)
+def test_from_lal_type(dtype):
+    func = utils_lal.find_typed_function(dtype, 'Create', 'TimeSeries')
+    lalts = func(None, None, 0, 1., None, 1)
+    assert utils_lal.from_lal_type(lalts) is dtype
+    assert utils_lal.from_lal_type(type(lalts)) is dtype
+
+
+@pytest.mark.parametrize('name', [
+    'XXX',
+    'XXXCOMPLEX64ZZZ',
+    'INNT2',
+    'INT5',
+    'REAL42',
+])
+def test_from_lal_type_errors(name):
+    lal_type = type(name, (), {})
+    with pytest.raises(ValueError, match='no known numpy'):
+        utils_lal.from_lal_type(lal_type)
 
 
 @pytest.mark.parametrize(("in_", "out", "scale"), (

@@ -22,6 +22,7 @@ This module requires lal >= 6.14.0
 """
 
 import operator
+import re
 from collections import OrderedDict
 from fractions import Fraction
 from functools import reduce
@@ -71,6 +72,9 @@ LAL_TYPE_FROM_NUMPY = {
 
 LAL_TYPE_STR_FROM_NUMPY = {k: LAL_TYPE_STR[v] for
                            (k, v) in LAL_TYPE_FROM_NUMPY.items()}
+LAL_NUMPY_FROM_TYPE_STR = {v: k for k, v in LAL_TYPE_STR_FROM_NUMPY.items()}
+
+LAL_TYPE_REGEX = re.compile(r'(U?INT|REAL|COMPLEX)\d+')
 
 
 def to_lal_type_str(pytype):
@@ -143,6 +147,33 @@ def find_typed_function(pytype, prefix, suffix, module=lal):
     """
     laltype = to_lal_type_str(pytype)
     return getattr(module, '{0}{1}{2}'.format(prefix, laltype, suffix))
+
+
+def from_lal_type(laltype):
+    """Convert the data type of a LAL instance or type into a numpy data type.
+
+    Parameters
+    ----------
+    laltype : `SwigPyObject` or `type`
+        the input LAL instance or type
+
+    Returns
+    -------
+    dtype : `type`
+        the numpy data type, such as `numpy.uint32`, `numpy.float64`, etc.
+
+    Raises
+    ------
+    ValueError
+        if the numpy data type cannot be inferred from the LAL object
+    """
+    if not isinstance(laltype, type):
+        laltype = type(laltype)
+    name = laltype.__name__
+    match = LAL_TYPE_REGEX.match(name)
+    if not match or match[0] not in LAL_NUMPY_FROM_TYPE_STR:
+        raise ValueError(f'{name!r} has no known numpy type equivalent')
+    return LAL_NUMPY_FROM_TYPE_STR[match[0]]
 
 
 # -- units --------------------------------------------------------------------

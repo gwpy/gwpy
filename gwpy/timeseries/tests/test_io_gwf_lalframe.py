@@ -23,6 +23,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import pytest
+import numpy
 
 from gwdatafind.utils import file_segment
 
@@ -43,8 +44,9 @@ gwpy_lalframe = pytest.importorskip("gwpy.timeseries.io.gwf.lalframe")
 TEST_GWF_PATH = Path(TEST_GWF_FILE).absolute()
 TEST_GWF_URL = TEST_GWF_PATH.as_uri()
 
-# get epoch corresponding to this file
+# get info corresponding to this file
 TEST_GWF_SEGMENT = file_segment(TEST_GWF_FILE)
+TEST_GWF_DELTA_T = 1 / 16384
 
 # channels to read
 CHANNELS = ["H1:LDAS-STRAIN", "L1:LDAS-STRAIN", "V1:h_16384Hz"]
@@ -103,7 +105,8 @@ def test_get_stream_duration(stream):
     (None, None),
     (None, TEST_GWF_SEGMENT[0] + .5),
     (TEST_GWF_SEGMENT[0] + .5, None),
-    (TEST_GWF_SEGMENT[0] + .25, TEST_GWF_SEGMENT[1] - .25)
+    (TEST_GWF_SEGMENT[0] + .25, TEST_GWF_SEGMENT[1] - .25),
+    (TEST_GWF_SEGMENT[1] - TEST_GWF_DELTA_T / 2, None),
 ])
 def test_read(start, end):
     data = gwpy_lalframe.read(
@@ -124,7 +127,7 @@ def test_read(start, end):
         assert ts.name == name
 
         # check data span is what we asked for
-        assert ts.xspan == (start, end)
+        assert numpy.allclose(ts.xspan, (start, end), atol=TEST_GWF_DELTA_T)
 
 
 def test_read_channel_error():
@@ -158,9 +161,22 @@ def test_write(tmp_path):
     assert_dict_equal(data, data2, assert_quantity_sub_equal)
 
 
-def test_write_no_ifo(tmp_path):
+@pytest.mark.parametrize(
+    'data',
+    [
+        pytest.param(
+            [],
+            marks=pytest.mark.xfail(
+                raises=RuntimeError,
+                reason='Cannot add an empty series to a frame',
+            )
+        ),
+        [1, 2, 3, 4, 5],
+    ]
+)
+def test_write_no_ifo(tmp_path, data):
     # create timeseries with no IFO
-    data = TimeSeries([1, 2, 3, 4, 5])
+    data = TimeSeries(data, dtype=float)
     tmp = tmp_path / "test.gwf"
     gwpy_lalframe.write(
         {None: data},
