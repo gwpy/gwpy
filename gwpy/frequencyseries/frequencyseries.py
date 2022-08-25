@@ -437,8 +437,8 @@ class FrequencySeries(Series):
             epoch = self.epoch.gps
         if self.f0.to('Hz').value:
             raise ValueError(
-                f"Cannot convert FrequencySeries to PyCBC with f0 = {self.f0}. "
-                "Starting frequency must be equal to 0 Hz."
+                f"Cannot convert FrequencySeries to PyCBC with f0 = {self.f0}."
+                " Starting frequency must be equal to 0 Hz."
             )
         return types.FrequencySeries(self.value,
                                      delta_f=self.df.to('Hz').value,
