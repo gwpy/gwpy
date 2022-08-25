@@ -1805,6 +1805,56 @@ class TimeSeries(TimeSeriesBase):
         out = in_.convolve(tdw, window=window)
         return out * numpy.sqrt(2 * in_.dt.decompose().value)
 
+    def find_gates(self, tzero=1.0, whiten=True,
+                   threshold=50., cluster_window=0.5, **whiten_kwargs):
+        """Identify points that should be gates using a provided threshold
+        and clustered within a provided time window.
+
+        Parameters
+        ----------
+        tzero : `int`, optional
+            half-width time duration (seconds) in which the timeseries is
+            set to zero
+
+        whiten : `bool`, optional
+            if True, data will be whitened before gating points are discovered,
+            use of this option is highly recommended
+
+        threshold : `float`, optional
+            amplitude threshold, if the data exceeds this value a gating window
+            will be placed
+
+        cluster_window : `float`, optional
+            time duration (seconds) over which gating points will be clustered
+
+        **whiten_kwargs
+            other keyword arguments that will be passed to the
+            `TimeSeries.whiten` method if it is being used when discovering
+            gating points
+
+        Returns
+        -------
+        out : `~gwpy.segments.SegmentList`
+            a list of segments that should be gated based on the
+            provided parameters
+
+        See also
+        --------
+        TimeSeries.gate
+            for a method that applies the identified gates
+        """
+        # Find points to gate based on a threshold
+        sample = self.sample_rate.to('Hz').value
+        data = self.whiten(**whiten_kwargs) if whiten else self
+        window_samples = cluster_window * sample
+        gates = signal.find_peaks(abs(data.value), height=threshold,
+                                  distance=window_samples)[0]
+        # represent gates as time segments
+        return SegmentList([Segment(
+            self.t0.value + (k / sample) - tzero,
+            self.t0.value + (k / sample) + tzero,
+        ) for k in gates]).coalesce()
+
     def gate(self, tzero=1.0, tpad=0.5, whiten=True,
              threshold=50., cluster_window=0.5, **whiten_kwargs):
         """Removes high amplitude peaks from data using inverse Planck window.
@@ -1873,23 +1923,16 @@ class TimeSeries(TimeSeriesBase):
         --------
         TimeSeries.mask
             for the method that masks out unwanted data
+        TimeSeries.find_gates
+            for the method that identifies gating points
         TimeSeries.whiten
             for the whitening filter used to identify gating points
         """
-        from scipy.signal import find_peaks
-        # Find points to gate based on a threshold
-        sample = self.sample_rate.to('Hz').value
-        data = self.whiten(**whiten_kwargs) if whiten else self
-        window_samples = cluster_window * sample
-        gates = find_peaks(abs(data.value), height=threshold,
-                           distance=window_samples)[0]
-        # represent gates as time segments
-        deadtime = SegmentList([Segment(
-            self.t0.value + (k / sample) - tzero,
-            self.t0.value + (k / sample) + tzero,
-        ) for k in gates]).coalesce()
-        # return the self-gated timeseries
-        return self.mask(deadtime=deadtime, const=0, tpad=tpad)
+        gates = self.find_gates(tzero=tzero, whiten=whiten,
+                                threshold=threshold,
+                                cluster_window=cluster_window,
+                                **whiten_kwargs)
+        return self.mask(deadtime=gates, const=0, tpad=tpad)
 
     def convolve(self, fir, window='hann'):
         """Convolve this `TimeSeries` with an FIR filter using the
