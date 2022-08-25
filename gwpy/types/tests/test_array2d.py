@@ -193,6 +193,33 @@ class TestArray2D(_TestSeries):
             exclude=['epoch'],
         )
 
+    @pytest.mark.xfail(
+        reason="https://github.com/gwpy/gwpy/issues/1504",
+        raises=IndexError,
+    )
+    def test_single_column_slice(self):
+        """Check that we can slice an `Array2D` into a single column.
+
+        But still represent the output as an `Array2D` with `Index` arrays.
+
+        This tests regression of https://github.com/gwpy/gwpy/issues/1504.
+        """
+        # create an array with indices
+        a = self.create()
+        a.xindex
+        a.yindex
+
+        # select a slice of width 1 (as opposed to indexing a single column)
+        b = a[0:1]
+
+        # and check that the index arrays were correctly preserved
+        assert isinstance(b, self.TEST_CLASS)
+        for attr in ("x0", "dx", "xunit", "y0", "dy", "yunit"):
+            assert getattr(a, attr) == getattr(b, attr)
+        utils.assert_array_equal(b[0], a[0])
+        utils.assert_array_equal(b.xindex, a.xindex[0:1])
+        utils.assert_array_equal(b.yindex, a.yindex)
+
     def test_is_compatible_yindex(self):
         """Check that irregular arrays are compatible if their yindexes match
         """
