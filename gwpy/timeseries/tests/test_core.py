@@ -176,8 +176,7 @@ class TestTimeSeriesBase(_TestSeries):
         # check that to + from returns the same array
         lalts = array.to_lal()
         a2 = type(array).from_lal(lalts)
-        utils.assert_quantity_sub_equal(array, a2, exclude=['name', 'channel'])
-        assert a2.name == ''
+        utils.assert_quantity_sub_equal(array, a2, exclude=['channel'])
 
     @utils.skip_missing_dependency("lal")
     @pytest.mark.parametrize("copy", (False, True))
