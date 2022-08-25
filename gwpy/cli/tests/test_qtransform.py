@@ -23,8 +23,9 @@ import os
 import re
 from unittest import mock
 
+import pytest
+
 from ... import cli
-from ...testing.utils import skip_missing_dependency
 from .base import (update_namespace, mock_nds2_connection)
 from .test_spectrogram import TestCliSpectrogram as _TestCliSpectrogram
 
@@ -68,7 +69,7 @@ class TestCliQtransform(_TestCliSpectrogram):
     def test_get_suptitle(self, prod):
         assert prod.get_suptitle() == f'Q-transform: {prod.chan_list[0]}'
 
-    @skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_run(self, prod):
         conn, _ = mock_nds2_connection()
         outf = 'X1-TEST_CHANNEL-5.0-0.5.png'

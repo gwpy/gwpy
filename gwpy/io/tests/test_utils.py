@@ -25,7 +25,6 @@ from pathlib import Path
 
 import pytest
 
-from ...testing.utils import skip_missing_dependency
 from .. import (
     cache as io_cache,
     utils as io_utils,
@@ -71,7 +70,7 @@ def test_file_list_file(cache):  # noqa: F811
         assert io_utils.file_list(f) == [f.name]
 
 
-@skip_missing_dependency("lal")
+@pytest.mark.requires("lal")
 def test_file_list_cache(cache):  # noqa: F811
     from lal.utils import CacheEntry
     # test CacheEntry -> [CacheEntry.path]
@@ -129,7 +128,7 @@ def test_file_path_errors(badthing):
     assert str(exc.value).startswith("Cannot parse file name for")
 
 
-@skip_missing_dependency("lal")
+@pytest.mark.requires("lal")
 def test_file_path_cacheentry():
     from lal.utils import CacheEntry
     path = "/path/to/A-B-0-1.txt"

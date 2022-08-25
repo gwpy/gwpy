@@ -108,7 +108,7 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
         assert a2.dtype is numpy.dtype(bool)
         utils.assert_array_equal(array.value, a2.value)
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_from_nds2_buffer(self):
         # build fake buffer
         nds_buffer = mocks.nds2_buffer(
@@ -331,7 +331,9 @@ class TestStateVector(_TestTimeSeriesBase):
     @pytest.mark.parametrize('format', [
         'hdf5',
         pytest.param(  # only frameCPP actually reads units properly
-            'gwf', marks=utils.skip_missing_dependency('LDAStools.frameCPP')),
+            "gwf",
+            marks=pytest.mark.requires("LDAStools.frameCPP"),
+        ),
     ])
     @pytest_skip_network_error
     def test_fetch_open_data(self, format):
@@ -352,7 +354,7 @@ class TestStateVector(_TestTimeSeriesBase):
         utils.assert_quantity_sub_equal(sv, ref, exclude=['channel', 'bits'])
         assert sorted(map(str, sv.bits)) == sorted(map(str, ref.bits))
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_from_nds2_buffer(self):
         # build fake buffer
         nds_buffer = mocks.nds2_buffer(

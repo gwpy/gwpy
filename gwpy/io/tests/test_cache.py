@@ -28,7 +28,6 @@ import numpy
 import pytest
 
 from ...segments import (Segment, SegmentList)
-from ...testing.utils import skip_missing_dependency
 from .. import cache as io_cache
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -94,7 +93,7 @@ def test_read_write_cache(cache, tmp_path, format, entry1):
     ) == cache[1::-1]
 
 
-@skip_missing_dependency('lal.utils')
+@pytest.mark.requires("lal.utils")
 def test_write_cache_cacheentry(cache, tmp_path):
     from lal.utils import CacheEntry
     tmp = tmp_path / "test.lcf"
@@ -121,14 +120,14 @@ def test_is_cache(input_, result):
     assert io_cache.is_cache(input_) is result
 
 
-@skip_missing_dependency('lal.utils')
+@pytest.mark.requires("lal.utils")
 def test_is_cache_lal():
     cache = [io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt')]
     assert io_cache.is_cache(cache)
     assert not io_cache.is_cache(cache + [None])
 
 
-@skip_missing_dependency('glue.lal')
+@pytest.mark.requires("glue.lal")
 def test_is_cache_glue():
     assert io_cache.is_cache(io_cache.Cache())
 
@@ -140,7 +139,7 @@ def test_is_cache_glue():
         assert io_cache.is_cache(f) is False
 
 
-@skip_missing_dependency('lal.utils')
+@pytest.mark.requires("lal.utils")
 def test_is_cache_file(tmp_path):
     """Check that `gwpy.io.cache.is_cache` returns `True` when it should
     """
@@ -155,7 +154,7 @@ def test_is_cache_file(tmp_path):
         assert io_cache.is_cache(tmpf)  # open file object
 
 
-@skip_missing_dependency('lal.utils')
+@pytest.mark.requires("lal.utils")
 def test_is_cache_file_empty(tmp_path):
     """Check that `gwpy.io.cache.is_cache` returns False when it should
     """

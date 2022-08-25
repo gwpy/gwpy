@@ -53,29 +53,21 @@ from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
 
-SKIP_CVMFS_GWOSC = pytest.mark.skipif(
-    not os.path.isdir('/cvmfs/gwosc.osgstorage.org/'),
-    reason="GWOSC CVMFS repository not available",
-)
-SKIP_FRAMECPP = utils.skip_missing_dependency('LDAStools.frameCPP')
-SKIP_FRAMEL = utils.skip_missing_dependency('framel')
-SKIP_LAL = utils.skip_missing_dependency('lal')
-SKIP_LALFRAME = utils.skip_missing_dependency('lalframe')
-SKIP_PYCBC_PSD = utils.skip_missing_dependency('pycbc.psd')
-
 try:
     get_default_gwf_api()
 except ImportError:
     HAVE_GWF_API = False
 else:
     HAVE_GWF_API = True
-SKIP_GWF_API = pytest.mark.skipif(not HAVE_GWF_API, reason="no GWF API")
 
 GWF_APIS = [
-    pytest.param(None, marks=SKIP_GWF_API),
-    pytest.param('lalframe', marks=SKIP_LALFRAME),
-    pytest.param('framecpp', marks=SKIP_FRAMECPP),
-    pytest.param('framel', marks=SKIP_FRAMEL),
+    pytest.param(
+        None,
+        marks=pytest.mark.skipif(not HAVE_GWF_API, reason="no GWF API"),
+    ),
+    pytest.param('lalframe', marks=pytest.mark.requires("lalframe")),
+    pytest.param('framecpp', marks=pytest.mark.requires("LDAStools.frameCPP")),
+    pytest.param('framel', marks=pytest.mark.requires("framel")),
 ]
 
 
@@ -125,9 +117,12 @@ def _gwosc_cvmfs(func):
     """
     for dec in (
         pytest.mark.cvmfs,
+        pytest.mark.requires("LDAStools.frameCPP"),
+        pytest.mark.skipif(
+            not os.path.isdir('/cvmfs/gwosc.osgstorage.org/'),
+            reason="GWOSC CVMFS repository not available",
+        ),
         pytest_skip_cvmfs_read_error,
-        SKIP_CVMFS_GWOSC,
-        SKIP_FRAMECPP,
     ):
         func = dec(func)
     return func
@@ -295,7 +290,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     @pytest.mark.parametrize('api', [
-        pytest.param('framecpp', marks=SKIP_FRAMECPP),
+        pytest.param(
+            'framecpp',
+            marks=pytest.mark.requires("LDAStools.frameCPP"),
+        ),
     ])
     def test_read_write_gwf_error(self, tmp_path, api, gw150914):
         tmp = tmp_path / "test.gwf"
@@ -320,7 +318,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             "Failed to read {0!r} from {1!r}".format(gw150914.name, str(tmp))
         )
 
-    @SKIP_LALFRAME
+    @pytest.mark.requires("lalframe")
     def test_read_gwf_scaled_lalframe(self):
         with warnings.catch_warnings():
             warnings.simplefilter("error")
@@ -339,7 +337,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             )
         utils.assert_quantity_sub_equal(data, data2)
 
-    @SKIP_FRAMECPP  # we need framecpp to extract frdata types
+    @pytest.mark.requires("LDAStools.frameCPP")
     @pytest.mark.parametrize("ctype", ("adc", "proc", "sim", None))
     @pytest.mark.parametrize("api", GWF_APIS)
     def test_write_gwf_type(self, gw150914, tmp_path, api, ctype):
@@ -496,7 +494,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 gap="raise",
             )
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_from_nds2_buffer_dynamic_scaled(self):
         # build fake buffer for LIGO channel
         nds_buffer = mocks.nds2_buffer(
@@ -528,7 +526,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.mark.parametrize('format', [
         'hdf5',
-        pytest.param('gwf', marks=SKIP_FRAMECPP),
+        pytest.param('gwf', marks=pytest.mark.requires("LDAStools.frameCPP")),
     ])
     @pytest_skip_network_error
     def test_fetch_open_data(self, gw150914, format):
@@ -562,7 +560,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 1,
             )
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     @pytest.mark.parametrize('protocol', (1, 2))
     def test_fetch(self, protocol):
         ts = self.create(name='L1:TEST', t0=1000000000, unit='m')
@@ -593,7 +591,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             assert ts2[-11] == ts[-1]
             assert ts2[-1] == -100. * ts.unit
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_fetch_empty_iterate_error(self):
         # test that the correct error is raised if nds2.connection.iterate
         # yields no buffers (and no errors)
@@ -685,7 +683,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=['name', 'channel', 'unit'],
         )
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     @utils.skip_kerberos_credential
     @mock.patch.dict(os.environ)
     def test_get_nds2(self, gw150914_16384):
@@ -736,7 +734,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             gw150914.psd(.5, .25, method="median", window="hann"),
         )
 
-    @SKIP_LAL
+    @pytest.mark.requires("lal")
     def test_psd_lal_median_mean(self, gw150914):
         # check that warnings and errors get raised in the right place
         # for a median-mean PSD with the wrong data size or parameters
@@ -834,12 +832,15 @@ class TestTimeSeries(_TestTimeSeriesBase):
         'scipy-welch',
         'scipy-bartlett',
         'scipy-median',
-        pytest.param('lal-welch', marks=SKIP_LAL),
-        pytest.param('lal-bartlett', marks=SKIP_LAL),
-        pytest.param('lal-median', marks=SKIP_LAL),
-        pytest.param('pycbc-welch', marks=SKIP_PYCBC_PSD),
-        pytest.param('pycbc-bartlett', marks=SKIP_PYCBC_PSD),
-        pytest.param('pycbc-median', marks=SKIP_PYCBC_PSD),
+        pytest.param("lal-welch", marks=pytest.mark.requires("lal")),
+        pytest.param("lal-bartlett", marks=pytest.mark.requires("lal")),
+        pytest.param("lal-median", marks=pytest.mark.requires("lal")),
+        pytest.param("pycbc-welch", marks=pytest.mark.requires("pycbc.psd")),
+        pytest.param(
+            "pycbc-bartlett",
+            marks=pytest.mark.requires("pycbc.psd"),
+        ),
+        pytest.param("pycbc-median", marks=pytest.mark.requires("pycbc.psd")),
     ])
     @pytest.mark.parametrize(
         'window', (None, 'hann', ('kaiser', 24), 'array'),
@@ -906,8 +907,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
     @pytest.mark.parametrize('library', [
-        pytest.param('lal', marks=SKIP_LAL),
-        pytest.param('pycbc', marks=SKIP_PYCBC_PSD),
+        pytest.param('lal', marks=pytest.mark.requires("lal")),
+        pytest.param('pycbc', marks=pytest.mark.requires("pycbc.psd")),
     ])
     def test_spectrogram_median_mean(self, gw150914, library):
         method = '{0}-median-mean'.format(library)
@@ -1448,7 +1449,7 @@ class TestTimeSeriesDict(_TestTimeSeriesBaseDict):
     TEST_CLASS = TimeSeriesDict
     ENTRY_CLASS = TimeSeries
 
-    @SKIP_FRAMEL
+    @pytest.mark.requires("framel")
     def test_read_write_gwf(self, instance, tmp_path):
         tmp = tmp_path / "test.gwf"
         instance.write(tmp)

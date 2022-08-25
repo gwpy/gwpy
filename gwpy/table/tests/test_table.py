@@ -128,7 +128,7 @@ class TestTable(object):
 
     # -- test I/O -------------------------------
 
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.requires("ligo.lw.lsctables")
     @pytest.mark.parametrize('ext', ['xml', 'xml.gz'])
     def test_read_write_ligolw(self, tmp_path, ext):
         table = self.create(
@@ -207,7 +207,7 @@ class TestTable(object):
         assert str(exc.value) == ('document must contain exactly '
                                   'one sngl_burst table')
 
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.requires("ligo.lw.lsctables")
     def test_read_write_ligolw_property_columns(self, tmp_path):
         table = self.create(100, ['peak', 'snr', 'central_freq'],
                             ['f8', 'f4', 'f4'])
@@ -234,7 +234,7 @@ class TestTable(object):
         )
         utils.assert_table_equal(t2, table, almost_equal=True)
 
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.requires("ligo.lw.lsctables")
     def test_read_ligolw_get_as_exclude(self, tmp_path):
         table = self.TABLE(
             rows=[
@@ -262,7 +262,7 @@ class TestTable(object):
         t2.sort("instrument")
         utils.assert_table_equal(t2, table)
 
-    @utils.skip_missing_dependency('uproot')
+    @pytest.mark.requires("uproot")
     def test_read_write_root(self, table, tmp_path):
         tmp = tmp_path / "table.root"
 
@@ -290,7 +290,7 @@ class TestTable(object):
             ),
         )
 
-    @utils.skip_missing_dependency('uproot')
+    @pytest.mark.requires("uproot")
     def test_write_root_overwrite(self, table, tmp_path):
         tmp = tmp_path / "table.root"
         table.write(tmp)
@@ -302,7 +302,7 @@ class TestTable(object):
         # assert works with overwrite=True
         table.write(tmp, overwrite=True)
 
-    @utils.skip_missing_dependency('uproot')
+    @pytest.mark.requires("uproot")
     def test_read_root_multiple_trees(self, tmp_path):
         uproot = pytest.importorskip("uproot")
         tmp = tmp_path / "table.root"
@@ -315,7 +315,7 @@ class TestTable(object):
         assert str(exc.value).startswith('Multiple trees found')
         self.TABLE.read(tmp, treename="a")
 
-    @utils.skip_missing_dependency('uproot')
+    @pytest.mark.requires("uproot")
     def test_read_write_root_append(self, table, tmp_path):
         tmp = tmp_path / "table.root"
         # write one tree
@@ -326,7 +326,7 @@ class TestTable(object):
         self.TABLE.read(tmp, treename="a")
         self.TABLE.read(tmp, treename="b")
 
-    @utils.skip_missing_dependency('uproot')
+    @pytest.mark.requires("uproot")
     def test_read_write_root_append_overwrite(self, table, tmp_path):
         tmp = tmp_path / "table.root"
         # write one tree
@@ -341,7 +341,7 @@ class TestTable(object):
         utils.assert_table_equal(table, self.TABLE.read(tmp, treename="b"))
         utils.assert_table_equal(t2, self.TABLE.read(tmp, treename="a"))
 
-    @utils.skip_missing_dependency('LDAStools.frameCPP')
+    @pytest.mark.requires("LDAStools.frameCPP")
     def test_read_write_gwf(self, tmp_path):
         table = self.create(100, ['time', 'blah', 'frequency'])
         columns = table.dtype.names
@@ -520,7 +520,7 @@ class TestEventTable(TestTable):
         assert isinstance(rate, TimeSeries)
         assert rate.sample_rate == 1 * units.Hz
 
-    @utils.skip_missing_dependency('lal')
+    @pytest.mark.requires("lal")
     def test_event_rates_gpsobject(self, table):
         """Test that `EventTable.event_rate` can handle object dtypes
         """

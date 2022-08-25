@@ -30,7 +30,6 @@ from ...io.cache import write_cache
 from ...testing.utils import (
     assert_dict_equal,
     assert_quantity_sub_equal,
-    skip_missing_dependency,
     TEST_GWF_FILE,
 )
 from ...timeseries import TimeSeries
@@ -74,7 +73,7 @@ def test_open_data_source(source):
     return _test_open_data_source(source)
 
 
-@skip_missing_dependency("glue.lal")
+@pytest.mark.requires("glue.lal")
 def test_open_data_source_glue():
     from glue.lal import Cache
     Cache.entry_class = lal_utils.CacheEntry

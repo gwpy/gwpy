@@ -386,7 +386,7 @@ class TestDataQualityFlag(object):
         with pytest.raises(TypeError):
             flag.pad(*PADDING, kwarg='test')
 
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.requires("ligo.lw.lsctables")
     def test_from_veto_def(self):
         from ligo.lw.lsctables import VetoDef
 
@@ -465,7 +465,7 @@ class TestDataQualityFlag(object):
         f2 = self.TEST_CLASS.read(tmp)
         utils.assert_flag_equal(f2, flag)
 
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.requires("ligo.lw.lsctables")
     def test_read_write_ligolw(self, flag):
         utils.test_read_write(
             flag,
@@ -476,7 +476,7 @@ class TestDataQualityFlag(object):
             read_kw={},
         )
 
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.requires("ligo.lw.lsctables")
     def test_write_ligolw_attrs(self, tmp_path, flag):
         from gwpy.io.ligolw import read_table
         tmp = tmp_path / "tmp.xml"
@@ -665,7 +665,7 @@ class TestDataQualityDict(object):
 
     # -- test I/O -------------------------------
 
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.requires("ligo.lw.lsctables")
     def test_from_veto_definer_file(self, veto_definer):
         # read veto definer
         vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer)
@@ -716,7 +716,7 @@ class TestDataQualityDict(object):
             _read_write(autoidentify=True)
         _read_write(autoidentify=True, write_kw={'overwrite': True})
 
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.requires("ligo.lw.lsctables")
     def test_read_write_ligolw(self, instance):
         def _assert(a, b):
             return utils.assert_dict_equal(a, b, utils.assert_flag_equal)
@@ -762,7 +762,7 @@ class TestDataQualityDict(object):
             with pytest.raises(ValueError) as exc:
                 _read(on_missing='blah')
 
-    @utils.skip_missing_dependency('ligo.lw.lsctables')
+    @pytest.mark.requires("ligo.lw.lsctables")
     def test_to_ligolw_tables(self, instance):
         tables = instance.to_ligolw_tables()
         assert len(tables[0]) == len(instance)  # segdef

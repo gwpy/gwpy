@@ -41,8 +41,6 @@ TEST_RESULTS = {
     'burst_range': 13.592140825568954 * units.Mpc,
 }
 
-SKIP_INSPIRAL_RANGE = utils.skip_missing_dependency("inspiral_range")
-
 
 @pytest.fixture(scope='module')
 def hoft():
@@ -96,7 +94,7 @@ def test_inspiral_range_missing_dep(psd):
     assert "'inspiral-range'" in str(exc.value)
 
 
-@SKIP_INSPIRAL_RANGE
+@pytest.mark.requires("inspiral_range")
 def test_inspiral_range_psd(psd):
     """Test for :func:`gwpy.astro.inspiral_range_psd`
     """
@@ -111,7 +109,7 @@ def test_inspiral_range_psd(psd):
     assert r.f0.value > 0
 
 
-@SKIP_INSPIRAL_RANGE
+@pytest.mark.requires("inspiral_range")
 def test_inspiral_range(psd):
     """Test for :func:`gwpy.astro.inspiral_range`
     """
@@ -147,7 +145,7 @@ def test_burst_range(psd):
 @pytest.mark.parametrize('rangekwargs', [
     pytest.param(
         {'mass1': 1.4, 'mass2': 1.4},
-        marks=[SKIP_INSPIRAL_RANGE],
+        marks=[pytest.mark.requires("inspiral_range")],
         id="inspiral_range",
     ),
     pytest.param(
@@ -176,7 +174,7 @@ def test_range_timeseries(hoft, rangekwargs):
     pytest.param(
         {'mass1': 1.4, 'mass2': 1.4},
         units.Mpc ** 2 / units.Hz,
-        marks=[SKIP_INSPIRAL_RANGE],
+        marks=[pytest.mark.requires("inspiral_range")],
         id="inspiral_range",
     ),
     pytest.param(

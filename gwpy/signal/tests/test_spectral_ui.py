@@ -30,7 +30,6 @@ from astropy import units
 from ...testing.utils import (
     assert_array_equal,
     assert_quantity_sub_equal,
-    skip_missing_dependency,
 )
 from ...timeseries import TimeSeries
 from ..spectral import _ui as fft_ui
@@ -73,7 +72,7 @@ def test_normalize_fft_params_window_array():
     assert_array_equal(ftp.pop("window"), win)
 
 
-@skip_missing_dependency("lal")
+@pytest.mark.requires("lal")
 @pytest.mark.parametrize("win", [
     "hann",
     signal.get_window(("kaiser", 14), 1024),

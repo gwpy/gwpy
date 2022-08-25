@@ -133,7 +133,7 @@ class TestTimeSeriesBase(_TestSeries):
             plot.save(BytesIO(), format='png')
             plot.close()
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_from_nds2_buffer(self):
         # build fake buffer
         nds_buffer = mocks.nds2_buffer(
@@ -171,14 +171,14 @@ class TestTimeSeriesBase(_TestSeries):
         assert b.dt == 1/128. * units.s
         assert shares_memory(nds_buffer.data, b.value)
 
-    @utils.skip_missing_dependency("lal")
+    @pytest.mark.requires("lal")
     def test_to_from_lal(self, array):
         # check that to + from returns the same array
         lalts = array.to_lal()
         a2 = type(array).from_lal(lalts)
         utils.assert_quantity_sub_equal(array, a2, exclude=['channel'])
 
-    @utils.skip_missing_dependency("lal")
+    @pytest.mark.requires("lal")
     @pytest.mark.parametrize("copy", (False, True))
     def test_to_from_lal_no_copy(self, array, copy):
         """Check that copy=False shares data
@@ -187,7 +187,7 @@ class TestTimeSeriesBase(_TestSeries):
         a2 = type(array).from_lal(lalts, copy=copy)
         assert shares_memory(a2.value, lalts.data.data) is not copy
 
-    @utils.skip_missing_dependency("lal")
+    @pytest.mark.requires("lal")
     def test_to_from_lal_unrecognised_units(self, array):
         """Test that unrecognised units get warned, but the operation continues
         """
@@ -199,7 +199,7 @@ class TestTimeSeriesBase(_TestSeries):
         a2 = self.TEST_CLASS.from_lal(lalts)
         assert a2.unit == units.dimensionless_unscaled
 
-    @utils.skip_missing_dependency("lal")
+    @pytest.mark.requires("lal")
     def test_to_from_lal_pow10_units(self, array):
         """Test that normal scaled units scale the data properly
         """
@@ -209,7 +209,7 @@ class TestTimeSeriesBase(_TestSeries):
         utils.assert_array_equal(lalts.data.data, array.value)
         assert lalts.sampleUnits == lal.MeterUnit * 1000.
 
-    @utils.skip_missing_dependency("lal")
+    @pytest.mark.requires("lal")
     def test_to_from_lal_scaled_units(self, array):
         """Test that weird scaled units scale the data properly
         """
@@ -219,8 +219,7 @@ class TestTimeSeriesBase(_TestSeries):
         utils.assert_array_equal(lalts.data.data, array.value * 123.)
         assert lalts.sampleUnits == lal.MeterUnit
 
-    @utils.skip_missing_dependency('lal')
-    @utils.skip_missing_dependency('pycbc')
+    @pytest.mark.requires("lal", "pycbc")
     def test_to_from_pycbc(self, array):
         from pycbc.types import TimeSeries as PyCBCTimeSeries
 
@@ -380,7 +379,7 @@ class TestTimeSeriesBaseDict(object):
     def test_get(self):
         return NotImplemented
 
-    @utils.skip_missing_dependency('nds2')
+    @pytest.mark.requires("nds2")
     def test_from_nds2_buffers(self):
         buffers = [
             mocks.nds2_buffer('X1:TEST', numpy.arange(100), 1000000000,

@@ -23,12 +23,10 @@ from unittest import mock
 
 import pytest
 
-from ...testing.utils import skip_missing_dependency
 from ..spectral import _median_mean as fft_median_mean
 
 
-@skip_missing_dependency("pycbc.psd")
-@skip_missing_dependency("lal")
+@pytest.mark.requires("lal", "pycbc.psd")
 @mock.patch(
     "gwpy.signal.spectral._pycbc.welch",
     side_effect=(None, ImportError, ImportError),
