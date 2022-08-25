@@ -19,22 +19,22 @@
 """Transfer function plots
 """
 
+from astropy.time import Time
 from collections import OrderedDict
 
 from ..plot.bode import BodePlot
 from ..plot.tex import label_to_latex
-from .spectrum import Spectrum
+from .cliproduct import (TransferFunctionProduct, FFTMixin)
+from ..plot.gps import GPS_SCALES
 
 __author__ = 'Evan Goetz <evan.goetz@ligo.org>'
 
 
-class TransferFunction(Spectrum):
+class TransferFunction(FFTMixin, TransferFunctionProduct):
     """Plot transfer function between a reference time series and one
     or more other time series
     """
     action = 'transferfunction'
-
-    MIN_DATASETS = 2
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -43,6 +43,12 @@ class TransferFunction(Spectrum):
         if ',' in self.ref_chan:
             self.ref_chan = self.ref_chan.split(',')[0]
         self.plot_dB = self.args.plot_dB
+
+    @property
+    def ax(self, subplot):  # pylint: disable=invalid-name
+        """The current `~matplotlib.axes.Axes` of this product's plot
+        """
+        return self.plot.axes[subplot]
 
     @classmethod
     def arg_channels(cls, parser):
@@ -53,30 +59,122 @@ class TransferFunction(Spectrum):
 
     @classmethod
     def arg_yaxis(cls, parser):
-        group = super().arg_yaxis(parser)
+        group = cls._arg_axis('y-mag-', parser, scale='log')
         group.add_argument('--plot-dB', action='store_true',
                            help='Plot transfer function in dB')
+        group = cls._arg_axis('y-phase-', parser, scale='linear')
+
         return group
 
+    def get_title(self):
+        gps = self.start_list[0]
+        utc = Time(gps, format='gps', scale='utc').iso
+        tstr = f'{utc} | {gps} ({self.duration})'
+
+        fftstr = f'fftlength={self.args.secpfft}, overlap={self.args.overlap}'
+
+        return ', '.join([tstr, fftstr])
+
     def _finalize_arguments(self, args):
-        if args.yscale is None:
-            args.yscale = 'linear'
-        if args.yscale == 'linear':
-            if not args.ymin:
-                args.ymin = 0
-            if not args.ymax:
-                args.ymax = 1.05
+        if args.y_mag_scale is None:
+            args.y_mag_scale = 'log'
+        if args.plot_dB:
+            args.y_mag_scale = 'linear'
+
         return super()._finalize_arguments(args)
 
-    def get_ylabel(self):
+    def get_ylabel(self, subplot):
         """Text for y-axis label
         """
-        return 'Transfer function'
+        if subplot == 0:
+            ylabelstr = 'Magnitude'
+        if subplot == 1:
+            ylabelstr = 'Phase [deg.]'
+        if self.plot_dB:
+            ylabelstr += ' [dB]'
 
-    def get_suptitle(self):
+        return ylabelstr
+
+    def get_suptitle(self, test_ch):
         """Start of default super title, first channel is appended to it
         """
-        return f"Transfer function: {self.ref_chan}"
+        return f"Transfer function: {test_ch}/{self.ref_chan}"
+
+    def set_axes_properties(self):
+
+        self.set_xaxis_properties()
+        self.set_yaxis_properties()
+
+    def _set_axis_properties(self, subplot, axis):
+        """Generic method to set properties for X/Y axis
+        on a specific subplot
+        """
+        def _get(param):
+            return getattr(self.ax(subplot), f'get_{axis}{param}')()
+
+        def _set(param, *args, **kwargs):
+            return getattr(self.ax(subplot), f'set_{axis}{param}')(
+                *args, **kwargs)
+
+        scale = getattr(self.args, f'{axis}scale')
+        label = getattr(self.args, f'{axis}label')
+        min_ = getattr(self.args, f'{axis}min')
+        max_ = getattr(self.args, f'{axis}max')
+
+        # parse limits
+        if (
+            scale == 'auto-gps'
+            and min_ is not None
+            and max_ is not None
+            and max_ < 1e8
+        ):
+            limits = (min_, min_ + max_)
+        else:
+            limits = (min_, max_)
+
+        # set limits
+        if limits[0] is not None or limits[1] is not None:
+            _set('lim', *limits)
+
+        # set scale
+        if scale:
+            _set('scale', scale)
+
+        # reset scale with epoch if using GPS scale
+        if _get('scale') in GPS_SCALES:
+            _set('scale', scale, epoch=self.args.epoch)
+
+        # set label
+        if label is None:
+            label = getattr(self, f'get_{axis}label')()
+        if label:
+            if self.usetex:
+                label = label_to_latex(label)
+            _set('label', label)
+
+        # log
+        limits = _get('lim')
+        scale = _get('scale')
+        label = _get('label')
+        self.log(
+            2,
+            f'{axis.upper()}-axis parameters | '
+            f'scale: {scale} | '
+            f'limits: {limits[0]!s} - {limits[1]!s}'
+        )
+        self.log(3, (f'{axis.upper()}-axis label: {label}'))
+
+    def set_xaxis_properties(self):
+        """Set properties for X-axis
+        """
+        self._set_axis_properties(0, 'x')
+        self._set_axis_properties(1, 'x')
+
+    def set_yaxis_properties(self):
+        """Set properties for Y-axis
+        """
+        self._set_axis_properties(0, 'y-mag-')
+        self._set_axis_properties(1, 'y-phase-')
 
     def make_plot(self):
         """Generate the transfer function plot from the time series
@@ -106,8 +204,8 @@ class TransferFunction(Spectrum):
 
         plot = BodePlot(figsize=self.figsize, dpi=self.dpi,
                         dB=self.plot_dB)
-        ax = plot.gca()
-        self.spectra = []
+        # ax = plot.gca()
+        self.tfs = []
 
         # calculate transfer function
         for seg in groups:
@@ -124,8 +222,8 @@ class TransferFunction(Spectrum):
                 if self.usetex:
                     label = label_to_latex(label)
 
-                ax.plot(tf, label=label)
-                self.spectra.append(tf)
+                plot.add_frequencyseries(tf, dB=self.plot_dB, label=label)
+                self.tfs.append(tf)
 
         if args.xscale == 'log' and not args.xmin:
             args.xmin = 1/fftlength

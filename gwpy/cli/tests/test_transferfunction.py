@@ -19,14 +19,15 @@
 """Unit tests for :mod:`gwpy.cli.transferfunction`
 """
 
+from astropy.time import Time
+
 from ... import cli
-from .base import _TestCliProduct
-from .test_spectrum import TestCliSpectrum as _TestCliSpectrum
+from .base import _TestCliProduct, _TestTransferFunctionProduct
 
 __author__ = 'Evan Goetz <evan.goetz@ligo.org>'
 
 
-class TestCliTransferFunction(_TestCliSpectrum):
+class TestCliTransferFunction(_TestTransferFunctionProduct):
     TEST_CLASS = cli.TransferFunction
     ACTION = 'transferfunction'
     TEST_ARGS = _TestCliProduct.TEST_ARGS + [
@@ -38,5 +39,17 @@ class TestCliTransferFunction(_TestCliSpectrum):
         assert prod.ref_chan == prod.chan_list[0]
 
     def test_get_suptitle(self, prod):
-        assert prod.get_suptitle() == 'Transfer function: {0}'.format(
-            prod.chan_list[0])
+        assert prod.get_suptitle() == f'Transfer function: {prod.chan_list[0]}'
+
+    def test_get_title(self, prod):
+        epoch = prod.start_list[0]
+        utc = Time(epoch, format='gps', scale='utc').iso
+        t = ', '.join([
+            f'{utc} | {epoch} ({prod.duration})',
+            f'fftlength={prod.args.secpfft}',
+            f'overlap={prod.args.overlap}',
+        ])
+        assert prod.get_title() == t
+
+    def test_set_plot_properties(self, prod):
+        pass

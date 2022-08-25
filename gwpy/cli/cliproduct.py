@@ -609,7 +609,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         self._set_axis_properties('x')
 
     def set_yaxis_properties(self):
-        """Set properties for X-axis
+        """Set properties for Y-axis
         """
         self._set_axis_properties('y')
 
@@ -962,3 +962,11 @@ class FrequencyDomainProduct(CliProduct, metaclass=abc.ABCMeta):
         """Default X-axis label for plot
         """
         return 'Frequency (Hz)'
+
+
+class TransferFunctionProduct(FrequencyDomainProduct):
+    """`CliProduct` with frequency on the X-axis and a complex
+    frequency series
+    """
+
+    MIN_DATASETS = 2

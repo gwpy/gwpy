@@ -230,6 +230,8 @@ class _TestCliProduct(object):
 
         if isinstance(plotprod, cliproduct.FrequencyDomainProduct):
             data = plotprod.spectra
+        elif isinstance(plotprod, cliproduct.TransferFunctionProduct):
+            data = plotprod.tfs
         else:
             data = plotprod.timeseries
         xmin = min(series.xspan[0] for series in data)
@@ -308,4 +310,22 @@ class _TestFrequencyDomainProduct(_TestCliProduct):
             fs = FrequencySeries(_random_data(nsamp), x0=0, dx=1/fftlength,
                                  channel=ts.channel, name=ts.name)
             prod.spectra.append(fs)
+        return prod
+
+
+class _TestTransferFunctionProduct(_TestCliProduct):
+    @classmethod
+    @pytest.fixture
+    def dataprod(cls, prod):
+        cls._prod_add_data(prod)
+        fftlength = prod.args.secpfft
+        for i, ts in enumerate(prod.timeseries):
+            nsamp = int(fftlength * 512 / 2.) + 1
+            random.seed(i)
+            if i % 2 == 0:
+                fs = FrequencySeries(
+                    _random_data(nsamp) + 1j*_random_data(nsamp),
+                    x0=0, dx=1/fftlength, channel=ts.channel,
+                    name=ts.name, dtype=complex)
+            prod.tfs.append(fs)
         return prod
