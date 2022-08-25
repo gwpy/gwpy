@@ -193,10 +193,6 @@ class TestArray2D(_TestSeries):
             exclude=['epoch'],
         )
 
-    @pytest.mark.xfail(
-        reason="https://github.com/gwpy/gwpy/issues/1504",
-        raises=IndexError,
-    )
     def test_single_column_slice(self):
         """Check that we can slice an `Array2D` into a single column.
 

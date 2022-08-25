@@ -191,7 +191,10 @@ class Array2D(Series):
         try:
             return self._y0
         except AttributeError:
-            self._y0 = Quantity(0, self.yunit)
+            try:
+                self._y0 = self._yindex[0]
+            except (AttributeError, IndexError):
+                self._y0 = Quantity(0, self.yunit)
             return self._y0
 
     @y0.setter
