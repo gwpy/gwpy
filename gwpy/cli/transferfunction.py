@@ -21,6 +21,7 @@
 
 from astropy.time import Time
 from collections import OrderedDict
+import numpy as np
 
 from ..plot.bode import BodePlot
 from ..plot.tex import label_to_latex
@@ -43,12 +44,14 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
         if ',' in self.ref_chan:
             self.ref_chan = self.ref_chan.split(',')[0]
         self.plot_dB = self.args.plot_dB
+        self.subplot = None
+        self.test_chan = None
 
     @property
-    def ax(self, subplot):  # pylint: disable=invalid-name
+    def ax(self):  # pylint: disable=invalid-name
         """The current `~matplotlib.axes.Axes` of this product's plot
         """
-        return self.plot.axes[subplot]
+        return self.plot.axes[self.subplot]
 
     @classmethod
     def arg_channels(cls, parser):
@@ -59,10 +62,10 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
 
     @classmethod
     def arg_yaxis(cls, parser):
-        group = cls._arg_axis('y-mag-', parser, scale='log')
+        group = cls._arg_axis('ymag', parser, scale='log')
         group.add_argument('--plot-dB', action='store_true',
                            help='Plot transfer function in dB')
-        group = cls._arg_axis('y-phase-', parser, scale='linear')
+        group = cls._arg_axis('yphase', parser, scale='linear')
 
         return group
 
@@ -76,45 +79,58 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
         return ', '.join([tstr, fftstr])
 
     def _finalize_arguments(self, args):
-        if args.y_mag_scale is None:
-            args.y_mag_scale = 'log'
+        if args.ymagscale is None:
+            args.ymagscale = 'log'
         if args.plot_dB:
-            args.y_mag_scale = 'linear'
+            args.ymagscale = 'linear'
 
         return super()._finalize_arguments(args)
 
-    def get_ylabel(self, subplot):
+    def get_ylabel(self):
         """Text for y-axis label
         """
-        if subplot == 0:
+        ylabelstr = ''
+        if self.subplot == 0:
             ylabelstr = 'Magnitude'
-        if subplot == 1:
+            if self.plot_dB:
+                ylabelstr += ' [dB]'
+        if self.subplot == 1:
             ylabelstr = 'Phase [deg.]'
-        if self.plot_dB:
-            ylabelstr += ' [dB]'
 
         return ylabelstr
 
-    def get_suptitle(self, test_ch):
+    def get_suptitle(self):
         """Start of default super title, first channel is appended to it
         """
-        return f"Transfer function: {test_ch}/{self.ref_chan}"
+        return f"Transfer function: {self.test_chan}/{self.ref_chan}"
 
     def set_axes_properties(self):
 
-        self.set_xaxis_properties()
-        self.set_yaxis_properties()
+        for subplot in [0, 1]:
+            self.subplot = subplot
+            self.scale_axes_from_data()
+            self.set_xaxis_properties()
+            self.set_yaxis_properties()
 
-    def _set_axis_properties(self, subplot, axis):
+    def _set_axis_properties(self, axis):
         """Generic method to set properties for X/Y axis
         on a specific subplot
         """
         def _get(param):
-            return getattr(self.ax(subplot), f'get_{axis}{param}')()
+            if axis.lower().startswith('y'):
+                ret = getattr(self.plot.axes[self.subplot], f'get_y{param}')()
+            else:
+                ret = getattr(self.plot.axes[self.subplot], f'get_x{param}')()
+            return ret
 
         def _set(param, *args, **kwargs):
-            return getattr(self.ax(subplot), f'set_{axis}{param}')(
-                *args, **kwargs)
+            if axis.lower().startswith('y'):
+                ret = getattr(self.plot.axes[self.subplot], f'set_y{param}')(
+                    *args, **kwargs)
+            else:
+                ret = getattr(self.plot.axes[self.subplot], f'set_x{param}')(
+                    *args, **kwargs)
+            return ret
 
         scale = getattr(self.args, f'{axis}scale')
         label = getattr(self.args, f'{axis}label')
@@ -146,7 +162,12 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
 
         # set label
         if label is None:
-            label = getattr(self, f'get_{axis}label')()
+            if axis.lower().startswith('y'):
+                label = getattr(self, f'get_ylabel')()
+            else:
+                label = getattr(self, f'get_xlabel')()
+        if self.subplot == 0 and axis == 'x':
+            label = None
         if label:
             if self.usetex:
                 label = label_to_latex(label)
@@ -164,17 +185,60 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
         )
         self.log(3, (f'{axis.upper()}-axis label: {label}'))
 
-    def set_xaxis_properties(self):
-        """Set properties for X-axis
-        """
-        self._set_axis_properties(0, 'x')
-        self._set_axis_properties(1, 'x')
-
     def set_yaxis_properties(self):
         """Set properties for Y-axis
         """
-        self._set_axis_properties(0, 'y-mag-')
-        self._set_axis_properties(1, 'y-phase-')
+        if self.subplot == 0:
+            self._set_axis_properties('ymag')
+        else:
+            self._set_axis_properties('yphase')
+
+    def scale_axes_from_data(self):
+        """Restrict data limits for Y-axis based on what you can see
+        """
+        # get tight limits for X-axis
+        if self.args.xmin is None:
+            self.args.xmin = min(tf.xspan[0] for tf in self.tfs)
+            # this is then typically zero, so if the xscale is log or None
+            # we'll need to set to be the next bin higher (one step of df)
+            if (self.args.xmin == 0 and
+                    (self.args.xscale == 'log' or self.args.xscale is None)):
+                self.args.xmin = min(tf.df.value for tf in self.tfs)
+        if self.args.xmax is None:
+            self.args.xmax = max(tf.xspan[1] for tf in self.tfs)
+
+        # autoscale view for Y-axis
+        cropped = [tf.crop(self.args.xmin, self.args.xmax) for
+                   tf in self.tfs]
+        ymin = None
+        ymax = None
+        for tf in cropped:
+            if self.subplot == 0:
+                if self.plot_dB:
+                    vals = 20 * np.log10(abs(tf.value))
+                else:
+                    vals = abs(tf.value)
+            else:
+                vals = np.angle(tf.value, deg=True)
+            minval = min(vals)
+            maxval = max(vals)
+            if ymin is None or minval < ymin:
+                ymin = minval
+            if ymax is None or maxval > ymax:
+                ymax = maxval
+        self.ax.yaxis.set_data_interval(ymin, ymax, ignore=True)
+        self.ax.autoscale_view(scalex=False)
+
+    def set_plot_properties(self):
+        """Finalize figure object and show() or save()
+        """
+        self.set_axes_properties()
+        self.subplot = 0
+        self.set_title(self.args.title)
+        self.set_suptitle(self.args.suptitle)
+        self.set_grid(not self.args.nogrid)
+        self.subplot = 1
+        self.set_grid(not self.args.nogrid)
 
     def make_plot(self):
         """Generate the transfer function plot from the time series
@@ -212,6 +276,7 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
             refts = groups[seg].pop(self.ref_chan)
             for name in groups[seg]:
                 series = groups[seg][name]
+                self.test_chan = name
                 tf = series.transfer_function(refts, fftlength=fftlength,
                                               overlap=overlap,
                                               window=args.window)
@@ -229,11 +294,3 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
             args.xmin = 1/fftlength
 
         return plot
-
-    def set_legend(self):
-        """Create a legend for this product
-        """
-        leg = super().set_legend()
-        if leg is not None:
-            leg.set_title('Transfer function with:')
-        return leg
