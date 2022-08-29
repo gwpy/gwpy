@@ -163,9 +163,9 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
         # set label
         if label is None:
             if axis.lower().startswith('y'):
-                label = getattr(self, f'get_ylabel')()
+                label = getattr(self, 'get_ylabel')()
             else:
-                label = getattr(self, f'get_xlabel')()
+                label = getattr(self, 'get_xlabel')()
         if self.subplot == 0 and axis == 'x':
             label = None
         if label:
@@ -201,8 +201,9 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
             self.args.xmin = min(tf.xspan[0] for tf in self.tfs)
             # this is then typically zero, so if the xscale is log or None
             # we'll need to set to be the next bin higher (one step of df)
-            if (self.args.xmin == 0 and
-                    (self.args.xscale == 'log' or self.args.xscale is None)):
+            if (self.args.xmin == 0
+                    and (self.args.xscale == 'log'
+                         or self.args.xscale is None)):
                 self.args.xmin = min(tf.df.value for tf in self.tfs)
         if self.args.xmax is None:
             self.args.xmax = max(tf.xspan[1] for tf in self.tfs)
