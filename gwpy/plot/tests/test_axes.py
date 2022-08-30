@@ -122,13 +122,12 @@ class TestAxes(AxesTestBase):
         x = 1
         y = 'B'
         c = 'something else'
-        with pytest.raises(ValueError) as exc:
-            ax.scatter(x, y, c=c, sortbycolor=sortbycolor)
         if sortbycolor:  # gwpy error
-            msg = "Axes.scatter argument 'sortbycolor'"
+            match = "^Axes.scatter argument 'sortbycolor'"
         else:  # matplotlib error
-            msg = "'c' argument must be a "
-        assert str(exc.value).startswith(msg)
+            match = "^'c' argument must be a "
+        with pytest.raises(ValueError, match=match):
+            ax.scatter(x, y, c=c, sortbycolor=sortbycolor)
 
     def test_imshow(self, ax):
         # standard imshow call
@@ -202,10 +201,12 @@ class TestAxes(AxesTestBase):
     def test_hist_error(self, ax):
         """Test that `ax.hist` presents the right error message for empty data
         """
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match="^cannot generate log-spaced histogram bins",
+        ):
             ax.hist([], logbins=True)
-        assert str(exc.value).startswith('cannot generate log-spaced '
-                                         'histogram bins')
+
         # assert it works if we give the range manually
         ax.hist([], logbins=True, range=(1, 100))
 
