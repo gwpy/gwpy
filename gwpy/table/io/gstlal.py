@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from the PyCBC live online GW search
+"""Read events from the GstLAL online GW search
 """
 
 import re
@@ -26,19 +26,21 @@ import numpy
 from astropy.table import join
 
 from ...io.registry import (register_reader, register_identifier)
+from ...io.ligolw import is_ligolw
+from .ligolw import read_table
 from .. import (Table, EventTable)
+from .pycbc import get_mchirp
 from ligo.lw import lsctables
-from . import read_table
 
 __author__ = 'Derk Davis <derek.davis@ligo.org>'
 __credits__ = 'Patrick Godwin <patrick.godwin@ligo.org>'
 
 GSTLAL_FORMAT = 'ligolw.gstlal'
 
-GSTLAL_FILENAME = re.compile('([A-Z][0-9])+-[0-9.]+-LLOID-[0-9.]+-[0-9.]+.xml')
+GSTLAL_FILENAME = re.compile('([A-Z][0-9])+-LLOID-[0-9.]+-[0-9.]+.xml.gz')
 
-@read_with_selection
-def read_gstlal(source, triggers=None, **kwargs):
+# could split this into ligolw.gstlal_single and ligolw.gstlal_coinc?
+def read_gstlal(source, triggers='single', **kwargs):
     """Read a `Table` from one or more LIGO_LW XML documents
 
     source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
@@ -64,14 +66,16 @@ def read_gstlal(source, triggers=None, **kwargs):
     extra_cols = []
     if triggers == 'single':
         derived_cols = []
-        if kwargs['columns']:
+        if 'columns' in kwargs:
             for name in kwargs['columns']:
-                if name not in lsctables.TableByName['sngl_inspiral'].validcolum:
+                if name not in lsctables.TableByName['sngl_inspiral'].validcolumns or name == 'mchirp':
                     if name in GET_COLUMN:
                         derived_cols.append(name)
-                        kwargs['columns'].pop(name)
+                        kwargs['columns'].remove(name)
                         required_cols = GET_COLUMN_EXTRA[name]
-                        for r_col in required_col if r_col not in kwargs['columns']:
+                        missing_cols = [c for c in required_cols \
+                                        if c not in kwargs['columns']]
+                        for r_col in missing_cols:
                             kwargs['columns'].append(r_col)
                             extra_cols.append(r_col)
                     else:
@@ -80,20 +84,19 @@ def read_gstlal(source, triggers=None, **kwargs):
         for col_name in derived_cols:
             col_data = GET_COLUMN[col_name](events)
             events.add_column(col_data,name=col_name)
-    if triggers == 'coinc':
-        if kwargs['columns']:
+    elif triggers == 'coinc':
+        if 'columns' in kwargs:
             columns = kwargs['columns']
             kwargs.pop('columns')
-            # Divvy up columnss
+            # Divvy up columns
             if 'coinc_event_id' not in columns:
                 columns.append('coinc_event_id')
                 extra_cols.append('coinc_event_id')
-            inspiral_cols = [col if col in lsctables.TableByName['coinc_inspiral'].validcolumn
-                             for col in columns]]
-            event_cols = [col if col in lsctables.TableByName['coinc_event'].validcolumn
-                             for col in columns]]
+            inspiral_cols = [col for col in columns if col in lsctables.TableByName['coinc_inspiral'].validcolumns]
+            event_cols = [col for col in columns if col in lsctables.TableByName['coinc_event'].validcolumns]
             if 'end' in columns:
                 inspiral_cols.append('end')
+            inspiral_cols.append('coinc_event_id')
             coinc_inspiral = read_table(source, tablename='coinc_inspiral', columns=inspiral_cols, **kwargs)
             coinc_event = read_table(source, tablename='coinc_event', columns=event_cols, **kwargs)
         else:
@@ -104,24 +107,23 @@ def read_gstlal(source, triggers=None, **kwargs):
         events.meta['tablename'] = 'gstlal_coinc_inspiral'
     else:
         raise
-    for col_name in extra_cols::
-        events = events.remove_column(col_name)
+    for col_name in extra_cols:
+        events.remove_column(col_name)
     return events
 
 
-### !!! unclear how to set up register
 def identify_gstlal(origin, filepath, fileobj, *args, **kwargs):
-    """Identify a PyCBC Live file as an HDF5 with the correct name
+    """Identify a GstLAL file as a ligolw file with the correct name
     """
-    if identify_hdf5(origin, filepath, fileobj, *args, **kwargs) and (
-            filepath is not None and PYCBC_FILENAME.match(basename(filepath))):
+    if is_ligolw(origin, filepath, fileobj, *args, **kwargs) and (
+            filepath is not None and GSTLAL_FILENAME.match(basename(filepath))):
         return True
     return False
 
 
 # register for unified I/O
 register_identifier(GSTLAL_FORMAT, EventTable, identify_gstlal)
-register_reader(GSTLAL_FORMAT, EventTable, table_from_file)
+register_reader(GSTLAL_FORMAT, EventTable, read_gstlal)
 
 # -- processed columns --------------------------------------------------------
 #
@@ -132,15 +134,6 @@ register_reader(GSTLAL_FORMAT, EventTable, table_from_file)
 
 GET_COLUMN = {}
 GET_COLUMN_EXTRA = {}
-
-def get_eta(events):  
-    """Calculate the 'eta' column for this GstLAL ligolw table group
-    """
-    eta = events['chisq'][:]
-    return eta
-
-GET_COLUMN['eta'] = get_eta
-GET_COLUMN_EXTRA['eta'] = ['chisq']
 
 def get_eta_snr(events, snr_pow=2., eta_pow=2.): 
     """Calculate the 'new SNR' column for this GstLAL ligolw table group
@@ -153,12 +146,6 @@ def get_eta_snr(events, snr_pow=2., eta_pow=2.):
 GET_COLUMN['eta_snr'] = get_eta_snr
 GET_COLUMN_EXTRA['eta_snr'] = ['snr','chisq']
 
-def get_mchirp(events):
-    """Calculate the chipr mass column for this GstLAL ligolw table group
-    """
-    mass1 = events['mass1'][:]
-    mass2 = events['mass2'][:]
-    return (mass1 * mass2) ** (3/5.) / (mass1 + mass2) ** (1/5.)
-
+# use same function as pycbc
 GET_COLUMN['mchirp'] = get_mchirp
 GET_COLUMN_EXTRA['mchirp'] = ['mass1','mass2']
