@@ -37,9 +37,12 @@ class TestCliTransferFunction(_TestTransferFunctionProduct):
     def test_init(self, prod):
         assert prod.chan_list == ['X1:TEST-CHANNEL', 'Y1:TEST-CHANNEL']
         assert prod.ref_chan == prod.chan_list[0]
+        assert prod.test_chan == prod.chan_list[1]
 
     def test_get_suptitle(self, prod):
-        assert prod.get_suptitle() == f'Transfer function: {prod.chan_list[0]}'
+        assert prod.get_suptitle() == (f'Transfer function: '
+                                       f'{prod.chan_list[1]}/'
+                                       f'{prod.chan_list[0]}')
 
     def test_get_title(self, prod):
         epoch = prod.start_list[0]

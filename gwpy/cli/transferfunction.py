@@ -45,7 +45,8 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
             self.ref_chan = self.ref_chan.split(',')[0]
         self.plot_dB = self.args.plot_dB
         self.subplot = None
-        self.test_chan = None
+        self.test_chan = self.chan_list[1]
+        self.tfs = []
 
     @property
     def ax(self):  # pylint: disable=invalid-name
