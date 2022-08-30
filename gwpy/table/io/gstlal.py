@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) California Institute of Technology (2019-2022)
+#               Pensylvania State University (2019)
 #
 # This file is part of GWpy.
 #
