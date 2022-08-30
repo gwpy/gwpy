@@ -171,17 +171,18 @@ class TestChannel(object):
         (None, None, None),
         ('m-trend', 'm-trend', 16),
         (8, 's-trend', 8),
-        ('blah', 'RAISE', '')
     ])
     def test_type_ndstype(self, arg, type_, ndstype):
-        if type_ == 'RAISE':  # check invalid raises correct exception
-            with pytest.raises(ValueError) as exc:
-                c = self.TEST_CLASS('', type=arg)
-            assert str(exc.value) == f'{arg!r} is not a valid Nds2ChannelType'
-        else:
-            c = self.TEST_CLASS('', type=arg)
-            assert getattr(c, 'type') == type_
-            assert getattr(c, 'ndstype') == ndstype
+        c = self.TEST_CLASS('', type=arg)
+        assert getattr(c, 'type') == type_
+        assert getattr(c, 'ndstype') == ndstype
+
+    def test_type_ndstype_error(self):
+        with pytest.raises(
+            ValueError,
+            match="^'blah' is not a valid Nds2ChannelType$",
+        ):
+            self.TEST_CLASS('', type="blah")
 
     @pytest.mark.parametrize('arg, dtype', [
         (None, None),
@@ -199,17 +200,18 @@ class TestChannel(object):
         None,
         'https://blah',
         'file://local/path',
+    ])
+    def test_url(self, url):
+        new = self.TEST_CLASS('test', url=url)
+        assert new.url == url
+
+    @pytest.mark.parametrize('url', [
         'BAD',
         1,
     ])
-    def test_url(self, url):
-        if url is not None and not str(url).startswith(('http', 'file')):
-            with pytest.raises(ValueError) as exc:
-                new = self.TEST_CLASS('test', url=url)
-            assert str(exc.value) == f"Invalid URL {url!r}"
-        else:
-            new = self.TEST_CLASS('test', url=url)
-            assert new.url == url
+    def test_url_error(self, url):
+        with pytest.raises(ValueError, match=f"^Invalid URL {url!r}$"):
+            self.TEST_CLASS('test', url=url)
 
     def test_frametype(self):
         new = self.TEST_CLASS('test', frametype='BLAH')
@@ -298,10 +300,14 @@ class TestChannel(object):
             assert getattr(c, key) is None
 
         # check errors
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match=(
+                "^Cannot parse channel name according to "
+                "LIGO channel-naming convention T990033$"
+            ),
+        ):
             self.TEST_CLASS.parse_channel_name('blah')
-        assert str(exc.value) == ('Cannot parse channel name according to '
-                                  'LIGO channel-naming convention T990033')
 
         # check parsing returns expected result
         assert self.TEST_CLASS.parse_channel_name(name) == pdict
@@ -349,13 +355,15 @@ class TestChannel(object):
                 assert c.model == 'x1model'
                 assert c.url == 'https://cis.ligo.org/channel/123456'
             else:
-                with pytest.raises(ValueError) as exc:
+                with pytest.raises(
+                    ValueError,
+                    match=f"^No channels found matching {name!r}$",
+                ):
                     self.TEST_CLASS.query(
                         name,
                         kerberos=False,
                         idp="https://idp.example.com/profile/SAML2/SOAP/ECP",
                     )
-                assert str(exc.value) == f'No channels found matching {name!r}'
 
     @pytest.mark.parametrize('name', ('X1:TEST-CHANNEL', 'Y1:TEST_CHANNEL'))
     @pytest.mark.requires("nds2")
