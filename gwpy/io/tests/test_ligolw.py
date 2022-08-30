@@ -119,9 +119,11 @@ def test_read_table(llwdoc_with_tables):
 
 
 def test_read_table_empty(llwdoc):
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(
+        ValueError,
+        match=r"^No tables found in LIGO_LW document\(s\)$",
+    ):
         io_ligolw.read_table(llwdoc)
-    assert str(exc.value) == "No tables found in LIGO_LW document(s)"
 
 
 @pytest.mark.requires("ligo.lw.lsctables")
@@ -134,11 +136,13 @@ def test_read_table_ilwd(tmp_path):
 
 
 def test_read_table_multiple(llwdoc_with_tables):
-    # check that read_table correctly errors on ambiguity
-    with pytest.raises(ValueError) as exc:
+    """Check that `gwpy.io.ligolw.read_table` correctly errors on ambiguity.
+    """
+    with pytest.raises(
+        ValueError,
+        match="^Multiple tables .* 'process', 'sngl_ringdown'",
+    ):
         io_ligolw.read_table(llwdoc_with_tables)
-    assert str(exc.value).startswith("Multiple tables")
-    assert "'process', 'sngl_ringdown'" in str(exc.value)
 
 
 def test_open_xmldoc(tmp_path, llwdoc_with_tables):

@@ -81,9 +81,11 @@ def test_read_multi_order_preservation(tmp1, tmp2):
 def test_read_multi_error_empty():
     """Check that an `IndexError` is raised when the input list is empty
     """
-    with pytest.raises(IndexError) as exc:
+    with pytest.raises(
+        IndexError,
+        match="^cannot read int from empty source list$",
+    ):
         io_mp.read_multi(1, int, [])
-    assert str(exc.value) == "cannot read int from empty source list"
 
 
 def test_read_multi_not_a_file():
