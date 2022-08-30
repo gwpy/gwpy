@@ -278,21 +278,24 @@ class TestFrequencySeries(_TestSeries):
         assert array.epoch is None
 
     @pytest.mark.requires("ligo.lw")
-    def test_read_ligolw_error_multiple_array(self, ligolw):
+    @pytest.mark.parametrize(("args", "match"), [
+        # no name given, 'name' in error message
+        ([], "read: 'channel', 'epoch', 'f0', 'name'$"),
+        # name given, 'name' not in error message
+        (("PSD2",), "read: 'channel', 'epoch', 'f0'$"),
+    ])
+    def test_read_ligolw_error_multiple_array(self, args, match, ligolw):
         # assert errors
-        with pytest.raises(ValueError) as exc:  # multiple <Array> hits
-            FrequencySeries.read(ligolw)
-        assert "'name'" in str(exc.value)
-
-        with pytest.raises(ValueError) as exc:  # multiple <Array> hits
-            FrequencySeries.read(ligolw, "PSD2")
-        assert "'epoch" in str(exc.value) and "'name'" not in str(exc.value)
+        with pytest.raises(
+            ValueError,
+            match=match,
+        ):  # multiple <Array> hits
+            FrequencySeries.read(ligolw, *args)
 
     @pytest.mark.requires("ligo.lw")
     def test_read_ligolw_error_no_array(self, ligolw):
-        with pytest.raises(ValueError) as exc:  # no hits
+        with pytest.raises(ValueError, match="^no <Array> elements found"):
             FrequencySeries.read(ligolw, "blah")
-        assert str(exc.value).startswith("no <Array> elements found")
 
     @pytest.mark.requires("ligo.lw")
     def test_read_ligolw_error_no_match(self, ligolw):
