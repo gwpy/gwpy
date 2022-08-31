@@ -28,22 +28,39 @@ from .. import window
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def test_canonical_name():
-    assert window.canonical_name('Han') == 'hann'
-    with pytest.raises(ValueError) as exc:
+@pytest.mark.parametrize(("in_, out"), [
+    ("Han", "hann"),
+])
+def test_canonical_name(in_, out):
+    assert window.canonical_name(in_) == out
+
+
+def test_canonical_name_error():
+    with pytest.raises(
+        ValueError,
+        match="^no window function in scipy.signal equivalent to 'blah'$",
+    ):
         window.canonical_name('blah')
-    assert str(exc.value) == ('no window function in scipy.signal '
-                              'equivalent to \'blah\'')
 
 
-def test_recommended_overlap():
-    assert window.recommended_overlap('hann') == .5
-    assert window.recommended_overlap('Hamming') == .5
+@pytest.mark.parametrize(("name", "overlap"), [
+    ("hann", 0.5),
+    ("Hamming", 0.5),
+])
+def test_recommended_overlap(name, overlap):
+    assert window.recommended_overlap(name) == overlap
+
+
+def test_recommended_overlap_nfft():
     assert window.recommended_overlap('barthann', nfft=128) == 64
-    with pytest.raises(ValueError) as exc:
+
+
+def test_recommended_overlap_error():
+    with pytest.raises(
+        ValueError,
+        match="^no recommended overlap for 'kaiser' window$",
+    ):
         window.recommended_overlap('kaiser')
-    assert str(exc.value) == ('no recommended overlap for \'kaiser\' '
-                              'window')
 
 
 def test_planck():
