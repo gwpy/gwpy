@@ -171,9 +171,11 @@ class TestTable(object):
         utils.assert_table_equal(vstack((t2, t2)), t3)
 
         # check writing to existing file raises IOError
-        with pytest.raises(IOError) as exc:
+        with pytest.raises(
+            IOError,
+            match=f"^File exists: {tmp}$",
+        ):
             _write()
-        assert str(exc.value) == 'File exists: %s' % tmp
 
         # check overwrite=True, append=False rewrites table
         _write(overwrite=True)
@@ -201,10 +203,11 @@ class TestTable(object):
         # is gone
         insp.write(tmp, format='ligolw', tablename='sngl_inspiral',
                    append=False, overwrite=True)
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match="^document must contain exactly one sngl_burst table$",
+        ):
             _read()
-        assert str(exc.value) == ('document must contain exactly '
-                                  'one sngl_burst table')
 
     @pytest.mark.requires("ligo.lw.lsctables")
     def test_read_write_ligolw_property_columns(self, tmp_path):
@@ -309,9 +312,11 @@ class TestTable(object):
             a = root.mktree("a", {"branch": "int32"})
             a.extend({"branch": asarray([1, 2, 3, 4, 5])})
             root.mktree("b", {"branch": "int32"})
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match="^Multiple trees found",
+        ):
             self.TABLE.read(tmp)
-        assert str(exc.value).startswith('Multiple trees found')
         self.TABLE.read(tmp, treename="a")
 
     @pytest.mark.requires("uproot")
@@ -400,9 +405,11 @@ class TestEventTable(TestTable):
         when no matches are found
         """
         t = self.create(1, ("a",))
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match=" no columns named 'time'",
+        ):
             t._get_time_column()
-        assert " no columns named 'time'" in str(exc.value)
 
     def test_get_time_column_error_multiple_match(self):
         # check that two GPS columns causes issues
@@ -411,9 +418,11 @@ class TestEventTable(TestTable):
             ("a", "b", "c"),
             dtypes=(float, LIGOTimeGPS, LIGOTimeGPS),
         )
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match=" multiple columns named 'time'",
+        ):
             t._get_time_column()
-        assert " multiple columns named 'time'" in str(exc.value)
 
     def test_get_time_column_error_empty(self):
         """Check that `_get_time_column` errors properly on an empty table
@@ -537,9 +546,11 @@ class TestEventTable(TestTable):
         time column (and no data) if and only if start/end are both given.
         """
         t2 = self.create(10, names=['a', 'b'])
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match="please give `timecolumn` keyword",
+        ):
             t2.event_rate(1)
-        assert 'please give `timecolumn` keyword' in str(exc.value)
         with pytest.raises(ValueError):
             t2.event_rate(1, start=0)
         with pytest.raises(ValueError):
@@ -561,9 +572,11 @@ class TestEventTable(TestTable):
         # check that method can function without explicit time column
         # (and no data) if and only if start/end are both given
         t2 = self.create(0, names=['a', 'b'])
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match="please give `timecolumn` keyword",
+        ):
             t2.binned_event_rates(1, 'a', (10, 100))
-        assert 'please give `timecolumn` keyword' in str(exc.value)
         with pytest.raises(ValueError):
             t2.binned_event_rates(1, 'a', (10, 100), start=0)
         with pytest.raises(ValueError):
@@ -608,9 +621,11 @@ class TestEventTable(TestTable):
 
     def test_cluster_window(self, clustertable):
         # check that a non-positive window throws an appropriate ValueError
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match="^Window must be a positive value$",
+        ):
             clustertable.cluster('time', 'amplitude', 0)
-        assert str(exc.value) == 'Window must be a positive value'
 
     def test_cluster_multiple(self, clustertable):
         # check that after clustering a table, clustering the table a
@@ -678,14 +693,14 @@ class TestEventTable(TestTable):
             pass  # write empty file
 
         # assert reading blank file doesn't work with column name error
-        with pytest.raises(InconsistentTableError) as exc:
+        with pytest.raises(
+            InconsistentTableError,
+            match=f"^No column names found in {fmtname} header$",
+        ):
             self.TABLE.read(
                 tmp,
                 format="ascii.{}".format(fmtname.lower()),
             )
-        assert str(exc.value) == (
-            'No column names found in {} header'.format(fmtname)
-        )
 
     @pytest.fixture
     def snaxtable(self):
