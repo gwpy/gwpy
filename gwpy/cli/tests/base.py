@@ -327,9 +327,12 @@ class _TestTransferFunctionProduct(_TestCliProduct):
                         f'{prod.timeseries[i].name}')
                 fs = FrequencySeries(
                     _random_data(nsamp) + 1j*_random_data(nsamp),
-                    x0=0, dx=1/fftlength,
+                    x0=0,
+                    dx=1/fftlength,
                     channel=prod.timeseries[i+1].channel,
-                    name=f'{name}', dtype=complex)
+                    name=f'{name}',
+                    dtype=complex,
+                )
                 prod.test_chan = prod.timeseries[i+1].name
             prod.tfs.append(fs)
         return prod

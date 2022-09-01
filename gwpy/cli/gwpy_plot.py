@@ -85,7 +85,7 @@ def create_parser():
     parser = _ArgumentParser(
         description=__doc__,
         formatter_class=HelpFormatter,
-        epilog=EPILOG
+        epilog=EPILOG,
     )
     parser.add_argument('-V', '--version', action='version',
                         version=__version__)
@@ -108,7 +108,7 @@ def create_parser():
         subparser = subparsers.add_parser(
             product, help=product_class.__doc__.strip().split('\n')[0],
             parents=[parentparser],
-            formatter_class=ArgumentDefaultsHelpFormatter
+            formatter_class=ArgumentDefaultsHelpFormatter,
         )
         product_class.init_cli(subparser)
 
