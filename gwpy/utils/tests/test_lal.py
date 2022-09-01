@@ -105,9 +105,11 @@ def test_to_lal_unit(in_, out, scale):
 
 
 def test_to_lal_unit_error():
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(
+        ValueError,
+        match="^LAL has no unit corresponding to 'rad'$",
+    ):
         utils_lal.to_lal_unit('rad/s')
-    assert str(exc.value) == "LAL has no unit corresponding to 'rad'"
 
 
 @pytest.mark.parametrize(("in_", "out"), (
