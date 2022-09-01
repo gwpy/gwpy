@@ -226,6 +226,17 @@ class TestFrequencySeries(_TestSeries):
         a2 = type(array).from_pycbc(array.to_pycbc(copy=False), copy=False)
         assert shares_memory(array.value, a2.value)
 
+    @pytest.mark.requires("pycbc")
+    def test_to_from_pycbc_nonzero_f0(self, array):
+        """Test `FrequencySeries.to_pycbc` conversion when ``f0 != 0``.
+        """
+        array.f0 = 1.
+        with pytest.raises(
+            ValueError,
+            match="^Cannot convert FrequencySeries",
+        ):
+            array.to_pycbc()
+
     @pytest.mark.parametrize('format', [
         'txt',
         'csv',
