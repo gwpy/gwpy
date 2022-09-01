@@ -60,21 +60,30 @@ class TestTimeSeriesBase(_TestSeries):
         assert array.sample_rate == units.Quantity(1, 'Hertz')
         assert array.dt == units.Quantity(1, 'second')
 
-        # check handling of epoch vs t0
+    def test_new_epoch_t0(self):
+        """Test `gwpy.timeseries.TimeSeriesBase` handling of epoch vs t0.
+        """
         a = self.create(epoch=10)
         b = self.create(t0=10)
         utils.assert_quantity_sub_equal(a, b)
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match="^give only one of epoch or t0$",
+        ):
             self.TEST_CLASS(self.data, epoch=1, t0=1)
-        assert str(exc.value) == 'give only one of epoch or t0'
 
+    def test_new_sample_rate_dt(self):
+        """Test `gwpy.timeseries.TimeSeriesBase` handling of sample_rate vs dt.
+        """
         # check handling of sample_rate vs dt
         a = self.create(sample_rate=100)
         b = self.create(dt=0.01)
         utils.assert_quantity_sub_equal(a, b)
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match="^give only one of sample_rate or dt$",
+        ):
             self.TEST_CLASS(self.data, sample_rate=1, dt=1)
-        assert str(exc.value) == 'give only one of sample_rate or dt'
 
     def test_epoch(self):
         """Test `gwpy.timeseries.TimeSeriesBase.epoch`
@@ -269,9 +278,13 @@ class TestTimeSeriesBaseDict(object):
         assert instance.span == reduce(
             operator.or_, (ts.span for ts in instance.values()), Segment(0, 0),
         )
-        with pytest.raises(ValueError) as exc:
+
+    def test_span_error_empty(self):
+        with pytest.raises(
+            ValueError,
+            match="cannot calculate span for empty ",
+        ):
             self.TEST_CLASS().span
-        assert 'cannot calculate span for empty ' in str(exc.value)
 
     def test_copy(self, instance):
         copy = instance.copy()
@@ -439,18 +452,22 @@ class TestTimeSeriesBaseList(object):
         assert all(isinstance(s, Segment) for s in sl)
         assert sl == [(0, 100), (101, 1101)]
 
-    def test_append(self):
-        tsl = self.create()
-
-        # test simple append
+    def test_append(self, instance):
+        """Test `TimeSeriesList.append`.
+        """
         new = self.ENTRY_CLASS([1, 2, 3, 4, 5], x0=1102, dx=1)
-        tsl.append(new)
+        instance.append(new)
+        assert len(instance) == 3
+        assert instance[-1] is new
 
-        # test mismatched type raises error
-        with pytest.raises(TypeError) as exc:
-            tsl.append([1, 2, 3, 4, 5])
-        assert str(exc.value) == (
-            "Cannot append type 'list' to %s" % type(tsl).__name__)
+    def test_append_typeerror(self, instance):
+        """Test `TimeSeriesList.append` errors on type differences.
+        """
+        with pytest.raises(
+            TypeError,
+            match=f"^Cannot append type 'list' to {self.TEST_CLASS.__name__}$",
+        ):
+            instance.append([1, 2, 3, 4, 5])
 
     def test_extend(self):
         a = self.create()
