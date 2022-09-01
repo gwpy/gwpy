@@ -199,7 +199,7 @@ def get_snr_chi(events, snr_pow=2., chi_pow=2.):
     """
     snr = events['snr'][:]
     chisq = events['chisq'][:]
-    snr_chi = snr**snr_pow / chisq**chi_pow 
+    snr_chi = snr**snr_pow / chisq**(chi_pow/2.) 
     return snr_chi
 
 GET_COLUMN['snr_chi'] = get_snr_chi
