@@ -194,16 +194,16 @@ register_reader(GSTLAL_FORMAT, EventTable, read_gstlal)
 GET_COLUMN = {}
 GET_COLUMN_EXTRA = {}
 
-def get_eta_snr(events, snr_pow=2., eta_pow=2.): 
+def get_snr_chi(events, snr_pow=2., chi_pow=2.): 
     """Calculate the 'new SNR' column for this GstLAL ligolw table group
     """
     snr = events['snr'][:]
-    eta = events['chisq'][:]
-    eta_snr = snr**snr_pow / eta**eta_pow 
-    return eta_snr
+    chisq = events['chisq'][:]
+    snr_chi = snr**snr_pow / chisq**chi_pow 
+    return snr_chi
 
-GET_COLUMN['eta_snr'] = get_eta_snr
-GET_COLUMN_EXTRA['eta_snr'] = ['snr','chisq']
+GET_COLUMN['snr_chi'] = get_snr_chi
+GET_COLUMN_EXTRA['snr_chi'] = ['snr','chisq']
 
 # use same function as pycbc
 GET_COLUMN['mchirp'] = get_mchirp
