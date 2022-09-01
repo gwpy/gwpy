@@ -228,10 +228,10 @@ class _TestCliProduct(object):
         args = plotprod.args
         update_namespace(args, **params)  # update parameters
 
-        if isinstance(plotprod, cliproduct.FrequencyDomainProduct):
-            data = plotprod.spectra
-        elif isinstance(plotprod, cliproduct.TransferFunctionProduct):
+        if isinstance(plotprod, cliproduct.TransferFunctionProduct):
             data = plotprod.tfs
+        elif isinstance(plotprod, cliproduct.FrequencyDomainProduct):
+            data = plotprod.spectra
         else:
             data = plotprod.timeseries
         xmin = min(series.xspan[0] for series in data)
