@@ -159,9 +159,12 @@ def test_read_coinc_columns(gstlal_table):
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_derived_values(gstlal_table):
     table = EventTable.read(gstlal_table, format='ligolw.gstlal',
-                            triggers='sngl', columns=['snr_chi', 'mchirp'])
+                            triggers='sngl',
+                            columns=['snr_chi', 'chi_snr', 'mchirp'])
     nptest.assert_almost_equal(
-            table['snr_chi'][0], 2.25)
+            table['snr_chi'][0], 4.5)
+    nptest.assert_almost_equal(
+            table['chi_snr'][0], 1./4.5)
     nptest.assert_almost_equal(
             table['mchirp'][0], float32(8.705506))
 
