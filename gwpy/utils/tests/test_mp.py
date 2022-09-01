@@ -54,13 +54,12 @@ def test_multiprocess_with_queues(capsys, nproc, verbose):
 def test_multiprocess_with_queues_errors(nproc):
     """Check that errors from child processes propagate to the parent
     """
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(ValueError, match="^math domain error$"):
         utils_mp.multiprocess_with_queues(
             nproc,
             sqrt,
             [-1, -1, -1, -1],
         )
-    assert str(exc.value) == "math domain error"
 
 
 def test_multiprocess_with_queues_raise():

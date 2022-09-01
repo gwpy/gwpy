@@ -68,8 +68,8 @@ class TestNumpyTypeEnum(object):
     def test_find_errors(self):
         """Test :meth:`NumpyTypeEnum.find` method error handling
         """
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match=f"^'blah' is not a valid {self.TEST_CLASS.__name__}$",
+        ):
             self.TEST_CLASS.find('blah')
-        assert str(exc.value) == "'blah' is not a valid {}".format(
-            self.TEST_CLASS.__name__,
-        )
