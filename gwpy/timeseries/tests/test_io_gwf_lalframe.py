@@ -90,11 +90,11 @@ def test_open_data_source_cache(tmp_path):
 
 
 def test_open_data_source_error():
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(
+        ValueError,
+        match=f"^Don't know how to open data source of type {type(None)}$",
+    ):
         gwpy_lalframe.open_data_source(None)
-    assert str(exc.value) == (
-        "Don't know how to open data source of type {}".format(type(None))
-    )
 
 
 def test_get_stream_duration(stream):
@@ -131,9 +131,11 @@ def test_read(start, end):
 
 
 def test_read_channel_error():
-    with pytest.raises(RuntimeError) as exc:
+    with pytest.raises(
+        RuntimeError,
+        match="^channel 'bad' not found$",
+    ):
         gwpy_lalframe.read(TEST_GWF_FILE, ["bad"])
-    assert str(exc.value) == "channel 'bad' not found"
 
 
 def test_read_deprecated_scaled():
