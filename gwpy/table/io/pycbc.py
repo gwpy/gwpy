@@ -258,9 +258,9 @@ def identify_pycbc_live(origin, filepath, fileobj, *args, **kwargs):
     return False
 
 
-# register for unified I/O
+# register for unified I/O (with higher priority than HDF5 reader)
 register_identifier(PYCBC_LIVE_FORMAT, EventTable, identify_pycbc_live)
-register_reader(PYCBC_LIVE_FORMAT, EventTable, table_from_file)
+register_reader(PYCBC_LIVE_FORMAT, EventTable, table_from_file, priority=1)
 
 # -- processed columns --------------------------------------------------------
 #
