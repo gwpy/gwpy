@@ -118,7 +118,8 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
         on a specific subplot
         """
         def _get(param):
-            ret = getattr(self.plot.axes[self.subplot], f'get_{axis[0].lower()}{param}')()
+            ret = getattr(self.plot.axes[self.subplot],
+                          f'get_{axis[0].lower()}{param}')()
             return ret
 
         def _set(param, *args, **kwargs):
