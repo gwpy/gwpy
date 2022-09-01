@@ -100,6 +100,7 @@ GSTLAL_FILE = """<?xml version='1.0' encoding='utf-8'?>
 </LIGO_LW>
 """  # noqa: E501
 
+
 @pytest.fixture
 def gstlal_table(tmp_path):
     tmp = tmp_path / "H1L1V1-LLOID-1-1.xml.gz"
@@ -112,49 +113,58 @@ def gstlal_table(tmp_path):
 SNGL_LEN = 3
 COINC_LEN = 2
 
+
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_sngl_function(gstlal_table):
     table = gstlalio.read_gstlal_sngl(gstlal_table)
     assert len(table) == SNGL_LEN
 
+
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_read_sngl_eventtable(gstlal_table):
-    table = EventTable.read(gstlal_table, format='ligolw.gstlal', 
+    table = EventTable.read(gstlal_table, format='ligolw.gstlal',
                             triggers='sngl')
     assert len(table) == SNGL_LEN
+
 
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_read_sngl_format(gstlal_table):
     table = EventTable.read(gstlal_table, format='ligolw.gstlal.sngl')
     assert len(table) == SNGL_LEN
 
+
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_read_sngl_columns(gstlal_table):
     table = EventTable.read(gstlal_table, format='ligolw.gstlal.sngl',
-                            columns=['snr','end_time'])
-    assert list(table.keys()) == ['snr','end_time']
+                            columns=['snr', 'end_time'])
+    assert list(table.keys()) == ['snr', 'end_time']
+
 
 @pytest.mark.requires("ligo.lw.lsctables")
-def test_sngl_function(gstlal_table):
+def test_coinc_function(gstlal_table):
     table = gstlalio.read_gstlal_coinc(gstlal_table)
     assert len(table) == COINC_LEN
 
+
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_read_coinc_eventtable(gstlal_table):
-    table = EventTable.read(gstlal_table, format='ligolw.gstlal', 
+    table = EventTable.read(gstlal_table, format='ligolw.gstlal',
                             triggers='coinc')
     assert len(table) == COINC_LEN
+
 
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_read_coinc_format(gstlal_table):
     table = EventTable.read(gstlal_table, format='ligolw.gstlal.coinc')
     assert len(table) == COINC_LEN
 
+
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_read_coinc_columns(gstlal_table):
     table = EventTable.read(gstlal_table, format='ligolw.gstlal.coinc',
-                            columns=['snr','end_time'])
-    assert list(table.keys()) == ['snr','end_time']
+                            columns=['snr', 'end_time'])
+    assert list(table.keys()) == ['snr', 'end_time']
+
 
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_derived_values(gstlal_table):
@@ -162,35 +172,38 @@ def test_derived_values(gstlal_table):
                             triggers='sngl',
                             columns=['snr_chi', 'chi_snr', 'mchirp'])
     nptest.assert_almost_equal(
-            table['snr_chi'][0], 4.5)
+        table['snr_chi'][0], 4.5)
     nptest.assert_almost_equal(
-            table['chi_snr'][0], 1./4.5)
+        table['chi_snr'][0], 1./4.5)
     nptest.assert_almost_equal(
-            table['mchirp'][0], float32(8.705506))
+        table['mchirp'][0], float32(8.705506))
+
 
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_incorrect_sngl_column(gstlal_table):
     with pytest.raises(
          ValueError,
          match="is not a valid column name",
-     ):
-        table = EventTable.read(gstlal_table, format='ligolw.gstlal.sngl',
-                                columns=['nan'])
+         ):
+        EventTable.read(gstlal_table, format='ligolw.gstlal.sngl',
+                        columns=['nan'])
+
 
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_incorrect_coinc_column(gstlal_table):
     with pytest.raises(
          ValueError,
          match="is not a valid column name",
-     ):
-        table = EventTable.read(gstlal_table, format='ligolw.gstlal.coinc',
-                                columns=['nan'])
+         ):
+        EventTable.read(gstlal_table, format='ligolw.gstlal.coinc',
+                        columns=['nan'])
+
 
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_incorrect_trigger_name(gstlal_table):
     with pytest.raises(
          ValueError,
          match="^The 'triggers' argument",
-     ):
-        table = EventTable.read(gstlal_table, format='ligolw.gstlal',
-                                triggers='nan')
+         ):
+        EventTable.read(gstlal_table, format='ligolw.gstlal',
+                        triggers='nan')
