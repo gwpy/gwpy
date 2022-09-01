@@ -29,7 +29,7 @@ from astropy.table import join
 from ...io.registry import (register_reader, register_identifier)
 from ...io.ligolw import is_ligolw
 from .ligolw import read_table
-from .. import (Table, EventTable)
+from .. import EventTable
 from .pycbc import get_mchirp
 from ligo.lw import lsctables
 
@@ -44,7 +44,7 @@ GSTLAL_FILENAME = re.compile('([A-Z][0-9])+-LLOID-[0-9.]+-[0-9.]+.xml.gz')
 
 # singles format
 def read_gstlal_sngl(source, **kwargs):
-    """Read a `Table` from one or more LIGO_LW XML documents
+    """Read a `sngl_inspiral` table from one or more GstLAL LIGO_LW XML files
 
     source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
         one or more open files, file paths, or LIGO_LW `Document` objects
@@ -88,7 +88,8 @@ def read_gstlal_sngl(source, **kwargs):
 
 # coinc format
 def read_gstlal_coinc(source, **kwargs):
-    """Read a `Table` from one or more LIGO_LW XML documents
+    """Read a `Table` containing coincident event information 
+    from one or more GstLAL LIGO_LW XML files
 
     source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
         one or more open files, file paths, or LIGO_LW `Document` objects
@@ -120,8 +121,6 @@ def read_gstlal_coinc(source, **kwargs):
             extra_cols.append('coinc_event_id')
         inspiral_cols = [col for col in columns if col in val_cols_inspiral]
         event_cols = [col for col in columns if col in val_cols_event]
-        if 'end' in columns: # what is this doing?
-            inspiral_cols.append('end')
         inspiral_cols.append('coinc_event_id')
         coinc_inspiral = read_table(source, tablename='coinc_inspiral', 
                                     columns=inspiral_cols, **kwargs)
@@ -139,10 +138,8 @@ def read_gstlal_coinc(source, **kwargs):
     return events
 
 # combined format
-
-# could split this into ligolw.gstlal_single and ligolw.gstlal_coinc?
 def read_gstlal(source, triggers='sngl', **kwargs):
-    """Read a `Table` from one or more LIGO_LW XML documents
+    """Read a `Table` from one or more GstLAL LIGO_LW XML files
 
     source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
         one or more open files, file paths, or LIGO_LW `Document` objects
@@ -150,8 +147,8 @@ def read_gstlal(source, triggers='sngl', **kwargs):
     triggers : `str`, optional
         the `Name` of the relevant `Table` to read, if not given a table will
         be returned if only one exists in the document(s).
-        'sngl' for sngl_inpsiral triggers, 
-        'coinc' for coinc triggers
+        'sngl' for single-detector trigger information, 
+        'coinc' for coincident trigger information
 
     **kwargs
         keyword arguments for the read, or conversion functions
@@ -181,7 +178,7 @@ def identify_gstlal(origin, filepath, fileobj, *args, **kwargs):
     return False
 
 
-# register for unified I/O
+# registers for unified I/O
 register_identifier(GSTLAL_FORMAT, EventTable, identify_gstlal)
 register_reader(GSTLAL_SNGL_FORMAT, EventTable, read_gstlal_sngl)
 register_reader(GSTLAL_COINC_FORMAT, EventTable, read_gstlal_coinc)
