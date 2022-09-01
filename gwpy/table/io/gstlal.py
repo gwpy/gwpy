@@ -195,7 +195,7 @@ GET_COLUMN = {}
 GET_COLUMN_EXTRA = {}
 
 def get_snr_chi(events, snr_pow=2., chi_pow=2.): 
-    """Calculate the 'new SNR' column for this GstLAL ligolw table group
+    """Calculate the 'SNR chi' column for this GstLAL ligolw table group
     """
     snr = events['snr'][:]
     chisq = events['chisq'][:]
@@ -204,6 +204,15 @@ def get_snr_chi(events, snr_pow=2., chi_pow=2.):
 
 GET_COLUMN['snr_chi'] = get_snr_chi
 GET_COLUMN_EXTRA['snr_chi'] = ['snr','chisq']
+
+def get_chi_snr(events, snr_pow=2., chi_pow=2.):
+    """Calculate the 'chi SNR' column for this GstLAL ligolw table group,
+    reciprocal of the 'SNR chi' column
+    """
+    return 1./get_snr_chi(events, snr_pow, chi_pow)
+
+GET_COLUMN['chi_snr'] = get_chi_snr
+GET_COLUMN_EXTRA['chi_snr'] = ['snr','chisq']
 
 # use same function as pycbc
 GET_COLUMN['mchirp'] = get_mchirp
