@@ -19,24 +19,13 @@
 """Tests for :mod:`gwpy.table.io.gstlal`
 """
 
-import re
-import warnings
-from io import BytesIO
-from unittest import mock
-#from urllib.error import HTTPError
-
 import pytest
 
-import numpy as np
-
-#from matplotlib import rc_context
-
 from numpy import testing as nptest
+from numpy import float32
 
 from ..io import gstlal as gstlalio
 from gwpy.table import EventTable
-from ...testing import utils
-from ...testing.errors import pytest_skip_network_error
 
 __author__ = 'Derek Davis <derek.davis@ligo.org>'
 
@@ -174,7 +163,7 @@ def test_derived_values(gstlal_table):
     nptest.assert_almost_equal(
             table['eta_snr'][0], 2.25)
     nptest.assert_almost_equal(
-            table['mchirp'][0], np.float32(8.705506))
+            table['mchirp'][0], float32(8.705506))
 
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_incorrect_sngl_column(gstlal_table):
@@ -202,9 +191,3 @@ def test_incorrect_trigger_name(gstlal_table):
      ):
         table = EventTable.read(gstlal_table, format='ligolw.gstlal',
                                 triggers='nan')
-
-@pytest.mark.requires("ligo.lw.lsctables")
-def test_identify(gstlal_table):
-    table = EventTable.read(gstlal_table)
-    assert len(table) == SNGL_LEN
-
