@@ -30,7 +30,6 @@ from ...io.ligolw import is_ligolw
 from .ligolw import read_table
 from .. import EventTable
 from .pycbc import get_mchirp
-from ligo.lw import lsctables
 
 __author__ = 'Derk Davis <derek.davis@ligo.org>'
 __credits__ = 'Patrick Godwin <patrick.godwin@ligo.org>'
@@ -59,7 +58,7 @@ def read_gstlal_sngl(source, **kwargs):
     gwpy.table.io.ligolw.to_astropy_table
         for details of keyword arguments for the conversion operation
     """
-
+    from ligo.lw import lsctables
     extra_cols = []
     derived_cols = []
     val_col = lsctables.TableByName['sngl_inspiral'].validcolumns
@@ -105,6 +104,7 @@ def read_gstlal_coinc(source, **kwargs):
     gwpy.table.io.ligolw.to_astropy_table
         for details of keyword arguments for the conversion operation
     """
+    from ligo.lw import lsctables
     extra_cols = []
     if 'columns' in kwargs:
         columns = kwargs['columns']
