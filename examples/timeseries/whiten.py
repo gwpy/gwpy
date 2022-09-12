@@ -19,10 +19,6 @@
 
 """Whitening a `TimeSeries`
 
-.. warning::
-
-   This example requires LIGO.ORG credentials for data access.
-
 Most data recorded from a gravitational-wave interferometer carry information
 across a wide band of frequencies, typically up to a few kiloHertz, but
 often it is the case that the low-frequency amplitude dwarfs that of the
@@ -31,31 +27,52 @@ high-frequency content, making discerning high-frequency features difficult.
 We employ a technique called 'whitening' to normalize the power at all
 frequencies so that excess power at any frequency is more obvious.
 
-We demonstrate below with an auxiliary signal recording transmitted power
-in one of the interferometer arms, which recorded two large glitches with
-a frequency of around 5-50Hz.
+Consider GW150914, the first detected gravitational wave event that 
+occurred at 09:50:45 UTC on September 14, 2015. For an explanation of
+some of these steps, see [1, 2].
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.timeseries'
 
+
 # First, we import the `TimeSeries` and :meth:`~TimeSeries.get` the data:
 from gwpy.timeseries import TimeSeries
-data = TimeSeries.get('H1:ASC-Y_TR_A_NSUM_OUT_DQ', 1123084671, 1123084703)
+gps = 1126259462
+t0 = gps - 8
+t1 = gps + 8
+data = TimeSeries.fetch_open_data('H1', t0, t1)
 
 # Now, we can `~TimeSeries.whiten` the data to enhance the higher-frequency
-# content
-white = data.whiten(4, 2)
+# content.
+# In this instance, this refers to dividing each Fourier coefficient for
+# a given frequency by the respective estimate of noise ASD, 
+# effectively downweighting noisy frequencies [2].
+white = data.whiten(2, 1, window="tukey")
 
-# and can `~TimeSeries.plot` both the original and whitened data
+# Next, we apply a bandpass filter between 35 Hz and 350 Hz,
+# and compare to a TimeSeries without whitening.
+nowhite = data.bandpass(35, 350)
+white = white.bandpass(35, 350)
+
+"""
+.. plot::
+"""
+# Finally, we use `~TimeSeries.plot`:
 from gwpy.plot import Plot
-plot = Plot(data, white, separate=True, sharex=True)
-plot.axes[0].set_ylabel('Y-arm power [counts]', fontsize=16)
-plot.axes[1].set_ylabel('Whitened amplitude', fontsize=16)
+plot = Plot(data, white, nowhite, separate=True, sharex=True)
+plot.axes[0].set_ylabel('$d(t)$', fontsize=16)
+plot.axes[1].set_ylabel('$d_w(t)$', fontsize=16)
+plot.axes[2].set_ylabel('$d_b(t)$', fontsize=16)
 plot.show()
 
-# Here we see two large spikes that are completely undetected in the raw
-# `TimeSeries`, but are very obvious in the whitened data. We can also see
+# We can see that, in the times series without pre-whitening, 
+# the gravitational wave signal at approximately 8 seconds is 
+# not easily visible. 
+# We can also see
 # tapering effects at the boundaries as the whitening filter settles in,
 # meaning that the first and last ~second of data are corrupted and should
 # be discarded before further processing.
+
+# 1. Abbott, et al. "Observation of gravitational waves from a binary black hole merger." Physical review letters 116.6 (2016): 061102. 
+# 2. Abbott, et al. "A guide to LIGO–Virgo detector noise and extraction of transient gravitational-wave signals." Classical and Quantum Gravity 37.5 (2020): 055002.
