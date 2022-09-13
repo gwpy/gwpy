@@ -594,9 +594,9 @@ Writing tables in PyCBC Live HDF5 format is not supported at this time.
 
 .. _gwpy-table-io-gstlal:
 
-=================
+========================
 GstLAL (``LIGO_LW`` XML)
-=================
+========================
 
 GstLAL is a low-latency search for gravitational waves from compact
 binary coalescences, built using |GStreamer|_ elements and tools from the |LALSuite|_ library.
@@ -610,7 +610,7 @@ To read an `EventTable` from a ``gstlal`` format ``LIGO_LW`` XML file, use the
 ``format='ligolw.gstlal'`` keyword:
 
 .. code-block:: python
-      :name: gwpy-table-io-gstlal-read
+   :name: gwpy-table-io-gstlal-read
    :caption: Reading an `EventTable` from a GstLAL ``LIGO_LW`` XML file.
 
    >>> t = EventTable.read("H1L1-GstLAL-1234567890-4.xml.gz", format="ligolw.gstlal")
@@ -624,7 +624,7 @@ To instead read information about triggers from multiple detectors, you can inst
 the ``triggers='coinc'`` keyword:
 
 .. code-block:: python
-         :name: gwpy-table-io-gstlal-read-coinc-table
+   :name: gwpy-table-io-gstlal-read-coinc-table
    :caption: Reading coincident triggers into an `EventTable` GstLAL ``LIGO_LW`` XML HDF5.
 
    >>> t = EventTable.read(
@@ -636,7 +636,7 @@ the ``triggers='coinc'`` keyword:
 To restrict the returned columns, use the ``columns`` keyword argument:
 
 .. code-block:: python
-      :name: gwpy-table-io-gstlal-read-columns
+   :name: gwpy-table-io-gstlal-read-columns
    :caption: Reading specific columns into an `EventTable` GstLAL ``LIGO_LW`` XML HDF5.
 
    >>> t = EventTable.read(
