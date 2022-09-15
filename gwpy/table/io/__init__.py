@@ -33,6 +33,7 @@ from . import (
     omega,  # Omega ASCII format
     cwb,  # cWB ROOT and ASCII formats
     pycbc,  # PyCBC (Live) HDF5
+    gstlal,  # GstLAL ligo.lw XML format
     hacr,  # Hierarchichal Algorithm for Curves and Ridges
     gwf,  # GWF FrEvents (e.g. MBTA)
     gravityspy,  # Gravity Spy Triggers

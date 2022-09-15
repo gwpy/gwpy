@@ -229,6 +229,7 @@ formats:
 - :ref:`gwpy-table-io-ascii-cwb`
 - :ref:`gwpy-table-io-root`
 - :ref:`gwpy-table-io-pycbc_live`
+- :ref:`gwpy-table-io-gstlal`
 - :ref:`gwpy-table-io-gwf`
 
 Each of the sub-sections below outlines how to read and write in these
@@ -590,6 +591,76 @@ Writing
 -------
 
 Writing tables in PyCBC Live HDF5 format is not supported at this time.
+
+.. _gwpy-table-io-gstlal:
+
+========================
+GstLAL (``LIGO_LW`` XML)
+========================
+
+GstLAL is a low-latency search for gravitational waves from compact
+binary coalescences, built using |GStreamer|_ elements and tools from the |LALSuite|_ library.
+This search writes files on the LIGO Data Grid (LIGO.ORG-authenticated users
+only) in ``LIGO_LW`` XML format, containing tables of events.
+
+Reading
+-------
+
+To read an `EventTable` from a ``gstlal`` format ``LIGO_LW`` XML file, use the
+``format='ligolw.gstlal'`` keyword:
+
+.. code-block:: python
+   :name: gwpy-table-io-gstlal-read
+   :caption: Reading an `EventTable` from a GstLAL ``LIGO_LW`` XML file.
+
+   >>> t = EventTable.read("H1L1-GstLAL-1234567890-4.xml.gz", format="ligolw.gstlal")
+
+GstLAL ``LIGO_LW`` XML files contain information about triggers from each detector separately
+as well as from a combination of detectors. 
+Accessing these different sets of information can be done using the ``triggers`` keyword. 
+By default, information about triggers from each detector separately is read in.
+This is equivalent to using ``triggers='sngl'``. 
+To instead read information about triggers from multiple detectors, you can instead use
+the ``triggers='coinc'`` keyword:
+
+.. code-block:: python
+   :name: gwpy-table-io-gstlal-read-coinc-table
+   :caption: Reading coincident triggers into an `EventTable` GstLAL ``LIGO_LW`` XML HDF5.
+
+   >>> t = EventTable.read(
+   ...     "H1L1-GstLAL-1234567890-4.xml.gz",
+   ...     format="gstlal.gstlal",
+   ...     triggers='coinc',
+   ... )
+
+To restrict the returned columns, use the ``columns`` keyword argument:
+
+.. code-block:: python
+   :name: gwpy-table-io-gstlal-read-columns
+   :caption: Reading specific columns into an `EventTable` GstLAL ``LIGO_LW`` XML HDF5.
+
+   >>> t = EventTable.read(
+   ...     "H1L1-GstLAL-1234567890-4.xml.gz",
+   ...     format="gstlal.gstlal",
+   ...     columns=["end_time", "snr", "chisq"],
+   ... )
+
+Similarly to the :ref:`gwpy-table-io-ligolw` format, some processed columns
+can be specified that are not included in the XML files, but are created
+on-the-fly.
+In addition to processed columns support by :ref:`gwpy-table-io-ligolw`, 
+the additional supported processed columns are:
+
+- ``mchirp``
+- ``snr_chi``
+- ``chi_snr``
+
+These can be specified without having to specify any of the input columns.
+
+Writing
+-------
+
+Writing tables in GstLAL ``LIGO_LW`` XML format is not supported at this time.
 
 .. _gwpy-table-io-snax:
 
