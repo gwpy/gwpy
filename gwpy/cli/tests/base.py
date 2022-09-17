@@ -228,7 +228,9 @@ class _TestCliProduct(object):
         args = plotprod.args
         update_namespace(args, **params)  # update parameters
 
-        if isinstance(plotprod, cliproduct.FrequencyDomainProduct):
+        if isinstance(plotprod, cliproduct.TransferFunctionProduct):
+            data = plotprod.tfs
+        elif isinstance(plotprod, cliproduct.FrequencyDomainProduct):
             data = plotprod.spectra
         else:
             data = plotprod.timeseries
@@ -308,4 +310,29 @@ class _TestFrequencyDomainProduct(_TestCliProduct):
             fs = FrequencySeries(_random_data(nsamp), x0=0, dx=1/fftlength,
                                  channel=ts.channel, name=ts.name)
             prod.spectra.append(fs)
+        return prod
+
+
+class _TestTransferFunctionProduct(_TestCliProduct):
+    @classmethod
+    @pytest.fixture
+    def dataprod(cls, prod):
+        cls._prod_add_data(prod)
+        fftlength = prod.args.secpfft
+        for i, ts in enumerate(prod.timeseries):
+            nsamp = int(fftlength * 512 / 2.) + 1
+            random.seed(i)
+            if i % 2 == 0:
+                name = (f'{prod.timeseries[i+1].name}---'
+                        f'{prod.timeseries[i].name}')
+                fs = FrequencySeries(
+                    _random_data(nsamp) + 1j*_random_data(nsamp),
+                    x0=0,
+                    dx=1/fftlength,
+                    channel=prod.timeseries[i+1].channel,
+                    name=f'{name}',
+                    dtype=complex,
+                )
+                prod.test_chan = prod.timeseries[i+1].name
+            prod.tfs.append(fs)
         return prod
