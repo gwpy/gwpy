@@ -37,7 +37,7 @@ __credits__ = 'Alex Nitz <alex.nitz@ligo.org>'
 PYCBC_LIVE_FORMAT = 'hdf5.pycbc_live'
 
 META_COLUMNS = {'psd', 'loudest'}
-PYCBC_FILENAME = re.compile('([A-Z][0-9])+-Live-[0-9.]+-[0-9.]+.hdf')
+PYCBC_FILENAME = re.compile('([A-Z][0-9])+-Live-[0-9.]+-[0-9.]+.(h5|hdf|hdf5)')
 
 
 @with_read_hdf5
@@ -250,17 +250,20 @@ def empty_hdf5_file(h5f, ifo=None):
 
 
 def identify_pycbc_live(origin, filepath, fileobj, *args, **kwargs):
-    """Identify a PyCBC Live file as an HDF5 with the correct name
+    """Identify a PyCBC Live file as an HDF5 with the correct name.
     """
-    if identify_hdf5(origin, filepath, fileobj, *args, **kwargs) and (
-            filepath is not None and PYCBC_FILENAME.match(basename(filepath))):
-        return True
-    return False
+    return bool(
+        identify_hdf5(origin, filepath, fileobj, *args, **kwargs)
+        and (
+            filepath is not None
+            and PYCBC_FILENAME.match(basename(filepath))
+        )
+    )
 
 
-# register for unified I/O
+# register for unified I/O (with higher priority than HDF5 reader)
 register_identifier(PYCBC_LIVE_FORMAT, EventTable, identify_pycbc_live)
-register_reader(PYCBC_LIVE_FORMAT, EventTable, table_from_file)
+register_reader(PYCBC_LIVE_FORMAT, EventTable, table_from_file, priority=1)
 
 # -- processed columns --------------------------------------------------------
 #

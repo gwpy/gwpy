@@ -547,17 +547,40 @@ This search writes files on the LIGO Data Grid (LIGO.ORG-authenticated users
 only) in HDF5 format, containing tables of events; each column in the table
 is recorded as a separate HDF5 Dataset.
 
+Identifying
+-----------
+
+PyCBC Live HDF5 files are identified automatically if the file is identified
+as an HDF5 file (see :func:`astropy.io.misc.hdf5.is_hdf5`) **and** the
+file _name_ matches the following regular expression:
+
+.. code-block:: text
+
+   ([A-Z][0-9])+-Live-[0-9.]+-[0-9.]+.(h5|hdf|hdf5)
+
+e.g.
+
+.. code-block:: text
+
+   H1-Live-1234567890-4.h5
+
+If the format cannot be auto-identifed (because the filename doesn't match the
+above regular expression), the format can be specified via
+
+.. code-block:: python
+
+   format="hdf5.pycbc_live"
+
 Reading
 -------
 
-To read an `EventTable` from a ``pycbc_live`` format HDF5 file, use the
-``format='hdf5.pycbc_live'`` keyword:
+To read an `EventTable` from a ``pycbc_live`` format HDF5 file:
 
 .. code-block:: python
    :name: gwpy-table-io-pycbc_live-read
    :caption: Reading an `EventTable` from a PyCBC-Live HDF5 file.
 
-   >>> t = EventTable.read("H1-Live-1234567890-4.hdf", format="hdf5.pycbc_live")
+   >>> t = EventTable.read("H1-Live-1234567890-4.h5")
 
 To restrict the returned columns, use the ``columns`` keyword argument:
 
@@ -566,7 +589,7 @@ To restrict the returned columns, use the ``columns`` keyword argument:
    :caption: Reading specific columns into an `EventTable` from PyCBC-Live HDF5.
 
    >>> t = EventTable.read(
-   ...     "H1-Live-1234567890-4.hdf",
+   ...     "H1-MY_DATA-1234567890-4.h5",
    ...     format="hdf5.pycbc_live",
    ...     columns=["end_time", "snr", "chisq"],
    ... )
