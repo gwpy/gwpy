@@ -47,7 +47,7 @@ jobs:
         python-version: '3.x'
 
     - name: Install build requirements
-      run: python -m pip install build setuptools wheel
+      run: python -m pip install build
 
     - name: Create distributions
       run: python -m build . --sdist --wheel --outdir .
