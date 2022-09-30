@@ -87,7 +87,7 @@ release = GWPY_VERSION
 
 # extension modules
 # DEVNOTE: please make sure and add 3rd-party dependencies to
-#          setup.cfg's [options.extras_require]/docs
+#          pyproject.toml's [project.optional-dependencies]/docs
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
