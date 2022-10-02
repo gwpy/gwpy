@@ -168,8 +168,8 @@ class Series(Array):
 
         Examples
         --------
-        >>> self._update_index("x0", 0)
-        >>> self._update_index("dx", 0)
+        >>> self._update_index("x", "x0", 0)
+        >>> self._update_index("x", "dx", 0)
 
         To actually set an index array, use `_set_index`
         """
@@ -210,21 +210,32 @@ class Series(Array):
         """Set a new index array for this series
         """
         axis = key[0]
-        origin = "{}0".format(axis)
-        delta = "d{}".format(axis)
+
+        # if given None, delete the current index
         if index is None:
             return delattr(self, key)
+
+        origin = f"{axis}0"
+        delta = f"d{axis}"
+
+        # format input as an Index array
         if not isinstance(index, Index):
             try:
                 unit = index.unit
             except AttributeError:
                 unit = getattr(self, "_default_{}unit".format(axis))
             index = Index(index, unit=unit, copy=False)
-        setattr(self, origin, index[0])
-        if index.regular:
-            setattr(self, delta, index[1] - index[0])
-        else:
-            delattr(self, delta)
+
+        # reset other axis attributes
+        if index.size:
+            setattr(self, origin, index[0])
+        if index.size > 1:
+            if index.regular:  # delta will reset from index
+                setattr(self, delta, index[1] - index[0])
+            else:
+                delattr(self, delta)
+
+        # update index array
         setattr(self, "_{}".format(key), index)
 
     def _index_span(self, axis):
@@ -255,7 +266,10 @@ class Series(Array):
         try:
             return self._x0
         except AttributeError:
-            self._x0 = Quantity(0, self.xunit)
+            try:
+                self._x0 = self._xindex[0]
+            except (AttributeError, IndexError):
+                self._x0 = Quantity(0, self.xunit)
             return self._x0
 
     @x0.setter
