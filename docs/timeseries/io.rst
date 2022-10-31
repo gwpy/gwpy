@@ -211,6 +211,22 @@ To write data held in any of the :mod:`gwpy.timeseries` classes to a GWF file, s
 
 **If the output file already exists it will be overwritten.**
 
+.. note::
+
+    When writing a timeseries to a `gwf` file, the `TimeSeries.name` property
+    is used to name the vector in the GWF (i.e. store the `channel` name).
+    Therefore, if you want to write a file and then read it back in, you
+    should first set the name to the chosen channel, e.g.
+
+    .. code-block:: python
+
+        >>> channel = "L1:CHANNEL_NAME"
+        >>> output_file = "output.gwf"
+        >>> data.channel = channel
+        >>> data.write(output_file)
+        >>> data = TimeSeries.read(output_file, channel)
+
+
 .. _gwpy-timeseries-io-hdf5:
 
 ====
