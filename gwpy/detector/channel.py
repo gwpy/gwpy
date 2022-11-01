@@ -399,7 +399,7 @@ class Channel(object):
     # -- classmethods ---------------------------
 
     @classmethod
-    def query(cls, name, kerberos=None):
+    def query(cls, name, kerberos=None, **kwargs):
         """Query the LIGO Channel Information System for the `Channel`
         matching the given name
 
@@ -413,13 +413,17 @@ class Channel(object):
             default behaviour will check for credentials and request username
             and password if none are found (`None`)
 
+        kwargs
+            other keyword arguments are passed directly to
+            :func:`ciecplib.get`
+
         Returns
         -------
         c : `Channel`
              a new `Channel` containing all of the attributes set from
              its entry in the CIS
         """
-        channellist = ChannelList.query(name, kerberos=kerberos)
+        channellist = ChannelList.query(name, kerberos=kerberos, **kwargs)
         if not channellist:
             raise ValueError(f"No channels found matching '{name}'")
         if len(channellist) > 1:
@@ -764,7 +768,7 @@ class ChannelList(list):
         return self.__class__(matched)
 
     @classmethod
-    def query(cls, name, kerberos=None):
+    def query(cls, name, kerberos=None, **kwargs):
         """Query the LIGO Channel Information System a `ChannelList`.
 
         Parameters
@@ -777,13 +781,17 @@ class ChannelList(list):
             default behaviour will check for credentials and request username
             and password if none are found (`None`)
 
+        kwargs
+            other keyword arguments are passed directly to
+            :func:`ciecplib.get`
+
         Returns
         -------
         channels : `ChannelList`
             a new list containing all `Channels <Channel>` found.
         """
         from .io import cis
-        return cis.query(name, kerberos=kerberos)
+        return cis.query(name, kerberos=kerberos, **kwargs)
 
     @classmethod
     def query_nds2(cls, names, host=None, port=None, connection=None,
