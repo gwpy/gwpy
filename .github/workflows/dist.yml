@@ -62,17 +62,23 @@ jobs:
         name: wheel
         path: gwpy*.whl
 
-  distribution-test:
-    name: Test Python ${{ matrix.python-version }} (${{ matrix.os }})
+  # -- pip install test -----
+
+  pip-install:
+    name: Python ${{ matrix.python-version }} install from ${{ matrix.artifact }} (${{ matrix.os }})
 
     needs:
       - tarball
     strategy:
       fail-fast: false
       matrix:
+        artifact:
+          - tarball
+          - wheel
         os:
           - macOS
           - Ubuntu
+          - Windows
         python-version:
           - "3.7"
           - "3.8"
@@ -80,11 +86,15 @@ jobs:
           - "3.10"
     runs-on: ${{ matrix.os }}-latest
 
+    defaults:
+      run:
+        shell: bash -e {0}
+
     steps:
-    - name: Download tarball
+    - name: Download ${{ matrix.artifact }}
       uses: actions/download-artifact@v2
       with:
-        name: tarball
+        name: ${{ matrix.artifact }}
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -93,8 +103,9 @@ jobs:
 
     - name: Install GWpy with test extras
       run: |
-        TARBALL=$(ls gwpy-*.tar.*)
-        python -m pip install ${TARBALL}[test]
+        # extras don't work with wildcards
+        DIST=$(ls gwpy-*.*)
+        python -m pip install ${DIST}[test]
 
     - name: Package list
       run: python -m pip list installed
@@ -115,7 +126,7 @@ jobs:
       run: python -m coverage report --show-missing
 
     - name: Publish coverage to Codecov
-      uses: codecov/codecov-action@v1.2.1
+      uses: codecov/codecov-action@v3
       with:
         files: coverage.xml
         flags: ${{ runner.os }},python${{ matrix.python-version }}
@@ -124,5 +135,5 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v2
       with:
-        name: pytest-conda-${{ matrix.os }}-${{ matrix.python-version }}
+        name: pytest-${{ matrix.artifact }}-${{ matrix.os }}-${{ matrix.python-version }}
         path: pytest.xml
