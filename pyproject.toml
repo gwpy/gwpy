@@ -2,22 +2,139 @@
 
 [build-system]
 requires = [
-    "setuptools>=42",
-    "setuptools_scm[toml]>=3.4.3",
-    "wheel",
+  "setuptools>=61",
+  "setuptools_scm[toml]>=3.4.3",
+  "wheel",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "gwpy"
+description = "A python package for gravitational-wave astrophysics"
+readme = "README.md"
+authors = [
+  { name = "Duncan Macleod", email = "duncan.macleod@ligo.org" },
+]
+license = { text = "GPL-3.0-or-later" }
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Topic :: Scientific/Engineering :: Astronomy",
+  "Topic :: Scientific/Engineering :: Physics",
+]
+
+# requirements
+requires-python = ">=3.7"
+dependencies = [
+  "astropy >=4.3.0",
+  "dqsegdb2",
+  "gwdatafind >=1.1.0",
+  "gwosc >=0.5.3",
+  "h5py >=2.8.0",
+  "ligo-segments >=1.0.0",
+  "ligotimegps >=1.2.1",
+  "matplotlib >=3.3.0",
+  "numpy >=1.17",
+  "python-dateutil",
+  "requests",
+  "scipy >=1.2.0",
+  "tqdm >=4.10.0",
+]
+
+# dynamic properties set by tools
+dynamic = [
+  "version",
+]
+
+[project.optional-dependencies]
+# test suite
+test = [
+  "coverage[toml] >=5.0",
+  "freezegun >=0.3.12",
+  "pytest >=3.9.1",
+  "pytest-cov >=2.4.0",
+  "pytest-requires",
+  "pytest-socket",
+  "pytest-xdist",
+  "requests-mock",
+]
+# astronomy/cosmology calculations
+astro = [
+  "inspiral-range",
+]
+# sphinx documentation
+docs = [
+  "numpydoc >=0.8.0",
+  "sphinx >=4.0.0",
+  "sphinx-automodapi",
+  "sphinx-immaterial >=0.7.3",
+  "sphinx-panels >=0.6.0",
+  "sphinxcontrib-programoutput",
+]
+# development environments
+dev = [
+  "ciecplib",
+  "lalsuite ; sys_platform != 'win32'",
+  "lscsoft-glue ; sys_platform != 'win32'",
+  "maya",
+  "psycopg2",
+  "pycbc >=1.13.4 ; sys_platform != 'win32'",
+  "pymysql",
+  "pyRXP",
+  "python-ligo-lw >=1.7.0 ; sys_platform != 'win32'",
+  "sqlalchemy",
+  "uproot >=4.1.5",
+]
+# conda packages for development
+# NOTE: this isn't a valid extra to install with pip
+conda = [
+  "python-framel >=8.40.1",
+  "python-ldas-tools-framecpp ; sys_platform != 'win32'",
+  "python-nds2-client",
+]
+
+[project.scripts]
+gwpy-plot = "gwpy.cli.gwpy_plot:main"
+
+[project.urls]
+"Bug Tracker" = "https://github.com/gwpy/gwpy/issues"
+"Discussion Forum" = "https://gwpy.slack.com"
+"Documentation" = "https://gwpy.github.io/docs/"
+"Source Code" = "https://github.com/gwpy/gwpy"
+
+[tool.setuptools]
+license-files = [ "LICENSE" ]
+
+[tool.setuptools.packages.find]
+# note: this is only required in CI, which otherwise fails because
+#       GHA is creating a temporary directory that setuptools
+#       discovers as another top-level package
+include = [
+  "gwpy*",
+]
+
+[tool.setuptools_scm]
+write_to = "gwpy/_version.py"
 
 # -- coverage.py
 
 [tool.coverage.run]
-source = ["gwpy"]
+source = [ "gwpy" ]
 omit = [
-	# ignore vendored sphinx extension
-	"gwpy/utils/sphinx/epydoc.py",
-	# don't report coverage for _version.py
-	# (generated automatically by setuptools-scm)
-	"*/_version.py",
+  # ignore vendored sphinx extension
+  "gwpy/utils/sphinx/epydoc.py",
+  # don't report coverage for _version.py
+  # (generated automatically by setuptools-scm)
+  "*/_version.py",
 ]
 
 [tool.coverage.report]
@@ -29,17 +146,17 @@ precision = 1
 [tool.pytest.ini_options]
 addopts = "-r a"
 filterwarnings = [
-	# https://github.com/gwastro/pycbc/pull/3701
-	"ignore:`np.int` is a deprecated alias::pycbc..*",
-	# https://git.ligo.org/lscsoft/glue/-/merge_requests/69
-	"ignore:PY_SSIZE_T_CLEAN will be required",
-	# https://github.com/pyreadline/pyreadline/issues/65
-	"ignore:Using or importing the ABCs::pyreadline",
-	# ignore numpy ndarray size warnings
-	"ignore:numpy.ndarray size changed, may indicate binary incompatibility",
-	# ignore warnings from distutils.version
-	"ignore:distutils Version::matplotlib",
-	"ignore:distutils Version::distutils",  # actually setuptools._distutils
+  # https://github.com/gwastro/pycbc/pull/3701
+  "ignore:`np.int` is a deprecated alias::pycbc..*",
+  # https://git.ligo.org/lscsoft/glue/-/merge_requests/69
+  "ignore:PY_SSIZE_T_CLEAN will be required",
+  # https://github.com/pyreadline/pyreadline/issues/65
+  "ignore:Using or importing the ABCs::pyreadline",
+  # ignore numpy ndarray size warnings
+  "ignore:numpy.ndarray size changed, may indicate binary incompatibility",
+  # ignore warnings from distutils.version
+  "ignore:distutils Version::matplotlib",
+  "ignore:distutils Version::distutils",  # actually setuptools._distutils
 ]
 xfail_strict = true
 
@@ -47,28 +164,23 @@ xfail_strict = true
 
 [tool.rstcheck]
 ignore_directives = [
-	# sphinx.ext.autosummary
-	"autoclass",
-	"autofunction",
-	"automethod",
-	"automodule",
-	"autosummary",
-	# sphinx-automodapi
-	"automodsumm",
-	# sphinxcontrib-programoutput
-	"command-output",
-	# sphinx.ext.ifconfig
-	"ifconfig",
-	# matplotlib
-	"plot",
-	# sphinx-panels
-	"tabbed",
+  # sphinx.ext.autosummary
+  "autoclass",
+  "autofunction",
+  "automethod",
+  "automodule",
+  "autosummary",
+  # sphinx-automodapi
+  "automodsumm",
+  # sphinxcontrib-programoutput
+  "command-output",
+  # sphinx.ext.ifconfig
+  "ifconfig",
+  # matplotlib
+  "plot",
+  # sphinx-panels
+  "tabbed",
 ]
 # rstcheck doesn't known about our referenced.txt which is implicitly included
 # in all pages via Sphinx's epilog option
 ignore_messages = "(Unknown target name:.*|Undefined substitution referenced: .*)"
-
-# -- setuptools-scm
-
-[tool.setuptools_scm]
-write_to = "gwpy/_version.py"
