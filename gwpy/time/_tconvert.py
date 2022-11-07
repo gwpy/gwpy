@@ -263,9 +263,13 @@ def _str_to_datetime(datestr):
     # use maya
     try:
         import maya
-        return maya.when(datestr).datetime()
     except ImportError:
-        pass
+        MAYA_ERROR = None
+    else:
+        try:
+            return maya.when(datestr).datetime()
+        except Exception as exc1:
+            MAYA_ERROR = exc1
 
     # use dateutil.parse
     with warnings.catch_warnings():
@@ -273,9 +277,14 @@ def _str_to_datetime(datestr):
         warnings.simplefilter("error", RuntimeWarning)
         try:
             return parse_datestr(datestr)
-        except RuntimeWarning:
-            raise ValueError("Cannot parse date string with timezone "
-                             "without maya, please install maya")
+        except RuntimeWarning as exc:
+            if MAYA_ERROR:
+                raise exc from MAYA_ERROR
+            exc.args = (
+                f"{str(exc).rstrip('.')}. Try installing 'maya' which can "
+                "handle more complex date strings.",
+            )
+            raise
         except (ValueError, TypeError) as exc:  # improve error reporting
             exc.args = ("Cannot parse date string {0!r}: {1}".format(
                 datestr, exc.args[0]),)
