@@ -107,10 +107,10 @@ else:
 class _Nds2Enum(enum.IntFlag):
     """Base class for NDS2 enums
     """
-    def __new__(cls, value, nds2name):
+    def __new__(cls, value, nds2name=None):
         obj = int.__new__(cls, value)
         obj._value_ = value
-        obj.nds2name = nds2name
+        obj.nds2name = nds2name  # will be None for bitwise operations
         return obj
 
     @classmethod
