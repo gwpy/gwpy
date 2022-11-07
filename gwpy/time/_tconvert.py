@@ -27,7 +27,7 @@ import warnings
 from decimal import Decimal
 from numbers import Number
 
-from dateutil import parser as dateparser
+from dateutil.parser import parse as parse_datestr
 
 from astropy.units import Quantity
 
@@ -272,7 +272,7 @@ def _str_to_datetime(datestr):
         # don't allow lazy passing of time-zones
         warnings.simplefilter("error", RuntimeWarning)
         try:
-            return dateparser.parse(datestr)
+            return parse_datestr(datestr)
         except RuntimeWarning:
             raise ValueError("Cannot parse date string with timezone "
                              "without maya, please install maya")
