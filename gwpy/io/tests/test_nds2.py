@@ -37,7 +37,7 @@ class _TestNds2Enum(object):
     TEST_CLASS = None
 
     def test_any(self):
-        assert self.TEST_CLASS.any() == 2 ** (len(self.TEST_CLASS) - 1) - 1
+        assert self.TEST_CLASS.any() == 2 * max(self.TEST_CLASS).value - 1
 
     def test_find_errors(self):
         """Test error raising for :meth:`gwpy.io.nds2.Nds2ChannelType.find`
@@ -58,8 +58,11 @@ class TestNds2ChannelType(_TestNds2Enum):
         assert self.TEST_CLASS.MTREND.nds2name == 'm-trend'
 
     def test_nds2names(self):
-        _raw_names = sorted(v[1] for v in io_nds2._NDS2_CHANNEL_TYPE.values())
-        assert sorted(self.TEST_CLASS.nds2names()) == _raw_names
+        expected = sorted(
+            io_nds2._NDS2_CHANNEL_TYPE[x.name][1]
+            for x in self.TEST_CLASS
+        )
+        assert sorted(self.TEST_CLASS.nds2names()) == expected
 
     @pytest.mark.parametrize(('input_', 'expected'), (
         (TEST_CLASS.MTREND.value, TEST_CLASS.MTREND),
