@@ -86,7 +86,7 @@ dev = [
   "ciecplib",
   "lalsuite ; sys_platform != 'win32'",
   "lscsoft-glue ; sys_platform != 'win32'",
-  "maya",
+  "maya ; python_version < '3.11'",
   "psycopg2",
   "pycbc >=1.13.4 ; sys_platform != 'win32'",
   "pymysql",
