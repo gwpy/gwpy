@@ -60,8 +60,8 @@ dynamic = [
 # test suite
 test = [
   "coverage[toml] >=5.0",
-  "freezegun >=0.3.12",
   "pytest >=3.9.1",
+  "pytest-freezegun",
   "pytest-cov >=2.4.0",
   "pytest-requires",
   "pytest-socket",
@@ -84,6 +84,8 @@ docs = [
 # development environments
 dev = [
   "ciecplib",
+  # for maya to work, see https://github.com/scrapinghub/dateparser/pull/1067
+  "dateparser >=1.1.2",
   "lalsuite ; sys_platform != 'win32'",
   "lscsoft-glue ; sys_platform != 'win32'",
   "maya ; python_version < '3.11'",

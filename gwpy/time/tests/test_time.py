@@ -19,15 +19,15 @@
 """Tests for :mod:`gwpy.time`
 """
 
+from contextlib import nullcontext
 from datetime import datetime
 from decimal import Decimal
 from operator import attrgetter
+from unittest import mock
 
 import pytest
 
 import numpy
-
-from freezegun import freeze_time
 
 from astropy.time import Time
 from astropy.units import (UnitConversionError, Quantity)
@@ -54,26 +54,12 @@ TOMORROW = 1126310417
 YESTERDAY = 1126137617
 
 
-def _is_error_type(obj):
-    if isinstance(obj, (list, tuple)):
-        return all(map(_is_error_type, obj))
-    return isinstance(obj, type) and issubclass(obj, Exception)
-
-
-def _test_with_errors(func, in_, out):
-    # assert error
-    if _is_error_type(out):
-        with pytest.raises(out):
-            func(in_)
-    # assert not error
-    else:
-        with freeze_time(FREEZE):
-            assert func(in_) == out
-
-
-# -- test functions -----------------------------------------------------------
-
-@pytest.mark.parametrize('in_, out', [
+@pytest.mark.freeze_time(FREEZE)
+@pytest.mark.parametrize("use_maya", (
+    False,
+    pytest.param(True, marks=pytest.mark.requires("maya")),
+))
+@pytest.mark.parametrize(("in_", "out"), [
     (1126259462, int(GW150914)),
     (1235635623.7500002, LIGOTimeGPS(1235635623, 750000200)),
     (LIGOTimeGPS(1126259462, 391000000), GW150914),
@@ -86,22 +72,68 @@ def _test_with_errors(func, in_, out):
     (Time(57754.0001, format='mjd'), LIGOTimeGPS(1167264026, 640000000)),
     (Quantity(1167264018, 's'), 1167264018),
     (Decimal('1126259462.391000000'), GW150914),
-    pytest.param(GlueGPS(GW150914.gpsSeconds, GW150914.gpsNanoSeconds),
-                 GW150914, marks=pytest.mark.requires("glue")),
+    pytest.param(
+        GlueGPS(GW150914.gpsSeconds, GW150914.gpsNanoSeconds),
+        GW150914,
+        marks=pytest.mark.requires("glue"),
+    ),
     (numpy.int32(NOW), NOW),  # fails with lal-6.18.0
     ('now', NOW),
     ('today', TODAY),
     ('tomorrow', TOMORROW),
     ('yesterday', YESTERDAY),
+])
+def test_to_gps(in_, out, use_maya):
+    """Test that :func:`to_gps` works with and without maya.
+    """
+    if use_maya:  # do nothing
+        ctx = nullcontext()
+    else:  # force 'install maya' to error to use dateutil
+        ctx = mock.patch.dict("sys.modules", {"maya": None})
+    with ctx:
+        assert time.to_gps(in_) == out
+
+
+@pytest.mark.requires("maya")
+@pytest.mark.parametrize(("in_", "out"), [
+    ('Oct 30 2016 12:34 CST', 1161887657),
+])
+def test_to_gps_maya(in_, out):
+    """Test that :func:`gwpy.time.to_gps` works with maya.
+    """
+    assert time.to_gps(in_) == out
+
+
+@pytest.mark.parametrize(("in_", "err"), [
     (Quantity(1, 'm'), UnitConversionError),
     ('random string', (ValueError, TypeError)),
-    pytest.param('Oct 30 2016 12:34 CST', 1161887657,
-                 marks=pytest.mark.requires("maya")),
 ])
-def test_to_gps(in_, out):
-    """Test :func:`gwpy.time.to_gps`
+def test_to_gps_error(in_, err):
+    """Test that :func:`gwpy.time.to_gps` errors when it should.
     """
-    _test_with_errors(time.to_gps, in_, out)
+    with pytest.raises(err):
+        time.to_gps(in_)
+
+
+@mock.patch.dict("sys.modules", {"maya": None})
+def test_to_gps_dateparser_error_propagation_nomaya():
+    with pytest.raises(
+        RuntimeWarning,
+        match=(
+            "tzname CST identified but not understood.(.*) "
+            "Try installing 'maya' (.*)"
+        ),
+    ):
+        time.to_gps("Oct 30 2016 12:34 CST")
+
+
+@pytest.mark.requires("maya")
+@mock.patch("maya.when", side_effect=ValueError("test chain"))
+def test_to_gps_dateparser_error_propagation_maya(_):
+    with pytest.raises(RuntimeWarning) as exc:
+        time.to_gps("Oct 30 2016 12:34 CST")
+    # validate that the maya exception was chained to the dateutil one
+    assert str(exc.value.__cause__) == "test chain"
 
 
 @pytest.mark.parametrize('in_, out', [
@@ -109,23 +141,39 @@ def test_to_gps(in_, out):
     ('1167264018', datetime(2017, 1, 1)),
     (1126259462.391, datetime(2015, 9, 14, 9, 50, 45, 391000)),
     ('1.13e9', datetime(2015, 10, 27, 16, 53, 3)),
-    pytest.param(GlueGPS(GW150914.gpsSeconds, GW150914.gpsNanoSeconds),
-                 GW150914_DT, marks=pytest.mark.requires("glue")),
+    pytest.param(
+        GlueGPS(GW150914.gpsSeconds, GW150914.gpsNanoSeconds),
+        GW150914_DT,
+        marks=pytest.mark.requires("glue"),
+    ),
+])
+def test_from_gps(in_, out):
+    """Test that :func:`gwpy.time.from_gps` works.
+    """
+    assert time.from_gps(in_) == out
+
+
+@pytest.mark.parametrize(("in_", "err"), [
     ('test', ValueError),
     (1167264017, ValueError),  # gwpy/gwpy#1021
 ])
-def test_from_gps(in_, out):
-    """Test :func:`gwpy.time.from_gps`
+def test_from_gps_error(in_, err):
+    """Test that :func:`gwpy.time.from_gps` errors when it should.
     """
-    _test_with_errors(time.from_gps, in_, out)
+    with pytest.raises(err):
+        time.from_gps(in_)
 
 
+@pytest.mark.freeze_time(FREEZE)
 @pytest.mark.parametrize('in_, out', [
     (float(GW150914), GW150914_DT),
     (GW150914, GW150914_DT),
     (GW150914_DT, GW150914),
-    pytest.param(GlueGPS(float(GW150914)), GW150914_DT,
-                 marks=pytest.mark.requires("glue")),
+    pytest.param(
+        GlueGPS(float(GW150914)),
+        GW150914_DT,
+        marks=pytest.mark.requires("glue"),
+    ),
     ('now', NOW),
     ('today', TODAY),
     ('tomorrow', TOMORROW),
@@ -134,7 +182,7 @@ def test_from_gps(in_, out):
 def test_tconvert(in_, out):
     """Test :func:`gwpy.time.tconvert`
     """
-    _test_with_errors(time.tconvert, in_, out)
+    assert time.tconvert(in_) == out
 
 
 @pytest.mark.parametrize('gpstype', time.gps_types,
