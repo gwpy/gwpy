@@ -37,7 +37,7 @@ CIS_DATA_TYPE = {
 }
 
 
-def query(name, kerberos=None):
+def query(name, kerberos=None, **kwargs):
     """Query the Channel Information System for details on the given
     channel name
 
@@ -45,6 +45,15 @@ def query(name, kerberos=None):
     ----------
     name : `~gwpy.detector.Channel`, or `str`
         Name of the channel of interest
+
+    kerberos : `bool`, optional
+        use an existing Kerberos ticket as the authentication credential,
+        default behaviour will check for credentials and request username
+        and password if none are found (`None`)
+
+    kwargs
+        other keyword arguments are passed directly to
+        :func:`ciecplib.get`
 
     Returns
     -------
@@ -55,7 +64,7 @@ def query(name, kerberos=None):
     more = True
     out = ChannelList()
     while more:
-        reply = _get(url, kerberos=kerberos)
+        reply = _get(url, kerberos=kerberos, **kwargs)
         try:
             out.extend(map(parse_json, reply[u'results']))
         except KeyError:
@@ -72,11 +81,11 @@ def query(name, kerberos=None):
     return out
 
 
-def _get(url, kerberos=None, idp="login.ligo.org"):
+def _get(url, kerberos=None, idp="login.ligo.org", **kwargs):
     """Perform a GET query against the CIS
     """
     from ciecplib import get as get_cis
-    response = get_cis(url, endpoint=idp, kerberos=kerberos)
+    response = get_cis(url, endpoint=idp, kerberos=kerberos, **kwargs)
     response.raise_for_status()
     return response.json()
 

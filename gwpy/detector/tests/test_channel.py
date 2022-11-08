@@ -331,18 +331,17 @@ class TestChannel(object):
             results = []
 
         # mock response and test parsing
-        url = f"https://cis.ligo.org/api/channel/?q={name}"
         with requests_mock.Mocker() as rmock:
-            # mock the request to get the list of IdPs
-            from ciecplib.utils import DEFAULT_IDPLIST_URL
             rmock.get(
-                DEFAULT_IDPLIST_URL,
-                text="https://login.ligo.org/idp/profile/SAML2/SOAP/ECP LIGO",
+                f"https://cis.ligo.org/api/channel/?q={name}",
+                json=results,
             )
-            # mock our request and test result parsing
-            rmock.get(url, json=results)
             if name == 'X1:TEST-CHANNEL':
-                c = self.TEST_CLASS.query(name, kerberos=True)
+                c = self.TEST_CLASS.query(
+                    name,
+                    kerberos=False,
+                    idp="https://idp.example.com/profile/SAML2/SOAP/ECP",
+                )
                 assert c.name == 'X1:TEST-CHANNEL'
                 assert c.unit == units.m
                 assert c.sample_rate == 16384 * units.Hz
@@ -351,7 +350,11 @@ class TestChannel(object):
                 assert c.url == 'https://cis.ligo.org/channel/123456'
             else:
                 with pytest.raises(ValueError) as exc:
-                    self.TEST_CLASS.query(name, kerberos=True)
+                    self.TEST_CLASS.query(
+                        name,
+                        kerberos=False,
+                        idp="https://idp.example.com/profile/SAML2/SOAP/ECP",
+                    )
                 assert str(exc.value) == f'No channels found matching {name!r}'
 
     @pytest.mark.parametrize('name', ('X1:TEST-CHANNEL', 'Y1:TEST_CHANNEL'))

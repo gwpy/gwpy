@@ -43,29 +43,30 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # -- veto definer fixture -----------------------------------------------------
 
-VETO_DEFINER_FILE = """<?xml version='1.0' encoding='utf-8'?>
+VETO_DEFINER_FILE = """
+<?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
 <LIGO_LW>
     <Table Name="veto_definer:table">
-        <Column Type="int_4s" Name="veto_definer:category"/>
-        <Column Type="lstring" Name="veto_definer:comment"/>
-        <Column Type="int_4s" Name="veto_definer:end_pad"/>
-        <Column Type="ilwd:char" Name="veto_definer:process_id"/>
-        <Column Type="lstring" Name="veto_definer:name"/>
-        <Column Type="int_4s" Name="veto_definer:version"/>
-        <Column Type="int_4s" Name="veto_definer:start_pad"/>
-        <Column Type="int_4s" Name="veto_definer:start_time"/>
-        <Column Type="lstring" Name="veto_definer:ifo"/>
-        <Column Type="int_4s" Name="veto_definer:end_time"/>
+        <Column Type="int_4s" Name="category"/>
+        <Column Type="lstring" Name="comment"/>
+        <Column Type="int_4s" Name="end_pad"/>
+        <Column Type="int_8s" Name="process:process_id"/>
+        <Column Type="lstring" Name="name"/>
+        <Column Type="int_4s" Name="version"/>
+        <Column Type="int_4s" Name="start_pad"/>
+        <Column Type="int_4s" Name="start_time"/>
+        <Column Type="lstring" Name="ifo"/>
+        <Column Type="int_4s" Name="end_time"/>
         <Stream Delimiter="," Type="Local" Name="veto_definer:table">
             1,"Test flag 1",2,,"TEST-FLAG",1,-1,100,"X1",0,
             2,"Test flag 1",2,,"TEST-FLAG_2",1,1,100,"X1",200,
             2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,200,"X1",0,
-            2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,100,"Y1",0,
+            2,"Test flag 1",2,,"TEST-FLAG_2",2,-2,100,"Y1",0
         </Stream>
     </Table>
 </LIGO_LW>
-"""  # noqa: E501
+""".strip()  # noqa: E501
 
 
 @pytest.fixture
