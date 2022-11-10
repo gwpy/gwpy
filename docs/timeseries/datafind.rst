@@ -25,8 +25,8 @@ A discovery service called |gwdatafind|_ is provided at each location to
 simplify discovering the file(s) that contain the data of interest for any
 research.
 
-These data are also made available remotely using |nds2|_, which enables
-sending data directly over a network to any location.
+These data are also made available remotely using :ref:`gwpy-external-nds2`,
+which enables sending data directly over a network to any location.
 This is used for both the full proprietary data (which requires an
 authorisation credential to access) and also the |GWOSC_AUX_RELEASE|_
 (which is freely available).
@@ -37,7 +37,7 @@ authorisation credential to access) and also the |GWOSC_AUX_RELEASE|_
 :meth:`TimeSeries.get`
 **********************
 
-**Additional dependencies:** |LDAStools.frameCPP|_ or |nds2|_
+**Additional dependencies:** :ref:`gwpy-external-framecpp` or :ref:`gwpy-external-nds2`
 
 GWpy provides the :meth:`TimeSeries.get` method as a one-stop interface
 to all automatically-discoverable data hosted locally at an IGWN
