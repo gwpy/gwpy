@@ -35,7 +35,10 @@ from ..utils import unique
 from ..signal import filter_design
 from ..signal.window import recommended_overlap
 from ..time import to_gps
-from ..timeseries import TimeSeriesDict
+from ..timeseries import (
+    TimeSeries,
+    TimeSeriesDict,
+)
 from ..timeseries.timeseries import DEFAULT_FFT_METHOD
 from ..plot.gps import (GPS_SCALES, GPSTransform)
 from ..plot.tex import label_to_latex
@@ -265,11 +268,13 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         )
         group.add_argument(
             '--chan',
+            '--channel',
+            '--ifo',
             type=str,
             nargs='+',
             action='append',
             required=True,
-            help='channels to load',
+            help='channels to load (or IFO prefix for GWOSC data)',
         )
         group.add_argument(
             '--start',
@@ -316,6 +321,12 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         meg.add_argument(
             '--frametype',
             help='GWF frametype to read from',
+        )
+        meg.add_argument(
+            '--gwosc',
+            action='store_true',
+            default=False,
+            help='get data from GWOSC',
         )
         return group
 
@@ -531,12 +542,29 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         args = self.args
 
         # determine how we're supposed get our data
-        source = 'cache' if args.framecache is not None else 'nds2'
+        if args.gwosc:
+            source = "gwosc"
+        elif args.framecache is not None:
+            source = "cache"
+        else:
+            source = "nds2"
 
         # Get the data from NDS or Frames
         for start in self.start_list:
             end = start + self.duration
-            if source == 'nds2':
+            if source.lower() == "gwosc":
+                tsd = TimeSeriesDict()
+                for chan in self.chan_list:
+                    ifo = chan.split(":", 1)[0]
+                    data = TimeSeries.fetch_open_data(
+                        ifo,
+                        start,
+                        end,
+                        verbose=verb,
+                    )
+                    data.name = f"{ifo}:{data.name}"
+                    tsd.append({data.name: data})
+            elif source.lower() == 'nds2':
                 tsd = TimeSeriesDict.get(self.chan_list, start, end,
                                          verbose=verb, host=args.nds2_server,
                                          frametype=args.frametype)
