@@ -95,6 +95,11 @@
 .. |uproot| replace:: `uproot`
 .. _uproot: https://uproot.readthedocs.io/
 
+.. -- Documents ---------------------------------
+
+.. |GWFSpec| replace: LIGO-T970130
+.. _GWFSpec: https://dcc.ligo.org/LIGO-T970130/public
+
 .. -- Other references --------------------------
 
 .. |GravitySpy| replace:: Gravity Spy
