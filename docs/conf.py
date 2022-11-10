@@ -357,7 +357,11 @@ def _new_or_different(content, target):
 def _render_cli_example(config, section, outdir, logger):
     """Render a :mod:`gwpy.cli` example as RST to be processed by Sphinx.
     """
-    raw = config.get(section, 'command') + " --interactive"
+    # read config values (allow for multi-line definition)
+    raw = config.get(
+        section,
+        'command',
+    ).strip().replace("\n", " ") + " --interactive"
     title = config.get(
         section,
         'title',
