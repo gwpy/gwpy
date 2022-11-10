@@ -82,6 +82,9 @@ class TimeSeries(TimeDomainProduct):
             )
             nlegargs = 0    # don't use  them
 
+        # get colours
+        colors = self._color_by_ifo()
+
         for i in range(0, self.n_datasets):
             series = self.timeseries[i]
             if nlegargs:
@@ -92,7 +95,7 @@ class TimeSeries(TimeDomainProduct):
                 label = series.name
             if self.usetex:
                 label = label_to_latex(label)
-            ax.plot(series, label=label)
+            ax.plot(series, label=label, color=colors[i])
 
         return plot
 
