@@ -260,13 +260,30 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """Add an `~argparse.ArgumentGroup` for channel options
         """
         group = parser.add_argument_group(
-            'Data options', 'What data to load')
-        group.add_argument('--chan', type=str, nargs='+', action='append',
-                           required=True, help='channels to load')
-        group.add_argument('--start', type=to_gps, nargs='+', action='append',
-                           help='Starting GPS times (required)')
-        group.add_argument('--duration', type=to_s, default=10,
-                           help='Duration (seconds) [10]')
+            'Data options',
+            'What data to load',
+        )
+        group.add_argument(
+            '--chan',
+            type=str,
+            nargs='+',
+            action='append',
+            required=True,
+            help='channels to load',
+        )
+        group.add_argument(
+            '--start',
+            type=to_gps,
+            nargs='+',
+            action='append',
+            help='Starting GPS times (required)',
+        )
+        group.add_argument(
+            '--duration',
+            type=to_s,
+            default=10,
+            help='Duration (seconds) [10]',
+        )
         return group
 
     @classmethod
@@ -274,14 +291,26 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """Add an `~argparse.ArgumentGroup` for data options
         """
         group = parser.add_argument_group(
-            'Data source options', 'Where to get the data')
+            'Data source options',
+            'Where to get the data',
+        )
         meg = group.add_mutually_exclusive_group()
-        meg.add_argument('-c', '--framecache', type=os.path.abspath,
-                         help='read data from cache')
-        meg.add_argument('-n', '--nds2-server', metavar='HOSTNAME',
-                         help='name of nds2 server to use, default is to '
-                         'try all of them')
-        meg.add_argument('--frametype', help='GWF frametype to read from')
+        meg.add_argument(
+            '-c',
+            '--framecache',
+            type=os.path.abspath,
+            help='read data from cache',
+        )
+        meg.add_argument(
+            '-n',
+            '--nds2-server',
+            metavar='HOSTNAME',
+            help='name of nds2 server to use, default is to try all of them',
+        )
+        meg.add_argument(
+            '--frametype',
+            help='GWF frametype to read from',
+        )
         return group
 
     @classmethod
@@ -292,12 +321,22 @@ class CliProduct(object, metaclass=abc.ABCMeta):
             'Signal processing options',
             'What to do with the data before plotting'
         )
-        group.add_argument('--highpass', type=to_hz,
-                           help='Frequency for highpass filter')
-        group.add_argument('--lowpass', type=to_hz,
-                           help='Frequency for lowpass filter')
-        group.add_argument('--notch', type=to_hz, nargs='*',
-                           help='Frequency for notch (can give multiple)')
+        group.add_argument(
+            '--highpass',
+            type=to_hz,
+            help='Frequency for highpass filter',
+        )
+        group.add_argument(
+            '--lowpass',
+            type=to_hz,
+            help='Frequency for lowpass filter',
+        )
+        group.add_argument(
+            '--notch',
+            type=to_hz,
+            nargs='*',
+            help='Frequency for notch (can give multiple)',
+        )
         return group
 
     # -- plot options
@@ -307,35 +346,68 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """Add an `~argparse.ArgumentGroup` for basic plot options
         """
         group = parser.add_argument_group('Plot options')
-        group.add_argument('-g', '--geometry', default='1200x600',
-                           metavar='WxH', help='size of resulting image')
-        group.add_argument('--dpi', type=int, default=rcParams['figure.dpi'],
-                           help='dots-per-inch for figure')
-        group.add_argument('--interactive', action='store_true',
-                           help='when running from ipython '
-                                'allows experimentation')
-        group.add_argument('--title', action='store',
-                           help='Set title (below suptitle, defaults to '
-                                'parameter summary')
-        group.add_argument('--suptitle',
-                           help='1st title line (larger than the others)')
-        group.add_argument('--out', default='gwpy.png',
-                           help='output filename')
+        group.add_argument(
+            '-g',
+            '--geometry',
+            default='1200x600',
+            metavar='WxH',
+            help='size of resulting image',
+        )
+        group.add_argument(
+            '--dpi',
+            type=int,
+            default=rcParams['figure.dpi'],
+            help='dots-per-inch for figure',
+        )
+        group.add_argument(
+            '--interactive',
+            action='store_true',
+            help='when running from ipython allows experimentation',
+        )
+        group.add_argument(
+            '--title',
+            action='store',
+            help='Set title (below suptitle, defaults to parameter summary',
+        )
+        group.add_argument(
+            '--suptitle',
+            help='1st title line (larger than the others)',
+        )
+        group.add_argument(
+            '--out',
+            default='gwpy.png',
+            help='output filename',
+        )
 
         # legends match input files in position are displayed if specified.
-        group.add_argument('--legend', nargs='+', action='append', default=[],
-                           help='strings to match data files')
-        group.add_argument('--nolegend', action='store_true',
-                           help='do not display legend')
-        group.add_argument('--nogrid', action='store_true',
-                           help='do not display grid lines')
+        group.add_argument(
+            '--legend',
+            nargs='+',
+            action='append',
+            default=[],
+            help='strings to match data files',
+        )
+        group.add_argument(
+            '--nolegend',
+            action='store_true',
+            help='do not display legend',
+        )
+        group.add_argument(
+            '--nogrid',
+            action='store_true',
+            help='do not display grid lines',
+        )
 
         # allow custom styling with a style file
         group.add_argument(
-            '--style', metavar='FILE',
-            help='path to custom matplotlib style sheet, see '
-                 'http://matplotlib.org/users/style_sheets.html#style-sheets '
-                 'for details of how to write one')
+            '--style',
+            metavar='FILE',
+            help=(
+                'path to custom matplotlib style sheet, see '
+                'http://matplotlib.org/users/style_sheets.html#style-sheets '
+                'for details of how to write one'
+            ),
+        )
         return group
 
     @classmethod
@@ -356,35 +428,51 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         group = parser.add_argument_group(f'{name} options')
 
         # label
-        group.add_argument(f'--{axis}label',
-                           default=defaults.get('label'),
-                           dest=f'{axis}label',
-                           help=f'{name} label')
+        group.add_argument(
+            f'--{axis}label',
+            default=defaults.get('label'),
+            dest=f'{axis}label',
+            help=f'{name} label',
+        )
 
         # min and max
         for extrema in ('min', 'max'):
             opt = axis + extrema
-            group.add_argument(f'--{opt}', type=float,
-                               default=defaults.get(extrema), dest=opt,
-                               help=f'{extrema} value for {name}')
+            group.add_argument(
+                f'--{opt}',
+                type=float,
+                default=defaults.get(extrema),
+                dest=opt,
+                help=f'{extrema} value for {name}',
+            )
 
         # scale
         scaleg = group.add_mutually_exclusive_group()
-        scaleg.add_argument(f'--{axis}scale', type=str,
-                            default=defaults.get('scale'),
-                            dest=f'{axis}scale',
-                            help=f'scale for {name}')
+        scaleg.add_argument(
+            f'--{axis}scale',
+            type=str,
+            default=defaults.get('scale'),
+            dest=f'{axis}scale',
+            help=f'scale for {name}',
+        )
         if defaults.get('scale') == 'log':
-            scaleg.add_argument(f'--nolog{axis}',
-                                action='store_const',
-                                dest=f'{axis}scale',
-                                const=None, default='log',
-                                help=f'use logarithmic {name}')
+            scaleg.add_argument(
+                f'--nolog{axis}',
+                action='store_const',
+                dest=f'{axis}scale',
+                const=None,
+                default='log',
+                help=f'use logarithmic {name}',
+            )
         else:
-            scaleg.add_argument(f'--log{axis}', action='store_const',
-                                dest=f'{axis}scale',
-                                const='log', default=None,
-                                help=f'use logarithmic {name}')
+            scaleg.add_argument(
+                f'--log{axis}',
+                action='store_const',
+                dest=f'{axis}scale',
+                const='log',
+                default=None,
+                help=f'use logarithmic {name}',
+            )
         return group
 
     def _finalize_arguments(self, args):
@@ -779,23 +867,42 @@ class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
         """Add an `~argparse.ArgumentGroup` for colour-axis options.
         """
         group = parser.add_argument_group('Colour axis options')
-        group.add_argument('--imin', type=float,
-                           help='minimum value for colorbar')
-        group.add_argument('--imax', type=float,
-                           help='maximum value for colorbar')
-        group.add_argument('--cmap',
-                           default=cls.DEFAULT_CMAP,
-                           help='Colormap. See '
-                                'https://matplotlib.org/examples/color/'
-                                'colormaps_reference.html for options')
-        group.add_argument('--color-scale', choices=('log', 'linear'),
-                           help='scale for colorbar')
-        group.add_argument('--norm', nargs='?', const='median',
-                           choices=('median', 'mean'), metavar='NORM',
-                           help='normalise each pixel against average in '
-                                'that frequency bin')
-        group.add_argument('--nocolorbar', action='store_true',
-                           help='hide the colour bar')
+        group.add_argument(
+            '--imin',
+            type=float,
+            help='minimum value for colorbar',
+        )
+        group.add_argument(
+            '--imax',
+            type=float,
+            help='maximum value for colorbar',
+        )
+        group.add_argument(
+            '--cmap',
+            default=cls.DEFAULT_CMAP,
+            help=(
+                'Colormap. See https://matplotlib.org/examples/color/'
+                'colormaps_reference.html for options'
+            ),
+        )
+        group.add_argument(
+            '--color-scale',
+            choices=('log', 'linear'),
+            help='scale for colorbar',
+        )
+        group.add_argument(
+            '--norm',
+            nargs='?',
+            const='median',
+            choices=('median', 'mean'),
+            metavar='NORM',
+            help='normalise each pixel against average in that frequency bin',
+        )
+        group.add_argument(
+            '--nocolorbar',
+            action='store_true',
+            help='hide the colour bar',
+        )
 
     @staticmethod
     def get_color_label():
@@ -841,17 +948,30 @@ class FFTMixin(object, metaclass=abc.ABCMeta):
         """Add an `~argparse.ArgumentGroup` for FFT options
         """
         group = parser.add_argument_group('Fourier transform options')
-        group.add_argument('--secpfft', type=float,
-                           default=cls.DEFAULT_FFTLENGTH,
-                           help='length of FFT in seconds')
-        group.add_argument('--overlap', type=float,
-                           help='overlap as fraction of FFT length [0-1)')
-        group.add_argument('--window', type=str, default='hann',
-                           help='window function to use when overlapping FFTs')
-        group.add_argument('--average-method', dest='method',
-                           default=DEFAULT_FFT_METHOD,
-                           choices=('median', 'welch', 'bartlett'),
-                           help='FFT averaging method')
+        group.add_argument(
+            '--secpfft',
+            type=float,
+            default=cls.DEFAULT_FFTLENGTH,
+            help='length of FFT in seconds',
+        )
+        group.add_argument(
+            '--overlap',
+            type=float,
+            help='overlap as fraction of FFT length [0-1)',
+        )
+        group.add_argument(
+            '--window',
+            type=str,
+            default='hann',
+            help='window function to use when overlapping FFTs',
+        )
+        group.add_argument(
+            '--average-method',
+            dest='method',
+            default=DEFAULT_FFT_METHOD,
+            choices=('median', 'welch', 'bartlett'),
+            help='FFT averaging method',
+        )
         return group
 
     @classmethod
@@ -862,38 +982,53 @@ class FFTMixin(object, metaclass=abc.ABCMeta):
         group = parser.add_argument_group(f'{name} options')
 
         # label
-        group.add_argument(f'--{axis}label',
-                           default=defaults.get('label'),
-                           dest=f'{axis}label',
-                           help=f'{name} label')
+        group.add_argument(
+            f'--{axis}label',
+            default=defaults.get('label'),
+            dest=f'{axis}label',
+            help=f'{name} label',
+        )
 
         # min and max
         for extrema in ('min', 'max'):
             meg = group.add_mutually_exclusive_group()
             for ax_ in (axis, 'f'):
                 meg.add_argument(
-                    f'--{ax_}{extrema}', type=float,
+                    f'--{ax_}{extrema}',
+                    type=float,
                     default=defaults.get(extrema),
                     dest=f'{axis}{extrema}',
-                    help=f'{extrema} value for {name}')
+                    help=f'{extrema} value for {name}',
+                )
 
         # scale
         scaleg = group.add_mutually_exclusive_group()
-        scaleg.add_argument(f'--{axis}scale', type=str,
-                            default=defaults.get('scale'),
-                            dest=f'{axis}scale',
-                            help=f'scale for {name}')
+        scaleg.add_argument(
+            f'--{axis}scale',
+            type=str,
+            default=defaults.get('scale'),
+            dest=f'{axis}scale',
+            help=f'scale for {name}',
+        )
         for ax_ in (axis, 'f'):
             if defaults.get('scale') == 'log':
                 scaleg.add_argument(
-                    f'--nolog{ax_}', action='store_const',
-                    dest=f'{axis}scale', const=None, default='log',
-                    help=f'use linear {name}')
+                    f'--nolog{ax_}',
+                    action='store_const',
+                    dest=f'{axis}scale',
+                    const=None,
+                    default='log',
+                    help=f'use linear {name}',
+                )
             else:
                 scaleg.add_argument(
-                    f'--log{ax_}', action='store_const',
-                    dest=f'{axis}scale', const='log', default=None,
-                    help='use logarithmic {name}')
+                    f'--log{ax_}',
+                    action='store_const',
+                    dest=f'{axis}scale',
+                    const='log',
+                    default=None,
+                    help='use logarithmic {name}',
+                )
 
         return group
 
@@ -917,14 +1052,27 @@ class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
         ``--epoch`` option for the time axis.
         """
         group = super().arg_xaxis(parser)
-        group.add_argument('--epoch', type=to_gps,
-                           help='center X axis on this GPS time, may be'
-                                'absolute date/time or delta')
+        group.add_argument(
+            '--epoch',
+            type=to_gps,
+            help=(
+                'center X axis on this GPS time, '
+                'may be absolute date/time or delta'
+            ),
+        )
 
-        group.add_argument('--std-seg', action='store_true',
-                           help='add DQ segment describing IFO state')
-        group.add_argument('--seg', type=str, nargs='+', action='append',
-                           help='specify one or more DQ segment names')
+        group.add_argument(
+            '--std-seg',
+            action='store_true',
+            help='add DQ segment describing IFO state',
+        )
+        group.add_argument(
+            '--seg',
+            type=str,
+            nargs='+',
+            action='append',
+            help='specify one or more DQ segment names',
+        )
         return group
 
     def _finalize_arguments(self, args):
