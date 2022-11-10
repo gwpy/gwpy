@@ -276,7 +276,10 @@ class CliProduct(object, metaclass=abc.ABCMeta):
             type=to_gps,
             nargs='+',
             action='append',
-            help='Starting GPS times (required)',
+            required=True,
+            help=(
+                'one or more starting times (integer GPS or date/time string)'
+            ),
         )
         group.add_argument(
             '--duration',
@@ -299,7 +302,10 @@ class CliProduct(object, metaclass=abc.ABCMeta):
             '-c',
             '--framecache',
             type=os.path.abspath,
-            help='read data from cache',
+            help=(
+                'path to a file containing a list of paths '
+                'from which to read data'
+            ),
         )
         meg.add_argument(
             '-n',
@@ -362,7 +368,11 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         group.add_argument(
             '--interactive',
             action='store_true',
-            help='when running from ipython allows experimentation',
+            help=(
+                'presents display in an interactive window, see '
+                'https://matplotlib.org/stable/users/explain/'
+                'interactive.html#default-ui for details'
+            ),
         )
         group.add_argument(
             '--title',
@@ -371,12 +381,15 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         )
         group.add_argument(
             '--suptitle',
-            help='1st title line (larger than the others)',
+            help='topmost title line (larger than the others)',
         )
         group.add_argument(
             '--out',
             default='gwpy.png',
-            help='output filename',
+            help=(
+                'output filename (extension determines format: '
+                'png, pdf, svg are available)'
+            ),
         )
 
         # legends match input files in position are displayed if specified.
@@ -462,7 +475,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
                 dest=f'{axis}scale',
                 const=None,
                 default='log',
-                help=f'use logarithmic {name}',
+                help=f'use linear {name}',
             )
         else:
             scaleg.add_argument(
