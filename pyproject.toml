@@ -75,7 +75,7 @@ astro = [
 # sphinx documentation
 docs = [
   "numpydoc >=0.8.0",
-  "sphinx >=4.0.0",
+  "Sphinx >=4.4.0",
   "sphinx-automodapi",
   "sphinx-immaterial >=0.7.3",
   "sphinx-panels >=0.6.0",
