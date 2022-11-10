@@ -776,7 +776,7 @@ All ``FrEvent`` structures contain the following columns, any other
 columns are use-specific:
 
 ===============  ====================================================================================
-Column name      Description (from `LIGO-T970130 <https://dcc.ligo.org/LIGO-T970130/public>`_)
+Column name      Description (from |GWFSpec|_)
 ===============  ====================================================================================
 ``time``         Reference time of event, as defined by the search algorithm
 ``amplitude``    Continuous output amplitude returned by event
