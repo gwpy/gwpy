@@ -45,7 +45,7 @@ are archived in :ref:`GWF <gwpy-timeseries-io-gwf>` files stored at the
 relevant observatory.
 These data are available locally to authenticated users of the associated
 computing centres (typically collaboration members), but are also
-distributed using |CVMFS|_ and are available remotely using |nds2|_.
+distributed using |CVMFS|_ and are available remotely using :ref:`gwpy-external-nds2`.
 Access to these data is restricted to active collaboration members.
 
 Additionally |GWOSCl|_ hosts publicly-accessible 'open' data, with *event*
@@ -56,7 +56,7 @@ and *bulk* datasets with the entire observing run data available roughly
 
 GWOSC also hosts the |GWOSC_AUX_RELEASE|_, providing public access to
 environmental sensor data around |GW170814|_.
-These data are freely accessible using |nds2|_.
+These data are freely accessible using :ref:`gwpy-external-nds2`.
 
 ======================
 Data discovery methods
@@ -109,9 +109,22 @@ See :func:`numpy.savetxt` for keyword argument options.
 GWF
 ===
 
-**Additional dependencies:**  |LDAStools.frameCPP|_ or |framel|_ or |lalframe|_
+**Additional dependencies:**  :ref:`gwpy-external-framecpp` or :ref:`gwpy-external-framel` or :ref:`gwpy-external-lalframe`
 
 The raw observatory data are archived in ``.gwf`` files, a custom binary format that efficiently stores the time streams and all necessary metadata, for more details about this particular data format, take a look at the specification document |GWFSpec|_.
+
+GWF library availability
+------------------------
+
+GWpy can use any of the three named GWF input/output libraries, and will try
+to find them in the order they are listed
+(FrameCPP first, then FrameL, then LALFrame).
+If you need to read/write GWF files, any of them will work, but re recommend
+to try and install the libraries in that order; FrameCPP provides a more
+complete Python API than the others.
+
+However, not all libraries may be available on all platforms, the linked pages
+for each library include an up-to-date listing of the supported platforms.
 
 Reading
 -------
@@ -196,24 +209,6 @@ To write data held in any of the :mod:`gwpy.timeseries` classes to a GWF file, s
    >>> data.write('output.gwf')
 
 **If the output file already exists it will be overwritten.**
-
-GWF library availability
-------------------------
-
-(Last we checked...) The three GWF library interfaces are available on
-the following platforms:
-
-.. table:: GWF library availability by platform
-   :align: left
-   :name: gwf-library-platforms
-
-   =====================  ==============================  =====  =====  =======
-   Library                Conda-forge package name        Linux  macOS  Windows
-   =====================  ==============================  =====  =====  =======
-   |LDASTools.frameCPP|_  ``python-ldas-tools-framecpp``  Yes    Yes    No
-   |framel|_              ``python-framel``               Yes    Yes    Yes
-   |lalframe|_            ``python-lalframe``             Yes    Yes    No
-   =====================  ==============================  =====  =====  =======
 
 .. _gwpy-timeseries-io-hdf5:
 
