@@ -25,13 +25,21 @@ from numbers import Number
 
 import numpy
 
-from matplotlib import (ticker, docstring)
+from matplotlib import ticker
 from matplotlib.scale import (register_scale, LinearScale, get_scale_names)
 from matplotlib.transforms import Transform
 try:
     from matplotlib.scale import _get_scale_docs as get_scale_docs
 except ImportError:  # matplotlib < 3.1
     from matplotlib.scale import get_scale_docs
+try:
+    from matplotlib import _docstring
+except ImportError:  # matplotlib < 3.6
+    try:
+        from matplotlib import docstring as _docstring
+    except ImportError:  # pragma: no cover
+        # maybe matplotlib >= 3.9?
+        _docstring = None
 
 from astropy import units
 
@@ -497,7 +505,11 @@ for _unit in TIME_UNITS:
     register_gps_scale(_gps_scale_factory(_unit))
 
 # update the docstring for matplotlib scale methods
-docstring.interpd.update(
-    scale=' | '.join([repr(x) for x in get_scale_names()]),
-    scale_docs=get_scale_docs().rstrip(),
-)
+try:
+    _docstring.interpd.update(
+        scale=' | '.join([repr(x) for x in get_scale_names()]),
+        scale_docs=get_scale_docs().rstrip(),
+    )
+except AttributeError:  # pragma: no cover
+    # matplotlib._docstring changed/removed/not found
+    pass
