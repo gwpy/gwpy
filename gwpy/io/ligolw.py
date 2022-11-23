@@ -77,6 +77,15 @@ def patch_ligotimegps(module="ligo.lw.lsctables"):
 
 # -- content handling ---------------------------------------------------------
 
+def _int_ilwd(ilwd):
+    """Convert an ``ilwd`` string into an integer.
+    """
+    try:
+        _, _, i = ilwd.strip().split(":")
+    except ValueError:
+        raise ValueError(f"invalid ilwd:char '{ilwd}'")
+    return int(i)
+
 
 def strip_ilwdchar(_ContentHandler):
     """Wrap a LIGO_LW content handler to swap ilwdchar for int on-the-fly
@@ -87,7 +96,7 @@ def strip_ilwdchar(_ContentHandler):
     """
     from ligo.lw.lsctables import TableByName
     from ligo.lw.table import (Column, TableStream)
-    from ligo.lw.types import (FromPyType, ToPyType)
+    from ligo.lw.types import FromPyType
 
     class IlwdMapContentHandler(_ContentHandler):
 
@@ -101,12 +110,7 @@ def strip_ilwdchar(_ContentHandler):
 
             # if an old ID type, convert type definition to an int
             if result.Type == "ilwd:char":
-                old_type = ToPyType[result.Type]
-
-                def converter(old):
-                    return int(old_type(old))
-
-                self._idconverter[(id(parent), result.Name)] = converter
+                self._idconverter[(id(parent), result.Name)] = _int_ilwd
                 result.Type = FromPyType[int]
 
             try:
