@@ -28,6 +28,7 @@ classifiers = [
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
   "Topic :: Scientific/Engineering :: Astronomy",
   "Topic :: Scientific/Engineering :: Physics",
 ]
@@ -85,7 +86,7 @@ dev = [
   "ciecplib",
   "lalsuite ; sys_platform != 'win32'",
   "lscsoft-glue ; sys_platform != 'win32'",
-  "maya",
+  "maya ; python_version < '3.11'",
   "psycopg2",
   "pycbc >=1.13.4 ; sys_platform != 'win32'",
   "pymysql",
