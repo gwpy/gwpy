@@ -43,7 +43,7 @@ def tconvert(gpsordate='now'):
     Parameters
     ----------
     gpsordate : `float`, `astropy.time.Time`, `datetime.datetime`, ...
-        input gps or date to convert, many input types are supported
+        input gps or date to convert; many input types are supported
 
     Returns
     -------
@@ -53,13 +53,13 @@ def tconvert(gpsordate='now'):
     Notes
     -----
     If the input object is a `float` or `LIGOTimeGPS`, it will get
-    converted from GPS format into a `datetime.datetime`, otherwise
+    converted from GPS format into a `datetime.datetime`; otherwise
     the input will be converted into `LIGOTimeGPS`.
 
     .. warning::
 
        This method cannot convert exact leap seconds to
-       `datetime.datetime`, that object doesn't support it,
+       `datetime.datetime`.  That object doesn't support it,
        so you should consider using `astropy.time.Time` directly.
 
     Examples
@@ -75,16 +75,21 @@ def tconvert(gpsordate='now'):
 
     while strings are automatically converted to `~gwpy.time.LIGOTimeGPS`:
 
-    >>> to_gps('Sep 14 2015 09:50:45.391')
+    >>> tconvert('Sep 14 2015 09:50:45.391')
     LIGOTimeGPS(1126259462, 391000000)
 
-    Additionally, a few special-case words as supported, which all return
+    Additionally, a few special-case words are supported, which all return
     `~gwpy.time.LIGOTimeGPS`:
 
     >>> tconvert('now')
     >>> tconvert('today')
     >>> tconvert('tomorrow')
     >>> tconvert('yesterday')
+
+    Note that 'today', 'tomorrow', and 'yesterday' return the GPS time for
+    00:00:00 UTC for today's date (current date in the local timezone), 
+    00:00:00 UTC for tomorrow's date, and 00:00:00 UTC for yesterday's date, 
+    respectively.
     """
     # convert from GPS into datetime
     try:
@@ -98,7 +103,7 @@ def to_gps(t, *args, **kwargs):
     """Convert any input date/time into a `LIGOTimeGPS`.
 
     Any input object that can be cast as a `~astropy.time.Time`
-    (with `str` going through the `datetime.datetime`) are acceptable.
+    (with `str` going through the `datetime.datetime`) is acceptable.
 
     Parameters
     ----------
@@ -108,7 +113,7 @@ def to_gps(t, *args, **kwargs):
         is acceptable.
 
     *args, **kwargs
-        other arguments to pass to pass to `~astropy.time.Time` if given
+        other arguments to pass to `~astropy.time.Time`, if given
 
     Returns
     -------
@@ -126,6 +131,7 @@ def to_gps(t, *args, **kwargs):
 
     Examples
     --------
+    >>> from gwpy.time import to_gps
     >>> to_gps('Jan 1 2017')
     LIGOTimeGPS(1167264018, 0)
     >>> to_gps('Sep 14 2015 09:50:45.391')
@@ -191,11 +197,12 @@ def from_gps(gps):
     .. warning::
 
        This method cannot convert exact leap seconds to
-       `datetime.datetime`, that object doesn't support it,
+       `datetime.datetime`.  That object doesn't support it,
        so you should consider using `astropy.time.Time` directly.
 
     Examples
     --------
+    >>> from gwpy.time import from_gps
     >>> from_gps(1167264018)
     datetime.datetime(2017, 1, 1, 0, 0)
     >>> from_gps(1126259462.3910)
