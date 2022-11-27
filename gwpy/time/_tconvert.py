@@ -87,8 +87,8 @@ def tconvert(gpsordate='now'):
     >>> tconvert('yesterday')
 
     Note that 'today', 'tomorrow', and 'yesterday' return the GPS time for
-    00:00:00 UTC for today's date (current date in the local timezone), 
-    00:00:00 UTC for tomorrow's date, and 00:00:00 UTC for yesterday's date, 
+    00:00:00 UTC for today's date (current date in the local timezone),
+    00:00:00 UTC for tomorrow's date, and 00:00:00 UTC for yesterday's date,
     respectively.
     """
     # convert from GPS into datetime
