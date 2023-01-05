@@ -117,7 +117,7 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
             if nlegargs:
                 label = self.args.legend[0][i]
             else:
-                label = series.channel.name
+                label = series.name or series.channel.name
                 if len(self.start_list) > 1:
                     label += f', {series.epoch.gps}'
 

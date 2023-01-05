@@ -86,8 +86,10 @@ class TimeSeries(TimeDomainProduct):
             series = self.timeseries[i]
             if nlegargs:
                 label = self.args.legend[0][i]
-            else:
+            elif series.channel:  # GWOSC data doesn't have a 'channel'
                 label = series.channel.name
+            else:
+                label = series.name
             if self.usetex:
                 label = label_to_latex(label)
             ax.plot(series, label=label)
