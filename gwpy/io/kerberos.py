@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2023)
 #
 # This file is part of GWpy.
 #
@@ -16,12 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utility module to initialise a kerberos ticket for NDS2 connections
+"""Utility module to initialise Kerberos ticket-granting tickets.
 
 This module provides a lazy-mans python version of the 'kinit'
-command-line tool, with internal guesswork using keytabs
+command-line tool using the python-gssapi library.
 
-See the documentation of the `kinit` function for example usage
+See the documentation of the `kinit` function for example usage.
 """
 
 import getpass
@@ -29,7 +30,11 @@ import os
 import re
 import subprocess
 import sys
+import warnings
 from collections import OrderedDict
+from unittest import mock
+
+from ..utils.decorators import deprecated_function
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -40,6 +45,8 @@ try:
 except NameError:
     _IPYTHON = False
 
+DEFAULT_REALM = "LIGO.ORG"
+
 
 class KerberosError(RuntimeError):
     """Kerberos (krb5) operation failed
@@ -48,49 +55,59 @@ class KerberosError(RuntimeError):
 
 
 def kinit(
-        username=None,
-        password=None,
-        realm=None,
-        exe="kinit",
-        keytab=None,
-        krb5ccname=None,
-        verbose=None,
+    username=None,
+    password=None,
+    realm=None,
+    keytab=None,
+    ccache=None,
+    lifetime=None,
+    krb5ccname=None,
+    verbose=None,
 ):
-    """Initialise a kerberos ticket using the ``kinit`` command-line tool.
-
-    This allows authenticated connections to, amongst others, NDS2 services.
+    """Initialise a Kerberos ticket-granting ticket (TGT).
 
     Parameters
     ----------
     username : `str`, optional
-        name of user, will be prompted for if not given.
-
-    password : `str`, optional
-        cleartext password of user for given realm, will be prompted for
+        Name principal for Kerberos credential, will be prompted for
         if not given.
 
-    realm : `str`, optional
-        name of realm to authenticate against, read from keytab if available,
-        defaults to ``'LIGO.ORG'``.
+    password : `str`, optional
+        Cleartext password of user for given realm, will be prompted for
+        if not given.
 
-    exe : `str`, optional
-        path to kinit executable.
+        .. warning::
+
+            Passing passwords in plain text presents a security risk, please
+            consider using a Kerberos keytab file to store credentials.
+
+    realm : `str`, optional
+        Name of realm to authenticate against, if not given as part of
+        ``username``, defaults to ``'LIGO.ORG'``.
 
     keytab : `str`, optional
-        path to keytab file. If not given this will be read from the
+        Path to keytab file. If not given this will be read from the
         ``KRB5_KTNAME`` environment variable. See notes for more details.
 
-    krb5ccname : `str`, optional
-        path to Kerberos credentials cache.
+    ccache : `str`, optional
+        Path to Kerberos credentials cache.
+
+    lifetime : `int`, optional
+        Desired liftime of the Kerberos credential (may not be respected
+        by the underlying GSSAPI implementation); pass `None` to use
+        the maximum permitted liftime (default).
+
+        This is currently not respected by MIT Kerberos (the most common
+        GSSAPI implementation).
 
     verbose : `bool`, optional
-        print verbose output (if `True`), or not (`False)`; default is `True`
+        Print verbose output (if `True`), or not (`False)`; default is `True`
         if any user-prompting is needed, otherwise `False`.
 
     Notes
     -----
     If a keytab is given, or is read from the ``KRB5_KTNAME`` environment
-    variable, this will be used to guess the username and realm, if it
+    variable, this will be used to guess the principal, if it
     contains only a single credential.
 
     Examples
@@ -107,27 +124,35 @@ def kinit(
     >>> kinit(keytab='~/.kerberos/ligo.org.keytab', verbose=True)
     Kerberos ticket generated for albert.einstein@LIGO.ORG
     """
-    # get keytab
+    try:
+        import gssapi
+    except ImportError as exc:
+        raise type(exc)(
+            "cannot generate kerberos credentials without python-gssapi, ",
+            "or run `kinit` from your terminal manually."
+        )
+
+    # handle deprecated keyword
+    if krb5ccname:
+        warnings.warn(
+            "The `krb5ccname` keyword for gwpy.io.kerberos.kinit was renamed "
+            "to `ccache`, and will stop working in a future release.",
+            DeprecationWarning,
+        )
+        if ccache is None:
+            ccache = krb5ccname
+
+    # get keytab and check we can use it (username in keytab)
     if keytab is None:
         keytab = os.environ.get('KRB5_KTNAME', None)
         if keytab is None or not os.path.isfile(keytab):
             keytab = None
     if keytab:
-        try:
-            principals = parse_keytab(keytab)
-        except KerberosError:
-            pass
+        keyprincipal = _keytab_principal(keytab)
+        if _use_keytab(username, keytab):
+            username = str(keyprincipal)
         else:
-            # is there's only one entry in the keytab, use that
-            if username is None and len(principals) == 1:
-                username = principals[0][0]
-            # or if the given username is in the keytab, find the realm
-            if username in list(zip(*principals))[0]:
-                idx = list(zip(*principals))[0].index(username)
-                realm = principals[idx][1]
-            # otherwise this keytab is useless, so remove it
-            else:
-                keytab = None
+            keytab = False
 
     # refuse to prompt if we can't get an answer
     # note: jupyter streams are not recognised as interactive
@@ -142,42 +167,110 @@ def kinit(
                             "a ticket, or consider using a keytab file")
 
     # get credentials
-    if realm is None:
-        realm = 'LIGO.ORG'
     if username is None:
         verbose = True
         username = input(
-            f"Please provide username for the {realm} kerberos realm: ",
+            "Kerberos principal (user@REALM): ",
         )
-    identity = f"{username}@{realm}"
+    if "@" not in username:
+        username = f"{username}@{DEFAULT_REALM}"
+    principal = gssapi.Name(
+        base=username,
+        name_type=gssapi.NameType.kerberos_principal,
+    )
     if not keytab and password is None:
         verbose = True
-        password = getpass.getpass(prompt=f"Password for {identity}: ")
+        password = getpass.getpass(prompt=f"Password for {principal}: ")
 
-    # format kinit command
-    if keytab:
-        cmd = [exe, '-k', '-t', keytab, identity]
-    else:
-        cmd = [exe, identity]
-    if krb5ccname:
-        krbenv = {'KRB5CCNAME': krb5ccname}
-    else:
-        krbenv = None
-
-    # execute command
-    kget = subprocess.Popen(cmd, env=krbenv, stdout=subprocess.PIPE,
-                            stdin=subprocess.PIPE)
-    if not keytab:
-        kget.communicate(password.encode('utf-8'))
-    kget.wait()
-    retcode = kget.poll()
-    if retcode:
-        raise subprocess.CalledProcessError(kget.returncode, ' '.join(cmd))
+    # generate credential
+    acquire_kw = {  # common options for acquire methods
+        "ccache": ccache,
+        "lifetime": lifetime,
+    }
+    try:
+        if keytab:
+            creds = _acquire_keytab(principal, str(keytab), **acquire_kw)
+        else:
+            creds = _acquire_password(principal, password, **acquire_kw)
+    except gssapi.exceptions.GSSError:
+        raise KerberosError(
+            f"failed to generate Kerberos TGT for {principal}",
+        )
     if verbose:
-        print(f"Kerberos ticket generated for {identity}")
+        print(
+            f"Kerberos ticket acquired for {creds.name} "
+            f"({creds.lifetime} seconds remaining)",
+        )
 
 
-def parse_keytab(keytab):
+def _acquire_keytab(principal, keytab, ccache=None, lifetime=None):
+    """Acquire a Kerberos TGT using a keytab.
+    """
+    import gssapi
+    store = {
+        "client_keytab": str(keytab),
+    }
+    if ccache:
+        store["ccache"] = str(ccache)
+    with mock.patch.dict("os.environ", {"KRB5_KTNAME": keytab}):
+        creds = gssapi.Credentials(
+            name=principal,
+            store=store,
+            usage="initiate",
+            lifetime=lifetime,
+        )
+    creds.inquire()
+    return creds
+
+
+def _acquire_password(principal, password, ccache=None, lifetime=None):
+    """Acquire a Kerberos TGT using principal/password.
+    """
+    import gssapi
+    raw_creds = gssapi.raw.acquire_cred_with_password(
+        name=principal,
+        password=password.encode("utf-8"),
+        usage="initiate",
+    )
+    creds = gssapi.Credentials(raw_creds.creds)
+    creds.inquire()
+    creds.store(
+        store={"ccache": str(ccache)} if ccache else None,
+        usage="initiate",
+        overwrite=True,
+    )
+    return creds
+
+
+def _keytab_principal(keytab):
+    """Return the principal assocated with a Kerberos keytab file.
+    """
+    import gssapi
+    with mock.patch.dict("os.environ", {"KRB5_KTNAME": str(keytab)}):
+        try:
+            creds = gssapi.Credentials(usage="accept")
+        except gssapi.exceptions.MissingCredentialsError as exc:
+            warnings.warn(str(exc))
+            return None
+    return creds.name
+
+
+def _use_keytab(username, principal):
+    """Return `True` if a keytab principal matches the requested username.
+    """
+    if not username:
+        return True
+    username = str(username)
+    return (
+        ("@" in username and username == str(principal))
+        or username == str(principal).split("@", 1)[0]
+    )
+
+
+# -- deprecated
+
+@deprecated_function
+def parse_keytab(keytab):  # pragma: no cover
     """Read the contents of a KRB5 keytab file, returning a list of
     credentials listed within
 
