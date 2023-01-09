@@ -22,10 +22,37 @@
 import numpy
 import pytest
 
+from scipy.signal import get_window as scipy_get_window
+
 from ...testing import utils
 from .. import window
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+
+@pytest.mark.parametrize(("win", "Nx", "out"), [
+    ("hann", 10, scipy_get_window("hann", 10)),
+    (24, 10, scipy_get_window(("kaiser", 24), 10)),
+    (("kaiser", 24), 10, scipy_get_window(("kaiser", 24), 10)),
+    (range(10), 10, numpy.arange(10)),
+])
+def test_get_window(win, Nx, out):
+    numpy.testing.assert_array_equal(
+        window.get_window(win, Nx),
+        out,
+    )
+
+
+@pytest.mark.parametrize(("win", "Nx", "exc"), [
+    (range(11), 10, "window array wrong size"),
+    ([[0, 1], [1, 2]], 4, "multi-dimensional windows are not supported"),
+])
+def test_get_window_error(win, Nx, exc):
+    with pytest.raises(
+        AssertionError,
+        match=exc,
+    ):
+        window.get_window(win, Nx)
 
 
 @pytest.mark.parametrize(("in_, out"), [
