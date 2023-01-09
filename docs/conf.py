@@ -329,9 +329,9 @@ ${titleunderline}
 
 ${description}
 
-.. code:: sh
+.. code-block:: shell
 
-   $$ ${command}
+   ${command}
 
 .. plot::
    :align: center
