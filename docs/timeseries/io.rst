@@ -223,6 +223,7 @@ To write data held in any of the :mod:`gwpy.timeseries` classes to a GWF file, s
 
         >>> channel = "L1:CHANNEL_NAME"
         >>> output_file = "output.gwf"
+        >>> data = TimeSeries([1, 2, 3])
         >>> data.name = channel
         >>> data.write(output_file)
         >>> data = TimeSeries.read(output_file, channel)
