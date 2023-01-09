@@ -29,6 +29,8 @@ from LDAStools import frameCPP
 
 from ..utils.enum import NumpyTypeEnum
 
+_FrVect = frameCPP.FrVect
+
 # -- detectors ----------------------------------------------------------------
 
 DetectorLocation = IntEnum(
@@ -41,66 +43,55 @@ DetectorLocation = IntEnum(
 # -- type mapping -------------------------------------------------------------
 
 class FrVectType(IntEnum, NumpyTypeEnum):
-    INT8 = frameCPP.FrVect.FR_VECT_C
-    INT16 = frameCPP.FrVect.FR_VECT_2S
-    INT32 = frameCPP.FrVect.FR_VECT_4S
-    INT64 = frameCPP.FrVect.FR_VECT_8S
-    FLOAT32 = frameCPP.FrVect.FR_VECT_4R
-    FLOAT64 = frameCPP.FrVect.FR_VECT_8R
-    COMPLEX64 = frameCPP.FrVect.FR_VECT_8C
-    COMPLEX128 = frameCPP.FrVect.FR_VECT_16C
-    BYTES = frameCPP.FrVect.FR_VECT_STRING
-    UINT8 = frameCPP.FrVect.FR_VECT_1U
-    UINT16 = frameCPP.FrVect.FR_VECT_2U
-    UINT32 = frameCPP.FrVect.FR_VECT_4U
-    UINT64 = frameCPP.FrVect.FR_VECT_8U
+    INT8 = _FrVect.FR_VECT_C
+    INT16 = _FrVect.FR_VECT_2S
+    INT32 = _FrVect.FR_VECT_4S
+    INT64 = _FrVect.FR_VECT_8S
+    FLOAT32 = _FrVect.FR_VECT_4R
+    FLOAT64 = _FrVect.FR_VECT_8R
+    COMPLEX64 = _FrVect.FR_VECT_8C
+    COMPLEX128 = _FrVect.FR_VECT_16C
+    BYTES = _FrVect.FR_VECT_STRING
+    UINT8 = _FrVect.FR_VECT_1U
+    UINT16 = _FrVect.FR_VECT_2U
+    UINT32 = _FrVect.FR_VECT_4U
+    UINT64 = _FrVect.FR_VECT_8U
 
 
 # -- compression types --------------------------------------------------------
 
 try:
-    frameCPP.FrVect.ZERO_SUPPRESS
+    _FrVect.ZERO_SUPPRESS
 except AttributeError:  # python-ldas-tools-framecpp < 3.0.0
     class Compression(IntEnum):
-        RAW = frameCPP.FrVect.RAW
-        GZIP = frameCPP.FrVect.GZIP
-        DIFF_GZIP = frameCPP.FrVect.DIFF_GZIP
-        ZERO_SUPPRESS_WORD_2 = frameCPP.FrVect.ZERO_SUPPRESS_WORD_2
-        ZERO_SUPPRESS_WORD_4 = frameCPP.FrVect.ZERO_SUPPRESS_WORD_4
-        ZERO_SUPPRESS_WORD_8 = frameCPP.FrVect.ZERO_SUPPRESS_WORD_8
-        ZERO_SUPPRESS_OTHERWISE_GZIP = frameCPP.FrVect.ZERO_SUPPRESS_OTHERWISE_GZIP
-
-    class DefaultCompressionLevel(IntEnum):
-        RAW = 0
-        GZIP = 6
-        DIFF_GZIP = 6
-        ZERO_SUPPRESS_WORD_2 = 0
-        ZERO_SUPPRESS_WORD_4 = 0
-        ZERO_SUPPRESS_WORD_8 = 0
-        ZERO_SUPPRESS_OTHERWISE_GZIP = 6
+        RAW = _FrVect.RAW
+        GZIP = _FrVect.GZIP
+        DIFF_GZIP = _FrVect.DIFF_GZIP
+        ZERO_SUPPRESS_WORD_2 = _FrVect.ZERO_SUPPRESS_WORD_2
+        ZERO_SUPPRESS_WORD_4 = _FrVect.ZERO_SUPPRESS_WORD_4
+        ZERO_SUPPRESS_WORD_8 = _FrVect.ZERO_SUPPRESS_WORD_8
+        ZERO_SUPPRESS_OTHERWISE_GZIP = _FrVect.ZERO_SUPPRESS_OTHERWISE_GZIP
 else:
     class Compression(IntEnum):
-        RAW = frameCPP.FrVect.RAW
-        BIGENDIAN_RAW = frameCPP.FrVect.BIGENDIAN_RAW
-        LITTLEENDIAN_RAW = frameCPP.FrVect.LITTLEENDIAN_RAW
-        GZIP = frameCPP.FrVect.GZIP
-        BIGENDIAN_GZIP = frameCPP.FrVect.BIGENDIAN_GZIP
-        LITTLEENDIAN_GZIP = frameCPP.FrVect.LITTLEENDIAN_GZIP
-        DIFF_GZIP = frameCPP.FrVect.DIFF_GZIP
-        BIGENDIAN_DIFF_GZIP = frameCPP.FrVect.BIGENDIAN_DIFF_GZIP
-        LITTLEENDIAN_DIFF_GZIP = frameCPP.FrVect.LITTLEENDIAN_DIFF_GZIP
-        ZERO_SUPPRESS = frameCPP.FrVect.ZERO_SUPPRESS
-        BIGENDIAN_ZERO_SUPPRESS = frameCPP.FrVect.BIGENDIAN_ZERO_SUPPRESS
-        LITTLEENDIAN_ZERO_SUPPRESS = frameCPP.FrVect.LITTLEENDIAN_ZERO_SUPPRESS
-        ZERO_SUPPRESS_OTHERWISE_GZIP = frameCPP.FrVect.ZERO_SUPPRESS_OTHERWISE_GZIP
+        RAW = _FrVect.RAW
+        BIGENDIAN_RAW = _FrVect.BIGENDIAN_RAW
+        LITTLEENDIAN_RAW = _FrVect.LITTLEENDIAN_RAW
+        GZIP = _FrVect.GZIP
+        BIGENDIAN_GZIP = _FrVect.BIGENDIAN_GZIP
+        LITTLEENDIAN_GZIP = _FrVect.LITTLEENDIAN_GZIP
+        DIFF_GZIP = _FrVect.DIFF_GZIP
+        BIGENDIAN_DIFF_GZIP = _FrVect.BIGENDIAN_DIFF_GZIP
+        LITTLEENDIAN_DIFF_GZIP = _FrVect.LITTLEENDIAN_DIFF_GZIP
+        ZERO_SUPPRESS = _FrVect.ZERO_SUPPRESS
+        BIGENDIAN_ZERO_SUPPRESS = _FrVect.BIGENDIAN_ZERO_SUPPRESS
+        LITTLEENDIAN_ZERO_SUPPRESS = _FrVect.LITTLEENDIAN_ZERO_SUPPRESS
+        ZERO_SUPPRESS_OTHERWISE_GZIP = _FrVect.ZERO_SUPPRESS_OTHERWISE_GZIP
 
-    class DefaultCompressionLevel(IntEnum):
-        RAW = 0
-        GZIP = 6
-        DIFF_GZIP = 6
-        ZERO_SUPPRESS = 0
-        ZERO_SUPPRESS_OTHERWISE_GZIP = 6
-
+# compression level is '6' for all GZip compressions, otherwise 0 (none)
+DefaultCompressionLevel = IntEnum(
+    "DefaultCompressionLevel",
+    {k: 6 if "GZIP" in k else 0 for k in Compression.__members__},
+)
 
 
 # -- Proc data types ----------------------------------------------------------
