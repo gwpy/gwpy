@@ -135,9 +135,8 @@ To create a new release on PyPI:
 
    rm -rf dist/
    git checkout vX.Y.Z
-   python setup.py sdist bdist_wheel
-   gpg --armor --detach-sign dist/gwpy-*.tar.gz
-   twine upload dist/gwpy-*
+   python -m build
+   python -m twine upload --sign dist/gwpy-*
 
 Conda
 -----

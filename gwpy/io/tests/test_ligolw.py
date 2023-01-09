@@ -30,6 +30,37 @@ from .. import ligolw as io_ligolw
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+OLD_FORMAT_LIGO_LW_XML = """
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+  <Table Name="sngl_burst:table">
+    <Column Type="lstring" Name="sngl_burst:ifo"/>
+    <Column Type="int_4s" Name="sngl_burst:peak_time"/>
+    <Column Type="int_4s" Name="sngl_burst:peak_time_ns"/>
+    <Column Type="int_4s" Name="sngl_burst:start_time"/>
+    <Column Type="int_4s" Name="sngl_burst:start_time_ns"/>
+    <Column Type="real_4" Name="sngl_burst:duration"/>
+    <Column Type="lstring" Name="sngl_burst:search"/>
+    <Column Type="ilwd:char" Name="sngl_burst:event_id"/>
+    <Column Type="ilwd:char" Name="sngl_burst:process_id"/>
+    <Column Type="real_4" Name="sngl_burst:central_freq"/>
+    <Column Type="lstring" Name="sngl_burst:channel"/>
+    <Column Type="real_4" Name="sngl_burst:amplitude"/>
+    <Column Type="real_4" Name="sngl_burst:snr"/>
+    <Column Type="real_4" Name="sngl_burst:confidence"/>
+    <Column Type="real_8" Name="sngl_burst:chisq"/>
+    <Column Type="real_8" Name="sngl_burst:chisq_dof"/>
+    <Column Type="real_4" Name="sngl_burst:bandwidth"/>
+    <Stream Delimiter="," Type="Local" Name="sngl_burst:table">
+      "H1",100000000,000000000,100000000,000000000,1,"gstlal_excesspower","sngl_burst:event_id:4696","process:process_id:0",162,"LDAS-STRAIN",2.3497068e-25,0.69409615,16.811825,0,512,256,
+      "H1",100000000,000000001,100000000,000000001,1,"gstlal_excesspower","sngl_burst:event_id:4697","process:process_id:0",162,"LDAS-STRAIN",2.3497797e-25,0.69416249,16.816761,0,512,256,
+      "H1",100000000,000000001,100000000,000000002,1,"gstlal_excesspower","sngl_burst:event_id:4698","process:process_id:0",162,"LDAS-STRAIN",2.3479907e-25,0.69253588,16.696106,0,512,256,
+    </Stream>
+  </Table>
+</LIGO_LW>
+""".strip()  # noqa: E501
+
 
 # -- fixtures -----------------------------------------------------------------
 
@@ -91,6 +122,15 @@ def test_read_table_empty(llwdoc):
     with pytest.raises(ValueError) as exc:
         io_ligolw.read_table(llwdoc)
     assert str(exc.value) == "No tables found in LIGO_LW document(s)"
+
+
+@pytest.mark.requires("ligo.lw.lsctables")
+def test_read_table_ilwd(tmp_path):
+    xmlpath = tmp_path / "test.xml"
+    with open(xmlpath, "w") as f:
+        f.write(OLD_FORMAT_LIGO_LW_XML)
+    tab = io_ligolw.read_table(xmlpath, tablename="sngl_burst")
+    assert len(tab) == 3
 
 
 def test_read_table_multiple(llwdoc_with_tables):
