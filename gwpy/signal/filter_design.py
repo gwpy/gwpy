@@ -30,7 +30,7 @@ from scipy import signal
 
 from astropy.units import (Unit, Quantity)
 
-from .window import planck
+from .window import (get_window, planck)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['lowpass', 'highpass', 'bandpass', 'notch', 'concatenate_zpks']
@@ -204,7 +204,7 @@ def truncate_impulse(impulse, ntaps, window='hann'):
     out = impulse.copy()
     trunc_start = int(ntaps / 2)
     trunc_stop = out.size - trunc_start
-    window = signal.get_window(window, ntaps)
+    window = get_window(window, ntaps)
     out[0:trunc_start] *= window[trunc_start:ntaps]
     out[trunc_stop:out.size] *= window[0:trunc_start]
     out[trunc_start:trunc_stop] = 0
