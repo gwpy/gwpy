@@ -35,6 +35,7 @@ from scipy import signal
 from astropy import units
 
 from ...frequencyseries import (FrequencySeries, SpectralVariance)
+from ...io.nds2 import NDSWarning
 from ...segments import (Segment, SegmentList, DataQualityFlag)
 from ...signal import filter_design
 from ...signal.window import planck
@@ -610,6 +611,25 @@ class TestTimeSeries(_TestTimeSeriesBase):
             with pytest.raises(RuntimeError) as exc:
                 self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.gwpy')
             assert 'no data received' in str(exc.value)
+
+    @pytest.mark.requires("nds2")
+    @mock.patch(
+        "gwpy.io.nds2.host_resolution_order",
+        return_value=(["nds.example.com", 31200],),
+    )
+    def test_fetch_warning_message(self, _):
+        """Test that TimeSeries.fetch emits a useful warning on NDS2 issues.
+        """
+        with \
+                pytest.raises(
+                    RuntimeError,
+                    match="Cannot find all relevant data",
+                ), \
+                pytest.warns(
+                    NDSWarning,
+                    match="failed to fetch data for X1:TEST",
+                ):
+            self.TEST_CLASS.fetch("X1:TEST", 0, 1)
 
     @_gwosc_cvmfs
     @mock.patch.dict(
