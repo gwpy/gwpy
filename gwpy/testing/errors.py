@@ -26,8 +26,11 @@ from urllib.error import URLError
 
 import pytest
 
+import requests.exceptions
+
 NETWORK_ERROR = (
     ConnectionError,
+    requests.exceptions.ConnectionError,
     socket.timeout,
     SSLError,
     URLError,
