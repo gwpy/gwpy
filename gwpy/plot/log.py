@@ -21,7 +21,7 @@
 helpful set of major and minor ticks.
 """
 
-from math import (ceil, floor, log)
+from math import (ceil, floor, isclose, log)
 
 import numpy
 
@@ -108,7 +108,7 @@ class LogFormatter(mticker.LogFormatterMathtext):
         b = self._base
         fx = log(x) / log(b)
 
-        is_x_decade = mticker.is_close_to_int(fx)
+        is_x_decade = isclose(fx, round(fx))
         if self.labelOnlyBase and not is_x_decade:
             return ''
 
