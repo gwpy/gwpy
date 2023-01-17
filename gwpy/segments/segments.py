@@ -157,7 +157,7 @@ class SegmentList(segmentlist):
         """
         from astropy.table import Table
         return Table(
-            rows=[(i, s[0], s[1], abs(s)) for i, s in enumerate(self)],
+            rows=[(i, s[0], s[1], abs(s[1]-s[0])) for i, s in enumerate(self)],
             names=('index', 'start', 'end', 'duration'),
         )
 
