@@ -32,20 +32,40 @@ MACROS = [
 ]
 
 
+def _test_usetex():
+    """Draw (but don't show) a test image using matplotlib and LaTeX.
+    """
+    from matplotlib import (pyplot, rc_context)
+    with rc_context({"text.usetex": True}):
+        fig = pyplot.figure()
+        ax = fig.gca()
+        ax.set_xlabel(r"\LaTeX")
+        fig.canvas.draw()
+    pyplot.close(fig)
+
+
 def has_tex():
     """Returns whether tex is installed on this system
 
-    Checks for ``latex``, ``pdflatex``, and ``dvipng`` on the path.
+    Checks for ``latex``, ``pdflatex``, and ``dvipng`` on the path, and
+    then attemps to draw an image using LaTeX syntax.
 
     Returns
     -------
     hastex : `bool`
-        `True` if all required executables are found on the path, otherwise
-        `False`
+        `True` if the test image is drawn correctly, otherwise `False`
     """
+    # run basic sanity checks
     for exe in ('latex', 'pdflatex', 'dvipng'):
         if which(exe) is None:
             return False
+
+    # attempt to render an image with latex
+    try:
+        _test_usetex()
+    except Exception:  # failed for any reason
+        return False
+
     return True
 
 
