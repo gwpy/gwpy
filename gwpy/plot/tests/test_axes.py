@@ -135,15 +135,22 @@ class TestAxes(AxesTestBase):
         array = numpy.random.random((10, 10))
         image2 = ax.imshow(array)
         utils.assert_array_equal(image2.get_array(), array)
-        assert image2.get_extent() == (-.5, array.shape[0]-.5,
-                                       array.shape[1]-.5, -.5)
+        assert tuple(image2.get_extent()) == (
+            -.5,
+            array.shape[0]-.5,
+            array.shape[1]-.5,
+            -.5,
+        )
 
     def test_imshow_array2d(self, ax):
         # overloaded imshow call (Array2D)
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
         image = ax.imshow(array)
         utils.assert_array_equal(image.get_array(), array.value.T)
-        assert image.get_extent() == tuple(array.xspan) + tuple(array.yspan)
+        assert tuple(image.get_extent()) == (
+            tuple(array.xspan)
+            + tuple(array.yspan)
+        )
 
         # check log scale uses non-zero boundaries
         ax.clear()
@@ -152,8 +159,12 @@ class TestAxes(AxesTestBase):
         ax.set_xscale('log')
         ax.set_yscale('log')
         image = ax.imshow(array)
-        assert image.get_extent() == (1e-300, array.xspan[1],
-                                      1e-300, array.yspan[1])
+        assert tuple(image.get_extent()) == (
+            1e-300,
+            array.xspan[1],
+            1e-300,
+            array.yspan[1],
+        )
 
     def test_pcolormesh(self, ax):
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
