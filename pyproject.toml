@@ -84,6 +84,7 @@ docs = [
 # development environments
 dev = [
   "ciecplib",
+  "gssapi",
   "lalsuite ; sys_platform != 'win32'",
   "lscsoft-glue ; sys_platform != 'win32'",
   "maya ; python_version < '3.11'",
