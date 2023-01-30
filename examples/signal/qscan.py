@@ -47,8 +47,11 @@ data = TimeSeries.fetch_open_data('L1', gps-34, gps+34)
 # find the one with the most significant tile near the time of merger:
 
 from gwpy.segments import Segment
-search = Segment(gps-0.25, gps+0.25)
-qgram = data.q_gram(qrange=(4, 150), search=search, mismatch=0.35)
+qgram = data.q_gram(
+    qrange=(4, 150),
+    search=Segment(gps-0.25, gps+0.25),
+    mismatch=0.35,
+)
 
 # .. note::
 #
@@ -59,11 +62,13 @@ qgram = data.q_gram(qrange=(4, 150), search=search, mismatch=0.35)
 # Finally, we can plot the loudest time-frequency plane, focusing on a
 # specific window around the merger time:
 
-from matplotlib.cm import get_cmap
-cmap = get_cmap('viridis')
-plot = qgram.tile('time', 'frequency', 'duration', 'bandwidth',
-                  color='energy', figsize=[8, 4], linewidth=0.1,
-                  edgecolor=cmap(0), antialiased=True)
+plot = qgram.tile(
+    'time',
+    'frequency',
+    'duration',
+    'bandwidth',
+    color='energy',
+)
 ax = plot.gca()
 ax.set_xscale('seconds')
 ax.set_xlim(gps-6, gps+1)
@@ -72,12 +77,15 @@ ax.set_yscale('log')
 ax.set_ylim(16, 1024)
 ax.set_ylabel('Frequency [Hz]')
 ax.grid(True, axis='y', which='both')
-ax.colorbar(cmap='viridis', label='Normalized energy', clim=[0, 25])
-cmap = get_cmap('viridis')
-ax.set_facecolor(cmap(0))
+
+from matplotlib import colormaps
+cmap = colormaps['viridis']
+ax.colorbar(cmap=cmap.name, label='Normalized energy', clim=[0, 50])
+ax.set_facecolor(cmap(0))  # colour background to the bottom of the map
+
 plot.show()
 
 # Here we can clearly see the trace of a binary neutron star merger, sweeping
 # up in frequency through a loud saturation glitch in the foreground.
 # For more details on this result, please see
-# https://www.gw-openscience.org/catalog/GWTC-1-confident/single/GW170817/.
+# the 'Science Summary' for |GW170817|_.
