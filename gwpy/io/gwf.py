@@ -113,9 +113,7 @@ def write_frames(filename, frames, compression='GZIP', compression_level=None):
         - ``'RAW'``
         - ``'GZIP'``
         - ``'DIFF_GZIP'``
-        - ``'ZERO_SUPPRESS_WORD_2'``
-        - ``'ZERO_SUPPRESS_WORD_4'``
-        - ``'ZERO_SUPPRESS_WORD_8'``
+        - ``'ZERO_SUPPRESS'``
         - ``'ZERO_SUPPRESS_OTHERWISE_GZIP'``
 
     compression_level : `int`, optional
