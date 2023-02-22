@@ -197,6 +197,22 @@ To write data held in any of the :mod:`gwpy.timeseries` classes to a GWF file, s
 
 **If the output file already exists it will be overwritten.**
 
+.. note::
+
+   When writing a timeseries to a GWF, the :attr:`TimeSeries.name` property is used for the `name` variable of
+   the GWF data structures (`FrProcData` and `FrVect`).
+   So, if you want to write a file and then read it back in, you must ensure that the :attr:`~TimeSeries.name` property
+   is correctly assigned, e.g:
+
+   .. code-block:: python
+
+      >>> channel = "L1:CHANNEL_NAME"
+      >>> output_file = "output.gwf"
+      >>> data = TimeSeries([1, 2, 3])
+      >>> data.name = channel
+      >>> data.write(output_file)
+      >>> data = TimeSeries.read(output_file, channel)
+
 GWF library availability
 ------------------------
 
