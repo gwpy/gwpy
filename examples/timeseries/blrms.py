@@ -36,7 +36,7 @@ from gwpy.plot import Plot
 # We do this using string-replacement so we can substitute the interferometer
 # prefix easily when we need to:
 channels = [
-    '{ifo}:ISI-BS_ST1_SENSCOR_GND_STS_Z_BLRMS_30M_100M',
+    '{ifo}:ISI-GND_STS_ITMY_Z_BLRMS_30M_100M',
 ]
 
 # At last we can :meth:`~TimeSeriesDict.get` 6 hours of data for each
