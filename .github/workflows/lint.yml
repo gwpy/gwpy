@@ -55,4 +55,4 @@ jobs:
             "rstcheck[sphinx,toml]>=6.0.0" \
         ;
     - name: Lint with rstcheck
-      run: rstcheck . --recursive --report-level error
+      run: rstcheck . --recursive --report-level error --log-level DEBUG

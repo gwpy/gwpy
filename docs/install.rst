@@ -62,12 +62,9 @@ GWpy has the following strict requirements:
 
 All of these will be installed using any of the above install methods.
 
-GWpy also depends on the following other packages for optional features:
+Gwpy also depends on the following other packages for optional features:
 
-- |python-ligo-lw| to read/write :class:`~gwpy.table.EventTable` with
-  LIGO_LW XML format (see :ref:`gwpy-table-io-ligolw`)
-- |LDAStools.frameCPP|_: to read/write data in GWF format
-- |nds2|_: to provide remote data access for `TimeSeries`
-  (see :ref:`gwpy-timeseries-remote`)
-- |uproot|_: to read/write :class:`~gwpy.table.EventTable` with ROOT
-  format (see :ref:`gwpy-table-io-root`)
+.. toctree::
+   :glob:
+
+   external/*

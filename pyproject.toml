@@ -75,7 +75,7 @@ astro = [
 # sphinx documentation
 docs = [
   "numpydoc >=0.8.0",
-  "sphinx >=4.0.0",
+  "Sphinx >=4.4.0",
   "sphinx-automodapi",
   "sphinx-immaterial >=0.7.3",
   "sphinx-panels >=0.6.0",
@@ -165,22 +165,31 @@ xfail_strict = true
 
 [tool.rstcheck]
 ignore_directives = [
+  # matplotlib
+  "plot",
+  # sphinx
+  "include",
   # sphinx.ext.autosummary
   "autoclass",
   "autofunction",
   "automethod",
   "automodule",
   "autosummary",
-  # sphinx-automodapi
-  "automodsumm",
-  # sphinxcontrib-programoutput
-  "command-output",
   # sphinx.ext.ifconfig
   "ifconfig",
-  # matplotlib
-  "plot",
+  # sphinx-automodapi
+  "automodsumm",
+  # sphinx-immaterial
+  "md-tab-set",
   # sphinx-panels
   "tabbed",
+  # sphinxcontrib-programoutput
+  "command-output",
+]
+ignore_roles = [
+  # doxylink
+  "lal",
+  "lalframe",
 ]
 # rstcheck doesn't known about our referenced.txt which is implicitly included
 # in all pages via Sphinx's epilog option
