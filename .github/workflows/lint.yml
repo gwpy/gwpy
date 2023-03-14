@@ -54,5 +54,7 @@ jobs:
         python -m pip install \
             "rstcheck[sphinx,toml]>=6.0.0" \
         ;
+    - name: List packages
+      run: python -m pip list installed
     - name: Lint with rstcheck
       run: rstcheck . --recursive --report-level error --log-level DEBUG
