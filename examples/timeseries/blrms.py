@@ -58,7 +58,7 @@ for ifo, ax in zip(('Hanford', 'Livingston'), (ax1, ax2)):
             fontsize=18)
 ax1.set_ylabel(r'$1-3$\,Hz motion [nm/s]', y=-0.1)
 ax2.set_ylabel('')
-ax1.set_title('Magnitude 7.1 earthquake impact on LIGO')
+ax1.set_title('Impact of earthquakes on LIGO')
 plot.show()
 
 # As we can see, the earthquake had a huge impact on the LIGO observatories,
