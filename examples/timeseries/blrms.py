@@ -19,7 +19,7 @@
 
 """Comparing seismic trends between LIGO sites
 
-On Feb 13 2015 there was a massive earthquake in the Atlantic Ocean, that
+On Jan 16 2020 there was a series of earthquakes, that
 should have had an impact on LIGO operations, I'd like to find out.
 """
 
@@ -36,29 +36,29 @@ from gwpy.plot import Plot
 # We do this using string-replacement so we can substitute the interferometer
 # prefix easily when we need to:
 channels = [
-    '{ifo}:ISI-BS_ST1_SENSCOR_GND_STS_X_BLRMS_30M_100M.mean,s-trend',
-    '{ifo}:ISI-BS_ST1_SENSCOR_GND_STS_Y_BLRMS_30M_100M.mean,s-trend',
-    '{ifo}:ISI-BS_ST1_SENSCOR_GND_STS_Z_BLRMS_30M_100M.mean,s-trend',
+    '{ifo}:ISI-GND_STS_ITMY_Z_BLRMS_30M_100M',
 ]
 
-# At last we can :meth:`~TimeSeriesDict.get` 12 hours of data for each
+# At last we can :meth:`~TimeSeriesDict.get` 6 hours of data for each
 # interferometer:
 lho = TimeSeriesDict.get([c.format(ifo='H1') for c in channels],
-                         'Feb 13 2015 16:00', 'Feb 14 2015 04:00')
+                         'Jan 16 2020 8:00', 'Jan 16 2020 14:00',
+                         host='losc-nds.ligo.org')
 llo = TimeSeriesDict.get([c.format(ifo='L1') for c in channels],
-                         'Feb 13 2015 16:00', 'Feb 14 2015 04:00')
+                         'Jan 16 2020 8:00', 'Jan 16 2020 14:00',
+                         host='losc-nds.ligo.org')
 
 # Next we can plot the data, with a separate `~gwpy.plot.Axes` for each
 # instrument:
 plot = Plot(lho, llo, figsize=(12, 6), sharex=True, yscale='log')
 ax1, ax2 = plot.axes
 for ifo, ax in zip(('Hanford', 'Livingston'), (ax1, ax2)):
-    ax.legend(['X', 'Y', 'Z'])
+    ax.legend(['ground motion in the Z-direction'])
     ax.text(1.01, 0.5, ifo, ha='left', va='center', transform=ax.transAxes,
             fontsize=18)
 ax1.set_ylabel(r'$1-3$\,Hz motion [nm/s]', y=-0.1)
 ax2.set_ylabel('')
-ax1.set_title('Magnitude 7.1 earthquake impact on LIGO')
+ax1.set_title('Impact of earthquakes on LIGO')
 plot.show()
 
 # As we can see, the earthquake had a huge impact on the LIGO observatories,
