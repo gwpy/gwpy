@@ -1156,8 +1156,8 @@ class TimeSeries(TimeSeriesBase):
         :attr:`TimeSeries.sample_rate` values, the higher sampled
         `TimeSeries` will be down-sampled to match the lower.
         """
-        csd = other.csd(self, fftlength=fftlength, overlap=overlap,
-                        window=window, **kwargs)
+        csd = self.csd(other, fftlength=fftlength, overlap=overlap,
+                       window=window, **kwargs)
         psd = self.psd(fftlength=fftlength, overlap=overlap, window=window,
                        **kwargs)
 

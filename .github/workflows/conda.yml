@@ -91,8 +91,6 @@ jobs:
         miniforge-variant: Mambaforge
         python-version: ${{ matrix.python-version }}
         use-mamba: true
-        # this is needed for caching to work properly:
-        use-only-tar-bz2: true
 
     - name: Conda info
       run: conda info --all

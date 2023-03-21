@@ -76,12 +76,12 @@ We can then trivially plot these data:
    For more details on all of the available keyword options,
    see the documentation of :meth:`TimeSeries.fetch_open_data`.
 
-************************************************************
-Accessing data from the Auxiliary Channel Three-hour Release
-************************************************************
+**********************************************
+Accessing data from Auxiliary Channel Releases
+**********************************************
 
 |GWOSC|_ has also published a data set containing instrumental sensor data
-in a three-hour window around |GW170814|_.
+in a three-hour window around |GW170814|_ and throughout the entirety of O3.
 These data cannot be loaded using :meth:`TimeSeries.fetch_open_data`,
 but can be loaded using :meth:`TimeSeries.get`
 (or :meth:`TimeSeriesDict.get`), by specifying `host="losc-nds.ligo.org"`.
