@@ -526,9 +526,11 @@ class TestDataQualityFlag(object):
                                           SegmentList([(0, 10)]))
 
         # flag not in database
-        with pytest.raises(HTTPError) as exc:
+        with pytest.raises(
+            HTTPError,
+            match=r"^HTTP Error 404: Not found \[X1:GWPY-TEST:0\]$",
+        ):
             self.TEST_CLASS.query_dqsegdb('X1:GWPY-TEST:0', 0, 10)
-        assert str(exc.value) == 'HTTP Error 404: Not found [X1:GWPY-TEST:0]'
 
         # bad syntax
         with pytest.raises(ValueError):
@@ -745,10 +747,11 @@ class TestDataQualityDict(object):
                                             **kwargs)
 
             # check on_missing='error' (default) raises ValueError
-            with pytest.raises(ValueError) as exc:
+            with pytest.raises(
+                ValueError,
+                match="^'randomname' not found in any input file$",
+            ):
                 _read()
-            assert str(exc.value) == ('\'randomname\' not found in any input '
-                                      'file')
 
             # check on_missing='warn' prints warning
             with pytest.warns(UserWarning):
@@ -760,7 +763,7 @@ class TestDataQualityDict(object):
                 _read(on_missing='ignore')
 
             # check on_missing=<anything else> raises exception
-            with pytest.raises(ValueError) as exc:
+            with pytest.raises(ValueError):
                 _read(on_missing='blah')
 
     @pytest.mark.requires("ligo.lw.lsctables")

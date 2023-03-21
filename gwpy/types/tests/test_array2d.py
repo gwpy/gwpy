@@ -229,9 +229,8 @@ class TestArray2D(_TestSeries):
         """
         y = numpy.logspace(0, 2, num=self.data.shape[1])
         other = self.create(yindex=y)
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(ValueError, match="indexes do not match"):
             array.is_compatible(other)
-        assert "indexes do not match" in str(exc.value)
 
     def test_value_at(self, array):
         assert array.value_at(2, 3) == self.data[2][3] * array.unit

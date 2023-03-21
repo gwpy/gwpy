@@ -42,11 +42,11 @@ class _TestNds2Enum(object):
     def test_find_errors(self):
         """Test error raising for :meth:`gwpy.io.nds2.Nds2ChannelType.find`
         """
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match=f"'blah' is not a valid {self.TEST_CLASS.__name__}",
+        ):
             self.TEST_CLASS.find('blah')
-        assert str(exc.value) == (
-            f"'blah' is not a valid {self.TEST_CLASS.__name__}"
-        )
 
 
 class TestNds2ChannelType(_TestNds2Enum):
@@ -223,9 +223,8 @@ def test_auth_connect_kinit(connect, kinit):
 def test_auth_connect_error(connect):
     """Test errors from `gwpy.io.nds2.auth_connect`
     """
-    with pytest.raises(RuntimeError) as exc:
+    with pytest.raises(RuntimeError, match="Anything else"):
         io_nds2.auth_connect('host', 'port')
-    assert str(exc.value) == 'Anything else'
     connect.assert_called_once_with("host", "port")
 
 
@@ -291,11 +290,11 @@ def test_find_channels(connection):
 
     # test unique errors (with nds1 protocol)
     conn.find_channels.return_value = [chan, chan]  # any two channels
-    with pytest.raises(ValueError) as exc:
-        assert io_nds2.find_channels(['X1:test'], host='test',
-                                     unique=True) == [chan]
-    assert str(exc.value) == (
-        "unique NDS2 channel match not found for 'X1:test'")
+    with pytest.raises(
+        ValueError,
+        match="^unique NDS2 channel match not found for 'X1:test'$",
+    ):
+        io_nds2.find_channels(['X1:test'], host='test', unique=True)
 
 
 @pytest.mark.requires("nds2")

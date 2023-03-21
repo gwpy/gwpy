@@ -107,9 +107,11 @@ def test_gwdatafind_module_error():
     """Test that _gwdatafind_module() will propagate an exception if
     it can't work out how to find data.
     """
-    with pytest.raises(RuntimeError) as exc:
+    with pytest.raises(
+        RuntimeError,
+        match="^unknown datafind configuration",
+    ):
         io_datafind.find_frametype("TEST")
-    assert str(exc.value).startswith("unknown datafind configuration")
 
 
 # -- find_frametype
@@ -152,11 +154,14 @@ def test_find_frametype_error_not_found():
     """Test that `find_frametype` raises the right error for a missing channel.
     """
     # test missing channel raises sensible error
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"^Cannot locate the following channel\(s\) "
+            "in any known frametype:\n    X1:TEST$"
+        )
+    ):
         io_datafind.find_frametype('X1:TEST', allow_tape=True)
-    assert str(exc.value) == (
-        'Cannot locate the following channel(s) '
-        'in any known frametype:\n    X1:TEST')
 
 
 @_mock_gwdatafind
@@ -164,11 +169,14 @@ def test_find_frametype_error_bad_channel():
     """Test that `find_frametype` raises the right error when the channel
     name isn't parsable.
     """
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(
+        ValueError,
+        match=(
+            "^Cannot parse interferometer prefix from channel name "
+            r"'bad channel name', cannot proceed with find\(\)$"
+        ),
+    ):
         io_datafind.find_frametype('bad channel name')
-    assert str(exc.value) == ('Cannot parse interferometer prefix '
-                              'from channel name \'bad channel name\','
-                              ' cannot proceed with find()')
 
 
 @_mock_gwdatafind
@@ -177,10 +185,13 @@ def test_find_frametype_error_files_on_tape():
     discovered data are on tape, and we asked for not on tape.
     """
     # check that allow_tape errors get handled properly
-    with mock.patch('gwpy.io.datafind.on_tape', return_value=True):
-        with pytest.raises(ValueError) as exc:
-            io_datafind.find_frametype('X1:TEST', allow_tape=False)
-        assert '[files on tape have not been checked' in str(exc.value)
+    patch = mock.patch('gwpy.io.datafind.on_tape', return_value=True)
+    raises = pytest.raises(
+        ValueError,
+        match=r"\[files on tape have not been checked",
+    )
+    with patch, raises:
+        io_datafind.find_frametype('X1:TEST', allow_tape=False)
 
 
 # -- find_best_frametype
@@ -274,9 +285,8 @@ def test_find_latest():
 )
 @_mock_gwdatafind
 def test_find_latest_error():
-    with pytest.raises(RuntimeError) as exc:
+    with pytest.raises(RuntimeError, match="^no files found for X-MISSING$"):
         io_datafind.find_latest("X1", "MISSING")
-    assert str(exc.value) == "no files found for X-MISSING"
 
 
 # -- find_types

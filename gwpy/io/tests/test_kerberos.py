@@ -59,24 +59,28 @@ def teardown_module():
 
 @mock.patch('subprocess.check_output', return_value=KLIST)
 def test_parse_keytab(check_output):
-    """Test `gwpy.io.kerberos.parse_keytab
+    """Test `gwpy.io.kerberos.parse_keytab.
     """
     # assert principals get extracted correctly
     principals = io_kerberos.parse_keytab('test.keytab')
     assert principals == [('albert.einstein', 'LIGO.ORG', 1),
                           ('ronald.drever', 'LIGO.ORG', 2)]
 
-    # assert klist fail gets raise appropriately
-    check_output.side_effect = [
-        OSError('something'),
-        subprocess.CalledProcessError(1, 'something else'),
-    ]
-    with pytest.raises(io_kerberos.KerberosError) as exc:
+
+@mock.patch("subprocess.check_output")
+@pytest.mark.parametrize(("se", "match"), [
+    (OSError, "^Failed to locate klist, cannot read keytab$"),
+    (
+        subprocess.CalledProcessError(1, "error"),
+        "Cannot read keytab 'test.keytab'",
+    ),
+])
+def test_parse_keytab_oserror(mock_check_output, se, match):
+    """Test `gwpy.io.kerberos.parse_keytab` fails appropriately.
+    """
+    mock_check_output.side_effect = se
+    with pytest.raises(io_kerberos.KerberosError, match=match):
         io_kerberos.parse_keytab('test.keytab')
-    assert str(exc.value) == "Failed to locate klist, cannot read keytab"
-    with pytest.raises(io_kerberos.KerberosError) as exc:
-        io_kerberos.parse_keytab('test.keytab')
-    assert str(exc.value) == "Cannot read keytab 'test.keytab'"
 
 
 @mock.patch('sys.stdout.isatty', return_value=True)

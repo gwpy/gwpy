@@ -297,27 +297,36 @@ class TestTimeSeries(_TestTimeSeriesBase):
         ),
     ])
     def test_read_write_gwf_error(self, tmp_path, api, gw150914):
+        fmt = f"gwf.{api}"
         tmp = tmp_path / "test.gwf"
-        gw150914.write(tmp, format="gwf.{}".format(api))
-        with pytest.raises(ValueError) as exc:
-            self.TEST_CLASS.read(tmp, "another channel",
-                                 format="gwf.{}".format(api))
-        assert str(exc.value) == (
-            "no Fr{Adc,Proc,Sim}Data structures with the "
-            "name another channel"
-        )
+        gw150914.write(tmp, format=fmt)
 
-        with pytest.raises(ValueError) as exc:
+        # wrong channel
+        with pytest.raises(
+            ValueError,
+            match=(
+                "^no Fr{Adc,Proc,Sim}Data structures with the "
+                "name another channel$"
+            ),
+        ):
+            self.TEST_CLASS.read(
+                tmp,
+                "another channel",
+                format=fmt,
+            )
+
+        # wrong times
+        with pytest.raises(
+            ValueError,
+            match=f"^Failed to read '{gw150914.name}' from '{tmp}'",
+        ):
             self.TEST_CLASS.read(
                 tmp,
                 gw150914.name,
                 start=gw150914.span[0]-1,
                 end=gw150914.span[0],
-                format="gwf.{}".format(api),
+                format=fmt,
             )
-        assert str(exc.value).startswith(
-            "Failed to read {0!r} from {1!r}".format(gw150914.name, str(tmp))
-        )
 
     @pytest.mark.requires("lalframe")
     def test_read_gwf_scaled_lalframe(self):
@@ -413,9 +422,11 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         tmp = tmp_path / "test.{}".format(ext)
         # check array with no name fails
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match="^Cannot determine HDF5 path",
+        ):
             array.write(tmp, overwrite=True)
-        assert str(exc.value).startswith('Cannot determine HDF5 path')
         array.name = 'TEST'
 
         # write array (with auto-identify)
@@ -608,9 +619,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # run fetch and assert error
         with mock.patch('nds2.connection') as mock_connection:
             mock_connection.return_value = nds_connection
-            with pytest.raises(RuntimeError) as exc:
+            with pytest.raises(RuntimeError, match="no data received"):
                 self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.gwpy')
-            assert 'no data received' in str(exc.value)
 
     @pytest.mark.requires("nds2")
     @mock.patch(
@@ -1423,9 +1433,11 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     def test_q_transform_nan(self):
         data = TimeSeries(numpy.empty(256*10) * numpy.nan, sample_rate=256)
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match="^Input signal contains non-numerical values$",
+        ):
             data.q_transform(method="median")
-        assert str(exc.value) == 'Input signal contains non-numerical values'
 
     def test_boolean_statetimeseries(self, array):
         comp = array >= 2 * array.unit

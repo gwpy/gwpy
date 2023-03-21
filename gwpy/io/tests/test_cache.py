@@ -208,13 +208,20 @@ def test_filename_metadata_error():
         io_cache.filename_metadata("A-B-0-4xml.gz")
 
 
-def test_file_segment():
+@pytest.mark.parametrize(("filename", "seg"), [
+    # basic
+    ("A-B-1-2.ext", Segment(1, 3)),
+    # multiple file extensions
+    ("A-B-1-2.ext.gz", Segment(1, 3)),
+    # non-integer
+    ("A-B-1.23-4.ext.gz", Segment(1.23, 5.23)),
+])
+def test_file_segment(filename, seg):
     """Test :func:`gwpy.io.cache.file_segment`
     """
-    # check basic
-    fs = io_cache.file_segment('A-B-1-2.ext')
+    fs = io_cache.file_segment(filename)
     assert isinstance(fs, Segment)
-    assert fs == Segment(1, 3)
+    assert fs == seg
 
     # check mutliple file extensions
     assert io_cache.file_segment('A-B-1-2.ext.gz') == (1, 3)
@@ -222,12 +229,15 @@ def test_file_segment():
     # check floats (and multiple file extensions)
     assert io_cache.file_segment('A-B-1.23-4.ext.gz') == (1.23, 5.23)
 
-    # test errors
-    with pytest.raises(ValueError) as exc:
+
+def test_file_segment_errors():
+    """Test :func:`gwpy.io.cache.file_segment` error handling.
+    """
+    with pytest.raises(
+        ValueError,
+        match="^Failed to parse 'blah' as a LIGO-T050017-compatible filename$"
+    ):
         io_cache.file_segment('blah')
-    assert str(exc.value) == (
-        "Failed to parse 'blah' as a LIGO-T050017-compatible filename"
-    )
 
 
 def test_flatten(cache):

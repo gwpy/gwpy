@@ -222,17 +222,15 @@ class TestSeries(_TestArray):
         """Check that `Series.is_compatible` errors with mismatching ``dx``
         """
         other = self.create(dx=2)
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(ValueError, match="sample sizes do not match"):
             array.is_compatible(other)
-        assert "sample sizes do not match" in str(exc.value)
 
     def test_is_compatible_error_unit(self, array):
         """Check that `Series.is_compatible` errors with mismatching ``unit``
         """
         other = self.create(unit='m')
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(ValueError, match="units do not match"):
             array.is_compatible(other)
-        assert "units do not match" in str(exc.value)
 
     def test_is_compatible_xindex(self):
         """Check that irregular arrays are compatible if their xindexes match
@@ -247,9 +245,8 @@ class TestSeries(_TestArray):
         """
         x = numpy.logspace(0, 2, num=self.data.shape[0])
         other = self.create(xindex=x)
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(ValueError, match="indexes do not match"):
             array.is_compatible(other)
-        assert "indexes do not match" in str(exc.value)
 
     def test_is_contiguous(self, array):
         a2 = self.create(x0=array.xspan[1])

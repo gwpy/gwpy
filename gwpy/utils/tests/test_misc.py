@@ -66,10 +66,11 @@ def test_round_to_power():
 def test_round_to_power_error():
     """Test for an errored use case of :func:`gwpy.utils.misc.round_to_power`
     """
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(
+        ValueError,
+        match="^'which' argument must be one of 'lower', 'upper', or None$",
+    ):
         utils_misc.round_to_power(7, which='')
-    assert str(exc.value) == (
-        "'which' argument must be one of 'lower', 'upper', or None")
 
 
 def test_unique():

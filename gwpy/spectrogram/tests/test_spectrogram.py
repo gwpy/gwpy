@@ -50,11 +50,15 @@ class TestSpectrogram(_TestArray2D):
         a = self.create(epoch=10)
         b = self.create(t0=10)
         utils.assert_quantity_sub_equal(a, b)
-        with pytest.raises(ValueError) as exc:
-            self.TEST_CLASS(self.data, epoch=1, t0=1)
-        assert str(exc.value) == 'give only one of epoch or t0'
 
-        # check times
+    def test_new_redundant_args(self):
+        with pytest.raises(
+            ValueError,
+            match="^give only one of epoch or t0$",
+        ):
+            self.TEST_CLASS(self.data, epoch=1, t0=1)
+
+    def test_new_times(self):
         times = numpy.arange(self.data.shape[0])
         a = self.create(times=times)
         utils.assert_quantity_equal(a.times, times * units.second)
