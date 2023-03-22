@@ -30,7 +30,7 @@ from astropy import units
 
 from ..segments import (Segment, SegmentList, DataQualityFlag)
 from ..signal import (filter_design, qtransform, spectral)
-from ..signal.window import (recommended_overlap, planck)
+from ..signal.window import (get_window, recommended_overlap, planck)
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
                    as_series_dict_class)
 
@@ -216,15 +216,7 @@ class TimeSeries(TimeSeriesBase):
         # format window
         if window is None:
             window = 'boxcar'
-        if isinstance(window, (str, tuple)):
-            win = signal.get_window(window, nfft)
-        else:
-            win = numpy.asarray(window)
-            if len(win.shape) != 1:
-                raise ValueError('window must be 1-D')
-            elif win.shape[0] != nfft:
-                raise ValueError('Window is the wrong size.')
-        win = win.astype(self.dtype)
+        win = get_window(window, nfft).astype(self.dtype)
         scaling = 1. / numpy.absolute(win).mean()
 
         if nfft % 2:
@@ -1797,7 +1789,11 @@ class TimeSeries(TimeSeriesBase):
         asd = asd.interpolate(1./self.duration.decompose().value)
         # design whitening filter, with highpass if requested
         ncorner = int(highpass / asd.df.decompose().value) if highpass else 0
-        ntaps = int((fduration * self.sample_rate).decompose().value)
+        if isinstance(window, (str, tuple)):
+            ntaps = int((fduration * self.sample_rate).decompose().value)
+        else:
+            window = numpy.asarray(window)
+            ntaps = len(window)
         tdw = filter_design.fir_from_transfer(1/asd.value, ntaps=ntaps,
                                               window=window, ncorner=ncorner)
         # condition the input data and apply the whitening filter
@@ -1973,7 +1969,7 @@ class TimeSeries(TimeSeriesBase):
         nfft = min(8*fir.size, self.size)
         # condition the input data
         in_ = self.copy()
-        window = signal.get_window(window, fir.size)
+        window = get_window(window, fir.size)
         in_.value[:pad] *= window[:pad]
         in_.value[-pad:] *= window[-pad:]
         # if FFT length is long enough, perform only one convolution

@@ -19,18 +19,39 @@
 """Utilities for signal-processing with windows
 """
 
-import numpy
-
+from functools import wraps
 from math import ceil
 
+import numpy
+
+from scipy.signal import get_window as _get_window
+from scipy.special import expit
 try:
     from scipy.signal.windows._windows import _win_equiv as WINDOWS
 except ImportError:  # scipy < 1.8.0
     from scipy.signal.windows.windows import _win_equiv as WINDOWS
 
-from scipy.special import expit
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+
+@wraps(_get_window)
+def get_window(window, Nx, *args, **kwargs):
+    """Wrapper around :func:`scipy.signal.get_window` to allow
+    pre-computed window arrays.
+    """
+    # try something floaty
+    try:
+        return _get_window(float(window), Nx, *args, **kwargs)
+    except (TypeError, ValueError):
+        pass
+    # otherwise a name or tuple of params
+    if isinstance(window, (str, tuple)):
+        return _get_window(window, Nx, *args, **kwargs)
+    # otherwise we were given an array
+    window = numpy.asarray(window)
+    assert window.ndim == 1, "multi-dimensional windows are not supported"
+    assert window.size == Nx, "window array wrong size"
+    return window
 
 
 def canonical_name(name):
