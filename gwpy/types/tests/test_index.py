@@ -28,6 +28,17 @@ class TestIndex(object):
     TEST_CLASS = Index
 
     def test_define_regular(self):
+        """Check for regression against gwpy/gwpy#1596.
+        """
+        ind_len = 1000
+        a = self.TEST_CLASS.define(
+                1262936373.4853957,
+                0.051,
+                ind_len
+        )
+        assert len(a) == ind_len
+
+    def test_define_index_length(self):
         """Check for regression against gwpy/gwpy#1506.
         """
         a = self.TEST_CLASS.define(
