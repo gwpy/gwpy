@@ -32,9 +32,9 @@ class TestIndex(object):
         """
         ind_len = 1000
         a = self.TEST_CLASS.define(
-                1262936373.4853957,
-                0.051,
-                ind_len
+            1262936373.4853957,
+            0.051,
+            ind_len
         )
         assert len(a) == ind_len
 

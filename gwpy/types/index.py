@@ -64,8 +64,8 @@ class Index(Quantity):
         step = Quantity(step, dtype=dtype, copy=False).to(start.unit)
         stop = start + step * num
         return cls(
-                numpy.arange(start.value, stop.value,
-                    step.value, dtype=dtype)[:num],
+            numpy.arange(start.value, stop.value,
+                         step.value, dtype=dtype)[:num],
             unit=start.unit,
             copy=False,
         )
