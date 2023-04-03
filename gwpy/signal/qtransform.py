@@ -568,7 +568,6 @@ class QGram(object):
         #     since they don't support log scaling
         interp = RectBivariateSpline(xout, frequencies, out.value)
 
-
         if not logf:
             if fres == "<default>":
                 fres = .5
