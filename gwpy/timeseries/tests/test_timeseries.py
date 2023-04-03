@@ -1384,6 +1384,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert qspecgram.shape == (1000, 2403)
         assert qspecgram.q == 5.65685424949238
         nptest.assert_almost_equal(qspecgram.value.max(), 155.93567, decimal=5)
+        nptest.assert_almost_equal(numpy.mean(qspecgram.value), 1.936469, decimal=5)
 
         # test whitening args
         asd = gw150914.asd(2, 1, method='scipy-welch')
