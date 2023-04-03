@@ -536,7 +536,7 @@ class QGram(object):
         It is also highly recommended to use the `outseg` keyword argument
         when only a small window around a given GPS time is of interest.
         """
-        from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
+        from scipy.interpolate import (RectBivariateSpline, InterpolatedUnivariateSpline)
         from ..spectrogram import Spectrogram
         if outseg is None:
             outseg = self.energies[0].span
@@ -565,7 +565,9 @@ class QGram(object):
         # interpolate the spectrogram to increase its frequency resolution
         # --- this is done because Duncan doesn't like interpolated images
         #     since they don't support log scaling
-        interp = interp2d(xout, frequencies, out.value.T, kind='cubic')
+        interp = RectBivariateSpline(xout, frequencies, out.value)
+
+
         if not logf:
             if fres == "<default>":
                 fres = .5
@@ -581,7 +583,7 @@ class QGram(object):
                 num=int(fres),
             )
         new = type(out)(
-            interp(xout, outfreq).T.astype(
+            interp(xout, outfreq).astype(
                 dtype, casting="same_kind", copy=False),
             t0=outseg[0], dt=tres, frequencies=outfreq,
         )
