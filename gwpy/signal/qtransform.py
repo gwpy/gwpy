@@ -536,8 +536,10 @@ class QGram(object):
         It is also highly recommended to use the `outseg` keyword argument
         when only a small window around a given GPS time is of interest.
         """
-        from scipy.interpolate import (RectBivariateSpline,
-                                       InterpolatedUnivariateSpline)
+        from scipy.interpolate import (
+            InterpolatedUnivariateSpline,
+            RectBivariateSpline,
+        )
         from ..spectrogram import Spectrogram
         if outseg is None:
             outseg = self.energies[0].span
