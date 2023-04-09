@@ -34,20 +34,30 @@ def _which(arg):
     return arg
 
 
-@mock.patch("gwpy.plot.tex.which", return_value="path")
-def test_has_tex_true(_):
-    """Test that `gwpy.plot.tex.has_tex` returns `True` when
-    all of the necessary executables are found
-    """
-    assert plot_tex.has_tex()
-
-
 @mock.patch("gwpy.plot.tex.which", _which)
-def test_has_tex_false():
+def test_has_tex_missing_exe():
     """Test that `gwpy.plot.tex.has_tex` returns `False` when
     any one of the necessary executables is missing.
     """
     assert not plot_tex.has_tex()
+
+
+@mock.patch("gwpy.plot.tex._test_usetex", side_effect=RuntimeError)
+def test_has_tex_bad_latex(_):
+    """Test that `gwpy.plot.tex.has_tex` returns `False` when
+    the LaTeX figure fails to render.
+    """
+    assert not plot_tex.has_tex()
+
+
+@mock.patch("gwpy.plot.tex.which", return_value="path")
+@mock.patch("gwpy.plot.tex._test_usetex")
+def test_has_tex_true(_which_, _test_usetex):
+    """Test that `gwpy.plot.tex.has_tex` returns `True` when
+    all of the necessary executables are found, and the LaTeX figure
+    doesn't raise an exception.
+    """
+    assert plot_tex.has_tex()
 
 
 @pytest.mark.parametrize('in_, out', [

@@ -70,8 +70,12 @@ class TestGravitySpyTable(_TestEventTable):
         of a JSONDecodeError.
         """
         requests_mock = pytest.importorskip("requests_mock")
-        with requests_mock.Mocker() as rmock, \
-             pytest.raises(requests.HTTPError) as exc:
+        mocker = requests_mock.Mocker()
+        raises = pytest.raises(
+            requests.HTTPError,
+            match="please check the request parameters$",
+        )
+        with mocker as rmock, raises:
             rmock.get(
                 "{}{}{}/?{}".format(
                     table_gravityspy.DEFAULT_HOST,
@@ -92,7 +96,6 @@ class TestGravitySpyTable(_TestEventTable):
                 },
             )
             self.TABLE.search(gravityspy_id="abcde")
-        assert str(exc.value).endswith("please check the request parameters")
 
     @pytest_skip_network_error
     def test_download(self, tmp_path):

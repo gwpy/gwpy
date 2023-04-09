@@ -284,9 +284,11 @@ class TestStateVector(_TestTimeSeriesBase):
         assert [v.sum() for v in bs.values()] == [50, 41]
 
         # check that invalid bits throws exception
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(
+            ValueError,
+            match="^Bit 'blah' not found in StateVector$",
+        ):
             array.get_bit_series(['blah'])
-        assert str(exc.value) == "Bit 'blah' not found in StateVector"
 
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):

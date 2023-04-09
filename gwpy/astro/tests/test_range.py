@@ -89,9 +89,11 @@ def test_sensemon_range(psd):
 
 @mock.patch.dict("sys.modules", {"inspiral_range": None})
 def test_inspiral_range_missing_dep(psd):
-    with pytest.raises(ModuleNotFoundError) as exc:
+    with pytest.raises(
+        ModuleNotFoundError,
+        match="extra package 'inspiral-range'",
+    ):
         astro.inspiral_range(psd)
-    assert "'inspiral-range'" in str(exc.value)
 
 
 @pytest.mark.requires("inspiral_range")
@@ -207,7 +209,8 @@ def test_range_spectrogram(hoft, rangekwargs, outunit):
     astro.range_spectrogram,
 ])
 def test_range_incompatible_input(range_func):
-    with pytest.raises(TypeError) as exc:
+    with pytest.raises(
+        TypeError,
+        match="Could not produce a spectrogram from the input",
+    ):
         range_func(2, 0.5)
-    assert str(exc.value).startswith(
-        'Could not produce a spectrogram from the input')

@@ -123,9 +123,11 @@ def test_file_path_file():
 def test_file_path_errors(badthing):
     """Check that :func:`gwpy.io.utils.file_path` fails when expected
     """
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(
+        ValueError,
+        match="^Cannot parse file name for ",
+    ):
         io_utils.file_path(badthing)
-    assert str(exc.value).startswith("Cannot parse file name for")
 
 
 @pytest.mark.requires("lal")

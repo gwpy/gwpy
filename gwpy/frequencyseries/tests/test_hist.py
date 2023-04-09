@@ -90,9 +90,11 @@ class TestSpectralVariance(_TestArray2D):
                 epoch=array.epoch,
             ),
         )
-        with pytest.raises(NotImplementedError) as exc:
+        with pytest.raises(
+            NotImplementedError,
+            match="^cannot slice SpectralVariance across bins$",
+        ):
             array[0, ::2]
-        assert str(exc.value) == 'cannot slice SpectralVariance across bins'
 
     # -- test methods ---------------------------
 

@@ -54,7 +54,7 @@
 .. _framel: http://lappweb.in2p3.fr/virgo/FrameL/
 
 .. |LDAStools.frameCPP| replace:: `LDAStools.frameCPP`
-.. _LDAStools.frameCPP: https://ldas-jobs.ligo.caltech.edu/~emaros/share/doc/ldas-tools/framecpp/html/
+.. _LDAStools.frameCPP: https://computing.docs.ligo.org/ldastools/LDAS_Tools/ldas-tools-framecpp/
 
 .. |lal| replace:: `lal`
 .. _lal: http://software.ligo.org/docs/lalsuite/lal/
@@ -67,9 +67,6 @@
 
 .. |MySQLdb| replace:: `MySQLdb`
 .. _MySQLdb: http://mysql-python.sourceforge.net/
-
-.. |nds2| replace:: `nds2`
-.. _nds2: https://www.lsc-group.phys.uwm.edu/daswg/projects/nds-client/doc/manual/
 
 .. |numpydoc| replace:: `numpydoc`
 .. _numpydoc: https://numpydoc.readthedocs.io/
@@ -94,6 +91,11 @@
 
 .. |uproot| replace:: `uproot`
 .. _uproot: https://uproot.readthedocs.io/
+
+.. -- Documents ---------------------------------
+
+.. |GWFSpec| replace:: LIGO-T970130
+.. _GWFSpec: https://dcc.ligo.org/LIGO-T970130/public
 
 .. -- Other references --------------------------
 

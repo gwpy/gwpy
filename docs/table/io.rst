@@ -622,7 +622,8 @@ GstLAL (``LIGO_LW`` XML)
 ========================
 
 GstLAL is a low-latency search for gravitational waves from compact
-binary coalescences, built using |GStreamer|_ elements and tools from the |LALSuite|_ library.
+binary coalescences, built using |GStreamer|_ elements and tools from the
+:ref:`gwpy-external-lalsuite` library.
 This search writes files on the LIGO Data Grid (LIGO.ORG-authenticated users
 only) in ``LIGO_LW`` XML format, containing tables of events.
 
@@ -747,7 +748,7 @@ Writing tables in SNAX HDF5 format is not supported at this time.
 GWF
 ===
 
-**Additional dependencies:** |LDAStools.frameCPP|_
+**Additional dependencies:** :ref:`gwpy-external-framecpp`
 
 The Gravitational-Wave Frame file format supports tabular data via
 ``FrEvent`` structures, which allow storage of arbitrary event information.
@@ -776,7 +777,7 @@ All ``FrEvent`` structures contain the following columns, any other
 columns are use-specific:
 
 ===============  ====================================================================================
-Column name      Description (from `LIGO-T970130 <https://dcc.ligo.org/LIGO-T970130/public>`_)
+Column name      Description (from |GWFSpec|_)
 ===============  ====================================================================================
 ``time``         Reference time of event, as defined by the search algorithm
 ``amplitude``    Continuous output amplitude returned by event

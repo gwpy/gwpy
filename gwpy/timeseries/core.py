@@ -1139,8 +1139,12 @@ class TimeSeriesBaseDict(OrderedDict):
                                          scaled=scaled, allow_tape=allow_tape_)
                     except (RuntimeError, ValueError) as exc:
                         error = str(exc)  # need to assign to take out of scope
-                        warnings.warn(error.split('\n', 1)[0],
-                                      io_nds2.NDSWarning)
+                        msg = error.split('\n', 1)[0]
+                        warnings.warn(
+                            f"failed to fetch data for {', '.join(channels)} "
+                            f"in interval [{start}, {end}): {msg}",
+                            io_nds2.NDSWarning,
+                        )
 
                 # if failing occurred because of data on tape, don't try
                 # reading channels individually, the same error will occur

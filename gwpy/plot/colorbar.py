@@ -138,7 +138,10 @@ def find_mappable(*axes):
 
 def _get_axes_class(ax):
     if isinstance(ax, SubplotBase):
-        return ax._axes_class
+        try:  # matplotlib < 3.7.0
+            return ax._axes_class
+        except AttributeError:  # matplotlib >= 3.7.0
+            return type(ax)
     return type(ax)
 
 

@@ -46,9 +46,11 @@ def test_return_as_error():
     def myfunc(value):
         return str(value)
 
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(
+        ValueError,
+        match="^failed to cast return from myfunc as int: ",
+    ):
         myfunc('test')
-    assert 'failed to cast return from myfunc as int: ' in str(exc.value)
 
 
 def test_deprecated_function():

@@ -229,10 +229,11 @@ def test_read_pycbc_live_multiple_ifos(
     """
     with h5py.File(pycbclivefile, "r+") as h5f:
         h5f.create_group('Z1')
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(
+        ValueError,
+        match="PyCBC live HDF5 file contains dataset groups",
+    ):
         EventTable.read(pycbclivefile, format="hdf5.pycbc_live")
-    assert str(exc.value).startswith(
-        'PyCBC live HDF5 file contains dataset groups')
 
     # but check that we can still read the original
     table = EventTable.read(
