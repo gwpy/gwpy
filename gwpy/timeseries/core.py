@@ -380,9 +380,9 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
-                        tag=None, version=None,
-                        format='hdf5', host=GWOSC_DEFAULT_HOST,
-                        verbose=False, cache=None, **kwargs):
+                        version=None, format='hdf5', 
+                        host=GWOSC_DEFAULT_HOST, verbose=False, 
+                        cache=None, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
         Parameters
@@ -403,10 +403,6 @@ class TimeSeriesBase(Series):
             the sample rate of desired data; most data are stored
             by GWOSC at 4096 Hz, however there may be event-related
             data releases with a 16384 Hz rate, default: `4096`
-
-        tag : `str`, optional
-            file tag, e.g. ``'CLN'`` to select cleaned data, or ``'C00'``
-            for 'raw' calibrated data.
 
         version : `int`, optional
             version of files to download, defaults to highest discovered
@@ -478,7 +474,6 @@ class TimeSeriesBase(Series):
             start,
             end,
             sample_rate=sample_rate,
-            tag=tag,
             version=version,
             format=format,
             verbose=verbose,
