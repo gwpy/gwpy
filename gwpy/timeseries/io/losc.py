@@ -47,7 +47,6 @@ STRAIN_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*STRAIN\Z")
 
 GWOSC_LOCATE_KWARGS = (
     'sample_rate',
-    'tag',
     'version',
     'host',
     'format',
