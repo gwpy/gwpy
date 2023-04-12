@@ -380,8 +380,8 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
-                        version=None, format='hdf5', 
-                        host=GWOSC_DEFAULT_HOST, verbose=False, 
+                        version=None, format='hdf5',
+                        host=GWOSC_DEFAULT_HOST, verbose=False,
                         cache=None, **kwargs):
         """Fetch open-access data from the LIGO Open Science Center
 
