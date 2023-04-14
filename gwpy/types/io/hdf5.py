@@ -125,8 +125,10 @@ def write_array_metadata(dataset, array):
         try:
             dataset.attrs[attr] = value
         except (TypeError, ValueError, RuntimeError) as exc:
-            exc.args = ("Failed to store {} ({}) for {}: {}".format(
-                attr, type(value).__name__, type(array).__name__, str(exc)))
+            exc.args = (
+                f"Failed to store {attr} ({type(value).__name__}) "
+                f"for {type(array).__name__}: '{exc}'",
+            )
             raise
 
 
