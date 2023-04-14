@@ -427,8 +427,8 @@ class Bits(list):
             indent, self.__class__.__name__,
             mask, str(self.channel), str(self.epoch)))
 
-    def __array__(self):
-        return numpy.array([b or '' for b in self])
+    def __array__(self, dtype="U"):
+        return numpy.array([b or '' for b in self], dtype=dtype)
 
 
 # -- StateVector --------------------------------------------------------------
