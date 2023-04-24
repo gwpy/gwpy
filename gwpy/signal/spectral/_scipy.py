@@ -20,6 +20,7 @@
 """
 
 import numpy
+import warnings
 
 import scipy.signal
 
@@ -171,7 +172,8 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
         sdfunc=scipy.signal.csd, **kwargs)
 
 
-def coherence(timeseries, other, segmentlength, noverlap=None, **kwargs):
+def coherence(timeseries, other, segmentlength, downsample=None,
+              noverlap=None, **kwargs):
     """Calculate the coherence between two `TimeSeries` using Welch's method
 
     Parameters
@@ -188,6 +190,10 @@ def coherence(timeseries, other, segmentlength, noverlap=None, **kwargs):
     noverlap : `int`
         number of samples to overlap between segments, defaults to 50%.
 
+    downsample : `bool`
+        Downsample the series with higher sampling frequency? SciPy assumes
+        that both TimeSeries have the same rate.
+
     **kwargs
         other keyword arguments are passed to :meth:`scipy.signal.coherence`
 
@@ -200,6 +206,34 @@ def coherence(timeseries, other, segmentlength, noverlap=None, **kwargs):
     --------
     scipy.signal.coherence
     """
+
+    # Should we warn about unequal sampling frequencies?
+    warn_fs = False
+
+    if downsample is None:
+        warn_fs = True
+        downsample = True
+
+    if timeseries.sample_rate != other.sample_rate:
+        # scipy assumes a single sampling frequency
+        if not downsample:
+            raise ValueError("Cannot calculate coherence when sampling "
+                             "frequencies are unequal")
+        else:
+            if warn_fs:
+                warnings.warn("Sampling frequencies are unequal. Higher "
+                              "frequency series will be downsampled before "
+                              "coherence is calculated")
+                # downsample the one with the higher rate
+                if timeseries.sample_rate > other.sample_rate:
+                    timeseries = timeseries.resample(other.sample_rate)
+                else:
+                    other = other.resample(timeseries.sample_rate)
+
+    # should never be equal from here on
+    if downsample is False:
+        assert timeseries.sample_rate == other.sample_rate
+
     # calculate CSD
     kwargs.setdefault('y', other.value)
     out = _spectral_density(
