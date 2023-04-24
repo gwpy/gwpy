@@ -1441,9 +1441,18 @@ class TimeSeriesBaseDict(OrderedDict):
             all other keyword arguments are passed to the plotter as
             appropriate
         """
+        kwargs.update({
+            "method": method,
+            "label": label,
+        })
+
         # make plot
         from ..plot import Plot
-        plot = Plot(self.values(), method=method, label=label, **kwargs)
+
+        if kwargs.get("separate", False):
+            plot = Plot(*self.values(), **kwargs)
+        else:
+            plot = Plot(self.values(), **kwargs)
 
         # update labels
         artmap = {'plot': 'lines', 'scatter': 'collections'}
