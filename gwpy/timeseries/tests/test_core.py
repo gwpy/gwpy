@@ -420,6 +420,22 @@ class TestTimeSeriesBaseDict(object):
             plot.save(BytesIO(), format='png')
             plot.close()
 
+    def test_plot_separate(self, instance):
+        """Test plotting `TimeSeriesDict` on separate axes.
+
+        See https://github.com/gwpy/gwpy/issues/1609
+        """
+        with rc_context(rc={'text.usetex': False}):
+            plot = instance.plot(separate=True)
+            assert len(plot.axes) == len(instance.keys())
+            for ax, key in zip(plot.axes, instance):
+                utils.assert_array_equal(ax.lines[-1].get_xdata(),
+                                         instance[key].xindex.value)
+                utils.assert_array_equal(ax.lines[-1].get_ydata(),
+                                         instance[key].value)
+            plot.save(BytesIO(), format='png')
+            plot.close()
+
 
 # -- TimeSeriesBaseList -------------------------------------------------------
 
