@@ -207,8 +207,6 @@ def coherence(timeseries, other, segmentlength, downsample=None,
     scipy.signal.coherence
     """
 
-    print("CALCULATING??", downsample)
-
     # Should we warn about unequal sampling frequencies?
     warn_fs = False
 
