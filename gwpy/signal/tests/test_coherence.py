@@ -23,14 +23,21 @@ __author__ = "Alex Southgate <alex.southgate@ligo.org>"
 
 import numpy as np
 import pytest
-from gwpy.signal import spectral
-from gwpy.timeseries.timeseries import TimeSeries
 import scipy.signal as sig
+
+from ...signal import spectral
+from ...timeseries import TimeSeries
 
 
 @pytest.fixture
 def series_data():
+    """Create some fake data with equal sampling frequencies.
 
+    Returns:
+        firstarr: an array of data, simple mixture of waves
+        secondarr: a second array of data from different mixture
+        seglen: segment length param to reuse for ffts
+    """
     seglen = 512
     n_segs = 10
     n_t = seglen * n_segs
@@ -41,7 +48,7 @@ def series_data():
     firstarr = 0.1 * np.cos(ts + 0.1) + 0.9 * np.sin(2 * ts + 5)
     firstarr += np.random.normal(5.8, 2, n_t)
 
-    secondarr = 0.1 * np.cos(ts + 0.1) + 0.9 * np.sin(2 * ts + 5)
+    secondarr = 0.5 * np.cos(ts + 0.1) + 0.1 * np.sin(5 * ts + 10)
     firstarr += np.random.normal(5.8, 2, n_t)
 
     return firstarr, secondarr, seglen
@@ -49,7 +56,17 @@ def series_data():
 
 @pytest.fixture
 def unequal_fs_series_data():
-    """Data with unequal sampling frequencies"""
+    """Create some fake data with unequal sampling frequencies.
+
+    Returns:
+        ts1: array of time points for first data array
+        ts2: array of time points for second data array
+        firstarr: an array of data, simple mixture of waves
+        secondarr: a second array of data from different mixture
+        seglen: segment length param to reuse for ffts
+        fs_1: sampling frequency 1
+        fs_2: sampling frequency 2
+    """
 
     seglen = 512
     n_segs1 = 10
