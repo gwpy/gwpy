@@ -145,7 +145,7 @@ def test_coherence_resample_arg(series_data):
     first = TimeSeries(firstarr, sample_rate=f_s)
     second = TimeSeries(secondarr, sample_rate=f_s * 2.32)
 
-    with pytest.warns(match="Sampling frequencies are unequal"):
+    with pytest.warns(UserWarning, match="Sampling frequencies are unequal"):
         spectral.coherence(first, second, segmentlength=seglen)
 
     with pytest.raises(ValueError):
