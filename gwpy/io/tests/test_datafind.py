@@ -84,7 +84,7 @@ def _gwosc_gwdatafind(func):
     """
     @mock.patch.dict(  # point GWDataFind at GWOSC server
         "os.environ",
-        {"GWDATAFIND_SERVER": "datafind.gw-openscience.org:80"},
+        {"GWDATAFIND_SERVER": "datafind.gwosc.org:80"},
     )
     @pytest_skip_cvmfs_read_error  # skip CVMFS problems
     @pytest_skip_network_error  # skip network problems

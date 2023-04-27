@@ -20,7 +20,7 @@
 """Plotting observing segments for O1
 
 The data from the full
-`Observing Run 1 (O1) <https://www.gw-openscience.org/O1/>`__
+`Observing Run 1 (O1) <https://gwosc.org/O1/>`__
 have been released by |GWOSC|_.
 
 This example demonstrates how to download segment information into a

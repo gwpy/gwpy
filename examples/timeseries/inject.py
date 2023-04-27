@@ -41,7 +41,7 @@ noise = TimeSeries(random.normal(scale=.1, size=16384), sample_rate=16384)
 # Then we can download a simulation of the GW150914 signal from GWOSC:
 
 from astropy.utils.data import get_readable_fileobj
-url = ("https://www.gw-openscience.org/s/events/GW150914/P150914/"
+url = ("https://gwosc.org/s/events/GW150914/P150914/"
        "fig2-unfiltered-waveform-H.txt")
 with get_readable_fileobj(url) as f:
     signal = TimeSeries.read(f, format='txt')
