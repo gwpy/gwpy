@@ -219,17 +219,16 @@ def coherence(timeseries, other, segmentlength, downsample=None,
         if not downsample:
             raise ValueError("Cannot calculate coherence when sampling "
                              "frequencies are unequal")
+        if warn_fs:
+            warnings.warn("Sampling frequencies are unequal. Higher "
+                          "frequency series will be downsampled before "
+                          "coherence is calculated",
+                          category=UserWarning)
+        # downsample the one with the higher rate
+        if timeseries.sample_rate > other.sample_rate:
+            timeseries = timeseries.resample(other.sample_rate)
         else:
-            if warn_fs:
-                warnings.warn("Sampling frequencies are unequal. Higher "
-                              "frequency series will be downsampled before "
-                              "coherence is calculated",
-                              category=UserWarning)
-            # downsample the one with the higher rate
-            if timeseries.sample_rate > other.sample_rate:
-                timeseries = timeseries.resample(other.sample_rate)
-            else:
-                other = other.resample(timeseries.sample_rate)
+            other = other.resample(timeseries.sample_rate)
 
     # should never be unequal from here on
     assert timeseries.sample_rate == other.sample_rate
