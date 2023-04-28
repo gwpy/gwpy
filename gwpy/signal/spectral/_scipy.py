@@ -225,15 +225,14 @@ def coherence(timeseries, other, segmentlength, downsample=None,
                               "frequency series will be downsampled before "
                               "coherence is calculated",
                               category=UserWarning)
-                # downsample the one with the higher rate
-                if timeseries.sample_rate > other.sample_rate:
-                    timeseries = timeseries.resample(other.sample_rate)
-                else:
-                    other = other.resample(timeseries.sample_rate)
+            # downsample the one with the higher rate
+            if timeseries.sample_rate > other.sample_rate:
+                timeseries = timeseries.resample(other.sample_rate)
+            else:
+                other = other.resample(timeseries.sample_rate)
 
-    # should never be equal from here on
-    if downsample is False:
-        assert timeseries.sample_rate == other.sample_rate
+    # should never be unequal from here on
+    assert timeseries.sample_rate == other.sample_rate
 
     # calculate CSD
     kwargs.setdefault('y', other.value)
