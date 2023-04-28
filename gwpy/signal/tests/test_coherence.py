@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2014-2023)
+# Copyright (C) Cardiff University (2023)
 #
 # This file is part of GWpy.
 #
