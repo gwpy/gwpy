@@ -118,7 +118,7 @@ def test_coherence_resample(unequal_fs_series_data):
     second = TimeSeries(secondarr, sample_rate=fs_1)
     third = TimeSeries(secondarr, sample_rate=fs_2)
 
-    # the first coherence measurement is broken intentionally since
+    # the first coherence val coh12 is broken intentionally since
     # secondarr data should not have fs_1, instead fs_2
     coh12 = spectral.coherence(first, second, segmentlength=seglen)
     coh13 = spectral.coherence(first, third, segmentlength=seglen)
@@ -152,4 +152,8 @@ def test_coherence_resample_arg(series_data):
         spectral.coherence(first, second, segmentlength=seglen,
                            downsample=False)
 
-    spectral.coherence(first, second, segmentlength=seglen, downsample=True)
+    coh1 = spectral.coherence(first, second, segmentlength=seglen)
+    coh2 = spectral.coherence(first, second, segmentlength=seglen,
+                              downsample=True)
+
+    assert all(np.array(coh1.data) == np.array(coh2.data))
