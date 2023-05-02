@@ -1,4 +1,4 @@
-.. currentmodule:: gwpy.signal
+.. currentmodule:: pdpy.signal
 
 ##########################
 Signal processing examples

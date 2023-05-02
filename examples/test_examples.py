@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2019-2020)
 #
-# This file is part of GWpy.
+# This file is part of PDpy.
 #
-# GWpy is free software: you can redistribute it and/or modify
+# PDpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# GWpy is distributed in the hope that it will be useful,
+# PDpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Test suite for all examples
 """
@@ -30,8 +30,8 @@ import pytest
 
 from matplotlib import use
 
-from gwpy.io.nds2 import NDSWarning
-from gwpy.testing.errors import pytest_skip_network_error
+from pdpy.io.nds2 import NDSWarning
+from pdpy.testing.errors import pytest_skip_network_error
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -111,7 +111,7 @@ def skip_missing_optional_dependency(func):
             return func(*args, **kwargs)  # run the test
         except ImportError as exc:  # pragma: no-cover
             # needs an optional dependency
-            if "gwpy" in str(exc):
+            if "pdpy" in str(exc):
                 raise
             pytest.skip(str(exc))
 

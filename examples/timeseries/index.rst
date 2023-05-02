@@ -1,4 +1,4 @@
-.. currentmodule:: gwpy.timeseries
+.. currentmodule:: pdpy.timeseries
 
 #####################
 `TimeSeries` examples

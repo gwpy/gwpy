@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of GWpy.
+# This file is part of PDpy.
 #
-# GWpy is free software: you can redistribute it and/or modify
+# PDpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# GWpy is distributed in the hope that it will be useful,
+# PDpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Generate the Q-transform of a `TimeSeries`
 
@@ -33,12 +33,12 @@ detection GW150914, so we can reproduce `that result (bottom panel of figure 1)
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = 'pdpy.timeseries'
 
 # First, we need to download the `TimeSeries` record for the H1 strain
 # measurement from |GWOSC|_:
 
-from gwpy.timeseries import TimeSeries
+from pdpy.timeseries import TimeSeries
 data = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
 
 # Next, we generate the `~TimeSeries.q_transform` of these data:
@@ -49,7 +49,7 @@ qspecgram = data.q_transform(outseg=(1126259462.2, 1126259462.5))
 #    interesting time. The ``outseg`` keyword argument returns a `Spectrogram`
 #    that is only as long as we need it to be.
 
-# Now, we can plot the resulting `~gwpy.spectrogram.Spectrogram`:
+# Now, we can plot the resulting `~pdpy.spectrogram.Spectrogram`:
 
 plot = qspecgram.plot(figsize=[8, 4])
 ax = plot.gca()

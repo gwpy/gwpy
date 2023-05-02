@@ -1,6 +1,6 @@
-.. currentmodule:: gwpy.table
+.. currentmodule:: pdpy.table
 
-.. _gwpy-table:
+.. _pdpy-table:
 
 ###########
 Data tables
@@ -14,7 +14,7 @@ noise transients (glitches).
 The :class:`EventTable`
 =======================
 
-GWpy extends the (excellent) :class:`~astropy.table.Table` from
+PDpy extends the (excellent) :class:`~astropy.table.Table` from
 `astropy` by providing the :class:`EventTable`.
 
 This object extends the functionality of the regular
@@ -29,9 +29,9 @@ the basic `Table` is the import:
 
 .. code-block:: python
    :caption: Importing the `EventTable`
-   :name: gwpy-table-import
+   :name: pdpy-table-import
 
-   >>> from gwpy.table import EventTable
+   >>> from pdpy.table import EventTable
 
 ======================
 Reading/writing tables

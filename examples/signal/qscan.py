@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Alex Urban (2019-2020)
 #
-# This file is part of GWpy.
+# This file is part of PDpy.
 #
-# GWpy is free software: you can redistribute it and/or modify
+# PDpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# GWpy is distributed in the hope that it will be useful,
+# PDpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Compute the raw Q-transform of a `TimeSeries`
 
@@ -33,20 +33,20 @@ vol. 119, p. 161101 <http://doi.org/10.1103/PhysRevLett.119.161101>`_).
 """
 
 __author__ = "Alex Urban <alexander.urban@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = 'pdpy.timeseries'
 
 # First, we need to download the `TimeSeries` record of L1 strain measurements
 # from |GWOSC|_:
 
 from gwosc import datasets
-from gwpy.timeseries import TimeSeries
+from pdpy.timeseries import TimeSeries
 gps = datasets.event_gps('GW170817')
 data = TimeSeries.fetch_open_data('L1', gps-34, gps+34)
 
 # We can Q-transform these data and scan over time-frequency planes to
 # find the one with the most significant tile near the time of merger:
 
-from gwpy.segments import Segment
+from pdpy.segments import Segment
 qgram = data.q_gram(
     qrange=(4, 150),
     search=Segment(gps-0.25, gps+0.25),

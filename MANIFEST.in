@@ -1,5 +1,5 @@
 include LICENSE README.md MANIFEST.in
-recursive-include gwpy/testing/data *gwf *xml.gz *txt *hdf
+recursive-include pdpy/testing/data *gwf *xml.gz *txt *hdf
 recursive-include examples *py
 include setup_utils.py
-include gwpy/_version.py
+include pdpy/_version.py

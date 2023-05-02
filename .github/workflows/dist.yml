@@ -55,12 +55,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: tarball
-        path: gwpy-*.tar.*
+        path: pdpy-*.tar.*
 
     - uses: actions/upload-artifact@v2
       with:
         name: wheel
-        path: gwpy*.whl
+        path: pdpy*.whl
 
   # -- pip install test -----
 
@@ -101,10 +101,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install GWpy with test extras
+    - name: Install PDpy with test extras
       run: |
         # extras don't work with wildcards
-        DIST=$(ls gwpy-*.*)
+        DIST=$(ls pdpy-*.*)
         python -m pip install ${DIST}[test]
 
     - name: Package list
@@ -115,11 +115,11 @@ jobs:
         python -m pytest \
             -ra \
             --color yes \
-            --cov gwpy \
+            --cov pdpy \
             --cov-report=xml \
             --disable-socket \
             --junitxml=pytest.xml \
-            --pyargs gwpy \
+            --pyargs pdpy \
         ;
 
     - name: Coverage report

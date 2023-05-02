@@ -2,20 +2,20 @@
 # Copyright (C) Louisiana State University (2014-2017),
 #               Cardiff University (2017-2021)
 #
-# This file is part of GWpy.
+# This file is part of PDpy.
 #
-# GWpy is free software: you can redistribute it and/or modify
+# PDpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# GWpy is distributed in the hope that it will be useful,
+# PDpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect
 import os.path
@@ -34,8 +34,8 @@ from sphinx.util import logging
 
 from numpydoc import docscrape_sphinx
 
-import gwpy
-from gwpy.utils.sphinx import (
+import pdpy
+from pdpy.utils.sphinx import (
     ex2rst,
     zenodo,
 )
@@ -43,14 +43,14 @@ from gwpy.utils.sphinx import (
 SPHINX_DIR = Path(__file__).parent.absolute()
 STATIC_DIRNAME = "_static"
 
-# use caching in GWpy calls
+# use caching in PDpy calls
 os.environ.update({
     "GWPY_CACHE": "true",
 })
 
 # -- versions ---------------
 
-GWPY_VERSION = gwpy.__version__
+GWPY_VERSION = pdpy.__version__
 
 # parse version number to get git reference
 _setuptools_scm_version_regex = re.compile(
@@ -69,7 +69,7 @@ matplotlib.use('agg')
 if "CI" not in os.environ:
     for message, category in (
         (".*non-GUI backend.*", UserWarning),
-        (".*gwpy.plot.*", DeprecationWarning),
+        (".*pdpy.plot.*", DeprecationWarning),
         ("", matplotlib.MatplotlibDeprecationWarning),
     ):
         warnings.filterwarnings("ignore", message=message, category=category)
@@ -77,7 +77,7 @@ if "CI" not in os.environ:
 # -- general ----------------
 
 needs_sphinx = "4.0"
-project = 'GWpy'
+project = 'PDpy'
 copyright = ' and '.join((
     '2013, 2017-2021 Cardiff University',
     '2013-2017 Lousiana State University',
@@ -105,7 +105,7 @@ extensions = [
     'numpydoc',
     'matplotlib.sphinxext.plot_directive',
     #'sphinxcontrib.doxylink',  # noqa: E265
-    'gwpy.utils.sphinx.epydoc',
+    'pdpy.utils.sphinx.epydoc',
 ]
 
 # content management
@@ -129,9 +129,9 @@ extensions.append("sphinx_immaterial")
 html_theme = "sphinx_immaterial"
 html_theme_options = {
     # metadata
-    "repo_name": "GWpy",
+    "repo_name": "PDpy",
     "repo_type": "github",
-    "repo_url": "https://github.com/gwpy/gwpy",
+    "repo_url": "https://github.com/pdpy/pdpy",
     "edit_uri": "blob/main/docs",
     "globaltoc_collapse": True,
     # features
@@ -170,7 +170,7 @@ html_theme_options = {
 html_static_path = [STATIC_DIRNAME]
 html_favicon = str(Path(STATIC_DIRNAME) / "favicon.png")
 html_logo = str(Path(STATIC_DIRNAME) / "favicon.png")
-html_css_files = ["css/gwpy-sphinx.css"]
+html_css_files = ["css/pdpy-sphinx.css"]
 
 # -- extensions config ------
 
@@ -281,7 +281,7 @@ def linkcode_resolve(domain, info):
             pass
         # get filename
         filename = Path(inspect.getsourcefile(obj)).relative_to(
-            Path(gwpy.__file__).parent,
+            Path(pdpy.__file__).parent,
         ).as_posix()
         # get line numbers of this object
         source, lineno = inspect.getsourcelines(obj)
@@ -299,11 +299,11 @@ def linkcode_resolve(domain, info):
         AttributeError,  # object not found
         OSError,  # file not found
         TypeError,  # source for object not found
-        ValueError,  # file not from GWpy
+        ValueError,  # file not from PDpy
     ):
         return None
 
-    return "https://github.com/gwpy/gwpy/tree/{}/gwpy/{}".format(
+    return "https://github.com/pdpy/pdpy/tree/{}/pdpy/{}".format(
         GWPY_GIT_REF,
         fileref,
     )
@@ -321,7 +321,7 @@ CLI_INDEX_TEMPLATE = Template("""
 """.strip())
 
 CLI_TEMPLATE = Template("""
-.. _gwpy-cli-example-${tag}:
+.. _pdpy-cli-example-${tag}:
 
 ${titleunderline}
 ${title}
@@ -355,7 +355,7 @@ def _new_or_different(content, target):
 
 
 def _render_cli_example(config, section, outdir, logger):
-    """Render a :mod:`gwpy.cli` example as RST to be processed by Sphinx.
+    """Render a :mod:`pdpy.cli` example as RST to be processed by Sphinx.
     """
     # read config values (allow for multi-line definition)
     raw = config.get(
@@ -370,7 +370,7 @@ def _render_cli_example(config, section, outdir, logger):
     desc = config.get(section, 'description', fallback='')
 
     # build command-line string for display
-    cmdstr = f"gwpy-plot {raw}".replace(  # split onto multiple lines
+    cmdstr = f"pdpy-plot {raw}".replace(  # split onto multiple lines
         ' --',
         ' \\\n       --',
     )
@@ -378,8 +378,8 @@ def _render_cli_example(config, section, outdir, logger):
     # build code to generate the plot when sphinx runs
     args = ", ".join(map(repr, shlex.split(raw)))
     code = "\n   ".join([
-        "from gwpy.cli.gwpy_plot import main as gwpy_plot",
-        f"gwpy_plot([{args}])",
+        "from pdpy.cli.pdpy_plot import main as pdpy_plot",
+        f"pdpy_plot([{args}])",
     ])
 
     rst = CLI_TEMPLATE.substitute(
@@ -400,7 +400,7 @@ def _render_cli_example(config, section, outdir, logger):
 
 
 def render_cli_examples(_):
-    """Render all :mod:`gwpy.cli` examples as RST to be processed by Sphinx.
+    """Render all :mod:`pdpy.cli` examples as RST to be processed by Sphinx.
     """
     logger = logging.getLogger('cli-examples')
 

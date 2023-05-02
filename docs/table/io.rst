@@ -1,8 +1,8 @@
 :tocdepth: 3
 
-.. currentmodule:: gwpy.table
+.. currentmodule:: pdpy.table
 
-.. _gwpy-table-io:
+.. _pdpy-table-io:
 
 #################################################################################
 Reading and writing :class:`~astropy.table.Table` and :class:`EventTable` objects
@@ -15,16 +15,16 @@ Reading and writing :class:`~astropy.table.Table` and :class:`EventTable` object
    :any:`astropy:read_write_tables`.
 
 Astropy provides an excellent :any:`unified input/output <astropy:table_io>`
-system for the `~astropy.table.Table` object, and GWpy extends upon that to
+system for the `~astropy.table.Table` object, and PDpy extends upon that to
 include common gravitational-wave file types, as well as providing
 event-specific input/output registrations for event data.
 In the most general case you can read a table of data as follows:
 
 .. code-block:: python
-   :name: gwpy-table-io-example
+   :name: pdpy-table-io-example
    :caption: Reading an `EventTable` from an ASCII file
 
-   >>> from gwpy.table import EventTable
+   >>> from pdpy.table import EventTable
    >>> table = EventTable.read('mydata.txt')
 
 :meth:`EventTable.read` will attempt to automatically identify the file
@@ -34,10 +34,10 @@ file-format.
 
 The :meth:`~EventTable.read` and :meth:`~EventTable.write` methods take
 different arguments and keywords based on the input/output file format,
-see :ref:`gwpy-table-io-formats` for details on reading/writing for
+see :ref:`pdpy-table-io-formats` for details on reading/writing for
 each of the built-in formats.
 
-.. _gwpy-table-gwosc:
+.. _pdpy-table-gwosc:
 
 ************************************
 Accessing Open Data event catalogues
@@ -47,11 +47,11 @@ Accessing Open Data event catalogues
 allowing public access to tables of gravitational wave events and their
 parameters.
 
-GWpy's :class:`EventTable` class comes with a
+PDpy's :class:`EventTable` class comes with a
 :meth:`~EventTable.fetch_open_data` method that queries the GWOSC database
 to download data for the relevant catalogue.
 
-.. _gwpy-table-gwosc-query:
+.. _pdpy-table-gwosc-query:
 
 ==============
 Simple queries
@@ -61,10 +61,10 @@ The simplest query just requires the catalogue name, and will return all paramet
 for all events in the catalogue:
 
 .. code-block:: python
-   :name: gwpy-table-io-fetch_open_data
+   :name: pdpy-table-io-fetch_open_data
    :caption: Fetching the GWTC-2 catalogue using :meth:`EventTable.fetch_open_data` (output correct as of |today|)
 
-   >>> from gwpy.table import EventTable
+   >>> from pdpy.table import EventTable
    >>> events = EventTable.fetch_open_data("GWTC-2")
    >>> print(events)
           name        final_mass_source_lower ... mass_2_source_upper mass_1_source_upper
@@ -113,7 +113,7 @@ for all events in the catalogue:
 The full list of available columns can be queried as follows:
 
 .. code-block:: python
-   :name: gwpy-table-io-fetch_open_data-info
+   :name: pdpy-table-io-fetch_open_data-info
    :caption: Printing the columns of an `EventTable` (output correct as of |today|)
 
    >>> print(events.info)
@@ -131,7 +131,7 @@ The full list of available columns can be queried as follows:
 
    For more details on the GWOSC catalogues, see https://gwosc.org/eventapi/html/.
 
-.. _gwpy-table-gwosc-filter:
+.. _pdpy-table-gwosc-filter:
 
 ================
 Filtered queries
@@ -142,7 +142,7 @@ and mathematical selection filters can be applied on-the-fly
 using the ``selection`` keyword:
 
 .. code-block:: python
-   :name: gwpy-table-io-fetch_open_data-filtered
+   :name: pdpy-table-io-fetch_open_data-filtered
    :caption: Downloading a sub-set of a catalogue from GWOSC (output correct as of |today|)
 
    >>> t = EventTable.fetch_open_data(
@@ -158,9 +158,9 @@ using the ``selection`` keyword:
 
 .. admonition:: More on filtering an `EventTable`
 
-   For more information on filtering, see :ref:`gwpy-table-filter`.
+   For more information on filtering, see :ref:`pdpy-table-filter`.
 
-.. _gwpy-table-io-formats:
+.. _pdpy-table-io-formats:
 
 ***************************
 Accessing GravitySpy events
@@ -181,7 +181,7 @@ directly:
 
 .. code-block:: python
 
-   >>> from gwpy.table import GravitySpyTable
+   >>> from pdpy.table import GravitySpyTable
    >>> blips = GravitySpyTable.fetch(
    ...     "gravityspy",
    ...     "glitches",
@@ -204,7 +204,7 @@ given the ID of a Gravity Spy event:
 
 .. code-block:: python
 
-   >>> from gwpy.table import GravitySpyTable
+   >>> from pdpy.table import GravitySpyTable
    >>> similar = GravitySpyTable.search("8FHTgA8MEu", howmany=5)
    >>> print(similar)
    ifo  peak_frequency  links_subjects ml_label searchedID ...
@@ -222,15 +222,15 @@ This has download 5 similarly *Scratchy* glitches from the LIGO-Hanford
 Built-in file formats
 *********************
 
-GWpy extends the Astropy functionality with readers for the following file
+PDpy extends the Astropy functionality with readers for the following file
 formats:
 
-- :ref:`gwpy-table-io-ligolw`
-- :ref:`gwpy-table-io-ascii-cwb`
-- :ref:`gwpy-table-io-root`
-- :ref:`gwpy-table-io-pycbc_live`
-- :ref:`gwpy-table-io-gstlal`
-- :ref:`gwpy-table-io-gwf`
+- :ref:`pdpy-table-io-ligolw`
+- :ref:`pdpy-table-io-ascii-cwb`
+- :ref:`pdpy-table-io-root`
+- :ref:`pdpy-table-io-pycbc_live`
+- :ref:`pdpy-table-io-gstlal`
+- :ref:`pdpy-table-io-gwf`
 
 Each of the sub-sections below outlines how to read and write in these
 file formats, include the custom keyword arguments to pass to
@@ -251,7 +251,7 @@ This argument can be used with any file-format, not just those defined below,
 but is **not** backported to for use with :meth:`Table.read`.
 
 
-.. _gwpy-table-io-ligolw:
+.. _pdpy-table-io-ligolw:
 
 ===============
 ``LIGO_LW`` XML
@@ -276,7 +276,7 @@ When reading, the ``tablename`` keyword argument should be given to identify
 the table in the file, as follows:
 
 .. code-block:: python
-   :name: gwpy-table-io-ligolw-tablename
+   :name: pdpy-table-io-ligolw-tablename
    :caption: Reading an `EventTable` from ``LIGO_LW`` XML.
 
    >>> t = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst')
@@ -284,7 +284,7 @@ the table in the file, as follows:
 The result should be something similar to this:
 
 .. code-block:: python
-   :name: gwpy-table-io-ligolw-output
+   :name: pdpy-table-io-ligolw-output
    :caption: Result of reading an `EventTable` from ``LIGO_LW`` XML.
 
    >>> print(t)
@@ -336,7 +336,7 @@ To restrict the columns returned in the new `EventTable`, use the `columns`
 keyword argument:
 
 .. code-block:: python
-   :name: gwpy-table-io-ligolw-columns
+   :name: pdpy-table-io-ligolw-columns
    :caption: Reading specific columns into an `EventTable` from ``LIGO_LW`` XML.
 
    >>> t = EventTable.read(
@@ -354,7 +354,7 @@ These 'columns' can be requested directly, providing the
 :meth:`get_<name>` method for that name:
 
 .. code-block:: python
-   :name: gwpy-table-io-ligolw-get-columns
+   :name: pdpy-table-io-ligolw-get-columns
    :caption: Reading ``get_`` columns into an `EventTable` from ``LIGO_LW`` XML.
 
    >>> t = EventTable.read(
@@ -388,7 +388,7 @@ To force all columns to have real `numpy` data types, use the
 types to a standard `numpy.dtype`, e.g:
 
 .. code-block:: python
-   :name: gwpy-table-io-ligo-lw-use_numpy_dtypes
+   :name: pdpy-table-io-ligo-lw-use_numpy_dtypes
    :caption: Example of using ``use_numpy_dtypes=True`` when reading an `EventTable` from ``LIGO_LW`` XML.
 
    >>> t = EventTable.read(
@@ -440,11 +440,11 @@ preserving other tables, use *both* ``append=True`` and ``overwrite=True``:
 
    The |python-ligo-lw| library reads and writes files using an updated
    version of the ``LIGO_LW`` format compared to :mod:`glue.ligolw` used to.
-   GWpy should support both format versions natively when _reading_, but
+   PDpy should support both format versions natively when _reading_, but
    only supports writing using the updated format.
 
 
-.. _gwpy-table-io-ascii-cwb:
+.. _pdpy-table-io-ascii-cwb:
 
 ============================================
 Coherence WaveBurst ASCII (aka `EVENTS.txt`)
@@ -463,7 +463,7 @@ Reading
 To read a cWB ASCII file:
 
 .. code-block:: python
-   :name: gwpy-table-io-cwb-read
+   :name: pdpy-table-io-cwb-read
    :caption: Reading an `EventTable` from cWB-format ASCII.
 
    >>> t = EventTable.read('EVENTS.txt', format='ascii.cwb')
@@ -477,7 +477,7 @@ Writing
 To write a table using the cWB ASCII format:
 
 .. code-block:: python
-   :name: gwpy-table-io-cwb-write
+   :name: pdpy-table-io-cwb-write
    :caption: Writing an `EventTable` to a cWB-format ASCII file.
 
    >>> t.write('EVENTS.txt', format='ascii.cwb')
@@ -485,7 +485,7 @@ To write a table using the cWB ASCII format:
 [the output file name is not required to be ``'EVENTS.txt'``, this is
 simply the convention used in the cWB analysis.]
 
-.. _gwpy-table-io-root:
+.. _pdpy-table-io-root:
 
 ====
 ROOT
@@ -501,7 +501,7 @@ To read a `ROOT <https://root.cern.ch/>`_ tree into a `Table`
 keyword argument:
 
 .. code-block:: python
-   :name: gwpy-table-io-root-read
+   :name: pdpy-table-io-root-read
    :caption: Reading an `EventTable` from a ROOT file.
 
    >>> t = Table.read('my-data.root', treename='triggers')
@@ -516,7 +516,7 @@ Writing
 To write a `Table` as a ROOT tree:
 
 .. code-block:: python
-   :name: gwpy-table-io-root-write
+   :name: pdpy-table-io-root-write
    :caption: Writing an `EventTable` to a ROOT file.
 
    >>> t.write('new-table.root')
@@ -528,14 +528,14 @@ By default, an existing file with an existing tree of the given name will be
 appended to, to overwrite use the ``mode='recreate'`` keyword argument:
 
 .. code-block:: python
-   :name: gwpy-table-io-root-write-mode
+   :name: pdpy-table-io-root-write-mode
    :caption: Writing an `EventTable` over an existing tree in a ROOT file.
 
    >>> t.write('new-table.root', treename='triggers', mode='recreate')
 
 Any other keyword arguments will be passed directly to :class:`uproot.newtree`.
 
-.. _gwpy-table-io-pycbc_live:
+.. _pdpy-table-io-pycbc_live:
 
 =================
 PyCBC Live (HDF5)
@@ -577,7 +577,7 @@ Reading
 To read an `EventTable` from a ``pycbc_live`` format HDF5 file:
 
 .. code-block:: python
-   :name: gwpy-table-io-pycbc_live-read
+   :name: pdpy-table-io-pycbc_live-read
    :caption: Reading an `EventTable` from a PyCBC-Live HDF5 file.
 
    >>> t = EventTable.read("H1-Live-1234567890-4.h5")
@@ -585,7 +585,7 @@ To read an `EventTable` from a ``pycbc_live`` format HDF5 file:
 To restrict the returned columns, use the ``columns`` keyword argument:
 
 .. code-block:: python
-   :name: gwpy-table-io-pycbc_live-read-columns
+   :name: pdpy-table-io-pycbc_live-read-columns
    :caption: Reading specific columns into an `EventTable` from PyCBC-Live HDF5.
 
    >>> t = EventTable.read(
@@ -594,7 +594,7 @@ To restrict the returned columns, use the ``columns`` keyword argument:
    ...     columns=["end_time", "snr", "chisq"],
    ... )
 
-Similarly to the :ref:`gwpy-table-io-ligolw` format, some processed columns
+Similarly to the :ref:`pdpy-table-io-ligolw` format, some processed columns
 can be specified that are not included in the HDF5 files, but are created
 on-the-fly.
 Supported processed columns are:
@@ -615,7 +615,7 @@ Writing
 
 Writing tables in PyCBC Live HDF5 format is not supported at this time.
 
-.. _gwpy-table-io-gstlal:
+.. _pdpy-table-io-gstlal:
 
 ========================
 GstLAL (``LIGO_LW`` XML)
@@ -623,7 +623,7 @@ GstLAL (``LIGO_LW`` XML)
 
 GstLAL is a low-latency search for gravitational waves from compact
 binary coalescences, built using |GStreamer|_ elements and tools from the
-:ref:`gwpy-external-lalsuite` library.
+:ref:`pdpy-external-lalsuite` library.
 This search writes files on the LIGO Data Grid (LIGO.ORG-authenticated users
 only) in ``LIGO_LW`` XML format, containing tables of events.
 
@@ -634,7 +634,7 @@ To read an `EventTable` from a ``gstlal`` format ``LIGO_LW`` XML file, use the
 ``format='ligolw.gstlal'`` keyword:
 
 .. code-block:: python
-   :name: gwpy-table-io-gstlal-read
+   :name: pdpy-table-io-gstlal-read
    :caption: Reading an `EventTable` from a GstLAL ``LIGO_LW`` XML file.
 
    >>> t = EventTable.read("H1L1-GstLAL-1234567890-4.xml.gz", format="ligolw.gstlal")
@@ -648,7 +648,7 @@ To instead read information about triggers from multiple detectors, you can inst
 the ``triggers='coinc'`` keyword:
 
 .. code-block:: python
-   :name: gwpy-table-io-gstlal-read-coinc-table
+   :name: pdpy-table-io-gstlal-read-coinc-table
    :caption: Reading coincident triggers into an `EventTable` GstLAL ``LIGO_LW`` XML HDF5.
 
    >>> t = EventTable.read(
@@ -660,7 +660,7 @@ the ``triggers='coinc'`` keyword:
 To restrict the returned columns, use the ``columns`` keyword argument:
 
 .. code-block:: python
-   :name: gwpy-table-io-gstlal-read-columns
+   :name: pdpy-table-io-gstlal-read-columns
    :caption: Reading specific columns into an `EventTable` GstLAL ``LIGO_LW`` XML HDF5.
 
    >>> t = EventTable.read(
@@ -669,10 +669,10 @@ To restrict the returned columns, use the ``columns`` keyword argument:
    ...     columns=["end_time", "snr", "chisq"],
    ... )
 
-Similarly to the :ref:`gwpy-table-io-ligolw` format, some processed columns
+Similarly to the :ref:`pdpy-table-io-ligolw` format, some processed columns
 can be specified that are not included in the XML files, but are created
 on-the-fly.
-In addition to processed columns support by :ref:`gwpy-table-io-ligolw`, 
+In addition to processed columns support by :ref:`pdpy-table-io-ligolw`, 
 the additional supported processed columns are:
 
 - ``mchirp``
@@ -686,7 +686,7 @@ Writing
 
 Writing tables in GstLAL ``LIGO_LW`` XML format is not supported at this time.
 
-.. _gwpy-table-io-snax:
+.. _pdpy-table-io-snax:
 
 ===========
 SNAX (HDF5)
@@ -707,7 +707,7 @@ To read an `EventTable` from a ``snax`` format HDF5 file,
 use the ``format='hdf5.snax'`` keyword:
 
 .. code-block:: python
-   :name: gwpy-table-io-snax-read
+   :name: pdpy-table-io-snax-read
    :caption: Reading an `EventTable` from a SNAX-format HDF5 file.
 
    >>> t = EventTable.read("H-SNAX_FEATURES-1255853400-20.h5", format="hdf5.snax")
@@ -716,7 +716,7 @@ By default, all channels contained in the file are read in.
 To restrict the returned channels, use the ``channels`` keyword argument:
 
 .. code-block:: python
-   :name: gwpy-table-io-snax-read-channels
+   :name: pdpy-table-io-snax-read-channels
    :caption: Reading specific channels into an `EventTable` from a SNAX-format HDF5 file.
 
    >>> t = EventTable.read(
@@ -728,7 +728,7 @@ To restrict the returned channels, use the ``channels`` keyword argument:
 To restrict the returned columns, use the ``columns`` keyword argument:
 
 .. code-block:: python
-   :name: gwpy-table-io-snax-read
+   :name: pdpy-table-io-snax-read
    :caption: Reading specific columns into an `EventTable` from SNAX-format HDF5.
 
    >>> t = EventTable.read(
@@ -742,13 +742,13 @@ Writing
 
 Writing tables in SNAX HDF5 format is not supported at this time.
 
-.. _gwpy-table-io-gwf:
+.. _pdpy-table-io-gwf:
 
 ===
 GWF
 ===
 
-**Additional dependencies:** :ref:`gwpy-external-framecpp`
+**Additional dependencies:** :ref:`pdpy-external-framecpp`
 
 The Gravitational-Wave Frame file format supports tabular data via
 ``FrEvent`` structures, which allow storage of arbitrary event information.
@@ -760,7 +760,7 @@ To read an `EventTable` from a ``GWF``-format file, specify the filename and
 the ``name`` of the ``FrEvent`` structures to read:
 
 .. code-block:: python
-   :name: gwpy-table-io-gwf-read
+   :name: pdpy-table-io-gwf-read
    :caption: Reading an `EventTable` from GWF.
 
    >>> t = EventTable.read('events.gwf', 'my-event-name')
@@ -768,7 +768,7 @@ the ``name`` of the ``FrEvent`` structures to read:
 To restrict the returned columns, use the ``columns`` keyword argument:
 
 .. code-block:: python
-   :name: gwpy-table-io-gwf-read-columns
+   :name: pdpy-table-io-gwf-read-columns
    :caption: Reading specific columns into an `EventTable` from GWF.
 
    >>> t = EventTable.read('events.gwf', 'my-event-name', columns=['time', 'amplitude'])

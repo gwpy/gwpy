@@ -1,6 +1,6 @@
-.. currentmodule:: gwpy.timeseries
+.. currentmodule:: pdpy.timeseries
 
-.. _gwpy-timeseries-opendata:
+.. _pdpy-timeseries-opendata:
 
 ##############################
 Accessing Open Data from GWOSC
@@ -20,13 +20,13 @@ and bulk datasets covering entire observing epochs.
 
    https://gwosc.org/data/
 
-.. _gwpy-timeseries-fetchopendata:
+.. _pdpy-timeseries-fetchopendata:
 
 **********************************
 :meth:`TimeSeries.fetch_open_data`
 **********************************
 
-GWpy provides the :meth:`TimeSeries.fetch_open_data` method as an interface
+PDpy provides the :meth:`TimeSeries.fetch_open_data` method as an interface
 to the GWOSC data archive, requiring users to provide a minimum of
 information in order to access data.
 
@@ -54,7 +54,7 @@ calibrated GW strain data in that interval:
    :include-source:
    :context:
 
-   >>> from gwpy.timeseries import TimeSeries
+   >>> from pdpy.timeseries import TimeSeries
    >>> data = TimeSeries.fetch_open_data('L1', start, end)
 
 We can then trivially plot these data:
@@ -69,7 +69,7 @@ We can then trivially plot these data:
 .. admonition:: Plotting a `TimeSeries`
 
    For more details on plotting a `TimeSeries`, see
-   :ref:`gwpy-timeseries-plot`.
+   :ref:`pdpy-timeseries-plot`.
 
 .. note:: :meth:`TimeSeries.fetch_open_data` keywords
 
@@ -85,4 +85,4 @@ in a three-hour window around |GW170814|_ and throughout the entirety of O3.
 These data cannot be loaded using :meth:`TimeSeries.fetch_open_data`,
 but can be loaded using :meth:`TimeSeries.get`
 (or :meth:`TimeSeriesDict.get`), by specifying `host="losc-nds.ligo.org"`.
-For more details, see :ref:`gwpy-timeseries-get`.
+For more details, see :ref:`pdpy-timeseries-get`.

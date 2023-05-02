@@ -2,36 +2,36 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of GWpy.
+# This file is part of PDpy.
 #
-# GWpy is free software: you can redistribute it and/or modify
+# PDpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# GWpy is distributed in the hope that it will be useful,
+# PDpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Filtering a `TimeSeries` with a ZPK filter
 
 Several data streams read from the LIGO detectors are whitened before being
 recorded to prevent numerical errors when using single-precision data
 storage.
-In this example we read such `channel <gwpy.detector.Channel>` and undo the
+In this example we read such `channel <pdpy.detector.Channel>` and undo the
 whitening to show the physical content of these data.
 
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = 'pdpy.timeseries'
 
 # First, we import the `TimeSeries` and :meth:`~TimeSeries.get` the data:
-from gwpy.timeseries import TimeSeries
+from pdpy.timeseries import TimeSeries
 white = TimeSeries.get(
     'L1:OAF-CAL_DARM_DQ', 'March 2 2015 12:00', 'March 2 2015 12:30')
 
@@ -44,21 +44,21 @@ hp = white.highpass(4)
 displacement = hp.zpk([100]*5, [1]*5, 1e-10)
 
 # We can visualise the impact of the whitening by calculating the ASD
-# `~gwpy.frequencyseries.FrequencySeries` before and after the filter,
+# `~pdpy.frequencyseries.FrequencySeries` before and after the filter,
 
 whiteasd = white.asd(8, 4)
 dispasd = displacement.asd(8, 4)
 
 # and plotting:
 
-from gwpy.plot import Plot
+from pdpy.plot import Plot
 plot = Plot(whiteasd, dispasd, separate=True, sharex=True,
             xscale='log', yscale='log')
 
 # Here we have passed the two
-# `spectra <gwpy.frequencyseries.FrequencySeries>` in order,
+# `spectra <pdpy.frequencyseries.FrequencySeries>` in order,
 # then `separate=True` to display them on separate Axes, `sharex=True` to tie
-# the `~matplotlib.axis.XAxis` of each of the `~gwpy.plot.Axes`
+# the `~matplotlib.axis.XAxis` of each of the `~pdpy.plot.Axes`
 # together.
 #
 # Finally, we prettify our plot with some limits, and some labels:

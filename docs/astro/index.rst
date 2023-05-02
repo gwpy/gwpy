@@ -1,14 +1,14 @@
-.. currentmodule:: gwpy.astro
+.. currentmodule:: pdpy.astro
 
-.. _gwpy-astro:
+.. _pdpy-astro:
 
 #######################
 Astrophysical modelling
 #######################
 
-Currently the only methods available from `gwpy.astro` are concerned with calculating sensitive distance.
+Currently the only methods available from `pdpy.astro` are concerned with calculating sensitive distance.
 
-.. _gwpy-astro-range:
+.. _pdpy-astro-range:
 
 ==================
 Sensitive distance
@@ -16,7 +16,7 @@ Sensitive distance
 
 The sensitive distance (sometimes called 'range', or 'horizon') is a measure of how far out into the universe a gravitational-wave source can be and still be detectable by a gravitational-wave detector 
 
-`gwpy.astro` provides methods to calculate the distance to simple models of inspiral and burst signals:
+`pdpy.astro` provides methods to calculate the distance to simple models of inspiral and burst signals:
 
 .. autosummary::
    :toctree: ../api

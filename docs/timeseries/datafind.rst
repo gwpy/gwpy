@@ -1,12 +1,12 @@
-.. currentmodule:: gwpy.timeseries
+.. currentmodule:: pdpy.timeseries
 
-.. _gwpy-timeseries-datafind:
+.. _pdpy-timeseries-datafind:
 
 ########################
 Automatic data-discovery
 ########################
 
-.. _gwpy-timeseries-datafind-intro:
+.. _pdpy-timeseries-datafind-intro:
 
 The :meth:`TimeSeries.fetch_open_data` method is only able to download
 GW strain data from those datasets exposed through the |GWOSC|_ API;
@@ -25,21 +25,21 @@ A discovery service called |gwdatafind|_ is provided at each location to
 simplify discovering the file(s) that contain the data of interest for any
 research.
 
-These data are also made available remotely using :ref:`gwpy-external-nds2`,
+These data are also made available remotely using :ref:`pdpy-external-nds2`,
 which enables sending data directly over a network to any location.
 This is used for both the full proprietary data (which requires an
 authorisation credential to access) and also the |GWOSC_AUX_RELEASE|_
 (which is freely available).
 
-.. _gwpy-timeseries-get:
+.. _pdpy-timeseries-get:
 
 **********************
 :meth:`TimeSeries.get`
 **********************
 
-**Additional dependencies:** :ref:`gwpy-external-framecpp` or :ref:`gwpy-external-nds2`
+**Additional dependencies:** :ref:`pdpy-external-framecpp` or :ref:`pdpy-external-nds2`
 
-GWpy provides the :meth:`TimeSeries.get` method as a one-stop interface
+PDpy provides the :meth:`TimeSeries.get` method as a one-stop interface
 to all automatically-discoverable data hosted locally at an IGWN
 computing centre, or available remotely.
 
@@ -71,7 +71,7 @@ data 'by any means necessary'; in practice that is
    Characterisation working group maintains a record of the most relevant
    channels for studying a given interferometer subsystem.
 
-.. _gwpy-timeseries-get-example:
+.. _pdpy-timeseries-get-example:
 
 =======
 Example
@@ -90,7 +90,7 @@ channel by specifying the special GWOSC NDS2 server url using the
    :context: reset
 
    >>> from gwosc.datasets import event_gps
-   >>> from gwpy.timeseries import TimeSeries
+   >>> from pdpy.timeseries import TimeSeries
    >>> gps = event_gps("GW170814")
    >>> start = int(gps) - 100
    >>> end = int(gps) + 100
@@ -98,7 +98,7 @@ channel by specifying the special GWOSC NDS2 server url using the
    >>> plot = data.plot(ylabel="Power [W]")
    >>> plot.show()
 
-.. _gwpy-timeseries-datafind-datasets:
+.. _pdpy-timeseries-datafind-datasets:
 
 ********************
 Proprietary datasets
@@ -201,7 +201,7 @@ dataset (``frametype``) you want to use for file-based data access:
    computing centre has its own datafind server with a subset of the available
    datasets.
 
-.. _gwpy-timeseries-datafind-trends:
+.. _pdpy-timeseries-datafind-trends:
 
 ***************
 LIGO trend data
@@ -219,7 +219,7 @@ To get around this you can directly specify (e.g.) ``frametype="H1_T"``
 method call, or you can use a suffix in the channel name:
 
 .. table:: Channel name suffices for LIGO trends
-   :name: gwpy-timeseries-datafind-trend-types
+   :name: pdpy-timeseries-datafind-trend-types
 
    ==========  ============  ===========
    Trend type  Dataset       Suffix
@@ -262,7 +262,7 @@ the 0.03Hz-0.1Hz range at two locations of the LIGO-Hanford observatory:
 .. plot::
    :context: reset
 
-   >>> from gwpy.timeseries import TimeSeriesDict
+   >>> from pdpy.timeseries import TimeSeriesDict
    >>> data = TimeSeriesDict.get(
    ...     ["H1:ISI-GND_STS_ITMY_Z_BLRMS_30M_100M.rms,s-trend",
    ...      "H1:ISI-GND_STS_ETMY_Z_BLRMS_30M_100M.rms,s-trend"],

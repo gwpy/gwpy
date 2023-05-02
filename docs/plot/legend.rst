@@ -1,12 +1,12 @@
-.. currentmodule:: gwpy.plot
+.. currentmodule:: pdpy.plot
 
-.. _gwpy-plot-legend:
+.. _pdpy-plot-legend:
 
 ######################
-Custom legends in GWpy
+Custom legends in PDpy
 ######################
 
-GWpy overrides the default :class:`~matplotlib.axes.Axes` class with one that
+PDpy overrides the default :class:`~matplotlib.axes.Axes` class with one that
 uses a different default legend handler for line plots.
 This means that, by default, lines in a legend will be thicker than on a
 standard matplotlib figure:
@@ -15,7 +15,7 @@ standard matplotlib figure:
    :include-source:
    :context: reset
 
-   >>> import gwpy  # <- import anything from gwpy
+   >>> import pdpy  # <- import anything from pdpy
    >>> from matplotlib import pyplot
    >>> fig = pyplot.figure()
    >>> ax = fig.gca()

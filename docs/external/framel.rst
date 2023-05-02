@@ -1,4 +1,4 @@
-.. _gwpy-external-framel:
+.. _pdpy-external-framel:
 
 ######
 FrameL
@@ -17,7 +17,7 @@ The main library is written in C and documented at
 
 https://lappweb.in2p3.fr/virgo/FrameL/
 
-GWpy can utilises the Python bindings for FrameL to provide GWF
+PDpy can utilises the Python bindings for FrameL to provide GWF
 input/output capabilities.
 
 This optional dependency can be installed using `Conda <https://conda.io>`__

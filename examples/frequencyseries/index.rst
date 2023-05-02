@@ -1,4 +1,4 @@
-.. currentmodule:: gwpy.frequencyseries
+.. currentmodule:: pdpy.frequencyseries
 
 ##########################
 `FrequencySeries` examples

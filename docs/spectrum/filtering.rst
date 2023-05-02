@@ -1,18 +1,18 @@
-.. _gwpy-frequencyseries-filter:
+.. _pdpy-frequencyseries-filter:
 
 ###############################
 Filtering frequency-domain data
 ###############################
 
-Frequency-domain data (a :class:`~gwpy.frequencyseries.FrequencySeries` or a :class:`~gwpy.spectrogram.Spectrogram`) can be filtered using an arbitrary filter using the :meth:`filter` methods of those objects:
+Frequency-domain data (a :class:`~pdpy.frequencyseries.FrequencySeries` or a :class:`~pdpy.spectrogram.Spectrogram`) can be filtered using an arbitrary filter using the :meth:`filter` methods of those objects:
 
-.. currentmodule:: gwpy.frequencyseries
+.. currentmodule:: pdpy.frequencyseries
 
 .. autosummary::
 
    FrequencySeries.filter
 
-.. currentmodule:: gwpy.spectrogram
+.. currentmodule:: pdpy.spectrogram
 
 .. autosummary::
 

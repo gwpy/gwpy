@@ -2,41 +2,41 @@
 |_title_|
 #########
 
-.. |_title_| image:: gwpy-docs-logo.png
+.. |_title_| image:: pdpy-docs-logo.png
 
-.. title:: GWpy docs
+.. title:: PDpy docs
 
 .. ifconfig:: 'dev' in release
 
    .. warning::
 
-      You are viewing documentation for a development build of GWpy.
+      You are viewing documentation for a development build of PDpy.
       This version may include unstable code, or breaking changes relative
       the most recent stable release.
-      To view the documentation for the latest stable release of GWpy, please
+      To view the documentation for the latest stable release of PDpy, please
       `click here <../stable/>`_.
 
-GWpy is a collaboration-driven `Python <http://www.python.org>`_ package
+PDpy is a collaboration-driven `Python <http://www.python.org>`_ package
 providing tools for studying data from ground-based gravitational-wave
 detectors.
 
-GWpy provides a user-friendly, intuitive interface to the common time-domain
+PDpy provides a user-friendly, intuitive interface to the common time-domain
 and frequency-domain data produced by the `LIGO <http://www.ligo.org>`_ and
 `Virgo <http://www.ego-gw.it>`_ instruments and their analysis,
 with easy-to-follow tutorials at each step.
 
-.. image:: https://img.shields.io/conda/vn/conda-forge/gwpy
-    :target: https://anaconda.org/conda-forge/gwpy/
-    :alt: GWpy Conda-forge version badge
-.. image:: https://img.shields.io/pypi/v/gwpy
-    :target: https://pypi.org/project/gwpy/
-    :alt: GWpy PyPI version badge
+.. image:: https://img.shields.io/conda/vn/conda-forge/pdpy
+    :target: https://anaconda.org/conda-forge/pdpy/
+    :alt: PDpy Conda-forge version badge
+.. image:: https://img.shields.io/pypi/v/pdpy
+    :target: https://pypi.org/project/pdpy/
+    :alt: PDpy PyPI version badge
 .. image:: https://zenodo.org/badge/9979119.svg
     :target: https://zenodo.org/badge/latestdoi/9979119
-    :alt: GWpy DOI badge
-.. image:: https://img.shields.io/pypi/l/gwpy.svg
+    :alt: PDpy DOI badge
+.. image:: https://img.shields.io/pypi/l/pdpy.svg
     :target: https://choosealicense.com/licenses/gpl-3.0/
-    :alt: GWpy license badge
+    :alt: PDpy license badge
 
 ***********
 First steps
@@ -45,9 +45,9 @@ First steps
 .. toctree::
    :maxdepth: 1
 
-   What is GWpy? <overview>
-   How do I install GWpy? <install>
-   Citing GWpy <citing>
+   What is PDpy? <overview>
+   How do I install PDpy? <install>
+   Citing PDpy <citing>
 
 *****************
 Working with data

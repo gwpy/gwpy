@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of GWpy.
+# This file is part of PDpy.
 #
-# GWpy is free software: you can redistribute it and/or modify
+# PDpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# GWpy is distributed in the hope that it will be useful,
+# PDpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Calculating the coherence between two channels
 
@@ -31,10 +31,10 @@ strain output of the LIGO-Hanford interferometer.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = 'pdpy.timeseries'
 
 # First, we import the `TimeSeriesDict`
-from gwpy.timeseries import TimeSeriesDict
+from pdpy.timeseries import TimeSeriesDict
 
 # and then :meth:`~TimeSeriesDict.get` the data for the strain output
 # (``H1:GDS-CALIB_STRAIN``) and the PSL periscope accelerometer
@@ -52,7 +52,7 @@ acc = data['H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ']
 # transform length, with a 1-second (50%) overlap:
 coh = hoft.coherence(acc, fftlength=2, overlap=1)
 
-# Finally, we can :meth:`~gwpy.frequencyseries.FrequencySeries.plot` the
+# Finally, we can :meth:`~pdpy.frequencyseries.FrequencySeries.plot` the
 # resulting data:
 plot = coh.plot(
     xlabel='Frequency [Hz]', xscale='log',

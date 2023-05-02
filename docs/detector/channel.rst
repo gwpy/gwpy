@@ -1,6 +1,6 @@
-.. currentmodule:: gwpy.detector
+.. currentmodule:: pdpy.detector
 
-.. _gwpy-channel:
+.. _pdpy-channel:
 
 ##########################
 The :class:`Channel` class
@@ -8,7 +8,7 @@ The :class:`Channel` class
 
 .. code-block:: python
 
-   >>> from gwpy.detector import Channel
+   >>> from pdpy.detector import Channel
 
 
 ====================
@@ -24,7 +24,7 @@ describes the output signal (``OUT``) from photodiode-B (``PDB``) inside the Int
 
 A simple representation of this physical signal is provided by the :class:`Channel` object::
 
-    >>> from gwpy.detector import Channel
+    >>> from pdpy.detector import Channel
     >>> signal = Channel('L1:PSL-ISS_PDB_OUT_DQ')
 
 This new :class:`Channel` has a number of attributes that describe its source, derived from its name::
@@ -58,7 +58,7 @@ The LIGO Channel Information System (https://cis.ligo.org)
 All of the LIGO interferometer data channels are recorded in the Channel Information System (https://cis.ligo.org), a queryable database containing the details of each channel recorded to disk from the observatories.
 The :meth:`Channel.query` `classmethod` allows you to query the database as follows::
 
-    >>> from gwpy.detector import Channel
+    >>> from pdpy.detector import Channel
     >>> chan = Channel.query('L1:IMC-F_OUT_DQ')
     >>> print(chan.sample_rate)
     16384.0 Hz

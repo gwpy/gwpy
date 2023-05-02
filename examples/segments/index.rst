@@ -1,4 +1,4 @@
-.. currentmodule:: gwpy.segments
+.. currentmodule:: pdpy.segments
 
 ######################
 `Segments` examples

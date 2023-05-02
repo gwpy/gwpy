@@ -1,6 +1,6 @@
-.. _currentmodule: gwpy.plot
+.. _currentmodule: pdpy.plot
 
-.. _gwpy-plot-colors:
+.. _pdpy-plot-colors:
 
 ################################################
 The Gravitational-Wave Observatory colour scheme
@@ -14,7 +14,7 @@ In order to simplify visual identification of a specific gravitational-wave obse
     import numpy
     from matplotlib import (pyplot, rcParams)
     from matplotlib.colors import to_hex
-    from gwpy.plot import colors
+    from pdpy.plot import colors
 
     rcParams.update({
         'text.usetex': False,
@@ -23,12 +23,12 @@ In order to simplify visual identification of a specific gravitational-wave obse
 
     th = numpy.linspace(0, 2*numpy.pi, 512)
     names = [
-         'gwpy:geo600',
-         'gwpy:kagra',
-         'gwpy:ligo-hanford',
-         'gwpy:ligo-india',
-         'gwpy:ligo-livingston',
-         'gwpy:virgo',
+         'pdpy:geo600',
+         'pdpy:kagra',
+         'pdpy:ligo-hanford',
+         'pdpy:ligo-india',
+         'pdpy:ligo-livingston',
+         'pdpy:virgo',
     ]
 
     fig = pyplot.figure(figsize=(5, 2))
@@ -54,16 +54,16 @@ For example:
 
 .. plot::
 
-    from gwpy.timeseries import TimeSeries
-    from gwpy.plot import Plot
+    from pdpy.timeseries import TimeSeries
+    from pdpy.plot import Plot
     h1 = TimeSeries.fetch_open_data('H1', 1126259457, 1126259467)
     h1b = h1.bandpass(50, 250).notch(60).notch(120)
     l1 = TimeSeries.fetch_open_data('L1', 1126259457, 1126259467)
     l1b = l1.bandpass(50, 250).notch(60).notch(120)
     plot = Plot(figsize=(12, 4.8))
     ax = plot.add_subplot(xscale='auto-gps')
-    ax.plot(h1b, color='gwpy:ligo-hanford', label='LIGO-Hanford')
-    ax.plot(l1b, color='gwpy:ligo-livingston', label='LIGO-Livingston')
+    ax.plot(h1b, color='pdpy:ligo-hanford', label='LIGO-Hanford')
+    ax.plot(l1b, color='pdpy:ligo-livingston', label='LIGO-Livingston')
     ax.set_epoch(1126259462.427)
     ax.set_xlim(1126259462, 1126259462.6)
     ax.set_ylim(-1e-21, 1e-21)
@@ -71,14 +71,14 @@ For example:
     ax.legend()
     plot.show()
 
-The above code was adapted from the example :ref:`gwpy-example-signal-gw150914`.
+The above code was adapted from the example :ref:`pdpy-example-signal-gw150914`.
 
-The colours can also be specified using the interferometer prefix (e.g. ``'H1'``) via the `gwpy.plot.colors.GW_OBSERVATORY_COLORS` object:
+The colours can also be specified using the interferometer prefix (e.g. ``'H1'``) via the `pdpy.plot.colors.GW_OBSERVATORY_COLORS` object:
 
 .. plot::
 
     from matplotlib import pyplot
-    from gwpy.plot.colors import GW_OBSERVATORY_COLORS
+    from pdpy.plot.colors import GW_OBSERVATORY_COLORS
     fig = pyplot.figure()
     ax = fig.gca()
     ax.plot([1, 2, 3, 4, 5], color=GW_OBSERVATORY_COLORS['L1'])
@@ -86,5 +86,5 @@ The colours can also be specified using the interferometer prefix (e.g. ``'H1'``
 
 .. note::
 
-   The ``'gwpy:<>'`` colours will not be available until `gwpy`
+   The ``'pdpy:<>'`` colours will not be available until `pdpy`
    has been imported.

@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2016-2020)
 #
-# This file is part of GWpy.
+# This file is part of PDpy.
 #
-# GWpy is free software: you can redistribute it and/or modify
+# PDpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# GWpy is distributed in the hope that it will be useful,
+# PDpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Filtering a `TimeSeries` to detect gravitational waves
 
@@ -24,30 +24,30 @@ with contributions from a large number of known and unknown noise sources,
 as well as possible gravitational wave signals.
 
 In order to uncover a real signal we need to filter out noises that otherwise
-hide the signal in the data. We can do this by using the :mod:`gwpy.signal`
+hide the signal in the data. We can do this by using the :mod:`pdpy.signal`
 module to design a digital filter to cut out low and high frequency noise, as
 well as notch out fixed frequencies polluted by known artefacts.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = 'pdpy.timeseries'
 
 # First we download the raw strain data from the GWOSC public archive:
 
-from gwpy.timeseries import TimeSeries
+from pdpy.timeseries import TimeSeries
 hdata = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
 
 # Next we can design a zero-pole-gain filter to remove the extranious noise.
 
-# First we import the `gwpy.signal.filter_design` module and create a
-# :meth:`~gwpy.signal.filter_design.bandpass` filter to remove both low and
+# First we import the `pdpy.signal.filter_design` module and create a
+# :meth:`~pdpy.signal.filter_design.bandpass` filter to remove both low and
 # high frequency content
 
-from gwpy.signal import filter_design
+from pdpy.signal import filter_design
 bp = filter_design.bandpass(50, 250, hdata.sample_rate)
 
 # Now we want to combine the bandpass with a series of
-# :meth:`~gwpy.signal.filter_design.notch` filters, so we create those
+# :meth:`~pdpy.signal.filter_design.notch` filters, so we create those
 # for the first three harmonics of the 60 Hz AC mains power:
 
 notches = [filter_design.notch(line, hdata.sample_rate) for
@@ -65,12 +65,12 @@ hfilt = hdata.filter(zpk, filtfilt=True)
 
 # .. note::
 #
-#    The :mod:`~gwpy.signal.filter_design` methods return digital filters
+#    The :mod:`~pdpy.signal.filter_design` methods return digital filters
 #    by default, so we apply them using `TimeSeries.filter`. If we had
 #    analogue filters (perhaps by passing `analog=True` to the filter design
 #    method), the easiest application would be `TimeSeries.zpk`
 
-# The :mod:`~gwpy.signal.filter_design` methods return infinite impulse
+# The :mod:`~pdpy.signal.filter_design` methods return infinite impulse
 # response filters by default, which, when applied, corrupt a small amount of
 # data at the beginning and the end of our original `TimeSeries`.
 # We can discard those data using the :meth:`~TimeSeries.crop` method
@@ -82,9 +82,9 @@ hfilt = hfilt.crop(*hfilt.span.contract(1))
 # Finally, we can :meth:`~TimeSeries.plot` the original and filtered data,
 # adding some code to prettify the figure:
 
-from gwpy.plot import Plot
+from pdpy.plot import Plot
 plot = Plot(hdata, hfilt, figsize=[12, 6], separate=True, sharex=True,
-            color='gwpy:ligo-hanford')
+            color='pdpy:ligo-hanford')
 ax1, ax2 = plot.axes
 ax1.set_title('LIGO-Hanford strain data around GW150914')
 ax1.text(1.0, 1.01, 'Unfiltered data', transform=ax1.transAxes, ha='right')
@@ -98,7 +98,7 @@ plot.close()  # hide
 # We see now a spike around 16 seconds into the data, so let's zoom into
 # that time (and prettify):
 
-plot = hfilt.plot(color='gwpy:ligo-hanford')
+plot = hfilt.plot(color='pdpy:ligo-hanford')
 ax = plot.gca()
 ax.set_title('LIGO-Hanford strain data around GW150914')
 ax.set_ylabel('Amplitude [strain]')
@@ -129,8 +129,8 @@ lfilt *= -1
 
 plot = Plot(figsize=[12, 4])
 ax = plot.gca()
-ax.plot(hfilt, label='LIGO-Hanford', color='gwpy:ligo-hanford')
-ax.plot(lfilt, label='LIGO-Livingston', color='gwpy:ligo-livingston')
+ax.plot(hfilt, label='LIGO-Hanford', color='pdpy:ligo-hanford')
+ax.plot(lfilt, label='LIGO-Livingston', color='pdpy:ligo-livingston')
 ax.set_title('LIGO strain data around GW150914')
 ax.set_xlim(1126259462, 1126259462.6)
 ax.set_xscale('seconds', epoch=1126259462)

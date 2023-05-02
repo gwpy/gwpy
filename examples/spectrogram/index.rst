@@ -1,4 +1,4 @@
-.. currentmodule:: gwpy.spectrogram
+.. currentmodule:: pdpy.spectrogram
 
 ######################
 `Spectrogram` examples

@@ -1,8 +1,8 @@
 :tocdepth: 3
 
-.. currentmodule:: gwpy.timeseries
+.. currentmodule:: pdpy.timeseries
 
-.. _gwpy-timeseries-io:
+.. _pdpy-timeseries-io:
 
 ####################################
 Reading and writing time series data
@@ -14,9 +14,9 @@ respectively.
 For example, to read from an ASCII file containing time and amplitude columns:
 
 .. code-block:: python
-   :name: gwpy-timeseries-io-example
+   :name: pdpy-timeseries-io-example
 
-   >>> from gwpy.timeseries import TimeSeries
+   >>> from pdpy.timeseries import TimeSeries
    >>> data = TimeSeries.read('my-data.txt')
 
 :meth:`TimeSeries.read` will attempt to automatically identify the file
@@ -26,10 +26,10 @@ file-format.
 
 The :meth:`~TimeSeries.read` and :meth:`~TimeSeries.write` methods take
 different arguments and keywords based on the input/output file format,
-see :ref:`gwpy-timeseries-io-formats` for details on reading/writing for
+see :ref:`pdpy-timeseries-io-formats` for details on reading/writing for
 each of the built-in formats.
 
-.. _gwpy-timeseries-io-discovery:
+.. _pdpy-timeseries-io-discovery:
 
 ***************************************
 Automatic discovery of GW detector data
@@ -41,11 +41,11 @@ GW detector data
 
 Gravitational-wave detector data, including all engineering diagnostic data
 as well as the calibrated 'strain' data that are searched for GW signals,
-are archived in :ref:`GWF <gwpy-timeseries-io-gwf>` files stored at the
+are archived in :ref:`GWF <pdpy-timeseries-io-gwf>` files stored at the
 relevant observatory.
 These data are available locally to authenticated users of the associated
 computing centres (typically collaboration members), but are also
-distributed using |CVMFS|_ and are available remotely using :ref:`gwpy-external-nds2`.
+distributed using |CVMFS|_ and are available remotely using :ref:`pdpy-external-nds2`.
 Access to these data is restricted to active collaboration members.
 
 Additionally |GWOSCl|_ hosts publicly-accessible 'open' data, with *event*
@@ -56,7 +56,7 @@ and *bulk* datasets with the entire observing run data available roughly
 
 GWOSC also hosts the |GWOSC_AUX_RELEASE|_, providing public access to
 environmental sensor data around |GW170814|_.
-These data are freely accessible using :ref:`gwpy-external-nds2`.
+These data are freely accessible using :ref:`pdpy-external-nds2`.
 
 ======================
 Data discovery methods
@@ -67,19 +67,19 @@ Data discovery methods
    opendata
    datafind
 
-.. _gwpy-timeseries-io-formats:
+.. _pdpy-timeseries-io-formats:
 
 *********************
 Built-in file formats
 *********************
 
-.. _gwpy-timeseries-io-ascii:
+.. _pdpy-timeseries-io-ascii:
 
 =====
 ASCII
 =====
 
-GWpy supports writing `TimeSeries` (and `~gwpy.frequencyseries.FrequencySeries`) data to ASCII in a two-column ``time`` and ``amplitude`` format.
+PDpy supports writing `TimeSeries` (and `~pdpy.frequencyseries.FrequencySeries`) data to ASCII in a two-column ``time`` and ``amplitude`` format.
 
 Reading
 -------
@@ -103,20 +103,20 @@ To write a `TimeSeries` to ASCII:
 
 See :func:`numpy.savetxt` for keyword argument options.
 
-.. _gwpy-timeseries-io-gwf:
+.. _pdpy-timeseries-io-gwf:
 
 ===
 GWF
 ===
 
-**Additional dependencies:**  :ref:`gwpy-external-framecpp` or :ref:`gwpy-external-framel` or :ref:`gwpy-external-lalframe`
+**Additional dependencies:**  :ref:`pdpy-external-framecpp` or :ref:`pdpy-external-framel` or :ref:`pdpy-external-lalframe`
 
 The raw observatory data are archived in ``.gwf`` files, a custom binary format that efficiently stores the time streams and all necessary metadata, for more details about this particular data format, take a look at the specification document |GWFSpec|_.
 
 GWF library availability
 ------------------------
 
-GWpy can use any of the three named GWF input/output libraries, and will try
+PDpy can use any of the three named GWF input/output libraries, and will try
 to find them in the order they are listed
 (FrameCPP first, then FrameL, then LALFrame).
 If you need to read/write GWF files, any of them will work, but re recommend
@@ -137,7 +137,7 @@ To read data from a GWF file, pass the input file path (or paths) and the name o
 
 .. note::
 
-   The ``HLV-HW100916-968654552-1.gwf`` file is included with the GWpy source under `/gwpy/testing/data/ <https://github.com/gwpy/gwpy/tree/main/gwpy/testing/data>`_.
+   The ``HLV-HW100916-968654552-1.gwf`` file is included with the PDpy source under `/pdpy/testing/data/ <https://github.com/pdpy/pdpy/tree/main/pdpy/testing/data>`_.
 
 Reading a `StateVector` uses the same syntax:
 
@@ -202,7 +202,7 @@ To read multiple channels from one or more GWF files (rather than opening and cl
 Writing
 -------
 
-To write data held in any of the :mod:`gwpy.timeseries` classes to a GWF file, simply use:
+To write data held in any of the :mod:`pdpy.timeseries` classes to a GWF file, simply use:
 
 .. code-block:: python
 
@@ -210,18 +210,18 @@ To write data held in any of the :mod:`gwpy.timeseries` classes to a GWF file, s
 
 **If the output file already exists it will be overwritten.**
 
-.. _gwpy-timeseries-io-hdf5:
+.. _pdpy-timeseries-io-hdf5:
 
 ====
 HDF5
 ====
 
-GWpy allows storing data in HDF5 format files, using a custom specification for storage of metadata.
+PDpy allows storing data in HDF5 format files, using a custom specification for storage of metadata.
 
 .. warning::
 
    To read GWOSC data from HDF5, please see
-   :ref:`gwpy-timeseries-io-hdf5-gwosc`.
+   :ref:`pdpy-timeseries-io-hdf5-gwosc`.
 
 Reading
 -------
@@ -276,7 +276,7 @@ To replace an existing dataset in an existing file, while preserving other data,
 
    >>> data.write('output.hdf', append=True, overwrite=True)
 
-.. _gwpy-timeseries-io-hdf5-gwosc:
+.. _pdpy-timeseries-io-hdf5-gwosc:
 
 ============
 HDF5 (GWOSC)
@@ -288,7 +288,7 @@ with `format='hdf5'`.
 Reading
 -------
 
-GWpy can read data from GWOSC HDF5 files using the `format='hdf5.gwosc'`
+PDpy can read data from GWOSC HDF5 files using the `format='hdf5.gwosc'`
 keyword:
 
 .. code-block:: python
@@ -306,7 +306,7 @@ As with regular HDF5, the ``start`` and ``end`` keyword arguments can be used
 to downselect data to a specific ``[start, end)`` time segment when reading.
 
 
-.. _gwpy-timeseries-io-wav:
+.. _pdpy-timeseries-io-wav:
 
 ===
 WAV

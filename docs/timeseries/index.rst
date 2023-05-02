@@ -1,6 +1,6 @@
-.. _gwpy-timeseries:
+.. _pdpy-timeseries:
 
-.. currentmodule:: gwpy.timeseries
+.. currentmodule:: pdpy.timeseries
 
 ################
 Time Series data
@@ -23,11 +23,11 @@ The :class:`TimeSeries`
 
 .. code-block:: python
    :caption: Importing the `TimeSeries`
-   :name: gwpy-timeseries-import
+   :name: pdpy-timeseries-import
 
-   from gwpy.timeseries import TimeSeries
+   from pdpy.timeseries import TimeSeries
 
-GWpy provides the `TimeSeries` object as a way of representing time series
+PDpy provides the `TimeSeries` object as a way of representing time series
 data.
 The `TimeSeries` is built on top of the :class:`numpy.ndarray`, and so many
 methods and applications of this object should be familiar to
@@ -38,10 +38,10 @@ For example, to create a simple `TimeSeries` filled with
 
 .. code-block:: python
    :caption: Creating a `TimeSeries` with random data
-   :name: gwpy-timeseries-random
+   :name: pdpy-timeseries-random
 
    >>> from numpy.random import random
-   >>> from gwpy.timeseries import TimeSeries
+   >>> from pdpy.timeseries import TimeSeries
    >>> t = TimeSeries(random(1000))
    >>> print(t)
    TimeSeries([ 0.59442285, 0.61979421, 0.62968915,...,  0.98309223,
@@ -68,7 +68,7 @@ metadata common to any time series data:
 Associated classes
 ==================
 
-Alongside the `TimeSeries` class, `gwpy.timeseries` module provides a
+Alongside the `TimeSeries` class, `pdpy.timeseries` module provides a
 small set of related classes for handling collections of data:
 
 .. autosummary::

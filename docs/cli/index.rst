@@ -1,31 +1,31 @@
 *******************************
-Command line plotting with GWpy
+Command line plotting with PDpy
 *******************************
 
-The ``gwpy-plot`` command-line script provides a terminal-based user interface
+The ``pdpy-plot`` command-line script provides a terminal-based user interface
 to querying data and generating images.
 Functionality for this tool is primarily inspired by LigoDV-web
 (LDVW, https://ldvw.ligo.caltech.edu), a web tool for viewing LIGO data,
 available to members of the joint LIGO-Virgo collaboration.
-LDVW, written in Java, uses the ``gwpy-plot`` command-line script provided by
-GWpy to generate the plots based on web-form input from the user.
+LDVW, written in Java, uses the ``pdpy-plot`` command-line script provided by
+PDpy to generate the plots based on web-form input from the user.
 
-The basic usage for `gwpy-plot` is as follows:
+The basic usage for `pdpy-plot` is as follows:
 
 .. code-block:: bash
 
-    gwpy-plot <ACTION> --chan <channel-name> --start <gps-start-time> [OPTIONS]
+    pdpy-plot <ACTION> --chan <channel-name> --start <gps-start-time> [OPTIONS]
 
 Where ``<ACTION>`` is the type of plot to make.
 
-You can run ``gwpy-plot --help`` to list the plot types ('actions') you can use:
+You can run ``pdpy-plot --help`` to list the plot types ('actions') you can use:
 
-.. command-output:: gwpy-plot --help
+.. command-output:: pdpy-plot --help
 
 To see the arguments and options for a given action, you can run, for example,
-``gwpy-plot timeseries --help``:
+``pdpy-plot timeseries --help``:
 
-.. command-output:: gwpy-plot timeseries --help
+.. command-output:: pdpy-plot timeseries --help
 
 The options for each action vary but many are common.
 
@@ -33,7 +33,7 @@ The options for each action vary but many are common.
 Specifying input data
 =====================
 
-.. currentmodule:: gwpy.timeseries
+.. currentmodule:: pdpy.timeseries
 
 The following table summarises the allowed number of inputs for each action
 

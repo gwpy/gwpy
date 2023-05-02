@@ -1,6 +1,6 @@
-.. currentmodule:: gwpy.time
+.. currentmodule:: pdpy.time
 
-.. _gwpy-time:
+.. _pdpy-time:
 
 ####################
 Times and timestamps
@@ -19,10 +19,10 @@ Time conversions
 ================
 
 `Astropy <http://astropy.org>`__ provides the excellent `Time <astropy.time>` object to allow easy conversion between this format and a number of other formats.
-For convenience, this object is available in GWpy as ``gwpy.time.Time``.
+For convenience, this object is available in PDpy as ``pdpy.time.Time``.
 
 
-On top of that, GWpy provides three simple methods to simplify converting between GPS times and Python-standard `datetime` objects, namely:
+On top of that, PDpy provides three simple methods to simplify converting between GPS times and Python-standard `datetime` objects, namely:
 
 .. autosummary::
    :nosignatures:
@@ -35,8 +35,8 @@ On top of that, GWpy provides three simple methods to simplify converting betwee
 Reference
 =========
 
-.. autofunction:: gwpy.time.tconvert
+.. autofunction:: pdpy.time.tconvert
 
-.. autofunction:: gwpy.time.to_gps
+.. autofunction:: pdpy.time.to_gps
 
-.. autofunction:: gwpy.time.from_gps
+.. autofunction:: pdpy.time.from_gps

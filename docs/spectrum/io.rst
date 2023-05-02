@@ -1,6 +1,6 @@
-.. currentmodule:: gwpy.frequencyseries
+.. currentmodule:: pdpy.frequencyseries
 
-.. _gwpy-frequencyseries-io:
+.. _pdpy-frequencyseries-io:
 
 #########################################
 Reading and writing frequency-domain data
@@ -16,17 +16,17 @@ The ``format`` keyword argument can be used to manually identify the input file-
 The :meth:`~FrequencySeries.read` and :meth:`~FrequencySeries.write` methods take different arguments and keywords based on the input/output file format, see the following sections for details on reading/writing for each of the built-in formats.
 Those formats are:
 
-- :ref:`gwpy-frequencyseries-io-ascii`
-- :ref:`gwpy-frequencyseries-io-hdf5`
-- :ref:`gwpy-frequencyseries-io-ligolw`
+- :ref:`pdpy-frequencyseries-io-ascii`
+- :ref:`pdpy-frequencyseries-io-hdf5`
+- :ref:`pdpy-frequencyseries-io-ligolw`
 
-.. _gwpy-frequencyseries-io-ascii:
+.. _pdpy-frequencyseries-io-ascii:
 
 =====
 ASCII
 =====
 
-GWpy supports writing `FrequencySeries` data to ASCII in a two-column ``frequency`` and ``amplitude`` format.
+PDpy supports writing `FrequencySeries` data to ASCII in a two-column ``frequency`` and ``amplitude`` format.
 
 Reading
 -------
@@ -47,13 +47,13 @@ To write a `FrequencySeries` to ASCII::
 See :func:`numpy.savetxt` for keyword argument options.
 
 
-.. _gwpy-frequencyseries-io-hdf5:
+.. _pdpy-frequencyseries-io-hdf5:
 
 ====
 HDF5
 ====
 
-GWpy allows storing data in HDF5 format files, using a custom specification for storage of metadata.
+PDpy allows storing data in HDF5 format files, using a custom specification for storage of metadata.
 
 Reading
 -------
@@ -80,7 +80,7 @@ To replace an dataset in an existing file, while preserving other data, use *bot
     >>> data.write('output.h5', 'psd', append=True, overwrite=True)
 
 
-.. _gwpy-frequencyseries-io-ligolw:
+.. _pdpy-frequencyseries-io-ligolw:
 
 ===============
 ``LIGO_LW`` XML
@@ -88,7 +88,7 @@ To replace an dataset in an existing file, while preserving other data, use *bot
 
 **Additional dependencies:** :mod:`python-ligo-lw`
 
-Alongside storing :ref:`tabular data <gwpy-table-io-ligolw>`, the ``LIGO_LW``
+Alongside storing :ref:`tabular data <pdpy-table-io-ligolw>`, the ``LIGO_LW``
 XML format allows storing array data.
 These arrays are stored in ``<LIGO_LW>`` elements, which describe the metadata
 for an array (name, GPS epoch, instrument, etc.), which contain an

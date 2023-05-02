@@ -1,4 +1,4 @@
-.. _gwpy-external-lalsuite:
+.. _pdpy-external-lalsuite:
 
 ########
 LALSuite
@@ -19,15 +19,15 @@ The main LALSuite documentation can be found at
 https://lscsoft.docs.ligo.org/lalsuite/
 
 LALSuite is made up of a number of component libraries, some of which are
-utilised by GWpy to provide various extra capabilities.
+utilised by PDpy to provide various extra capabilities.
 
-The full LALsuite can be installed alongside GWpy using
+The full LALsuite can be installed alongside PDpy using
 `Conda <https://conda.io>`__
 (or `Mamba <https://mamba.readthedocs.io/en/stable/>`__)
 or `pip`:
 
 .. md-tab-set::
-    :name: gwpy-install-lalsuite
+    :name: pdpy-install-lalsuite
 
     .. md-tab-item:: Install LALSuite with conda/mamba
 
@@ -41,7 +41,7 @@ or `pip`:
 
             python -m pip install lalsuite
 
-.. _gwpy-external-lal:
+.. _pdpy-external-lal:
 
 ===
 LAL
@@ -60,9 +60,9 @@ It's documentation is at
 
 https://lscsoft.docs.ligo.org/lalsuite/lal/
 
-GWpy provides utilities to transform to and from LAL objects
-(like the :lal:`XLALREAL8TimeSeries`) from/to their GWpy equivalent
-(e.g. :class:`gwpy.timeseries.TimeSeries`).
+PDpy provides utilities to transform to and from LAL objects
+(like the :lal:`XLALREAL8TimeSeries`) from/to their PDpy equivalent
+(e.g. :class:`pdpy.timeseries.TimeSeries`).
 
 LAL can be installed using `Conda <https://conda.io>`__
 (or `Mamba <https://mamba.readthedocs.io/en/stable/>`__)
@@ -74,7 +74,7 @@ on Unix systems (not Windows):
 
     conda install -c conda-forge python-lal
 
-.. _gwpy-external-lalframe:
+.. _pdpy-external-lalframe:
 
 ========
 LALFrame
@@ -92,7 +92,7 @@ It's documentation is at
 
 https://lscsoft.docs.ligo.org/lalsuite/lalframe/
 
-GWpy utilises the Python bindings for LALFrame on Unix platforms
+PDpy utilises the Python bindings for LALFrame on Unix platforms
 (Linux and macOS) to provide GWF input/output capabilities.
 
 This optional dependency can be installed using `Conda <https://conda.io>`__

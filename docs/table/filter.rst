@@ -1,6 +1,6 @@
-.. currentmodule:: gwpy.table
+.. currentmodule:: pdpy.table
 
-.. _gwpy-table-filter:
+.. _pdpy-table-filter:
 
 ################
 Filtering tables
@@ -15,7 +15,7 @@ To demonstrate, we can download |GWTC-2| from |GWOSC|:
 
 .. code-block:: python
 
-   >>> from gwpy.table import EventTable
+   >>> from pdpy.table import EventTable
    >>> events = EventTable.fetch_open_data("GWTC-2")
    >>> print(events)
           name        chi_eff_upper ...     GPS      final_mass_source_upper
@@ -41,7 +41,7 @@ With the above GWTC-2 events, we can use the filter
 high signal power:
 
 .. code-block:: python
-   :name: gwpy-table-filter-statement-example
+   :name: pdpy-table-filter-statement-example
    :caption: Filtering an `EventTable` using a `str` definition
 
    >>> print(events.filter("network_matched_filter_snr > 15"))
@@ -78,10 +78,10 @@ Using the same ``events`` table we can define a function to include only
 those events in the first six months of 2019:
 
 .. code-block:: python
-   :name: gwpy-table-filter-function-example
+   :name: pdpy-table-filter-function-example
    :caption: Filtering an `EventTable` using a filter function
 
-   >>> from gwpy.time import to_gps
+   >>> from pdpy.time import to_gps
    >>> start = to_gps("Jan 2019")
    >>> end = to_gps("Jul 2019")
    >>> def q12_2019(column, interval):
@@ -108,7 +108,7 @@ For example could filter the table to return only those events with
 high mass ratio:
 
 .. code-block:: python
-   :name: gwpy-table-filter-function-example-2
+   :name: pdpy-table-filter-function-example-2
    :caption: Filtering an `EventTable` using multiple columns
 
    >>> def high_mass_ratio(table, threshold):
@@ -131,7 +131,7 @@ Using multiple filters
 Filters can be chained (either in `str` form, or functional form):
 
 .. code-block:: python
-   :name: gwpy-table-filter-chaining
+   :name: pdpy-table-filter-chaining
    :caption: Chaining multiple filters with :meth:`EventTable.filter`
 
    >>> print(events.filter("network_matched_filter_snr > 15", "luminosity_distance > 1000"))
@@ -156,8 +156,8 @@ internally by the parser anyway. E.g., use ``channel = "X1:TEST"`` and not
 Built-in filters
 ================
 
-The GWpy package defines a small number of filter functions that implement
+The PDpy package defines a small number of filter functions that implement
 standard filtering operations used in gravitational-wave data analysis:
 
-.. automodsumm:: gwpy.table.filters
+.. automodsumm:: pdpy.table.filters
    :functions-only:

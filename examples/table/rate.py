@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of GWpy.
+# This file is part of PDpy.
 #
-# GWpy is free software: you can redistribute it and/or modify
+# PDpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# GWpy is distributed in the hope that it will be useful,
+# PDpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Calculating (and plotting) rate versus time for an `EventTable`
 
@@ -29,12 +29,12 @@ the performance of the LIGO detectors and downstream data analysis procedures.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.table'
+__currentmodule__ = 'pdpy.table'
 
 # First, we import the `EventTable` object and read in a set of events from
 # a LIGO_LW-format XML file containing a
 # :class:`sngl_burst <ligo.lw.lsctables.SnglBurstTable>` table
-from gwpy.table import EventTable
+from pdpy.table import EventTable
 events = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz',
                          tablename='sngl_burst', columns=['peak', 'snr'])
 
@@ -48,8 +48,8 @@ events = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz',
 rate = events.event_rate(1, start=968654552, end=968654562)
 
 # The :meth:`~EventTable.event_rate` method has returned a
-# `~gwpy.timeseries.TimeSeries`, so we can display this using the
-# :meth:`~gwpy.timeseries.TimeSeries.step` method of that object:
+# `~pdpy.timeseries.TimeSeries`, so we can display this using the
+# :meth:`~pdpy.timeseries.TimeSeries.step` method of that object:
 plot = rate.step()
 ax = plot.gca()
 ax.set_xlim(968654552, 968654562)

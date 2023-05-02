@@ -1,13 +1,13 @@
-.. currentmodule:: gwpy.timeseries
+.. currentmodule:: pdpy.timeseries
 
 .. plot::
    :include-source: False
    :context: reset
    :nofigs:
 
-   >>> from gwpy.timeseries import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
+   >>> from pdpy.timeseries import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 
-.. _gwpy-timeseries-plot:
+.. _pdpy-timeseries-plot:
 
 #########################
 Plotting time-domain data
@@ -19,7 +19,7 @@ Plotting one `TimeSeries`
 
 The `TimeSeries` class includes a :meth:`~TimeSeries.plot` method to
 trivialise visualisation of the contained data.
-Reproducing the example from :ref:`gwpy-timeseries-remote`:
+Reproducing the example from :ref:`pdpy-timeseries-remote`:
 
 .. plot::
    :include-source:
@@ -29,9 +29,9 @@ Reproducing the example from :ref:`gwpy-timeseries-remote`:
    >>> plot = l1hoft.plot()
    >>> plot.show()
 
-The returned object `plot` is a :class:`~gwpy.plot.Plot`, a sub-class of
+The returned object `plot` is a :class:`~pdpy.plot.Plot`, a sub-class of
 :class:`matplotlib.figure.Figure` adapted for GPS time-stamped data.
-Customisations of the figure or the underlying :class:`~gwpy.plot.Axes` can
+Customisations of the figure or the underlying :class:`~pdpy.plot.Axes` can
 be done using standard :mod:`matplotlib` methods.
 For example:
 
@@ -46,7 +46,7 @@ For example:
    >>> ax.axvline(1126259462, color='orange', linestyle='--')
    >>> plot.refresh()
 
-Here the :meth:`~gwpy.plot.Axes.set_epoch` method is used to reset the
+Here the :meth:`~pdpy.plot.Axes.set_epoch` method is used to reset the
 reference time for the x-axis.
 
 =======================================
@@ -81,17 +81,17 @@ Alternatively, the two `TimeSeries` could be combined into a
    >>> plot.gca().legend()
    >>> plot.show()
 
-The third method of achieving the same result is by importing and accessing the `~gwpy.plot.Plot` object directly:
+The third method of achieving the same result is by importing and accessing the `~pdpy.plot.Plot` object directly:
 
 .. plot::
    :include-source:
    :context: close-figs
 
-   >>> from gwpy.plot import Plot
+   >>> from pdpy.plot import Plot
    >>> plot = Plot(l1hoft, h1hoft)
    >>> plot.show()
 
-Using the `~gwpy.plot.Plot` directly allows for greater customisation.
+Using the `~pdpy.plot.Plot` directly allows for greater customisation.
 The ``separate=True`` keyword argument can be used to plot each `TimeSeries`
 on its own axes, with ``sharex=True`` given to link the time scales for each
 :class:`~matplotlib.axes.Axes`:

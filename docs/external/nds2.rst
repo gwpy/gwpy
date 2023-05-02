@@ -1,4 +1,4 @@
-.. _gwpy-external-nds2:
+.. _pdpy-external-nds2:
 
 ####
 NDS2

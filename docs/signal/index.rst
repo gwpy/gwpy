@@ -1,13 +1,13 @@
-.. currentmodule:: gwpy.timeseries
+.. currentmodule:: pdpy.timeseries
 
-.. _gwpy-signal-processing:
+.. _pdpy-signal-processing:
 
 #################
 Signal processing
 #################
 
 In a wide-array of applications, the original data recorded from a digital system must be manipulated in order to extract the greatest amount of information.
-GWpy provides a suite of functions to simplify and extend the excellent digital signal processing suite in :mod:`scipy.signal`.
+PDpy provides a suite of functions to simplify and extend the excellent digital signal processing suite in :mod:`scipy.signal`.
 
 ===========================
 Spectral density estimation
@@ -16,11 +16,11 @@ Spectral density estimation
 `Spectral density estimation <https://en.wikipedia.org/wiki/Spectral_density>`_
 is a common way of investigating the frequency-domain content of a time-domain
 signal.
-GWpy provides wrappers of power spectral density (PSD) estimation methods
+PDpy provides wrappers of power spectral density (PSD) estimation methods
 from :mod:`scipy.signal` to simplify calculating a
-:class:`~gwpy.frequencyseries.FrequencySeries` from a :class:`TimeSeries`.
+:class:`~pdpy.frequencyseries.FrequencySeries` from a :class:`TimeSeries`.
 
-The :mod:`gwpy.signal.spectral` sub-package provides the following
+The :mod:`pdpy.signal.spectral` sub-package provides the following
 PSD estimation averaging methods:
 
 - ``'bartlett'`` - mean average of non-overlapping periodograms
@@ -65,7 +65,7 @@ Available methods include:
 
 Each of the above methods eventually calls out to :meth:`TimeSeries.filter` to apply a digital linear filter, normally via cascaded second-order-sections (requires `scipy >= 0.16`).
 
-For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`gwpy-example-signal-gw150914`.
+For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`pdpy-example-signal-gw150914`.
 
 ==========================
 Frequency-domain filtering
@@ -84,28 +84,28 @@ Available methods include:
    TimeSeries.rayleigh_spectrum
    TimeSeries.rayleigh_spectrogram
 
-For a worked example of how to load data and calculate the Amplitude Spectral Density `~gwpy.frequencyseries.FrequencySeries`, see the example :ref:`gwpy-example-frequencyseries-hoff`.
+For a worked example of how to load data and calculate the Amplitude Spectral Density `~pdpy.frequencyseries.FrequencySeries`, see the example :ref:`pdpy-example-frequencyseries-hoff`.
 
-.. _gwpy-filter-design:
+.. _pdpy-filter-design:
 
 =============
 Filter design
 =============
 
-The :mod:`gwpy.signal` provides a number of filter design methods which, when combined with the `~gwpy.plot.BodePlot` visualisation, can be used to create a number of common filters:
+The :mod:`pdpy.signal` provides a number of filter design methods which, when combined with the `~pdpy.plot.BodePlot` visualisation, can be used to create a number of common filters:
 
 .. autosummary::
    :nosignatures:
 
-   ~gwpy.signal.filter_design.lowpass
-   ~gwpy.signal.filter_design.highpass
-   ~gwpy.signal.filter_design.bandpass
-   ~gwpy.signal.filter_design.notch
-   ~gwpy.signal.filter_design.concatenate_zpks
+   ~pdpy.signal.filter_design.lowpass
+   ~pdpy.signal.filter_design.highpass
+   ~pdpy.signal.filter_design.bandpass
+   ~pdpy.signal.filter_design.notch
+   ~pdpy.signal.filter_design.concatenate_zpks
 
 Each of these will return filter coefficients that can be passed directly into `~TimeSeries.zpk` (default for analogue filters) or `~TimeSeries.filter` (default for digital filters).
 
-For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`gwpy-example-signal-gw150914`.
+For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`pdpy-example-signal-gw150914`.
 
 **Cross-channel correlations:**
 
@@ -115,20 +115,20 @@ For a worked example of how to filter LIGO data to discover a gravitational-wave
    TimeSeries.coherence
    TimeSeries.coherence_spectrogram
 
-For a worked example of how to compare channels like this, see the example :ref:`gwpy-example-frequencyseries-coherence`.
+For a worked example of how to compare channels like this, see the example :ref:`pdpy-example-frequencyseries-coherence`.
 
-.. currentmodule:: gwpy.signal
+.. currentmodule:: pdpy.signal
 
 =============
 Reference/API
 =============
 
-.. automethod:: gwpy.signal.filter_design.bandpass
+.. automethod:: pdpy.signal.filter_design.bandpass
 
-.. automethod:: gwpy.signal.filter_design.lowpass
+.. automethod:: pdpy.signal.filter_design.lowpass
 
-.. automethod:: gwpy.signal.filter_design.highpass
+.. automethod:: pdpy.signal.filter_design.highpass
 
-.. automethod:: gwpy.signal.filter_design.notch
+.. automethod:: pdpy.signal.filter_design.notch
 
-.. automethod:: gwpy.signal.filter_design.concatenate_zpks
+.. automethod:: pdpy.signal.filter_design.concatenate_zpks

@@ -1,16 +1,16 @@
-.. currentmodule:: gwpy.spectrogram
+.. currentmodule:: pdpy.spectrogram
 
-.. _gwpy-spectrogram:
+.. _pdpy-spectrogram:
 
 #################
 The `Spectrogram`
 #################
 
-While the `~gwpy.timeseries.TimeSeries` allows us to study how the amplitude of a signal changes over time, and the `~gwpy.frequencyseries.FrequencySeries` allows us to study how that amplitude changes over frequency, the time-frequency `~gwpy.spectrogram.Spectrogram` allows us to track the evolution of the `~gwpy.frequencyseries.FrequencySeries` over time.
+While the `~pdpy.timeseries.TimeSeries` allows us to study how the amplitude of a signal changes over time, and the `~pdpy.frequencyseries.FrequencySeries` allows us to study how that amplitude changes over frequency, the time-frequency `~pdpy.spectrogram.Spectrogram` allows us to track the evolution of the `~pdpy.frequencyseries.FrequencySeries` over time.
 
 This object is a 2-dimensional array, essentially a stacked set of spectra, one per unit time.
 
-As always, a `Spectrogram` can be generated from any arbitrary data sequence, but here the required metadata are a combination of those required for the `~gwpy.timeserises.TimeSeries` and `~gwpy.frequencyseries.FrequencySeries`::
+As always, a `Spectrogram` can be generated from any arbitrary data sequence, but here the required metadata are a combination of those required for the `~pdpy.timeserises.TimeSeries` and `~pdpy.frequencyseries.FrequencySeries`::
 
     >>> import numpy
     >>> specgram = Spectrogram(numpy.random.random((100, 1000)), epoch=1000000000, sample_rate=1, f0=0, df=1)
@@ -48,30 +48,30 @@ The full set of metadata that can be provided is as follows:
    ~Spectrogram.df
 
 ================================================================
-Calculating a `Spectrogram` from a `~gwpy.timeseries.TimeSeries`
+Calculating a `Spectrogram` from a `~pdpy.timeseries.TimeSeries`
 ================================================================
 
-The time-frequency `Spectrogram` of a `~gwpy.timeseries.TimeSeries` can be calculated using the :meth:`~gwpy.timeseries.TimeSeries.spectrogram` method.
-We can extend previous examples of plotting a `~gwpy.timeseries.TimeSeries` with calculation of a `Spectrogram` with a 20-second stride:
+The time-frequency `Spectrogram` of a `~pdpy.timeseries.TimeSeries` can be calculated using the :meth:`~pdpy.timeseries.TimeSeries.spectrogram` method.
+We can extend previous examples of plotting a `~pdpy.timeseries.TimeSeries` with calculation of a `Spectrogram` with a 20-second stride:
 
 .. plot::
    :context: reset
    :include-source:
    :nofigs:
 
-   >>> from gwpy.timeseries import TimeSeries
+   >>> from pdpy.timeseries import TimeSeries
    >>> gwdata = TimeSeries.get('H1:LDAS-STRAIN', 'September 16 2010 06:40',
    ...                         'September 16 2010 06:50')
    >>> specgram = gwdata.spectrogram(20, fftlength=8, overlap=4) ** (1/2.)
 
 
-.. _gwpy-spectrogram-plot:
+.. _pdpy-spectrogram-plot:
 
 ========================
 Plotting a `Spectrogram`
 ========================
 
-Like the `~gwpy.timeseries.TimeSeries` and `~gwpy.frequencyseries.FrequencySeries`, the `Spectrogram` has a convenient :meth:`~Spectrogram.plot` method, allowing us to view the data.
+Like the `~pdpy.timeseries.TimeSeries` and `~pdpy.frequencyseries.FrequencySeries`, the `Spectrogram` has a convenient :meth:`~Spectrogram.plot` method, allowing us to view the data.
 We can extend the previous time-series example to include a plot:
 
 .. plot::

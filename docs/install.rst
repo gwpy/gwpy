@@ -1,4 +1,4 @@
-.. _gwpy-install:
+.. _pdpy-install:
 
 ############
 Installation
@@ -6,23 +6,23 @@ Installation
 
 
 ===============
-Installing GWpy
+Installing PDpy
 ===============
 
-.. _gwpy-install-conda:
+.. _pdpy-install-conda:
 
 -----
 Conda
 -----
 
-The recommended way of installing GWpy is with `Conda <https://conda.io>`__:
+The recommended way of installing PDpy is with `Conda <https://conda.io>`__:
 
 .. code-block:: bash
 
-   conda install -c conda-forge gwpy
+   conda install -c conda-forge pdpy
 
 
-.. _gwpy-install-pip:
+.. _pdpy-install-pip:
 
 ---
 Pip
@@ -30,16 +30,16 @@ Pip
 
 .. code-block:: bash
 
-    python -m pip install gwpy
+    python -m pip install pdpy
 
 
 ============
 Requirements
 ============
 
-GWpy has the following strict requirements:
+PDpy has the following strict requirements:
 
-.. table:: Requirements for GWpy
+.. table:: Requirements for PDpy
    :align: left
    :name: requirements-table
 
@@ -62,7 +62,7 @@ GWpy has the following strict requirements:
 
 All of these will be installed using any of the above install methods.
 
-Gwpy also depends on the following other packages for optional features:
+Pdpy also depends on the following other packages for optional features:
 
 .. toctree::
    :glob:

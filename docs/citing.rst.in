@@ -1,17 +1,17 @@
 ###########
-Citing GWpy
+Citing PDpy
 ###########
 
-If you have used GWpy as part of a project that leads to a scientific
+If you have used PDpy as part of a project that leads to a scientific
 publication, please acknowledge this by citing the
-`GWpy paper <https://www.sciencedirect.com/science/article/pii/S2352711021000029>`_: D. M. Macleod *et al*, SoftwareX, **13**, 100657 (2021). The citation in various formats is given below:
+`PDpy paper <https://www.sciencedirect.com/science/article/pii/S2352711021000029>`_: D. M. Macleod *et al*, SoftwareX, **13**, 100657 (2021). The citation in various formats is given below:
 
 .. tabbed:: BibTeX
 
    .. code-block:: bibtex
 
-      @article{gwpy,
-          title = "{GWpy: A Python package for gravitational-wave astrophysics}",
+      @article{pdpy,
+          title = "{PDpy: A Python package for gravitational-wave astrophysics}",
          author = {{Macleod}, D.~M. and {Areeda}, J.~S. and {Coughlin}, S.~B. and {Massinger}, T.~J. and {Urban}, A.~L.},
         journal = {SoftwareX},
          volume = 13,
@@ -27,7 +27,7 @@ publication, please acknowledge this by citing the
    .. code-block::
 
       TY  - JOUR
-      T1  - GWpy: A Python package for gravitational-wave astrophysics
+      T1  - PDpy: A Python package for gravitational-wave astrophysics
       AU  - Macleod, Duncan M.
       AU  - Areeda, Joseph S.
       AU  - Coughlin, Scott B.
@@ -48,7 +48,7 @@ publication, please acknowledge this by citing the
    .. code-block::
 
       %0 Journal Article
-      %T GWpy: A Python package for gravitational-wave astrophysics
+      %T PDpy: A Python package for gravitational-wave astrophysics
       %A Macleod, Duncan M.
       %A Areeda, Joseph S.
       %A Coughlin, Scott B.
@@ -66,7 +66,7 @@ publication, please acknowledge this by citing the
    .. code-block::
 
       RT Journal
-      T1 GWpy: A Python package for gravitational-wave astrophysics
+      T1 PDpy: A Python package for gravitational-wave astrophysics
       A1 Macleod, Duncan M.
       A1 Areeda, Joseph S.
       A1 Coughlin, Scott B.
@@ -79,11 +79,11 @@ publication, please acknowledge this by citing the
       DO DOI: 10.1016/j.softx.2021.100657
       SN 2352-7110
 
-Also cite the DOI for the version of GWpy that you have used.
+Also cite the DOI for the version of PDpy that you have used.
 Each of the DOIs below resolves a Zenodo record for that version.
 See the *Export* section on each page for formatted citations in a number
 of common styles.
 
-The list below includes only the 10 most recent releases of GWpy.
+The list below includes only the 10 most recent releases of PDpy.
 For older versions, please
 `click here <https://zenodo.org//search?page=2&size=10&q=conceptrecid:"597016"&sort=-version&all_versions=True>`__.

@@ -1,4 +1,4 @@
-.. currentmodule:: gwpy.table
+.. currentmodule:: pdpy.table
 
 #####################
 Tabular data examples

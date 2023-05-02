@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of GWpy.
+# This file is part of PDpy.
 #
-# GWpy is free software: you can redistribute it and/or modify
+# PDpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# GWpy is distributed in the hope that it will be useful,
+# PDpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Plotting an over-dense, short-duration `Spectrogram`
 
@@ -29,12 +29,12 @@ to produce a much more feature-rich output.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = 'pdpy.timeseries'
 
 # To demonstrate this, we can download some data associated with the
 # gravitational-wave event GW510914:
 
-from gwpy.timeseries import TimeSeries
+from pdpy.timeseries import TimeSeries
 lho = TimeSeries.fetch_open_data('H1', 1126259458, 1126259467, verbose=True)
 
 # and can :meth:`~TimeSeries.highpass` and :meth:`~TimeSeries.whiten`
@@ -51,7 +51,7 @@ white = hp.whiten(4, 2).crop(1126259460, 1126259465)
 #    artefacts that may have been introduced.
 
 # Now we can call the `~TimeSeries.spectrogram2` method of `gwdata` to
-# calculate our over-dense `~gwpy.spectrogram.Spectrogram`, using a
+# calculate our over-dense `~pdpy.spectrogram.Spectrogram`, using a
 # 1/16-second FFT length and high overlap:
 
 specgram = white.spectrogram2(fftlength=1/16., overlap=15/256.) ** (1/2.)

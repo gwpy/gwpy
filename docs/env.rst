@@ -1,9 +1,9 @@
 #####################################
-Configuring GWpy from the environment
+Configuring PDpy from the environment
 #####################################
 
-GWpy can be configured by setting environment variables at run time.
-Each of the variables are boolean switches, meaning they just tell GWpy to
+PDpy can be configured by setting environment variables at run time.
+Each of the variables are boolean switches, meaning they just tell PDpy to
 do something, or not to do something. The following values match as `True`:
 
 - ``'y'``
@@ -30,7 +30,7 @@ The following variables are defined:
 |                     |         | GWOSC to prevent repeated downloads         |
 +---------------------+---------+---------------------------------------------+
 | ``GWPY_RCPARAMS``   | `True`  | Whether to update `matplotlib.rcParams`     |
-|                     |         | with custom GWpy defaults for rendering     |
+|                     |         | with custom PDpy defaults for rendering     |
 |                     |         | images                                      |
 +---------------------+---------+---------------------------------------------+
 | ``GWPY_USETEX``     | `False` | Whether to use LaTeX when rendering images, |
