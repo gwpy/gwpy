@@ -8,7 +8,7 @@ step.
 
 <https://gwpy.github.io>
 
-# Release status
+# Release statuss
 
 [![PyPI version](https://badge.fury.io/py/gwpy.svg)](http://badge.fury.io/py/gwpy)
 [![Conda version](https://img.shields.io/conda/vn/conda-forge/gwpy.svg)](https://anaconda.org/conda-forge/gwpy/)
