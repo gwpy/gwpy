@@ -330,10 +330,17 @@ def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False,
     z_hor = find_root_redshift(
         lambda z: inspiral.SNR(psd.value[f > 0], z) - snr,
     )
-    dist = (
-        inspiral.cosmo.luminosity_distance(z_hor) if horizon else
-        range_func(f[f > 0], psd.value[f > 0], z_hor=z_hor, H=inspiral)
-    )
+    if horizon:
+        dist = inspiral.cosmo.luminosity_distance(z_hor)
+    else:
+        dist = range_func(
+            f[f > 0],
+            psd.value[f > 0],
+            z_hor=z_hor,
+            H=inspiral,
+            detection_snr=snr,
+        )
+
     # calculate the sensitive distance PSD
     (fz, hz) = inspiral.z_scale(z_hor)
     hz = interp1d(fz, hz, bounds_error=False, fill_value=(hz[0], 0))(f)
@@ -434,11 +441,17 @@ def inspiral_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
     )
 
     # return the sensitive distance metric
-    return units.Quantity(
-        inspiral.cosmo.luminosity_distance(z_hor) if horizon else
-        range_func(f[frange], psd.value[frange], z_hor=z_hor, H=inspiral),
-        unit='Mpc',
-    )
+    if horizon:
+        dist = inspiral.cosmo.luminosity_distance(z_hor)
+    else:
+        dist = range_func(
+            f[frange],
+            psd.value[frange],
+            z_hor=z_hor,
+            H=inspiral,
+            detection_snr=snr,
+        )
+    return units.Quantity(dist, unit="Mpc")
 
 
 # -- burst range --------------------------------
