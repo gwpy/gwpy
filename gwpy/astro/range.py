@@ -392,6 +392,7 @@ def inspiral_range_psd(
             psd.value[f > 0],
             z_hor=z_hor,
             H=inspiral,
+            detection_snr=snr,
         )
 
     # calculate the sensitive distance PSD
@@ -525,6 +526,7 @@ def inspiral_range(
             psd.value[frange],
             z_hor=z_hor,
             H=inspiral,
+            detection_snr=snr,
         )
     return units.Quantity(dist, unit="Mpc")
 
