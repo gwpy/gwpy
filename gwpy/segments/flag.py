@@ -443,7 +443,7 @@ class DataQualityFlag(object):
             timeout for download (seconds)
 
         host : `str`, optional
-            URL of GWOSC host, default: ``'https://gw-openscience.org'``
+            URL of GWOSC host, default: ``'https://gwosc.org'``
 
         Returns
         -------

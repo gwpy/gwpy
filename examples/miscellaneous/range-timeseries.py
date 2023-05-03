@@ -31,7 +31,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
 # First, we need to load some data. We can `fetch` the
-# `public data <https://www.gw-openscience.org/catalog/>`__
+# `public data <https://gwosc.org/catalog/>`__
 # around the GW170817 BNS merger:
 
 from gwpy.timeseries import TimeSeries

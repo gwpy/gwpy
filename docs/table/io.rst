@@ -129,7 +129,7 @@ The full list of available columns can be queried as follows:
 
 .. admonition:: GWOSC catalogues
 
-   For more details on the GWOSC catalogues, see https://www.gw-openscience.org/eventapi/html/.
+   For more details on the GWOSC catalogues, see https://gwosc.org/eventapi/html/.
 
 .. _gwpy-table-gwosc-filter:
 
