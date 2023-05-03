@@ -198,7 +198,7 @@ class TestArray2D(_TestSeries):
 
         But still represent the output as an `Array2D` with `Index` arrays.
 
-        This tests regression of https://github.com/pdpy/pdpy/issues/1504.
+        This tests regression of https://github.com/pdpy-github/pdpy/issues/1504.
         """
         # create an array with indices
         a = self.create()

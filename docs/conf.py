@@ -131,7 +131,7 @@ html_theme_options = {
     # metadata
     "repo_name": "PDpy",
     "repo_type": "github",
-    "repo_url": "https://github.com/pdpy/pdpy",
+    "repo_url": "https://github.com/pdpy-github/pdpy",
     "edit_uri": "blob/main/docs",
     "globaltoc_collapse": True,
     # features
@@ -303,7 +303,7 @@ def linkcode_resolve(domain, info):
     ):
         return None
 
-    return "https://github.com/pdpy/pdpy/tree/{}/pdpy/{}".format(
+    return "https://github.com/pdpy-github/pdpy/tree/{}/pdpy/{}".format(
         GWPY_GIT_REF,
         fileref,
     )

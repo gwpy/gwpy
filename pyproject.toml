@@ -109,10 +109,10 @@ conda = [
 pdpy-plot = "pdpy.cli.pdpy_plot:main"
 
 [project.urls]
-"Bug Tracker" = "https://github.com/pdpy/pdpy/issues"
+"Bug Tracker" = "https://github.com/pdpy-github/pdpy/issues"
 "Discussion Forum" = "https://pdpy.slack.com"
 "Documentation" = "https://pdpy.github.io/docs/"
-"Source Code" = "https://github.com/pdpy/pdpy"
+"Source Code" = "https://github.com/pdpy-github/pdpy"
 
 [tool.setuptools]
 license-files = [ "LICENSE" ]

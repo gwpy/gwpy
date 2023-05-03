@@ -75,7 +75,7 @@ Step-by-step
 
 #. **Draft a release on GitHub**
 
-   * Go to https://github.com/pdpy/pdpy/releases/new
+   * Go to https://github.com/pdpy-github/pdpy/releases/new
    * Use ``vX.Y.Z`` as the *Tag version*
    * Use X.Y.Z as the *Release title*
    * Copy the tag message into the text box to serve as release notes
@@ -93,7 +93,7 @@ Step-by-step
 
    .. code-block:: bash
 
-      cd /home/duncan.macleod/pdpy-nightly-build/pdpy.github.io/docs
+      cd /home/duncan.macleod/pdpy-nightly-build/pdpy-github.github.io/docs
       unlink stable && ln -s X.Y.Z stable
       sed -i 's/0.9.9/X.Y.Z/g' index.html
 
@@ -108,7 +108,7 @@ Step-by-step
       git push --signed=if-asked  # <- this step needs an SSH key
 
    It should take ~5 minutes for the release documentation to actually
-   appear on https://pdpy.github.io/docs/
+   appear on https://pdpy-github.github.io/docs/
 
 ==============
 Linked updates
