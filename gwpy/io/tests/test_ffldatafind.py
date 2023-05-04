@@ -96,9 +96,11 @@ def test_is_ffl_file(path, result):
 # -- test ffl UI ------------
 
 FFLS = {
-    "test.ffl": [
+    "a/test.ffl": [
         "/tmp/X-test-0-1.gwf 0 1 0 0",
         "/tmp/X-test-1-1.gwf 1 1 0 0",
+    ],
+    "b/test.ffl": [
         "/tmp/X-test-2-1.gwf 2 1 0 0",
     ],
     "test2.ffl": [
@@ -114,7 +116,11 @@ FFLS = {
     "test-empty.ffl": [],
     "test-bad.ffl": ["badness"],
 }
-TEST_URLS = [x.split()[0] for x in FFLS["test.ffl"]]
+TEST_URLS = [
+    x.split()[0]
+    for key in ("a/test.ffl", "b/test.ffl")
+    for x in FFLS[key]
+]
 
 
 @pytest.fixture(autouse=True)
@@ -124,6 +130,7 @@ def mock_ffl(tmp_path):
     """
     for path, lines in FFLS.items():
         ffl = tmp_path / path
+        ffl.parent.mkdir(parents=True, exist_ok=True)
         ffl.write_text("\n".join(lines))
     with mock.patch.dict(
         "os.environ",
@@ -190,7 +197,7 @@ def test_find_latest():
     assert ffldatafind.find_latest(
         "X",
         "test",
-    ) == sorted(x.split()[0] for x in FFLS["test.ffl"])[-1:]
+    ) == sorted(x.split()[0] for x in FFLS["b/test.ffl"])[-1:]
 
 
 @pytest.mark.parametrize(("on_missing", "ctx"), (
