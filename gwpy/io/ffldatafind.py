@@ -28,8 +28,9 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 import os
 import re
-from warnings import warn
+from collections import defaultdict
 from functools import lru_cache
+from warnings import warn
 
 from ligo.segments import (
     segment,
@@ -39,6 +40,7 @@ from ligo.segments import (
 from .cache import (
     _iter_cache,
     cache_segments,
+    file_segment,
     read_cache_entry,
 )
 
@@ -123,10 +125,10 @@ def _find_ffl_files(basedir=None):
 def _find_ffls(basedir=None):
     """Find all readable FFL files.
     """
-    ffls = {}
+    ffls = defaultdict(list)
     for path in _find_ffl_files(basedir=basedir):
         try:
-            ffls[_get_site_tag(path)] = path
+            ffls[_get_site_tag(path)].append(path)
         except (
             OSError,  # file is empty (or cannot be read at all)
             AttributeError,  # last entry didn't match _SITE_REGEX
@@ -135,8 +137,8 @@ def _find_ffls(basedir=None):
     return ffls
 
 
-def _ffl_path(site, tag, basedir=None):
-    """Return the path of the FFL file for a given site and tag.
+def _ffl_paths(site, tag, basedir=None):
+    """Return the paths of all FFL files for a given site and tag.
     """
     try:
         return _find_ffls(basedir=basedir)[(site, tag)]
@@ -147,15 +149,18 @@ def _ffl_path(site, tag, basedir=None):
 
 
 @lru_cache()
-def _read_ffl(site, tag, basedir=None):
-    """Read an FFL file as a list of `CacheEntry` objects
+def _read_ffls(site, tag, basedir=None):
+    """Read all FFL files for a given site and tag
+    as a list of `CacheEntry` objects.
     """
-    ffl = _ffl_path(site, tag, basedir=basedir)
-    with open(ffl, "r") as fobj:
-        return [
-            type(entry)(site, tag, entry.segment, entry.path)
-            for entry in _iter_cache(fobj, gpstype=float)
-        ]
+    entries = []
+    for ffl in _ffl_paths(site, tag, basedir=basedir):
+        with open(ffl, "r") as fobj:
+            entries.extend(
+                type(entry)(site, tag, entry.segment, entry.path)
+                for entry in _iter_cache(fobj, gpstype=float)
+            )
+    return entries
 
 
 def _handle_error(action, message):
@@ -261,7 +266,7 @@ def find_urls(
     span = segment(gpsstart, gpsend)
 
     cache = [
-        e for e in _read_ffl(site, tag) if (
+        e for e in _read_ffls(site, tag) if (
             e.observatory == site
             and e.description == tag
             and e.segment.intersects(span)
@@ -305,11 +310,16 @@ def find_latest(site, tag, on_missing="warn"):
         for a specific site and tag.
     """
     try:
-        fflfile = _ffl_path(site, tag)
+        fflfiles = _ffl_paths(site, tag)
     except ValueError:  # no readable FFL file
         urls = []
     else:
-        urls = [read_cache_entry(_read_last_line(fflfile), gpstype=float)]
+        urls = [
+            read_cache_entry(_read_last_line(fflfile), gpstype=float)
+            for fflfile in fflfiles
+        ]
+        if urls:  # if multiple, find the latest one
+            urls = sorted(urls, key=file_segment)[-1:]
 
     if not urls:
         _handle_error(on_missing, "No files found")
