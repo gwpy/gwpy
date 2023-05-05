@@ -370,6 +370,22 @@ class TestStateVector(_TestTimeSeriesBase):
         array = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
         assert array.unit is units.dimensionless_unscaled
 
+    @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
+    def test_read_write_hdf5(self, tmp_path, array, ext):
+        array.bits = ["a", "b", "c", "d"]
+        array.name = "test"
+
+        tmp = tmp_path / "test.{}".format(ext)
+
+        # write array (with auto-identify)
+        array.write(tmp, overwrite=True)
+
+        # check reading gives the same data (with/without auto-identify)
+        new = type(array).read(tmp, format='hdf5')
+        utils.assert_quantity_sub_equal(array, new)
+        new = type(array).read(tmp)
+        utils.assert_quantity_sub_equal(array, new)
+
 
 # -- StateVectorDict ----------------------------------------------------------
 
