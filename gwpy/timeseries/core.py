@@ -993,7 +993,7 @@ class TimeSeriesBaseDict(OrderedDict):
         return self
 
     def crop(self, start=None, end=None, copy=False):
-        """Crop each entry of this `dict`
+        """Crop each entry of this `dict`.
 
         This method calls the :meth:`crop` method of all entries and
         modifies this dict in place.
@@ -1007,6 +1007,10 @@ class TimeSeriesBaseDict(OrderedDict):
         end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
+
+        copy : `bool`, optional, default: `False`
+            If `True` copy the data for each entry to fresh memory,
+            otherwise return a view.
 
         See also
         --------
