@@ -26,6 +26,7 @@ MANIFEST
 Portfile
 .coverage
 .eggs/
+_build
 
 # Installer logs
 pip-log.txt
