@@ -1,10 +1,10 @@
-# Contributing to PDpy
+# Contributing to pyDischarge
 
 ## Reporting Issues
 
 When opening an issue to report a problem, please try to provide a minimal code
 example that reproduces the issue along with details of the operating
-system and the Python, NumPy, Astropy, and PDpy versions you are using.
+system and the Python, NumPy, Astropy, and pyDischarge versions you are using.
 
 ## Contributing Code
 
@@ -31,32 +31,32 @@ the errors and assumptions that seasoned contributors have glossed over.
 Note: This disclaimer was originally written by
 [Adrienne Lowe](https://github.com/adriennefriend) for a
 [PyCon talk](https://www.youtube.com/watch?v=6Uj746j9Heo), and was adapted for
-PDpy based on its use in the [Astropy](https://github.com/astropy/astropy/)
+pyDischarge based on its use in the [Astropy](https://github.com/astropy/astropy/)
 contributing guide.
 
 ## Development model
 
-Contributions to PDpy are made via pull requests from GitHub users' forks of
-the main [pdpy repositories](https://github.com/pdpy/pdpy), following the
+Contributions to pyDischarge are made via pull requests from GitHub users' forks of
+the main [pydischarge repositories](https://github.com/pydischarge/pydischarge), following the
 [GitHub flow](https://guides.github.com/introduction/flow/) workflow.
 The basic idea is that all changes are proposed using a dedicated _feature_
 branch:
 
 - create the fork (if needed) by clicking _Fork_ in the upper-right corner of
-  <https://github.com/pdpy/pdpy/> - this only needs to be done once, ever
+  <https://github.com/pydischarge/pydischarge/> - this only needs to be done once, ever
 
 - clone the main repo, calling it `upstream` in the git configuration:
 
   ```bash
-  git clone https://github.com/pdpy/pdpy.git pdpy --origin upstream
-  cd pdpy
+  git clone https://github.com/pydischarge/pydischarge.git pydischarge --origin upstream
+  cd pydischarge
   ```
 
 - add your fork as the `origin` remote (replace `<username>` with your
   GitHub username):
 
   ```bash
-  git remote add origin git@github.com:<username>/pdpy.git
+  git remote add origin git@github.com:<username>/pydischarge.git
   ```
 
 - create a new branch on which to work
@@ -74,7 +74,7 @@ branch:
   ```
 
 - open a merge request on github.com, this will trigger a code review by one
-  of the PDpy maintainers, who may suggest modifications to your proposed
+  of the pyDischarge maintainers, who may suggest modifications to your proposed
   changes
 
 - to update your feature branch with the latest changes from the `main` branch
@@ -100,7 +100,7 @@ branch:
 
 ### Python compatibility
 
-**PDpy code must be compatible with Python >= 3.7.**
+**pyDischarge code must be compatible with Python >= 3.7.**
 
 ### Style
 
@@ -117,7 +117,7 @@ python3 -m flake8
 
 ### Testing
 
-PDpy has a fairly complete test suite, covering over 90% of the codebase.
+pyDischarge has a fairly complete test suite, covering over 90% of the codebase.
 All code contributions should be accompanied by (unit) tests to be executed with
 [`pytest`](https://docs.pytest.org/en/latest/), and should cover
 all new or modified lines.
@@ -125,5 +125,5 @@ all new or modified lines.
 You can run the test suite locally from the root of the repository via:
 
 ```bash
-python3 -m pytest pdpy/
+python3 -m pytest pydischarge/
 ```

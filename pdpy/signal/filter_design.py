@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Custom filtering utilities for the `TimeSeries`
 """
@@ -171,7 +171,7 @@ def truncate_transfer(transfer, ncorner=None):
     `ncorner` extra samples will be zeroed on the left as a hard highpass
     filter.
 
-    See :func:`~pdpy.signal.window.planck` for more information.
+    See :func:`~pydischarge.signal.window.planck` for more information.
     """
     nsamp = transfer.size
     ncorner = ncorner if ncorner else 0
@@ -413,12 +413,12 @@ def lowpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     --------
     To create a low-pass filter at 1000 Hz for 4096 Hz-sampled data:
 
-    >>> from pdpy.signal.filter_design import lowpass
+    >>> from pydischarge.signal.filter_design import lowpass
     >>> lp = lowpass(1000, 4096)
 
-    To view the filter, you can use the `~pdpy.plot.BodePlot`:
+    To view the filter, you can use the `~pydischarge.plot.BodePlot`:
 
-    >>> from pdpy.plot import BodePlot
+    >>> from pydischarge.plot import BodePlot
     >>> plot = BodePlot(lp, sample_rate=4096)
     >>> plot.show()
     """
@@ -475,12 +475,12 @@ def highpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     --------
     To create a high-pass filter at 100 Hz for 4096 Hz-sampled data:
 
-    >>> from pdpy.signal.filter_design import highpass
+    >>> from pydischarge.signal.filter_design import highpass
     >>> hp = highpass(100, 4096)
 
-    To view the filter, you can use the `~pdpy.plot.BodePlot`:
+    To view the filter, you can use the `~pydischarge.plot.BodePlot`:
 
-    >>> from pdpy.plot import BodePlot
+    >>> from pydischarge.plot import BodePlot
     >>> plot = BodePlot(hp, sample_rate=4096)
     >>> plot.show()
     """
@@ -541,12 +541,12 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
     --------
     To create a band-pass filter for 100-1000 Hz for 4096 Hz-sampled data:
 
-    >>> from pdpy.signal.filter_design import bandpass
+    >>> from pydischarge.signal.filter_design import bandpass
     >>> bp = bandpass(100, 1000, 4096)
 
-    To view the filter, you can use the `~pdpy.plot.BodePlot`:
+    To view the filter, you can use the `~pydischarge.plot.BodePlot`:
 
-    >>> from pdpy.plot import BodePlot
+    >>> from pydischarge.plot import BodePlot
     >>> plot = BodePlot(bp, sample_rate=4096)
     >>> plot.show()
     """
@@ -601,12 +601,12 @@ def notch(frequency, sample_rate, type='iir', output='zpk', **kwargs):
     --------
     To create a low-pass filter at 1000 Hz for 4096 Hz-sampled data:
 
-    >>> from pdpy.signal.filter_design import notch
+    >>> from pydischarge.signal.filter_design import notch
     >>> n = notch(100, 4096)
 
-    To view the filter, you can use the `~pdpy.plot.BodePlot`:
+    To view the filter, you can use the `~pydischarge.plot.BodePlot`:
 
-    >>> from pdpy.plot import BodePlot
+    >>> from pydischarge.plot import BodePlot
     >>> plot = BodePlot(n, sample_rate=4096)
     >>> plot.show()
     """
@@ -652,7 +652,7 @@ def concatenate_zpks(*zpks):
     --------
     Create a lowpass and a highpass filter, and combine them:
 
-    >>> from pdpy.signal.filter_design import (
+    >>> from pydischarge.signal.filter_design import (
     ...     highpass, lowpass, concatenate_zpks)
     >>> hp = highpass(100, 4096)
     >>> lp = lowpass(1000, 4096)
@@ -660,7 +660,7 @@ def concatenate_zpks(*zpks):
 
     Plot the filter:
 
-    >>> from pdpy.plot import BodePlot
+    >>> from pydischarge.plot import BodePlot
     >>> plot = BodePlot(zpk, sample_rate=4096)
     >>> plot.show()
     """

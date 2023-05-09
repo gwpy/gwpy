@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""PDpy API to the LAL FFT routines
+"""pyDischarge API to the LAL FFT routines
 
 See the `LAL TimeFreqFFT.h documentation
 <http://software.ligo.org/docs/lalsuite/lal/group___time_freq_f_f_t__h.html>`_
@@ -158,7 +158,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
 
     Parameters
     ----------
-    timeseries : `~pdpy.timeseries.TimeSeries`
+    timeseries : `~pydischarge.timeseries.TimeSeries`
         input `TimeSeries` data.
 
     segmentlength : `int`
@@ -178,7 +178,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
 
     Returns
     -------
-    spectrum : `~pdpy.frequencyseries.FrequencySeries`
+    spectrum : `~pydischarge.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
     """
     import lal
@@ -249,7 +249,7 @@ def welch(timeseries, segmentlength, noverlap=None, window=None, plan=None):
 
     Parameters
     ----------
-    timeseries : `~pdpy.timeseries.TimeSeries`
+    timeseries : `~pydischarge.timeseries.TimeSeries`
         input `TimeSeries` data.
 
     segmentlength : `int`
@@ -266,7 +266,7 @@ def welch(timeseries, segmentlength, noverlap=None, window=None, plan=None):
 
     Returns
     -------
-    spectrum : `~pdpy.frequencyseries.FrequencySeries`
+    spectrum : `~pydischarge.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
 
     See also
@@ -283,7 +283,7 @@ def bartlett(timeseries, segmentlength, noverlap=None, window=None, plan=None):
 
     Parameters
     ----------
-    timeseries : `~pdpy.timeseries.TimeSeries`
+    timeseries : `~pydischarge.timeseries.TimeSeries`
         input `TimeSeries` data.
 
     segmentlength : `int`
@@ -300,7 +300,7 @@ def bartlett(timeseries, segmentlength, noverlap=None, window=None, plan=None):
 
     Returns
     -------
-    spectrum : `~pdpy.frequencyseries.FrequencySeries`
+    spectrum : `~pydischarge.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
 
     See also
@@ -319,7 +319,7 @@ def median(timeseries, segmentlength, noverlap=None, window=None, plan=None):
 
     Parameters
     ----------
-    timeseries : `~pdpy.timeseries.TimeSeries`
+    timeseries : `~pydischarge.timeseries.TimeSeries`
         input `TimeSeries` data.
 
     segmentlength : `int`
@@ -336,7 +336,7 @@ def median(timeseries, segmentlength, noverlap=None, window=None, plan=None):
 
     Returns
     -------
-    spectrum : `~pdpy.frequencyseries.FrequencySeries`
+    spectrum : `~pydischarge.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
 
     See also
@@ -358,7 +358,7 @@ def median_mean(timeseries, segmentlength, noverlap=None,
 
     Parameters
     ----------
-    timeseries : `~pdpy.timeseries.TimeSeries`
+    timeseries : `~pydischarge.timeseries.TimeSeries`
         input `TimeSeries` data.
 
     segmentlength : `int`
@@ -375,7 +375,7 @@ def median_mean(timeseries, segmentlength, noverlap=None,
 
     Returns
     -------
-    spectrum : `~pdpy.frequencyseries.FrequencySeries`
+    spectrum : `~pydischarge.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
 
     See also

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Read data from gravitational-wave frame (GWF) files using
 |LDAStools.frameCPP|__.
@@ -73,16 +73,16 @@ def read(source, channels, start=None, end=None, scaled=None, type=None,
         - `str` path of cache file,
         - `list` of paths.
 
-    channels : `~pdpy.detector.ChannelList`, `list`
+    channels : `~pydischarge.detector.ChannelList`, `list`
         a list of channels to read from the source.
 
-    start : `~pdpy.time.LIGOTimeGPS`, `float`, `str` optional
+    start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str` optional
         GPS start time of required data, anything parseable by
-        :func:`~pdpy.time.to_gps` is fine.
+        :func:`~pydischarge.time.to_gps` is fine.
 
-    end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS end time of required data, anything parseable by
-        :func:`~pdpy.time.to_gps` is fine.
+        :func:`~pydischarge.time.to_gps` is fine.
 
     scaled : `bool`, optional
         apply slope and bias calibration to ADC data.
@@ -96,7 +96,7 @@ def read(source, channels, start=None, end=None, scaled=None, type=None,
 
     Returns
     -------
-    data : `~pdpy.timeseries.TimeSeriesDict` or similar
+    data : `~pydischarge.timeseries.TimeSeriesDict` or similar
         a dict of ``(channel, series)`` pairs read from the GWF source(s).
     """
     # parse input source
@@ -127,16 +127,16 @@ def read_gwf(filename, channels, start=None, end=None, scaled=None,
     filename : `str`
         the GWF path from which to read
 
-    channels : `~pdpy.detector.ChannelList`, `list`
+    channels : `~pydischarge.detector.ChannelList`, `list`
         a list of channels to read from the source.
 
-    start : `~pdpy.time.LIGOTimeGPS`, `float`, `str` optional
+    start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str` optional
         GPS start time of required data, anything parseable by
-        :func:`~pdpy.time.to_gps` is fine.
+        :func:`~pydischarge.time.to_gps` is fine.
 
-    end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS end time of required data, anything parseable by
-        :func:`~pdpy.time.to_gps` is fine.
+        :func:`~pydischarge.time.to_gps` is fine.
 
     scaled : `bool`, optional
         apply slope and bias calibration to ADC data.
@@ -150,7 +150,7 @@ def read_gwf(filename, channels, start=None, end=None, scaled=None,
 
     Returns
     -------
-    data : `~pdpy.timeseries.TimeSeriesDict` or similar
+    data : `~pydischarge.timeseries.TimeSeriesDict` or similar
         a dict of ``(channel, series)`` pairs read from the GWF file.
     """
     # parse kwargs
@@ -285,7 +285,7 @@ def read_frdata(frdata, epoch, start, end, scaled=True,
 
     Returns
     -------
-    series : `~pdpy.timeseries.TimeSeriesBase`
+    series : `~pydischarge.timeseries.TimeSeriesBase`
         the formatted data series
 
     Raises
@@ -378,7 +378,7 @@ def read_frvect(vect, epoch, start, end, name=None, series_class=TimeSeries):
 
     Returns
     -------
-    series : `~pdpy.timeseries.TimeSeriesBase`
+    series : `~pydischarge.timeseries.TimeSeriesBase`
         the formatted data series
 
     Raises
@@ -444,7 +444,7 @@ def read_frvect(vect, epoch, start, end, name=None, series_class=TimeSeries):
 def write(tsdict, outfile,
           start=None, end=None,
           type=None,
-          name='pdpy', run=0,
+          name='pydischarge', run=0,
           compression='GZIP', compression_level=None):
     """Write data to a GWF file using the frameCPP API
 
@@ -554,9 +554,9 @@ def _append_to_frame(frame, timeseries, type='proc', **kwargs):
 
     See also
     --------
-    pdpy.io.gwf.create_fradcdata
-    pdpy.io.gwf.create_frprocdata
-    pdpy.io.gwf_create_frsimdata
+    pydischarge.io.gwf.create_fradcdata
+    pydischarge.io.gwf.create_frprocdata
+    pydischarge.io.gwf_create_frsimdata
         for details of the data structure creation, and associated available
         arguments
     """

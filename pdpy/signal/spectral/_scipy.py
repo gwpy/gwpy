@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""PDpy API to the scipy.signal FFT routines
+"""pyDischarge API to the scipy.signal FFT routines
 """
 
 import numpy
@@ -95,7 +95,7 @@ def rayleigh(timeseries, segmentlength, noverlap=0, window='hann'):
 
     Parameters
     ----------
-    timeseries : `~pdpy.timeseries.TimeSeries`
+    timeseries : `~pydischarge.timeseries.TimeSeries`
         input `TimeSeries` data.
 
     segmentlength : `int`
@@ -112,7 +112,7 @@ def rayleigh(timeseries, segmentlength, noverlap=0, window='hann'):
 
     Returns
     -------
-    spectrum : `~pdpy.frequencyseries.FrequencySeries`
+    spectrum : `~pydischarge.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
     """
     stepsize = segmentlength - noverlap
@@ -139,10 +139,10 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
 
     Parameters
     ----------
-    timeseries : `~pdpy.timeseries.TimeSeries`
+    timeseries : `~pydischarge.timeseries.TimeSeries`
         time-series of data
 
-    other : `~pdpy.timeseries.TimeSeries`
+    other : `~pydischarge.timeseries.TimeSeries`
         time-series of data
 
     segmentlength : `int`
@@ -156,7 +156,7 @@ def csd(timeseries, other, segmentlength, noverlap=None, **kwargs):
 
     Returns
     -------
-    spectrum : `~pdpy.frequencyseries.FrequencySeries`
+    spectrum : `~pydischarge.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
 
     See also
@@ -176,10 +176,10 @@ def coherence(timeseries, other, segmentlength, noverlap=None, **kwargs):
 
     Parameters
     ----------
-    timeseries : `~pdpy.timeseries.TimeSeries`
+    timeseries : `~pydischarge.timeseries.TimeSeries`
         time-series of data
 
-    other : `~pdpy.timeseries.TimeSeries`
+    other : `~pydischarge.timeseries.TimeSeries`
         time-series of data
 
     segmentlength : `int`
@@ -193,7 +193,7 @@ def coherence(timeseries, other, segmentlength, noverlap=None, **kwargs):
 
     Returns
     -------
-    spectrum : `~pdpy.frequencyseries.FrequencySeries`
+    spectrum : `~pydischarge.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
 
     See also

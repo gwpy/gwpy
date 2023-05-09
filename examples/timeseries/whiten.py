@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Whitening a `TimeSeries`
 
@@ -37,10 +37,10 @@ a frequency of around 5-50Hz.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'pdpy.timeseries'
+__currentmodule__ = 'pydischarge.timeseries'
 
 # First, we import the `TimeSeries` and :meth:`~TimeSeries.get` the data:
-from pdpy.timeseries import TimeSeries
+from pydischarge.timeseries import TimeSeries
 data = TimeSeries.get('H1:ASC-Y_TR_A_NSUM_OUT_DQ', 1123084671, 1123084703)
 
 # Now, we can `~TimeSeries.whiten` the data to enhance the higher-frequency
@@ -48,7 +48,7 @@ data = TimeSeries.get('H1:ASC-Y_TR_A_NSUM_OUT_DQ', 1123084671, 1123084703)
 white = data.whiten(4, 2)
 
 # and can `~TimeSeries.plot` both the original and whitened data
-from pdpy.plot import Plot
+from pydischarge.plot import Plot
 plot = Plot(data, white, separate=True, sharex=True)
 plot.axes[0].set_ylabel('Y-arm power [counts]', fontsize=16)
 plot.axes[1].set_ylabel('Whitened amplitude', fontsize=16)

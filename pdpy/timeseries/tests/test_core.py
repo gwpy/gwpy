@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Unit test for timeseries module
 """
@@ -51,7 +51,7 @@ class TestTimeSeriesBase(_TestSeries):
     TEST_CLASS = TimeSeriesBase
 
     def test_new(self):
-        """Test `pdpy.timeseries.TimeSeriesBase` constructor
+        """Test `pydischarge.timeseries.TimeSeriesBase` constructor
         """
         array = super().test_new()
 
@@ -61,7 +61,7 @@ class TestTimeSeriesBase(_TestSeries):
         assert array.dt == units.Quantity(1, 'second')
 
     def test_new_epoch_t0(self):
-        """Test `pdpy.timeseries.TimeSeriesBase` handling of epoch vs t0.
+        """Test `pydischarge.timeseries.TimeSeriesBase` handling of epoch vs t0.
         """
         a = self.create(epoch=10)
         b = self.create(t0=10)
@@ -73,7 +73,7 @@ class TestTimeSeriesBase(_TestSeries):
             self.TEST_CLASS(self.data, epoch=1, t0=1)
 
     def test_new_sample_rate_dt(self):
-        """Test `pdpy.timeseries.TimeSeriesBase` handling of sample_rate vs dt.
+        """Test `pydischarge.timeseries.TimeSeriesBase` handling of sample_rate vs dt.
         """
         # check handling of sample_rate vs dt
         a = self.create(sample_rate=100)
@@ -86,7 +86,7 @@ class TestTimeSeriesBase(_TestSeries):
             self.TEST_CLASS(self.data, sample_rate=1, dt=1)
 
     def test_epoch(self):
-        """Test `pdpy.timeseries.TimeSeriesBase.epoch`
+        """Test `pydischarge.timeseries.TimeSeriesBase.epoch`
         """
         # check basic conversion from t0 -> epoch
         a = self.create(t0=1126259462)
@@ -107,7 +107,7 @@ class TestTimeSeriesBase(_TestSeries):
             a.t0, units.Quantity(1126259462, 's'))
 
     def test_sample_rate(self):
-        """Test `pdpy.timeseries.TimeSeriesBase.sample_rate`
+        """Test `pydischarge.timeseries.TimeSeriesBase.sample_rate`
         """
         # check basic conversion from dt -> sample_rate
         a = self.create(dt=0.5)
@@ -445,7 +445,7 @@ class TestTimeSeriesBaseList(object):
         assert self.TEST_CLASS.EntryClass is self.ENTRY_CLASS
 
     def test_segments(self, instance):
-        """Test :attr:`pdpy.timeseries.TimeSeriesBaseList.segments`
+        """Test :attr:`pydischarge.timeseries.TimeSeriesBaseList.segments`
         """
         sl = instance.segments
         assert isinstance(sl, SegmentList)

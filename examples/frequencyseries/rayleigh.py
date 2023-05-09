@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Plotting a Rayleigh-statistic `Spectrum`
 
@@ -31,25 +31,25 @@ and recorded at a LIGO site.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'pdpy.frequencyseries'
+__currentmodule__ = 'pydischarge.frequencyseries'
 
 # To demonstate this, we can load some data from the LIGO Livingston
 # intereferometer around the time of the GW151226 gravitational wave detection:
 
-from pdpy.timeseries import TimeSeries
+from pydischarge.timeseries import TimeSeries
 gwdata = TimeSeries.fetch_open_data('L1', 'Dec 26 2015 03:37',
                                     'Dec 26 2015 03:47', verbose=True)
 
 # Next, we can calculate a Rayleigh statistic `FrequencySeries` using the
-# :meth:`~pdpy.timeseries.TimeSeries.rayleigh_spectrum` method of the
-# `~pdpy.timeseries.TimeSeries` with a 2-second FFT and 1-second overlap (50%):
+# :meth:`~pydischarge.timeseries.TimeSeries.rayleigh_spectrum` method of the
+# `~pydischarge.timeseries.TimeSeries` with a 2-second FFT and 1-second overlap (50%):
 
 rayleigh = gwdata.rayleigh_spectrum(2, 1)
 
 # For easy comparison, we can calculate the spectral sensitivity ASD of the
 # strain data and plot both on the same figure:
 
-from pdpy.plot import Plot
+from pydischarge.plot import Plot
 plot = Plot(gwdata.asd(2, 1), rayleigh, geometry=(2, 1), sharex=True,
             xscale='log', xlim=(30, 1500))
 asdax, rayax = plot.axes

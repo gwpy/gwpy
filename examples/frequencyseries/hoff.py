@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>
 
 """Calculating and plotting a `FrequencySeries`
 
@@ -25,29 +25,29 @@ and display the spectral sensitivity of each of the detectors at that time.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'pdpy.frequencyseries'
+__currentmodule__ = 'pydischarge.frequencyseries'
 
 # In order to generate a `FrequencySeries` we need to import the
-# `~pdpy.timeseries.TimeSeries` and use
-# :meth:`~pdpy.timeseries.TimeSeries.fetch_open_data` to download the strain
+# `~pydischarge.timeseries.TimeSeries` and use
+# :meth:`~pydischarge.timeseries.TimeSeries.fetch_open_data` to download the strain
 # records:
 
-from pdpy.timeseries import TimeSeries
+from pydischarge.timeseries import TimeSeries
 lho = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
 llo = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
 
-# We can then call the :meth:`~pdpy.timeseries.TimeSeries.asd` method to
+# We can then call the :meth:`~pydischarge.timeseries.TimeSeries.asd` method to
 # calculated the amplitude spectral density for each
-# `~pdpy.timeseries.TimeSeries`:
+# `~pydischarge.timeseries.TimeSeries`:
 lhoasd = lho.asd(4, 2)
 lloasd = llo.asd(4, 2)
 
 # We can then :meth:`~FrequencySeries.plot` the spectra using the 'standard'
 # colour scheme:
 
-plot = lhoasd.plot(label='LIGO-Hanford', color='pdpy:ligo-hanford')
+plot = lhoasd.plot(label='LIGO-Hanford', color='pydischarge:ligo-hanford')
 ax = plot.gca()
-ax.plot(lloasd, label='LIGO-Livingston', color='pdpy:ligo-livingston')
+ax.plot(lloasd, label='LIGO-Livingston', color='pydischarge:ligo-livingston')
 ax.set_xlim(10, 2000)
 ax.set_ylim(5e-24, 1e-21)
 ax.legend(frameon=False, bbox_to_anchor=(1., 1.), loc='lower right', ncol=2)

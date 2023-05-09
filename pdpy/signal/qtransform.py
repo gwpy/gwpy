@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2016-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Python implementation of the tiled Q-transform scan.
 
@@ -165,7 +165,7 @@ class QTiling(QObject):
 
         Parameters
         ----------
-        fseries : `~pdpy.timeseries.FrequencySeries`
+        fseries : `~pydischarge.timeseries.FrequencySeries`
             the complex FFT of a time-series data set
 
         **kwargs
@@ -292,7 +292,7 @@ class QPlane(QBase):
 
         Parameters
         ----------
-        fseries : `~pdpy.frequencyseries.FrequencySeries`
+        fseries : `~pydischarge.frequencyseries.FrequencySeries`
             the complex FFT of a time-series data set
 
         norm : `bool`, `str`, optional
@@ -300,12 +300,12 @@ class QPlane(QBase):
             ``'median'``) or the ``'mean'``, if `False` the output
             is the complex `~numpy.fft.ifft` output of the Q-tranform
 
-        epoch : `~pdpy.time.LIGOTimeGPS`, `float`, optional
+        epoch : `~pydischarge.time.LIGOTimeGPS`, `float`, optional
             the epoch of these data, only used for metadata in the output
             `TimeSeries`, and not requires if the input `fseries` has the
             epoch populated.
 
-        search : `~pdpy.segments.Segment`, optional
+        search : `~pydischarge.segments.Segment`, optional
             search window of interest to determine the loudest Q-plane
 
         Returns
@@ -403,7 +403,7 @@ class QTile(QBase):
 
         Parameters
         ----------
-        fseries : `~pdpy.frequencyseries.FrequencySeries`
+        fseries : `~pydischarge.frequencyseries.FrequencySeries`
             the complex FFT of a time-series data set
 
         norm : `bool`, `str`, optional
@@ -411,14 +411,14 @@ class QTile(QBase):
             ``'median'``) or the ``'mean'``, if `False` the output
             is the energy (power) of the Q-tranform
 
-        epoch : `~pdpy.time.LIGOTimeGPS`, `float`, optional
+        epoch : `~pydischarge.time.LIGOTimeGPS`, `float`, optional
             the epoch of these data, only used for metadata in the output
             `TimeSeries`, and not requires if the input `fseries` has the
             epoch populated.
 
         Returns
         -------
-        energy : `~pdpy.timeseries.TimeSeries`
+        energy : `~pydischarge.timeseries.TimeSeries`
             a `TimeSeries` of the energy from the Q-transform of
             this tile against the data.
         """
@@ -461,7 +461,7 @@ class QGram(object):
     energies : `list` of `TimeSeries`
         a list of signal energies for each row of tiles
 
-    search : `~pdpy.segments.Segment`, optional
+    search : `~pydischarge.segments.Segment`, optional
         search window of interest to determine the loudest tile
     """
     def __init__(self, plane, energies, search):
@@ -505,13 +505,13 @@ class QGram(object):
             boolean switch to enable (`True`) or disable (`False`) use of
             log-sampled frequencies in the output `Spectrogram`
 
-        outseg : `~pdpy.segments.Segment`, optional
+        outseg : `~pydischarge.segments.Segment`, optional
             GPS `[start, stop)` segment for output `Spectrogram`,
             default is the full duration of the input
 
         Returns
         -------
-        out : `~pdpy.spectrogram.Spectrogram`
+        out : `~pydischarge.spectrogram.Spectrogram`
             output `Spectrogram` of normalised Q energy
 
         See also
@@ -528,7 +528,7 @@ class QGram(object):
         ``norm`` is given, and ``float64`` otherwise.
 
         To optimize plot rendering with `~matplotlib.axes.Axes.pcolormesh`,
-        the output `~pdpy.spectrogram.Spectrogram` can be given a log-sampled
+        the output `~pydischarge.spectrogram.Spectrogram` can be given a log-sampled
         frequency axis by passing `logf=True` at runtime. The `fres` argument
         is then the number of points on the frequency axis. Note, this is
         incompatible with `~matplotlib.axes.Axes.imshow`.
@@ -603,7 +603,7 @@ class QGram(object):
 
         Returns
         -------
-        out : `~pdpy.table.EventTable`
+        out : `~pydischarge.table.EventTable`
             a table of time-frequency tiles on this `QPlane`
 
         Notes
@@ -643,11 +643,11 @@ def q_scan(data, mismatch=DEFAULT_MISMATCH, qrange=DEFAULT_QRANGE,
 
     This utility is provided mainly to allow direct manipulation of the
     `QTiling.transform` output. Most users probably just want to use
-    :meth:`~pdpy.timeseries.TimeSeries.q_transform`, which wraps around this.
+    :meth:`~pydischarge.timeseries.TimeSeries.q_transform`, which wraps around this.
 
     Parameters
     ----------
-    data : `~pdpy.timeseries.TimeSeries` or `ndarray`
+    data : `~pydischarge.timeseries.TimeSeries` or `ndarray`
         the time- or frequency-domain input data
 
     mismatch : `float`, optional
@@ -678,7 +678,7 @@ def q_scan(data, mismatch=DEFAULT_MISMATCH, qrange=DEFAULT_QRANGE,
         expected false alarm rate (Hertz) of white Gaussian noise with the
         same peak energy and total duration as `qgram`
     """
-    from pdpy.timeseries import TimeSeries
+    from pydischarge.timeseries import TimeSeries
     # prepare input
     if isinstance(data, TimeSeries):
         duration = abs(data.span)

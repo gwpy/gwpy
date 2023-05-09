@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Basic utilities for reading/writing LIGO_LW-format XML files.
 
@@ -345,7 +345,7 @@ def read_table(
         SAX content handler for parsing LIGO_LW documents.
 
     **kwargs
-        other keyword arguments are passed to `~pdpy.io.ligolw.read_ligolw`
+        other keyword arguments are passed to `~pydischarge.io.ligolw.read_ligolw`
 
     Returns
     -------
@@ -623,7 +623,7 @@ def list_tables(source):
 
     Examples
     --------
-    >>> from pdpy.io.ligolw import list_tables
+    >>> from pydischarge.io.ligolw import list_tables
     >>> print(list_tables('H1-LDAS_STRAIN-968654552-10.xml.gz'))
     ['process', 'process_params', 'sngl_burst', 'search_summary', 'segment_definer', 'segment_summary', 'segment']
     """  # noqa: E501
@@ -654,7 +654,7 @@ def to_table_type(val, cls, colname):
 
     Examples
     --------
-    >>> from pdpy.io.ligolw import to_table_type as to_ligolw_type
+    >>> from pydischarge.io.ligolw import to_table_type as to_ligolw_type
     >>> from ligo.lw.lsctables import SnglBurstTable
     >>> x = to_ligolw_type(1.0, SnglBurstTable, 'central_freq'))
     >>> print(type(x), x)

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Unit test for timeseries module
 """
@@ -182,7 +182,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_read_ascii_header(self, tmpdir):
         """Check that ASCII files with headers are read without extra options
 
-        [regression: https://github.com/pdpy-github/pdpy/issues/1473]
+        [regression: https://github.com/pydischarge-github/pydischarge/issues/1473]
         """
         txt = tmpdir / "text.txt"
         txt.write_text(
@@ -264,7 +264,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         """Check that each GWF API can read a series of files, either in
         a single process, or in multiple processes
 
-        Regression: https://github.com/pdpy-github/pdpy/issues/1486
+        Regression: https://github.com/pydischarge-github/pydischarge/issues/1486
         """
         fmt = "gwf" if api is None else "gwf." + api
         a1 = self.create(name='TEST')
@@ -492,9 +492,9 @@ class TestTimeSeries(_TestTimeSeriesBase):
         """Check that `TimeSeries.read` with `gap='raise'` actually
         raises appropriately.
 
-        [regression: https://github.com/pdpy-github/pdpy/issues/1211]
+        [regression: https://github.com/pydischarge-github/pydischarge/issues/1211]
         """
-        from pdpy.io.cache import file_segment
+        from pydischarge.io.cache import file_segment
         span = file_segment(utils.TEST_HDF5_FILE)
         with pytest.raises(ValueError):
             self.TEST_CLASS.read(
@@ -620,11 +620,11 @@ class TestTimeSeries(_TestTimeSeriesBase):
         with mock.patch('nds2.connection') as mock_connection:
             mock_connection.return_value = nds_connection
             with pytest.raises(RuntimeError, match="no data received"):
-                self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.pdpy')
+                self.TEST_CLASS.fetch('L1:TEST', 0, 1, host='nds.pydischarge')
 
     @pytest.mark.requires("nds2")
     @mock.patch(
-        "pdpy.io.nds2.host_resolution_order",
+        "pydischarge.io.nds2.host_resolution_order",
         return_value=(["nds.example.com", 31200],),
     )
     def test_fetch_warning_message(self, _):
@@ -1088,7 +1088,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_quantity_sub_equal(sg, sg2)
 
     def test_resample(self, gw150914):
-        """Test :meth:`pdpy.timeseries.TimeSeries.resample`
+        """Test :meth:`pydischarge.timeseries.TimeSeries.resample`
         """
         # test IIR decimation
         l2 = gw150914.resample(1024, ftype='iir')
@@ -1105,7 +1105,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         rms = gw150914.rms(1.)
         assert rms.sample_rate == 1 * units.Hz
 
-    @mock.patch('pdpy.segments.DataQualityFlag.query',
+    @mock.patch('pydischarge.segments.DataQualityFlag.query',
                 return_value=LIVETIME)
     def test_mask(self, dqflag):
         # craft a timeseries of ones that can be easily tested against

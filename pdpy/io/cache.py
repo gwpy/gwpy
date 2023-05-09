@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Input/Output utilities for GW Cache files.
 
@@ -173,7 +173,7 @@ def read_cache(
     sort : `callable`, optional
         A callable key function by which to sort the output list of file paths
 
-    segment : `pdpy.segments.Segment`, optional
+    segment : `pydischarge.segments.Segment`, optional
         A GPS `[start, stop)` interval, if given only files overlapping this
         interval will be returned.
 
@@ -226,7 +226,7 @@ def read_cache_entry(line, gpstype=LIGOTimeGPS):
 
 def open_cache(*args, **kwargs):  # pragma: no cover
     # pylint: disable=missing-docstring
-    warnings.warn("pdpy.io.cache.open_cache was renamed read_cache",
+    warnings.warn("pydischarge.io.cache.open_cache was renamed read_cache",
                   DeprecationWarning)
     return read_cache(*args, **kwargs)
 
@@ -344,7 +344,7 @@ def filename_metadata(filename):
     tag : `str`
         the file tag
 
-    segment : `pdpy.segments.Segment`
+    segment : `pydischarge.segments.Segment`
         the GPS ``[float, float)`` interval for this file
 
     Notes
@@ -355,7 +355,7 @@ def filename_metadata(filename):
 
     Examples
     --------
-    >>> from pdpy.io.cache import filename_metadata
+    >>> from pydischarge.io.cache import filename_metadata
     >>> filename_metadata("A-B-0-1.txt")
     ('A', 'B', Segment(0, 1))
     >>> filename_metadata("A-B-0.456-1.345.txt")
@@ -394,7 +394,7 @@ def file_segment(filename):
 
     Returns
     -------
-    segment : `~pdpy.segments.Segment`
+    segment : `~pydischarge.segments.Segment`
         the ``[start, stop)`` GPS segment covered by the given file
 
     Notes
@@ -421,7 +421,7 @@ def cache_segments(*caches):
 
     Returns
     -------
-    segments : `~pdpy.segments.SegmentList`
+    segments : `~pydischarge.segments.SegmentList`
         A list of segments for when data should be available
     """
     from ..segments import SegmentList
@@ -476,7 +476,7 @@ def sieve(cache, segment=None, strict=True):
     cache : `list`
         Input list of file paths
 
-    segment : `~pdpy.segments.Segment`
+    segment : `~pydischarge.segments.Segment`
         The ``[start, stop)`` interval to match against.
 
     strict : `bool`, optional
@@ -510,13 +510,13 @@ def sieve(cache, segment=None, strict=True):
 
 def file_name(*args, **kwargs):
     from .utils import file_path
-    warnings.warn("this function has been moved to pdpy.io.utils.file_path",
+    warnings.warn("this function has been moved to pydischarge.io.utils.file_path",
                   DeprecationWarning)
     return file_path(*args, **kwargs)
 
 
 def file_list(*args, **kwargs):
     from .utils import file_list
-    warnings.warn("this function has been moved to pdpy.io.utils.file_list",
+    warnings.warn("this function has been moved to pydischarge.io.utils.file_list",
                   DeprecationWarning)
     return file_list(*args, **kwargs)

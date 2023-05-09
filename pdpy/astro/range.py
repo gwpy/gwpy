@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module provides methods to calculate the astrophysical sensitive
 distance of an instrumental power-spectral density.
@@ -70,16 +70,16 @@ def _get_spectrogram(hoft, **kwargs):
 
     Parameters
     ----------
-    hoft : `~pdpy.timeseries.TimeSeries` or `~pdpy.spectrogram.Spectrogram`
+    hoft : `~pydischarge.timeseries.TimeSeries` or `~pydischarge.spectrogram.Spectrogram`
         record of gravitational-wave strain output from a detector
 
     **kwargs : `dict`, optional
         additional keyword arguments to
-        `~pdpy.timeseries.TimeSeries.spectrogram`
+        `~pydischarge.timeseries.TimeSeries.spectrogram`
 
     Returns
     -------
-    hoft : `~pdpy.spectrogram.Spectrogram`
+    hoft : `~pydischarge.spectrogram.Spectrogram`
         a time-frequency `Spectrogram` of the input
     """
     if not isinstance(hoft, Spectrogram):
@@ -87,8 +87,8 @@ def _get_spectrogram(hoft, **kwargs):
             hoft = hoft.spectrogram(**kwargs)
         except (AttributeError, TypeError):
             msg = ('Could not produce a spectrogram from the input, please '
-                   'pass an instance of pdpy.timeseries.TimeSeries or '
-                   'pdpy.spectrogram.Spectrogram')
+                   'pass an instance of pydischarge.timeseries.TimeSeries or '
+                   'pydischarge.spectrogram.Spectrogram')
             raise TypeError(msg)
     return hoft
 
@@ -117,7 +117,7 @@ def sensemon_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):
 
     Parameters
     ----------
-    psd : `~pdpy.frequencyseries.FrequencySeries`
+    psd : `~pydischarge.frequencyseries.FrequencySeries`
         the instrumental power-spectral-density data
 
     snr : `float`, optional
@@ -138,7 +138,7 @@ def sensemon_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False):
 
     Returns
     -------
-    rspec : `~pdpy.frequencyseries.FrequencySeries`
+    rspec : `~pydischarge.frequencyseries.FrequencySeries`
         the calculated inspiral sensitivity PSD [Mpc^2 / Hz]
     """
     frange = (psd.frequencies > 0)
@@ -178,7 +178,7 @@ def sensemon_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
 
     Parameters
     ----------
-    psd : `~pdpy.frequencyseries.FrequencySeries`
+    psd : `~pydischarge.frequencyseries.FrequencySeries`
         the instrumental power-spectral-density data
 
     snr : `float`, optional
@@ -213,13 +213,13 @@ def sensemon_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
     --------
     Grab some data for LIGO-Livingston around GW150914 and generate a PSD:
 
-    >>> from pdpy.timeseries import TimeSeries
+    >>> from pydischarge.timeseries import TimeSeries
     >>> hoft = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
     >>> hoff = hoft.psd(fftlength=4)
 
     Now we can calculate the :func:`sensemon_range`:
 
-    >>> from pdpy.astro import sensemon_range
+    >>> from pydischarge.astro import sensemon_range
     >>> r = sensemon_range(hoff, fmin=30)
     >>> print(r)
     70.4612102889 Mpc
@@ -253,11 +253,11 @@ def _import_inspiral_range():
         )
     except ModuleNotFoundError as exc:  # no inspiral-range package
         exc.msg = str(exc) + (
-            "; pdpy.astro's inspiral_range and inspiral_range_psd functions "
+            "; pydischarge.astro's inspiral_range and inspiral_range_psd functions "
             "require the extra package 'inspiral-range' to provide "
             "cosmologically-corrected distance calculations, please install "
-            "that package and try again, or install pdpy with the 'astro' "
-            "extra via `python -m pip install pdpy[astro]`"
+            "that package and try again, or install pydischarge with the 'astro' "
+            "extra via `python -m pip install pydischarge[astro]`"
         )
         raise
 
@@ -284,7 +284,7 @@ def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False,
 
     Parameters
     ----------
-    psd : `~pdpy.frequencyseries.FrequencySeries`
+    psd : `~pydischarge.frequencyseries.FrequencySeries`
         the instrumental power-spectral-density data
 
     snr : `float`, optional
@@ -308,7 +308,7 @@ def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False,
 
     Returns
     -------
-    rspec : `~pdpy.frequencyseries.FrequencySeries`
+    rspec : `~pydischarge.frequencyseries.FrequencySeries`
         the calculated inspiral sensitivity PSD [Mpc^2 / Hz]
 
     See also
@@ -359,7 +359,7 @@ def inspiral_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
 
     Parameters
     ----------
-    psd : `~pdpy.frequencyseries.FrequencySeries`
+    psd : `~pydischarge.frequencyseries.FrequencySeries`
         the instrumental power-spectral-density data
 
     snr : `float`, optional
@@ -397,13 +397,13 @@ def inspiral_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
     --------
     Grab some data for LIGO-Livingston around GW150914 and generate a PSD:
 
-    >>> from pdpy.timeseries import TimeSeries
+    >>> from pydischarge.timeseries import TimeSeries
     >>> hoft = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
     >>> hoff = hoft.psd(fftlength=4)
 
     Now, we can calculate the :func:`inspiral_range`:
 
-    >>> from pdpy.astro import inspiral_range
+    >>> from pydischarge.astro import inspiral_range
     >>> r = inspiral_range(hoff, fmin=30)
     >>> print(r)
     70.4612102889 Mpc
@@ -449,7 +449,7 @@ def burst_range_spectrum(psd, snr=8, energy=1e-2):
 
     Parameters
     ----------
-    psd : `~pdpy.frequencyseries.FrequencySeries`
+    psd : `~pydischarge.frequencyseries.FrequencySeries`
         the instrumental power-spectral-density data
 
     snr : `float`, optional
@@ -462,7 +462,7 @@ def burst_range_spectrum(psd, snr=8, energy=1e-2):
 
     Returns
     -------
-    rangespec : `~pdpy.frequencyseries.FrequencySeries`
+    rangespec : `~pydischarge.frequencyseries.FrequencySeries`
         the burst range `FrequencySeries` [Mpc (default)]
     """
     frange = (psd.frequencies > 0)
@@ -481,7 +481,7 @@ def burst_range(psd, snr=8, energy=1e-2, fmin=100, fmax=500):
 
     Parameters
     ----------
-    psd : `~pdpy.frequencyseries.FrequencySeries`
+    psd : `~pydischarge.frequencyseries.FrequencySeries`
         the instrumental power-spectral-density data
 
     snr : `float`, optional
@@ -509,13 +509,13 @@ def burst_range(psd, snr=8, energy=1e-2, fmin=100, fmax=500):
     --------
     Grab some data for LIGO-Livingston around GW150914 and generate a PSD
 
-    >>> from pdpy.timeseries import TimeSeries
+    >>> from pydischarge.timeseries import TimeSeries
     >>> hoft = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
     >>> hoff = hoft.psd(fftlength=4)
 
     Now we can calculate the :func:`burst_range`:
 
-    >>> from pdpy.astro import burst_range
+    >>> from pydischarge.astro import burst_range
     >>> r = burst_range(hoff, fmin=30)
     >>> print(r)
     42.5055584195 Mpc
@@ -554,7 +554,7 @@ def range_timeseries(
 
     Parameters
     ----------
-    hoft : `~pdpy.timeseries.TimeSeries` or `~pdpy.spectrogram.Spectrogram`
+    hoft : `~pydischarge.timeseries.TimeSeries` or `~pydischarge.spectrogram.Spectrogram`
         record of gravitational-wave strain output from a detector
 
     stride : `float`, optional
@@ -575,7 +575,7 @@ def range_timeseries(
 
     method : `str`, optional
         FFT-averaging method, defaults to median averaging, see
-        :meth:`~pdpy.timeseries.TimeSeries.spectrogram` for
+        :meth:`~pydischarge.timeseries.TimeSeries.spectrogram` for
         more details
 
     nproc : `int`, optional
@@ -593,7 +593,7 @@ def range_timeseries(
 
     Returns
     -------
-    out : `~pdpy.timeseries.TimeSeries`
+    out : `~pydischarge.timeseries.TimeSeries`
         timeseries trends of astrophysical range
 
     Notes
@@ -605,14 +605,14 @@ def range_timeseries(
 
     See also
     --------
-    pdpy.timeseries.TimeSeries.spectrogram
+    pydischarge.timeseries.TimeSeries.spectrogram
         for the underlying power spectral density estimator
     inspiral_range
         for the function that computes inspiral range
     burst_range
         for the function that computes burst range
     range_spectrogram
-        for a `~pdpy.spectrogram.Spectrogram` of the range integrand
+        for a `~pydischarge.spectrogram.Spectrogram` of the range integrand
     """
     rangekwargs = rangekwargs or {'mass1': 1.4, 'mass2': 1.4}
     if range_func is None and "energy" in rangekwargs:
@@ -648,7 +648,7 @@ def range_spectrogram(
 
     Parameters
     ----------
-    hoft : `~pdpy.timeseries.TimeSeries`  or `~pdpy.spectrogram.Spectrogram`
+    hoft : `~pydischarge.timeseries.TimeSeries`  or `~pydischarge.spectrogram.Spectrogram`
         record of gravitational-wave strain output from a detector
 
     stride : `float`, optional
@@ -669,7 +669,7 @@ def range_spectrogram(
 
     method : `str`, optional
         FFT-averaging method, defaults to median averaging, see
-        :meth:`~pdpy.timeseries.TimeSeries.spectrogram` for
+        :meth:`~pydischarge.timeseries.TimeSeries.spectrogram` for
         more details
 
     nproc : `int`, optional
@@ -693,7 +693,7 @@ def range_spectrogram(
 
     Returns
     -------
-    out : `~pdpy.spectrogram.Spectrogram`
+    out : `~pydischarge.spectrogram.Spectrogram`
         time-frequency spectrogram of astrophysical range
 
     Notes
@@ -710,7 +710,7 @@ def range_spectrogram(
 
     See also
     --------
-    pdpy.timeseries.TimeSeries.spectrogram
+    pydischarge.timeseries.TimeSeries.spectrogram
         for the underlying power spectral density estimator
     inspiral_range_psd
         for the function that computes inspiral range integrand

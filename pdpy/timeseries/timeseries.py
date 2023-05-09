@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Array with metadata
 """
@@ -70,9 +70,9 @@ class TimeSeries(TimeSeriesBase):
     unit : `~astropy.units.Unit`, optional
         physical unit of these data
 
-    t0 : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    t0 : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~pdpy.time.to_gps` is fine
+        any input parsable by `~pydischarge.time.to_gps` is fine
 
     dt : `float`, `~astropy.units.Quantity`, optional
         time between successive samples (seconds), can also be given inversely
@@ -90,7 +90,7 @@ class TimeSeries(TimeSeriesBase):
     name : `str`, optional
         descriptive title for this array
 
-    channel : `~pdpy.detector.Channel`, `str`, optional
+    channel : `~pydischarge.detector.Channel`, `str`, optional
         source data stream for these data
 
     dtype : `~numpy.dtype`, optional
@@ -109,12 +109,12 @@ class TimeSeries(TimeSeriesBase):
     returned via the :attr:`~TimeSeries.times` property.
 
     All comparison operations performed on a `TimeSeries` will return a
-    `~pdpy.timeseries.StateTimeSeries` - a boolean array
+    `~pydischarge.timeseries.StateTimeSeries` - a boolean array
     with metadata copied from the starting `TimeSeries`.
 
     Examples
     --------
-    >>> from pdpy.timeseries import TimeSeries
+    >>> from pydischarge.timeseries import TimeSeries
 
     To create an array of random numbers, sampled at 100 Hz, in units of
     'metres':
@@ -141,7 +141,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        out : `~pdpy.frequencyseries.FrequencySeries`
+        out : `~pydischarge.frequencyseries.FrequencySeries`
             the normalised, complex-valued FFT `FrequencySeries`.
 
         See also
@@ -152,7 +152,7 @@ class TimeSeries(TimeSeriesBase):
         -----
         This method, in constrast to the :func:`numpy.fft.rfft` method
         it calls, applies the necessary normalisation such that the
-        amplitude of the output `~pdpy.frequencyseries.FrequencySeries` is
+        amplitude of the output `~pydischarge.frequencyseries.FrequencySeries` is
         correct.
         """
         from ..frequencyseries import FrequencySeries
@@ -193,7 +193,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        out : complex-valued `~pdpy.frequencyseries.FrequencySeries`
+        out : complex-valued `~pydischarge.frequencyseries.FrequencySeries`
             the transformed output, with populated frequencies array
             metadata
 
@@ -202,7 +202,7 @@ class TimeSeries(TimeSeriesBase):
         TimeSeries.fft
            The FFT method used.
         """
-        from pdpy.spectrogram import Spectrogram
+        from pydischarge.spectrogram import Spectrogram
         # format lengths
         if fftlength is None:
             fftlength = self.duration
@@ -273,7 +273,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        psd :  `~pdpy.frequencyseries.FrequencySeries`
+        psd :  `~pydischarge.frequencyseries.FrequencySeries`
             a data series containing the PSD.
 
         Notes
@@ -316,7 +316,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        asd :  `~pdpy.frequencyseries.FrequencySeries`
+        asd :  `~pydischarge.frequencyseries.FrequencySeries`
             a data series containing the ASD
 
         See also
@@ -358,7 +358,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        csd :  `~pdpy.frequencyseries.FrequencySeries`
+        csd :  `~pydischarge.frequencyseries.FrequencySeries`
             a data series containing the CSD.
         """
         return spectral.psd(
@@ -378,7 +378,7 @@ class TimeSeries(TimeSeriesBase):
         Each time-bin of the output `Spectrogram` is calculated by taking
         a chunk of the `TimeSeries` in the segment
         `[t - overlap/2., t + stride + overlap/2.)` and calculating the
-        :meth:`~pdpy.timeseries.TimeSeries.psd` of those data.
+        :meth:`~pydischarge.timeseries.TimeSeries.psd` of those data.
 
         As a result, each time-bin is calculated using `stride + overlap`
         seconds of data.
@@ -409,7 +409,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        spectrogram : `~pdpy.spectrogram.Spectrogram`
+        spectrogram : `~pydischarge.spectrogram.Spectrogram`
             time-frequency power spectrogram as generated from the
             input time-series.
 
@@ -465,7 +465,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        spectrogram: `~pdpy.spectrogram.Spectrogram`
+        spectrogram: `~pydischarge.spectrogram.Spectrogram`
             a power `Spectrogram` with `1/fftlength` frequency resolution and
             (fftlength - overlap) time resolution.
 
@@ -649,7 +649,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        psd :  `~pdpy.frequencyseries.FrequencySeries`
+        psd :  `~pydischarge.frequencyseries.FrequencySeries`
             a data series containing the PSD.
         """
         return spectral.psd(
@@ -687,7 +687,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        spectrogram : `~pdpy.spectrogram.Spectrogram`
+        spectrogram : `~pydischarge.spectrogram.Spectrogram`
             time-frequency Rayleigh spectrogram as generated from the
             input time-series.
 
@@ -716,7 +716,7 @@ class TimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
-        other : `~pdpy.timeseries.TimeSeries`
+        other : `~pydischarge.timeseries.TimeSeries`
             second time-series for cross spectral density calculation
 
         stride : `float`
@@ -740,7 +740,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        spectrogram : `~pdpy.spectrogram.Spectrogram`
+        spectrogram : `~pydischarge.spectrogram.Spectrogram`
             time-frequency cross spectrogram as generated from the
             two input time-series.
         """
@@ -780,7 +780,7 @@ class TimeSeries(TimeSeriesBase):
 
         **kwargs
             other keyword arguments are passed to
-            :func:`pdpy.signal.filter_design.highpass`
+            :func:`pydischarge.signal.filter_design.highpass`
 
         Returns
         -------
@@ -789,7 +789,7 @@ class TimeSeries(TimeSeriesBase):
 
         See also
         --------
-        pdpy.signal.filter_design.highpass
+        pydischarge.signal.filter_design.highpass
             for details on the filter design
         TimeSeries.filter
             for details on how the filter is applied
@@ -824,7 +824,7 @@ class TimeSeries(TimeSeriesBase):
 
         **kwargs
             other keyword arguments are passed to
-            :func:`pdpy.signal.filter_design.lowpass`
+            :func:`pydischarge.signal.filter_design.lowpass`
 
         Returns
         -------
@@ -833,7 +833,7 @@ class TimeSeries(TimeSeriesBase):
 
         See also
         --------
-        pdpy.signal.filter_design.lowpass
+        pydischarge.signal.filter_design.lowpass
             for details on the filter design
         TimeSeries.filter
             for details on how the filter is applied
@@ -871,7 +871,7 @@ class TimeSeries(TimeSeriesBase):
 
         **kwargs
             other keyword arguments are passed to
-            :func:`pdpy.signal.filter_design.bandpass`
+            :func:`pydischarge.signal.filter_design.bandpass`
 
         Returns
         -------
@@ -880,7 +880,7 @@ class TimeSeries(TimeSeriesBase):
 
         See also
         --------
-        pdpy.signal.filter_design.bandpass
+        pydischarge.signal.filter_design.bandpass
             for details on the filter design
         TimeSeries.filter
             for details on how the filter is applied
@@ -1053,9 +1053,9 @@ class TimeSeries(TimeSeriesBase):
         Examples
         --------
         We can design an arbitrarily complicated filter using
-        :mod:`pdpy.signal.filter_design`
+        :mod:`pydischarge.signal.filter_design`
 
-        >>> from pdpy.signal import filter_design
+        >>> from pydischarge.signal import filter_design
         >>> bp = filter_design.bandpass(50, 250, 4096.)
         >>> notches = [filter_design.notch(f, 4096.) for f in (60, 120, 180)]
         >>> zpk = filter_design.concatenate_zpks(bp, *notches)
@@ -1063,14 +1063,14 @@ class TimeSeries(TimeSeriesBase):
         And then can download some data from GWOSC to apply it using
         `TimeSeries.filter`:
 
-        >>> from pdpy.timeseries import TimeSeries
+        >>> from pydischarge.timeseries import TimeSeries
         >>> data = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
         >>> filtered = data.filter(zpk, filtfilt=True)
 
         We can plot the original signal, and the filtered version, cutting
         off either end of the filtered data to remove filter-edge artefacts
 
-        >>> from pdpy.plot import Plot
+        >>> from pydischarge.plot import Plot
         >>> plot = Plot(data, filtered[128:-128], separate=True)
         >>> plot.show()
         """
@@ -1138,7 +1138,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        transfer_function : `~pdpy.frequencyseries.FrequencySeries`
+        transfer_function : `~pydischarge.frequencyseries.FrequencySeries`
             the transfer function `FrequencySeries` of this `TimeSeries`
             with the other
 
@@ -1191,7 +1191,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        coherence : `~pdpy.frequencyseries.FrequencySeries`
+        coherence : `~pydischarge.frequencyseries.FrequencySeries`
             the coherence `FrequencySeries` of this `TimeSeries`
             with the other
 
@@ -1251,7 +1251,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        coherence : `~pdpy.frequencyseries.FrequencySeries`
+        coherence : `~pydischarge.frequencyseries.FrequencySeries`
             the coherence `FrequencySeries` of this `TimeSeries`
             with the other
 
@@ -1304,7 +1304,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        spectrogram : `~pdpy.spectrogram.Spectrogram`
+        spectrogram : `~pydischarge.spectrogram.Spectrogram`
             time-frequency coherence spectrogram as generated from the
             input time-series.
         """
@@ -1372,8 +1372,8 @@ class TimeSeries(TimeSeriesBase):
 
         **kwargs : `dict`, optional
             additional keyword arguments to
-            `~pdpy.segments.DataQualityFlag.query` or
-            `~pdpy.segments.DataQualityFlag.fetch_open_data`,
+            `~pydischarge.segments.DataQualityFlag.query` or
+            `~pydischarge.segments.DataQualityFlag.fetch_open_data`,
             see "Notes" below
 
         Returns
@@ -1391,7 +1391,7 @@ class TimeSeries(TimeSeriesBase):
         The `deadtime` segment list will always be coalesced and restricted to
         the limits of `self.span`. In particular, when querying a data-quality
         flag, this means the `start` and `end` arguments to
-        `~pdpy.segments.DataQualityFlag.query` will effectively be reset and
+        `~pydischarge.segments.DataQualityFlag.query` will effectively be reset and
         therefore need not be given.
 
         If `flag` is interpreted positively, i.e. if `flag` being active
@@ -1400,11 +1400,11 @@ class TimeSeries(TimeSeriesBase):
 
         See also
         --------
-        pdpy.segments.DataQualityFlag.query
+        pydischarge.segments.DataQualityFlag.query
             for the method to query segments of a given data-quality flag
-        pdpy.segments.DataQualityFlag.fetch_open_data
+        pydischarge.segments.DataQualityFlag.fetch_open_data
             for the method to query data-quality flags from the GWOSC database
-        pdpy.signal.window.planck
+        pydischarge.signal.window.planck
             for the generic Planck-taper window
         """
         query_method = (DataQualityFlag.fetch_open_data if query_open_data
@@ -1476,7 +1476,7 @@ class TimeSeries(TimeSeriesBase):
         we can download some data from GWOSC to look at trends of the
         amplitude and phase of LIGO Livingston's calibration line at 331.3 Hz:
 
-        >>> from pdpy.timeseries import TimeSeries
+        >>> from pydischarge.timeseries import TimeSeries
         >>> data = TimeSeries.fetch_open_data('L1', 1131350417, 1131357617)
 
         We can demodulate the `TimeSeries` at 331.3 Hz with a stride of one
@@ -1487,7 +1487,7 @@ class TimeSeries(TimeSeriesBase):
         We can then plot these trends to visualize fluctuations in the
         amplitude of the calibration line:
 
-        >>> from pdpy.plot import Plot
+        >>> from pydischarge.plot import Plot
         >>> plot = Plot(amp)
         >>> ax = plot.gca()
         >>> ax.set_ylabel('Strain Amplitude at 331.3 Hz')
@@ -1539,11 +1539,11 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
-        This is similar to the :meth:`~pdpy.timeseries.TimeSeries.demodulate`
+        This is similar to the :meth:`~pydischarge.timeseries.TimeSeries.demodulate`
         method, but is more general in that it accepts a varying phase
         evolution, rather than a fixed frequency.
 
-        Unlike :meth:`~pdpy.timeseries.TimeSeries.demodulate`, the complex
+        Unlike :meth:`~pydischarge.timeseries.TimeSeries.demodulate`, the complex
         output is double-sided by default, so is not multiplied by 2.
 
         Examples
@@ -1560,7 +1560,7 @@ class TimeSeries(TimeSeriesBase):
         LIGO-Livingston data from GWOSC, inject the simulated signal, and
         recover its amplitude.
 
-        >>> from pdpy.timeseries import TimeSeries
+        >>> from pydischarge.timeseries import TimeSeries
         >>> data = TimeSeries.fetch_open_data('L1', 1131350417, 1131354017)
 
         We now need to set the signal parameters, generate the expected
@@ -1654,14 +1654,14 @@ class TimeSeries(TimeSeriesBase):
         sinusoidal `TimeSeries` at both ends:
 
         >>> import numpy
-        >>> from pdpy.timeseries import TimeSeries
+        >>> from pydischarge.timeseries import TimeSeries
         >>> t = numpy.linspace(0, 1, 2048)
         >>> series = TimeSeries(numpy.cos(10.5*numpy.pi*t), times=t)
         >>> tapered = series.taper()
 
         We can plot it to see how the ends now vary smoothly from 0 to 1:
 
-        >>> from pdpy.plot import Plot
+        >>> from pydischarge.plot import Plot
         >>> plot = Plot(series, tapered, separate=True, sharex=True)
         >>> plot.show()
 
@@ -1673,7 +1673,7 @@ class TimeSeries(TimeSeriesBase):
         the full width of the `TimeSeries`, and will fail if there are no
         stationary points.
 
-        See :func:`~pdpy.signal.window.planck` for the generic Planck taper
+        See :func:`~pydischarge.signal.window.planck` for the generic Planck taper
         window, and see :func:`scipy.signal.get_window` for other common
         window formats.
         """
@@ -1728,7 +1728,7 @@ class TimeSeries(TimeSeriesBase):
             type of detrending to do before FFT (see `~TimeSeries.detrend`
             for more details), default: ``'constant'``
 
-        asd : `~pdpy.frequencyseries.FrequencySeries`, optional
+        asd : `~pydischarge.frequencyseries.FrequencySeries`, optional
             the amplitude spectral density using which to whiten the data,
             overrides other ASD arguments, default: `None`
 
@@ -1757,7 +1757,7 @@ class TimeSeries(TimeSeriesBase):
             for details on the ASD calculation
         TimeSeries.convolve
             for details on convolution with the overlap-save method
-        pdpy.signal.filter_design.fir_from_transfer
+        pydischarge.signal.filter_design.fir_from_transfer
             for FIR filter design through spectrum truncation
 
         Notes
@@ -1830,7 +1830,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        out : `~pdpy.segments.SegmentList`
+        out : `~pydischarge.segments.SegmentList`
             a list of segments that should be gated based on the
             provided parameters
 
@@ -1886,7 +1886,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        out : `~pdpy.timeseries.TimeSeries`
+        out : `~pydischarge.timeseries.TimeSeries`
             a copy of the original `TimeSeries` that has had gating windows
             applied
 
@@ -1894,7 +1894,7 @@ class TimeSeries(TimeSeriesBase):
         --------
         Read data into a `TimeSeries`
 
-        >>> from pdpy.timeseries import TimeSeries
+        >>> from pydischarge.timeseries import TimeSeries
         >>> data = TimeSeries.fetch_open_data('H1', 1135148571, 1135148771)
 
         Apply gating using custom arguments
@@ -2181,9 +2181,9 @@ class TimeSeries(TimeSeriesBase):
         TimeSeries.q_transform
             for a method to interpolate the raw Q-transform over a regularly
             gridded spectrogram
-        pdpy.signal.qtransform
+        pydischarge.signal.qtransform
             for code and documentation on how the Q-transform is implemented
-        pdpy.table.EventTable.tile
+        pydischarge.table.EventTable.tile
             to render this `EventTable` as a collection of polygons
 
         Notes
@@ -2261,13 +2261,13 @@ class TimeSeries(TimeSeriesBase):
         mismatch : `float`
             maximum allowed fractional mismatch between neighbouring tiles
 
-        outseg : `~pdpy.segments.Segment`, optional
+        outseg : `~pydischarge.segments.Segment`, optional
             GPS `[start, stop)` segment for output `Spectrogram`,
             default is the full duration of the input
 
-        whiten : `bool`, `~pdpy.frequencyseries.FrequencySeries`, optional
+        whiten : `bool`, `~pydischarge.frequencyseries.FrequencySeries`, optional
             boolean switch to enable (`True`) or disable (`False`) data
-            whitening, or an ASD `~pdpy.freqencyseries.FrequencySeries`
+            whitening, or an ASD `~pydischarge.freqencyseries.FrequencySeries`
             with which to whiten the data
 
         fduration : `float`, optional
@@ -2284,7 +2284,7 @@ class TimeSeries(TimeSeriesBase):
 
         Returns
         -------
-        out : `~pdpy.spectrogram.Spectrogram`
+        out : `~pydischarge.spectrogram.Spectrogram`
             output `Spectrogram` of normalised Q energy
 
         See also
@@ -2293,7 +2293,7 @@ class TimeSeries(TimeSeriesBase):
             for documentation on acceptable `**asd_kw`
         TimeSeries.whiten
             for documentation on how the whitening is done
-        pdpy.signal.qtransform
+        pydischarge.signal.qtransform
             for code and documentation on how the Q-transform is implemented
 
         Notes
@@ -2302,7 +2302,7 @@ class TimeSeries(TimeSeriesBase):
         ``norm`` is given, and ``float64`` otherwise.
 
         To optimize plot rendering with `~matplotlib.axes.Axes.pcolormesh`,
-        the output `~pdpy.spectrogram.Spectrogram` can be given a log-sampled
+        the output `~pydischarge.spectrogram.Spectrogram` can be given a log-sampled
         frequency axis by passing `logf=True` at runtime. The `fres` argument
         is then the number of points on the frequency axis. Note, this is
         incompatible with `~matplotlib.axes.Axes.imshow`.
@@ -2318,7 +2318,7 @@ class TimeSeries(TimeSeriesBase):
         --------
         >>> from numpy.random import normal
         >>> from scipy.signal import gausspulse
-        >>> from pdpy.timeseries import TimeSeries
+        >>> from pydischarge.timeseries import TimeSeries
 
         Generate a `TimeSeries` containing Gaussian noise sampled at 4096 Hz,
         centred on GPS time 0, with a sine-Gaussian pulse ('glitch') at

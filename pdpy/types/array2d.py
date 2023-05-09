@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """The `Series` is a one-dimensional array with metadata
 """
@@ -72,14 +72,14 @@ class Array2D(Series):
         the unit of the y-axis coordinates. If not given explicitly, it will be
         taken from any of `dy`, `y0`, or `yindex`, or set to a boring default
 
-    epoch : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    epoch : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~pdpy.time.to_gps` is fine
+        any input parsable by `~pydischarge.time.to_gps` is fine
 
     name : `str`, optional
         descriptive title for this array
 
-    channel : `~pdpy.detector.Channel`, `str`, optional
+    channel : `~pydischarge.detector.Channel`, `str`, optional
         source data stream for these data
 
     dtype : `~numpy.dtype`, optional
@@ -283,7 +283,7 @@ class Array2D(Series):
     def yspan(self):
         """Y-axis [low, high) segment encompassed by these data
 
-        :type: `~pdpy.segments.Segment`
+        :type: `~pydischarge.segments.Segment`
         """
         return self._index_span("y")
 
@@ -305,9 +305,9 @@ class Array2D(Series):
 
     # -- Array2D methods ------------------------
 
-    def _is_compatible_pdpy(self, other):
+    def _is_compatible_pydischarge(self, other):
         self._compare_index(other, "y")
-        return super()._is_compatible_pdpy(other)
+        return super()._is_compatible_pydischarge(other)
 
     def value_at(self, x, y):
         """Return the value of this `Series` at the given `(x, y)` coordinates

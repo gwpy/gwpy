@@ -2,22 +2,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Joseph Areeda (2015-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Generate plots of GW observatory data using PDpy
+"""Generate plots of GW observatory data using pyDischarge
 """
 
 import time
@@ -49,14 +49,14 @@ INTERACTIVE = hasattr(sys, 'ps1')
 EPILOG = f"""
 Examples:
 
-    $ pdpy-plot timeseries --chan H1:GDS-CALIB_STRAIN --start 1126259457
+    $ pydischarge-plot timeseries --chan H1:GDS-CALIB_STRAIN --start 1126259457
 
-    $ pdpy-plot spectrum --chan H1:GDS-CALIB_STRAIN L1:GDS-CALIB_STRAIN --chan V1:Hrec_hoft_16384Hz --start 1187008866 --duration 32 --xmin 10 --xmax 4000
+    $ pydischarge-plot spectrum --chan H1:GDS-CALIB_STRAIN L1:GDS-CALIB_STRAIN --chan V1:Hrec_hoft_16384Hz --start 1187008866 --duration 32 --xmin 10 --xmax 4000
 
-    $ pdpy-plot coherencegram --chan H1:GDS-CALIB_STRAIN H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ --start 1126260017 --duration 600
+    $ pydischarge-plot coherencegram --chan H1:GDS-CALIB_STRAIN H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ --start 1126260017 --duration 600
 
 Written by {__author__}.
-Report bugs to https://github.com/pdpy-github/pdpy/issues/.
+Report bugs to https://github.com/pydischarge-github/pydischarge/issues/.
 """  # noqa: E501
 
 
@@ -123,7 +123,7 @@ def parse_command_line(args=None):
 # -- run ----------------------------------------------------------------------
 
 def main(args=None):
-    """Run pdpy-plot
+    """Run pydischarge-plot
 
     Returns the relevant exit code, that can be passed to :func:`sys.exit`.
     """

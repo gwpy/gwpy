@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Alex Urban (2018-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Inject a known signal into a `FrequencySeries`
 
@@ -31,12 +31,12 @@ frequency domain because it is much easier to model a sinusoid there.
 """
 
 __author__ = "Alex Urban <alexander.urban@ligo.org>"
-__currentmodule__ = 'pdpy.timeseries'
+__currentmodule__ = 'pydischarge.timeseries'
 
 # First, we prepare one second of Gaussian noise:
 
 from numpy import random
-from pdpy.timeseries import TimeSeries
+from pydischarge.timeseries import TimeSeries
 noise = TimeSeries(random.normal(scale=.1, size=1024), sample_rate=1024)
 
 # To inject a signal in the frequency domain, we need to take an FFT:
@@ -44,17 +44,17 @@ noise = TimeSeries(random.normal(scale=.1, size=1024), sample_rate=1024)
 noisefd = noise.fft()
 
 # We can now easily inject a loud sinusoid of unit amplitude at, say,
-# 30 Hz. To do this, we use :meth:`~pdpy.types.series.Series.inject`.
+# 30 Hz. To do this, we use :meth:`~pydischarge.types.series.Series.inject`.
 
 import numpy
-from pdpy.frequencyseries import FrequencySeries
+from pydischarge.frequencyseries import FrequencySeries
 signal = FrequencySeries(numpy.array([1.]), f0=30, df=noisefd.df)
 injfd = noisefd.inject(signal)
 
 # We can then visualize the data before and after injection in the frequency
 # domain:
 
-from pdpy.plot import Plot
+from pydischarge.plot import Plot
 plot = Plot(numpy.abs(noisefd), numpy.abs(injfd), separate=True,
             sharex=True, sharey=True, xscale='log', yscale='log')
 plot.show()

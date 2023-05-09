@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Cardiff University (2018-2022)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Extension of `~matplotlib.axes.Axes` for pdpy
+"""Extension of `~matplotlib.axes.Axes` for pydischarge
 """
 
 import warnings
@@ -49,7 +49,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 def log_norm(func):
-    """Wrap ``func`` to handle custom pdpy keywords for a LogNorm colouring
+    """Wrap ``func`` to handle custom pydischarge keywords for a LogNorm colouring
     """
     @wraps(func)
     def decorated_func(*args, **kwargs):
@@ -60,7 +60,7 @@ def log_norm(func):
 
 
 def xlim_as_gps(func):
-    """Wrap ``func`` to handle pass limit inputs through `pdpy.time.to_gps`
+    """Wrap ``func`` to handle pass limit inputs through `pydischarge.time.to_gps`
     """
     @wraps(func)
     def wrapped_func(self, left=None, right=None, **kw):
@@ -128,7 +128,7 @@ def deprecate_c_sort(func):
             warnings.warn(
                 f"the `c_sort` keyword for {func.__name__} was "
                 "renamed `sortbycolor`, this warning will result "
-                "in an error in future versions of PDpy",
+                "in an error in future versions of pyDischarge",
                 DeprecationWarning,
             )
             kwargs.setdefault(
@@ -207,13 +207,13 @@ class Axes(_Axes):
         """Set the epoch for the current GPS scale.
 
         This method will fail if the current X-axis scale isn't one of
-        the GPS scales. See :ref:`pdpy-plot-gps` for more details.
+        the GPS scales. See :ref:`pydischarge-plot-gps` for more details.
 
         Parameters
         ----------
         epoch : `float`, `str`
             GPS-compatible time or date object, anything parseable by
-            :func:`~pdpy.time.to_gps` is fine.
+            :func:`~pydischarge.time.to_gps` is fine.
         """
         scale = self.get_xscale()
         return self.set_xscale(scale, epoch=epoch)
@@ -222,7 +222,7 @@ class Axes(_Axes):
         """Return the epoch for the current GPS scale/
 
         This method will fail if the current X-axis scale isn't one of
-        the GPS scales. See :ref:`pdpy-plot-gps` for more details.
+        the GPS scales. See :ref:`pydischarge-plot-gps` for more details.
         """
         return self.get_xaxis().get_transform().get_epoch()
 
@@ -258,8 +258,8 @@ class Axes(_Axes):
     def imshow(self, array, *args, **kwargs):
         """Display an image, i.e. data on a 2D regular raster.
 
-        If ``array`` is a :class:`~pdpy.types.Array2D` (e.g. a
-        :class:`~pdpy.spectrogram.Spectrogram`), then the defaults are
+        If ``array`` is a :class:`~pydischarge.types.Array2D` (e.g. a
+        :class:`~pydischarge.spectrogram.Spectrogram`), then the defaults are
         _different_ to those in the upstream
         :meth:`~matplotlib.axes.Axes.imshow` method. Namely, the defaults are
 
@@ -293,7 +293,7 @@ class Axes(_Axes):
 
     def _imshow_array2d(self, array, origin='lower', interpolation='none',
                         aspect='auto', **kwargs):
-        """Render an `~pdpy.types.Array2D` using `Axes.imshow`
+        """Render an `~pydischarge.types.Array2D` using `Axes.imshow`
         """
         # NOTE: If you change the defaults for this method, please update
         #       the docstring for `imshow` above.
@@ -314,8 +314,8 @@ class Axes(_Axes):
     def pcolormesh(self, *args, **kwargs):
         """Create a pseudocolor plot with a non-regular rectangular grid.
 
-        When using PDpy, this method can be called with a single argument
-        that is an :class:`~pdpy.types.Array2D`, for which the ``X`` and ``Y``
+        When using pyDischarge, this method can be called with a single argument
+        that is an :class:`~pydischarge.types.Array2D`, for which the ``X`` and ``Y``
         coordinate arrays will be determined from the indexing.
 
         In all other usage, all ``args`` and ``kwargs`` are passed directly
@@ -335,7 +335,7 @@ class Axes(_Axes):
         return super().pcolormesh(*args, **kwargs)
 
     def _pcolormesh_array2d(self, array, *args, **kwargs):
-        """Render an `~pdpy.types.Array2D` using `Axes.pcolormesh`
+        """Render an `~pydischarge.types.Array2D` using `Axes.pcolormesh`
         """
         x = numpy.concatenate((array.xindex.value, array.xspan[-1:]))
         y = numpy.concatenate((array.yindex.value, array.yspan[-1:]))
@@ -401,13 +401,13 @@ class Axes(_Axes):
 
         Parameters
         ----------
-        data : `~pdpy.types.Series`
+        data : `~pydischarge.types.Series`
             Data to plot normally.
 
-        lower : `~pdpy.types.Series`
+        lower : `~pydischarge.types.Series`
             Lower boundary (on Y-axis) for shade.
 
-        upper : `~pdpy.types.Series`
+        upper : `~pydischarge.types.Series`
             Upper boundary (on Y-axis) for shade.
 
         **kwargs
@@ -496,7 +496,7 @@ class Axes(_Axes):
         --------
         >>> import numpy
         >>> from matplotlib import pyplot
-        >>> import pdpy.plot  # to get pdpy's Axes
+        >>> import pydischarge.plot  # to get pydischarge's Axes
 
         >>> x = numpy.arange(10)
         >>> y = numpy.arange(x.size)
@@ -571,7 +571,7 @@ class Axes(_Axes):
    `~matplotlib.lines.Line2D` objects, with increased linewidth relative
    to the upstream :meth:`~matplotlib.axes.Axes.legend` method.
    To disable this, pass ``handler_map=None``, or create and pass your
-   own handler class.  See :ref:`pdpy-plot-legend` for more details.
+   own handler class.  See :ref:`pydischarge-plot-legend` for more details.
 
 Call signatures""",
     )

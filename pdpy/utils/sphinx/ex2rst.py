@@ -2,22 +2,22 @@
 # Copyright (C) Louisiana State University (2014-2017)
 #               Cardiff University (2017-2021)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Convert PDpy example python files into rst files for sphinx documentation
+"""Convert pyDischarge example python files into rst files for sphinx documentation
 """
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org'
@@ -59,7 +59,7 @@ def ex2rst(infile):
     ref = '-'.join((infile.parent.name, infile.with_suffix("").name))
 
     output = []
-    header = ['.. _pdpy-example-%s:\n' % ref]
+    header = ['.. _pydischarge-example-%s:\n' % ref]
 
     indoc = False
     incode = False

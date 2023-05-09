@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilties for the PDpy test suite
+"""Utilties for the pyDischarge test suite
 """
 
 import os.path
@@ -47,8 +47,8 @@ TEST_HDF5_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.hdf')
 # -- dependencies -------------------------------------------------------------
 
 @deprecated_function(message=(
-    "pdpy.testing.utils.has is deprecated and will "
-    "be removed in PDpy 3.1.0",
+    "pydischarge.testing.utils.has is deprecated and will "
+    "be removed in pyDischarge 3.1.0",
 ))
 def has(module):  # pragma: no cover
     """Test whether a module is available
@@ -64,8 +64,8 @@ def has(module):  # pragma: no cover
 
 
 @deprecated_function(message=(
-    "pdpy.testing.utils.skip_missing_dependency is deprecated and will "
-    "be removed in PDpy 3.1.0, please update your code to use "
+    "pydischarge.testing.utils.skip_missing_dependency is deprecated and will "
+    "be removed in pyDischarge 3.1.0, please update your code to use "
     "pytest.mark.requires from the pytest-requires package",
 ))
 def skip_missing_dependency(module):  # pragma: no cover
@@ -79,8 +79,8 @@ def skip_missing_dependency(module):  # pragma: no cover
 
 
 @deprecated_function(message=(
-    "pdpy.testing.utils.module_older_than is deprecated and will "
-    "be removed in PDpy 3.1.0",
+    "pydischarge.testing.utils.module_older_than is deprecated and will "
+    "be removed in pyDischarge 3.1.0",
 ))
 def module_older_than(module, minversion):  # pragma: no cover
     mod = import_module(module)
@@ -88,8 +88,8 @@ def module_older_than(module, minversion):  # pragma: no cover
 
 
 @deprecated_function(message=(
-    "pdpy.testing.utils.skip_minimum_version is deprecated and will "
-    "be removed in PDpy 3.1.0",
+    "pydischarge.testing.utils.skip_minimum_version is deprecated and will "
+    "be removed in pyDischarge 3.1.0",
 ))
 def skip_minimum_version(module, minversion):  # pragma: no cover
     """Returns a mark generator to skip a test if the dependency is too old
@@ -149,11 +149,11 @@ def _assert_quantity(q1, q2, array_assertion=assert_array_equal):
 
 
 def assert_quantity_sub_equal(a, b, *attrs, **kwargs):
-    """Assert that two `~pdpy.types.Array` objects are the same (or almost)
+    """Assert that two `~pydischarge.types.Array` objects are the same (or almost)
 
     Parameters
     ----------
-    a, b : `~pdpy.types.Array`
+    a, b : `~pydischarge.types.Array`
         the arrays two be tested (can be subclasses)
 
     *attrs

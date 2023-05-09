@@ -1,4 +1,4 @@
-.. _pdpy-external-framecpp:
+.. _pydischarge-external-framecpp:
 
 ########
 FrameCPP
@@ -17,7 +17,7 @@ The main library is written in C++ and documented at
 
 https://computing.docs.ligo.org/ldastools/LDAS_Tools/ldas-tools-framecpp/
 
-PDpy utilises the Python bindings for FrameCPP on Unix platforms
+pyDischarge utilises the Python bindings for FrameCPP on Unix platforms
 (Linux and macOS) to provide GWF input/output capabilities.
 
 This optional dependency can be installed using `Conda <https://conda.io>`__

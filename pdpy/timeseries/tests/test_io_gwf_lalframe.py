@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`pdpy.timeseries.io.gwf.lalframe`
+"""Tests for :mod:`pydischarge.timeseries.io.gwf.lalframe`
 """
 
 from pathlib import Path
@@ -38,7 +38,7 @@ from ...timeseries import TimeSeries
 # import optional dependencies
 lal_utils = pytest.importorskip("lal.utils")
 lalframe = pytest.importorskip("lalframe")
-pdpy_lalframe = pytest.importorskip("pdpy.timeseries.io.gwf.lalframe")
+pydischarge_lalframe = pytest.importorskip("pydischarge.timeseries.io.gwf.lalframe")
 
 # get URI to test against
 TEST_GWF_PATH = Path(TEST_GWF_FILE).absolute()
@@ -60,7 +60,7 @@ def stream():
 def _test_open_data_source(source):
     """This function actually performs the test
     """
-    stream = pdpy_lalframe.open_data_source(source)
+    stream = pydischarge_lalframe.open_data_source(source)
     assert stream.epoch == TEST_GWF_SEGMENT[0]
     assert Path(urlparse(stream.cache.list.url).path).samefile(TEST_GWF_PATH)
 
@@ -94,11 +94,11 @@ def test_open_data_source_error():
         ValueError,
         match=f"^Don't know how to open data source of type {type(None)}$",
     ):
-        pdpy_lalframe.open_data_source(None)
+        pydischarge_lalframe.open_data_source(None)
 
 
 def test_get_stream_duration(stream):
-    assert pdpy_lalframe.get_stream_duration(stream) == 1.
+    assert pydischarge_lalframe.get_stream_duration(stream) == 1.
 
 
 @pytest.mark.parametrize("start, end", [
@@ -109,7 +109,7 @@ def test_get_stream_duration(stream):
     (TEST_GWF_SEGMENT[1] - TEST_GWF_DELTA_T / 2, None),
 ])
 def test_read(start, end):
-    data = pdpy_lalframe.read(
+    data = pydischarge_lalframe.read(
         TEST_GWF_FILE,
         CHANNELS,
         start=start,
@@ -135,12 +135,12 @@ def test_read_channel_error():
         RuntimeError,
         match="^channel 'bad' not found$",
     ):
-        pdpy_lalframe.read(TEST_GWF_FILE, ["bad"])
+        pydischarge_lalframe.read(TEST_GWF_FILE, ["bad"])
 
 
 def test_read_deprecated_scaled():
     with pytest.warns(UserWarning):
-        pdpy_lalframe.read(
+        pydischarge_lalframe.read(
             TEST_GWF_FILE,
             ["L1:LDAS-STRAIN"],
             scaled=True,
@@ -149,17 +149,17 @@ def test_read_deprecated_scaled():
 
 def test_write(tmp_path):
     # read the data first
-    data = pdpy_lalframe.read(TEST_GWF_FILE, CHANNELS)
+    data = pydischarge_lalframe.read(TEST_GWF_FILE, CHANNELS)
 
     # write the data
     tmp = tmp_path / "test.gwf"
-    pdpy_lalframe.write(
+    pydischarge_lalframe.write(
         data,
         tmp,
     )
 
     # read it back and check things
-    data2 = pdpy_lalframe.read(tmp, CHANNELS)
+    data2 = pydischarge_lalframe.read(tmp, CHANNELS)
     assert_dict_equal(data, data2, assert_quantity_sub_equal)
 
 
@@ -180,7 +180,7 @@ def test_write_no_ifo(tmp_path, data):
     # create timeseries with no IFO
     data = TimeSeries(data, dtype=float)
     tmp = tmp_path / "test.gwf"
-    pdpy_lalframe.write(
+    pydischarge_lalframe.write(
         {None: data},
         tmp
     )

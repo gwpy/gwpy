@@ -1,4 +1,4 @@
-.. currentmodule:: pdpy.spectrogram
+.. currentmodule:: pydischarge.spectrogram
 
 ######################
 `Spectrogram` examples

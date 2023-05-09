@@ -55,12 +55,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: tarball
-        path: pdpy-*.tar.*
+        path: pydischarge-*.tar.*
 
     - uses: actions/upload-artifact@v2
       with:
         name: wheel
-        path: pdpy*.whl
+        path: pydischarge*.whl
 
   # -- pip install test -----
 
@@ -101,10 +101,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install PDpy with test extras
+    - name: Install pyDischarge with test extras
       run: |
         # extras don't work with wildcards
-        DIST=$(ls pdpy-*.*)
+        DIST=$(ls pydischarge-*.*)
         python -m pip install ${DIST}[test]
 
     - name: Package list
@@ -115,11 +115,11 @@ jobs:
         python -m pytest \
             -ra \
             --color yes \
-            --cov pdpy \
+            --cov pydischarge \
             --cov-report=xml \
             --disable-socket \
             --junitxml=pytest.xml \
-            --pyargs pdpy \
+            --pyargs pydischarge \
         ;
 
     - name: Coverage report

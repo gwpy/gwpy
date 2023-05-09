@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """The `Series` is a one-dimensional array with metadata
 """
@@ -66,14 +66,14 @@ class Series(Array):
         the unit of the x-axis index. If not given explicitly, it will be
         taken from any of `dx`, `x0`, or `xindex`, or set to a boring default
 
-    epoch : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    epoch : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~pdpy.time.to_gps` is fine
+        any input parsable by `~pydischarge.time.to_gps` is fine
 
     name : `str`, optional
         descriptive title for this array
 
-    channel : `~pdpy.detector.Channel`, `str`, optional
+    channel : `~pydischarge.detector.Channel`, `str`, optional
         source data stream for these data
 
     dtype : `~numpy.dtype`, optional
@@ -367,7 +367,7 @@ class Series(Array):
     def xspan(self):
         """X-axis [low, high) segment encompassed by these data
 
-        :type: `~pdpy.segments.Segment`
+        :type: `~pydischarge.segments.Segment`
         """
         return self._index_span("x")
 
@@ -498,7 +498,7 @@ class Series(Array):
 
         Examples
         --------
-        >>> from pdpy.types import Series
+        >>> from pydischarge.types import Series
         >>> a = Series([1, 2, 3, 4, 5], x0=0, dx=1, xunit='m')
         >>> print(a.x0)
         0.0 m
@@ -659,7 +659,7 @@ class Series(Array):
         `~Series.unit` match.
         """
         if isinstance(other, type(self)):
-            return self._is_compatible_pdpy(other)
+            return self._is_compatible_pydischarge(other)
         return self._is_compatible_numpy(other)
 
     def _compatibility_error(self, other, attr, name):
@@ -706,7 +706,7 @@ class Series(Array):
                     "{}-axis indexes".format(axis),
                 )
 
-    def _is_compatible_pdpy(self, other):
+    def _is_compatible_pydischarge(self, other):
         """Check whether this series and another series are compatible
         """
         self._compare_index(other, axis="x")
@@ -1100,7 +1100,7 @@ class Series(Array):
 
         Users who wish to taper or window their `Series` should do so before
         passing it to this method. See :meth:`TimeSeries.taper` and
-        :func:`~pdpy.signal.window.planck` for more information.
+        :func:`~pydischarge.signal.window.planck` for more information.
         """
         # check Series compatibility
         self.is_compatible(other)

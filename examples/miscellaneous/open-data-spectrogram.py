@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2019-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Plotting a spectrogram of all open data for 1 day
 
@@ -34,7 +34,7 @@ data.
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-# .. currentmodule:: pdpy.segments
+# .. currentmodule:: pydischarge.segments
 #
 # Getting the segments
 # --------------------
@@ -44,7 +44,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 # using ``'H1_DATA'`` as the flag (for an explanation of what this means,
 # read up on `The S6 Data Release <https://gwosc.org/S6/>`__).
 
-from pdpy.segments import DataQualityFlag
+from pydischarge.segments import DataQualityFlag
 h1segs = DataQualityFlag.fetch_open_data('H1_DATA',
                                          'Sep 16 2010', 'Sep 17 2010')
 
@@ -62,25 +62,25 @@ splot.close()  # hide
 
 print(abs(h1segs.active))
 
-# .. currentmodule:: pdpy.timeseries
+# .. currentmodule:: pydischarge.timeseries
 #
 # Working with strain data
 # ------------------------
 #
 # Now, we can loop through the active segments of ``'H1_DATA'`` and fetch the
 # strain `TimeSeries` for each segment, calculating a
-# :class:`~pdpy.spectrogram.Spectrogram` for each segment.
+# :class:`~pydischarge.spectrogram.Spectrogram` for each segment.
 
-from pdpy.timeseries import TimeSeries
+from pydischarge.timeseries import TimeSeries
 spectrograms = []
 for start, end in h1segs.active:
     h1strain = TimeSeries.fetch_open_data('H1', start, end, verbose=True)
     specgram = h1strain.spectrogram(30, fftlength=4) ** (1/2.)
     spectrograms.append(specgram)
 
-# Finally, we can build a :meth:`~pdpy.spectrogram.Spectrogram.plot`:
+# Finally, we can build a :meth:`~pydischarge.spectrogram.Spectrogram.plot`:
 
-from pdpy.plot import Plot
+from pydischarge.plot import Plot
 plot = Plot(figsize=(12, 6))
 ax = plot.gca()
 for specgram in spectrograms:

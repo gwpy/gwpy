@@ -1,12 +1,12 @@
-.. currentmodule:: pdpy.plot
+.. currentmodule:: pydischarge.plot
 
-.. _pdpy-plot-legend:
+.. _pydischarge-plot-legend:
 
 ######################
-Custom legends in PDpy
+Custom legends in pyDischarge
 ######################
 
-PDpy overrides the default :class:`~matplotlib.axes.Axes` class with one that
+pyDischarge overrides the default :class:`~matplotlib.axes.Axes` class with one that
 uses a different default legend handler for line plots.
 This means that, by default, lines in a legend will be thicker than on a
 standard matplotlib figure:
@@ -15,7 +15,7 @@ standard matplotlib figure:
    :include-source:
    :context: reset
 
-   >>> import pdpy  # <- import anything from pdpy
+   >>> import pydischarge  # <- import anything from pydischarge
    >>> from matplotlib import pyplot
    >>> fig = pyplot.figure()
    >>> ax = fig.gca()

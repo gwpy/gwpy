@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2017-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """I/O utilities for reading `TimeSeries` from a `list` of file paths.
 """
@@ -36,13 +36,13 @@ def preformat_cache(cache, start=None, end=None):
     cache : `list`, `str`
         List of file paths, or path to a LAL-format cache file on disk.
 
-    start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS start time of required data, defaults to start of data found;
-        any input parseable by `~pdpy.time.to_gps` is fine.
+        any input parseable by `~pydischarge.time.to_gps` is fine.
 
-    end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS end time of required data, defaults to end of data found;
-        any input parseable by `~pdpy.time.to_gps` is fine.
+        any input parseable by `~pydischarge.time.to_gps` is fine.
 
     Returns
     -------

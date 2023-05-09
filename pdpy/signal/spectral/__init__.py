@@ -1,28 +1,28 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2017-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""FFT routines for PDpy
+"""FFT routines for pyDischarge
 
 This sub-package provides PSD estimation routines based on functionality
 provided by :mod:`scipy.signal`.
 
 The methods provided here aren't meant to be called directly by the user,
-but rather via instance methods of the :class:`~pdpy.timeseries.TimeSeries`
+but rather via instance methods of the :class:`~pydischarge.timeseries.TimeSeries`
 object.
 """
 
@@ -52,9 +52,9 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 def get_default_fft_api():
     """Return the preferred FFT-API library
 
-    As of pdpy > 0.14.0|1.0.0 this always returns 'scipy'
+    As of pydischarge > 0.14.0|1.0.0 this always returns 'scipy'
     This is referenced to set the default methods for
-    `~pdpy.timeseries.TimeSeries` methods (amongst others)
+    `~pydischarge.timeseries.TimeSeries` methods (amongst others)
 
     Examples
     --------

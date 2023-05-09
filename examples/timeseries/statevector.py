@@ -2,36 +2,36 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Plotting segments for a `StateVector`
 
 Confident detection of gravitational-wave signals is critically dependent
 on understanding the quality of the data searched.
 Alongside the strain *h(t)* data, |GWOSC|_ also
-releases a *Data Quality* :ref:`state vector <pdpy-statevector>`.
+releases a *Data Quality* :ref:`state vector <pydischarge-statevector>`.
 We can use this to check on the quality of the data from the LIGO Livingston
 detector around |GW170817|_.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = "pdpy.timeseries"
+__currentmodule__ = "pydischarge.timeseries"
 
 # First, we can import the `StateVector` class:
-from pdpy.timeseries import StateVector
+from pydischarge.timeseries import StateVector
 
 # and download the state information surrounding GW170817:
 data = StateVector.fetch_open_data(

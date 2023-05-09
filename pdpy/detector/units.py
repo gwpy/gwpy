@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module registers a number of custom units used in GW astronomy.
 """
@@ -34,7 +34,7 @@ UNRECOGNIZED_UNITS = {}
 
 # -- parser to handle any unit ------------------------------------------------
 
-class PDpyFormat(Generic):
+class pyDischargeFormat(Generic):
     """Sub-class of the `Generic` unit parser that is more forgiving
 
     This format tries to work around 'human' errors in unit naming,
@@ -45,7 +45,7 @@ class PDpyFormat(Generic):
     created so that mathematical operations will work. Conversions to other
     units will explicitly not work.
     """
-    name = 'pdpy'
+    name = 'pydischarge'
     re_closest_unit = re.compile(r'Did you mean (.*)\?\Z')
     re_closest_unit_delim = re.compile('(, | or )')
     warn = True
@@ -95,7 +95,7 @@ class PDpyFormat(Generic):
 
 
 # pylint: disable=redefined-builtin
-def parse_unit(name, parse_strict='warn', format='pdpy'):
+def parse_unit(name, parse_strict='warn', format='pydischarge'):
     """Attempt to intelligently parse a `str` as a `~astropy.units.Unit`
 
     Parameters
@@ -136,10 +136,10 @@ def parse_unit(name, parse_strict='warn', format='pdpy'):
             ):
                 raise
             # try again using out own lenient parser
-            PDpyFormat.warn = parse_strict != 'silent'
+            pyDischargeFormat.warn = parse_strict != 'silent'
             return units.Unit(name, parse_strict='silent', format=format)
         finally:
-            PDpyFormat.warn = True
+            pyDischargeFormat.warn = True
 
 
 # -- custom units -------------------------------------------------------------

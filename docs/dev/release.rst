@@ -1,14 +1,14 @@
-.. _pdpy-dev-release:
+.. _pydischarge-dev-release:
 
 ####################
 Publishing a release
 ####################
 
-This page describes the steps required to author a release of PDpy.
+This page describes the steps required to author a release of pyDischarge.
 
 Notes:
 
-* pdpy uses the
+* pydischarge uses the
   `stable mainline <https://www.bitsnbites.eu/a-stable-mainline-branching-model-for-git/>`_
   branching model for releases
 * all release numbers must follow `Semantic Versioning 2 <segmver.org>`_ and
@@ -75,7 +75,7 @@ Step-by-step
 
 #. **Draft a release on GitHub**
 
-   * Go to https://github.com/pdpy-github/pdpy/releases/new
+   * Go to https://github.com/pydischarge-github/pydischarge/releases/new
    * Use ``vX.Y.Z`` as the *Tag version*
    * Use X.Y.Z as the *Release title*
    * Copy the tag message into the text box to serve as release notes
@@ -86,14 +86,14 @@ Step-by-step
 
    .. code-block:: bash
 
-      cd /home/duncan.macleod/pdpy-nightly-build/
+      cd /home/duncan.macleod/pydischarge-nightly-build/
       bash release-build.sh X.Y.Z
 
    Once that is complete (~20 minutes), a few manual updates must be made:
 
    .. code-block:: bash
 
-      cd /home/duncan.macleod/pdpy-nightly-build/pdpy-github.github.io/docs
+      cd /home/duncan.macleod/pydischarge-nightly-build/pydischarge-github.github.io/docs
       unlink stable && ln -s X.Y.Z stable
       sed -i 's/0.9.9/X.Y.Z/g' index.html
 
@@ -108,7 +108,7 @@ Step-by-step
       git push --signed=if-asked  # <- this step needs an SSH key
 
    It should take ~5 minutes for the release documentation to actually
-   appear on https://pdpy-github.github.io/docs/
+   appear on https://pydischarge-github.github.io/docs/
 
 ==============
 Linked updates
@@ -136,14 +136,14 @@ To create a new release on PyPI:
    rm -rf dist/
    git checkout vX.Y.Z
    python -m build
-   python -m twine upload --sign dist/pdpy-*
+   python -m twine upload --sign dist/pydischarge-*
 
 Conda
 -----
 
 Once the PyPI upload has completed, the conda-forge bot will automatically
-open a pull request to `conda-forge/pdpy-feedstock
-<https://github.com/conda-forge/pdpy-feedstock.git>`_.
+open a pull request to `conda-forge/pydischarge-feedstock
+<https://github.com/conda-forge/pydischarge-feedstock.git>`_.
 Just double-check that the dependencies and tests are up-to-date, then
 merge.
 

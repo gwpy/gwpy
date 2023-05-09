@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`pdpy.astro.range`
+"""Unit tests for :mod:`pydischarge.astro.range`
 """
 
 from unittest import mock
@@ -64,7 +64,7 @@ def psd(hoft):
 # -- sensemon -----------------------------------
 
 def test_sensemon_range_psd(psd):
-    """Test for :func:`pdpy.astro.sensemon_range_psd`
+    """Test for :func:`pydischarge.astro.sensemon_range_psd`
     """
     fisco = astro.range._get_isco_frequency(1.4, 1.4).value
     frange = (psd.frequencies.value < fisco)
@@ -78,7 +78,7 @@ def test_sensemon_range_psd(psd):
 
 
 def test_sensemon_range(psd):
-    """Test for :func:`pdpy.astro.sensemon_range`
+    """Test for :func:`pydischarge.astro.sensemon_range`
     """
     r = astro.sensemon_range(psd)
     utils.assert_quantity_almost_equal(r, TEST_RESULTS['sensemon_range'])
@@ -98,7 +98,7 @@ def test_inspiral_range_missing_dep(psd):
 
 @pytest.mark.requires("inspiral_range")
 def test_inspiral_range_psd(psd):
-    """Test for :func:`pdpy.astro.inspiral_range_psd`
+    """Test for :func:`pydischarge.astro.inspiral_range_psd`
     """
     frange = (psd.frequencies.value < 4096)
     r = astro.inspiral_range_psd(psd[frange])
@@ -113,7 +113,7 @@ def test_inspiral_range_psd(psd):
 
 @pytest.mark.requires("inspiral_range")
 def test_inspiral_range(psd):
-    """Test for :func:`pdpy.astro.inspiral_range`
+    """Test for :func:`pydischarge.astro.inspiral_range`
     """
     r = astro.inspiral_range(psd)
     utils.assert_quantity_almost_equal(r, TEST_RESULTS['inspiral_range'])
@@ -122,7 +122,7 @@ def test_inspiral_range(psd):
 # -- burst range --------------------------------
 
 def test_burst_range_spectrum(psd):
-    """Test for :func:`pdpy.astro.burst_range_spectrum`
+    """Test for :func:`pydischarge.astro.burst_range_spectrum`
     """
     f = psd.frequencies
     frange = (f.value >= 100) & (f.value < 500)
@@ -136,7 +136,7 @@ def test_burst_range_spectrum(psd):
 
 
 def test_burst_range(psd):
-    """Test for :func:`pdpy.astro.burst_range`
+    """Test for :func:`pydischarge.astro.burst_range`
     """
     r = astro.burst_range(psd)
     utils.assert_quantity_almost_equal(r, TEST_RESULTS['burst_range'])

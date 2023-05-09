@@ -148,14 +148,14 @@ jobs:
         EOF
         sudo cvmfs_config probe
 
-    - name: Install PDpy
+    - name: Install pyDischarge
       run: python -m pip install .[dev] --no-build-isolation -vv
 
     - name: Package list
       run: conda list --name test
 
     - name: Run test suite
-      run: python -m pytest -ra --color yes --cov pdpy --cov-report=xml --junitxml=pytest.xml --numprocesses=auto pdpy/ examples/
+      run: python -m pytest -ra --color yes --cov pydischarge --cov-report=xml --junitxml=pytest.xml --numprocesses=auto pydischarge/ examples/
 
     - name: Coverage report
       run: python -m coverage report --show-missing

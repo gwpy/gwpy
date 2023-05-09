@@ -5,7 +5,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = python -m sphinx
-SPHINXPROJ    = pdpy
+SPHINXPROJ    = pydischarge
 SOURCEDIR     = .
 BUILDDIR      = ../build/sphinx
 

@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Cardiff University (2022)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`pdpy.io.ffldatafind`
+"""Unit tests for :mod:`pydischarge.io.ffldatafind`
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -210,22 +210,22 @@ def test_find_latest_on_missing(on_missing, ctx):
         ) == []
 
 
-# -- test pdpy.io.datafind interface
+# -- test pydischarge.io.datafind interface
 
 @mock.patch(
-    "pdpy.io.datafind.iter_channel_names",
+    "pydischarge.io.datafind.iter_channel_names",
     mock.MagicMock(return_value=["Y1:TEST-CHANNEL"]),
 )
 @mock.patch(
-    "pdpy.io.datafind.on_tape",
+    "pydischarge.io.datafind.on_tape",
     mock.MagicMock(return_value=False),
 )
 @mock.patch(
-    'pdpy.io.datafind.num_channels',
+    'pydischarge.io.datafind.num_channels',
     mock.MagicMock(return_value=1),
 )
 def test_datafind_find_frametype():
-    """Test that pdpy.io.datafind.find_frametype ends up calling out
+    """Test that pydischarge.io.datafind.find_frametype ends up calling out
     to ffldatafind under the right circumstances.
     """
     assert io_datafind.find_frametype(

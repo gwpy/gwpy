@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2018-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Basic I/O routines for :mod:`pdpy.timeseries`
+"""Basic I/O routines for :mod:`pydischarge.timeseries`
 """
 
 from ...io import cache as io_cache
@@ -24,7 +24,7 @@ from ...io.mp import read_multi as io_read_multi
 
 
 def read(cls, source, *args, **kwargs):
-    """Read data from a source into a `pdpy.timeseries` object.
+    """Read data from a source into a `pydischarge.timeseries` object.
 
     This method is just the internal worker for `TimeSeries.read`, and
     `TimeSeriesDict.read`, and isn't meant to be called directly.
@@ -96,7 +96,7 @@ def _pad_series(ts, pad, start=None, end=None, error=False):
 
     Parameters
     ----------
-    ts : `pdpy.types.Series`
+    ts : `pydischarge.types.Series`
         the input series
 
     pad : `float`, `astropy.units.Quantity`

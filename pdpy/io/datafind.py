@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Utilities for auto-discovery of GW data files.
 
@@ -25,7 +25,7 @@ The functions in this module are highly reliant on having local access to
 files (either directly, or via NFS, or CVMFS).
 
 Data discovery using the DataFind service requires the `gwdatafind` Python
-package (a dependency of ``pdpy``), and either the ``GW_DATAFIND_SERVER``
+package (a dependency of ``pydischarge``), and either the ``GW_DATAFIND_SERVER``
 (or legacy ``LIGO_DATAFIND_SERVER``) environment variable to be set,
 or the ``host`` keyword must be passed to :func:`find_urls` and friends.
 
@@ -133,7 +133,7 @@ def on_tape(*files):
 def _gwdatafind_module(**datafind_kw):
     """Return the appropriate GWDataFind-like API based on the environment
 
-    This allows switching to the hacky `pdpy.io.ffldatafind` replacement
+    This allows switching to the hacky `pydischarge.io.ffldatafind` replacement
     module to enable a GWDataFind-like interface for direct FFL data
     discovery at Virgo.
     """
@@ -159,7 +159,7 @@ def _select_gwdatafind_mod(func):
     """Decorate a function to see the right ``gwdatafind`` API.
 
     This exists only to allow on-the-fly replacing of the actual `gwdatafind`
-    with :mod:`pdpy.io.ffldatafind` if it looks like we are trying to find
+    with :mod:`pydischarge.io.ffldatafind` if it looks like we are trying to find
     data from FFL files.
     """
     @wraps(func)
@@ -252,7 +252,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
 
     Parameters
     ----------
-    channel : `str`, `~pdpy.detector.Channel`
+    channel : `str`, `~pydischarge.detector.Channel`
         the channel to be found
 
     gpstime : `int`, optional
@@ -297,7 +297,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
 
     Examples
     --------
-    >>> from pdpy.io import datafind as io_datafind
+    >>> from pydischarge.io import datafind as io_datafind
     >>> io_datafind.find_frametype('H1:IMC-PWR_IN_OUTPUT', gpstime=1126259462)
     'H1_R'
     >>> io_datafind.find_frametype('H1:IMC-PWR_IN_OUTPUT', gpstime=1126259462,
@@ -435,16 +435,16 @@ def find_best_frametype(channel, start, end,
 
     Parameters
     ----------
-    channel : `str`, `~pdpy.detector.Channel`
+    channel : `str`, `~pydischarge.detector.Channel`
         the channel to be found
 
-    start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+    start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
         GPS start time of period of interest,
-        any input parseable by `~pdpy.time.to_gps` is fine
+        any input parseable by `~pydischarge.time.to_gps` is fine
 
-    end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+    end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
         GPS end time of period of interest,
-        any input parseable by `~pdpy.time.to_gps` is fine
+        any input parseable by `~pydischarge.time.to_gps` is fine
 
     host : `str`, optional
         name of datafind host to use
@@ -472,7 +472,7 @@ def find_best_frametype(channel, start, end,
 
     Examples
     --------
-    >>> from pdpy.io.datafind import find_best_frametype
+    >>> from pydischarge.io.datafind import find_best_frametype
     >>> find_best_frametype('L1:GDS-CALIB_STRAIN', 1126259460, 1126259464)
     'L1_HOFT_C00'
     """

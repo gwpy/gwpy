@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Alex Urban (2018-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Inject a known signal into a `TimeSeries`
 
@@ -30,12 +30,12 @@ noise, then inject a simulation of GW150914 into it at a known time.
 """
 
 __author__ = "Alex Urban <alexander.urban@ligo.org>"
-__currentmodule__ = 'pdpy.timeseries'
+__currentmodule__ = 'pydischarge.timeseries'
 
 # First, we prepare one second of Gaussian noise:
 
 from numpy import random
-from pdpy.timeseries import TimeSeries
+from pydischarge.timeseries import TimeSeries
 noise = TimeSeries(random.normal(scale=.1, size=16384), sample_rate=16384)
 
 # Then we can download a simulation of the GW150914 signal from GWOSC:
@@ -50,18 +50,18 @@ signal.t0 = .5  # make sure this intersects with noise time samples
 # Note, since this simulation cuts off before a certain time, it is
 # important to taper its ends to zero to avoid ringing artifacts.
 # We can accomplish this using the
-# :meth:`~pdpy.timeseries.TimeSeries.taper` method.
+# :meth:`~pydischarge.timeseries.TimeSeries.taper` method.
 
 signal = signal.taper()
 
 # Since the time samples overlap, we can inject this into our noise data
-# using :meth:`~pdpy.types.series.Series.inject`:
+# using :meth:`~pydischarge.types.series.Series.inject`:
 
 data = noise.inject(signal)
 
 # Finally, we can visualize the full process in the time domain:
 
-from pdpy.plot import Plot
+from pydischarge.plot import Plot
 plot = Plot(noise, signal, data, separate=True, sharex=True, sharey=True)
 plot.gca().set_epoch(0)
 plot.show()

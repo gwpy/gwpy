@@ -1,6 +1,6 @@
-.. currentmodule:: pdpy.table
+.. currentmodule:: pydischarge.table
 
-.. _pdpy-table-histogram:
+.. _pydischarge-table-histogram:
 
 #####################
 Data table histograms
@@ -17,7 +17,7 @@ Using the above method we can generate a histogram as follows
 .. plot::
    :include-source:
 
-   >>> from pdpy.table import EventTable
+   >>> from pydischarge.table import EventTable
    >>> events = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['snr'])
    >>> plot = events.hist('snr', weights=1/10., logbins=True, bins=50, histtype='stepfilled')
    >>> ax = plot.gca()
@@ -27,4 +27,4 @@ Using the above method we can generate a histogram as follows
    >>> ax.autoscale(axis='x', tight=True)
    >>> plot.show()
 
-This is a snippet from the example :ref:`pdpy-example-table-histogram`.
+This is a snippet from the example :ref:`pydischarge-example-table-histogram`.

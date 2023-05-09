@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Plotting an `EventTable` in a histogram
 
@@ -23,12 +23,12 @@ I would like to study the distribution of the GW events detected to date.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'pdpy.table'
+__currentmodule__ = 'pydischarge.table'
 
 # First, we can download the ``'GWTC-1-confident'`` catalogue using
 # :meth:`EventTable.fetch_open_data`:
 
-from pdpy.table import EventTable
+from pydischarge.table import EventTable
 events = EventTable.fetch_open_data(
     "GWTC-1-confident",
     columns=("mass_1_source", "mass_2_source"),
@@ -38,7 +38,7 @@ events.add_column(
     name="mtotal"
 )
 
-# and can generate a new `~pdpy.plot.Plot` using the
+# and can generate a new `~pydischarge.plot.Plot` using the
 # :meth:`~EventTable.hist` method:
 
 plot = events.hist('mtotal', bins=10, range=(0, 100), histtype='stepfilled')

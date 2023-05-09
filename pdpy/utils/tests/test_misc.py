@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`pdpy.utils.misc`
+"""Tests for :mod:`pydischarge.utils.misc`
 """
 
 import sys
@@ -27,7 +27,7 @@ from .. import misc as utils_misc
 
 
 def test_gprint(capsys):
-    """Test for :func:`pdpy.utils.misc.gprint`
+    """Test for :func:`pydischarge.utils.misc.gprint`
     """
     utils_misc.gprint('test')
     assert capsys.readouterr().out == 'test\n'
@@ -40,7 +40,7 @@ def test_gprint(capsys):
 
 
 def test_null_context():
-    """Test for :func:`pdpy.utils.misc.null_context`
+    """Test for :func:`pydischarge.utils.misc.null_context`
     """
     with pytest.warns(DeprecationWarning):
         ctx = utils_misc.null_context()
@@ -49,7 +49,7 @@ def test_null_context():
 
 
 def test_round_to_power():
-    """Test for :func:`pdpy.utils.misc.round_to_power`
+    """Test for :func:`pydischarge.utils.misc.round_to_power`
     """
     # test basic features
     assert utils_misc.round_to_power(2) == 2
@@ -64,7 +64,7 @@ def test_round_to_power():
 
 
 def test_round_to_power_error():
-    """Test for an errored use case of :func:`pdpy.utils.misc.round_to_power`
+    """Test for an errored use case of :func:`pydischarge.utils.misc.round_to_power`
     """
     with pytest.raises(
         ValueError,
@@ -74,7 +74,7 @@ def test_round_to_power_error():
 
 
 def test_unique():
-    """Test for :func:`pdpy.utils.misc.unique`
+    """Test for :func:`pydischarge.utils.misc.unique`
     """
     a = [1, 2, 4, 3, 5, 4, 5, 3]
     assert utils_misc.unique(a) == [1, 2, 4, 3, 5]
@@ -85,6 +85,6 @@ def test_unique():
     (str, 1, '1'),
 ])
 def test_if_not_none(func, value, out):
-    """Test for :func:`pdpy.utils.misc.if_not_none`
+    """Test for :func:`pydischarge.utils.misc.if_not_none`
     """
     assert utils_misc.if_not_none(func, value) == out

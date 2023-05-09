@@ -2,26 +2,26 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Calculating the time-dependent coherence between two channels
 
 The standard coherence calculation outputs a frequency series
-(`~pdpy.frequencyseries.FrequencySeries`) giving a time-averaged measure
-of coherence. See :ref:`pdpy-example-frequencyseries-coherence` for an
+(`~pydischarge.frequencyseries.FrequencySeries`) giving a time-averaged measure
+of coherence. See :ref:`pydischarge-example-frequencyseries-coherence` for an
 example.
 
 The `TimeSeries` method :meth:`~TimeSeries.coherence_spectrogram` performs the
@@ -31,10 +31,10 @@ measure.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'pdpy.timeseries'
+__currentmodule__ = 'pydischarge.timeseries'
 
 # First, we import the `TimeSeriesDict`
-from pdpy.timeseries import TimeSeriesDict
+from pydischarge.timeseries import TimeSeriesDict
 
 # and then :meth:`~TimeSeriesDict.get` the data for the strain output
 # (``H1:GDS-CALIB_STRAIN``) and the PSL periscope accelerometer
@@ -52,7 +52,7 @@ acc = data['H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ']
 # transform length, with a 1-second (50%) overlap:
 coh = hoft.coherence_spectrogram(acc, 10, fftlength=.5, overlap=.25)
 
-# Finally, we can :meth:`~pdpy.spectrogram.Spectrogram.plot` the
+# Finally, we can :meth:`~pydischarge.spectrogram.Spectrogram.plot` the
 # resulting data
 plot = coh.plot()
 ax = plot.gca()

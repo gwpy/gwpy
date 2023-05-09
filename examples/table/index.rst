@@ -1,4 +1,4 @@
-.. currentmodule:: pdpy.table
+.. currentmodule:: pydischarge.table
 
 #####################
 Tabular data examples

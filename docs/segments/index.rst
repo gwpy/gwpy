@@ -1,6 +1,6 @@
-.. currentmodule:: pdpy.segments
+.. currentmodule:: pydischarge.segments
 
-.. _pdpy-segments:
+.. _pydischarge-segments:
 
 #####################
 Data-quality segments
@@ -23,7 +23,7 @@ such times as semi-open GPS ``[start, stop)`` segments.
 The :class:`Segment` and :class:`SegmentList` classes
 =====================================================
 
-PDpy provides a number of classes for generating and manipulating such
+pyDischarge provides a number of classes for generating and manipulating such
 segments, enhancing the functionality provided by the (excellent)
 :mod:`ligo.segments` package.
 All credits for their usefulness go to the authors of that package.
@@ -77,7 +77,7 @@ Combining `DataQualityFlag`\s
 
 `DataQualityFlag`\s can be combined in a number of ways, using the standard python operators, e.g. `&` and `|`.
 
-.. _pdpy-segments-intersection:
+.. _pydischarge-segments-intersection:
 
 --------------------
 Intersection (``&``)
@@ -102,7 +102,7 @@ returns the intersection of both the `~DataQualityFlag.known` and
 This new flag represents times when both ``a`` and ``b`` were known and
 when both were active.
 
-.. _pdpy-segments-union:
+.. _pydischarge-segments-union:
 
 -------------
 Union (``|``)
@@ -124,7 +124,7 @@ returns the union of both the `~DataQualityFlag.known` and
 This new flag represents times when either ``a`` or ``b`` were known and when
 either was active.
 
-.. _pdpy-segments-sub:
+.. _pydischarge-segments-sub:
 
 -------------------
 Subtraction (``-``)
@@ -145,7 +145,7 @@ of the `~DataQualityFlag.active` segment lists, e.g.::
 
 The new flag represents times when both ``a`` and ``b`` were *known*, but only ``a`` was active.
 
-.. _pdpy-segments-add:
+.. _pydischarge-segments-add:
 
 ----------------
 Addition (``+``)
@@ -154,7 +154,7 @@ Addition (``+``)
 
    >>> a + b
 
-This operation is the same as :ref:`pdpy-segments-union`.
+This operation is the same as :ref:`pydischarge-segments-union`.
 
 -----------------
 Inversion (``~``)

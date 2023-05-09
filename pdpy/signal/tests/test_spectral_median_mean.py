@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2017-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for :mod:`pdpy.signal.spectral._median_mean`
+"""Unit test for :mod:`pydischarge.signal.spectral._median_mean`
 """
 
 from unittest import mock
@@ -28,11 +28,11 @@ from ..spectral import _median_mean as fft_median_mean
 
 @pytest.mark.requires("lal", "pycbc.psd")
 @mock.patch(
-    "pdpy.signal.spectral._pycbc.welch",
+    "pydischarge.signal.spectral._pycbc.welch",
     side_effect=(None, ImportError, ImportError),
 )
 @mock.patch(
-    "pdpy.signal.spectral._lal._lal_spectrum",
+    "pydischarge.signal.spectral._lal._lal_spectrum",
     side_effect=(None, ImportError),
 )
 def test_median_mean(lal_func, pycbc_func):

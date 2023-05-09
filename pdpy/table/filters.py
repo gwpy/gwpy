@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2017-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Filter functions for use with :meth:`EventTable.filter`
 
@@ -37,7 +37,7 @@ import numpy
 def in_segmentlist(column, segmentlist):
     """Return the index of values lying inside the given segmentlist
 
-    A `~pdpy.segments.Segment` represents a semi-open interval,
+    A `~pydischarge.segments.Segment` represents a semi-open interval,
     so for any segment `[a, b)`, a value `x` is 'in' the segment if
 
     a <= x < b
@@ -76,6 +76,6 @@ def in_segmentlist(column, segmentlist):
 def not_in_segmentlist(column, segmentlist):
     """Return the index of values not lying inside the given segmentlist
 
-    See :func:`~pdpy.table.filters.in_segmentlist` for more details
+    See :func:`~pydischarge.table.filters.in_segmentlist` for more details
     """
     return in_segmentlist(column, ~segmentlist)

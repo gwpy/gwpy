@@ -1,6 +1,6 @@
-.. currentmodule:: pdpy.table
+.. currentmodule:: pydischarge.table
 
-.. _pdpy-table-rate:
+.. _pydischarge-table-rate:
 
 ##############################
 Calculating event trigger rate
@@ -26,7 +26,7 @@ event rate on a 1-second stride:
    :context: reset
    :include-source:
 
-   >>> from pdpy.table import EventTable
+   >>> from pydischarge.table import EventTable
    >>> events = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst', columns=['peak', 'central_freq', 'snr'])
    >>> rate = events.event_rate(1, start=968654552, end=968654562, timecolumn='peak')
    >>> plot = rate.step()
@@ -35,7 +35,7 @@ event rate on a 1-second stride:
    >>> ax.set_title('LIGO Hanford Observatory event rate for HW100916')
    >>> plot.show()
 
-This code is a snippet of the example :ref:`pdpy-example-table-rate`.
+This code is a snippet of the example :ref:`pydischarge-example-table-rate`.
 
 =================
 Binned event rate
@@ -62,4 +62,4 @@ signal-to-noise ratio (SNR) above some threshold, for the same table as above.
    >>> ax.set_title('LIGO Hanford Observatory event rate for HW100916')
    >>> plot.show()
 
-This code is a snippet of the example on :ref:`pdpy-example-table-rate_binned`.
+This code is a snippet of the example on :ref:`pydischarge-example-table-rate_binned`.

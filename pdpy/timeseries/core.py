@@ -2,20 +2,20 @@
 # Copyright (C) Louisiana State University (2014-2017)
 #               Cardiff University (2017-2021)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 The TimeSeriesBase
@@ -124,9 +124,9 @@ class TimeSeriesBase(Series):
     unit : `~astropy.units.Unit`, optional
         physical unit of these data
 
-    t0 : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    t0 : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~pdpy.time.to_gps` is fine
+        any input parsable by `~pydischarge.time.to_gps` is fine
 
     dt : `float`, `~astropy.units.Quantity`, optional, default: `1`
         time between successive samples (seconds), can also be given inversely
@@ -144,7 +144,7 @@ class TimeSeriesBase(Series):
     name : `str`, optional
         descriptive title for this array
 
-    channel : `~pdpy.detector.Channel`, `str`, optional
+    channel : `~pydischarge.detector.Channel`, `str`, optional
         source data stream for these data
 
     dtype : `~numpy.dtype`, optional
@@ -275,16 +275,16 @@ class TimeSeriesBase(Series):
             - `str` path of LAL-format cache file,
             - `list` of paths.
 
-        name : `str`, `~pdpy.detector.Channel`
+        name : `str`, `~pydischarge.detector.Channel`
             the name of the channel to read, or a `Channel` object.
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS start time of required data, defaults to start of data found;
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, defaults to end of data found;
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         format : `str`, optional
             source format identifier. If not given, the format will be
@@ -334,16 +334,16 @@ class TimeSeriesBase(Series):
 
         Parameters
         ----------
-        channel : `str`, `~pdpy.detector.Channel`
+        channel : `str`, `~pydischarge.detector.Channel`
             the data channel for which to query
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS end time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         host : `str`, optional
             URL of NDS server to use, if blank will try any server
@@ -391,13 +391,13 @@ class TimeSeriesBase(Series):
             the two-character prefix of the IFO in which you are interested,
             e.g. `'L1'`
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS start time of required data, defaults to start of data found;
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, defaults to end of data found;
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         sample_rate : `float`, optional,
             the sample rate of desired data; most data are stored
@@ -431,7 +431,7 @@ class TimeSeriesBase(Series):
 
         Examples
         --------
-        >>> from pdpy.timeseries import (TimeSeries, StateVector)
+        >>> from pydischarge.timeseries import (TimeSeries, StateVector)
         >>> print(TimeSeries.fetch_open_data('H1', 1126259446, 1126259478))
         TimeSeries([  2.17704028e-19,  2.08763900e-19,  2.39681183e-19,
                     ...,   3.55365541e-20,  6.33533516e-20,
@@ -490,16 +490,16 @@ class TimeSeriesBase(Series):
 
         Parameters
         ----------
-        channel : `str`, `~pdpy.detector.Channel`
+        channel : `str`, `~pydischarge.detector.Channel`
             the name of the channel to read, or a `Channel` object.
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS end time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         frametype : `str`, optional
             name of frametype in which this channel is stored, will search
@@ -544,16 +544,16 @@ class TimeSeriesBase(Series):
 
         Parameters
         ----------
-        channel : `str`, `~pdpy.detector.Channel`
+        channel : `str`, `~pydischarge.detector.Channel`
             the name of the channel to read, or a `Channel` object.
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS end time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         pad : `float`, optional
             value with which to fill gaps in the source data,
@@ -756,7 +756,7 @@ class TimeSeriesBase(Series):
         Returns
         -------
         timeseries : `TimeSeries`
-            a PDpy version of the input timeseries
+            a pyDischarge version of the input timeseries
         """
         return cls(pycbcseries.data, t0=pycbcseries.start_time,
                    dt=pycbcseries.delta_t, copy=copy)
@@ -843,7 +843,7 @@ class TimeSeriesBaseDict(OrderedDict):
     def span(self):
         """The GPS ``[start, stop)`` extent of data in this `dict`
 
-        :type: `~pdpy.segments.Segment`
+        :type: `~pydischarge.segments.Segment`
         """
         span = SegmentList()
         for value in self.values():
@@ -870,16 +870,16 @@ class TimeSeriesBaseDict(OrderedDict):
             - `str` path of LAL-format cache file,
             - `list` of paths.
 
-        channels : `~pdpy.detector.channel.ChannelList`, `list`
+        channels : `~pydischarge.detector.channel.ChannelList`, `list`
             a list of channels to read from the source.
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str` optional
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str` optional
             GPS start time of required data, anything parseable by
-            :func:`~pdpy.time.to_gps` is fine
+            :func:`~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, anything parseable by
-            :func:`~pdpy.time.to_gps` is fine
+            :func:`~pydischarge.time.to_gps` is fine
 
         format : `str`, optional
             source format identifier. If not given, the format will be
@@ -1000,13 +1000,13 @@ class TimeSeriesBaseDict(OrderedDict):
 
         Parameters
         ----------
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, defaults to end of data found;
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         See also
         --------
@@ -1050,13 +1050,13 @@ class TimeSeriesBaseDict(OrderedDict):
         channels : `list`
             required data channels.
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, defaults to end of data found;
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         host : `str`, optional
             URL of NDS server to use, if blank will try any server
@@ -1094,7 +1094,7 @@ class TimeSeriesBaseDict(OrderedDict):
 
         Returns
         -------
-        data : :class:`~pdpy.timeseries.TimeSeriesBaseDict`
+        data : :class:`~pydischarge.timeseries.TimeSeriesBaseDict`
             a new `TimeSeriesBaseDict` of (`str`, `TimeSeries`) pairs fetched
             from NDS.
         """
@@ -1186,13 +1186,13 @@ class TimeSeriesBaseDict(OrderedDict):
         channels : `list`
             required data channels.
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, defaults to end of data found;
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         frametype : `str`, optional
             name of frametype in which this channel is stored, by default
@@ -1301,13 +1301,13 @@ class TimeSeriesBaseDict(OrderedDict):
         channels : `list`
             required data channels.
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, defaults to end of data found;
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         frametype : `str`, optional
             name of frametype in which this channel is stored, by default
@@ -1592,7 +1592,7 @@ class TimeSeriesBaseList(list):
 
         Returns
         -------
-        series : `pdpy.types.TimeSeriesBase` subclass
+        series : `pydischarge.types.TimeSeriesBase` subclass
              a single series containing all data from each entry in this list
 
         See also

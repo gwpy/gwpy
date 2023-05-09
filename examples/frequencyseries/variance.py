@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Calculating and plotting a `SpectralVariance` histogram
 
@@ -24,23 +24,23 @@ via the power or amplitude spectral density calculations (PSD or ASD).
 However, these typically involve averaging of the data over a period, which
 can wash out transient noise (as is often desired).
 
-The `SpectralVariance` histogram provide by `pdpy.frequencyseries` allows
+The `SpectralVariance` histogram provide by `pydischarge.frequencyseries` allows
 us to look at the spectral sensitivity in a different manner, displaying
 which frequencies sit at which amplitude _most_ of the time, but also
 highlighting excursions from normal behaviour.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'pdpy.frequencyseries'
+__currentmodule__ = 'pydischarge.frequencyseries'
 
 # To demonstate this, we can load some data from the LIGO Livingston
 # intereferometer around the time of the GW151226 gravitational wave detection:
 
-from pdpy.timeseries import TimeSeries
+from pydischarge.timeseries import TimeSeries
 llo = TimeSeries.fetch_open_data('L1', 1135136228, 1135140324, verbose=True)
 
-# We can then call the :meth:`~pdpy.timeseries.TimeSeries.spectral_variance`
-# method of the ``llo`` `~pdpy.timeseries.TimeSeries` by calculating an ASD
+# We can then call the :meth:`~pydischarge.timeseries.TimeSeries.spectral_variance`
+# method of the ``llo`` `~pydischarge.timeseries.TimeSeries` by calculating an ASD
 # every 5 seconds and counting the amount of time each frequency bin spends
 # at each ASD value:
 

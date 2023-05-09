@@ -1,6 +1,6 @@
-.. currentmodule:: pdpy.plot
+.. currentmodule:: pydischarge.plot
 
-.. _pdpy-plot-bode:
+.. _pydischarge-plot-bode:
 
 #######################################
 Visualising filters (:class:`BodePlot`)
@@ -11,8 +11,8 @@ Any time-domain or Fourier-domain filters can be visualised using the Bode plot,
 .. plot::
    :include-source:
 
-   >>> from pdpy.signal.filter_design import bandpass
-   >>> from pdpy.plot import BodePlot
+   >>> from pydischarge.signal.filter_design import bandpass
+   >>> from pydischarge.plot import BodePlot
    >>> zpk = bandpass(40, 1000, 4096, analog=False)
    >>> plot = BodePlot(zpk, analog=False, sample_rate=4096, title='40-1000 Hz bandpass filter')
    >>> plot.show()

@@ -1,4 +1,4 @@
-.. _pdpy-install:
+.. _pydischarge-install:
 
 ############
 Installation
@@ -6,23 +6,23 @@ Installation
 
 
 ===============
-Installing PDpy
+Installing pyDischarge
 ===============
 
-.. _pdpy-install-conda:
+.. _pydischarge-install-conda:
 
 -----
 Conda
 -----
 
-The recommended way of installing PDpy is with `Conda <https://conda.io>`__:
+The recommended way of installing pyDischarge is with `Conda <https://conda.io>`__:
 
 .. code-block:: bash
 
-   conda install -c conda-forge pdpy
+   conda install -c conda-forge pydischarge
 
 
-.. _pdpy-install-pip:
+.. _pydischarge-install-pip:
 
 ---
 Pip
@@ -30,16 +30,16 @@ Pip
 
 .. code-block:: bash
 
-    python -m pip install pdpy
+    python -m pip install pydischarge
 
 
 ============
 Requirements
 ============
 
-PDpy has the following strict requirements:
+pyDischarge has the following strict requirements:
 
-.. table:: Requirements for PDpy
+.. table:: Requirements for pyDischarge
    :align: left
    :name: requirements-table
 
@@ -62,7 +62,7 @@ PDpy has the following strict requirements:
 
 All of these will be installed using any of the above install methods.
 
-Pdpy also depends on the following other packages for optional features:
+pyDischarge also depends on the following other packages for optional features:
 
 .. toctree::
    :glob:

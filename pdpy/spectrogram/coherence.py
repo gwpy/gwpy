@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module contains the relevant methods to generate a
 time-frequency coherence spectrogram from a pair of time-series.
@@ -33,10 +33,10 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
                      window=None, **kwargs):
     """Generate a time-frequency coherence
-    :class:`~pdpy.spectrogram.Spectrogram` from a pair of
-    :class:`~pdpy.timeseries.TimeSeries`.
+    :class:`~pydischarge.spectrogram.Spectrogram` from a pair of
+    :class:`~pydischarge.timeseries.TimeSeries`.
 
-    For each `stride`, a PSD :class:`~pdpy.frequencyseries.FrequencySeries`
+    For each `stride`, a PSD :class:`~pydischarge.frequencyseries.FrequencySeries`
     is generated, with all resulting spectra stacked in time and returned.
     """
     # check sampling rates
@@ -90,7 +90,7 @@ def from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
 
     Parameters
     ----------
-    timeseries : :class:`~pdpy.timeseries.TimeSeries`
+    timeseries : :class:`~pydischarge.timeseries.TimeSeries`
         input time-series to process.
     stride : `float`
         number of seconds in single PSD (column of spectrogram).
@@ -106,7 +106,7 @@ def from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
 
     Returns
     -------
-    spectrogram : :class:`~pdpy.spectrogram.Spectrogram`
+    spectrogram : :class:`~pydischarge.spectrogram.Spectrogram`
         time-frequency power spectrogram as generated from the
         input time-series.
     """

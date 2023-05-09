@@ -2,20 +2,20 @@
 # Copyright (C) Louisiana State University (2014-2017)
 #               Cardiff University (2017-2022)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Spectrogram object
 """
@@ -70,9 +70,9 @@ class Spectrogram(Array2D):
     unit : `~astropy.units.Unit`, optional
         physical unit of these data
 
-    epoch : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    epoch : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~pdpy.time.to_gps` is fine
+        any input parsable by `~pydischarge.time.to_gps` is fine
 
     sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
         the rate of samples per second (Hertz)
@@ -93,14 +93,14 @@ class Spectrogram(Array2D):
         This argument takes precedence over `f0` and `df` so should
         be given in place of these if relevant, not alongside
 
-    epoch : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    epoch : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~pdpy.time.to_gps` is fine
+        any input parsable by `~pydischarge.time.to_gps` is fine
 
     name : `str`, optional
         descriptive title for this array
 
-    channel : `~pdpy.detector.Channel`, `str`, optional
+    channel : `~pydischarge.detector.Channel`, `str`, optional
         source data stream for these data
 
     dtype : `~numpy.dtype`, optional
@@ -167,7 +167,7 @@ class Spectrogram(Array2D):
                      TimeSeries.epoch.__delete__,
                      """Starting GPS epoch for this `Spectrogram`
 
-                     :type: `~pdpy.segments.Segment`
+                     :type: `~pydischarge.segments.Segment`
                      """)
 
     t0 = property(TimeSeries.t0.__get__, TimeSeries.t0.__set__,
@@ -188,7 +188,7 @@ class Spectrogram(Array2D):
                     TimeSeries.span.__delete__,
                     """GPS [start, stop) span for this `Spectrogram`
 
-                    :type: `~pdpy.segments.Segment`
+                    :type: `~pydischarge.segments.Segment`
                     """)
 
     f0 = property(Array2D.y0.__get__, Array2D.y0.__set__,
@@ -288,7 +288,7 @@ class Spectrogram(Array2D):
         Parameters
         ----------
         operand : `str`, `FrequencySeries`, `Quantity`
-            a `~pdpy.frequencyseries.FrequencySeries` or
+            a `~pydischarge.frequencyseries.FrequencySeries` or
             `~astropy.units.Quantity` to weight against, or one of
 
             - ``'mean'`` : weight against the mean of each spectrum
@@ -345,7 +345,7 @@ class Spectrogram(Array2D):
 
         Returns
         -------
-        plot : `~pdpy.plot.Plot`
+        plot : `~pydischarge.plot.Plot`
             the `Plot` containing the data
 
         See also
@@ -356,8 +356,8 @@ class Spectrogram(Array2D):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        pdpy.plot.Axes.imshow
-        pdpy.plot.Axes.pcolormesh
+        pydischarge.plot.Axes.imshow
+        pydischarge.plot.Axes.pcolormesh
             for documentation of keyword arguments used in rendering the
             `Spectrogram` data
         """
@@ -375,7 +375,7 @@ class Spectrogram(Array2D):
         Parameters
         ----------
         *spectra
-            any number of `~pdpy.frequencyseries.FrequencySeries` series
+            any number of `~pydischarge.frequencyseries.FrequencySeries` series
         dt : `float`, `~astropy.units.Quantity`, optional
             stride between given spectra
 
@@ -384,11 +384,11 @@ class Spectrogram(Array2D):
         Spectrogram
             a new `Spectrogram` from a vertical stacking of the spectra
             The new object takes the metadata from the first given
-            `~pdpy.frequencyseries.FrequencySeries` if not given explicitly
+            `~pydischarge.frequencyseries.FrequencySeries` if not given explicitly
 
         Notes
         -----
-        Each `~pdpy.frequencyseries.FrequencySeries` passed to this
+        Each `~pydischarge.frequencyseries.FrequencySeries` passed to this
         constructor must be the same length.
         """
         data = numpy.vstack([s.value for s in spectra])
@@ -421,7 +421,7 @@ class Spectrogram(Array2D):
 
         Returns
         -------
-        spectrum : `~pdpy.frequencyseries.FrequencySeries`
+        spectrum : `~pydischarge.frequencyseries.FrequencySeries`
             the given percentile `FrequencySeries` calculated from this
             `SpectralVaraicence`
         """

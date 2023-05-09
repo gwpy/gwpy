@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`pdpy.io.nds2`
+"""Unit tests for :mod:`pydischarge.io.nds2`
 """
 
 import os
@@ -40,7 +40,7 @@ class _TestNds2Enum(object):
         assert self.TEST_CLASS.any() == 2 * max(self.TEST_CLASS).value - 1
 
     def test_find_errors(self):
-        """Test error raising for :meth:`pdpy.io.nds2.Nds2ChannelType.find`
+        """Test error raising for :meth:`pydischarge.io.nds2.Nds2ChannelType.find`
         """
         with pytest.raises(
             ValueError,
@@ -50,7 +50,7 @@ class _TestNds2Enum(object):
 
 
 class TestNds2ChannelType(_TestNds2Enum):
-    """Tests of :class:`pdpy.io.nds2.Nds2DataType`
+    """Tests of :class:`pydischarge.io.nds2.Nds2DataType`
     """
     TEST_CLASS = io_nds2.Nds2ChannelType
 
@@ -75,13 +75,13 @@ class TestNds2ChannelType(_TestNds2Enum):
         ('REDUCED', TEST_CLASS.RDS),
     ))
     def test_find(self, input_, expected):
-        """Test :meth:`pdpy.io.nds2.Nds2ChannelType.find`
+        """Test :meth:`pydischarge.io.nds2.Nds2ChannelType.find`
         """
         assert self.TEST_CLASS.find(input_) == expected
 
 
 class TestNds2DataType(_TestNds2Enum, _TestNumpyTypeEnum):
-    """Tests of :class:`pdpy.io.nds2.Nds2DataType`
+    """Tests of :class:`pydischarge.io.nds2.Nds2DataType`
     """
     TEST_CLASS = io_nds2.Nds2DataType
 
@@ -99,7 +99,7 @@ class TestNds2DataType(_TestNds2Enum, _TestNumpyTypeEnum):
      [('test1.ligo.org', 80), ('test2.ligo.org', 43)]),
 ])
 def test_parse_nds_env(key, value, hosts):
-    """Test `pdpy.io.nds2.parse_nds_env`
+    """Test `pydischarge.io.nds2.parse_nds_env`
     """
     with mock.patch.dict(os.environ, {key: value}):
         assert io_nds2.parse_nds_env(env=key) == hosts
@@ -111,7 +111,7 @@ def test_parse_nds_env(key, value, hosts):
             ('nds.ligo.caltech.edu', 31200)]),
 ])
 def test_host_resolution_order(ifo, hosts):
-    """Test `pdpy.io.nds2.host_resolution_order` basic usage
+    """Test `pydischarge.io.nds2.host_resolution_order` basic usage
     """
     assert io_nds2.host_resolution_order(ifo, env=None) == hosts
 
@@ -126,7 +126,7 @@ def test_host_resolution_order(ifo, hosts):
             ('nds.ligo.caltech.edu', 31200)]),
 ])
 def test_host_resolution_order_env(ifo, hosts):
-    """Test `pdpy.io.nds2.host_resolution_order` environment parsing
+    """Test `pydischarge.io.nds2.host_resolution_order` environment parsing
     """
     assert io_nds2.host_resolution_order(ifo) == hosts
 
@@ -134,7 +134,7 @@ def test_host_resolution_order_env(ifo, hosts):
 @mock.patch.dict(os.environ,
                  {'TESTENV': 'test1.ligo.org:80,test2.ligo.org:43'})
 def test_host_resolution_order_named_env():
-    """Test `pdpy.io.nds2.host_resolution_order` environment parsing
+    """Test `pydischarge.io.nds2.host_resolution_order` environment parsing
     with a named environment variable
     """
     hro = io_nds2.host_resolution_order(None, env='TESTENV')
@@ -152,7 +152,7 @@ def test_host_resolution_order_named_env():
       ('nds.ligo-la.caltech.edu', 31200), ('nds.ligo.caltech.edu', 31200)]),
 ])
 def test_host_resolution_order_epoch(ifo, epoch, env, hosts):
-    """Test `pdpy.io.nds2.host_resolution_order` epoch parsing
+    """Test `pydischarge.io.nds2.host_resolution_order` epoch parsing
     """
     assert io_nds2.host_resolution_order(ifo, epoch=epoch, env=env) == hosts
 
@@ -160,7 +160,7 @@ def test_host_resolution_order_epoch(ifo, epoch, env, hosts):
 @mock.patch.dict(os.environ,
                  {'TESTENV': 'test1.ligo.org:80,test2.ligo.org:43'})
 def test_host_resolution_order_warning():
-    """Test `pdpy.io.nds2.host_resolution_order` warnings
+    """Test `pydischarge.io.nds2.host_resolution_order` warnings
     """
     # test warnings for unknown IFO
     with pytest.warns(UserWarning) as record:
@@ -174,13 +174,13 @@ def test_host_resolution_order_warning():
 
 @pytest.mark.requires("nds2")
 @pytest.mark.parametrize('host, port, callport', [
-    ('nds.test.pdpy', None, None),
-    ('nds.test.pdpy', 31200, 31200),
+    ('nds.test.pydischarge', None, None),
+    ('nds.test.pydischarge', 31200, 31200),
     ('x1nds9', None, 8088),
 ])
 @mock.patch('nds2.connection')
 def test_connect(connector, host, port, callport):
-    """Test `pdpy.io.nds2.connect`
+    """Test `pydischarge.io.nds2.connect`
     """
     io_nds2.connect(host, port=port)
     if callport is None:
@@ -190,26 +190,26 @@ def test_connect(connector, host, port, callport):
 
 
 @pytest.mark.requires("nds2")
-@mock.patch('pdpy.io.nds2.connect')
+@mock.patch('pydischarge.io.nds2.connect')
 def test_auth_connect(connect):
-    """Test `pdpy.io.nds2.auth_connect`
+    """Test `pydischarge.io.nds2.auth_connect`
     """
     io_nds2.auth_connect('host', 'port')
     connect.assert_called_once_with('host', 'port')
 
 
 @pytest.mark.requires("nds2")
-@mock.patch('pdpy.io.nds2.kinit')
+@mock.patch('pydischarge.io.nds2.kinit')
 @mock.patch(
-    'pdpy.io.nds2.connect',
+    'pydischarge.io.nds2.connect',
     side_effect=(
         RuntimeError('Request SASL authentication something something'),
         True,
     ),
 )
 def test_auth_connect_kinit(connect, kinit):
-    """Test `pdpy.io.nds2.auth_connect` with a callout to
-    `pdpy.io.kerberos.kinit`
+    """Test `pydischarge.io.nds2.auth_connect` with a callout to
+    `pydischarge.io.kerberos.kinit`
     """
     with pytest.warns(io_nds2.NDSWarning):
         assert io_nds2.auth_connect('host', 'port')
@@ -219,18 +219,18 @@ def test_auth_connect_kinit(connect, kinit):
 
 
 @pytest.mark.requires("nds2")
-@mock.patch('pdpy.io.nds2.connect', side_effect=RuntimeError('Anything else'))
+@mock.patch('pydischarge.io.nds2.connect', side_effect=RuntimeError('Anything else'))
 def test_auth_connect_error(connect):
-    """Test errors from `pdpy.io.nds2.auth_connect`
+    """Test errors from `pydischarge.io.nds2.auth_connect`
     """
     with pytest.raises(RuntimeError, match="Anything else"):
         io_nds2.auth_connect('host', 'port')
     connect.assert_called_once_with("host", "port")
 
 
-@mock.patch('pdpy.io.nds2.auth_connect', return_value=1)
+@mock.patch('pydischarge.io.nds2.auth_connect', return_value=1)
 def test_open_connection(auth_connect):
-    """Test the `pdpy.io.nds2.open_connection` decorator
+    """Test the `pydischarge.io.nds2.open_connection` decorator
     """
     @io_nds2.open_connection
     def new_func(arg1, connection=None):
@@ -248,7 +248,7 @@ def test_open_connection(auth_connect):
 @pytest.mark.requires("nds2")
 @mock.patch('nds2.connection')
 def test_find_channels(connection):
-    """Test `pdpy.io.nds2.find_channels`
+    """Test `pydischarge.io.nds2.find_channels`
     """
     # set up connection.find_channels
     chan = mocks.nds2_channel('X1:test', 16, 'm')
@@ -298,10 +298,10 @@ def test_find_channels(connection):
 
 
 @pytest.mark.requires("nds2")
-@mock.patch('pdpy.io.nds2.find_channels', return_value=['X1:test'])
-@mock.patch('pdpy.io.nds2.auth_connect')
+@mock.patch('pydischarge.io.nds2.find_channels', return_value=['X1:test'])
+@mock.patch('pydischarge.io.nds2.auth_connect')
 def test_get_availability(auth_connect, _):
-    """Test `pdpy.io.nds2.get_availability`
+    """Test `pydischarge.io.nds2.get_availability`
     """
     # setup mocks
     conn = mock.MagicMock()
@@ -334,14 +334,14 @@ def test_get_availability(auth_connect, _):
     (1167264018, 1198800018, (1167264000, 1198800060)),  # expand both
 ])
 def test_minute_trend_times(start, end, out):
-    """Test `pdpy.io.nds2.minute_trend_times`
+    """Test `pydischarge.io.nds2.minute_trend_times`
     """
     assert io_nds2.minute_trend_times(start, end) == out
 
 
 @pytest.mark.requires("nds2")
 def test_get_nds2_name():
-    """Test `pdpy.io.nds2._get_nds2_name`
+    """Test `pydischarge.io.nds2._get_nds2_name`
     """
     # we can't use parametrize because mocks.nds2_channel requires
     # the nds2-client and is executed _before_ the skip decorator is
@@ -356,7 +356,7 @@ def test_get_nds2_name():
 
 @pytest.mark.requires("nds2")
 def test_get_nds2_names():
-    """Test `pdpy.io.nds2._get_nds2_names`
+    """Test `pydischarge.io.nds2._get_nds2_names`
     """
     channels = ['test', Channel('X1:TEST', type='m-trend'),
                 mocks.nds2_channel('X1:TEST', 16, 'NONE')]

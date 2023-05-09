@@ -2,22 +2,22 @@
 # Copyright (C) Louisiana State University (2014-2017)
 #               Cardiff University (2017-2021)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`pdpy.segments`
+"""Tests for :mod:`pydischarge.segments`
 """
 
 import re
@@ -414,7 +414,7 @@ class TestDataQualityFlag(object):
         assert f.name == 'X1:TEST-FLAG'
         assert f.version is None
 
-    @mock.patch("pdpy.segments.flag.query_segments", mock_query_segments)
+    @mock.patch("pydischarge.segments.flag.query_segments", mock_query_segments)
     def test_populate(self):
         name = QUERY_FLAGS[0]
         flag = self.TEST_CLASS(name, known=QUERY_RESULT[name].known)
@@ -479,7 +479,7 @@ class TestDataQualityFlag(object):
 
     @pytest.mark.requires("ligo.lw.lsctables")
     def test_write_ligolw_attrs(self, tmp_path, flag):
-        from pdpy.io.ligolw import read_table
+        from pydischarge.io.ligolw import read_table
         tmp = tmp_path / "tmp.xml"
         flag.write(
             tmp,
@@ -491,7 +491,7 @@ class TestDataQualityFlag(object):
 
     # -- test queries ---------------------------
 
-    @mock.patch("pdpy.segments.flag.query_segments", mock_query_segments)
+    @mock.patch("pydischarge.segments.flag.query_segments", mock_query_segments)
     def test_query(self):
         result = self.TEST_CLASS.query(QUERY_FLAGS[0], 0, 10)
         assert isinstance(result, self.TEST_CLASS)
@@ -503,7 +503,7 @@ class TestDataQualityFlag(object):
         (QUERY_FLAGS[0], QUERY_FLAGS[0]),  # regular query
         (QUERY_FLAGS[0].rsplit(':', 1)[0], QUERY_FLAGS[0]),  # versionless
     ])
-    @mock.patch('pdpy.segments.flag.query_segments', mock_query_segments)
+    @mock.patch('pydischarge.segments.flag.query_segments', mock_query_segments)
     def test_query_dqsegdb(self, name, flag):
         # standard query
         result = self.TEST_CLASS.query_dqsegdb(name, 0, 10)
@@ -538,7 +538,7 @@ class TestDataQualityFlag(object):
         with pytest.raises(ValueError):
             self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS[0], (1, 2, 3))
 
-    @mock.patch('pdpy.segments.flag.query_segments', mock_query_segments)
+    @mock.patch('pydischarge.segments.flag.query_segments', mock_query_segments)
     def test_query_dqsegdb_multi(self):
         segs = SegmentList([Segment(0, 2), Segment(8, 10)])
         result = self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS[0], segs)
@@ -775,7 +775,7 @@ class TestDataQualityDict(object):
 
     # -- test queries ---------------------------
 
-    @mock.patch('pdpy.segments.flag.query_segments', mock_query_segments)
+    @mock.patch('pydischarge.segments.flag.query_segments', mock_query_segments)
     def test_query(self):
         result = self.TEST_CLASS.query(QUERY_FLAGS, 0, 10)
         RESULT = QUERY_RESULT.copy().coalesce()
@@ -783,7 +783,7 @@ class TestDataQualityDict(object):
         assert isinstance(result, self.TEST_CLASS)
         utils.assert_dict_equal(result, RESULT, utils.assert_flag_equal)
 
-    @mock.patch('pdpy.segments.flag.query_segments', mock_query_segments)
+    @mock.patch('pydischarge.segments.flag.query_segments', mock_query_segments)
     def test_query_dqsegdb(self):
         result = self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS, 0, 10)
         RESULT = QUERY_RESULTC
@@ -801,7 +801,7 @@ class TestDataQualityDict(object):
         with pytest.raises(ValueError):
             self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS, 0, 10, on_error='blah')
 
-    @mock.patch('pdpy.segments.flag.query_segments', mock_query_segments)
+    @mock.patch('pydischarge.segments.flag.query_segments', mock_query_segments)
     def test_populate(self):
         def fake():
             return self.TEST_CLASS({

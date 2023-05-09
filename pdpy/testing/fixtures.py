@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2018-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Custom pytest fixtures for PDpy
+"""Custom pytest fixtures for pyDischarge
 
-This module is imported in pdpy.conftest such that all fixtures declared
+This module is imported in pydischarge.conftest such that all fixtures declared
 here are available to test functions/methods by default.
 
 Developer note: **none of the fixtures here should declare autouse=True**.
@@ -83,7 +83,7 @@ def usetex(request):
     """Repeat a test with matplotlib's `text.usetex` param False and True.
 
     If TeX is not available on the test machine (determined by
-    `pdpy.plot.tex.has_tex()`), the usetex=True tests will be skipped.
+    `pydischarge.plot.tex.has_tex()`), the usetex=True tests will be skipped.
     """
     use_ = request.param
     with rc_context(rc={'text.usetex': use_}):

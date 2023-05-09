@@ -2,20 +2,20 @@
 # Copyright (C) Louisiana State University (2014-2017)
 #               Cardiff University (2017-2021)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module defines the Boolean array representing the state of some data
 
@@ -122,9 +122,9 @@ class StateTimeSeries(TimeSeriesBase):
     value : array-like
         input data array
 
-    t0 : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    t0 : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~pdpy.time.to_gps` is fine
+        any input parsable by `~pydischarge.time.to_gps` is fine
 
     dt : `float`, `~astropy.units.Quantity`, optional, default: `1`
         time between successive samples (seconds), can also be given inversely
@@ -142,7 +142,7 @@ class StateTimeSeries(TimeSeriesBase):
     name : `str`, optional
         descriptive title for this array
 
-    channel : `~pdpy.detector.Channel`, `str`, optional
+    channel : `~pydischarge.detector.Channel`, `str`, optional
         source data stream for these data
 
     dtype : `~numpy.dtype`, optional
@@ -225,10 +225,10 @@ class StateTimeSeries(TimeSeriesBase):
 
     def to_dqflag(self, name=None, minlen=1, dtype=None, round=False,
                   label=None, description=None):
-        """Convert this series into a `~pdpy.segments.DataQualityFlag`.
+        """Convert this series into a `~pydischarge.segments.DataQualityFlag`.
 
         Each contiguous set of `True` values are grouped as a
-        `~pdpy.segments.Segment` running from the GPS time the first
+        `~pydischarge.segments.Segment` running from the GPS time the first
         found `True`, to the GPS time of the next `False` (or the end
         of the series)
 
@@ -236,7 +236,7 @@ class StateTimeSeries(TimeSeriesBase):
         ----------
         minlen : `int`, optional
             minimum number of consecutive `True` values to identify as a
-            `~pdpy.segments.Segment`. This is useful to ignore single
+            `~pydischarge.segments.Segment`. This is useful to ignore single
             bit flips, for example.
 
         dtype : `type`, `callable`
@@ -245,20 +245,20 @@ class StateTimeSeries(TimeSeriesBase):
             another numeric type, defaults to the `dtype` of the time index
 
         round : `bool`, optional
-            choose to round each `~pdpy.segments.Segment` to its
+            choose to round each `~pydischarge.segments.Segment` to its
             inclusive integer boundaries
 
         label : `str`, optional
-            the :attr:`~pdpy.segments.DataQualityFlag.label` for the
+            the :attr:`~pydischarge.segments.DataQualityFlag.label` for the
             output flag.
 
         description : `str`, optional
-            the :attr:`~pdpy.segments.DataQualityFlag.description` for the
+            the :attr:`~pydischarge.segments.DataQualityFlag.description` for the
             output flag.
 
         Returns
         -------
-        dqflag : `~pdpy.segments.DataQualityFlag`
+        dqflag : `~pydischarge.segments.DataQualityFlag`
             a segment representation of this `StateTimeSeries`, the span
             defines the `known` segments, while the contiguous `True`
             sets defined each of the `active` segments
@@ -448,9 +448,9 @@ class StateVector(TimeSeriesBase):
     bits : `Bits`, `list`, optional
         list of bits defining this `StateVector`
 
-    t0 : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    t0 : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~pdpy.time.to_gps` is fine
+        any input parsable by `~pydischarge.time.to_gps` is fine
 
     dt : `float`, `~astropy.units.Quantity`, optional, default: `1`
         time between successive samples (seconds), can also be given inversely
@@ -468,7 +468,7 @@ class StateVector(TimeSeriesBase):
     name : `str`, optional
         descriptive title for this array
 
-    channel : `~pdpy.detector.Channel`, `str`, optional
+    channel : `~pydischarge.detector.Channel`, `str`, optional
         source data stream for these data
 
     dtype : `~numpy.dtype`, optional
@@ -617,16 +617,16 @@ class StateVector(TimeSeriesBase):
             - `str` path of LAL-format cache file,
             - `list` of paths.
 
-        channel : `str`, `~pdpy.detector.Channel`
+        channel : `str`, `~pydischarge.detector.Channel`
             the name of the channel to read, or a `Channel` object.
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, defaults to end of data found;
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         bits : `list`, optional
             list of bits names for this `StateVector`, give `None` at
@@ -689,10 +689,10 @@ class StateVector(TimeSeriesBase):
         return super().read(source, *args, **kwargs)
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
-        """Convert this `StateVector` into a `~pdpy.segments.DataQualityDict`
+        """Convert this `StateVector` into a `~pydischarge.segments.DataQualityDict`
 
         The `StateTimeSeries` for each bit is converted into a
-        `~pdpy.segments.DataQualityFlag` with the bits combined into a dict.
+        `~pydischarge.segments.DataQualityFlag` with the bits combined into a dict.
 
         Parameters
         ----------
@@ -708,7 +708,7 @@ class StateVector(TimeSeriesBase):
         Returns
         -------
         DataQualityFlag list : `list`
-            a list of `~pdpy.segments.flag.DataQualityFlag`
+            a list of `~pydischarge.segments.flag.DataQualityFlag`
             reprensentations for each bit in this `StateVector`
 
         See also
@@ -733,16 +733,16 @@ class StateVector(TimeSeriesBase):
 
         Parameters
         ----------
-        channel : `str`, `~pdpy.detector.Channel`
+        channel : `str`, `~pydischarge.detector.Channel`
             the name of the channel to read, or a `Channel` object.
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS end time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         bits : `Bits`, `list`, optional
             definition of bits for this `StateVector`
@@ -781,16 +781,16 @@ class StateVector(TimeSeriesBase):
 
         Parameters
         ----------
-        channel : `str`, `~pdpy.detector.Channel`
+        channel : `str`, `~pydischarge.detector.Channel`
             the name of the channel to read, or a `Channel` object.
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
             GPS end time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         bits : `Bits`, `list`, optional
             definition of bits for this `StateVector`
@@ -844,13 +844,13 @@ class StateVector(TimeSeriesBase):
 
         **kwargs
             Other keyword arguments to be passed to either
-            `~pdpy.plot.SegmentAxes.plot` or
-            `~pdpy.plot.Axes.plot`, depending
+            `~pydischarge.plot.SegmentAxes.plot` or
+            `~pydischarge.plot.Axes.plot`, depending
             on ``format``.
 
         Returns
         -------
-        plot : `~pdpy.plot.Plot`
+        plot : `~pydischarge.plot.Plot`
             output plot object
 
         See also
@@ -861,7 +861,7 @@ class StateVector(TimeSeriesBase):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        pdpy.plot.SegmentAxes.plot_flag
+        pydischarge.plot.SegmentAxes.plot_flag
             for documentation of keyword arguments used in rendering each
             statevector flag.
         """
@@ -970,16 +970,16 @@ class StateVectorDict(TimeSeriesBaseDict):
             - `str` path of LAL-format cache file,
             - `list` of paths.
 
-        channels : `~pdpy.detector.channel.ChannelList`, `list`
+        channels : `~pydischarge.detector.channel.ChannelList`, `list`
             a list of channels to read from the source.
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str` optional
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str` optional
             GPS start time of required data, anything parseable by
-            :meth:`~pdpy.time.to_gps` is fine
+            :meth:`~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, anything parseable by
-            :meth:`~pdpy.time.to_gps` is fine
+            :meth:`~pydischarge.time.to_gps` is fine
 
         bits : `list` of `lists`, `dict`, optional
             the ordered list of interesting bit lists for each channel,

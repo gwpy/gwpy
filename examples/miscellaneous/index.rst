@@ -1,4 +1,4 @@
-.. currentmodule:: pdpy.timeseries
+.. currentmodule:: pydischarge.timeseries
 
 ######################
 Miscellaneous examples

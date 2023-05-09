@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`pdpy.io.kerberos`
+"""Unit tests for :mod:`pydischarge.io.kerberos`
 """
 
 import os
@@ -59,7 +59,7 @@ def teardown_module():
 
 @mock.patch('subprocess.check_output', return_value=KLIST)
 def test_parse_keytab(check_output):
-    """Test `pdpy.io.kerberos.parse_keytab.
+    """Test `pydischarge.io.kerberos.parse_keytab.
     """
     # assert principals get extracted correctly
     principals = io_kerberos.parse_keytab('test.keytab')
@@ -76,7 +76,7 @@ def test_parse_keytab(check_output):
     ),
 ])
 def test_parse_keytab_oserror(mock_check_output, se, match):
-    """Test `pdpy.io.kerberos.parse_keytab` fails appropriately.
+    """Test `pydischarge.io.kerberos.parse_keytab` fails appropriately.
     """
     mock_check_output.side_effect = se
     with pytest.raises(io_kerberos.KerberosError, match=match):
@@ -84,11 +84,11 @@ def test_parse_keytab_oserror(mock_check_output, se, match):
 
 
 @mock.patch('sys.stdout.isatty', return_value=True)
-@mock.patch('pdpy.io.kerberos.input', return_value='rainer.weiss')
+@mock.patch('pydischarge.io.kerberos.input', return_value='rainer.weiss')
 @mock.patch('getpass.getpass', return_value='test')
 @mock.patch('subprocess.Popen')
 def test_kinit_up(popen, getpass, input_, _, capsys):
-    """Test `pdpy.io.kerberos.kinit` with username and password given
+    """Test `pydischarge.io.kerberos.kinit` with username and password given
     """
     proc = popen.return_value
     proc.poll.return_value = 0
@@ -110,11 +110,11 @@ def test_kinit_up(popen, getpass, input_, _, capsys):
     proc.communicate.aossert_called_with(b'test')
 
 
-@mock.patch('pdpy.io.kerberos.input')
+@mock.patch('pydischarge.io.kerberos.input')
 @mock.patch('getpass.getpass')
 @mock.patch('subprocess.Popen')
 def test_kinit_up_kwargs(popen, getpass, input_):
-    """Test `pdpy.io.kerberos.kinit` with username and password given
+    """Test `pydischarge.io.kerberos.kinit` with username and password given
     """
     proc = popen.return_value
     proc.poll.return_value = 0
@@ -135,10 +135,10 @@ def test_kinit_up_kwargs(popen, getpass, input_):
     popen.return_value.communicate.assert_called_with(b'test')
 
 
-@mock.patch('pdpy.io.kerberos.parse_keytab')
+@mock.patch('pydischarge.io.kerberos.parse_keytab')
 @mock.patch('subprocess.Popen')
 def test_kinit_keytab_dne(popen, parse_keytab):
-    """Test `pdpy.io.kerberos.kinit` with a non-existent keytab
+    """Test `pydischarge.io.kerberos.kinit` with a non-existent keytab
     """
     proc = popen.return_value
     proc.poll.return_value = 0
@@ -158,12 +158,12 @@ def test_kinit_keytab_dne(popen, parse_keytab):
 @mock.patch.dict(os.environ, {'KRB5_KTNAME': '/test.keytab'})
 @mock.patch('os.path.isfile', return_value=True)
 @mock.patch(
-    'pdpy.io.kerberos.parse_keytab',
+    'pydischarge.io.kerberos.parse_keytab',
     return_value=[['rainer.weiss', 'LIGO.ORG']],
 )
 @mock.patch('subprocess.Popen')
 def test_kinit_keytab(popen, *unused_mocks):
-    """Test `pdpy.io.kerberos.kinit` can handle keytabs properly
+    """Test `pydischarge.io.kerberos.kinit` can handle keytabs properly
     """
     proc = popen.return_value
     proc.poll.return_value = 0
@@ -189,7 +189,7 @@ def test_kinit_keytab(popen, *unused_mocks):
 
 @mock.patch('subprocess.Popen')
 def test_kinit_krb5ccname(popen):
-    """Test `pdpy.io.kerberos.kinit` passes `KRB5CCNAME` to /bin/kinit
+    """Test `pydischarge.io.kerberos.kinit` passes `KRB5CCNAME` to /bin/kinit
     """
     # test using krb5ccname (credentials cache)
     # this will raise error because we haven't patched the poll() method
@@ -206,7 +206,7 @@ def test_kinit_krb5ccname(popen):
 
 
 def test_kinit_notty():
-    """Test `pdpy.io.kerberos.kinit` raises an error in a non-interactive
+    """Test `pydischarge.io.kerberos.kinit` raises an error in a non-interactive
     session if it needs to prompt for information.
 
     By default all tests are executed by pytest in a non-interactive session

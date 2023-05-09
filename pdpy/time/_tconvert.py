@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """tconvert: a utility to convert to and from GPS times.
 
@@ -67,19 +67,19 @@ def tconvert(gpsordate='now'):
     Integers and floats are automatically converted from GPS to
     `datetime.datetime`:
 
-    >>> from pdpy.time import tconvert
+    >>> from pydischarge.time import tconvert
     >>> tconvert(0)
     datetime.datetime(1980, 1, 6, 0, 0)
     >>> tconvert(1126259462.3910)
     datetime.datetime(2015, 9, 14, 9, 50, 45, 391000)
 
-    while strings are automatically converted to `~pdpy.time.LIGOTimeGPS`:
+    while strings are automatically converted to `~pydischarge.time.LIGOTimeGPS`:
 
     >>> to_gps('Sep 14 2015 09:50:45.391')
     LIGOTimeGPS(1126259462, 391000000)
 
     Additionally, a few special-case words as supported, which all return
-    `~pdpy.time.LIGOTimeGPS`:
+    `~pydischarge.time.LIGOTimeGPS`:
 
     >>> tconvert('now')
     >>> tconvert('today')

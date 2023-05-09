@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2018-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`pdpy.utils.env`
+"""Tests for :mod:`pydischarge.utils.env`
 """
 
 from unittest import mock
@@ -56,7 +56,7 @@ BOOL_ENV.update(BOOL_FALSE)
     + [(k, False) for k in sorted(BOOL_FALSE)],
 )
 def test_bool_env(env, result):
-    """Test :meth:`pdpy.utils.env.bool_env` _without_ the `default` keyword
+    """Test :meth:`pydischarge.utils.env.bool_env` _without_ the `default` keyword
     """
     assert utils_env.bool_env(env) is result
 
@@ -67,6 +67,6 @@ def test_bool_env(env, result):
     ('TEST_MISSING', True, True),
 ])
 def test_bool_env_default(env, default, result):
-    """Test :meth:`pdpy.utils.env.bool_env` _with_ the `default` keyword
+    """Test :meth:`pydischarge.utils.env.bool_env` _with_ the `default` keyword
     """
     assert utils_env.bool_env(env, default=default) is result

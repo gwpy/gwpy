@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Interface to the LIGO Channel Information System
 """
@@ -43,7 +43,7 @@ def query(name, kerberos=None, **kwargs):
 
     Parameters
     ----------
-    name : `~pdpy.detector.Channel`, or `str`
+    name : `~pydischarge.detector.Channel`, or `str`
         Name of the channel of interest
 
     kerberos : `bool`, optional
@@ -57,7 +57,7 @@ def query(name, kerberos=None, **kwargs):
 
     Returns
     -------
-    channel : `~pdpy.detector.Channel`
+    channel : `~pydischarge.detector.Channel`
         Channel with all details as acquired from the CIS
     """
     url = f"{CIS_API_URL}/?q={name}"

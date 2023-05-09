@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`pdpy.io.utils`
+"""Unit tests for :mod:`pydischarge.io.utils`
 """
 
 import gzip
@@ -110,7 +110,7 @@ def test_file_path(input_, expected):
 
 
 def test_file_path_file():
-    """Check that :func:`pdpy.io.utils.file_path` can handle open files
+    """Check that :func:`pydischarge.io.utils.file_path` can handle open files
     """
     with tempfile.NamedTemporaryFile() as f:
         assert io_utils.file_path(f) == f.name
@@ -121,7 +121,7 @@ def test_file_path_file():
     ["test.txt"],
 ))
 def test_file_path_errors(badthing):
-    """Check that :func:`pdpy.io.utils.file_path` fails when expected
+    """Check that :func:`pydischarge.io.utils.file_path` fails when expected
     """
     with pytest.raises(
         ValueError,

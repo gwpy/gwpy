@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Definition of a BodePlot
 """
@@ -58,7 +58,7 @@ class BodePlot(Plot):
 
     Parameters
     ----------
-    *filters : `~scipy.signal.lti`, `~pdpy.frequencyseries.FrequencySeries`
+    *filters : `~scipy.signal.lti`, `~pydischarge.frequencyseries.FrequencySeries`
         any number of the following:
 
         - linear time-invariant filters, either
@@ -67,7 +67,7 @@ class BodePlot(Plot):
           - 3: (zeros, poles, gain)
           - 4: (A, B, C, D)
 
-        - complex-valued `spectra <pdpy.frequencyseries.FrequencySeries>`
+        - complex-valued `spectra <pydischarge.frequencyseries.FrequencySeries>`
           representing a transfer function
 
     frequencies : `numpy.ndarray`, optional
@@ -195,7 +195,7 @@ class BodePlot(Plot):
             the lines drawn for the magnitude and phase of the filter.
         """
         from scipy.signal import (lti, dlti)
-        from pdpy.signal.filter_design import parse_filter
+        from pydischarge.signal.filter_design import parse_filter
 
         if not analog:
             if not sample_rate:
@@ -231,7 +231,7 @@ class BodePlot(Plot):
 
         Parameters
         ----------
-        spectrum : `~pdpy.frequencyseries.FrequencySeries`
+        spectrum : `~pydischarge.frequencyseries.FrequencySeries`
             the (complex-valued) `FrequencySeries` to display
 
         db : `bool`, optional, default: `True`

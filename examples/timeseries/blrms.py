@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Comparing seismic trends between LIGO sites
 
@@ -24,12 +24,12 @@ should have had an impact on LIGO operations, I'd like to find out.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'pdpy.timeseries'
+__currentmodule__ = 'pydischarge.timeseries'
 
 # First: we import the objects we need, one for getting the data:
-from pdpy.timeseries import TimeSeriesDict
+from pydischarge.timeseries import TimeSeriesDict
 # and one for plotting the data:
-from pdpy.plot import Plot
+from pydischarge.plot import Plot
 
 # Next we define the channels we want, namely the 0.03Hz-1Hz ground motion
 # band-limited RMS channels (1-second average trends).
@@ -48,7 +48,7 @@ llo = TimeSeriesDict.get([c.format(ifo='L1') for c in channels],
                          'Jan 16 2020 8:00', 'Jan 16 2020 14:00',
                          host='losc-nds.ligo.org')
 
-# Next we can plot the data, with a separate `~pdpy.plot.Axes` for each
+# Next we can plot the data, with a separate `~pydischarge.plot.Axes` for each
 # instrument:
 plot = Plot(lho, llo, figsize=(12, 6), sharex=True, yscale='log')
 ax1, ax2 = plot.axes

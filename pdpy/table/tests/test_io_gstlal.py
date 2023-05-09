@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) California Institute of Technology (2022)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`pdpy.table.io.gstlal`
+"""Tests for :mod:`pydischarge.table.io.gstlal`
 """
 
 import pytest
@@ -25,7 +25,7 @@ from numpy import testing as nptest
 from numpy import float32
 
 from ..io import gstlal as gstlalio
-from pdpy.table import EventTable
+from pydischarge.table import EventTable
 
 __author__ = 'Derek Davis <derek.davis@ligo.org>'
 

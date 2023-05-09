@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Representation of a frequency series
 """
@@ -56,14 +56,14 @@ class FrequencySeries(Series):
         This argument takes precedence over `f0` and `df` so should
         be given in place of these if relevant, not alongside
 
-    epoch : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+    epoch : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~pdpy.time.to_gps` is fine
+        any input parsable by `~pydischarge.time.to_gps` is fine
 
     name : `str`, optional
         descriptive title for this array
 
-    channel : `~pdpy.detector.Channel`, `str`, optional
+    channel : `~pydischarge.detector.Channel`, `str`, optional
         source data stream for these data
 
     dtype : `~numpy.dtype`, optional
@@ -207,7 +207,7 @@ class FrequencySeries(Series):
 
         Returns
         -------
-        out : :class:`~pdpy.timeseries.TimeSeries`
+        out : :class:`~pydischarge.timeseries.TimeSeries`
             the normalised, real-valued `TimeSeries`.
 
         See also
@@ -419,7 +419,7 @@ class FrequencySeries(Series):
         Returns
         -------
         spectrum : `FrequencySeries`
-            a PDpy version of the input frequency series
+            a pyDischarge version of the input frequency series
         """
         return cls(fs.data, f0=0, df=fs.delta_f, epoch=fs.epoch, copy=copy)
 

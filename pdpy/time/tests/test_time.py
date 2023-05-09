@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`pdpy.time`
+"""Tests for :mod:`pydischarge.time`
 """
 
 from contextlib import nullcontext
@@ -99,7 +99,7 @@ def test_to_gps(in_, out, use_maya):
     ('Oct 30 2016 12:34 CST', 1161887657),
 ])
 def test_to_gps_maya(in_, out):
-    """Test that :func:`pdpy.time.to_gps` works with maya.
+    """Test that :func:`pydischarge.time.to_gps` works with maya.
     """
     assert time.to_gps(in_) == out
 
@@ -109,7 +109,7 @@ def test_to_gps_maya(in_, out):
     ('random string', (ValueError, TypeError)),
 ])
 def test_to_gps_error(in_, err):
-    """Test that :func:`pdpy.time.to_gps` errors when it should.
+    """Test that :func:`pydischarge.time.to_gps` errors when it should.
     """
     with pytest.raises(err):
         time.to_gps(in_)
@@ -148,17 +148,17 @@ def test_to_gps_dateparser_error_propagation_maya(_):
     ),
 ])
 def test_from_gps(in_, out):
-    """Test that :func:`pdpy.time.from_gps` works.
+    """Test that :func:`pydischarge.time.from_gps` works.
     """
     assert time.from_gps(in_) == out
 
 
 @pytest.mark.parametrize(("in_", "err"), [
     ('test', ValueError),
-    (1167264017, ValueError),  # pdpy/pdpy#1021
+    (1167264017, ValueError),  # pydischarge/pydischarge#1021
 ])
 def test_from_gps_error(in_, err):
-    """Test that :func:`pdpy.time.from_gps` errors when it should.
+    """Test that :func:`pydischarge.time.from_gps` errors when it should.
     """
     with pytest.raises(err):
         time.from_gps(in_)
@@ -180,7 +180,7 @@ def test_from_gps_error(in_, err):
     ('yesterday', YESTERDAY),
 ])
 def test_tconvert(in_, out):
-    """Test :func:`pdpy.time.tconvert`
+    """Test :func:`pydischarge.time.tconvert`
     """
     assert time.tconvert(in_) == out
 

@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2018-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for `pdpy.plot.log`
+"""Tests for `pydischarge.plot.log`
 """
 
 from unittest import mock
@@ -37,7 +37,7 @@ class TestLogFormatter(object):
     @pytest.fixture
     def formatter(cls):
         with mock.patch(
-            "pdpy.plot.log.LogFormatter._num_ticks",
+            "pydischarge.plot.log.LogFormatter._num_ticks",
             return_value=2,
         ):
             yield cls.TEST_CLASS()
@@ -72,7 +72,7 @@ class TestLogFormatter(object):
             assert formatter(x, fmt=fmt) == texresult
 
     @mock.patch(  # we don't need this function for this test
-        "pdpy.plot.log.LogFormatter.set_locs",
+        "pydischarge.plot.log.LogFormatter.set_locs",
         mock.MagicMock(),
     )
     @pytest.mark.parametrize("values, result", [
@@ -87,7 +87,7 @@ class TestLogFormatter(object):
         pytest.param(
             [1e-1, 1e0, 1e1, 1e2],
             [plot_log._math(x) for x in ("0.1", "1", "10", "100")],
-            id="pdpy",
+            id="pydischarge",
         ),
     ])
     def test_format_ticks(self, formatter, values, result):

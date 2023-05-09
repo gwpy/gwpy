@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2017-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""User-interface to FFT routines for PDpy
+"""User-interface to FFT routines for pyDischarge
 
 This module provides the methods that eventually get called by TimeSeries.xxx,
 so isn't really for direct user interaction.
@@ -88,7 +88,7 @@ def normalize_fft_params(series, kwargs=None, func=None):
 
     Parameters
     ----------
-    series : `pdpy.timeseries.TimeSeries`
+    series : `pydischarge.timeseries.TimeSeries`
         the data that will be processed using an FFT-based method
 
     kwargs : `dict`
@@ -100,7 +100,7 @@ def normalize_fft_params(series, kwargs=None, func=None):
     Examples
     --------
     >>> from numpy.random import normal
-    >>> from pdpy.timeseries import TimeSeries
+    >>> from pydischarge.timeseries import TimeSeries
     >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256))
     {'nfft': 1024, 'noverlap': 0}
     >>> normalize_fft_params(TimeSeries(normal(size=1024), sample_rate=256),
@@ -249,7 +249,7 @@ def psd(timeseries, method_func, *args, **kwargs):
 
     Parameters
     ----------
-    timeseries : `~pdpy.timeseries.TimeSeries`, `tuple`
+    timeseries : `~pydischarge.timeseries.TimeSeries`, `tuple`
         the data to process, or a 2-tuple of series to correlate
 
     method_func : `callable`
@@ -269,7 +269,7 @@ def _psdn(timeseries, method_func, *args, **kwargs):
 
     Parameters
     ----------
-    timeseries : `~pdpy.timeseries.TimeSeries`, `tuple`
+    timeseries : `~pydischarge.timeseries.TimeSeries`, `tuple`
         the data to process, or a 2-tuple of series to correlate
 
     method_func : `callable`

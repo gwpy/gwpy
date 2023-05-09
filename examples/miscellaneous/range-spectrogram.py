@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Alex Urban (2019-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Estimating the spectral contribution to inspiral range
 
@@ -23,7 +23,7 @@ We have seen how the binary neutron star (BNS) inspiral range of a
 gravitational-wave detector can be measured directly from the strain
 readout. In this example, we will estimate the average spectral
 contribution to BNS range from the strain record surrounding GW170817
-using :func:`pdpy.astro.range_spectrogram`.
+using :func:`pydischarge.astro.range_spectrogram`.
 """
 
 __author__ = 'Alex Urban <alexander.urban@ligo.org>'
@@ -32,13 +32,13 @@ __author__ = 'Alex Urban <alexander.urban@ligo.org>'
 # `public data <https://gwosc.org/catalog/>`__
 # around the GW170817 BNS merger:
 
-from pdpy.timeseries import TimeSeries
+from pydischarge.timeseries import TimeSeries
 l1 = TimeSeries.fetch_open_data('L1', 1187006834, 1187010930)
 
 # Then, we can calculate a `Spectrogram` of the inspiral range
 # amplitude spectrum:
 
-from pdpy.astro import range_spectrogram
+from pydischarge.astro import range_spectrogram
 l1spec = range_spectrogram(l1, 30, fftlength=4, fmin=15, fmax=500) ** (1./2)
 
 # We can plot this `Spectrogram` to visualise spectral variation in

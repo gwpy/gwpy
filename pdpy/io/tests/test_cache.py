@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Unit test for `io` module
 """
@@ -141,7 +141,7 @@ def test_is_cache_glue():
 
 @pytest.mark.requires("lal.utils")
 def test_is_cache_file(tmp_path):
-    """Check that `pdpy.io.cache.is_cache` returns `True` when it should
+    """Check that `pydischarge.io.cache.is_cache` returns `True` when it should
     """
     # write a cache file
     e = io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt')
@@ -156,7 +156,7 @@ def test_is_cache_file(tmp_path):
 
 @pytest.mark.requires("lal.utils")
 def test_is_cache_file_empty(tmp_path):
-    """Check that `pdpy.io.cache.is_cache` returns False when it should
+    """Check that `pydischarge.io.cache.is_cache` returns False when it should
     """
     tmp = tmp_path / "tmpfile"
     assert not io_cache.is_cache(tmp)  # FileNotFoundError
@@ -176,7 +176,7 @@ def test_is_cache_entry():
 
 
 def test_cache_segments(cache, segments):
-    """Test :func:`pdpy.io.cache.cache_segments`
+    """Test :func:`pydischarge.io.cache.cache_segments`
     """
     # check empty input
     sl = io_cache.cache_segments()
@@ -198,7 +198,7 @@ def test_cache_segments(cache, segments):
     ("/path/to/A-B-0.456-1.345.txt.gz", ("A", "B", Segment(0.456, 1.801))),
 ])
 def test_filename_metadata(path, metadata):
-    """Test :func:`pdpy.io.cache.filename_metadata`
+    """Test :func:`pydischarge.io.cache.filename_metadata`
     """
     assert io_cache.filename_metadata(path) == metadata
 
@@ -217,7 +217,7 @@ def test_filename_metadata_error():
     ("A-B-1.23-4.ext.gz", Segment(1.23, 5.23)),
 ])
 def test_file_segment(filename, seg):
-    """Test :func:`pdpy.io.cache.file_segment`
+    """Test :func:`pydischarge.io.cache.file_segment`
     """
     fs = io_cache.file_segment(filename)
     assert isinstance(fs, Segment)
@@ -231,7 +231,7 @@ def test_file_segment(filename, seg):
 
 
 def test_file_segment_errors():
-    """Test :func:`pdpy.io.cache.file_segment` error handling.
+    """Test :func:`pydischarge.io.cache.file_segment` error handling.
     """
     with pytest.raises(
         ValueError,
@@ -241,7 +241,7 @@ def test_file_segment_errors():
 
 
 def test_flatten(cache):
-    """Test :func:`pdpy.io.cache.flatten`
+    """Test :func:`pydischarge.io.cache.flatten`
     """
     # check flattened version of single cache is unchanged
     assert io_cache.flatten(cache) == cache
@@ -255,7 +255,7 @@ def test_flatten(cache):
 
 
 def test_find_contiguous(cache, segments):
-    """Test :func:`pdpy.io.cache.find_contiguous`
+    """Test :func:`pydischarge.io.cache.find_contiguous`
     """
     for i, cache in enumerate(io_cache.find_contiguous(cache)):
         io_cache.cache_segments(cache).extent() == segments[i]

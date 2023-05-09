@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Plotting a transfer function
 
@@ -27,16 +27,16 @@ ground motion through the HEPI system.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'pdpy.timeseries'
+__currentmodule__ = 'pydischarge.timeseries'
 
 if __name__ == '__main__':
     from matplotlib import pyplot
     pyplot.ion()
 
 # Before anything else, we import the objects we will need:
-from pdpy.time import tconvert
-from pdpy.timeseries import TimeSeriesDict
-from pdpy.plot import BodePlot
+from pydischarge.time import tconvert
+from pydischarge.timeseries import TimeSeriesDict
+from pydischarge.plot import BodePlot
 
 # and set the times of our query, and the channels we want:
 start = tconvert('May 27 2014 04:00')
@@ -54,8 +54,8 @@ hpi = data[hpichannel]
 # :meth:`~TimeSeries.transfer_function` method:
 tf = gnd.transfer_function(hpi, 100, 50)
 
-# The `~pdpy.plot.BodePlot` knows how to separate a complex-valued
-# `~pdpy.frequencyseries.FrequencySeries` into magnitude and phase:
+# The `~pydischarge.plot.BodePlot` knows how to separate a complex-valued
+# `~pydischarge.frequencyseries.FrequencySeries` into magnitude and phase:
 plot = BodePlot(tf)
 plot.maxes.set_title(
     r'L1 ITMY ground $\rightarrow$ HPI transfer function')

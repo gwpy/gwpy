@@ -1,6 +1,6 @@
-.. currentmodule:: pdpy.time
+.. currentmodule:: pydischarge.time
 
-.. _pdpy-time:
+.. _pydischarge-time:
 
 ####################
 Times and timestamps
@@ -19,10 +19,10 @@ Time conversions
 ================
 
 `Astropy <http://astropy.org>`__ provides the excellent `Time <astropy.time>` object to allow easy conversion between this format and a number of other formats.
-For convenience, this object is available in PDpy as ``pdpy.time.Time``.
+For convenience, this object is available in pyDischarge as ``pydischarge.time.Time``.
 
 
-On top of that, PDpy provides three simple methods to simplify converting between GPS times and Python-standard `datetime` objects, namely:
+On top of that, pyDischarge provides three simple methods to simplify converting between GPS times and Python-standard `datetime` objects, namely:
 
 .. autosummary::
    :nosignatures:
@@ -35,8 +35,8 @@ On top of that, PDpy provides three simple methods to simplify converting betwee
 Reference
 =========
 
-.. autofunction:: pdpy.time.tconvert
+.. autofunction:: pydischarge.time.tconvert
 
-.. autofunction:: pdpy.time.to_gps
+.. autofunction:: pydischarge.time.to_gps
 
-.. autofunction:: pdpy.time.from_gps
+.. autofunction:: pydischarge.time.from_gps

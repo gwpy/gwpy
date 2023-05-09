@@ -2,20 +2,20 @@
 # Copyright (C) Louisiana State University (2014-2017)
 #               Cardiff University (2017-2021)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Read/write segment XML in LIGO_LW format into DataQualityFlags
 """
@@ -109,7 +109,7 @@ def write_ligolw(flags, target, attrs=None, **kwargs):
     Parameters
     ----------
     flags : `DataQualityFlag`, `DataQualityDict`
-        `pdpy.segments` object to write
+        `pydischarge.segments` object to write
 
     target : `str`, `file`, :class:`~ligo.lw.ligolw.Document`
         the file or document to write into
@@ -122,7 +122,7 @@ def write_ligolw(flags, target, attrs=None, **kwargs):
 
     See also
     --------
-    pdpy.io.ligolw.write_ligolw_tables
+    pydischarge.io.ligolw.write_ligolw_tables
         for details of acceptable keyword arguments
     """
     if isinstance(flags, DataQualityFlag):

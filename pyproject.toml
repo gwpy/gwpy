@@ -9,7 +9,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pdpy"
+name = "pydischarge"
 description = "A python package for gravitational-wave astrophysics"
 readme = "README.md"
 authors = [
@@ -106,13 +106,13 @@ conda = [
 ]
 
 [project.scripts]
-pdpy-plot = "pdpy.cli.pdpy_plot:main"
+pydischarge-plot = "pydischarge.cli.pydischarge_plot:main"
 
 [project.urls]
-"Bug Tracker" = "https://github.com/pdpy-github/pdpy/issues"
-"Discussion Forum" = "https://pdpy.slack.com"
-"Documentation" = "https://pdpy.github.io/docs/"
-"Source Code" = "https://github.com/pdpy-github/pdpy"
+"Bug Tracker" = "https://github.com/pydischarge-github/pydischarge/issues"
+"Discussion Forum" = "https://pydischarge.slack.com"
+"Documentation" = "https://pydischarge.github.io/docs/"
+"Source Code" = "https://github.com/pydischarge-github/pydischarge"
 
 [tool.setuptools]
 license-files = [ "LICENSE" ]
@@ -122,19 +122,19 @@ license-files = [ "LICENSE" ]
 #       GHA is creating a temporary directory that setuptools
 #       discovers as another top-level package
 include = [
-  "pdpy*",
+  "pydischarge*",
 ]
 
 [tool.setuptools_scm]
-write_to = "pdpy/_version.py"
+write_to = "pydischarge/_version.py"
 
 # -- coverage.py
 
 [tool.coverage.run]
-source = [ "pdpy" ]
+source = [ "pydischarge" ]
 omit = [
   # ignore vendored sphinx extension
-  "pdpy/utils/sphinx/epydoc.py",
+  "pydischarge/utils/sphinx/epydoc.py",
   # don't report coverage for _version.py
   # (generated automatically by setuptools-scm)
   "*/_version.py",

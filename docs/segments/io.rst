@@ -1,21 +1,21 @@
-.. currentmodule:: pdpy.segments
+.. currentmodule:: pydischarge.segments
 
-.. _pdpy-segments-io:
+.. _pydischarge-segments-io:
 
 ##################################
 Reading/writing segments and flags
 ##################################
 
 The `SegmentList`, `DataQualityFlag`, and `DataQualityDict` objects each include :meth:`read` and :meth:`write` methods to enable reading from and writing to a number of different file formats for segment-like objects.
-As with other classes in PDpy, the ``format`` keyword argument can be used to manually specify the input or output format, if the file extension isn't obvious enough.
+As with other classes in pyDischarge, the ``format`` keyword argument can be used to manually specify the input or output format, if the file extension isn't obvious enough.
 
 The :meth:`read` and :meth:`write` methods take different arguments and keywords based on the input/output file format, see the following sections for details on reading/writing for each of the built-in formats. Those formats are:
 
-- :ref:`pdpy-segments-io-ligolw`
-- :ref:`pdpy-segments-io-hdf5`
-- :ref:`pdpy-segments-io-json`
+- :ref:`pydischarge-segments-io-ligolw`
+- :ref:`pydischarge-segments-io-hdf5`
+- :ref:`pydischarge-segments-io-json`
 
-.. _pdpy-segments-io-ligolw:
+.. _pydischarge-segments-io-ligolw:
 
 ===============
 ``LIGO_LW`` XML
@@ -72,7 +72,7 @@ To write a `DataQualityFlag` to file in ``LIGO_LW`` format, use the :meth:`~Data
 
    >>> f.write('new-segments.xml')
 
-As with :ref:`writing tables <pdpy-table-io-ligolw>`, if the target file already exists, an :class:`~exceptions.IOError` will be raised, use ``overwrite=True`` to force a new file to be written.
+As with :ref:`writing tables <pydischarge-table-io-ligolw>`, if the target file already exists, an :class:`~exceptions.IOError` will be raised, use ``overwrite=True`` to force a new file to be written.
 
 To write a table to an existing file, use ``append=True``::
 
@@ -90,7 +90,7 @@ Extra attributes can be written to the tables via the ``attrs={}`` keyword, all 
 
    The |python-ligo-lw| library reads and writes files using an updated
    version of the ``LIGO_LW`` format compared to :mod:`glue.ligolw` used to.
-   PDpy should support both format versions natively when _reading_, but
+   pyDischarge should support both format versions natively when _reading_, but
    only supports writing using the updated format.
 
 
@@ -105,13 +105,13 @@ Identical arguments should be used relative to the :meth:`DataQualityFlag.write`
 
     >>> fdict.write('new-segments.xml')
 
-.. _pdpy-segments-io-hdf5:
+.. _pydischarge-segments-io-hdf5:
 
 ====
 HDF5
 ====
 
-PDpy uses HDF5 Groups to store a `DataQualityFlag`, with each of the :attr:`~DataQualityFlag.known` and :attr:`~DataQualityFlag.active` segment lists stored in a Dataset, and extra metadata stored in the Group's attributes.
+pyDischarge uses HDF5 Groups to store a `DataQualityFlag`, with each of the :attr:`~DataQualityFlag.known` and :attr:`~DataQualityFlag.active` segment lists stored in a Dataset, and extra metadata stored in the Group's attributes.
 
 Reading
 -------
@@ -146,7 +146,7 @@ Identical arguments should be used relative to the :meth:`DataQualityFlag.write`
 
     >>> fdict.write('new-segments.hdf5')
 
-.. _pdpy-segments-io-json:
+.. _pydischarge-segments-io-json:
 
 ====
 JSON

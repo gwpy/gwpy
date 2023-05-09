@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Read events from the PyCBC live online GW search
 """
@@ -68,7 +68,7 @@ def table_from_file(source, ifo=None, columns=None, selection=None,
 
     Returns
     -------
-    table : `~pdpy.table.EventTable`
+    table : `~pydischarge.table.EventTable`
     """
     # find group
     if isinstance(source, h5py.File):
@@ -171,7 +171,7 @@ def _get_extended_metadata(h5group):
     except KeyError:
         pass
     else:
-        from pdpy.frequencyseries import FrequencySeries
+        from pydischarge.frequencyseries import FrequencySeries
         meta['psd'] = FrequencySeries(
             psd[:], f0=0, df=psd.attrs['delta_f'], name='pycbc_live')
 

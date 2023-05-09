@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Utilies for interacting with the LIGO Algorithm Library.
 
@@ -34,8 +34,8 @@ from astropy import units
 import lal
 
 from ..time import to_gps
-# import pdpy.detector.units to register other units now
-from ..detector import units as pdpy_units  # noqa: F401
+# import pydischarge.detector.units to register other units now
+from ..detector import units as pydischarge_units  # noqa: F401
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -84,7 +84,7 @@ def to_lal_type_str(pytype):
     --------
     To convert a python type:
 
-    >>> from pdpy.utils.lal import to_lal_type_str
+    >>> from pydischarge.utils.lal import to_lal_type_str
     >>> to_lal_type_str(float)
     'REAL8'
 
@@ -141,7 +141,7 @@ def find_typed_function(pytype, prefix, suffix, module=lal):
 
     Examples
     --------
-    >>> from pdpy.utils.lal import find_typed_function
+    >>> from pydischarge.utils.lal import find_typed_function
     >>> find_typed_function(float, 'Create', 'Sequence')
     <built-in function CreateREAL8Sequence>
     """
@@ -302,8 +302,8 @@ def to_lal_ligotimegps(gps):
 
     Parameters
     ----------
-    gps : `~pdpy.time.LIGOTimeGPS`, `float`, `str`
-        input GPS time, can be anything parsable by :meth:`~pdpy.time.to_gps`
+    gps : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`
+        input GPS time, can be anything parsable by :meth:`~pydischarge.time.to_gps`
 
     Returns
     -------

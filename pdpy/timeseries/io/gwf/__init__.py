@@ -2,20 +2,20 @@
 # Copyright (C) Louisiana State University (2014-2017)
 #               Cardiff University (2017-2022)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Input/output routines for gravitational-wave frame (GWF) format files.
 
@@ -122,7 +122,7 @@ def get_default_gwf_api():
     --------
     If you have |LDAStools.frameCPP|_ installed:
 
-    >>> from pdpy.timeseries.io.gwf import get_default_gwf_api
+    >>> from pydischarge.timeseries.io.gwf import get_default_gwf_api
     >>> get_default_gwf_api()
     'framecpp'
 
@@ -194,13 +194,13 @@ def register_gwf_api(library):
         channels : `list`
             list of channel names (or `Channel` objects) to read from frame.
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS start time of required data, defaults to start of data found;
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, defaults to end of data found;
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         pad : `float`, optional
             value with which to fill gaps in the source data, if not
@@ -208,7 +208,7 @@ def register_gwf_api(library):
 
         Returns
         -------
-        dict : :class:`~pdpy.timeseries.TimeSeriesDict`
+        dict : :class:`~pydischarge.timeseries.TimeSeriesDict`
             dict of (channel, `TimeSeries`) data pairs
         """
         # import the frame library here to have any ImportErrors occur early
@@ -306,13 +306,13 @@ def register_gwf_api(library):
         outfile : `str`
             the path of the output frame file
 
-        start : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        start : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS start time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
-        end : `~pdpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        end : `~pydischarge.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data,
-            any input parseable by `~pdpy.time.to_gps` is fine
+            any input parseable by `~pydischarge.time.to_gps` is fine
 
         type : `str`, optional
             the type of the channel, one of 'adc', 'proc', 'sim', default

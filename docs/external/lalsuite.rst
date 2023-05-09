@@ -1,4 +1,4 @@
-.. _pdpy-external-lalsuite:
+.. _pydischarge-external-lalsuite:
 
 ########
 LALSuite
@@ -19,15 +19,15 @@ The main LALSuite documentation can be found at
 https://lscsoft.docs.ligo.org/lalsuite/
 
 LALSuite is made up of a number of component libraries, some of which are
-utilised by PDpy to provide various extra capabilities.
+utilised by pyDischarge to provide various extra capabilities.
 
-The full LALsuite can be installed alongside PDpy using
+The full LALsuite can be installed alongside pyDischarge using
 `Conda <https://conda.io>`__
 (or `Mamba <https://mamba.readthedocs.io/en/stable/>`__)
 or `pip`:
 
 .. md-tab-set::
-    :name: pdpy-install-lalsuite
+    :name: pydischarge-install-lalsuite
 
     .. md-tab-item:: Install LALSuite with conda/mamba
 
@@ -41,7 +41,7 @@ or `pip`:
 
             python -m pip install lalsuite
 
-.. _pdpy-external-lal:
+.. _pydischarge-external-lal:
 
 ===
 LAL
@@ -60,9 +60,9 @@ It's documentation is at
 
 https://lscsoft.docs.ligo.org/lalsuite/lal/
 
-PDpy provides utilities to transform to and from LAL objects
-(like the :lal:`XLALREAL8TimeSeries`) from/to their PDpy equivalent
-(e.g. :class:`pdpy.timeseries.TimeSeries`).
+pyDischarge provides utilities to transform to and from LAL objects
+(like the :lal:`XLALREAL8TimeSeries`) from/to their pyDischarge equivalent
+(e.g. :class:`pydischarge.timeseries.TimeSeries`).
 
 LAL can be installed using `Conda <https://conda.io>`__
 (or `Mamba <https://mamba.readthedocs.io/en/stable/>`__)
@@ -74,7 +74,7 @@ on Unix systems (not Windows):
 
     conda install -c conda-forge python-lal
 
-.. _pdpy-external-lalframe:
+.. _pydischarge-external-lalframe:
 
 ========
 LALFrame
@@ -92,7 +92,7 @@ It's documentation is at
 
 https://lscsoft.docs.ligo.org/lalsuite/lalframe/
 
-PDpy utilises the Python bindings for LALFrame on Unix platforms
+pyDischarge utilises the Python bindings for LALFrame on Unix platforms
 (Linux and macOS) to provide GWF input/output capabilities.
 
 This optional dependency can be installed using `Conda <https://conda.io>`__

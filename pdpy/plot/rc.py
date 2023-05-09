@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2017-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Custom default figure configuration
 """
@@ -81,11 +81,11 @@ GWPY_TEX_RCPARAMS = RcParams(**{
 
 
 def rc_params(usetex=None):
-    """Returns a new `matplotlib.RcParams` with updated PDpy parameters
+    """Returns a new `matplotlib.RcParams` with updated pyDischarge parameters
 
     The updated parameters are globally stored as
-    `pdpy.plot.rc.GWPY_RCPARAMS`, with the updated TeX parameters as
-    `pdpy.plot.rc.GWPY_TEX_RCPARAMS`.
+    `pydischarge.plot.rc.GWPY_RCPARAMS`, with the updated TeX parameters as
+    `pydischarge.plot.rc.GWPY_TEX_RCPARAMS`.
 
     .. note::
 
@@ -103,8 +103,8 @@ def rc_params(usetex=None):
     Examples
     --------
     >>> import matplotlib
-    >>> from pdpy.plot.rc import rc_params as pdpy_rc_params()
-    >>> matplotlib.rcParams.update(pdpy_rc_params(usetex=False))
+    >>> from pydischarge.plot.rc import rc_params as pydischarge_rc_params()
+    >>> matplotlib.rcParams.update(pydischarge_rc_params(usetex=False))
     """
     # if user didn't specify to use tex or not, guess based on
     # the `GWPY_USETEX` environment variable, or whether tex is
@@ -114,7 +114,7 @@ def rc_params(usetex=None):
             'GWPY_USETEX',
             default=rcParams['text.usetex'] or tex.has_tex())
 
-    # build RcParams from matplotlib.rcParams with PDpy extras
+    # build RcParams from matplotlib.rcParams with pyDischarge extras
     rcp = GWPY_RCPARAMS.copy()
     if usetex:
         rcp.update(GWPY_TEX_RCPARAMS)

@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for `pdpy.table`
+"""Unit tests for `pydischarge.table`
 """
 
 import os.path
@@ -87,7 +87,7 @@ def mock_hacr_connection(table, start, stop):
     return conn
 
 
-# -- pdpy.table.Table (astropy.table.Table) -----------------------------------
+# -- pydischarge.table.Table (astropy.table.Table) -----------------------------------
 
 class TestTable(object):
     TABLE = Table
@@ -522,7 +522,7 @@ class TestEventTable(TestTable):
         )
 
     def test_event_rates(self, table):
-        """Test :meth:`pdpy.table.EventTable.event_rate`
+        """Test :meth:`pydischarge.table.EventTable.event_rate`
         """
         rate = table.event_rate(1)
         assert isinstance(rate, TimeSeries)

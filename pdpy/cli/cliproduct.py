@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Joseph Areeda (2015-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Base class for CLI (`pdpy-plot`) products.
+"""Base class for CLI (`pydischarge-plot`) products.
 """
 
 import abc
@@ -112,7 +112,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
 
     >>> import argparse
     >>> parser = argparse.ArgumentParser()
-    >>> from pdpy.cli import CliProduct
+    >>> from pydischarge.cli import CliProduct
     >>> CliProduct.init_cli(parser)
     >>> product = CliProduct(parser.parse_args())
     >>> product.run()
@@ -396,7 +396,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         )
         group.add_argument(
             '--out',
-            default='pdpy.png',
+            default='pydischarge.png',
             help=(
                 'output filename (extension determines format: '
                 'png, pdf, svg are available)'
@@ -507,7 +507,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         # have been parsed)
 
         if args.out is None:
-            args.out = "pdpy.png"
+            args.out = "pydischarge.png"
 
     def _validate_arguments(self):
         """Sanity check arguments and raise errors if required

@@ -2,24 +2,24 @@
 # Copyright (C) Louisiana State University (2014-2017)
 #               Cardiff University (2017-2022)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Read and write HDF5 files in the LIGO Open Science Center format
 
-For more details, see :ref:`pdpy-table-io`.
+For more details, see :ref:`pydischarge-table-io`.
 """
 
 import os.path
@@ -210,7 +210,7 @@ def read_gwosc_hdf5(
 
     Returns
     -------
-    data : `~pdpy.timeseries.TimeSeries`
+    data : `~pydischarge.timeseries.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
     dataset = io_hdf5.find_dataset(h5f, path)
@@ -245,10 +245,10 @@ def read_gwosc_hdf5_state(
     path : `str`
         path of HDF5 dataset to read.
 
-    start : `Time`, `~pdpy.time.LIGOTimeGPS`, optional
+    start : `Time`, `~pydischarge.time.LIGOTimeGPS`, optional
         start GPS time of desired data
 
-    end : `Time`, `~pdpy.time.LIGOTimeGPS`, optional
+    end : `Time`, `~pydischarge.time.LIGOTimeGPS`, optional
         end GPS time of desired data
 
     copy : `bool`, default: `False`
@@ -256,7 +256,7 @@ def read_gwosc_hdf5_state(
 
     Returns
     -------
-    data : `~pdpy.timeseries.TimeSeries`
+    data : `~pydischarge.timeseries.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
     # find data

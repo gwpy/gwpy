@@ -2,20 +2,20 @@
 # Copyright (C) Louisiana State University (2017)
 #               Cardiff University (2017-2022)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Extend :mod:`astropy.table` with the `EventTable`
 """
@@ -133,7 +133,7 @@ class EventTable(Table):
         This method checks the name of the column against a hardcoded list
         of time-like names, then checks the `dtype` of the column (or the
         first element in the column) against a hardcoded list of time-like
-        dtypes (`pdpy.time.gps_types`).
+        dtypes (`pydischarge.time.gps_types`).
         """
         # if the name looks like a time column, accept that
         if name.lower() in TIME_LIKE_COLUMN_NAMES:
@@ -300,7 +300,7 @@ class EventTable(Table):
 
         Examples
         --------
-        >>> from pdpy.table import EventTable
+        >>> from pydischarge.table import EventTable
 
         To download a table of all blip glitches from the Gravity Spy database:
 
@@ -406,18 +406,18 @@ class EventTable(Table):
 
     @_rates_preprocess
     def event_rate(self, stride, start=None, end=None, timecolumn=None):
-        """Calculate the rate `~pdpy.timeseries.TimeSeries` for this `Table`.
+        """Calculate the rate `~pydischarge.timeseries.TimeSeries` for this `Table`.
 
         Parameters
         ----------
         stride : `float`
             size (seconds) of each time bin
 
-        start : `float`, `~pdpy.time.LIGOTimeGPS`, optional
-            GPS start epoch of rate `~pdpy.timeseries.TimeSeries`
+        start : `float`, `~pydischarge.time.LIGOTimeGPS`, optional
+            GPS start epoch of rate `~pydischarge.timeseries.TimeSeries`
 
-        end : `float`, `~pdpy.time.LIGOTimeGPS`, optional
-            GPS end time of rate `~pdpy.timeseries.TimeSeries`.
+        end : `float`, `~pydischarge.time.LIGOTimeGPS`, optional
+            GPS end time of rate `~pydischarge.timeseries.TimeSeries`.
             This value will be rounded up to the nearest sample if needed.
 
         timecolumn : `str`, optional
@@ -426,7 +426,7 @@ class EventTable(Table):
 
         Returns
         -------
-        rate : `~pdpy.timeseries.TimeSeries`
+        rate : `~pydischarge.timeseries.TimeSeries`
             a `TimeSeries` of events per second (Hz)
 
         Raises
@@ -435,7 +435,7 @@ class EventTable(Table):
             if the ``timecolumn`` cannot be guessed from the table contents
         """
         # NOTE: decorator sets timecolumn, start, end to non-None values
-        from pdpy.timeseries import TimeSeries
+        from pydischarge.timeseries import TimeSeries
         times = self[timecolumn]
         if times.dtype.name == 'object':  # cast to ufuncable type
             times = times.astype('longdouble', copy=False)
@@ -449,7 +449,7 @@ class EventTable(Table):
     @_rates_preprocess
     def binned_event_rates(self, stride, column, bins, operator='>=',
                            start=None, end=None, timecolumn=None):
-        """Calculate an event rate `~pdpy.timeseries.TimeSeriesDict` over
+        """Calculate an event rate `~pydischarge.timeseries.TimeSeriesDict` over
         a number of bins.
 
         Parameters
@@ -479,11 +479,11 @@ class EventTable(Table):
                If ``bins`` is given as a list of tuples, this argument
                is ignored.
 
-        start : `float`, `~pdpy.time.LIGOTimeGPS`, optional
-            GPS start epoch of rate `~pdpy.timeseries.TimeSeries`.
+        start : `float`, `~pydischarge.time.LIGOTimeGPS`, optional
+            GPS start epoch of rate `~pydischarge.timeseries.TimeSeries`.
 
-        end : `float`, `~pdpy.time.LIGOTimeGPS`, optional
-            GPS end time of rate `~pdpy.timeseries.TimeSeries`.
+        end : `float`, `~pydischarge.time.LIGOTimeGPS`, optional
+            GPS end time of rate `~pydischarge.timeseries.TimeSeries`.
             This value will be rounded up to the nearest sample if needed.
 
         timecolumn : `str`, optional, default: ``time``
@@ -491,13 +491,13 @@ class EventTable(Table):
 
         Returns
         -------
-        rates : ~pdpy.timeseries.TimeSeriesDict`
-            a dict of (bin, `~pdpy.timeseries.TimeSeries`) pairs describing a
+        rates : ~pydischarge.timeseries.TimeSeriesDict`
+            a dict of (bin, `~pydischarge.timeseries.TimeSeries`) pairs describing a
             rate of events per second (Hz) for each of the bins.
         """
         # NOTE: decorator sets timecolumn, start, end to non-None values
 
-        from pdpy.timeseries import TimeSeriesDict
+        from pydischarge.timeseries import TimeSeriesDict
 
         # generate column bins
         if not bins:
@@ -551,7 +551,7 @@ class EventTable(Table):
 
         Returns
         -------
-        plot : `~pdpy.plot.Plot`
+        plot : `~pydischarge.plot.Plot`
             the newly created figure
 
         See also
@@ -562,7 +562,7 @@ class EventTable(Table):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        pdpy.plot.Axes.scatter
+        pydischarge.plot.Axes.scatter
             for documentation of keyword arguments used to display the table
         """
         color = kwargs.pop('color', None)
@@ -595,7 +595,7 @@ class EventTable(Table):
 
         Returns
         -------
-        plot : `~pdpy.plot.Plot`
+        plot : `~pydischarge.plot.Plot`
             the newly created figure
 
         See also
@@ -606,7 +606,7 @@ class EventTable(Table):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        pdpy.plot.Axes.tile
+        pydischarge.plot.Axes.tile
             for documentation of keyword arguments used to display the table
         """
         color = kwargs.pop('color', None)
@@ -660,7 +660,7 @@ class EventTable(Table):
 
         Returns
         -------
-        plot : `~pdpy.plot.Plot`
+        plot : `~pydischarge.plot.Plot`
             The newly created figure.
 
         See also
@@ -671,7 +671,7 @@ class EventTable(Table):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes.
-        pdpy.plot.Axes.hist
+        pydischarge.plot.Axes.hist
             for documentation of keyword arguments used to display the
             histogram, if the ``method`` keyword is given, this method
             might not actually be the one used.
@@ -693,7 +693,7 @@ class EventTable(Table):
 
         Notes
         -----
-        See :ref:`pdpy-table-filter` for more details on using filter tuples
+        See :ref:`pydischarge-table-filter` for more details on using filter tuples
 
         Returns
         -------
@@ -710,7 +710,7 @@ class EventTable(Table):
 
         Custom operations can be defined using filter tuple definitions:
 
-        >>> from pdpy.table.filters import in_segmentlist
+        >>> from pydischarge.table.filters import in_segmentlist
         >>> table.filter(('time', in_segmentlist, segs))
         """
         return filter_table(self, *column_filters)

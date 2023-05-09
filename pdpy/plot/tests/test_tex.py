@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2018-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for `pdpy.plot.tex`
+"""Tests for `pydischarge.plot.tex`
 """
 
 from unittest import mock
@@ -34,26 +34,26 @@ def _which(arg):
     return arg
 
 
-@mock.patch("pdpy.plot.tex.which", _which)
+@mock.patch("pydischarge.plot.tex.which", _which)
 def test_has_tex_missing_exe():
-    """Test that `pdpy.plot.tex.has_tex` returns `False` when
+    """Test that `pydischarge.plot.tex.has_tex` returns `False` when
     any one of the necessary executables is missing.
     """
     assert not plot_tex.has_tex()
 
 
-@mock.patch("pdpy.plot.tex._test_usetex", side_effect=RuntimeError)
+@mock.patch("pydischarge.plot.tex._test_usetex", side_effect=RuntimeError)
 def test_has_tex_bad_latex(_):
-    """Test that `pdpy.plot.tex.has_tex` returns `False` when
+    """Test that `pydischarge.plot.tex.has_tex` returns `False` when
     the LaTeX figure fails to render.
     """
     assert not plot_tex.has_tex()
 
 
-@mock.patch("pdpy.plot.tex.which", return_value="path")
-@mock.patch("pdpy.plot.tex._test_usetex")
+@mock.patch("pydischarge.plot.tex.which", return_value="path")
+@mock.patch("pydischarge.plot.tex._test_usetex")
 def test_has_tex_true(_which_, _test_usetex):
-    """Test that `pdpy.plot.tex.has_tex` returns `True` when
+    """Test that `pydischarge.plot.tex.has_tex` returns `True` when
     all of the necessary executables are found, and the LaTeX figure
     doesn't raise an exception.
     """

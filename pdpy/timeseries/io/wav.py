@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2017-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Read/write WAV files using `scipy.signal.wavfile`
 """
@@ -50,7 +50,7 @@ def read(fobj, **kwargs):
 
     Examples
     --------
-    >>> from pdpy.timeseries import TimeSeries
+    >>> from pydischarge.timeseries import TimeSeries
     >>> t = TimeSeries.read('test.wav')
     """
     fsamp, arr = wavfile.read(fobj, **kwargs)
@@ -80,7 +80,7 @@ def write(series, output, scale=None):
 
     Examples
     --------
-    >>> from pdpy.timeseries import TimeSeries
+    >>> from pydischarge.timeseries import TimeSeries
     >>> t = TimeSeries([1, 2, 3, 4, 5])
     >>> t = TimeSeries.write('test.wav')
     """

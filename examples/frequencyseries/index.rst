@@ -1,4 +1,4 @@
-.. currentmodule:: pdpy.frequencyseries
+.. currentmodule:: pydischarge.frequencyseries
 
 ##########################
 `FrequencySeries` examples

@@ -1,6 +1,6 @@
-.. currentmodule:: pdpy.segments
+.. currentmodule:: pydischarge.segments
 
-.. _pdpy-segments-dqsegdb2:
+.. _pydischarge-segments-dqsegdb2:
 
 ####################
 The Segment Database
@@ -23,7 +23,7 @@ data-quality flags and apply them in any analysis.
 The `DataQualityFlag` object includes the :meth:`~DataQualityFlag.query`
 `classmethod` with which to access segments stored in any segment database::
 
-    >>> from pdpy.segments import DataQualityFlag
+    >>> from pydischarge.segments import DataQualityFlag
     >>> segs = DataQualityFlag.query('L1:DMT-ANALYSIS_READY:1',
     ...                              'Sep 14 2015', 'Sep 15 2015')
 

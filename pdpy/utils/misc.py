@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Miscellaneous utilties for PDpy
+"""Miscellaneous utilties for pyDischarge
 """
 
 import sys
@@ -43,8 +43,8 @@ def null_context():
     """Null context manager
     """
     warnings.warn(
-        "pdpy.utils.null_context is deprecated and will be removed in "
-        "PDpy 3.1.0, please update your code to use "
+        "pydischarge.utils.null_context is deprecated and will be removed in "
+        "pyDischarge 3.1.0, please update your code to use "
         "contextlib.nullcontext from the Python standard library (>=3.7)",
         DeprecationWarning,
     )
@@ -56,7 +56,7 @@ def if_not_none(func, value):
 
     Examples
     --------
-    >>> from pdpy.utils.misc import if_not_none
+    >>> from pydischarge.utils.misc import if_not_none
     >>> if_not_none(int, '1')
     1
     >>> if_not_none(int, None)
@@ -93,7 +93,7 @@ def round_to_power(x, base=2, which=None):
 
     Examples
     --------
-    >>> from pdpy.utils.misc import round_to_power
+    >>> from pydischarge.utils.misc import round_to_power
     >>> round_to_power(2)
     2
     >>> round_to_power(9, base=10)
@@ -119,7 +119,7 @@ def unique(list_):
 
     Examples
     --------
-    >>> from pdpy.utils.misc import unique
+    >>> from pydischarge.utils.misc import unique
     >>> unique(['b', 'c', 'a', 'a', 'd', 'e', 'd', 'a'])
     ['b', 'c', 'a', 'd', 'e']
     """

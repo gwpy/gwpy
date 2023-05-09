@@ -1,6 +1,6 @@
-.. currentmodule:: pdpy.timeseries
+.. currentmodule:: pydischarge.timeseries
 
-.. _pdpy-statevector:
+.. _pydischarge-statevector:
 
 #############
 State vectors
@@ -8,7 +8,7 @@ State vectors
 
 .. code-block:: python
 
-   >>> from pdpy.timeseries import (StateTimeSeries, StateVector)
+   >>> from pydischarge.timeseries import (StateTimeSeries, StateVector)
 
 A large quantity of important data from gravitational-wave detectors
 can be distilled into simple boolean (`True` or `False`) statements
@@ -16,7 +16,7 @@ informing something about the state of the instrument at a given time.
 These statements can be used to identify times during which a particular
 control system was active, or when the signal in a seismometer was above
 an alarming threshold, for example.
-In PDpy, these data are represented by special cases (`sub-classes`) of
+In pyDischarge, these data are represented by special cases (`sub-classes`) of
 the `TimeSeries` object:
 
 .. autosummary::
@@ -39,7 +39,7 @@ These arrays can be generated from simple arrays of booleans, as follows:
 
 .. code-block:: python
 
-   >>> from pdpy.timeseries import StateTimeSeries
+   >>> from pydischarge.timeseries import StateTimeSeries
    >>> state = StateTimeSeries(
    ...     [True, True, False, False, False, True, False],
    ...     sample_rate=1,
@@ -58,7 +58,7 @@ Alternatively, applying a standard mathematical comparison to a regular
 
 .. code-block:: python
 
-   >>> from pdpy.timeseries import TimeSeries
+   >>> from pydischarge.timeseries import TimeSeries
    >>> laserpower = TimeSeries.get(
    ...     "H1:IMC-PWR_IN_OUT_DQ",
    ...     1186741850,
@@ -77,7 +77,7 @@ Alternatively, applying a standard mathematical comparison to a regular
 
 The :class:`StateTimeSeries` includes a handy
 :meth:`StateTimeSeries.to_dqflag` method to convert the boolean array
-into a :class:`~pdpy.segments.DataQualityFlag`, where the ``active``
+into a :class:`~pydischarge.segments.DataQualityFlag`, where the ``active``
 segments represent times of `True` values:
 
 .. code-block:: python
@@ -129,7 +129,7 @@ binary system:
    :nofigs:
 
    >>> from gwosc.datasets import event_gps
-   >>> from pdpy.timeseries import StateVector
+   >>> from pydischarge.timeseries import StateVector
    >>> gps = event_gps("GW200105_162426")
    >>> start = int(gps) - 1000
    >>> end = int(gps) + 1000
@@ -156,7 +156,7 @@ through the :class:`BitMask` class, recording the bits as a list with
 some metdata about their purpose.
 
 The `StateVector` fetched in the above example can then be parsed into a
-series of :class:`~pdpy.segments.DataQualityFlag` objects, recording the
+series of :class:`~pydischarge.segments.DataQualityFlag` objects, recording the
 active segments for that bit in the vector:
 
 .. plot::
@@ -223,7 +223,7 @@ the GW200102 event detection.
 Associated classes
 ==================
 
-Alongside the :class:`StateVector` class, :mod:`pdpy.timeseries` provides a
+Alongside the :class:`StateVector` class, :mod:`pydischarge.timeseries` provides a
 :class:`StateVectorDict` for handling collections of bit-vector data
 (mainly to enable reading and writing multiple `StateVector` in one operation).
 

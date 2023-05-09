@@ -1,6 +1,6 @@
-.. _currentmodule: pdpy.plot
+.. _currentmodule: pydischarge.plot
 
-.. _pdpy-plot-colors:
+.. _pydischarge-plot-colors:
 
 ################################################
 The Gravitational-Wave Observatory colour scheme
@@ -14,7 +14,7 @@ In order to simplify visual identification of a specific gravitational-wave obse
     import numpy
     from matplotlib import (pyplot, rcParams)
     from matplotlib.colors import to_hex
-    from pdpy.plot import colors
+    from pydischarge.plot import colors
 
     rcParams.update({
         'text.usetex': False,
@@ -23,12 +23,12 @@ In order to simplify visual identification of a specific gravitational-wave obse
 
     th = numpy.linspace(0, 2*numpy.pi, 512)
     names = [
-         'pdpy:geo600',
-         'pdpy:kagra',
-         'pdpy:ligo-hanford',
-         'pdpy:ligo-india',
-         'pdpy:ligo-livingston',
-         'pdpy:virgo',
+         'pydischarge:geo600',
+         'pydischarge:kagra',
+         'pydischarge:ligo-hanford',
+         'pydischarge:ligo-india',
+         'pydischarge:ligo-livingston',
+         'pydischarge:virgo',
     ]
 
     fig = pyplot.figure(figsize=(5, 2))
@@ -54,16 +54,16 @@ For example:
 
 .. plot::
 
-    from pdpy.timeseries import TimeSeries
-    from pdpy.plot import Plot
+    from pydischarge.timeseries import TimeSeries
+    from pydischarge.plot import Plot
     h1 = TimeSeries.fetch_open_data('H1', 1126259457, 1126259467)
     h1b = h1.bandpass(50, 250).notch(60).notch(120)
     l1 = TimeSeries.fetch_open_data('L1', 1126259457, 1126259467)
     l1b = l1.bandpass(50, 250).notch(60).notch(120)
     plot = Plot(figsize=(12, 4.8))
     ax = plot.add_subplot(xscale='auto-gps')
-    ax.plot(h1b, color='pdpy:ligo-hanford', label='LIGO-Hanford')
-    ax.plot(l1b, color='pdpy:ligo-livingston', label='LIGO-Livingston')
+    ax.plot(h1b, color='pydischarge:ligo-hanford', label='LIGO-Hanford')
+    ax.plot(l1b, color='pydischarge:ligo-livingston', label='LIGO-Livingston')
     ax.set_epoch(1126259462.427)
     ax.set_xlim(1126259462, 1126259462.6)
     ax.set_ylim(-1e-21, 1e-21)
@@ -71,14 +71,14 @@ For example:
     ax.legend()
     plot.show()
 
-The above code was adapted from the example :ref:`pdpy-example-signal-gw150914`.
+The above code was adapted from the example :ref:`pydischarge-example-signal-gw150914`.
 
-The colours can also be specified using the interferometer prefix (e.g. ``'H1'``) via the `pdpy.plot.colors.GW_OBSERVATORY_COLORS` object:
+The colours can also be specified using the interferometer prefix (e.g. ``'H1'``) via the `pydischarge.plot.colors.GW_OBSERVATORY_COLORS` object:
 
 .. plot::
 
     from matplotlib import pyplot
-    from pdpy.plot.colors import GW_OBSERVATORY_COLORS
+    from pydischarge.plot.colors import GW_OBSERVATORY_COLORS
     fig = pyplot.figure()
     ax = fig.gca()
     ax.plot([1, 2, 3, 4, 5], color=GW_OBSERVATORY_COLORS['L1'])
@@ -86,5 +86,5 @@ The colours can also be specified using the interferometer prefix (e.g. ``'H1'``
 
 .. note::
 
-   The ``'pdpy:<>'`` colours will not be available until `pdpy`
+   The ``'pydischarge:<>'`` colours will not be available until `pydischarge`
    has been imported.

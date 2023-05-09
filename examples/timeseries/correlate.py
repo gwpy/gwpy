@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Alex Urban (2019-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Cross-correlating two `TimeSeries`
 
@@ -41,10 +41,10 @@ Advanced LIGO's second observing run.
 """
 
 __author__ = "Alex Urban <alexander.urban@ligo.org>"
-__currentmodule__ = 'pdpy.timeseries'
+__currentmodule__ = 'pydischarge.timeseries'
 
 # First, we import the `TimeSeries` and :meth:`~TimeSeries.get` the data:
-from pdpy.timeseries import TimeSeries
+from pydischarge.timeseries import TimeSeries
 hoft = TimeSeries.get('L1:GDS-CALIB_STRAIN', 1172489751, 1172489815)
 aux = TimeSeries.get('L1:PSL-ISS_PDA_REL_OUT_DQ', 1172489751, 1172489815)
 

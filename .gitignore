@@ -12,7 +12,7 @@ build/
 develop-eggs/
 dist/
 eggs/
-/pdpy/_version.py
+/pydischarge/_version.py
 lib/
 lib64/
 parts/

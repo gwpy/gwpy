@@ -1,18 +1,18 @@
-.. _pdpy-frequencyseries-filter:
+.. _pydischarge-frequencyseries-filter:
 
 ###############################
 Filtering frequency-domain data
 ###############################
 
-Frequency-domain data (a :class:`~pdpy.frequencyseries.FrequencySeries` or a :class:`~pdpy.spectrogram.Spectrogram`) can be filtered using an arbitrary filter using the :meth:`filter` methods of those objects:
+Frequency-domain data (a :class:`~pydischarge.frequencyseries.FrequencySeries` or a :class:`~pydischarge.spectrogram.Spectrogram`) can be filtered using an arbitrary filter using the :meth:`filter` methods of those objects:
 
-.. currentmodule:: pdpy.frequencyseries
+.. currentmodule:: pydischarge.frequencyseries
 
 .. autosummary::
 
    FrequencySeries.filter
 
-.. currentmodule:: pdpy.spectrogram
+.. currentmodule:: pydischarge.spectrogram
 
 .. autosummary::
 

@@ -2,20 +2,20 @@
 # Copyright (C) Louisiana State University (2014-2017)
 #               Cardiff University (2017-2022)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Plotting utilities for segments
 """
@@ -43,10 +43,10 @@ class SegmentAxes(Axes):
 
     This `SegmentAxes` provides custom methods for displaying any of
 
-    - `~pdpy.segments.DataQualityFlag`
-    - `~pdpy.segments.Segment` or :class:`ligo.segments.segment`
-    - `~pdpy.segments.SegmentList` or :class:`ligo.segments.segmentlist`
-    - `~pdpy.segments.SegmentListDict` or
+    - `~pydischarge.segments.DataQualityFlag`
+    - `~pydischarge.segments.Segment` or :class:`ligo.segments.segment`
+    - `~pydischarge.segments.SegmentList` or :class:`ligo.segments.segmentlist`
+    - `~pydischarge.segments.SegmentListDict` or
       :class:`ligo.segments.segmentlistdict`
 
     Parameters
@@ -57,7 +57,7 @@ class SegmentAxes(Axes):
 
     See also
     --------
-    pdpy.plot.Axes
+    pydischarge.plot.Axes
         for documentation of other args and kwargs
     """
     name = 'segments'
@@ -101,10 +101,10 @@ class SegmentAxes(Axes):
         args
             a single instance of
 
-                - `~pdpy.segments.DataQualityFlag`
-                - `~pdpy.segments.Segment`
-                - `~pdpy.segments.SegmentList`
-                - `~pdpy.segments.SegmentListDict`
+                - `~pydischarge.segments.DataQualityFlag`
+                - `~pydischarge.segments.Segment`
+                - `~pydischarge.segments.SegmentList`
+                - `~pydischarge.segments.SegmentListDict`
 
             or equivalent types upstream from :mod:`ligo.segments`
 
@@ -136,11 +136,11 @@ class SegmentAxes(Axes):
         return out
 
     def plot_dict(self, flags, label='key', known='x', **kwargs):
-        """Plot a `~pdpy.segments.DataQualityDict` onto these axes
+        """Plot a `~pydischarge.segments.DataQualityDict` onto these axes
 
         Parameters
         ----------
-        flags : `~pdpy.segments.DataQualityDict`
+        flags : `~pydischarge.segments.DataQualityDict`
             data-quality dict to display
 
         label : `str`, optional
@@ -178,11 +178,11 @@ class SegmentAxes(Axes):
         return out
 
     def plot_flag(self, flag, y=None, **kwargs):
-        """Plot a `~pdpy.segments.DataQualityFlag` onto these axes.
+        """Plot a `~pydischarge.segments.DataQualityFlag` onto these axes.
 
         Parameters
         ----------
-        flag : `~pdpy.segments.DataQualityFlag`
+        flag : `~pydischarge.segments.DataQualityFlag`
             Data-quality flag to display.
 
         y : `float`, optional
@@ -253,11 +253,11 @@ class SegmentAxes(Axes):
 
     def plot_segmentlist(self, segmentlist, y=None, height=.8, label=None,
                          collection=True, rasterized=None, **kwargs):
-        """Plot a `~pdpy.segments.SegmentList` onto these axes
+        """Plot a `~pydischarge.segments.SegmentList` onto these axes
 
         Parameters
         ----------
-        segmentlist : `~pdpy.segments.SegmentList`
+        segmentlist : `~pydischarge.segments.SegmentList`
             list of segments to display
 
         y : `float`, optional
@@ -318,13 +318,13 @@ class SegmentAxes(Axes):
         return out
 
     def plot_segmentlistdict(self, segmentlistdict, y=None, dy=1, **kwargs):
-        """Plot a `~pdpy.segments.SegmentListDict` onto
+        """Plot a `~pydischarge.segments.SegmentListDict` onto
         these axes
 
         Parameters
         ----------
-        segmentlistdict : `~pdpy.segments.SegmentListDict`
-            (name, `~pdpy.segments.SegmentList`) dict
+        segmentlistdict : `~pydischarge.segments.SegmentListDict`
+            (name, `~pydischarge.segments.SegmentList`) dict
 
         y : `float`, optional
             starting y-axis value for new segmentlists
@@ -455,7 +455,7 @@ class SegmentRectangle(Rectangle):
 
         Parameters
         ----------
-        segment : `~pdpy.segments.Segment`
+        segment : `~pydischarge.segments.Segment`
             ``[start, stop)`` GPS segment
 
         y : `float`

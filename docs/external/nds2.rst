@@ -1,4 +1,4 @@
-.. _pdpy-external-nds2:
+.. _pydischarge-external-nds2:
 
 ####
 NDS2

@@ -2,22 +2,22 @@
 # Copyright (C) Louisiana State University (2017)
 #               Cardiff University (2017-2021)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Colour customisations for visualisation in PDpy
+"""Colour customisations for visualisation in pyDischarge
 """
 
 import numpy
@@ -52,8 +52,8 @@ _GWO_PREFIX = {
 GW_OBSERVATORY_COLORS = {_GWO_PREFIX[n]: GWPY_COLORS[n] for n in GWPY_COLORS}
 
 # set named colour upstream in matplotlib, so users can specify as
-# e.g. plot(..., color='pdpy:ligo-hanford')
-color_map.update({f"pdpy:{name}": col for name, col in GWPY_COLORS.items()})
+# e.g. plot(..., color='pydischarge:ligo-hanford')
+color_map.update({f"pydischarge:{name}": col for name, col in GWPY_COLORS.items()})
 
 
 # -- colour utilities ---------------------------------------------------------

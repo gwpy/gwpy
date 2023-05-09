@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """I/O utilities for GWF files using the lalframe or frameCPP APIs
 """
@@ -140,7 +140,7 @@ def write_frames(filename, frames, compression='GZIP', compression_level=None):
     # stream auto-closes (apparently)
 
 
-def create_frame(time=0, duration=None, name='pdpy', run=-1, ifos=None):
+def create_frame(time=0, duration=None, name='pydischarge', run=-1, ifos=None):
     """Create a new :class:`~LDAStools.frameCPP.FrameH`
 
     **Requires:** |LDAStools.frameCPP|_
@@ -197,7 +197,7 @@ def create_frame(time=0, duration=None, name='pdpy', run=-1, ifos=None):
 
 def create_fradcdata(series, frame_epoch=0,
                      channelgroup=0, channelid=0, nbits=16):
-    """Create a `~frameCPP.FrAdcData` from a `~pdpy.types.Series`
+    """Create a `~frameCPP.FrAdcData` from a `~pydischarge.types.Series`
 
     .. note::
 
@@ -205,7 +205,7 @@ def create_fradcdata(series, frame_epoch=0,
 
     Parameters
     ----------
-    series : `~pdpy.types.Series`
+    series : `~pydischarge.types.Series`
         the input data array to store
 
     frame_epoch : `float`, `int`, optional
@@ -258,7 +258,7 @@ def _get_series_frange(series):
 def create_frprocdata(series, frame_epoch=0, comment=None,
                       type=None, subtype=None, trange=None,
                       fshift=0, phase=0, frange=None, bandwidth=0):
-    """Create a `~frameCPP.FrAdcData` from a `~pdpy.types.Series`
+    """Create a `~frameCPP.FrAdcData` from a `~pydischarge.types.Series`
 
     .. note::
 
@@ -266,7 +266,7 @@ def create_frprocdata(series, frame_epoch=0, comment=None,
 
     Parameters
     ----------
-    series : `~pdpy.types.Series`
+    series : `~pydischarge.types.Series`
         the input data array to store
 
     frame_epoch : `float`, `int`, optional
@@ -330,7 +330,7 @@ def create_frprocdata(series, frame_epoch=0, comment=None,
 
 
 def create_frsimdata(series, frame_epoch=0, comment=None, fshift=0, phase=0):
-    """Create a `~frameCPP.FrAdcData` from a `~pdpy.types.Series`
+    """Create a `~frameCPP.FrAdcData` from a `~pydischarge.types.Series`
 
     .. note::
 
@@ -338,7 +338,7 @@ def create_frsimdata(series, frame_epoch=0, comment=None, fshift=0, phase=0):
 
     Parameters
     ----------
-    series : `~pdpy.types.Series`
+    series : `~pydischarge.types.Series`
         the input data array to store
 
     frame_epoch : `float`, `int`, optional
@@ -378,7 +378,7 @@ def create_frsimdata(series, frame_epoch=0, comment=None, fshift=0, phase=0):
 
 
 def create_frvect(series):
-    """Create a `~frameCPP.FrVect` from a `~pdpy.types.Series`
+    """Create a `~frameCPP.FrVect` from a `~pydischarge.types.Series`
 
     .. note::
 
@@ -386,7 +386,7 @@ def create_frvect(series):
 
     Parameters
     ----------
-    series : `~pdpy.types.Series`
+    series : `~pydischarge.types.Series`
         the input data array to store
 
     Returns
@@ -448,7 +448,7 @@ def get_channel_type(channel, framefile):
 
     Parameters
     ----------
-    channel : `str`, `~pdpy.detector.Channel`
+    channel : `str`, `~pydischarge.detector.Channel`
         name of data channel to find
 
     framefile : `str`
@@ -584,7 +584,7 @@ def data_segments(paths, channel, warn=True):
 
     Returns
     -------
-    segments : `~pdpy.segments.SegmentList`
+    segments : `~pydischarge.segments.SegmentList`
         the list of segments containing data
     """
     segments = SegmentList()
@@ -690,7 +690,7 @@ def _series_name(series):
 
     Parameters
     ----------
-    series : `pdpy.types.Series`
+    series : `pydischarge.types.Series`
         the input series that will be written
 
     Returns

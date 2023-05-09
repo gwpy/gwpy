@@ -2,20 +2,20 @@
 # Copyright (C) Louisiana State University (2014-2017)
 #               Cardiff University (2017-2021)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module defines the `DataQualityFlag` and `DataQualityDict`.
 
@@ -452,7 +452,7 @@ class DataQualityFlag(object):
 
         Examples
         --------
-        >>> from pdpy.segments import DataQualityFlag
+        >>> from pydischarge.segments import DataQualityFlag
         >>> print(DataQualityFlag.fetch_open_data('H1_DATA', 'Jan 1 2010',
         ...                                       'Jan 2 2010'))
         <DataQualityFlag('H1:DATA',
@@ -801,7 +801,7 @@ class DataQualityFlag(object):
         ----------
         **kwargs
             all keyword arguments are passed to the
-            :class:`~pdpy.plot.Plot` constructor.
+            :class:`~pydischarge.plot.Plot` constructor.
 
         Returns
         -------
@@ -816,7 +816,7 @@ class DataQualityFlag(object):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        pdpy.plot.SegmentAxes.plot_segmentlist
+        pydischarge.plot.SegmentAxes.plot_segmentlist
             for documentation of keyword arguments used in rendering the data
         """
         from matplotlib import rcParams
@@ -1129,9 +1129,9 @@ class DataQualityDict(OrderedDict):
         ----------
         fp : `str`
             path of veto definer file to read
-        start : `~pdpy.time.LIGOTimeGPS`, `int`, optional
+        start : `~pydischarge.time.LIGOTimeGPS`, `int`, optional
             GPS start time at which to restrict returned flags
-        end : `~pdpy.time.LIGOTimeGPS`, `int`, optional
+        end : `~pydischarge.time.LIGOTimeGPS`, `int`, optional
             GPS end time at which to restrict returned flags
         ifo : `str`, optional
             interferometer prefix whose flags you want to read
@@ -1215,7 +1215,7 @@ class DataQualityDict(OrderedDict):
         gpstype : `type`, `callable`, optional
             class to use for GPS times in returned objects, can be a function
             to convert GPS time to something else, default is
-            `~pdpy.time.LIGOTimeGPS`
+            `~pydischarge.time.LIGOTimeGPS`
 
         on_missing : `str`, optional
             action to take when a one or more ``names`` are not found in
@@ -1579,7 +1579,7 @@ class DataQualityDict(OrderedDict):
 
         **kwargs
             all keyword arguments are passed to the
-            :class:`~pdpy.plot.Plot` constructor.
+            :class:`~pydischarge.plot.Plot` constructor.
 
         Returns
         -------
@@ -1594,7 +1594,7 @@ class DataQualityDict(OrderedDict):
         matplotlib.figure.Figure.add_subplot
             for documentation of keyword arguments used to create the
             axes
-        pdpy.plot.SegmentAxes.plot_segmentlist
+        pydischarge.plot.SegmentAxes.plot_segmentlist
             for documentation of keyword arguments used in rendering the data
         """
         # make plot

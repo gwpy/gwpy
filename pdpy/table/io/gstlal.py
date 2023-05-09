@@ -2,20 +2,20 @@
 # Copyright (C) California Institute of Technology (2019-2022)
 #               Pensylvania State University (2019)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Read events from the GstLAL online GW search
 """
@@ -53,9 +53,9 @@ def read_gstlal_sngl(source, **kwargs):
 
     See also
     --------
-    pdpy.io.ligolw.read_table
+    pydischarge.io.ligolw.read_table
         for details of keyword arguments for the read operation
-    pdpy.table.io.ligolw.to_astropy_table
+    pydischarge.table.io.ligolw.to_astropy_table
         for details of keyword arguments for the conversion operation
     """
     from ligo.lw import lsctables
@@ -99,9 +99,9 @@ def read_gstlal_coinc(source, **kwargs):
 
     See also
     --------
-    pdpy.io.ligolw.read_table
+    pydischarge.io.ligolw.read_table
         for details of keyword arguments for the read operation
-    pdpy.table.io.ligolw.to_astropy_table
+    pydischarge.table.io.ligolw.to_astropy_table
         for details of keyword arguments for the conversion operation
     """
     from ligo.lw import lsctables
@@ -157,9 +157,9 @@ def read_gstlal(source, triggers='sngl', **kwargs):
 
     See also
     --------
-    pdpy.io.ligolw.read_table
+    pydischarge.io.ligolw.read_table
         for details of keyword arguments for the read operation
-    pdpy.table.io.ligolw.to_astropy_table
+    pydischarge.table.io.ligolw.to_astropy_table
         for details of keyword arguments for the conversion operation
     """
 
@@ -192,7 +192,7 @@ register_reader(GSTLAL_FORMAT, EventTable, read_gstlal)
 # Here we define methods required to build commonly desired columns that
 # are just a combination of the basic columns.
 #
-# Each method should take in a `~pdpy.table.Table` and return a `numpy.ndarray`
+# Each method should take in a `~pydischarge.table.Table` and return a `numpy.ndarray`
 
 GET_COLUMN = {}
 GET_COLUMN_EXTRA = {}

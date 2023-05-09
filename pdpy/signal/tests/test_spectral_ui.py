@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2013-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """Unit test for signal module
 """
@@ -36,7 +36,7 @@ from ..spectral import _ui as fft_ui
 
 
 def test_seconds_to_samples():
-    """Test :func:`pdpy.signal.spectral.ui.seconds_to_samples`
+    """Test :func:`pydischarge.signal.spectral.ui.seconds_to_samples`
     """
     assert fft_ui.seconds_to_samples(4, 256) == 1024
     assert fft_ui.seconds_to_samples(1 * units.minute, 16) == 960
@@ -45,7 +45,7 @@ def test_seconds_to_samples():
 
 
 def test_normalize_fft_params():
-    """Test :func:`pdpy.signal.spectral.ui.normalize_fft_params`
+    """Test :func:`pydischarge.signal.spectral.ui.normalize_fft_params`
     """
     ftp = fft_ui.normalize_fft_params(
         TimeSeries(numpy.zeros(1024), sample_rate=256))
@@ -79,7 +79,7 @@ def test_normalize_fft_params_window_array():
 ])
 def test_normalize_fft_params_window_lal(win):
     import lal
-    from pdpy.signal.spectral._lal import welch
+    from pydischarge.signal.spectral._lal import welch
     ftp = fft_ui.normalize_fft_params(
         TimeSeries(numpy.zeros(1024, dtype="float32"), sample_rate=256),
         kwargs={'window': win},
@@ -89,7 +89,7 @@ def test_normalize_fft_params_window_lal(win):
 
 
 def test_chunk_timeseries():
-    """Test :func:`pdpy.signal.spectral.ui._chunk_timeseries`
+    """Test :func:`pydischarge.signal.spectral.ui._chunk_timeseries`
     """
     a = TimeSeries(numpy.arange(400))
     chunks = list(fft_ui._chunk_timeseries(a, 100, 50))

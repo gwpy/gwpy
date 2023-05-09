@@ -1,6 +1,6 @@
-.. currentmodule:: pdpy.frequencyseries
+.. currentmodule:: pydischarge.frequencyseries
 
-.. _pdpy-frequencyseries:
+.. _pydischarge-frequencyseries:
 
 ##################################
 The :class:`FrequencySeries` class
@@ -11,9 +11,9 @@ Additionally, the auxiliary `channels <../detector/channel>`_ used to sense and 
 
 The :class:`FrequencySeries` object is used to represent any frequency series, including the power-spectral (and amplitude-spectral) density series describing instrument performance.
 
-Analogously to the :class:`~pdpy.timeseries.TimeSeries`, a new `FrequencySeries` can be generated from any data sequence along with the minimal :attr:`~FrequencySeries.f0` and :attr:`~FrequencySeries.df` metadata::
+Analogously to the :class:`~pydischarge.timeseries.TimeSeries`, a new `FrequencySeries` can be generated from any data sequence along with the minimal :attr:`~FrequencySeries.f0` and :attr:`~FrequencySeries.df` metadata::
 
-    >>> from pdpy.frequencyseries import FrequencySeries
+    >>> from pydischarge.frequencyseries import FrequencySeries
     >>> spec = FrequencySeries([1,2,3,4,5,6,7,8,9,10], f0=0, df=1)
     >>> print(spec)
     FrequencySeries([ 1  2  3  4  5  6  7  8  9 10],
@@ -36,10 +36,10 @@ The full set of metadata that can be provided is as follows:
    ~FrequencySeries.df
 
 ==========================================================================
-Generating a `FrequencySeries` from a :class:`~pdpy.timeseries.TimeSeries`
+Generating a `FrequencySeries` from a :class:`~pydischarge.timeseries.TimeSeries`
 ==========================================================================
 
-.. currentmodule:: pdpy.timeseries
+.. currentmodule:: pydischarge.timeseries
 
 The frequency-spectrum of a :class:`TimeSeries` can be calculated using either of the following methods:
 
@@ -49,14 +49,14 @@ The frequency-spectrum of a :class:`TimeSeries` can be calculated using either o
    TimeSeries.psd
    TimeSeries.asd
 
-In this example we expand upon plotting a :class:`~pdpy.timeseries.TimeSeries`, by calculating the amplitude-spectral density of the gravitational-wave strain data from LHO:
+In this example we expand upon plotting a :class:`~pydischarge.timeseries.TimeSeries`, by calculating the amplitude-spectral density of the gravitational-wave strain data from LHO:
 
 .. plot::
    :context: reset
    :include-source:
    :nofigs:
 
-   >>> from pdpy.timeseries import TimeSeries
+   >>> from pydischarge.timeseries import TimeSeries
    >>> gwdata = TimeSeries.get('H1:LDAS-STRAIN', 'September 16 2010 06:40',
    ...                         'September 16 2010 06:50')
    >>> spectrum = gwdata.asd(8, 4)
@@ -74,15 +74,15 @@ Reading/writing frequency-domain data
    io
 
 
-.. _pdpy-frequencyseries-plot:
+.. _pydischarge-frequencyseries-plot:
 
 ============================
 Plotting a `FrequencySeries`
 ============================
 
-.. currentmodule:: pdpy.frequencyseries
+.. currentmodule:: pydischarge.frequencyseries
 
-Similary to the :class:`~pdpy.timeseries.TimeSeries`, the `FrequencySeries` object comes with its own :meth:`~FrequencySeries.plot` method, which will quickly construct a :class:`~pdpy.plot.Plot`:
+Similary to the :class:`~pydischarge.timeseries.TimeSeries`, the `FrequencySeries` object comes with its own :meth:`~FrequencySeries.plot` method, which will quickly construct a :class:`~pydischarge.plot.Plot`:
 
 .. plot::
    :context:

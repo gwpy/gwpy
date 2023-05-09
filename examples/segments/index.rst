@@ -1,4 +1,4 @@
-.. currentmodule:: pdpy.segments
+.. currentmodule:: pydischarge.segments
 
 ######################
 `Segments` examples

@@ -2,22 +2,22 @@
 # Copyright (C) Louisiana State University (2014-2017)
 #               Cardiff University (2017-2022)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Extension of the basic matplotlib Figure for PDpy
+"""Extension of the basic matplotlib Figure for pyDischarge
 """
 
 import itertools
@@ -72,7 +72,7 @@ def get_backend_mod(name=None):
 
     Examples
     --------
-    >>> from pdpy.plot.plot import get_backend_mod
+    >>> from pydischarge.plot.plot import get_backend_mod
     >>> print(get_backend_mod('agg'))
     <module 'matplotlib.backends.backend_agg' from ... >
     """
@@ -89,7 +89,7 @@ class Plot(figure.Figure):
     """An extension of the core matplotlib `~matplotlib.figure.Figure`
 
     The `Plot` provides a number of methods to simplify generating
-    figures from PDpy data objects, and modifying them on-the-fly in
+    figures from pyDischarge data objects, and modifying them on-the-fly in
     interactive mode.
     """
     def __init__(self, *data, **kwargs):
@@ -402,7 +402,7 @@ class Plot(figure.Figure):
         Examples
         --------
         >>> import numpy
-        >>> from pdpy.plot import Plot
+        >>> from pydischarge.plot import Plot
 
         To plot a simple image and add a colorbar:
 
@@ -430,7 +430,7 @@ class Plot(figure.Figure):
 
         # force the minor ticks to be the same as the major ticks
         # in practice, this normally swaps out LogFormatterSciNotation to
-        # pdpy's LogFormatter; # this is hacky, and would be improved using a
+        # pydischarge's LogFormatter; # this is hacky, and would be improved using a
         # subclass of Colorbar in the first place, but matplotlib's
         # cbar_factory doesn't support that
         longaxis = (cbar.ax.yaxis if cbar.orientation == "vertical" else
@@ -470,7 +470,7 @@ class Plot(figure.Figure):
 
         Parameters
         ----------
-        segments : `~pdpy.segments.DataQualityFlag`
+        segments : `~pydischarge.segments.DataQualityFlag`
             A data-quality flag, or `SegmentList` denoting state segments
             about this Plot
 
@@ -495,7 +495,7 @@ class Plot(figure.Figure):
 
         **plotargs
             extra keyword arguments are passed to
-            :meth:`~pdpy.plot.SegmentAxes.plot`
+            :meth:`~pydischarge.plot.SegmentAxes.plot`
         """
         # get axes to anchor against
         if not ax:
@@ -581,7 +581,7 @@ def _group_axes_data(inputs, separate=None, flat=False):
 
     Examples
     --------
-    >>> from pdpy.plot import Plot
+    >>> from pydischarge.plot import Plot
     >>> Plot._group_axes_data([1, 2], separate=False)
     [[1, 2]]
     >>> Plot._group_axes_data([1, 2], separate=True)

@@ -2,41 +2,41 @@
 |_title_|
 #########
 
-.. |_title_| image:: pdpy-docs-logo.png
+.. |_title_| image:: pydischarge-docs-logo.png
 
-.. title:: PDpy docs
+.. title:: pyDischarge docs
 
 .. ifconfig:: 'dev' in release
 
    .. warning::
 
-      You are viewing documentation for a development build of PDpy.
+      You are viewing documentation for a development build of pyDischarge.
       This version may include unstable code, or breaking changes relative
       the most recent stable release.
-      To view the documentation for the latest stable release of PDpy, please
+      To view the documentation for the latest stable release of pyDischarge, please
       `click here <../stable/>`_.
 
-PDpy is a collaboration-driven `Python <http://www.python.org>`_ package
+pyDischarge is a collaboration-driven `Python <http://www.python.org>`_ package
 providing tools for studying data from ground-based gravitational-wave
 detectors.
 
-PDpy provides a user-friendly, intuitive interface to the common time-domain
+pyDischarge provides a user-friendly, intuitive interface to the common time-domain
 and frequency-domain data produced by the `LIGO <http://www.ligo.org>`_ and
 `Virgo <http://www.ego-gw.it>`_ instruments and their analysis,
 with easy-to-follow tutorials at each step.
 
-.. image:: https://img.shields.io/conda/vn/conda-forge/pdpy
-    :target: https://anaconda.org/conda-forge/pdpy/
-    :alt: PDpy Conda-forge version badge
-.. image:: https://img.shields.io/pypi/v/pdpy
-    :target: https://pypi.org/project/pdpy/
-    :alt: PDpy PyPI version badge
+.. image:: https://img.shields.io/conda/vn/conda-forge/pydischarge
+    :target: https://anaconda.org/conda-forge/pydischarge/
+    :alt: pyDischarge Conda-forge version badge
+.. image:: https://img.shields.io/pypi/v/pydischarge
+    :target: https://pypi.org/project/pydischarge/
+    :alt: pyDischarge PyPI version badge
 .. image:: https://zenodo.org/badge/9979119.svg
     :target: https://zenodo.org/badge/latestdoi/9979119
-    :alt: PDpy DOI badge
-.. image:: https://img.shields.io/pypi/l/pdpy.svg
+    :alt: pyDischarge DOI badge
+.. image:: https://img.shields.io/pypi/l/pydischarge.svg
     :target: https://choosealicense.com/licenses/gpl-3.0/
-    :alt: PDpy license badge
+    :alt: pyDischarge license badge
 
 ***********
 First steps
@@ -45,9 +45,9 @@ First steps
 .. toctree::
    :maxdepth: 1
 
-   What is PDpy? <overview>
-   How do I install PDpy? <install>
-   Citing PDpy <citing>
+   What is pyDischarge? <overview>
+   How do I install pyDischarge? <install>
+   Citing pyDischarge <citing>
 
 *****************
 Working with data

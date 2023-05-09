@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
-# This file is part of PDpy.
+# This file is part of pyDischarge.
 #
-# PDpy is free software: you can redistribute it and/or modify
+# pyDischarge is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PDpy is distributed in the hope that it will be useful,
+# pyDischarge is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PDpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with pyDischarge.  If not, see <http://www.gnu.org/licenses/>.
 
 """The `astro` module provides methods for sensitivity calculations of
 gravitational-wave interferometer data.
@@ -31,14 +31,14 @@ distance range of a detector
 
 .. autosummary::
 
-   ~pdpy.astro.burst_range
-   ~pdpy.astro.burst_range_spectrum
-   ~pdpy.astro.inspiral_range
-   ~pdpy.astro.inspiral_range_psd
-   ~pdpy.astro.sensemon_range
-   ~pdpy.astro.sensemon_range_psd
-   ~pdpy.astro.range_timeseries
-   ~pdpy.astro.range_spectrogram
+   ~pydischarge.astro.burst_range
+   ~pydischarge.astro.burst_range_spectrum
+   ~pydischarge.astro.inspiral_range
+   ~pydischarge.astro.inspiral_range_psd
+   ~pydischarge.astro.sensemon_range
+   ~pydischarge.astro.sensemon_range_psd
+   ~pydischarge.astro.range_timeseries
+   ~pydischarge.astro.range_spectrogram
 
 Each of the above methods has been given default parameters corresponding to
 the standard usage by the LIGO project.
