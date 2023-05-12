@@ -31,10 +31,14 @@ class LatexInlineDimensional(LatexInline):
     name = 'latex_inline_dimensional'
 
     @classmethod
-    def to_string(cls, unit):
-        u = f"[{super().to_string(unit)}]"
+    def to_string(cls, unit, *args, **kwargs):
+        u = f"[{super().to_string(unit, *args, **kwargs)}]"
 
         if unit.physical_type not in {None, 'unknown', 'dimensionless'}:
-            ptype = str(unit.physical_type).split('/', 1)[0].title()
-            return f"{cls._latex_escape(ptype)} {u}"
+            # format physical type of unit for LaTeX
+            ptype = str(
+                unit.physical_type,
+            ).split('/', 1)[0].title().replace("_", r"\_")
+            # return '<Physical type> [<unit>]'
+            return f"{ptype} {u}"
         return u
