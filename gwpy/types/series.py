@@ -1005,7 +1005,7 @@ class Series(Array):
             idx0 = None
         else:
             if not irregular:
-                idx0 = int((xtype(start) - x0) // self.dx.value)
+                idx0 = floor((xtype(start) - x0) / self.dx.value)
             else:
                 idx0 = numpy.searchsorted(
                     self.xindex.value, xtype(start), side="left"
@@ -1016,7 +1016,7 @@ class Series(Array):
             idx1 = None
         else:
             if not irregular:
-                idx1 = int((xtype(end) - x0) // self.dx.value)
+                idx1 = floor((xtype(end) - x0) / self.dx.value)
                 if idx1 >= self.size:
                     idx1 = None
             else:
