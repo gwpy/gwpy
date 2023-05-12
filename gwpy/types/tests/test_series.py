@@ -212,6 +212,19 @@ class TestSeries(_TestArray):
         cropped = series.crop(start=25, end=75)
         utils.assert_quantity_equal(series[(x > 25) & (x < 75)], cropped)
 
+    def test_crop_float_precision(self):
+        """Verify the float precision of the crop function.
+
+        This tests regression against https://github.com/gwpy/gwpy/issues/1601.
+        """
+        # construct empty data array with the right shape for this array object
+        shape = (101,) * self.TEST_CLASS._ndim
+        series = self.TEST_CLASS(numpy.empty(shape), dx=0.01)
+
+        # assert that when we crop it, we only crop a single sample
+        cropped = series.crop(end=1.)
+        utils.assert_quantity_equal(series[:-1], cropped)
+
     def test_is_compatible(self, array):
         """Test the `Series.is_compatible` method
         """
