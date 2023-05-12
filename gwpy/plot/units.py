@@ -24,9 +24,21 @@ from astropy.units.format import LatexInline
 
 
 class LatexInlineDimensional(LatexInline):
-    """Custom LaTeX formatter that includes physical type (if available)
+    r"""Custom LaTeX formatter that includes physical type (if available)
 
-    Mainly for auto-labelling `Axes` in matplotlib figures
+    Mainly for auto-labelling `Axes` in matplotlib figures.
+
+    Examples
+    --------
+    The built-in astropy ``latex_inline`` formatter gives this:
+
+    >>> Unit('m/s').to_string(format='latex_inline')
+    '$\mathrm{m\,s^{-1}}$'
+
+    This custom 'dimensional' formatter gives:
+
+    >>> Unit('m/s').to_string(format='latex_inline_dimensional')
+    'Speed [$\mathrm{m\,s^{-1}}$]'
     """
     name = 'latex_inline_dimensional'
 
