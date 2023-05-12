@@ -185,16 +185,25 @@ class TestSeries(_TestArray):
             z, numpy.column_stack((array.xindex.value, array.value)))
 
     def test_crop(self, array):
+        """Test basic functionality of `Series.crop`.
+        """
+        # all defaults
+        utils.assert_quantity_equal(array, array.crop())
+
+        # normal operation
         a2 = array.crop(10, 20)
         utils.assert_quantity_equal(array[10:20], a2)
-        # check that warnings are printed for out-of-bounds
+
+    def test_crop_warnings(self, array):
+        """Test that `Series.crop` emits warnings when it is supposed to.
+        """
         with pytest.warns(UserWarning):
             array.crop(array.xspan[0]-1, array.xspan[1])
         with pytest.warns(UserWarning):
             array.crop(array.xspan[0], array.xspan[1]+1)
 
     def test_crop_irregular(self):
-        """The cropping on an irregularly spaced series.
+        """Test `Series.crop` with an irregular index.
         """
         x = numpy.linspace(0, 100, num=self.data.shape[0])
 
