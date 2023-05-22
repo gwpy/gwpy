@@ -48,9 +48,7 @@ class LatexInlineDimensional(LatexInline):
 
         if unit.physical_type not in {None, 'unknown', 'dimensionless'}:
             # format physical type of unit for LaTeX
-            ptype = str(
-                unit.physical_type,
-            ).split('/', 1)[0].title().replace("_", r"\_")
+            ptype = str(unit.physical_type).title().replace("_", r"\_")
             # return '<Physical type> [<unit>]'
             return f"{ptype} {u}"
         return u
