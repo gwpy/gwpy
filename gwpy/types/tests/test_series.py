@@ -185,16 +185,25 @@ class TestSeries(_TestArray):
             z, numpy.column_stack((array.xindex.value, array.value)))
 
     def test_crop(self, array):
+        """Test basic functionality of `Series.crop`.
+        """
+        # all defaults
+        utils.assert_quantity_equal(array, array.crop())
+
+        # normal operation
         a2 = array.crop(10, 20)
         utils.assert_quantity_equal(array[10:20], a2)
-        # check that warnings are printed for out-of-bounds
+
+    def test_crop_warnings(self, array):
+        """Test that `Series.crop` emits warnings when it is supposed to.
+        """
         with pytest.warns(UserWarning):
             array.crop(array.xspan[0]-1, array.xspan[1])
         with pytest.warns(UserWarning):
             array.crop(array.xspan[0], array.xspan[1]+1)
 
     def test_crop_irregular(self):
-        """The cropping on an irregularly spaced series.
+        """Test `Series.crop` with an irregular index.
         """
         x = numpy.linspace(0, 100, num=self.data.shape[0])
 
@@ -211,6 +220,19 @@ class TestSeries(_TestArray):
 
         cropped = series.crop(start=25, end=75)
         utils.assert_quantity_equal(series[(x > 25) & (x < 75)], cropped)
+
+    def test_crop_float_precision(self):
+        """Verify the float precision of the crop function.
+
+        This tests regression against https://github.com/gwpy/gwpy/issues/1601.
+        """
+        # construct empty data array with the right shape for this array object
+        shape = (101,) * self.TEST_CLASS._ndim
+        series = self.TEST_CLASS(numpy.empty(shape), dx=0.01)
+
+        # assert that when we crop it, we only crop a single sample
+        cropped = series.crop(end=1.)
+        utils.assert_quantity_equal(series[:-1], cropped)
 
     def test_is_compatible(self, array):
         """Test the `Series.is_compatible` method

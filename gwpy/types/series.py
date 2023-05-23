@@ -947,25 +947,26 @@ class Series(Array):
         Parameters
         ----------
         start : `float`, optional
-            lower limit of x-axis to crop to, defaults to
-            current `~Series.x0`
+            Lower limit of x-axis to crop to, defaults to
+            :attr:`~Series.x0`.
 
         end : `float`, optional
-            upper limit of x-axis to crop to, defaults to current series end
+            Upper limit of x-axis to crop to, defaults to series end.
 
-        copy : `bool`, optional, default: `False`
-            copy the input data to fresh memory, otherwise return a view
+        copy : `bool`, optional
+            Copy the input data to fresh memory,
+            otherwise return a view (default).
 
         Returns
         -------
         series : `Series`
-            A new series with a sub-set of the input data
+            A new series with a sub-set of the input data.
 
         Notes
         -----
         If either ``start`` or ``end`` are outside of the original
         `Series` span, warnings will be printed and the limits will
-        be restricted to the :attr:`~Series.xspan`
+        be restricted to the :attr:`~Series.xspan`.
         """
         x0, x1 = self.xspan
         xtype = type(x0)
@@ -978,18 +979,20 @@ class Series(Array):
         if start == x0:
             start = None
         elif start is not None and xtype(start) < x0:
-            warn('%s.crop given start smaller than current start, '
-                 'crop will begin when the Series actually starts.'
-                 % type(self).__name__)
+            warn(
+                f"{type(self).__name__}.crop given start smaller than current "
+                "start, crop will begin when the Series actually starts.",
+            )
             start = None
 
         # pin late ends to time-series end
         if end == x1:
             end = None
         if end is not None and xtype(end) > x1:
-            warn('%s.crop given end larger than current end, '
-                 'crop will end when the Series actually ends.'
-                 % type(self).__name__)
+            warn(
+                f"{type(self).__name__}.crop given end larger than current "
+                "end, crop will begin when the Series actually ends.",
+            )
             end = None
 
         # check if series is irregular
@@ -1003,31 +1006,26 @@ class Series(Array):
         # find start index
         if start is None:
             idx0 = None
+        elif irregular:
+            idx0 = numpy.searchsorted(
+                self.xindex.value,
+                xtype(start),
+                side="left",
+            )
         else:
-            if not irregular:
-                idx0 = int((xtype(start) - x0) // self.dx.value)
-            else:
-                idx0 = numpy.searchsorted(
-                    self.xindex.value, xtype(start), side="left"
-                )
+            idx0 = floor((xtype(start) - x0) / self.dx.value)
 
         # find end index
         if end is None:
             idx1 = None
+        elif irregular:
+            idx1 = numpy.searchsorted(
+                self.xindex.value,
+                xtype(end),
+                side="left",
+            )
         else:
-            if not irregular:
-                idx1 = int((xtype(end) - x0) // self.dx.value)
-                if idx1 >= self.size:
-                    idx1 = None
-            else:
-                if xtype(end) >= self.xindex.value[-1]:
-                    idx1 = None
-                else:
-                    idx1 = (
-                        numpy.searchsorted(
-                            self.xindex.value, xtype(end), side="left"
-                        )
-                    )
+            idx1 = floor((xtype(end) - x0) / self.dx.value)
 
         # crop
         if copy:
