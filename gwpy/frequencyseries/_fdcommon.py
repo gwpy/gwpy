@@ -51,14 +51,23 @@ def fdfilter(data, *filt, **kwargs):
     # parse filter
     if fs is None:
         fs = 2 * (data.shape[-1] * data.df).to('Hz').value
-    form, filt = parse_filter(filt)
-    if analog:
-        form, filt = convert_to_digital(form, filt, fs)
-    lti = signal.lti(*filt)
 
-    # generate frequency response
+    # if analog, leave it be, don't convert to digital first
+    form, filt = parse_filter(filt)
+
     freqs = data.frequencies.value.copy()
-    fresp = numpy.nan_to_num(abs(lti.freqresp(w=freqs)[1]))
+
+    if analog:
+        lti = signal.lti(*filt)
+        # generate frequency response
+        freqs_corr_units = freqs
+    else:
+        lti = signal.dlti(*filt)
+        # dlti freqresp expects w in radians/sample;
+        # freqs is Hz, fs is sampleHz
+        freqs_corr_units = 2 * numpy.pi * freqs / fs
+
+    fresp = numpy.nan_to_num(abs(lti.freqresp(w=freqs_corr_units)[1]))
 
     # apply to array
     if inplace:
