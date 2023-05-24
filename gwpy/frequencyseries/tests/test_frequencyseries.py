@@ -129,7 +129,7 @@ class TestFrequencySeries(_TestSeries):
         utils.assert_allclose(ts.fft().ifft().value, ts.value)
 
     def test_filter(self, array):
-        a2 = array.filter([100], [1], 1e-2)
+        a2 = array.filter([100], [1], 1e-2, analog=True)
         assert isinstance(a2, type(array))
         utils.assert_quantity_equal(a2.frequencies, array.frequencies)
 
@@ -138,10 +138,34 @@ class TestFrequencySeries(_TestSeries):
         fresp = abs(signal.freqs(b, a, array.frequencies.value)[1])
         utils.assert_array_equal(a2.value, fresp * array.value)
 
-    def test_zpk(self, array):
-        a2 = array.zpk([100], [1], 1e-2)
+    def test_filter_digital(self, array):
+
+        # fs=2*max val
+        fs = 2 * (array.shape[-1] * array.df).value
+
+        # get a digital low pass filter
+        z, p, k = signal.butter(4, 10, 'low',
+                                fs=fs,
+                                output='zpk', analog=False)
+
+        a2 = array.filter(z, p, k, analog=False)
         assert isinstance(a2, type(array))
         utils.assert_quantity_equal(a2.frequencies, array.frequencies)
+
+        fresp = abs(signal.freqz_zpk(z, p, k, array.frequencies.value,
+                                     fs=fs)[1])
+
+        numpy.testing.assert_array_almost_equal(a2.value, fresp * array.value)
+
+    def test_zpk(self, array):
+        a2 = array.zpk([100], [1], 1e-2, analog=True)
+        assert isinstance(a2, type(array))
+        utils.assert_quantity_equal(a2.frequencies, array.frequencies)
+
+        # manually rebuild the filter to test it works
+        b, a, = signal.zpk2tf([100], [1], 1e-2)
+        fresp = abs(signal.freqs(b, a, array.frequencies.value)[1])
+        utils.assert_array_equal(a2.value, fresp * array.value)
 
     def test_inject(self):
         # create a timeseries out of an array of zeros
