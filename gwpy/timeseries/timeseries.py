@@ -1107,7 +1107,7 @@ class TimeSeries(TimeSeriesBase):
         return new
 
     def transfer_function(self, other, fftlength=None, overlap=None,
-                          window='hann', **kwargs):
+                          window='hann', average='mean', **kwargs):
         """Calculate the transfer function between this `TimeSeries` and
         another.
 
@@ -1132,6 +1132,10 @@ class TimeSeries(TimeSeriesBase):
             see :func:`scipy.signal.get_window` for details on acceptable
             formats
 
+        average : `str`, optional
+            FFT-averaging method (default: ``'mean'``) passed to
+            underlying csd() and psd() methods
+
         **kwargs
             any other keyword arguments accepted by
             :meth:`TimeSeries.csd` or :meth:`TimeSeries.psd`
@@ -1149,9 +1153,9 @@ class TimeSeries(TimeSeriesBase):
         `TimeSeries` will be down-sampled to match the lower.
         """
         csd = self.csd(other, fftlength=fftlength, overlap=overlap,
-                       window=window, **kwargs)
+                       window=window, average=average, **kwargs)
         psd = self.psd(fftlength=fftlength, overlap=overlap, window=window,
-                       **kwargs)
+                       average=average, **kwargs)
 
         # Take the minimum of the frequencyseries csd and psd because the
         # sample rate of different channels might yield different length
