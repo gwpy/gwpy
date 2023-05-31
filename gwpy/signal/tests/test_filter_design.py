@@ -153,3 +153,18 @@ def test_parse_filter():
     parsed = filter_design.parse_filter(zpk)
     assert parsed[0] == 'zpk'
     utils.assert_zpk_equal(parsed[1], zpk)
+
+def test_convert_to_digital():
+
+    z, p, k = [1], [2], 0.1
+    fs = 0.1
+    form, filt = filter_design.parse_filter((z, p, k))
+    dform, dfilt = filter_design.convert_to_digital(form, filt, fs)
+
+    assert dform == form
+    assert dfilt == filter_design.bilinear_zpk(z, p, k, fs)
+
+    with pytest.raises(ValueError, match='Cannot convert'):
+        filter_design.convert_to_digital(
+            "badstr", ([1], [1], 1), fs
+        )
