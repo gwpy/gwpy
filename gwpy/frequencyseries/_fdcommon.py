@@ -25,7 +25,7 @@ import numpy
 
 from scipy import signal
 
-from ..signal.filter_design import parse_filter
+from ..signal.filter_design import parse_filter, convert_to_digital
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -52,6 +52,8 @@ def fdfilter(data, *filt, **kwargs):
     if fs is None:
         fs = 2 * (data.shape[-1] * data.df).to('Hz').value
     form, filt = parse_filter(filt)
+    if analog:
+        form, filt = convert_to_digital(form, filt, fs)
     lti = signal.lti(*filt)
 
     # generate frequency response
