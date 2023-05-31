@@ -208,7 +208,7 @@ class BodePlot(Plot):
                 frequencies *= dt
 
         # parse filter (without digital conversions)
-        _, fcomp = parse_filter(filter_, analog=False)
+        _, fcomp = parse_filter(filter_)
         if analog:
             _lti = lti(*fcomp)
         else:
