@@ -59,7 +59,8 @@ def fdfilter(data, *filt, **kwargs):
 
     if analog:
         lti = signal.lti(*filt)
-        # generate frequency response
+        # although freqresp expects rad/s; filter zpk roots are hz
+        # same result occurs per index i in any units if roots and w scaled
         freqs_corr_units = freqs
     else:
         lti = signal.dlti(*filt)
