@@ -365,8 +365,6 @@ def parse_filter(args):
     # parse FIR filter
     if isinstance(args, numpy.ndarray) and args.ndim == 1:  # fir
         b, a = args, [1.]
-        # if analog and analog_to_digital:
-        #     return 'ba', signal.bilinear(b, a)
         return 'ba', (b, a)
 
     # parse IIR filter
