@@ -129,14 +129,40 @@ class TestFrequencySeries(_TestSeries):
         utils.assert_allclose(ts.fft().ifft().value, ts.value)
 
     def test_filter(self, array):
+
         a2 = array.filter([100], [1], 1e-2, analog=True)
         assert isinstance(a2, type(array))
         utils.assert_quantity_equal(a2.frequencies, array.frequencies)
 
         # manually rebuild the filter to test it works
-        b, a, = signal.zpk2tf([100], [1], 1e-2)
-        fresp = abs(signal.freqs(b, a, array.frequencies.value)[1])
-        utils.assert_array_equal(a2.value, fresp * array.value)
+        # 2 pi are used to convert to expected rad/s
+        # the result is the same without them; here for explicitness
+        # signal.freqs expects rad/s units; roots and w arr should be in
+        # these units too
+        b, a, = signal.zpk2tf(
+            [2 * numpy.pi * 100],
+            [2 * numpy.pi * 1],
+            1e-2
+        )
+        fresp = abs(signal.freqs(b, a,
+                                 2 * numpy.pi * array.frequencies.value)[1])
+
+        # leaving as hz
+        bhz, ahz, = signal.zpk2tf([100], [1], 1e-2)
+        fresphz = abs(signal.freqs(bhz, ahz, array.frequencies.value)[1])
+
+        # make sure leaving as hz gives same result (per index i)
+        # this assumption is important for _fdcommon.fdfilter
+        # if for some reason it changes, filter will need to be converted to
+        # rad/s before filtering
+        numpy.testing.assert_array_almost_equal(fresphz, fresp)
+
+        numpy.testing.assert_array_almost_equal(
+            a2.value, fresphz * array.value
+        )
+        numpy.testing.assert_array_almost_equal(
+            a2.value, fresp * array.value
+        )
 
     def test_filter_digital(self, array):
 
@@ -149,12 +175,15 @@ class TestFrequencySeries(_TestSeries):
                                 output='zpk', analog=False)
 
         a2 = array.filter(z, p, k, analog=False)
-        assert isinstance(a2, type(array))
-        utils.assert_quantity_equal(a2.frequencies, array.frequencies)
 
+        # from scipy docs:
+        # when fs is supplied, vals are calculated for frequencies
+        # "in the same units as fs", otherwise rads/sample
         fresp = abs(signal.freqz_zpk(z, p, k, array.frequencies.value,
                                      fs=fs)[1])
 
+        assert isinstance(a2, type(array))
+        utils.assert_quantity_equal(a2.frequencies, array.frequencies)
         numpy.testing.assert_array_almost_equal(a2.value, fresp * array.value)
 
     def test_zpk(self, array):
