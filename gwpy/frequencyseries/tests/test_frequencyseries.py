@@ -186,6 +186,10 @@ class TestFrequencySeries(_TestSeries):
         utils.assert_quantity_equal(a2.frequencies, array.frequencies)
         numpy.testing.assert_array_almost_equal(a2.value, fresp * array.value)
 
+        # by default, analog=False for .filter()
+        a3 = array.filter(z, p, k, analog=False)
+        numpy.testing.assert_array_almost_equal(a3.value, a2.value)
+
     def test_zpk(self, array):
         a2 = array.zpk([100], [1], 1e-2, analog=True)
         assert isinstance(a2, type(array))
@@ -195,6 +199,10 @@ class TestFrequencySeries(_TestSeries):
         b, a, = signal.zpk2tf([100], [1], 1e-2)
         fresp = abs(signal.freqs(b, a, array.frequencies.value)[1])
         utils.assert_array_equal(a2.value, fresp * array.value)
+
+        # test default works, analog=True by default
+        a3 = array.zpk([100], [1], 1e-2)
+        utils.assert_array_equal(a2.value, a3.value)
 
     def test_inject(self):
         # create a timeseries out of an array of zeros
