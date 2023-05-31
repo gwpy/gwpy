@@ -168,7 +168,10 @@ def test_convert_to_digital():
     b, a = signal.zpk2tf(z, p, k)
     dformba, dfiltba = filter_design.convert_to_digital('ba', (b, a), fs)
     assert dformba == 'ba'
-    assert dfilt == signal.bilinear(b, a, fs)
+    b2, a2 = dfiltba
+    b3, a3 = signal.bilinear(b, a, fs=fs)
+    assert all(b3 == b2)
+    assert all(a3 == a2)
 
     with pytest.raises(ValueError, match='Cannot convert'):
         filter_design.convert_to_digital(
