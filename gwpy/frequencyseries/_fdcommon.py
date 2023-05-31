@@ -51,7 +51,7 @@ def fdfilter(data, *filt, **kwargs):
     # parse filter
     if fs is None:
         fs = 2 * (data.shape[-1] * data.df).to('Hz').value
-    form, filt = parse_filter(filt, analog=analog, sample_rate=fs)
+    form, filt = parse_filter(filt)
     lti = signal.lti(*filt)
 
     # generate frequency response
