@@ -165,6 +165,11 @@ def test_convert_to_digital():
     assert dform == form
     assert dfilt == filter_design.bilinear_zpk(z, p, k, fs)
 
+    b, a = signal.zpk2tf(z, p, k)
+    dformba, dfiltba = filter_design.convert_to_digital('ba', (b, a), fs)
+    assert dformba == 'ba'
+    assert dfilt == signal.bilinear(b, a, fs)
+
     with pytest.raises(ValueError, match='Cannot convert'):
         filter_design.convert_to_digital(
             "badstr", ([1], [1], 1), fs
