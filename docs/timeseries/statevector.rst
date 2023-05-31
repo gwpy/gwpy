@@ -117,7 +117,7 @@ data-quality states of the detector.
 .. admonition:: GWOSC data usage notes
 
    Refer to the GWOSC
-   `data usage notes <https://www.gw-openscience.org/yellow_box/>`__
+   `data usage notes <https://gwosc.org/yellow_box/>`__
    page for details of the various bits (states) in the state vectors.
 
 To demonstate, we can download the `StateVector` associated with

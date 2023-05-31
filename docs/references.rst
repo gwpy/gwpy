@@ -103,13 +103,13 @@
 .. _GravitySpy: https://gravityspy.org
 
 .. |GWOSCl| replace:: The Gravitational-Wave Open Science Centre (GWOSC)
-.. _GWOSCl: https://www.gw-openscience.org/
+.. _GWOSCl: https://gwosc.org/
 
 .. |GWOSC| replace:: GWOSC
-.. _GWOSC: https://www.gw-openscience.org/
+.. _GWOSC: https://gwosc.org/
 
 .. |GWOSC_AUX_RELEASE| replace:: Auxiliary Channel Three Hour Release
-.. _GWOSC_AUX_RELEASE: https://www.gw-openscience.org/auxiliary/GW170814/
+.. _GWOSC_AUX_RELEASE: https://gwosc.org/auxiliary/GW170814/
 
 .. |LIGO-T050017| replace:: LIGO-T050017
 .. _LIGO-T050017: https://dcc.ligo.org/LIGO-T050017/public
@@ -119,34 +119,34 @@
 .. catalogues
 
 .. |GWTCl| replace:: Gravitational-Wave Transient Catalogue (GWTC)
-.. _GWTCl: https://www.gw-openscience.org/eventapi/html/GWTC/
+.. _GWTCl: https://gwosc.org/eventapi/html/GWTC/
 
 .. |GWTC| replace:: GWTC
-.. _GWTC: https://www.gw-openscience.org/eventapi/html/GWTC/
+.. _GWTC: https://gwosc.org/eventapi/html/GWTC/
 
 .. |GWTC-1l| replace:: Gravitational-Wave Transient Catalogue (GWTC) 1
-.. _GWTC-1l: https://www.gw-openscience.org/GWTC-1/
+.. _GWTC-1l: https://gwosc.org/GWTC-1/
 
 .. |GWTC-1| replace:: GWTC-1
-.. _GWTC-1: https://www.gw-openscience.org/GWTC-1/
+.. _GWTC-1: https://gwosc.org/GWTC-1/
 
 .. |GWTC-2l| replace:: Gravitational-Wave Transient Catalogue (GWTC) 2
-.. _GWTC-2l: https://www.gw-openscience.org/GWTC-2/
+.. _GWTC-2l: https://gwosc.org/GWTC-2/
 
 .. |GWTC-2| replace:: GWTC-2
-.. _GWTC-2: https://www.gw-openscience.org/GWTC-2/
+.. _GWTC-2: https://gwosc.org/GWTC-2/
 
 .. |GWTC-2.1l| replace:: Gravitational-Wave Transient Catalogue (GWTC) 2.1
-.. _GWTC-2.1l: https://www.gw-openscience.org/GWTC-2.1/
+.. _GWTC-2.1l: https://gwosc.org/GWTC-2.1/
 
 .. |GWTC-2.1| replace:: GWTC-2.1
-.. _GWTC-2.1: https://www.gw-openscience.org/GWTC-2.1/
+.. _GWTC-2.1: https://gwosc.org/GWTC-2.1/
 
 .. |GWTC-3l| replace:: Gravitational-Wave Transient Catalogue (GWTC) 3
-.. _GWTC-3l: https://www.gw-openscience.org/GWTC-3/
+.. _GWTC-3l: https://gwosc.org/GWTC-3/
 
 .. |GWTC-3| replace:: GWTC-3
-.. _GWTC-3: https://www.gw-openscience.org/GWTC-3/
+.. _GWTC-3: https://gwosc.org/GWTC-3/
 
 .. events
 

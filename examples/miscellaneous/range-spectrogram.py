@@ -29,7 +29,7 @@ using :func:`gwpy.astro.range_spectrogram`.
 __author__ = 'Alex Urban <alexander.urban@ligo.org>'
 
 # First, we need to load some data. As before we can `fetch` the
-# `public data <https://www.gw-openscience.org/catalog/>`__
+# `public data <https://gwosc.org/catalog/>`__
 # around the GW170817 BNS merger:
 
 from gwpy.timeseries import TimeSeries

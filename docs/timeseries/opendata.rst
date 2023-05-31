@@ -18,7 +18,7 @@ and bulk datasets covering entire observing epochs.
 
    For full details of the available data, please see
 
-   https://www.gw-openscience.org/data/
+   https://gwosc.org/data/
 
 .. _gwpy-timeseries-fetchopendata:
 

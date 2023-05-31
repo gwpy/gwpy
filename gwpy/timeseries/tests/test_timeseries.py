@@ -82,7 +82,7 @@ LIVETIME = DataQualityFlag(
     isgood=True,
 )
 
-GWOSC_DATAFIND_SERVER = "datafind.gw-openscience.org"
+GWOSC_DATAFIND_SERVER = "datafind.gwosc.org"
 GWOSC_GW150914_IFO = "L1"
 GWOSC_GW150914_CHANNEL = "L1:GWOSC-16KHZ_R1_STRAIN"
 NDS2_GW150914_CHANNEL = "L1:DCS-CALIB_STRAIN_C02"
@@ -834,23 +834,32 @@ class TestTimeSeries(_TestTimeSeriesBase):
             gw150914.psd(1, **kw) ** (1/2.),
         )
 
-    def test_csd(self, noisy_sinusoid, corrupt_noisy_sinusoid):
-        # test that csd(self) is the same as psd()
-        fs = noisy_sinusoid.csd(noisy_sinusoid)
+    def test_csd(self, noisy_sinusoid):
+        """Test that `TimeSeries.csd(self)` is the same as `psd()`.
+        """
+        fs = noisy_sinusoid.csd(noisy_sinusoid, average="mean")
         utils.assert_quantity_sub_equal(
-            fs,
+            fs.abs(),
             noisy_sinusoid.psd(method="welch"),
             exclude=['name'],
         )
 
-        # test fftlength
+    def test_csd_fftlength(self, noisy_sinusoid, corrupt_noisy_sinusoid):
+        """Test that `TimeSeries.csd` uses the ``fftlength`` keyword properly.
+        """
+        # test fftlength is used
         fs = noisy_sinusoid.csd(corrupt_noisy_sinusoid, fftlength=0.5)
         assert fs.size == 0.5 * noisy_sinusoid.sample_rate.value // 2 + 1
         assert fs.df == 2 * units.Hertz
+
+        # test that the default overlap works (by comparing to explicit)
         utils.assert_quantity_sub_equal(
             fs,
-            noisy_sinusoid.csd(corrupt_noisy_sinusoid, fftlength=0.5,
-                               overlap=0.25),
+            noisy_sinusoid.csd(
+                corrupt_noisy_sinusoid,
+                fftlength=0.5,
+                overlap=0.25,
+            ),
         )
 
     @staticmethod

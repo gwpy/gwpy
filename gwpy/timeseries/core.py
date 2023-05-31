@@ -84,7 +84,9 @@ def _dynamic_scaled(scaled, channel):
     """Determine default for scaled based on channel name
 
     This is mainly to work around LIGO not correctly recording ADC
-    scaling parameters for most of Advanced LIGO (through 2019).
+    scaling parameters for most of Advanced LIGO (through 2023).
+    Scaling parameters for H0 and L0 data are also not correct
+    starting in mid-2020.
 
     Parameters
     ----------
@@ -108,7 +110,7 @@ def _dynamic_scaled(scaled, channel):
     """
     if scaled is not None:
         return scaled
-    return not str(channel).startswith(("H1", "L1"))
+    return not str(channel).startswith(("H0", "L0", "H1", "L1"))
 
 
 # -- TimeSeriesBase------------------------------------------------------------
@@ -993,7 +995,7 @@ class TimeSeriesBaseDict(OrderedDict):
         return self
 
     def crop(self, start=None, end=None, copy=False):
-        """Crop each entry of this `dict`
+        """Crop each entry of this `dict`.
 
         This method calls the :meth:`crop` method of all entries and
         modifies this dict in place.
@@ -1007,6 +1009,10 @@ class TimeSeriesBaseDict(OrderedDict):
         end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
+
+        copy : `bool`, optional, default: `False`
+            If `True` copy the data for each entry to fresh memory,
+            otherwise return a view.
 
         See also
         --------
@@ -1441,9 +1447,18 @@ class TimeSeriesBaseDict(OrderedDict):
             all other keyword arguments are passed to the plotter as
             appropriate
         """
+        kwargs.update({
+            "method": method,
+            "label": label,
+        })
+
         # make plot
         from ..plot import Plot
-        plot = Plot(self.values(), method=method, label=label, **kwargs)
+
+        if kwargs.get("separate", False):
+            plot = Plot(*self.values(), **kwargs)
+        else:
+            plot = Plot(self.values(), **kwargs)
 
         # update labels
         artmap = {'plot': 'lines', 'scatter': 'collections'}
