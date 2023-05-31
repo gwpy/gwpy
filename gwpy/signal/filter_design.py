@@ -256,57 +256,40 @@ def fir_from_transfer(transfer, ntaps, window='hann', ncorner=None):
     return out
 
 
-def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):
-    """Convert an analogue ZPK filter to digital using a bilinear transform
+def convert_to_digital(form, filter, sample_rate):
+    """Convert an analog filter to digital via bilinear functions.
 
     Parameters
     ----------
-    zeros : array-like
-        list of zeros
+    form : `str`
+        type of filter, 'zpk' or 'ba'
 
-    poles : array-like
-        list of poles
+    filter: `tuple`
+        filter values
 
-    gain : `float`
-        filter gain
-
-    fs : `float`, `~astropy.units.Quantity`
-        sampling rate at which to evaluate bilinear transform, default: 1.
-
-    unit : `str`, `~astropy.units.Unit`
-        unit of inputs, one or 'Hz' or 'rad/s', default: ``'Hz'``
+    sample_rate: `float`
 
     Returns
     -------
-    zpk : `tuple`
-        digital version of input zpk
+    dform : `str`
+        type of filter, 'zpk' or 'ba'
+
+    dfilter: 'tuple'
+        digital filter values
     """
-    zeros = numpy.array(zeros, dtype=float, copy=False)
-    zeros = zeros[numpy.isfinite(zeros)]
-    poles = numpy.array(poles, dtype=float, copy=False)
-    gain = gain
 
-    # convert from Hz to rad/s if needed
-    unit = Unit(unit)
-    if unit == Unit('Hz'):
-        zeros *= -2 * pi
-        poles *= -2 * pi
-    elif unit != Unit('rad/s'):
-        raise ValueError("zpk can only be given with unit='Hz' "
-                         "or 'rad/s'")
+    if form not in ('zpk', 'ba'):
+        raise ValueError(f"Cannot convert form {form} to digital. Only"
+                         f"'zpk' or 'ba' are allowed.")
 
-    # convert to Z-domain via bilinear transform
-    fs = 2 * Quantity(fs, 'Hz').value
-    dpoles = (1 + poles/fs) / (1 - poles/fs)
-    dzeros = (1 + zeros/fs) / (1 - zeros/fs)
-    dzeros = numpy.concatenate((
-        dzeros, -numpy.ones(len(dpoles) - len(dzeros)),
-    ))
-    dgain = gain * numpy.prod(fs - zeros)/numpy.prod(fs - poles)
-    return dzeros, dpoles, dgain
+    if form == 'ba':
+        return 'ba', signal.bilinear(*filter, fs=sample_rate)
+
+    if form == 'zpk':
+        return 'zpk', signal.bilinear_zpk(*filter, fs=sample_rate)
 
 
-def parse_filter(args, analog=False, sample_rate=None):
+def parse_filter(args):
     """Parse arbitrary input args into a TF or ZPK filter definition
 
     Parameters
@@ -314,13 +297,6 @@ def parse_filter(args, analog=False, sample_rate=None):
     args : `tuple`, `~scipy.signal.lti`
         filter definition, normally just captured positional ``*args``
         from a function call
-
-    analog : `bool`, optional
-        `True` if filter definition has analogue coefficients
-
-    sample_rate : `float`, optional
-        sampling frequency at which to convert analogue filter to digital
-        via bilinear transform, required if ``analog=True``
 
     Returns
     -------
@@ -330,9 +306,6 @@ def parse_filter(args, analog=False, sample_rate=None):
         the filter components for the returned `ftype`, either a 2-tuple
         for with transfer function components, or a 3-tuple for ZPK
     """
-    if analog and not sample_rate:
-        raise ValueError("Must give sample_rate frequency to convert "
-                         "analog filter to digital")
 
     # unpack filter
     if isinstance(args, tuple) and len(args) == 1:
@@ -342,8 +315,8 @@ def parse_filter(args, analog=False, sample_rate=None):
     # parse FIR filter
     if isinstance(args, numpy.ndarray) and args.ndim == 1:  # fir
         b, a = args, [1.]
-        if analog:
-            return 'ba', signal.bilinear(b, a)
+        # if analog and analog_to_digital:
+        #     return 'ba', signal.bilinear(b, a)
         return 'ba', (b, a)
 
     # parse IIR filter
@@ -360,11 +333,6 @@ def parse_filter(args, analog=False, sample_rate=None):
             lti = signal.lti(*args)
         lti = lti.to_zpk()
 
-    # convert to digital components
-    if analog:
-        return 'zpk', bilinear_zpk(lti.zeros, lti.poles, lti.gain,
-                                   fs=sample_rate)
-    # return zpk
     return 'zpk', (lti.zeros, lti.poles, lti.gain)
 
 
