@@ -25,7 +25,7 @@ import numpy
 
 from scipy import signal
 
-from ..signal.filter_design import parse_filter, convert_to_digital
+from ..signal.filter_design import parse_filter
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
