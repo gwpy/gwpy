@@ -154,6 +154,7 @@ def test_parse_filter():
     assert parsed[0] == 'zpk'
     utils.assert_zpk_equal(parsed[1], zpk)
 
+
 def test_convert_to_digital():
 
     z, p, k = [1], [2], 0.1
