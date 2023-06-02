@@ -83,7 +83,7 @@ def _design_fir(wp, ws, sample_rate, gpass, gstop, window='hamming', **kwargs):
     # pylint: disable=invalid-name
     wp = numpy.atleast_1d(wp)
     ws = numpy.atleast_1d(ws)
-    tw = abs(wp[0] - ws[0])
+    tw = wp[0] - ws[0]
     nt = num_taps(sample_rate, tw, gpass, gstop)
     if wp[0] > ws[0]:
         kwargs.setdefault('pass_zero', False)
@@ -122,12 +122,16 @@ def num_taps(sample_rate, transitionwidth, gpass, gstop):
     """
     gpass = 10 ** (-gpass / 10.)
     gstop = 10 ** (-gstop / 10.)
-    return int(
+    ntaps = int(
         2/3.
         * log10(1 / (10 * gpass * gstop))
         * sample_rate
-        / transitionwidth
+        / abs(transitionwidth)
     )
+    # highpass filters must have an odd number of taps
+    if transitionwidth > 0 and ntaps % 2 == 0:
+        return ntaps + 1
+    return ntaps
 
 
 def is_zpk(zpktup):
