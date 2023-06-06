@@ -40,7 +40,7 @@ jobs:
       matrix:
         include:
           - name: "Minimum"
-            python-version: "3.7"
+            python-version: "3.8"
             experimental: false
             extras: "test"
             pip-opts: "--upgrade-strategy=only-if-needed"
