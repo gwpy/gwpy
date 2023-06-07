@@ -46,7 +46,7 @@ dependencies = [
   "numpy >=1.19",
   "python-dateutil",
   "requests",
-  "scipy >=1.2.0",
+  "scipy >=1.5.0",
   "tqdm >=4.10.0",
 ]
 
