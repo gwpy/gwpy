@@ -486,54 +486,70 @@ class TimeSeriesBase(Series):
         )
 
     @classmethod
-    def find(cls, channel, start, end, frametype=None, pad=None,
-             scaled=None, nproc=1, verbose=False, **readargs):
-        """Find and read data from frames for a channel
+    def find(cls, channel, start, end, **kwargs):
+        """Find and read data from frames for a channel.
 
         Parameters
         ----------
         channel : `str`, `~gwpy.detector.Channel`
-            the name of the channel to read, or a `Channel` object.
+            The name of the channel to read, or a `Channel` object.
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~gwpy.time.to_gps` is fine
+            any input parseable by `~gwpy.time.to_gps` is fine.
 
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
             GPS end time of required data,
-            any input parseable by `~gwpy.time.to_gps` is fine
+            any input parseable by `~gwpy.time.to_gps` is fine.
+
+        observatory : `str`, optional
+            The observatory prefix to use when discovering data.
+            Defaults to the first character of the channel name.
 
         frametype : `str`, optional
-            name of frametype in which this channel is stored, will search
-            for containing frame types if necessary
+            Name of frametype in which this channel is stored,
+            by default will search for all required frame types.
 
-        nproc : `int`, optional, default: `1`
-            number of parallel processes to use, serial process by
-            default.
+        frametype_match : `str`, optional
+            Regular expression to use for frametype matching.
+
+        scan : `str`, optional
+            A directory tree to scan for files, instead of using `gwdatafind`.
+            Files in the tree must follow the file-naming convention detailed
+            in |LIGO-T050017|_ to be discoverable.
+            If ``scan`` is given, `gwdatafind` will still be used to resolve
+            the ``frametype`` if required.
 
         pad : `float`, optional
-            value with which to fill gaps in the source data,
+            Value with which to fill gaps in the source data,
             by default gaps will result in a `ValueError`.
 
+        scaled : `bool`, optional
+            Apply slope and bias calibration to ADC data, for non-ADC data
+            this option has no effect.
+
+        nproc : `int`, optional, default: `1`
+            Number of parallel processes to use, serial process by
+            default.
+
         allow_tape : `bool`, optional, default: `True`
-            allow reading from frame files on (slow) magnetic tape
+            Allow reading from frame files on (slow) magnetic tape
 
         verbose : `bool`, optional
-            print verbose output about read progress, if ``verbose``
+            Print verbose output about read progress, if ``verbose``
             is specified as a string, this defines the prefix for the
-            progress meter
+            progress meter.
 
         **readargs
-            any other keyword arguments to be passed to `.read()`
+            Any other keyword arguments to be passed to the file
+            reader. Valid arguments depend on the file type being read
+            and the reader used.
         """
         return cls.DictClass.find(
-            [channel], start, end,
-            frametype=frametype,
-            verbose=verbose,
-            pad=pad,
-            scaled=scaled,
-            nproc=nproc,
-            **readargs
+            [channel],
+            start,
+            end,
+            **kwargs,
         )[str(channel)]
 
     @classmethod
@@ -1182,53 +1198,80 @@ class TimeSeriesBaseDict(OrderedDict):
                      series_class=cls.EntryClass).crop(start, end)
 
     @classmethod
-    def find(cls, channels, start, end, frametype=None,
-             frametype_match=None, pad=None, scaled=None, nproc=1,
-             verbose=False, allow_tape=True, observatory=None, **readargs):
+    def find(
+        cls,
+        channels,
+        start,
+        end,
+        observatory=None,
+        frametype=None,
+        frametype_match=None,
+        scan=None,
+        pad=None,
+        scaled=None,
+        nproc=1,
+        verbose=False,
+        allow_tape=True,
+        **readargs,
+    ):
         """Find and read data from frames for a number of channels.
 
         Parameters
         ----------
         channels : `list`
-            required data channels.
+            Data channel names (or `~gwpy.detector.Channel` objects) to read.
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~gwpy.time.to_gps` is fine
+            any input parseable by `~gwpy.time.to_gps` is fine.
 
         end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, defaults to end of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
+            GPS end time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine.
+
+        observatory : `str`, optional
+            The observatory prefix to use when discovering data.
+            Defaults to the first character of the channel name
+            for each channel.
 
         frametype : `str`, optional
-            name of frametype in which this channel is stored, by default
-            will search for all required frame types
+            Name of frametype in which this channel is stored,
+            by default will search for all required frame types.
 
         frametype_match : `str`, optional
-            regular expression to use for frametype matching
+            Regular expression to use for frametype matching.
+
+        scan : `str`, optional
+            A directory tree to scan for files, instead of using `gwdatafind`.
+            Files in the tree must follow the file-naming convention detailed
+            in |LIGO-T050017|_ to be discoverable.
+            If ``scan`` is given, `gwdatafind` will still be used to resolve
+            the ``frametype`` if required.
 
         pad : `float`, optional
-            value with which to fill gaps in the source data,
+            Value with which to fill gaps in the source data,
             by default gaps will result in a `ValueError`.
 
         scaled : `bool`, optional
-            apply slope and bias calibration to ADC data, for non-ADC data
+            Apply slope and bias calibration to ADC data, for non-ADC data
             this option has no effect.
 
         nproc : `int`, optional, default: `1`
-            number of parallel processes to use, serial process by
+            Number of parallel processes to use, serial process by
             default.
 
         allow_tape : `bool`, optional, default: `True`
-            allow reading from frame files on (slow) magnetic tape
+            Allow reading from frame files on (slow) magnetic tape
 
         verbose : `bool`, optional
-            print verbose output about read progress, if ``verbose``
+            Print verbose output about read progress, if ``verbose``
             is specified as a string, this defines the prefix for the
-            progress meter
+            progress meter.
 
         **readargs
-            any other keyword arguments to be passed to `.read()`
+            Any other keyword arguments to be passed to the file
+            reader. Valid arguments depend on the file type being read
+            and the reader used.
         """
         from ..io import datafind as io_datafind
 
@@ -1236,6 +1279,7 @@ class TimeSeriesBaseDict(OrderedDict):
         end = to_gps(end)
 
         # -- find frametype(s)
+
         if frametype is None:
             matched = io_datafind.find_best_frametype(
                 channels, start, end, frametype_match=frametype_match,
@@ -1257,6 +1301,7 @@ class TimeSeriesBaseDict(OrderedDict):
             frametypes = {frametype: channels}
 
         # -- read data
+
         out = cls()
         for frametype, clist in frametypes.items():
             if verbose:
@@ -1274,13 +1319,24 @@ class TimeSeriesBaseDict(OrderedDict):
                     exc.args = "Cannot parse list of IFOs from channel names",
                     raise
             # find frames
-            cache = io_datafind.find_urls(
-                observatory,
-                frametype,
-                start,
-                end,
-                on_gaps="error" if pad is None else "warn",
-            )
+            on_gaps = "error" if pad is None else "warn"
+            if scan:
+                cache = io_datafind.scan(
+                    scan,
+                    observatory,
+                    frametype,
+                    start,
+                    end,
+                    on_gaps=on_gaps,
+                )
+            else:
+                cache = io_datafind.find_urls(
+                    observatory,
+                    frametype,
+                    start,
+                    end,
+                    on_gaps=on_gaps,
+                )
             if not cache:
                 raise RuntimeError("No %s-%s frame files found for [%d, %d)"
                                    % (observatory, frametype, start, end))
