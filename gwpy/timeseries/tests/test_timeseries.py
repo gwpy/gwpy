@@ -759,6 +759,38 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
         utils.assert_quantity_sub_equal(data, new, exclude=["channel"])
 
+        # -- check that pad translates to on_gaps as expected
+
+        # pad=0 should emit a warning but pad the gap with zeros
+        with pytest.warns(UserWarning):
+            new = self.TEST_CLASS.find(
+                "X1:TEST-DATA",
+                start,
+                end+1,
+                frametype="TEST_DATA",
+                scan=tmp_path,
+                pad=0.,
+            )
+        assert new.span == (start, end + 1)
+        utils.assert_quantity_sub_equal(
+            data.append(
+                numpy.zeros(int(data.sample_rate.to("Hz").value)),
+                inplace=False,
+            ),
+            new,
+            exclude=["channel"],
+        )
+
+        # pad=None (default) should raise an error
+        with pytest.raises(RuntimeError, match="Missing segments"):
+            new = self.TEST_CLASS.find(
+                "X1:TEST-DATA",
+                start-1,
+                end,
+                frametype="TEST_DATA",
+                scan=tmp_path,
+            )
+
     # -- signal processing methods --------------
 
     def test_fft(self, gw150914):
