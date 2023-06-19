@@ -1082,7 +1082,9 @@ class TimeSeries(TimeSeriesBase):
 
         if kwargs.pop('analog', False):
             form, filt = filter_design.convert_to_digital(
-                form, filt, self.sample_rate.to('Hz').value
+                form,
+                filt,
+                self.sample_rate.to('Hz').value
             )
 
         if form == 'zpk':
