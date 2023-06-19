@@ -155,25 +155,58 @@ def test_parse_filter():
     utils.assert_zpk_equal(parsed[1], zpk)
 
 
-def test_convert_to_digital():
-
+@pytest.fixture
+def example_zpk_fs_tuple():
     z, p, k = [1], [2], 0.1
     fs = 0.1
-    form, filt = filter_design.parse_filter((z, p, k))
-    dform, dfilt = filter_design.convert_to_digital(form, filt, fs)
+    return z, p, k, fs
 
-    assert dform == form
+
+def test_convert_to_digital_zpk(example_zpk_fs_tuple):
+    z, p, k, fs = example_zpk_fs_tuple
+
+    dform, dfilt = filter_design.convert_to_digital((z, p, k), fs)
+
+    assert dform == 'zpk'
     assert dfilt == filter_design.bilinear_zpk(z, p, k, fs)
 
-    b, a = signal.zpk2tf(z, p, k)
-    dformba, dfiltba = filter_design.convert_to_digital('ba', (b, a), fs)
-    assert dformba == 'ba'
-    b2, a2 = dfiltba
-    b3, a3 = signal.bilinear(b, a, fs=fs)
-    assert all(b3 == b2)
-    assert all(a3 == a2)
 
-    with pytest.raises(ValueError, match='Cannot convert'):
-        filter_design.convert_to_digital(
-            "badstr", ([1], [1], 1), fs
-        )
+def test_convert_to_digital_ba(example_zpk_fs_tuple):
+    z, p, k, fs = example_zpk_fs_tuple
+    b, a = signal.zpk2tf(z, p, k)
+
+    # this should be converted to ZPK form
+    dform, dfilt = filter_design.convert_to_digital((b, a), fs)
+    assert dform == 'zpk'
+    assert dfilt == filter_design.bilinear_zpk(z, p, k, fs)
+
+
+def test_convert_to_digital_fir_still_zpk(example_zpk_fs_tuple):
+    """ Test that a filter with poles at zero after bilinear is ZPK. """
+
+    # Why do we always return zpk? We do so for all IIR filters.
+    # Only a filter with all poles equal to -2*fs would be a
+    # FIR after bilinear transform. However, here, such a filter
+    # would be first converted to ZPK form. So we always output ZPK.
+    # The "poles" are "implicit", all z=0 (or |z| -> inf),
+    # and in some instances are explicitly used by scipy, such as:
+    # >>> sig.tf2zpk([1, 0.1, -0.5], [1, 0])
+    # >>> (array([-0.75887234,  0.65887234]), array([0.]), 1.0)
+    # >>> sig.tf2zpk([1, 0.1, -0.5], [1])
+    # >>> (array([-0.75887234,  0.65887234]), array([]), 1.0)
+
+    fs = 0.1
+    z = [1, -0.2, 0.3]
+    # 2 * numpy.pi to account for Hz
+    p = [-2 * fs] * len(z)
+    k = 0.1
+
+    dform, dfilt = filter_design.convert_to_digital(
+        (z, p, k),
+        fs,
+        unit='rad/s'
+    )
+    assert dform == 'zpk'
+
+    dz, dp, dk = dfilt
+    assert numpy.allclose(numpy.array(dp), 0)

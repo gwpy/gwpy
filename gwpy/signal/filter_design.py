@@ -306,37 +306,35 @@ def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):
     return dzeros, dpoles, dgain
 
 
-def convert_to_digital(form, filter, sample_rate):
+def convert_to_digital(filter, sample_rate, unit='Hz'):
     """Convert an analog filter to digital via bilinear functions.
+
+    This function always returns in zpk format.
 
     Parameters
     ----------
-    form : `str`
-        type of filter, 'zpk' or 'ba'
-
     filter: `tuple`
         filter values
 
     sample_rate: `float`
 
+    unit: `str`
+
     Returns
     -------
     dform : `str`
-        type of filter, 'zpk' or 'ba'
+        type of filter, 'zpk' format
 
     dfilter: 'tuple'
         digital filter values
     """
 
-    if form not in ('zpk', 'ba'):
-        raise ValueError(f"Cannot convert form {form} to digital. Only"
-                         f"'zpk' or 'ba' are allowed.")
-
-    if form == 'ba':
-        return 'ba', signal.bilinear(*filter, fs=sample_rate)
+    form, filter = parse_filter(filter)
 
     if form == 'zpk':
-        return 'zpk', bilinear_zpk(*filter, fs=sample_rate)
+        dfilter = bilinear_zpk(*filter, fs=sample_rate, unit=unit)
+
+    return parse_filter(dfilter)
 
 
 def parse_filter(args):
