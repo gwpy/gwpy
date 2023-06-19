@@ -53,7 +53,7 @@ def fdfilter(data, *filt, **kwargs):
         fs = 2 * (data.shape[-1] * data.df).to('Hz').value
     form, filt = parse_filter(filt)
     if analog:
-        form, filt = convert_to_digital(form, filt, fs)
+        form, filt = convert_to_digital(filt, fs)
     lti = signal.lti(*filt)
 
     # generate frequency response
