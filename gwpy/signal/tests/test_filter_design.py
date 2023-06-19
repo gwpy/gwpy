@@ -18,14 +18,14 @@
 
 """Unit tests for :mod:`gwpy.signal.filter_design`
 """
-
-import pytest
-
 import numpy
+import pytest
 
 from scipy import signal
 
 from astropy import units
+
+from unittest import mock
 
 from ...testing import utils
 from .. import filter_design
@@ -184,18 +184,29 @@ def test_convert_to_digital_ba(example_zpk_fs_tuple):
 def test_convert_to_digital_fir(example_zpk_fs_tuple):
     fs = 0.1
     b = numpy.array([1, 0.2, 0.5])
-    a = numpy.array([1, 0, 0])
-
     # this should be converted to ZPK form
-    dform, dfilt = filter_design.convert_to_digital((b, a), fs)
+    dform, dfilt = filter_design.convert_to_digital(b, fs)
     dz, dp, dk = dfilt
     assert dform == 'zpk'
 
+    a = numpy.array([1, 0, 0])
     z, p, k = signal.tf2zpk(b, a)
     exp_dz, exp_dp, exp_dk = filter_design.bilinear_zpk(z, p, k, fs)
     assert numpy.allclose(exp_dz, dz)
     assert numpy.allclose(exp_dp, dp)
     assert exp_dk == dk
+
+
+def test_n_poles_zeros_exception():
+    with pytest.raises(ValueError, match='zeros than poles'):
+        filter_design.bilinear_zpk([1, 1], [1, ], 1, 1)
+
+
+def test_convert_to_digital_invalid_form():
+    with mock.patch('gwpy.signal.filter_design.parse_filter') as tmp_mock:
+        tmp_mock.return_value = ("invalid", [1, 2, 3])
+        with pytest.raises(ValueError, match='convert invalid'):
+            filter_design.convert_to_digital([1, 2, 3], sample_rate=1)
 
 
 def test_convert_to_digital_fir_still_zpk(example_zpk_fs_tuple):

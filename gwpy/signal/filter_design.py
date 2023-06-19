@@ -286,6 +286,9 @@ def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):
     poles = numpy.array(poles, dtype=float, copy=False)
     gain = gain
 
+    if len(zeros) > len(poles):
+        raise ValueError("More zeros than poles. Pad if required.")
+
     # convert from Hz to rad/s if needed
     unit = Unit(unit)
     if unit == Unit('Hz'):
@@ -340,7 +343,10 @@ def convert_to_digital(filter, sample_rate, unit='Hz'):
         raise ValueError(f"Cannot convert {form}, only 'zpk' or 'ba'")
 
     if form == 'ba':
-        filter = signal.tf2zpk(*filter)
+        b, a = filter
+        if len(a) < len(b) and a[0] == 1:
+            a = numpy.append(a, numpy.zeros(len(b)-len(a)))
+        filter = signal.tf2zpk(b, a)
 
     filter = bilinear_zpk(*filter, fs=sample_rate, unit=unit)
 
@@ -364,7 +370,6 @@ def parse_filter(args):
         the filter components for the returned `ftype`, either a 2-tuple
         for with transfer function components, or a 3-tuple for ZPK
     """
-
     # unpack filter
     if isinstance(args, tuple) and len(args) == 1:
         # either packed defintion ((z, p, k)) or simple definition (lti,)
