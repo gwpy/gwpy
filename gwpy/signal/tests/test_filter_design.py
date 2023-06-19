@@ -181,6 +181,23 @@ def test_convert_to_digital_ba(example_zpk_fs_tuple):
     assert dfilt == filter_design.bilinear_zpk(z, p, k, fs)
 
 
+def test_convert_to_digital_fir(example_zpk_fs_tuple):
+    fs = 0.1
+    b = numpy.array([1, 0.2, 0.5])
+    a = numpy.array([1, 0, 0])
+
+    # this should be converted to ZPK form
+    dform, dfilt = filter_design.convert_to_digital((b, a), fs)
+    dz, dp, dk = dfilt
+    assert dform == 'zpk'
+
+    z, p, k = signal.tf2zpk(b, a)
+    exp_dz, exp_dp, exp_dk = filter_design.bilinear_zpk(z, p, k, fs)
+    assert numpy.allclose(exp_dz, dz)
+    assert numpy.allclose(exp_dp, dp)
+    assert exp_dk == dk
+
+
 def test_convert_to_digital_fir_still_zpk(example_zpk_fs_tuple):
     """ Test that a filter with poles at zero after bilinear is ZPK. """
 

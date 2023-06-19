@@ -329,12 +329,22 @@ def convert_to_digital(filter, sample_rate, unit='Hz'):
         digital filter values
     """
 
+    # This will always end up returning zpk form.
+    # If FIR, bilinear will convert it to IIR.
+    # If IIR, only if p_i = -2 * fs will it yield poles at zero.
+    # See gwpy/signal/tests/test_filter_design for more information.
+
     form, filter = parse_filter(filter)
 
-    if form == 'zpk':
-        dfilter = bilinear_zpk(*filter, fs=sample_rate, unit=unit)
+    if form not in ('ba', 'zpk'):
+        raise ValueError(f"Cannot convert {form}, only 'zpk' or 'ba'")
 
-    return parse_filter(dfilter)
+    if form == 'ba':
+        filter = signal.tf2zpk(*filter)
+
+    filter = bilinear_zpk(*filter, fs=sample_rate, unit=unit)
+
+    return parse_filter(filter)
 
 
 def parse_filter(args):
