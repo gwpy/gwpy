@@ -339,7 +339,6 @@ def convert_to_digital(filter, sample_rate, unit='Hz'):
 
     form, filter = parse_filter(filter)
 
-
     if form == 'ba':
         b, a = filter
         filter = signal.bilinear(b, a, fs=sample_rate)
