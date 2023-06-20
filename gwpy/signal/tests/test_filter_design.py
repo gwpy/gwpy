@@ -186,15 +186,8 @@ def test_convert_to_digital_fir(example_zpk_fs_tuple):
     b = numpy.array([1, 0.2, 0.5])
     # this should be converted to ZPK form
     dform, dfilt = filter_design.convert_to_digital(b, fs)
-    dz, dp, dk = dfilt
-    assert dform == 'zpk'
-
-    a = numpy.array([1, 0, 0])
-    z, p, k = signal.tf2zpk(b, a)
-    exp_dz, exp_dp, exp_dk = filter_design.bilinear_zpk(z, p, k, fs)
-    assert numpy.allclose(exp_dz, dz)
-    assert numpy.allclose(exp_dp, dp)
-    assert exp_dk == dk
+    assert dform == 'ba'
+    assert numpy.allclose(dfilt, signal.bilinear(b, [1], fs))
 
 
 def test_n_poles_zeros_exception():
@@ -225,7 +218,6 @@ def test_convert_to_digital_fir_still_zpk(example_zpk_fs_tuple):
 
     fs = 0.1
     z = [1, -0.2, 0.3]
-    # 2 * numpy.pi to account for Hz
     p = [-2 * fs] * len(z)
     k = 0.1
 

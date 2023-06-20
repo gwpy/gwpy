@@ -339,18 +339,18 @@ def convert_to_digital(filter, sample_rate, unit='Hz'):
 
     form, filter = parse_filter(filter)
 
-    if form not in ('ba', 'zpk'):
-        raise ValueError(f"Cannot convert {form}, only 'zpk' or 'ba'")
 
     if form == 'ba':
         b, a = filter
-        if len(a) < len(b) and a[0] == 1:
-            a = numpy.append(a, numpy.zeros(len(b)-len(a)))
-        filter = signal.tf2zpk(b, a)
+        filter = signal.bilinear(b, a, fs=sample_rate)
 
-    filter = bilinear_zpk(*filter, fs=sample_rate, unit=unit)
+    elif form == 'zpk':
+        filter = bilinear_zpk(*filter, fs=sample_rate, unit=unit)
 
-    return parse_filter(filter)
+    else:
+        raise ValueError(f"Cannot convert {form}, only 'zpk' or 'ba'")
+
+    return form, filter
 
 
 def parse_filter(args):
