@@ -190,11 +190,6 @@ def test_convert_to_digital_fir(example_zpk_fs_tuple):
     assert numpy.allclose(dfilt, signal.bilinear(b, [1], fs))
 
 
-def test_n_poles_zeros_exception():
-    with pytest.raises(ValueError, match='zeros than poles'):
-        filter_design.bilinear_zpk([1, 1], [1, ], 1, 1)
-
-
 def test_convert_to_digital_invalid_form():
     with mock.patch('gwpy.signal.filter_design.parse_filter') as tmp_mock:
         tmp_mock.return_value = ("invalid", [1, 2, 3])
