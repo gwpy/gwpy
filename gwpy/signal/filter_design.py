@@ -286,9 +286,6 @@ def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):
     poles = numpy.array(poles, dtype=float, copy=False)
     gain = gain
 
-    if len(zeros) > len(poles):
-        raise ValueError("More zeros than poles. Pad if required.")
-
     # convert from Hz to rad/s if needed
     unit = Unit(unit)
     if unit == Unit('Hz'):
@@ -331,7 +328,6 @@ def convert_to_digital(filter, sample_rate, unit='Hz'):
     dfilter: 'tuple'
         digital filter values
     """
-
     # This will always end up returning zpk form.
     # If FIR, bilinear will convert it to IIR.
     # If IIR, only if p_i = -2 * fs will it yield poles at zero.
