@@ -18,14 +18,16 @@
 
 """Unit tests for :mod:`gwpy.signal.filter_design`
 """
-import numpy
-import pytest
 
-from scipy import signal
+from unittest import mock
+
+import numpy
+
+import pytest
 
 from astropy import units
 
-from unittest import mock
+from scipy import signal
 
 from ...testing import utils
 from .. import filter_design
