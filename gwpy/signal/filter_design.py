@@ -306,7 +306,49 @@ def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):
     return dzeros, dpoles, dgain
 
 
-def parse_filter(args, analog=False, sample_rate=None):
+def convert_to_digital(filter, sample_rate, unit='Hz'):
+    """Convert an analog filter to digital via bilinear functions.
+
+    This function always returns in zpk format.
+
+    Parameters
+    ----------
+    filter: `tuple`
+        filter values
+
+    sample_rate: `float`
+
+    unit: `str`
+
+    Returns
+    -------
+    dform : `str`
+        type of filter, 'zpk' format
+
+    dfilter: 'tuple'
+        digital filter values
+    """
+    # This will always end up returning zpk form.
+    # If FIR, bilinear will convert it to IIR.
+    # If IIR, only if p_i = -2 * fs will it yield poles at zero.
+    # See gwpy/signal/tests/test_filter_design for more information.
+
+    form, filter = parse_filter(filter)
+
+    if form == 'ba':
+        b, a = filter
+        filter = signal.bilinear(b, a, fs=sample_rate)
+
+    elif form == 'zpk':
+        filter = bilinear_zpk(*filter, fs=sample_rate, unit=unit)
+
+    else:
+        raise ValueError(f"Cannot convert {form}, only 'zpk' or 'ba'")
+
+    return form, filter
+
+
+def parse_filter(args):
     """Parse arbitrary input args into a TF or ZPK filter definition
 
     Parameters
@@ -314,13 +356,6 @@ def parse_filter(args, analog=False, sample_rate=None):
     args : `tuple`, `~scipy.signal.lti`
         filter definition, normally just captured positional ``*args``
         from a function call
-
-    analog : `bool`, optional
-        `True` if filter definition has analogue coefficients
-
-    sample_rate : `float`, optional
-        sampling frequency at which to convert analogue filter to digital
-        via bilinear transform, required if ``analog=True``
 
     Returns
     -------
@@ -330,10 +365,6 @@ def parse_filter(args, analog=False, sample_rate=None):
         the filter components for the returned `ftype`, either a 2-tuple
         for with transfer function components, or a 3-tuple for ZPK
     """
-    if analog and not sample_rate:
-        raise ValueError("Must give sample_rate frequency to convert "
-                         "analog filter to digital")
-
     # unpack filter
     if isinstance(args, tuple) and len(args) == 1:
         # either packed defintion ((z, p, k)) or simple definition (lti,)
@@ -342,8 +373,6 @@ def parse_filter(args, analog=False, sample_rate=None):
     # parse FIR filter
     if isinstance(args, numpy.ndarray) and args.ndim == 1:  # fir
         b, a = args, [1.]
-        if analog:
-            return 'ba', signal.bilinear(b, a)
         return 'ba', (b, a)
 
     # parse IIR filter
@@ -360,11 +389,6 @@ def parse_filter(args, analog=False, sample_rate=None):
             lti = signal.lti(*args)
         lti = lti.to_zpk()
 
-    # convert to digital components
-    if analog:
-        return 'zpk', bilinear_zpk(lti.zeros, lti.poles, lti.gain,
-                                   fs=sample_rate)
-    # return zpk
     return 'zpk', (lti.zeros, lti.poles, lti.gain)
 
 

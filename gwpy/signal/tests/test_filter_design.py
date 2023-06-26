@@ -19,13 +19,15 @@
 """Unit tests for :mod:`gwpy.signal.filter_design`
 """
 
-import pytest
+from unittest import mock
 
 import numpy
 
-from scipy import signal
+import pytest
 
 from astropy import units
+
+from scipy import signal
 
 from ...testing import utils
 from .. import filter_design
@@ -153,3 +155,75 @@ def test_parse_filter():
     parsed = filter_design.parse_filter(zpk)
     assert parsed[0] == 'zpk'
     utils.assert_zpk_equal(parsed[1], zpk)
+
+
+@pytest.fixture
+def example_zpk_fs_tuple():
+    z, p, k = [1], [2], 0.1
+    fs = 0.1
+    return z, p, k, fs
+
+
+def test_convert_to_digital_zpk(example_zpk_fs_tuple):
+    z, p, k, fs = example_zpk_fs_tuple
+
+    dform, dfilt = filter_design.convert_to_digital((z, p, k), fs)
+
+    assert dform == 'zpk'
+    assert dfilt == filter_design.bilinear_zpk(z, p, k, fs)
+
+
+def test_convert_to_digital_ba(example_zpk_fs_tuple):
+    z, p, k, fs = example_zpk_fs_tuple
+    b, a = signal.zpk2tf(z, p, k)
+
+    # this should be converted to ZPK form
+    dform, dfilt = filter_design.convert_to_digital((b, a), fs)
+    assert dform == 'zpk'
+    assert dfilt == filter_design.bilinear_zpk(z, p, k, fs)
+
+
+def test_convert_to_digital_fir(example_zpk_fs_tuple):
+    fs = 0.1
+    b = numpy.array([1, 0.2, 0.5])
+    # this should be converted to ZPK form
+    dform, dfilt = filter_design.convert_to_digital(b, fs)
+    assert dform == 'ba'
+    assert numpy.allclose(dfilt, signal.bilinear(b, [1], fs))
+
+
+def test_convert_to_digital_invalid_form():
+    with mock.patch('gwpy.signal.filter_design.parse_filter') as tmp_mock:
+        tmp_mock.return_value = ("invalid", [1, 2, 3])
+        with pytest.raises(ValueError, match='convert invalid'):
+            filter_design.convert_to_digital([1, 2, 3], sample_rate=1)
+
+
+def test_convert_to_digital_fir_still_zpk(example_zpk_fs_tuple):
+    """ Test that a filter with poles at zero after bilinear is ZPK. """
+
+    # Why do we always return zpk? We do so for all IIR filters.
+    # Only a filter with all poles equal to -2*fs would be a
+    # FIR after bilinear transform. However, here, such a filter
+    # would be first converted to ZPK form. So we always output ZPK.
+    # The "poles" are "implicit", all z=0 (or |z| -> inf),
+    # and in some instances are explicitly used by scipy, such as:
+    # >>> sig.tf2zpk([1, 0.1, -0.5], [1, 0])
+    # >>> (array([-0.75887234,  0.65887234]), array([0.]), 1.0)
+    # >>> sig.tf2zpk([1, 0.1, -0.5], [1])
+    # >>> (array([-0.75887234,  0.65887234]), array([]), 1.0)
+
+    fs = 0.1
+    z = [1, -0.2, 0.3]
+    p = [-2 * fs] * len(z)
+    k = 0.1
+
+    dform, dfilt = filter_design.convert_to_digital(
+        (z, p, k),
+        fs,
+        unit='rad/s'
+    )
+    assert dform == 'zpk'
+
+    dz, dp, dk = dfilt
+    assert numpy.allclose(numpy.array(dp), 0)

@@ -1078,11 +1078,15 @@ class TimeSeries(TimeSeriesBase):
         filtfilt = kwargs.pop('filtfilt', False)
 
         # parse filter
-        form, filt = filter_design.parse_filter(
-            filt,
-            analog=kwargs.pop('analog', False),
-            sample_rate=self.sample_rate.to('Hz').value,
-        )
+        form, filt = filter_design.parse_filter(filt)
+
+        if kwargs.pop('analog', False):
+            form, filt = filter_design.convert_to_digital(
+                filt,
+                sample_rate=self.sample_rate.to('Hz').value,
+                unit='Hz'
+            )
+
         if form == 'zpk':
             sos = signal.zpk2sos(*filt)
         else:
