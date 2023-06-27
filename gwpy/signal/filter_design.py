@@ -257,7 +257,22 @@ def fir_from_transfer(transfer, ntaps, window='hann', ncorner=None):
 
 
 def convert_zpk_units(filt, unit):
-    """Convert zeros and poles created for a freq response in Hz to rad/s."""
+    """Convert zeros and poles created for a freq response in Hz to rad/s.
+
+    Parameters
+    ----------
+    filt : `tuple`
+        zeros, poles, gain
+
+    unit : `str`
+        `'Hz'` or `'rad/s'`
+
+    Returns
+    -------
+    zeros : `numpy.array` of `numpy.cfloat`
+    poles : `numpy.array` of `numpy.cfloat`
+    gain : input, unadjusted gain
+    """
     zeros, poles, gain = filt
     zeros = numpy.array(zeros).astype(numpy.cfloat)
     poles = numpy.array(poles).astype(numpy.cfloat)
