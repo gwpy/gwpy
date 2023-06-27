@@ -256,7 +256,23 @@ def fir_from_transfer(transfer, ntaps, window='hann', ncorner=None):
     return out
 
 
-def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):
+def convert_zpk_units(filt, unit):
+    """Convert zeros and poles created for a freq response in Hz to rad/s."""
+    zeros, poles, gain = filt
+    zeros = numpy.array(zeros).astype(numpy.cfloat)
+    poles = numpy.array(poles).astype(numpy.cfloat)
+
+    if unit == 'Hz':
+        zeros *= -2. * numpy.pi
+        poles *= -2. * numpy.pi
+    elif unit != 'rad/s':
+        raise ValueError("zpk can only be given with unit='Hz' "
+                         "or 'rad/s'")
+
+    return zeros, poles, gain
+
+
+def bilinear_zpk(zeros, poles, gain, fs=1.0):
     """Convert an analogue ZPK filter to digital using a bilinear transform
 
     Parameters
@@ -286,15 +302,6 @@ def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):
     poles = numpy.array(poles, dtype=float, copy=False)
     gain = gain
 
-    # convert from Hz to rad/s if needed
-    unit = Unit(unit)
-    if unit == Unit('Hz'):
-        zeros *= -2 * pi
-        poles *= -2 * pi
-    elif unit != Unit('rad/s'):
-        raise ValueError("zpk can only be given with unit='Hz' "
-                         "or 'rad/s'")
-
     # convert to Z-domain via bilinear transform
     fs = 2 * Quantity(fs, 'Hz').value
     dpoles = (1 + poles/fs) / (1 - poles/fs)
@@ -306,7 +313,7 @@ def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):
     return dzeros, dpoles, dgain
 
 
-def convert_to_digital(filter, sample_rate, unit='Hz'):
+def convert_to_digital(filter, sample_rate):
     """Convert an analog filter to digital via bilinear functions.
 
     This function always returns in zpk format.
@@ -340,7 +347,7 @@ def convert_to_digital(filter, sample_rate, unit='Hz'):
         filter = signal.bilinear(b, a, fs=sample_rate)
 
     elif form == 'zpk':
-        filter = bilinear_zpk(*filter, fs=sample_rate, unit=unit)
+        filter = bilinear_zpk(*filter, fs=sample_rate)
 
     else:
         raise ValueError(f"Cannot convert {form}, only 'zpk' or 'ba'")

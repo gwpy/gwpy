@@ -221,7 +221,6 @@ def test_convert_to_digital_fir_still_zpk(example_zpk_fs_tuple):
     dform, dfilt = filter_design.convert_to_digital(
         (z, p, k),
         fs,
-        unit='rad/s'
     )
     assert dform == 'zpk'
 

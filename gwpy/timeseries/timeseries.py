@@ -951,7 +951,7 @@ class TimeSeries(TimeSeriesBase):
             new.sample_rate = rate
             return new
 
-    def zpk(self, zeros, poles, gain, analog=True, **kwargs):
+    def zpk(self, zeros, poles, gain, analog=True, unit='Hz', **kwargs):
         """Filter this `TimeSeries` by applying a zero-pole-gain filter
 
         Parameters
@@ -968,6 +968,10 @@ class TimeSeries(TimeSeriesBase):
         analog : `bool`, optional
             type of ZPK being applied, if `analog=True` all parameters
             will be converted in the Z-domain for digital filtering
+
+        unit: `str`
+            The frequency response units this filter was designed for
+             either Hz or rad/s. Default: 'Hz'.
 
         Returns
         -------
@@ -986,9 +990,11 @@ class TimeSeries(TimeSeriesBase):
 
         >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-        return self.filter(zeros, poles, gain, analog=analog, **kwargs)
 
-    def filter(self, *filt, **kwargs):
+        f = self.filter(zeros, poles, gain, analog=analog, unit=unit, **kwargs)
+        return f
+
+    def filter(self, *filt, unit='Hz', **kwargs):
         """Filter this `TimeSeries` with an IIR or FIR filter
 
         Parameters
@@ -1013,6 +1019,10 @@ class TimeSeries(TimeSeriesBase):
         inplace : `bool`, optional
             if `True`, this array will be overwritten with the filtered
             version, default: `False`
+
+        unit: `str`
+            If zpk, the frequency response units this filter was designed for,
+             either Hz or rad/s. Default: 'Hz'.
 
         **kwargs
             other keyword arguments are passed to the filter method
@@ -1080,11 +1090,14 @@ class TimeSeries(TimeSeriesBase):
         # parse filter
         form, filt = filter_design.parse_filter(filt)
 
+        # convert units if the system was designed in Hz
+        if form == "zpk":
+            filt = filter_design.convert_zpk_units(filt, unit)
+
         if kwargs.pop('analog', False):
             form, filt = filter_design.convert_to_digital(
                 filt,
                 sample_rate=self.sample_rate.to('Hz').value,
-                unit='Hz'
             )
 
         if form == 'zpk':
