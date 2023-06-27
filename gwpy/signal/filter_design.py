@@ -28,7 +28,7 @@ from numpy import fft as npfft
 
 from scipy import signal
 
-from astropy.units import (Unit, Quantity)
+from astropy.units import (Quantity)
 
 from .window import (get_window, planck)
 
