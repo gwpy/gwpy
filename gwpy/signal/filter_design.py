@@ -274,12 +274,12 @@ def convert_zpk_units(filt, unit):
     gain : input, unadjusted gain
     """
     zeros, poles, gain = filt
-    zeros = numpy.array(zeros).astype(numpy.cfloat)
-    poles = numpy.array(poles).astype(numpy.cfloat)
 
     if unit == 'Hz':
-        zeros *= -2. * numpy.pi
-        poles *= -2. * numpy.pi
+        for zi in range(len(zeros)):
+            zeros[zi] *= -2. * numpy.pi
+        for pi in range(len(poles)):
+            poles[pi] *= -2. * numpy.pi
     elif unit != 'rad/s':
         raise ValueError("zpk can only be given with unit='Hz' "
                          "or 'rad/s'")
