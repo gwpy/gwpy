@@ -278,8 +278,8 @@ def convert_zpk_units(filt, unit):
     if unit == 'Hz':
         for zi in range(len(zeros)):
             zeros[zi] *= -2. * numpy.pi
-        for pi in range(len(poles)):
-            poles[pi] *= -2. * numpy.pi
+        for pj in range(len(poles)):
+            poles[pj] *= -2. * numpy.pi
     elif unit != 'rad/s':
         raise ValueError("zpk can only be given with unit='Hz' "
                          "or 'rad/s'")
