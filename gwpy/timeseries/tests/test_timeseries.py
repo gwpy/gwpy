@@ -1370,6 +1370,105 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_quantity_sub_equal(
             gw150914.zpk(*zpk), gw150914.filter(*zpk, analog=True))
 
+    def test_highpass_happy_path(self, gw150914):
+        """Check that passband val are approx equal, stopband are not."""
+
+        asd = gw150914.asd()
+        hp_asd = gw150914.highpass(100).asd()
+
+        eqinds = numpy.where(hp_asd.frequencies.value > 200)[0]
+        eqind0 = eqinds[0]
+
+        # be within 40% for all values after
+        # numpy allclose formula:
+        # |a-b| <= atol + rtol * |b|
+
+        assert numpy.allclose(
+            hp_asd[eqind0:].value,
+            asd[eqind0:].value,
+            rtol=0.4,
+            atol=0)
+
+        # dont be within 40% for all value before
+        assert not numpy.allclose(
+            hp_asd[:eqind0].value,
+            asd[:eqind0].value,
+            rtol=0.4,
+            atol=0
+        )
+
+    def test_lowpass_happy_path(self, gw150914):
+        """Check that passband val are approx equal, stopband are not."""
+
+        asd = gw150914.asd()
+        lp_asd = gw150914.lowpass(500).asd()
+
+        eqinds = numpy.where(lp_asd.frequencies.value < 500)[0]
+        eqind0 = eqinds[0]
+
+        # be within 40% for all values before
+        # numpy allclose formula:
+        # |a-b| <= atol + rtol * |b|
+
+        assert not numpy.allclose(
+            lp_asd[eqind0:].value,
+            asd[eqind0:].value,
+            rtol=0.4,
+            atol=0
+        )
+
+        # dont be within 40% for all value after
+        assert numpy.allclose(
+            lp_asd[:eqind0].value,
+            asd[:eqind0].value,
+            rtol=0.4,
+            atol=0
+        )
+
+    def test_bandpass_happy_path(self, gw150914):
+        """Check that passband val are approx equal, stopband are not."""
+
+        asd = gw150914.asd()
+        bp_asd = gw150914.bandpass(100, 1000).asd()
+
+        eqinds = numpy.where(
+            numpy.logical_and(
+                bp_asd.frequencies.value > 100,
+                bp_asd.frequencies.value < 1000
+            )
+        )[0]
+
+        eqind0 = eqinds[0]
+        eqindn = eqinds[-1]
+
+        # be within 40% for all values after
+        # numpy allclose formula:
+        # |a-b| <= atol + rtol * |b|
+
+        assert numpy.allclose(
+            bp_asd[eqind0:eqindn].value,
+            asd[eqind0:eqindn].value,
+            rtol=0.4,
+            atol=0
+        )
+
+        # dont be within 40% for all value before
+        assert not numpy.allclose(
+            bp_asd[:eqind0].value,
+            asd[:eqind0].value,
+            rtol=0.4,
+            atol=0
+        )
+
+        # or after
+        assert not numpy.allclose(
+            bp_asd[eqindn:].value,
+            asd[eqindn:].value,
+            rtol=0.4,
+            atol=0
+        )
+
+
     def test_notch(self, gw150914):
         # test notch runs end-to-end
         gw150914.notch(60)

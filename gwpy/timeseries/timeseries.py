@@ -798,8 +798,8 @@ class TimeSeries(TimeSeriesBase):
         filt = filter_design.highpass(frequency, self.sample_rate,
                                       fstop=fstop, gpass=gpass, gstop=gstop,
                                       analog=False, type=type, **kwargs)
-        # apply filter
-        return self.filter(*filt, filtfilt=filtfilt)
+        # filter_design.highpass returns rad/sample already
+        return self.filter(*filt, unit='rad/sample', filtfilt=filtfilt)
 
     def lowpass(self, frequency, gpass=2, gstop=30, fstop=None, type='iir',
                 filtfilt=True, **kwargs):
@@ -842,8 +842,8 @@ class TimeSeries(TimeSeriesBase):
         filt = filter_design.lowpass(frequency, self.sample_rate,
                                      fstop=fstop, gpass=gpass, gstop=gstop,
                                      analog=False, type=type, **kwargs)
-        # apply filter
-        return self.filter(*filt, filtfilt=filtfilt)
+        # apply filter, it is already rad/sample
+        return self.filter(*filt, unit='rad/sample', filtfilt=filtfilt)
 
     def bandpass(self, flow, fhigh, gpass=2, gstop=30, fstop=None, type='iir',
                  filtfilt=True, **kwargs):
@@ -890,7 +890,7 @@ class TimeSeries(TimeSeriesBase):
                                       fstop=fstop, gpass=gpass, gstop=gstop,
                                       analog=False, type=type, **kwargs)
         # apply filter
-        return self.filter(*filt, filtfilt=filtfilt)
+        return self.filter(*filt, unit='rad/sample', filtfilt=filtfilt)
 
     def resample(self, rate, window='hamming', ftype='fir', n=None):
         """Resample this Series to a new rate

@@ -280,9 +280,9 @@ def convert_zpk_units(filt, unit):
             zeros[zi] *= -2. * numpy.pi
         for pj in range(len(poles)):
             poles[pj] *= -2. * numpy.pi
-    elif unit != 'rad/s':
+    elif unit not in ['rad/s', 'rad/sample']:
         raise ValueError("zpk can only be given with unit='Hz' "
-                         "or 'rad/s'")
+                         f"'rad/s', or 'rad/sample', not {unit}")
 
     return zeros, poles, gain
 
