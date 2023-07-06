@@ -994,7 +994,7 @@ class TimeSeries(TimeSeriesBase):
         f = self.filter(zeros, poles, gain, analog=analog, unit=unit, **kwargs)
         return f
 
-    def filter(self, *filt, unit='Hz', **kwargs):
+    def filter(self, *filt, **kwargs):
         """Filter this `TimeSeries` with an IIR or FIR filter
 
         Parameters
@@ -1022,7 +1022,7 @@ class TimeSeries(TimeSeriesBase):
 
         unit: `str`
             If zpk, the frequency response units this filter was designed for,
-             either Hz or rad/s. Default: 'Hz'.
+             either Hz or rad/s. Default: 'Hz' if analog. Rad/s if digital.
 
         **kwargs
             other keyword arguments are passed to the filter method
@@ -1089,6 +1089,13 @@ class TimeSeries(TimeSeriesBase):
 
         # parse filter
         form, filt = filter_design.parse_filter(filt)
+
+        unit = kwargs.pop('unit', False)
+        if not unit:
+            if kwargs.get('analog', False):
+                unit = 'Hz'
+            else:
+                unit = 'rad/s'
 
         # convert units if the system was designed in Hz
         if form == "zpk":
