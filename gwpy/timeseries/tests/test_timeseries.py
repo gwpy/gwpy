@@ -1104,6 +1104,18 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # FIXME: this test needs to be more robust
         assert l2.sample_rate == 1024 * units.Hz
 
+    def test_resample_simple_upsample(self, gw150914):
+        """Test consistency when upsampling by 2x`
+        """
+        upsamp = gw150914.resample(gw150914.sample_rate.value * 2)
+        assert numpy.allclose(gw150914.value, upsamp.value[::2])
+
+    def test_resample_simple_downsample(self, gw150914):
+        """Test consistency when downsampling by 2x`
+        """
+        downsamp = gw150914.resample(gw150914.sample_rate.value // 2)
+        assert numpy.allclose(gw150914.value[::2], downsamp.value)
+
     def test_resample_noop(self):
         data = self.TEST_CLASS([1, 2, 3, 4, 5])
         with pytest.warns(UserWarning):
@@ -1467,7 +1479,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
             rtol=0.4,
             atol=0
         )
-
 
     def test_notch(self, gw150914):
         # test notch runs end-to-end
