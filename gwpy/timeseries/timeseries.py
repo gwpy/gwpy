@@ -287,6 +287,10 @@ class TimeSeries(TimeSeriesBase):
         # get method
         method_func = spectral.get_method(method)
 
+        # work-around to propagate 'window' argument intact for LPSD averaging method
+        if "method" in kwargs and kwargs["method"] == "lpsd":
+            kwargs["window_"] = window
+
         # calculate PSD using UI method
         return spectral.psd(self, method_func, fftlength=fftlength,
                             overlap=overlap, window=window, **kwargs)
@@ -331,6 +335,10 @@ class TimeSeries(TimeSeriesBase):
         - ``'median'`` : a median average of overlapping periodograms
         - ``'welch'`` : a mean average of overlapping periodograms
         """
+        # work-around to propagate 'window' argument intact for LPSD averaging method
+        if "method" in kwargs and kwargs["method"] == "lpsd":
+            kwargs["window_"] = window
+
         return self.psd(method=method, fftlength=fftlength, overlap=overlap,
                         window=window, **kwargs) ** (1/2.)
 
@@ -361,9 +369,15 @@ class TimeSeries(TimeSeriesBase):
         csd :  `~gwpy.frequencyseries.FrequencySeries`
             a data series containing the CSD.
         """
+        method_func = spectral.csd
+        # need to change method function and add _window to kwargs in case of LPSD
+        if "method" in kwargs and kwargs["method"] == "lpsd":
+            method_func = spectral.lpsd
+            kwargs["window_"] = window
+
         return spectral.psd(
             (self, other),
-            spectral.csd,
+            method_func,
             fftlength=fftlength,
             overlap=overlap,
             window=window,
@@ -1214,14 +1228,50 @@ class TimeSeries(TimeSeriesBase):
         scipy.signal.coherence
             for details of the coherence calculator
         """
-        return spectral.psd(
+        if "method" in kwargs and kwargs["method"] == "lpsd":
+            pass
+        else:
+            return spectral.psd(
+                (self, other),
+                spectral.coherence,
+                fftlength=fftlength,
+                overlap=overlap,
+                window=window,
+                **kwargs
+            )
+        # for LPSD method, calculate coherence "manually"
+
+        # work-around to propagate 'window' argument intact for custom averaging methods
+        kwargs["window_"] = window
+
+        csd = spectral.psd(
             (self, other),
-            spectral.coherence,
+            method_func=spectral.lpsd,
             fftlength=fftlength,
             overlap=overlap,
             window=window,
-            **kwargs
+            **kwargs,
         )
+        psd1 = spectral.psd(
+            self,
+            method_func=spectral.lpsd,
+            fftlength=fftlength,
+            overlap=overlap,
+            window=window,
+            **kwargs,
+        )
+        psd2 = spectral.psd(
+            other,
+            method_func=spectral.lpsd,
+            fftlength=fftlength,
+            overlap=overlap,
+            window=window,
+            **kwargs,
+        )
+        coherence = numpy.abs(csd) ** 2 / psd1 / psd2
+        coherence.name = f"Coherence between {self.name} and {other.name}"
+        coherence.override_unit("coherence")
+        return coherence
 
     def auto_coherence(self, dt, fftlength=None, overlap=None,
                        window='hann', **kwargs):
