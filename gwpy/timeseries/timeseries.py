@@ -287,7 +287,8 @@ class TimeSeries(TimeSeriesBase):
         # get method
         method_func = spectral.get_method(method)
 
-        # work-around to propagate 'window' argument intact for LPSD averaging method
+        # work-around to propagate 'window' argument intact
+        # for LPSD averaging method
         if "method" in kwargs and kwargs["method"] == "lpsd":
             kwargs["window_"] = window
 
@@ -335,7 +336,8 @@ class TimeSeries(TimeSeriesBase):
         - ``'median'`` : a median average of overlapping periodograms
         - ``'welch'`` : a mean average of overlapping periodograms
         """
-        # work-around to propagate 'window' argument intact for LPSD averaging method
+        # work-around to propagate 'window' argument intact
+        # for LPSD averaging method
         if "method" in kwargs and kwargs["method"] == "lpsd":
             kwargs["window_"] = window
 
@@ -1241,7 +1243,8 @@ class TimeSeries(TimeSeriesBase):
             )
         # for LPSD method, calculate coherence "manually"
 
-        # work-around to propagate 'window' argument intact for custom averaging methods
+        # work-around to propagate 'window' argument intact
+        # for LPSD averaging method
         kwargs["window_"] = window
 
         csd = spectral.psd(
