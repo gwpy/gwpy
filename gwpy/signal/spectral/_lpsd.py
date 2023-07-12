@@ -106,6 +106,19 @@ def lpsd(*args, **kwargs):
 
 
 def _parse_window(window):
+    """Parse `window` argument for LPSD algorithm.
+
+    Parameters
+    ----------
+    window : str
+        Window function as string
+        (specifying np.array not supported, defaults to `kaiser`)
+
+    Returns
+    -------
+    window: func
+        Window as a numpy function
+    """
     window = "kaiser" if window is None else window
 
     if not isinstance(window, str):
@@ -135,21 +148,30 @@ def _parse_window(window):
     return window_function
 
 
-def _parse_overlap(overlap):
-    if overlap == 0:
-        return 0
-    if overlap > 0:
-        if overlap > total_duration:
-            raise ValueError(
-                "Specified overlap (in seconds) "
-                "exceeds total time series duration!"
-            )
-        return overlap / total_duration
-
-
 def _parse_kwargs(total_duration, kwargs):
+    """Parse arguments for LPSD algorithm.
+    Convert overlap s -> %, window to numpy function,
+    and remove kwargs not accepted by lpsd code.
+
+    Parameters
+    ----------
+    total_duration : float
+        Total duration of time series in seconds
+    kwargs : dict
+        Rest of the arguments
+
+    Returns
+    -------
+    lpsd_kwargs: dict
+        Cleaned-up arguments
+    overlap: float
+        Overlap in percentage
+    window: func
+        Window as a numpy function
+
+    """
     # convert overlap given in number of seconds to percentage
-    overlap = _parse_overlap(kwargs.pop("overlap", 0))
+    overlap = _parse_overlap(kwargs.pop("overlap", 0), total_duration)
 
     # convert window to numpy function
     window_function = _parse_window(kwargs.pop("window_", None))
@@ -164,6 +186,31 @@ def _parse_kwargs(total_duration, kwargs):
             lpsd_kwargs.pop(k)
 
     return lpsd_kwargs, overlap, window_function
+
+
+def _parse_overlap(overlap, total_duration):
+    """Parse `overlap` argument for LPSD algorithm.
+    Convert value in seconds to percentage
+
+    Parameters
+    ----------
+    total_duration : float
+        Total duration of time series in seconds
+
+    Returns
+    -------
+    overlap: float
+        Overlap in percentage
+    """
+    if overlap == 0:
+        return 0
+    if overlap > 0:
+        if overlap > total_duration:
+            raise ValueError(
+                "Specified overlap (in seconds) "
+                "exceeds total time series duration!"
+            )
+        return overlap / total_duration
 
 
 fft_registry.register_method(lpsd)
