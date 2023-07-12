@@ -372,7 +372,8 @@ class TimeSeries(TimeSeriesBase):
             a data series containing the CSD.
         """
         method_func = spectral.csd
-        # need to change method function and add _window to kwargs in case of LPSD
+        # need to change method function
+        # and add _window to kwargs in case of LPSD
         if "method" in kwargs and kwargs["method"] == "lpsd":
             method_func = spectral.lpsd
             kwargs["window_"] = window
