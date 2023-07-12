@@ -80,7 +80,8 @@ def lpsd(*args, **kwargs):
     df.index = timeseries.times.value
 
     # clean up kwargs: get ones that are allowed for LPSD
-    lpsd_kwargs, overlap, window_function = _parse_kwargs(timeseries.duration, kwargs)
+    lpsd_kwargs, overlap, window_function = \
+        _parse_kwargs(timeseries.duration, kwargs)
 
     csd = lcsd(
         df,
@@ -105,6 +106,8 @@ def lpsd(*args, **kwargs):
 
 
 def _parse_window(window):
+    window = "kaiser" if window is None else window
+
     if not isinstance(window, str):
         warnings.warn(
             "Specifying window as an array "
@@ -132,24 +135,27 @@ def _parse_window(window):
     return window_function
 
 
-def _parse_kwargs(total_duration, kwargs):
-    # convert overlap given in number of seconds to percentage
-    overlap = kwargs.pop("overlap", 0)
+def _parse_overlap(overlap):
+    if overlap == 0:
+        return 0
     if overlap > 0:
         if overlap > total_duration:
             raise ValueError(
                 "Specified overlap (in seconds) "
                 "exceeds total time series duration!"
             )
-        overlap = overlap / total_duration
+        return overlap / total_duration
+
+
+def _parse_kwargs(total_duration, kwargs):
+    # convert overlap given in number of seconds to percentage
+    overlap = _parse_overlap(kwargs.pop("overlap", 0))
 
     # convert window to numpy function
-    window = kwargs.pop("window_", None)
-    window = "kaiser" if window is None else window
+    window_function = _parse_window(kwargs.pop("window_", None))
     # clean up default value from kwargs
     if "window" in kwargs:
         kwargs.pop("window")
-    window_function = _parse_window(window)
 
     allowed_kwargs = inspect.getfullargspec(LCSD.__init__).args
     lpsd_kwargs = kwargs.copy()
