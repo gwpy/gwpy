@@ -1090,7 +1090,7 @@ class TimeSeries(TimeSeriesBase):
         # parse filter
         form, filt = filter_design.parse_filter(filt)
 
-        unit = kwargs.pop('unit', False)
+        unit = kwargs.pop('unit', None)
         if not unit:
             if kwargs.get('analog', False):
                 unit = 'Hz'
