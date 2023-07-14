@@ -971,7 +971,7 @@ class TimeSeries(TimeSeriesBase):
 
         unit: `str`
             The frequency response units this filter was designed for
-             either Hz or rad/s. Default: 'Hz'.
+            either Hz or rad/s. Default: 'Hz'.
 
         Returns
         -------

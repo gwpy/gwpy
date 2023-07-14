@@ -28,7 +28,7 @@ from numpy import fft as npfft
 
 from scipy import signal
 
-from astropy.units import (Quantity)
+from astropy.units import Quantity
 
 from .window import (get_window, planck)
 
@@ -265,7 +265,7 @@ def convert_zpk_units(filt, unit):
         zeros, poles, gain
 
     unit : `str`
-        `'Hz'` or `'rad/s'`
+        ``'Hz'`` or ``'rad/s'``
 
     Returns
     -------
