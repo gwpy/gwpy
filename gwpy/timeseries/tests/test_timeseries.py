@@ -1438,7 +1438,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     def test_notch_happy_path(self, gw150914):
-        """For notch filtering, check that passband vals are approx equal, stopband are not."""
+        """Check passband vals are approx equal, stopband are not."""
 
         nf = 10
         notched = gw150914.notch(nf, filtfilt=True)
@@ -1453,29 +1453,38 @@ class TestTimeSeries(_TestTimeSeriesBase):
         r_inds = numpy.where(notched_asd.frequencies.value > nf + eps)[0]
         # index at 10 rad/s
         nf_ind = numpy.argmin(numpy.abs(notched_asd.frequencies.value - nf))
-        # indices inside interval around 10 rad/s and 
+        # indices inside interval around 10 rad/s
         nf_inds = numpy.arange(nf_ind - n_eps, nf_ind + n_eps)
-
-        print("??")
-        print(nf_ind, nf_inds)
-        print(l_inds[-1], r_inds[0], nf_ind)
-        print((notched_asd[nf_inds].value - asd[nf_inds].value) / asd[nf_inds].value)
-
 
         assert l_inds[-1] <= nf_ind
         assert r_inds[0] >= nf_ind
 
         # be within 40% for all values outside nbrhood
-        assert numpy.allclose(notched_asd[l_inds].value, asd[l_inds].value, rtol=0.4, atol=0)
-        assert numpy.allclose(notched_asd[r_inds].value, asd[r_inds].value, rtol=0.4, atol=0)
+        assert numpy.allclose(
+            notched_asd[l_inds].value,
+            asd[l_inds].value,
+            rtol=0.4,
+            atol=0
+        )
+        assert numpy.allclose(
+            notched_asd[r_inds].value,
+            asd[r_inds].value,
+            rtol=0.4,
+            atol=0
+        )
 
         # dont be within 40% for all values inside nbrhood
-        assert not numpy.allclose(notched_asd[nf_inds].value, asd[nf_inds].value, rtol=0.4, atol=0)
+        assert not numpy.allclose(
+            notched_asd[nf_inds].value,
+            asd[nf_inds].value,
+            rtol=0.4,
+            atol=0
+        )
 
-        # biggest difference between filtered and unfiltered should be at closest f to nf=10
+        # biggest difference between filtered and unfiltered
+        # should be at closest f to nf=10
         abs_prop_diff = numpy.abs(notched_asd.value - asd.value)
         assert numpy.argmax(abs_prop_diff) in (nf_ind - 1, nf_ind, nf_ind + 1)
-
 
     def test_bandpass_happy_path(self, gw150914):
         """Check that passband val are approx equal, stopband are not."""
