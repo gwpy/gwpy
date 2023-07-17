@@ -274,16 +274,22 @@ class TestAxes(AxesTestBase):
             ax.tile(x, y, w, h, anchor='blah')
 
     @pytest.mark.parametrize('cb_kw', [
-        {},  # our default
-        {'use_axesgrid': True, 'fraction': 0.15},  # match matplotlib behaviour
-        {'use_axesgrid': False, 'fraction': 0.15},  # matplotlib default
+        {"fraction": 0},  # our default
+        {"fraction": 0.15},  # matplotlib default
     ])
     def test_colorbar(self, ax, cb_kw):
+        pos = ax.get_position().bounds
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
         mesh = ax.pcolormesh(array)
         cbar = ax.colorbar(vmin=2, vmax=4, **cb_kw)
         assert cbar.mappable is mesh
         assert cbar.mappable.get_clim() == (2., 4.)
+        # assert the axes haven't been resized
+        if cb_kw.get("fraction", 0.) == 0.:
+            assert ax.get_position().bounds == pos
+        # or that they have
+        else:
+            assert ax.get_position().bounds != pos
 
     def test_legend(self, ax):
         ax.plot(numpy.arange(5), label='test')
