@@ -109,7 +109,7 @@ def process_colorbar_kwargs(
     if cax is not None:  # cax was given, we don't need fraction
         kwargs.pop("fraction", None)
     elif fraction == 0.:  # if fraction is 0, make the inset axes ourselves
-        cax, kwargs = make_inset_axes(ax, **kwargs)
+        cax, kwargs = _make_inset_axes(ax, **kwargs)
     else:  # otherwise let matplotlib generate the Axes using its own default
         kwargs["fraction"] = fraction
 
@@ -222,7 +222,7 @@ def _colorbar_bounds(
     return l0, 0 - pad - width, length, width
 
 
-def make_inset_axes(
+def _make_inset_axes(
     ax,
     location='right',
     width=0.012,
@@ -230,6 +230,8 @@ def make_inset_axes(
     pad=None,
     **kwargs,
 ):
+    """Create a new `Axes` to support a colorbar using `Axes.inset_axes`.
+    """
     # set default orientation
     if location in ('left', 'right'):
         orientation = kwargs.setdefault("orientation", "vertical")
