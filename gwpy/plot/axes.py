@@ -39,7 +39,6 @@ from matplotlib.collections import PolyCollection
 from matplotlib.lines import Line2D
 from matplotlib.projections import register_projection
 
-from . import (Plot, colorbar as gcbar)
 from .colors import format_norm
 from .gps import GPS_SCALES
 from .legend import HandlerLine2D
@@ -576,20 +575,24 @@ class Axes(_Axes):
 Call signatures""",
     )
 
-    def colorbar(self, mappable=None, **kwargs):
+    def colorbar(
+        self,
+        mappable=None,
+        fraction=0.,
+        **kwargs,
+    ):
         """Add a `~matplotlib.colorbar.Colorbar` to these `Axes`
 
         Parameters
         ----------
         mappable : matplotlib data collection, optional
-            collection against which to map the colouring, default will
-            be the last added mappable artist (collection or image)
+            Collection against which to map the colouring, default will
+            be the last added mappable artist (collection or image).
 
         fraction : `float`, optional
-            fraction of space to steal from these `Axes` to make space
-            for the new axes, default is ``0.`` if ``use_axesgrid=True``
-            is given (default), otherwise default is ``.15`` to match
-            the upstream matplotlib default.
+            Fraction of space to steal from these `Axes` to make space
+            for the new axes, default is ``0.``.
+            Use ``fraction=.15`` to match the upstream matplotlib default.
 
         **kwargs
             other keyword arguments to be passed to the
@@ -604,20 +607,12 @@ Call signatures""",
         --------
         Plot.colorbar
         """
-        fig = self.get_figure()
-        if kwargs.get('use_axesgrid', True):
-            kwargs.setdefault('fraction', 0.)
-        if kwargs.get('fraction', 0.) == 0.:
-            kwargs.setdefault('use_axesgrid', True)
-        mappable, kwargs = gcbar.process_colorbar_kwargs(
-            fig, mappable=mappable, ax=self, **kwargs)
-        if isinstance(fig, Plot):
-            # either we have created colorbar Axes using axesgrid1, or
-            # the user already gave use_axesgrid=False, so we forcefully
-            # disable axesgrid here in case fraction == 0., which causes
-            # gridspec colorbars to fail.
-            kwargs['use_axesgrid'] = False
-        return fig.colorbar(mappable, **kwargs)
+        return self.get_figure().colorbar(
+            mappable=mappable,
+            ax=self,
+            fraction=fraction,
+            **kwargs,
+        )
 
 
 # override default Axes with this one by registering a projection with the
