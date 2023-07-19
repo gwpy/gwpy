@@ -1483,8 +1483,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # biggest difference between filtered and unfiltered
         # should be at closest f to nf=10
-        abs_prop_diff = numpy.abs(notched_asd.value - asd.value)
-        assert numpy.argmax(abs_prop_diff) in (nf_ind - 1, nf_ind, nf_ind + 1)
+        absd = numpy.abs(notched_asd.value - asd.value)
+        assert numpy.isclose(absd[nf_ind], numpy.max(absd))
 
     def test_bandpass_happy_path(self, gw150914):
         """Check that passband val are approx equal, stopband are not."""
