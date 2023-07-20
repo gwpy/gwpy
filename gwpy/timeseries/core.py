@@ -245,8 +245,6 @@ class TimeSeriesBase(Series):
             del self.dt
             return
         self.dt = (1 / units.Quantity(val, units.Hertz)).to(self.xunit)
-        if numpy.isclose(self.dt.value, round(self.dt.value)):
-            self.dt = units.Quantity(round(self.dt.value), self.dt.unit)
 
     # -- duration
     @property
