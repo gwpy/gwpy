@@ -1488,7 +1488,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert numpy.isclose(absd[nf_ind], numpy.max(absd))
 
     def test_bandpass_happy_path(self, gw150914):
-        """Check that passband val are approx equal, stopband are not."""
+        """Check that passband val are approx equal, stopband are not.
+        """
 
         asd = gw150914.asd()
         bp_asd = gw150914.bandpass(100, 1000).asd()
