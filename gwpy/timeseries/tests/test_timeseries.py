@@ -1511,7 +1511,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             bp_asd[eqind0:eqindn].value,
             asd[eqind0:eqindn].value,
             rtol=0.4,
-            atol=0
+            atol=0,
         )
 
         # dont be within 40% for all value before
@@ -1519,7 +1519,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             bp_asd[:eqind0].value,
             asd[:eqind0].value,
             rtol=0.4,
-            atol=0
+            atol=0,
         )
 
         # or after
@@ -1527,7 +1527,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             bp_asd[eqindn:].value,
             asd[eqindn:].value,
             rtol=0.4,
-            atol=0
+            atol=0,
         )
 
     def test_notch(self, gw150914):
