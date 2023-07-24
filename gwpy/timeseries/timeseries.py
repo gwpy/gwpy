@@ -991,8 +991,14 @@ class TimeSeries(TimeSeriesBase):
         >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
 
-        f = self.filter(zeros, poles, gain, analog=analog, unit=unit, **kwargs)
-        return f
+        return self.filter(
+            zeros,
+            poles,
+            gain,
+            analog=analog,
+            unit=unit,
+            **kwargs
+        )
 
     def filter(self, *filt, **kwargs):
         """Filter this `TimeSeries` with an IIR or FIR filter
