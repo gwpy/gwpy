@@ -1383,8 +1383,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
             gw150914.zpk(*zpk), gw150914.filter(*zpk, analog=True))
 
     def test_highpass_happy_path(self, gw150914):
-        """Check that passband val are approx equal, stopband are not."""
-
+        """Check that passband val are approx equal, stopband are not.
+        """
         asd = gw150914.asd()
         hp_asd = gw150914.highpass(100).asd()
 
@@ -1399,19 +1399,20 @@ class TestTimeSeries(_TestTimeSeriesBase):
             hp_asd[eqind0:].value,
             asd[eqind0:].value,
             rtol=0.4,
-            atol=0)
+            atol=0,
+        )
 
         # dont be within 40% for all value before
         assert not numpy.allclose(
             hp_asd[:eqind0].value,
             asd[:eqind0].value,
             rtol=0.4,
-            atol=0
+            atol=0,
         )
 
     def test_lowpass_happy_path(self, gw150914):
-        """Check that passband val are approx equal, stopband are not."""
-
+        """Check that passband val are approx equal, stopband are not.
+        """
         asd = gw150914.asd()
         lp_asd = gw150914.lowpass(500).asd()
 
@@ -1426,7 +1427,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             lp_asd[eqind0:].value,
             asd[eqind0:].value,
             rtol=0.4,
-            atol=0
+            atol=0,
         )
 
         # dont be within 40% for all value after
@@ -1434,12 +1435,12 @@ class TestTimeSeries(_TestTimeSeriesBase):
             lp_asd[:eqind0].value,
             asd[:eqind0].value,
             rtol=0.4,
-            atol=0
+            atol=0,
         )
 
     def test_notch_happy_path(self, gw150914):
-        """Check passband vals are approx equal, stopband are not."""
-
+        """Check passband vals are approx equal, stopband are not.
+        """
         nf = 10
         notched = gw150914.notch(nf, filtfilt=True)
         notched_asd = notched.asd()
@@ -1464,13 +1465,13 @@ class TestTimeSeries(_TestTimeSeriesBase):
             notched_asd[l_inds].value,
             asd[l_inds].value,
             rtol=0.4,
-            atol=0
+            atol=0,
         )
         assert numpy.allclose(
             notched_asd[r_inds].value,
             asd[r_inds].value,
             rtol=0.4,
-            atol=0
+            atol=0,
         )
 
         # dont be within 40% for all values inside nbrhood
@@ -1478,7 +1479,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             notched_asd[nf_inds].value,
             asd[nf_inds].value,
             rtol=0.4,
-            atol=0
+            atol=0,
         )
 
         # biggest difference between filtered and unfiltered

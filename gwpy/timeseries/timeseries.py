@@ -990,14 +990,13 @@ class TimeSeries(TimeSeriesBase):
 
         >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-
         return self.filter(
             zeros,
             poles,
             gain,
             analog=analog,
             unit=unit,
-            **kwargs
+            **kwargs,
         )
 
     def filter(self, *filt, **kwargs):
