@@ -174,11 +174,11 @@ class TestSpectrogram(_TestArray2D):
             lti.freqresp(w=array.frequencies.value)[1]))
 
         # test simple filter
-        a2 = array.filter(*zpk)
+        a2 = array.filter(*zpk, analog=True)
         utils.assert_array_equal(array * fresp, a2)
 
         # test inplace filtering
-        array.filter(lti, inplace=True)
+        array.filter(lti, inplace=True, analog=True)
         utils.assert_array_equal(array, a2)
 
         # test errors
