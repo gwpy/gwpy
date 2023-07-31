@@ -50,15 +50,21 @@ def fdfilter(data, *filt, **kwargs):
 
     # parse filter
     if fs is None:
-        fs = 2 * (data.shape[-1] * data.df).to('Hz').value
+        fs = 2 * data.frequencies[-1].to('Hz').value
     form, filt = parse_filter(filt)
-    if analog:
-        form, filt = convert_to_digital(filt, fs)
-    lti = signal.lti(*filt)
-
-    # generate frequency response
     freqs = data.frequencies.value.copy()
-    fresp = numpy.nan_to_num(abs(lti.freqresp(w=freqs)[1]))
+
+    if not analog:
+        lti = signal.dlti(*filt).to_zpk()
+        z, p, k = lti.zeros, lti.poles, lti.gain
+        # dlti.freqresp does not take into account fs
+        # better to use the more straightforward functions
+        w, fr = signal.freqz_zpk(z, p, k, worN=freqs, fs=fs)
+    else:
+        lti = signal.lti(*filt).to_zpk()
+        z, p, k = lti.zeros, lti.poles, lti.gain
+        w, fr = signal.freqs_zpk(z, p, k, worN=freqs)
+    fresp = numpy.nan_to_num(abs(fr))
 
     # apply to array
     if inplace:
