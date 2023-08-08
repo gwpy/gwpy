@@ -60,7 +60,7 @@ def test_round_to_power():
     base = 10.
     rounded = utils_misc.round_to_power(9, base=base)
     assert base == rounded
-    assert type(base) == type(rounded)
+    assert type(base) == type(rounded)  # noqa: E721
 
 
 def test_round_to_power_error():
