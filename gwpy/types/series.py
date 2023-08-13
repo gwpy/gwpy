@@ -839,8 +839,7 @@ class Series(Array):
             N = min(self.shape[0], other.shape[0])
 
         # if units are the same, can shortcut
-        # NOTE: why not use isinstance here?
-        if type(other) == type(self) and other.unit == self.unit:
+        if isinstance(other, Series) and other.unit == self.unit:
             self.value[-N:] = other.value[-N:]
         # otherwise if its just a numpy array
         elif type(other) is type(self.value) or (  # noqa: E721

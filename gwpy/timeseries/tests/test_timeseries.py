@@ -1104,6 +1104,18 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # FIXME: this test needs to be more robust
         assert l2.sample_rate == 1024 * units.Hz
 
+    def test_resample_simple_upsample(self, gw150914):
+        """Test consistency when upsampling by 2x`
+        """
+        upsamp = gw150914.resample(gw150914.sample_rate.value * 2)
+        assert numpy.allclose(gw150914.value, upsamp.value[::2])
+
+    def test_resample_simple_downsample(self, gw150914):
+        """Test consistency when downsampling by 2x`
+        """
+        downsamp = gw150914.resample(gw150914.sample_rate.value // 2)
+        assert numpy.allclose(gw150914.value[::2], downsamp.value)
+
     def test_resample_noop(self):
         data = self.TEST_CLASS([1, 2, 3, 4, 5])
         with pytest.warns(UserWarning):
@@ -1369,6 +1381,155 @@ class TestTimeSeries(_TestTimeSeriesBase):
         zpk = [10, 10], [1, 1], 100
         utils.assert_quantity_sub_equal(
             gw150914.zpk(*zpk), gw150914.filter(*zpk, analog=True))
+
+    def test_highpass_happy_path(self, gw150914):
+        """Check that passband val are approx equal, stopband are not.
+        """
+        asd = gw150914.asd()
+        hp_asd = gw150914.highpass(100).asd()
+
+        eqinds = numpy.where(hp_asd.frequencies.value > 200)[0]
+        eqind0 = eqinds[0]
+
+        # be within 40% for all values after
+        # numpy allclose formula:
+        # |a-b| <= atol + rtol * |b|
+
+        assert numpy.allclose(
+            hp_asd[eqind0:].value,
+            asd[eqind0:].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+        # dont be within 40% for all value before
+        assert not numpy.allclose(
+            hp_asd[:eqind0].value,
+            asd[:eqind0].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+    def test_lowpass_happy_path(self, gw150914):
+        """Check that passband val are approx equal, stopband are not.
+        """
+        asd = gw150914.asd()
+        lp_asd = gw150914.lowpass(500).asd()
+
+        eqinds = numpy.where(lp_asd.frequencies.value < 500)[0]
+        eqind0 = eqinds[0]
+
+        # be within 40% for all values before
+        # numpy allclose formula:
+        # |a-b| <= atol + rtol * |b|
+
+        assert not numpy.allclose(
+            lp_asd[eqind0:].value,
+            asd[eqind0:].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+        # dont be within 40% for all value after
+        assert numpy.allclose(
+            lp_asd[:eqind0].value,
+            asd[:eqind0].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+    def test_notch_happy_path(self, gw150914):
+        """Check passband vals are approx equal, stopband are not.
+        """
+        nf = 10
+        notched = gw150914.notch(nf, filtfilt=True)
+        notched_asd = notched.asd()
+        asd = gw150914.asd()
+
+        n_eps = 3
+        eps = n_eps * notched_asd.df.value
+
+        # indices outside interval around 10 rad/s
+        l_inds = numpy.where(notched_asd.frequencies.value < nf - eps)[0]
+        r_inds = numpy.where(notched_asd.frequencies.value > nf + eps)[0]
+        # index at 10 rad/s
+        nf_ind = numpy.argmin(numpy.abs(notched_asd.frequencies.value - nf))
+        # indices inside interval around 10 rad/s
+        nf_inds = numpy.arange(nf_ind - n_eps, nf_ind + n_eps)
+
+        assert l_inds[-1] <= nf_ind
+        assert r_inds[0] >= nf_ind
+
+        # be within 40% for all values outside nbrhood
+        assert numpy.allclose(
+            notched_asd[l_inds].value,
+            asd[l_inds].value,
+            rtol=0.4,
+            atol=0,
+        )
+        assert numpy.allclose(
+            notched_asd[r_inds].value,
+            asd[r_inds].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+        # dont be within 40% for all values inside nbrhood
+        assert not numpy.allclose(
+            notched_asd[nf_inds].value,
+            asd[nf_inds].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+        # biggest difference between filtered and unfiltered
+        # should be at closest f to nf=10
+        absd = numpy.abs(notched_asd.value - asd.value)
+        assert numpy.isclose(absd[nf_ind], numpy.max(absd))
+
+    def test_bandpass_happy_path(self, gw150914):
+        """Check that passband val are approx equal, stopband are not.
+        """
+
+        asd = gw150914.asd()
+        bp_asd = gw150914.bandpass(100, 1000).asd()
+
+        eqinds = numpy.where(
+            numpy.logical_and(
+                bp_asd.frequencies.value > 100,
+                bp_asd.frequencies.value < 1000
+            )
+        )[0]
+
+        eqind0 = eqinds[0]
+        eqindn = eqinds[-1]
+
+        # be within 40% for all values after
+        # numpy allclose formula:
+        # |a-b| <= atol + rtol * |b|
+
+        assert numpy.allclose(
+            bp_asd[eqind0:eqindn].value,
+            asd[eqind0:eqindn].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+        # dont be within 40% for all value before
+        assert not numpy.allclose(
+            bp_asd[:eqind0].value,
+            asd[:eqind0].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+        # or after
+        assert not numpy.allclose(
+            bp_asd[eqindn:].value,
+            asd[eqindn:].value,
+            rtol=0.4,
+            atol=0,
+        )
 
     def test_notch(self, gw150914):
         # test notch runs end-to-end
