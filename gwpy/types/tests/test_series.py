@@ -272,7 +272,6 @@ class TestSeries(_TestArray):
         expected = series.xindex[0]
         assert series.crop(start=xmin).xindex[0] == expected
 
-
     def test_is_compatible(self, array):
         """Test the `Series.is_compatible` method
         """
