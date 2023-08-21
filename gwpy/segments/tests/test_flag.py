@@ -76,6 +76,52 @@ def veto_definer(tmp_path):
     return tmp
 
 
+# -- XML without _ns columns --------------------------------------------------
+
+LIGOLW_NO_NS = """
+<?xml version="1.0"?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+  <Table Name="segment_definergroup:segment_definer:table">
+    <Column Name="segment_def_id" Type="int_8s"/>
+    <Column Name="ifos" Type="lstring"/>
+    <Column Name="name" Type="lstring"/>
+    <Column Name="version" Type="int_4s"/>
+    <Column Name="comment" Type="lstring"/>
+    <Stream Name="segment_definergroup:segment_definer:table" Type="Local" Delimiter=",">
+      0,"X1","TEST_FLAG",1,"Test flag",
+    </Stream>
+  </Table>
+  <Table Name="segment_summarygroup:segment_summary:table">
+    <Column Name="segment_sum_id" Type="int_8s"/>
+    <Column Name="start_time" Type="int_4s"/>
+    <Column Name="end_time" Type="int_4s"/>
+    <Column Name="comment" Type="lstring"/>
+    <Column Name="segment_definer:segment_def_id" Type="int_8s"/>
+    <Stream Name="segment_summarygroup:segment_summary:table" Type="Local" Delimiter=",">
+      0,1366644592,1366644608,"",0,
+    </Stream>
+  </Table>
+  <Table Name="segmentgroup:segment:table">
+    <Column Name="segment_id" Type="int_8s"/>
+    <Column Name="start_time" Type="int_4s"/>
+    <Column Name="end_time" Type="int_4s"/>
+    <Column Name="segment_definer:segment_def_id" Type="int_8s"/>
+    <Stream Name="segmentgroup:segment:table" Type="Local" Delimiter=",">
+      0,1366644592,1366644593,0,
+    </Stream>
+  </Table>
+</LIGO_LW>
+""".strip()  # noqa: E501
+
+
+@pytest.fixture
+def ligolw_no_ns(tmp_path):
+    tmp = tmp_path / "test.xml"
+    tmp.write_text(LIGOLW_NO_NS)
+    return tmp
+
+
 # -- test data ----------------------------------------------------------------
 
 def _as_segmentlist(*segments):
@@ -488,6 +534,13 @@ class TestDataQualityFlag(object):
         )
         segdeftab = read_table(tmp, 'segment_definer')
         assert int(segdeftab[0].process_id) == 100
+
+    @pytest.mark.requires("ligo.lw.lsctables")
+    def test_read_ligolw_no_ns(self, ligolw_no_ns):
+        flag = self.TEST_CLASS.read(ligolw_no_ns, format="ligolw")
+        assert flag.name == "X1:TEST_FLAG:1"
+        assert flag.known == [(1366644592, 1366644608)]
+        assert flag.active == [(1366644592, 1366644593)]
 
     # -- test queries ---------------------------
 
