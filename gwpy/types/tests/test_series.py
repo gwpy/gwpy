@@ -248,15 +248,16 @@ class TestSeries(_TestArray):
         assert series.crop(end=xmax).xindex[-1] == expected
 
         # test that cropping at a point between two grid values is floored
-        # e.g. x = [1, 2, 3], end = 2.5, result = [2]
+        # e.g. x = [1, 2, 3], end = 2.5, result = [1, 2]
         series = Series([0] * 3, xindex=[1, 2, 3])
         print(series.crop(end=2.5))
         assert all(series.crop(end=2.5).xindex == [1, 2])
 
-        # test that cropping at a point between two grid values is floored
-        # e.g. x = [1, 2, 3], end = 2.5, result = [2]
         series = Series([0] * 3, xindex=[1, 2, 3])
         assert all(series.crop(start=2.5).xindex == [3])
+
+        series = Series([0] * 5, xindex=[1, 2, 3, 4, 5])
+        assert all(series.crop(start=2.5, end=4.5).xindex == [3, 4])
 
         # some slightly harder examples
         xmax = 0.508463154883984
