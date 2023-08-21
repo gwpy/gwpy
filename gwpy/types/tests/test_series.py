@@ -113,7 +113,7 @@ class TestSeries(_TestArray):
 
     def test_xindex_length_exception(self):
         with pytest.raises(ValueError):
-            series = Series([1, 2, 3], xindex=[0])
+            Series([1, 2, 3], xindex=[0])
 
     def test_xindex_dtype(self):
         x0 = numpy.longdouble(100)
