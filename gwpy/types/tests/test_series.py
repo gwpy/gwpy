@@ -238,6 +238,16 @@ class TestSeries(_TestArray):
         cropped = series.crop(end=1.)
         utils.assert_quantity_equal(series[:-1], cropped)
 
+        # test that floating point division followed by floor doesn't result
+        # in cropping one too many indices
+
+        arrlen = 500
+        xmax = 0.508463154883984
+        x_series = numpy.linspace(0, xmax, arrlen)
+        series = Series([0] * arrlen, xindex=x_series)
+        expected = series.xindex[-2]
+        assert series.crop(end=xmax).xindex[-1] == expected
+
     def test_is_compatible(self, array):
         """Test the `Series.is_compatible` method
         """

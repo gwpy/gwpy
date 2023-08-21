@@ -1028,7 +1028,7 @@ class Series(Array):
                 side="left",
             )
         else:
-            idx1 = floor((xtype(end) - x0) / self.dx.value)
+            idx1 = round((xtype(end) - x0) / self.dx.value)
 
         # crop
         if copy:
