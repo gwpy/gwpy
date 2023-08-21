@@ -1009,26 +1009,22 @@ class Series(Array):
         # find start index
         if start is None:
             idx0 = None
-        elif irregular:
+        else:
             idx0 = numpy.searchsorted(
                 self.xindex.value,
                 xtype(start),
                 side="left",
             )
-        else:
-            idx0 = floor((xtype(start) - x0) / self.dx.value)
 
         # find end index
         if end is None:
             idx1 = None
-        elif irregular:
+        else:
             idx1 = numpy.searchsorted(
                 self.xindex.value,
                 xtype(end),
                 side="left",
             )
-        else:
-            idx1 = round((xtype(end) - x0) / self.dx.value)
 
         # crop
         if copy:

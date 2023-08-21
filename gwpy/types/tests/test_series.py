@@ -240,13 +240,38 @@ class TestSeries(_TestArray):
 
         # test that floating point division followed by floor doesn't result
         # in cropping one too many indices
-
         arrlen = 500
         xmax = 0.508463154883984
         x_series = numpy.linspace(0, xmax, arrlen)
         series = Series([0] * arrlen, xindex=x_series)
         expected = series.xindex[-2]
         assert series.crop(end=xmax).xindex[-1] == expected
+
+        # test that cropping at a point between two grid values is floored
+        # e.g. x = [1, 2, 3], end = 2.5, result = [2]
+        series = Series([0] * 3, xindex=[1, 2, 3])
+        print(series.crop(end=2.5))
+        assert all(series.crop(end=2.5).xindex == [1, 2])
+
+        # test that cropping at a point between two grid values is floored
+        # e.g. x = [1, 2, 3], end = 2.5, result = [2]
+        series = Series([0] * 3, xindex=[1, 2, 3])
+        assert all(series.crop(start=2.5).xindex == [3])
+
+        # some slightly harder examples
+        xmax = 0.508463154883984
+        x_series = numpy.linspace(0, xmax, arrlen)
+        series = Series([0] * arrlen, xindex=x_series)
+        expected = series.xindex[-2]
+        mid = (0.6 * series.xindex[-2] + 0.4 * series.xindex[-1])
+        assert series.crop(end=mid).xindex[-1] == expected
+
+        xmin = 0.508463154883984
+        x_series = numpy.linspace(xmin, 1.0, arrlen)
+        series = Series([0] * arrlen, xindex=x_series)
+        expected = series.xindex[0]
+        assert series.crop(start=xmin).xindex[0] == expected
+
 
     def test_is_compatible(self, array):
         """Test the `Series.is_compatible` method
