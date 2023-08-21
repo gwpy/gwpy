@@ -123,6 +123,10 @@ class Series(Array):
 
         # set x-axis metadata from xindex
         if xindex is not None:
+
+            if len(xindex) != len(value):
+                raise ValueError('xindex must have the same length as data.')
+
             # warn about duplicate settings
             if dx is not None:
                 warn("xindex was given to %s(), dx will be ignored"

@@ -111,6 +111,10 @@ class TestSeries(_TestArray):
         assert series.x0 == units.Quantity(1, 'Mpc')
         assert series.xspan == (x[0], x[-1] + x[-1] - x[-2])
 
+    def test_xindex_length_exception(self):
+        with pytest.raises(ValueError):
+            Series([1, 2, 3], xindex=[0])
+
     def test_xindex_dtype(self):
         x0 = numpy.longdouble(100)
         dx = numpy.float32(1e-4)
