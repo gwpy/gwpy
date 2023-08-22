@@ -161,7 +161,10 @@ class Axes(_Axes):
         super().__init__(*args, **kwargs)
 
         # handle Series in `ax.plot()`
-        self._get_lines = PlotArgsProcessor(self)
+        if matplotlib_version >= "3.8.0":
+            self._get_lines = PlotArgsProcessor()
+        else:
+            self._get_lines = PlotArgsProcessor(self)
 
         # reset data formatters (for interactive plots) to support
         # GPS time display
@@ -630,6 +633,10 @@ class PlotArgsProcessor(_process_plot_var_args):
         """Find `Series` data in `plot()` args and unwrap
         """
         newargs = []
+        # matplotlib 3.8.0 includes the Axes object up-front
+        if args and isinstance(args[0], Axes):
+            newargs.append(args[0])
+            args = args[1:]
         while args:
             # strip first argument
             this, args = args[:1], args[1:]
