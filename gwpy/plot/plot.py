@@ -521,9 +521,11 @@ class Plot(figure.Figure):
             pass
 
         # add new axes
-        if ax.get_axes_locator():
+        try:
             divider = ax.get_axes_locator()._axes_divider
-        else:
+        except AttributeError:
+            # get_axes_locator() is None _or_ the _axes_divider property
+            # has been removed
             from mpl_toolkits.axes_grid1 import make_axes_locatable
             divider = make_axes_locatable(ax)
         if location not in {'top', 'bottom'}:

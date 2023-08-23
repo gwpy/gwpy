@@ -23,7 +23,10 @@ import pytest
 
 import numpy
 
-from matplotlib import rcParams
+from matplotlib import (
+    __version__ as matplotlib_version,
+    rcParams,
+)
 from matplotlib.collections import PolyCollection
 from matplotlib.lines import Line2D
 
@@ -169,7 +172,10 @@ class TestAxes(AxesTestBase):
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
         ax.grid(True, which="both", axis="both")
         mesh = ax.pcolormesh(array)
-        utils.assert_array_equal(mesh.get_array(), array.T.flatten())
+        if matplotlib_version >= "3.8.0":
+            utils.assert_array_equal(mesh.get_array(), array.T)
+        else:  # matplotlib < 3.8.0
+            utils.assert_array_equal(mesh.get_array(), array.T.flatten())
         utils.assert_array_equal(mesh.get_paths()[-1].vertices[2],
                                  (array.xspan[1], array.yspan[1]))
         # check that restore_grid decorator did its job
