@@ -998,25 +998,32 @@ class Series(Array):
             )
             end = None
 
+        # check if we have an index to use when searching
+        have_xindex = getattr(self, '_xindex', None) is not None
+
         # find start index
         if start is None:
             idx0 = None
-        else:
+        elif have_xindex:
             idx0 = numpy.searchsorted(
                 self.xindex.value,
                 xtype(start),
                 side="left",
             )
+        else:
+            idx0 = floor((xtype(start) - x0) / self.dx.value)
 
         # find end index
         if end is None:
             idx1 = None
-        else:
+        elif have_xindex:
             idx1 = numpy.searchsorted(
                 self.xindex.value,
                 xtype(end),
                 side="left",
             )
+        else:
+            idx1 = floor((xtype(end) - x0) / self.dx.value)
 
         # crop
         if copy:
