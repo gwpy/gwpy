@@ -257,7 +257,6 @@ class TestSeries(_TestArray):
         """
         # e.g. x = [1, 2, 3], end = 2.5, result = [1, 2]
         series = Series([0] * 3, xindex=[1, 2, 3])
-        print(series.crop(end=2.5))
         assert all(series.crop(end=2.5).xindex == [1, 2])
 
         series = Series([0] * 3, xindex=[1, 2, 3])
