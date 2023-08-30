@@ -57,12 +57,12 @@ def fdfilter(data, *filt, **kwargs):
     if analog:
         lti = signal.lti(*filt).to_zpk()
         z, p, k = lti.zeros, lti.poles, lti.gain
+        # dlti.freqresp does not take into account fs
+        # better to use the more straightforward functions
         w, fr = signal.freqs_zpk(z, p, k, worN=freqs)
     else:
         lti = signal.dlti(*filt).to_zpk()
         z, p, k = lti.zeros, lti.poles, lti.gain
-        # dlti.freqresp does not take into account fs
-        # better to use the more straightforward functions
         w, fr = signal.freqz_zpk(z, p, k, worN=freqs, fs=fs)
 
     fresp = numpy.nan_to_num(abs(fr))
