@@ -225,8 +225,8 @@ class TestSeries(_TestArray):
         cropped = series.crop(start=25, end=75)
         utils.assert_quantity_equal(series[(x > 25) & (x < 75)], cropped)
 
-    def test_crop_float_precision(self):
-        """Verify the float precision of the crop function.
+    def test_crop_float_precision_last_value(self):
+        """Verify the float precision of Series.crop given the last index.
 
         This tests regression against https://github.com/gwpy/gwpy/issues/1601.
         """
@@ -237,6 +237,58 @@ class TestSeries(_TestArray):
         # assert that when we crop it, we only crop a single sample
         cropped = series.crop(end=1.)
         utils.assert_quantity_equal(series[:-1], cropped)
+
+    def test_crop_float_precision_last_value_float(self):
+        """Verify the float precision of the crop function with float end.
+
+        This tests regression against https://github.com/gwpy/gwpy/issues/1656.
+        """
+        arrlen = 500
+        xmax = 0.508463154883984
+        x_series = numpy.linspace(0, xmax, arrlen)
+        series = Series([0] * arrlen, xindex=x_series)
+        expected = series.xindex[-2]
+        assert series.crop(end=xmax).xindex[-1] == expected
+
+    def test_crop_between_grid_points_is_floored(self):
+        """Test that when we crop between xindex values, the result is floored.
+
+        This tests regression against https://github.com/gwpy/gwpy/issues/1656.
+        """
+        # e.g. x = [1, 2, 3], end = 2.5, result = [1, 2]
+        series = Series([0] * 3, xindex=[1, 2, 3])
+        assert all(series.crop(end=2.5).xindex == [1, 2])
+
+        series = Series([0] * 3, xindex=[1, 2, 3])
+        assert all(series.crop(start=2.5).xindex == [3])
+
+        series = Series([0] * 5, xindex=[1, 2, 3, 4, 5])
+        assert all(series.crop(start=2.5, end=4.5).xindex == [3, 4])
+
+    def test_crop_float_precision_near_last_value_float(self):
+        """Test the float precision of Series.crop with arg just under end.
+
+        This tests regression against https://github.com/gwpy/gwpy/issues/1656.
+        """
+        arrlen = 500
+        xmax = 0.508463154883984
+        x_series = numpy.linspace(0, xmax, arrlen)
+        series = Series([0] * arrlen, xindex=x_series)
+        expected = series.xindex[-2]
+        mid = (0.6 * series.xindex[-2] + 0.4 * series.xindex[-1])
+        assert series.crop(end=mid).xindex[-1] == expected
+
+    def test_crop_float_precision_first_value_float(self):
+        """Verify the float precision of the crop function with float start.
+
+        This tests regression against https://github.com/gwpy/gwpy/issues/1656.
+        """
+        arrlen = 500
+        xmin = 0.508463154883984
+        x_series = numpy.linspace(xmin, 1.0, arrlen)
+        series = Series([0] * arrlen, xindex=x_series)
+        expected = series.xindex[0]
+        assert series.crop(start=xmin).xindex[0] == expected
 
     def test_is_compatible(self, array):
         """Test the `Series.is_compatible` method

@@ -998,18 +998,13 @@ class Series(Array):
             )
             end = None
 
-        # check if series is irregular
-        try:
-            self.dx
-        except AttributeError:
-            irregular = True
-        else:
-            irregular = False
+        # check if we have an index to use when searching
+        have_xindex = getattr(self, '_xindex', None) is not None
 
         # find start index
         if start is None:
             idx0 = None
-        elif irregular:
+        elif have_xindex:
             idx0 = numpy.searchsorted(
                 self.xindex.value,
                 xtype(start),
@@ -1021,7 +1016,7 @@ class Series(Array):
         # find end index
         if end is None:
             idx1 = None
-        elif irregular:
+        elif have_xindex:
             idx1 = numpy.searchsorted(
                 self.xindex.value,
                 xtype(end),
