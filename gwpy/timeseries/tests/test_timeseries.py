@@ -23,6 +23,7 @@ import os.path
 import warnings
 from contextlib import nullcontext
 from itertools import (chain, product)
+from math import (ceil, floor)
 from unittest import mock
 
 import pytest
@@ -728,6 +729,67 @@ class TestTimeSeries(_TestTimeSeriesBase):
             gw150914_16384,
             exclude=['name', 'channel', 'unit'],
         )
+
+    @pytest.mark.requires("framel")
+    def test_find_scan(self, tmp_path):
+        # create a timeseries
+        data = self.create(name="X1:TEST-DATA", t0=100, dt=.1)
+        start, end = data.span
+
+        # create a directory in which to write data
+        datadir = tmp_path / "data"
+        datadir.mkdir(parents=True, exist_ok=True)
+
+        # split the timeseries into chunks and write each chunk to a file
+        chunk = int(data.size // 2)
+        for part in data[:chunk], data[chunk:]:
+            s, e = part.span
+            s = floor(s)
+            d = ceil(e) - s
+            path = datadir / f"X-TEST_DATA-{s}-{d}.gwf"
+            part.write(path)
+
+        # scan for the data and assert we get it all back
+        new = self.TEST_CLASS.find(
+            "X1:TEST-DATA",
+            start,
+            end,
+            frametype="TEST_DATA",
+            scan=tmp_path,
+        )
+        utils.assert_quantity_sub_equal(data, new, exclude=["channel"])
+
+        # -- check that pad translates to on_gaps as expected
+
+        # pad=0 should emit a warning but pad the gap with zeros
+        with pytest.warns(UserWarning):
+            new = self.TEST_CLASS.find(
+                "X1:TEST-DATA",
+                start,
+                end+1,
+                frametype="TEST_DATA",
+                scan=tmp_path,
+                pad=0.,
+            )
+        assert new.span == (start, end + 1)
+        utils.assert_quantity_sub_equal(
+            data.append(
+                numpy.zeros(int(data.sample_rate.to("Hz").value)),
+                inplace=False,
+            ),
+            new,
+            exclude=["channel"],
+        )
+
+        # pad=None (default) should raise an error
+        with pytest.raises(RuntimeError, match="Missing segments"):
+            new = self.TEST_CLASS.find(
+                "X1:TEST-DATA",
+                start-1,
+                end,
+                frametype="TEST_DATA",
+                scan=tmp_path,
+            )
 
     # -- signal processing methods --------------
 

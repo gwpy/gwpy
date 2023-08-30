@@ -45,7 +45,10 @@ from unittest import mock
 
 import gwdatafind
 
-from ligo.segments import segment as LigoSegment
+from ligo.segments import (
+    segment as LigoSegment,
+    segmentlist as LigoSegmentList,
+)
 
 from ..time import to_gps
 from . import ffldatafind
@@ -568,3 +571,103 @@ def find_latest(
             f"(pass allow_tape=True to force): {path}",
         )
     return path
+
+
+# -- filesystem scanner -------------------------------------------------------
+
+def _scan(basedir, observatory, frametype, span, ext="gwf"):
+    """Scan a directory tree for paths matching the LIGO
+    file-naming convention.
+
+    See |LIGO-T050017|_.
+    """
+    match = re.compile(
+        fr"{observatory}-{frametype}-(?P<start>\d+)-(?P<dur>\d+).{ext}",
+    ).match
+    join = os.path.join
+    for root, dirs, files in os.walk(basedir):
+        for name in files:
+            m = match(name)
+            if not m:
+                continue
+            start, dur = map(float, m.groups())
+            segment = LigoSegment(start, start + dur)
+            if segment.intersects(span):
+                yield join(root, name)
+
+
+def scan(
+    basedir,
+    observatory,
+    frametype,
+    start,
+    end,
+    ext="gwf",
+    on_gaps="error",
+):
+    """Scan a directory tree for files to read.
+
+    Parameters
+    ----------
+    basedir : `str`
+        Root directory in which to scan.
+
+    observatory : `str`
+        Observatory prefix to expect in filenames, normally a single
+        uppercase character.
+
+    frametype : `str`
+        Dataset name to expect in filenames.
+
+    start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS start time of period of interest,
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS end time of period of interest,
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    ext : `str`
+        File extension to expect in filenames.
+
+    on_gaps : `str`, optional
+        Action to take when gaps are discovered in file coverage,
+        one of
+
+        - ``'error'`` (default) - raise a `RuntimeError` when gaps are found
+        - ``'warn'`` - emit a warning when gaps are found, but return anyway
+        - ``'ignore'`` - ignore gaps and return what was found
+
+    Returns
+    -------
+    cache : `list` of `str`
+        The list of discovered file paths.
+
+    Raises
+    ------
+    RuntimeError
+        If the discovered files do not fully cover the requested interval,
+        **and** ``on_gaps="error"`` was given.
+    """
+    span = LigoSegment(to_gps(start), to_gps(end))
+    cache = list(_scan(
+        basedir,
+        observatory,
+        frametype,
+        span,
+        ext=ext,
+    ))
+
+    if on_gaps == "ignore":
+        return cache
+
+    # handle missing data
+    missing = LigoSegmentList([span]) - cache_segments(cache)
+    if missing:
+        message = "Missing segments: \n" + "\n".join(map(str, missing))
+        if on_gaps == "warn":
+            warnings.warn(message)
+        else:
+            raise RuntimeError(message)
+
+    return cache
