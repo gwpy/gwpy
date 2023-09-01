@@ -176,7 +176,12 @@ def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
     out = None
     kwargs['cls'] = cls
     for url in cache:
-        keep = file_segment(url) & span
+        try:
+            keep = file_segment(url) & span
+        except ValueError:
+            # occurs when span and url segments don't overlap
+            # https://git.ligo.org/lscsoft/ligo-segments/-/blob/master/ligo/segments/__init__.py#L403
+            continue
         kwargs["start"], kwargs["end"] = keep
         new = _fetch_gwosc_data_file(url, *args, **kwargs)
         if is_gwf and (not args or args[0] is None):
