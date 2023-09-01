@@ -35,7 +35,10 @@ from gwosc.locate import get_urls
 
 from .. import (StateVector, TimeSeries)
 from ...io import (gwf as io_gwf, hdf5 as io_hdf5)
-from ...io.cache import file_segment
+from ...io.cache import (
+    file_segment,
+    sieve as sieve_cache,
+)
 from ...io.utils import file_path
 from ...detector.units import parse_unit
 from ...segments import Segment
@@ -149,7 +152,10 @@ def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
               key in kwargs}
     if 'sample_rate' in url_kw:  # format as Hertz
         url_kw['sample_rate'] = Quantity(url_kw['sample_rate'], 'Hz').value
-    cache = get_urls(detector, int(start), int(ceil(end)), **url_kw)
+    cache = sieve_cache(
+        get_urls(detector, int(start), int(ceil(end)), **url_kw),
+        segment=span,
+    )
     # if event dataset, pick shortest file that covers the request
     # -- this is a bit hacky, and presumes that only an event dataset
     # -- would be produced with overlapping files.
