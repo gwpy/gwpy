@@ -193,12 +193,17 @@ def test_convert_to_digital_fir(example_zpk_fs_tuple):
 
 
 def test_convert_to_digital_complex_type_preserved():
+    """Test that conversion to digital does not erroneously convert
+    to float types.
+
+    Tests regression against:
+     https://github.com/gwpy/gwpy/issues/1630#issuecomment-1721674653
+    """
     z, p, k = signal.butter(3, 30, 'low', analog=True, output='zpk')
     form, filt = filter_design.convert_to_digital((z, p, k), 100)
     zd, pd, kd = filt
     assert p.dtype == pd.dtype
-    assert pd.dtype == numpy.complex128
-
+    assert numpy.iscomplexobj(pd)
 
 def test_convert_to_digital_invalid_form():
     with mock.patch('gwpy.signal.filter_design.parse_filter') as tmp_mock:
