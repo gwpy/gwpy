@@ -1185,48 +1185,61 @@ class TimeSeriesBaseDict(OrderedDict):
              verbose=False, allow_tape=True, observatory=None, **readargs):
         """Find and read data from frames for a number of channels.
 
+        This method uses :mod:`gwdatafind` to discover the (`file://`) URLs
+        that provide the requested data, then reads those files using
+        :meth:`TimeSeriesDict.read()`.
+
         Parameters
         ----------
         channels : `list`
-            required data channels.
+            Required data channels.
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        frametype : `str`, optional
-            name of frametype in which this channel is stored, by default
-            will search for all required frame types
+        frametype : `str`
+            Name of frametype in which this channel is stored; if not given
+            all frametypes discoverable via GWDataFind will be searched for
+            the required channels.
 
-        frametype_match : `str`, optional
-            regular expression to use for frametype matching
+        frametype_match : `str`
+            Regular expression to use for frametype matching.
 
-        pad : `float`, optional
-            value with which to fill gaps in the source data,
+        pad : `float`
+            Value with which to fill gaps in the source data,
             by default gaps will result in a `ValueError`.
 
-        scaled : `bool`, optional
-            apply slope and bias calibration to ADC data, for non-ADC data
+        scaled : `bool`
+            Apply slope and bias calibration to ADC data, for non-ADC data
             this option has no effect.
 
-        nproc : `int`, optional, default: `1`
-            number of parallel processes to use, serial process by
-            default.
+        nproc : `int`
+            Number of parallel processes to use.
 
-        allow_tape : `bool`, optional, default: `True`
-            allow reading from frame files on (slow) magnetic tape
+        allow_tape : `bool`
+            Allow reading from frame files on (slow) magnetic tape.
 
         verbose : `bool`, optional
-            print verbose output about read progress, if ``verbose``
+            Print verbose output about read progress, if ``verbose``
             is specified as a string, this defines the prefix for the
-            progress meter
+            progress meter.
 
-        **readargs
-            any other keyword arguments to be passed to `.read()`
+        readargs
+            Any other keyword arguments to be passed to `.read()`.
+
+        Raises
+        ------
+        requests.exceptions.HTTPError
+            If the GWDataFind query fails for any reason.
+
+        RuntimeError
+            If no files are found to read, or if the read operation
+            fails.
         """
         from ..io import datafind as io_datafind
 
@@ -1234,11 +1247,18 @@ class TimeSeriesBaseDict(OrderedDict):
         end = to_gps(end)
 
         # -- find frametype(s)
+
+        frametypes = {}
+
         if frametype is None:
             matched = io_datafind.find_best_frametype(
-                channels, start, end, frametype_match=frametype_match,
-                allow_tape=allow_tape)
-            frametypes = {}
+                channels,
+                start,
+                end,
+                frametype_match=frametype_match,
+                allow_tape=allow_tape,
+            )
+
             # flip dict to frametypes with a list of channels
             for name, ftype in matched.items():
                 try:
@@ -1247,30 +1267,34 @@ class TimeSeriesBaseDict(OrderedDict):
                     frametypes[ftype] = [name]
 
             if verbose and len(frametypes) > 1:
-                gprint("Determined %d frametypes to read" % len(frametypes))
+                gprint(f"Determined {len(frametypes)} frametypes to read")
             elif verbose:
-                gprint("Determined best frametype as %r"
-                       % list(frametypes.keys())[0])
-        else:
-            frametypes = {frametype: channels}
+                gprint(f"Determined best frametype as '{list(frametypes)[0]}'")
+        else:  # use the given frametype for all channels
+            frametypes[frametype] = channels
 
         # -- read data
+
         out = cls()
         for frametype, clist in frametypes.items():
             if verbose:
-                verbose = "Reading {} frames".format(frametype)
+                verbose = f"Reading '{frametype}' data"
+
             # parse as a ChannelList
             channellist = ChannelList.from_names(*clist)
             # strip trend tags from channel names
             names = [c.name for c in channellist]
+
             # find observatory for this group
             if observatory is None:
                 try:
                     observatory = ''.join(
                         sorted(set(c.ifo[0] for c in channellist)))
                 except TypeError as exc:
-                    exc.args = "Cannot parse list of IFOs from channel names",
-                    raise
+                    raise ValueError(
+                        "Cannot parse list of IFOs from channel names",
+                    ) from exc
+
             # find frames
             cache = io_datafind.find_urls(
                 observatory,
@@ -1280,16 +1304,28 @@ class TimeSeriesBaseDict(OrderedDict):
                 on_gaps="error" if pad is None else "warn",
             )
             if not cache:
-                raise RuntimeError("No %s-%s frame files found for [%d, %d)"
-                                   % (observatory, frametype, start, end))
+                raise RuntimeError(
+                    f"No {observatory}-{frametype} URLs found for "
+                    f"[{start}, {end})",
+                )
+
             # read data
-            readargs.setdefault('format', 'gwf')
-            new = cls.read(cache, names, start=start, end=end, pad=pad,
-                           scaled=scaled, nproc=nproc,
-                           verbose=verbose, **readargs)
+            new = cls.read(
+                cache,
+                names,
+                start=start,
+                end=end,
+                pad=pad,
+                scaled=scaled,
+                nproc=nproc,
+                verbose=verbose,
+                **readargs,
+            )
+
             # map back to user-given channel name and append
-            out.append(type(new)((key, new[chan]) for
-                                 (key, chan) in zip(clist, names)))
+            out.append(type(new)(
+                (key, new[chan]) for (key, chan) in zip(clist, names)
+            ))
         return out
 
     @classmethod
