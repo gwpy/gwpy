@@ -170,7 +170,7 @@ def test_convert_to_digital_zpk(example_zpk_fs_tuple):
     dform, dfilt = filter_design.convert_to_digital((z, p, k), fs)
 
     assert dform == 'zpk'
-    assert dfilt == filter_design.bilinear_zpk(z, p, k, fs)
+    assert dfilt == signal.bilinear_zpk(z, p, k, fs)
 
 
 def test_convert_to_digital_ba(example_zpk_fs_tuple):
@@ -180,7 +180,7 @@ def test_convert_to_digital_ba(example_zpk_fs_tuple):
     # this should be converted to ZPK form
     dform, dfilt = filter_design.convert_to_digital((b, a), fs)
     assert dform == 'zpk'
-    assert dfilt == filter_design.bilinear_zpk(z, p, k, fs)
+    assert dfilt == signal.bilinear_zpk(z, p, k, fs)
 
 
 def test_convert_to_digital_fir(example_zpk_fs_tuple):
@@ -190,6 +190,14 @@ def test_convert_to_digital_fir(example_zpk_fs_tuple):
     dform, dfilt = filter_design.convert_to_digital(b, fs)
     assert dform == 'ba'
     assert numpy.allclose(dfilt, signal.bilinear(b, [1], fs))
+
+
+def test_convert_to_digital_complex_type_preserved():
+    z, p, k = signal.butter(3, 30, 'low', analog=True, output='zpk')
+    form, filt = filter_design.convert_to_digital((z, p, k), 100)
+    zd, pd, kd = filt
+    assert p.dtype == pd.dtype
+    assert pd.dtype == numpy.complex128
 
 
 def test_convert_to_digital_invalid_form():
