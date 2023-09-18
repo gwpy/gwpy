@@ -205,6 +205,7 @@ def test_convert_to_digital_complex_type_preserved():
     assert p.dtype == pd.dtype
     assert numpy.iscomplexobj(pd)
 
+
 def test_convert_to_digital_invalid_form():
     with mock.patch('gwpy.signal.filter_design.parse_filter') as tmp_mock:
         tmp_mock.return_value = ("invalid", [1, 2, 3])
