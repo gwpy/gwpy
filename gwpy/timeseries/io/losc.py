@@ -24,6 +24,7 @@ For more details, see :ref:`gwpy-table-io`.
 
 import os.path
 import re
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from math import ceil
 from urllib.parse import urlparse
 
@@ -131,7 +132,7 @@ def _overlapping(files):
 
 # -- remote data access (the main event) --------------------------------------
 
-def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
+def fetch_gwosc_data(detector, start, end, nthreads=10, cls=TimeSeries, **kwargs):
     """Fetch GWOSC data for a given detector
 
     This function is for internal purposes only, all users should instead
@@ -178,9 +179,35 @@ def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
     else:
         args = ()
 
+
     # read data
     out = None
+    out2 = None
     kwargs['cls'] = cls
+
+    import datetime
+    t0 = datetime.datetime.now()
+
+    with ProcessPoolExecutor(max_workers=nthreads) as executor:
+        futures = []
+        # each thread needs different kwargs
+        for url in cache:
+            keep = file_segment(url) & span
+            kwargs_copy = kwargs.copy()
+            kwargs_copy["start"], kwargs_copy["end"] = keep
+            print(span)
+            futures.append(executor.submit(_fetch_gwosc_data_file, url, *args, **kwargs_copy))
+        for future in futures:
+            new = future.result() # wait indefinitely, we need the order to be preserved
+            if is_gwf and (not args or args[0] is None):
+                args = (new.name,)
+            if out2 is None:
+                out2 = new.copy()
+            else:
+                out2.append(new, resize=True)
+
+    t1 = datetime.datetime.now()
+
     for url in cache:
         keep = file_segment(url) & span
         kwargs["start"], kwargs["end"] = keep
@@ -191,6 +218,12 @@ def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
             out = new.copy()
         else:
             out.append(new, resize=True)
+
+    t2 = datetime.datetime.now()
+
+    print(t2-t1, t1-t0)
+
+
     return out
 
 
