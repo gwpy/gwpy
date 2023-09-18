@@ -287,47 +287,6 @@ def convert_zpk_units(filt, unit):
     return zeros, poles, gain
 
 
-def bilinear_zpk(zeros, poles, gain, fs=1.0):
-    """Convert an analogue ZPK filter to digital using a bilinear transform
-
-    Parameters
-    ----------
-    zeros : array-like
-        list of zeros
-
-    poles : array-like
-        list of poles
-
-    gain : `float`
-        filter gain
-
-    fs : `float`, `~astropy.units.Quantity`
-        sampling rate at which to evaluate bilinear transform, default: 1.
-
-    unit : `str`, `~astropy.units.Unit`
-        unit of inputs, one or 'Hz' or 'rad/s', default: ``'Hz'``
-
-    Returns
-    -------
-    zpk : `tuple`
-        digital version of input zpk
-    """
-    zeros = numpy.array(zeros, dtype=float, copy=False)
-    zeros = zeros[numpy.isfinite(zeros)]
-    poles = numpy.array(poles, dtype=float, copy=False)
-    gain = gain
-
-    # convert to Z-domain via bilinear transform
-    fs = 2 * Quantity(fs, 'Hz').value
-    dpoles = (1 + poles/fs) / (1 - poles/fs)
-    dzeros = (1 + zeros/fs) / (1 - zeros/fs)
-    dzeros = numpy.concatenate((
-        dzeros, -numpy.ones(len(dpoles) - len(dzeros)),
-    ))
-    dgain = gain * numpy.prod(fs - zeros)/numpy.prod(fs - poles)
-    return dzeros, dpoles, dgain
-
-
 def convert_to_digital(filter, sample_rate):
     """Convert an analog filter to digital via bilinear functions.
 
@@ -362,7 +321,7 @@ def convert_to_digital(filter, sample_rate):
         filter = signal.bilinear(b, a, fs=sample_rate)
 
     elif form == 'zpk':
-        filter = bilinear_zpk(*filter, fs=sample_rate)
+        filter = signal.bilinear_zpk(*filter, fs=sample_rate)
 
     else:
         raise ValueError(f"Cannot convert {form}, only 'zpk' or 'ba'")
