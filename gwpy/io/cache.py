@@ -115,7 +115,12 @@ class _CacheEntry(namedtuple(
             return cls(*filename_metadata(path) + (path,))
 
         try:
-            return _parse_entry_ffl(parts, gpstype=gpstype)
+            # Disable lal warnings if this fails
+            prev_level = lal.GetDebugLevel()
+            lal.ClobberDebugLevel(0)
+            entry = _parse_entry_ffl(parts, gpstype=gpstype)
+            lal.ClobberDebugLevel(prev_level)
+            return entry
         except (RuntimeError, TypeError, ValueError) as exc:
             try:
                 return _parse_entry_lal(parts, gpstype=gpstype)
