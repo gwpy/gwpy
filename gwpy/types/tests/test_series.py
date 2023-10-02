@@ -171,10 +171,10 @@ class TestSeries(_TestArray):
         regression against https://github.com/gwpy/gwpy/issues/1680.
         """
         xindex = array.xindex  # create xindex
-        indices = numpy.array([0, 5, 10, 20])
+        indices = numpy.array([0, 1, len(array)-1])
         newarray = array[indices]
 
-        assert len(newarray) == 4
+        assert len(newarray) == 3
         assert len(newarray) == len(newarray.value)
         assert len(newarray.value) == len(newarray.xindex)
 
