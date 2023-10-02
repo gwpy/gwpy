@@ -612,6 +612,10 @@ class Series(Array):
     def __getitem__(self, item):
         new = super().__getitem__(item)
 
+        have_xindex = getattr(self, '_xindex', None) is not None
+        if have_xindex:
+            new._xindex = self._xindex[item]
+
         # slice axis 0 metadata
         slice_, = sliceutils.format_nd_slice(item, 1)
         if not sliceutils.null_slice(slice_):
