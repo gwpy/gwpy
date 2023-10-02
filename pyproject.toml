@@ -101,7 +101,7 @@ dev = [
 conda = [
   "python-framel >=8.40.1",
   "python-ldas-tools-framecpp ; sys_platform != 'win32'",
-  "python-nds2-client",
+  "python-nds2-client ; sys_platform != 'win32'",
 ]
 
 [project.scripts]
