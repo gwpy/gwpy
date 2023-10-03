@@ -106,6 +106,7 @@ def null_slice(slice_):
         slice_ = as_slice(slice_)
     except TypeError:
         return False
+    
     if isinstance(slice_, numpy.ndarray) and numpy.all(slice_ == 1):
         return True
     if isinstance(slice_, slice) and slice_ in (

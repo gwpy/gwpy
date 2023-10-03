@@ -612,6 +612,7 @@ class Series(Array):
         slice_, = sliceutils.format_nd_slice(item, 1)
         if not sliceutils.null_slice(slice_):
             sliceutils.slice_axis_attributes(self, 'x', new, 'x', slice_)
+
         return new
 
     def is_contiguous(self, other, tol=1/2.**18):
