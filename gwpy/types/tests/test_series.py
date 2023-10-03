@@ -178,12 +178,16 @@ class TestSeries(_TestArray):
         assert len(newarray) == len(newarray.value)
         assert len(newarray.value) == len(newarray.xindex)
 
-        # check that the first index is correct
-        assert(array[indices[0]] == newarray[0])
+    def test_single_getitem_not_created(self, array):
+        """Test that array[i] does not return an object with a new _xindex."""
 
         # check that there is no xindex when a single value is accessed
         with pytest.raises(AttributeError):
-            xindex = array[indices[0]].xindex
+            xindex = array[0].xindex
+
+        # we don't need this, we don't want it accidentally injected
+        with pytest.raises(AttributeError):
+            xindex = array[0]._xindex
 
     def test_empty_slice(self, array):
         """Check that we can slice a `Series` into nothing
