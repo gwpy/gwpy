@@ -56,7 +56,7 @@ jobs:
         fetch-depth: 0
 
     - name: Cache conda packages
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         # increment to reset cache
         CACHE_NUMBER: 0
@@ -67,7 +67,7 @@ jobs:
 
     - name: Cache apt (Linux)
       if: matrix.os == 'Ubuntu'
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         # increment to reset cache
         CACHE_NUMBER: 0
