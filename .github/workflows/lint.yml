@@ -27,7 +27,7 @@ jobs:
     name: Flake8
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -43,7 +43,7 @@ jobs:
     name: rstcheck
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
