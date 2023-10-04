@@ -52,12 +52,12 @@ jobs:
     - name: Create distributions
       run: python -m build . --sdist --wheel --outdir .
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: tarball
         path: gwpy-*.tar.*
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: wheel
         path: gwpy*.whl
@@ -135,7 +135,7 @@ jobs:
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pytest-${{ matrix.artifact }}-${{ matrix.os }}-${{ matrix.python-version }}
         path: pytest.xml
