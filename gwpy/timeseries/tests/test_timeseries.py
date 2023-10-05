@@ -30,6 +30,8 @@ import pytest
 import numpy
 from numpy import testing as nptest
 
+from requests.exceptions import HTTPError
+
 from scipy import signal
 
 from astropy import units
@@ -646,29 +648,65 @@ class TestTimeSeries(_TestTimeSeriesBase):
         "os.environ",
         {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
-    def test_find(self, gw150914_16384):
+    @pytest.mark.parametrize("kwargs", [
+        pytest.param({"verbose": True}, id="default"),
+        pytest.param({"observatory": GWOSC_GW150914_IFO[0]}, id="observatory"),
+    ])
+    def test_find(self, gw150914_16384, kwargs):
+        """Test that `TimeSeries.find()` can actually find data.
+        """
         ts = self.TEST_CLASS.find(
             GWOSC_GW150914_CHANNEL,
             *GWOSC_GW150914_SEGMENT,
             frametype=GWOSC_GW150914_FRAMETYPE,
+            **kwargs,
         )
-        utils.assert_quantity_sub_equal(ts, gw150914_16384,
-                                        exclude=['name', 'channel', 'unit'])
+        utils.assert_quantity_sub_equal(
+            ts,
+            gw150914_16384,
+            exclude=['name', 'channel', 'unit'],
+        )
 
-        # test observatory
-        ts2 = self.TEST_CLASS.find(
-            GWOSC_GW150914_CHANNEL,
-            *GWOSC_GW150914_SEGMENT,
-            frametype=GWOSC_GW150914_FRAMETYPE,
-            observatory=GWOSC_GW150914_IFO[0],
-        )
-        utils.assert_quantity_sub_equal(ts, ts2)
-        with pytest.raises(RuntimeError):
+    @pytest_skip_network_error
+    @mock.patch.dict(
+        "os.environ",
+        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+    )
+    def test_find_datafind_httperror(self):
+        """Test that HTTPErrors are presented in `find()`.
+        """
+        with pytest.raises(HTTPError):
             self.TEST_CLASS.find(
                 GWOSC_GW150914_CHANNEL,
                 *GWOSC_GW150914_SEGMENT,
                 frametype=GWOSC_GW150914_FRAMETYPE,
                 observatory='X',
+            )
+
+    @mock.patch.dict(
+        "os.environ",
+        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+    )
+    def test_find_datafind_runtimeerror(self):
+        """Test that empty datafind caches result in RuntimeErrors in `find()`.
+        """
+        with pytest.raises(RuntimeError):
+            self.TEST_CLASS.find(
+                GWOSC_GW150914_CHANNEL,
+                *GWOSC_GW150914_SEGMENT.shift(-1e8),  # no data available here!
+                frametype=GWOSC_GW150914_FRAMETYPE,
+            )
+
+    def test_find_observatory_error(self):
+        with pytest.raises(
+            ValueError,
+            match="Cannot parse list of IFOs from channel names",
+        ):
+            self.TEST_CLASS.find(
+                "Test",
+                0,
+                1,
+                frametype="X1_TEST",
             )
 
     @_gwosc_cvmfs

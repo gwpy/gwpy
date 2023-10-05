@@ -107,26 +107,48 @@ class TestTimeSeriesBase(_TestSeries):
             a.t0, units.Quantity(1126259462, 's'))
 
     def test_sample_rate(self):
-        """Test `gwpy.timeseries.TimeSeriesBase.sample_rate`
+        """Test `gwpy.timeseries.TimeSeriesBase.sample_rate`.
         """
         # check basic conversion from dt -> sample_rate
         a = self.create(dt=0.5)
         assert a.sample_rate == 2 * units.Hz
 
+    def test_sample_rate_del(self, array):
+        """Test that `sample_rate` cannot be deleted.
+        """
         # test that we can't delete sample_rate
-        with pytest.raises(AttributeError):
-            del a.sample_rate
+        with pytest.raises(
+            AttributeError,
+            match="(can't delete attribute|has no deleter)",
+        ):
+            del array.sample_rate
 
+    def test_sample_rate_none(self, array):
+        """Test that `sample_rate = None` is effectively a deletion.
+        """
         # check None gets preserved
-        a.sample_rate = None
-        with pytest.raises(AttributeError):
-            a._t0
+        array.sample_rate = None
+        with pytest.raises(AttributeError, match="_t0"):
+            array._t0
 
-        # check other types
-        a.sample_rate = units.Quantity(128, units.Hz)
-        utils.assert_quantity_equal(a.dt, units.s / 128.)
-        a.sample_rate = units.Quantity(16.384, units.kiloHertz)
-        utils.assert_quantity_equal(a.dt, units.s / 16384)
+    @pytest.mark.parametrize(("samp", "dt"), [
+        (128 * units.Hz, units.s / 128.),
+        (16.384 * units.kiloHertz, units.s / 16384),
+        (10 / units.s, units.s / 10),
+    ])
+    def test_sample_rate_type(self, array, samp, dt):
+        """Test that units and types are handled when setting `sample_rate`.
+        """
+        array.sample_rate = samp
+        utils.assert_quantity_equal(array.dt, dt)
+
+    def test_sample_rate_ghz(self, array):
+        """Test that very large sample rates don't get rounded to dt=0.
+
+        Regression: https://github.com/gwpy/gwpy/issues/1646
+        """
+        array.sample_rate = 1e9
+        assert array.dt.value > 0.
 
     def test_duration(self, array):
         assert array.duration == array.t0 + array.shape[0] * array.dt
