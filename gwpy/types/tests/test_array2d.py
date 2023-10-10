@@ -250,3 +250,7 @@ class TestArray2D(_TestSeries):
     @pytest.mark.skip("not implemented for >1D arrays")
     def test_pad_asymmetric(self):
         return NotImplemented
+
+    @pytest.mark.skip("not applicable for >1D arrays")
+    def test_single_getitem_not_created(self):
+        return NotImplemented

@@ -167,6 +167,32 @@ class TestSeries(_TestArray):
                 name=array.name, epoch=array.epoch, unit=array.unit),
             )
 
+    def test_getitem_index(self, array):
+        """Test that __getitem__ also applies to an xindex.
+
+        When subsetting a Series with an iterable of integer indices,
+        make sure that the xindex, if it exists, is also subsetted. Tests
+        regression against https://github.com/gwpy/gwpy/issues/1680.
+        """
+        array.xindex  # create xindex
+        indices = numpy.array([0, 1, len(array)-1])
+        newarray = array[indices]
+
+        assert len(newarray) == 3
+        assert len(newarray) == len(newarray.value)
+        assert len(newarray.value) == len(newarray.xindex)
+
+    def test_single_getitem_not_created(self, array):
+        """Test that array[i] does not return an object with a new _xindex."""
+
+        # check that there is no xindex when a single value is accessed
+        with pytest.raises(AttributeError):
+            array[0].xindex
+
+        # we don't need this, we don't want it accidentally injected
+        with pytest.raises(AttributeError):
+            array[0]._xindex
+
     def test_empty_slice(self, array):
         """Check that we can slice a `Series` into nothing
 
