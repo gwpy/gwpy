@@ -184,7 +184,7 @@ class TestSeries(_TestArray):
         """Test that __getitem__ works with list and numpy.array"""
         indices = numpy.array([0, 1, len(array) - 1])
         lindices = [0, 1, len(array) - 1]
-        assert numpy.all(array[indices] == array[lindices])
+        assert numpy.all(array[indices].value == array[lindices].value)
 
     def test_single_getitem_not_created(self, array):
         """Test that array[i] does not return an object with a new _xindex."""
