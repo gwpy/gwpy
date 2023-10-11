@@ -215,6 +215,16 @@ class TestArray2D(_TestSeries):
         utils.assert_array_equal(b.xindex, a.xindex[0:1])
         utils.assert_array_equal(b.yindex, a.yindex)
 
+    def test_two_index_arrays(self):
+        """Test that subsetting with two index arrays works correctly."""
+        # create an array with indices
+        rawa = numpy.arange(12).reshape((4, 3))
+        a = Array2D(rawa)
+        exp = numpy.array([3, 11])
+        ind1, ind2 = numpy.array([1, 3]), numpy.array([0, 2])
+        assert numpy.all(rawa[ind1, ind2] == exp)
+        assert numpy.all(a[ind1, ind2].value == exp)
+
     def test_is_compatible_yindex(self):
         """Check that irregular arrays are compatible if their yindexes match
         """
