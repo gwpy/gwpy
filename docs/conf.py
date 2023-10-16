@@ -236,6 +236,7 @@ doxylink = {
 # Intersphinx
 intersphinx_mapping = {
     'astropy': ('https://docs.astropy.org/en/stable/', None),
+    'dateparser': ('https://dateparser.readthedocs.io/en/stable/', None),
     'dateutil': ('https://dateutil.readthedocs.io/en/stable/', None),
     'dqsegdb2': ('https://dqsegdb2.readthedocs.io/en/stable/', None),
     # 'glue': ('https://docs.ligo.org/lscsoft/glue/', None),
