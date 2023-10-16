@@ -1134,13 +1134,28 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
         utils.assert_quantity_sub_equal(sg, sg2)
 
-    def test_resample(self, gw150914):
+    @pytest.mark.parametrize("ftype", ("fir", "iir"))
+    @pytest.mark.parametrize("rate", [
+        1024,
+        pytest.param(units.Quantity(1024, "Hz"), id="1024 Hz"),
+        pytest.param(units.Quantity(1.5, "kHz"), id="1.5 kHz"),
+    ])
+    def test_resample(self, gw150914, rate, ftype):
         """Test :meth:`gwpy.timeseries.TimeSeries.resample`
         """
-        # test IIR decimation
-        l2 = gw150914.resample(1024, ftype='iir')
-        # FIXME: this test needs to be more robust
-        assert l2.sample_rate == 1024 * units.Hz
+        # resample
+        l2 = gw150914.resample(rate, ftype=ftype)
+        assert l2.sample_rate == units.Quantity(rate, units.Hz)
+
+        # compare ASDs
+        asd1 = gw150914.asd(fftlength=4, overlap=2).crop(30, 400)
+        asd2 = l2.asd(fftlength=4, overlap=2).crop(30, 400)
+        max1 = asd1.argmax()
+        max2 = asd2.argmax()
+        # check that the peak occurs at the same frequency
+        assert max1 == max2
+        # check that the peak itself is approximately the same
+        assert asd1[max1].value == pytest.approx(asd2[max2].value)
 
     def test_resample_simple_upsample(self, gw150914):
         """Test consistency when upsampling by 2x`
@@ -1148,17 +1163,20 @@ class TestTimeSeries(_TestTimeSeriesBase):
         upsamp = gw150914.resample(gw150914.sample_rate.value * 2)
         assert numpy.allclose(gw150914.value, upsamp.value[::2])
 
-    def test_resample_simple_downsample(self, gw150914):
-        """Test consistency when downsampling by 2x`
-        """
-        downsamp = gw150914.resample(gw150914.sample_rate.value // 2)
-        assert numpy.allclose(gw150914.value[::2], downsamp.value)
-
     def test_resample_noop(self):
         data = self.TEST_CLASS([1, 2, 3, 4, 5])
         with pytest.warns(UserWarning):
             new = data.resample(data.sample_rate)
             assert data is new
+
+    def test_resample_rate_units(self):
+        """Check that TimeSeries.resample fails on weird units.
+        """
+        with pytest.raises(
+            ValueError,
+            match="invalid resampling rate",
+        ):
+            self.TEST_CLASS([1, 2, 3, 4, 5]).resample(units.Quantity(1, "m"))
 
     def test_rms(self, gw150914):
         rms = gw150914.rms(1.)
