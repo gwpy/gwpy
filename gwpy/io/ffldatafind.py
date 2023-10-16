@@ -38,6 +38,7 @@ from ligo.segments import (
 )
 
 from .cache import (
+    _CacheEntry,
     _iter_cache,
     cache_segments,
     file_segment,
@@ -157,7 +158,7 @@ def _read_ffls(site, tag, basedir=None):
     for ffl in _ffl_paths(site, tag, basedir=basedir):
         with open(ffl, "r") as fobj:
             entries.extend(
-                type(entry)(site, tag, entry.segment, entry.path)
+                _CacheEntry(site, tag, entry.segment, entry.path)
                 for entry in _iter_cache(fobj, gpstype=float)
             )
     return entries
