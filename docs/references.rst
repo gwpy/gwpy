@@ -6,6 +6,9 @@
 .. |CVMFS| replace:: CVMFS
 .. _CVMFS: https://cvmfs.readthedocs.io/
 
+.. |dateparser| replace:: `dateparser`
+.. _dateparser: https://dateparser.readthedocs.io
+
 .. |dateutil| replace:: `dateutil`
 .. _dateutil: https://dateutil.readthedocs.io
 

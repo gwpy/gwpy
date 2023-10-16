@@ -23,13 +23,12 @@ Peter Shawhan.
 """
 
 import datetime
-import warnings
 from decimal import Decimal
 from numbers import Number
 
-from dateutil.parser import parse as parse_datestr
-
 from astropy.units import Quantity
+
+from dateparser import parse as dateparser_parse
 
 from . import (Time, LIGOTimeGPS)
 
@@ -260,35 +259,18 @@ def _str_to_datetime(datestr):
     except KeyError:  # any other string
         pass
 
-    # use maya
-    try:
-        import maya
-    except ImportError:
-        MAYA_ERROR = None
-    else:
-        try:
-            return maya.when(datestr).datetime()
-        except Exception as exc1:
-            MAYA_ERROR = exc1
-
-    # use dateutil.parse
-    with warnings.catch_warnings():
-        # don't allow lazy passing of time-zones
-        warnings.simplefilter("error", RuntimeWarning)
-        try:
-            return parse_datestr(datestr)
-        except RuntimeWarning as exc:
-            if MAYA_ERROR:
-                raise exc from MAYA_ERROR
-            exc.args = (
-                f"{str(exc).rstrip('.')}. Try installing 'maya' which can "
-                "handle more complex date strings.",
-            )
-            raise
-        except (ValueError, TypeError) as exc:  # improve error reporting
-            exc.args = ("Cannot parse date string {0!r}: {1}".format(
-                datestr, exc.args[0]),)
-            raise
+    result = dateparser_parse(
+        datestr,
+        settings={
+            "TIMEZONE": "UTC",
+            "RETURN_AS_TIMEZONE_AWARE": True,
+            "TO_TIMEZONE": "UTC",
+            "PREFER_DATES_FROM": "current_period",
+        }
+    )
+    if result is None:
+        raise ValueError("failed to parse '{datestr}' as datetime")
+    return result
 
 
 def _datetime_to_time(dtm):
