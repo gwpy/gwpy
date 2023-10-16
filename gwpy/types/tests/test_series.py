@@ -185,10 +185,7 @@ class TestSeries(_TestArray):
         """
         indices = numpy.array([0, 1, len(array) - 1])
         lindices = [0, 1, len(array) - 1]
-        assert utils.assert_quantity_sub_equal(
-            array[indices].value,
-            array[lindices].value
-        )
+        utils.assert_quantity_sub_equal(array[indices], array[lindices])
 
     def test_single_getitem_not_created(self, array):
         """Test that array[i] does not return an object with a new _xindex."""
