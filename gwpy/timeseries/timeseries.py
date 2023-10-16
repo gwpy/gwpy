@@ -76,7 +76,6 @@ if TYPE_CHECKING:
 
     from ..frequencyseries import FrequencySeries, SpectralVariance
     from ..signal.filter_design import (
-        BAType,
         FilterType,
         ZpkType,
     )
@@ -1162,15 +1161,19 @@ class TimeSeries(TimeSeriesBase):
     def resample(
         self,
         rate: float,
-        window: str | float | tuple = "hamming",
+        window: WindowLike = "hamming",
         ftype: Literal["fir", "iir"] = "fir",
         n: int | None = None,
     ) -> TimeSeries:
         """Resample this Series to a new rate.
 
+        Upsampling, or downsampling by a non-integer factor calls out to
+        :func:`scipy.signal.resample`, while integer downsampling calls out
+        to :func:`scipy.signal.decimate`.
+
         Parameters
         ----------
-        rate : `float`
+        rate : `float`, `astropy.units.Quantity`
             Rate to which to resample this `Series`.
 
         window : `str`, `numpy.ndarray`, optional
@@ -1190,15 +1193,17 @@ class TimeSeries(TimeSeriesBase):
         Series
             A new Series with the resampling applied, and the same metadata.
         """
-        if n is None and ftype == "iir":
-            n = 8
-        elif n is None:
-            n = 60
+        # calculate downsampling factor
+        if not isinstance(rate, units.Quantity):
+            rate = units.Quantity(rate, 1 / self.xunit)
+        downfactor = (self.sample_rate / rate).decompose()
+        if downfactor.unit != units.dimensionless_unscaled:
+            msg = f"invalid resampling rate '{rate}'"
+            raise ValueError(msg)
+        downfactor = downfactor.value
 
-        if isinstance(rate, Quantity):
-            rate = rate.value
-        factor = (self.sample_rate.value / rate)
-        if math.isclose(factor, 1., rel_tol=1e-09, abs_tol=0.):
+        # if the factor is 1 (or extremely close to 1), do nothing
+        if math.isclose(downfactor, 1., rel_tol=1e-09, abs_tol=0.):
             warnings.warn(
                 f"resample() rate matches current sample_rate ({self.sample_rate}), "
                 "returning input data unmodified; please double-check your parameters",
@@ -1207,26 +1212,33 @@ class TimeSeries(TimeSeriesBase):
             )
             return self
 
-        # if integer down-sampling, use decimate
-        if factor.is_integer():
-            filt: ZpkType | BAType
-            if ftype == "iir":
-                filt = signal.cheby1(n, 0.05, 0.8 / factor, output="zpk")
-            else:
-                filt = signal.firwin(n + 1, 1. / factor, window=window)
-            return self.filter(filt, filtfilt=True)[::int(factor)]
+        def _repack(new: numpy.ndarray) -> TimeSeries:
+            """Repack the resampled array to look like the original object."""
+            out = cast("Self", new.view(type(self)))
+            out.__metadata_finalize__(self)
+            out.override_unit(self.unit)
+            out.sample_rate = rate
+            return out
 
+        # if integer down-sampling, use decimate
+        if downfactor.is_integer():
+            out = signal.decimate(
+                self.value,
+                int(downfactor),
+                n=n,
+                ftype=ftype,
+                zero_phase=True,
+            )
         # otherwise use Fourier filtering
-        nsamp = int(self.shape[0] * self.dx.value * rate)
-        new = cast("Self", signal.resample(
-            self.value,
-            nsamp,
-            window=window,
-        ).view(self.__class__))
-        new.__metadata_finalize__(self)
-        new._unit = self.unit
-        new.sample_rate = rate
-        return new
+        else:
+            nsamp = int(self.shape[0] / downfactor)
+            out = signal.resample(
+                self.value,
+                nsamp,
+                window=window,
+            )
+
+        return cast("Self", _repack(out))
 
     def zpk(
         self,
