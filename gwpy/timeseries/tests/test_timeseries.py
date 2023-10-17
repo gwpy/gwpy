@@ -1160,6 +1160,32 @@ class TestTimeSeries(_TestTimeSeriesBase):
             new = data.resample(data.sample_rate)
             assert data is new
 
+    def test_upsample_repeat_factor_3(self, gw150914):
+        """Test that repeat upsampling by a factor of 3 works as intended.
+        """
+        factor = 3
+        upsamped = gw150914.upsample_repeat(factor)
+        upsamped.xindex  # generate the x index
+        assert upsamped.sample_rate == factor * gw150914.sample_rate
+        for valj, val in enumerate(gw150914):
+            for fj in range(factor):
+                assert val == upsamped[factor * valj + fj]
+
+    def test_upsample_repeat_factor_3_xindex(self, gw150914):
+        """Test that repeat upsampling provides the correct xindex.
+        """
+        factor = 3
+        upsamped = gw150914.upsample_repeat(factor)
+        upsamped.xindex  # generate the x index
+        assert len(upsamped) == len(upsamped.xindex)
+
+    def test_upsample_repeat_exception(self, gw150914):
+        """Assert that non-integer factor raises a ValueError.
+        """
+        factor = 3.3
+        with pytest.raises(ValueError):
+            gw150914.upsample_repeat(factor)
+
     def test_rms(self, gw150914):
         rms = gw150914.rms(1.)
         assert rms.sample_rate == 1 * units.Hz
