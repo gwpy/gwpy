@@ -33,7 +33,8 @@ from ...timeseries import TimeSeries
 def series_data():
     """Create some fake data with equal sampling frequencies.
 
-    Returns:
+    Returns
+    -------
         firstarr: an array of data, simple mixture of waves
         secondarr: a second array of data from different mixture
         seglen: segment length param to reuse for ffts
@@ -49,7 +50,7 @@ def series_data():
     firstarr += np.random.normal(5.8, 2, n_t)
 
     secondarr = 0.5 * np.cos(ts + 0.1) + 0.1 * np.sin(5 * ts + 10)
-    firstarr += np.random.normal(5.8, 2, n_t)
+    secondarr += np.random.normal(5.8, 2, n_t)
 
     return firstarr, secondarr, seglen
 
@@ -58,7 +59,8 @@ def series_data():
 def unequal_fs_series_data():
     """Create some fake data with unequal sampling frequencies.
 
-    Returns:
+    Returns
+    -------
         ts1: array of time points for first data array
         ts2: array of time points for second data array
         firstarr: an array of data, simple mixture of waves
@@ -67,7 +69,6 @@ def unequal_fs_series_data():
         fs_1: sampling frequency 1
         fs_2: sampling frequency 2
     """
-
     seglen = 512
     n_segs1 = 10
     n_segs2 = 20
@@ -92,7 +93,6 @@ def test_coherence_happy(series_data):
 
     For other tests see timeseries/tests/timeseries.py
     """
-
     firstarr, secondarr, seglen = series_data
     f_s = 0.001
 
@@ -108,8 +108,8 @@ def test_coherence_happy(series_data):
 
 
 def test_coherence_resample(unequal_fs_series_data):
-    """Ensure warning is raised by unequal sampling frequencies"""
-
+    """Ensure warning is raised by unequal sampling frequencies.
+    """
     ts1, ts2, firstarr, secondarr, seglen, fs_1, fs_2 = unequal_fs_series_data
 
     # first and second arrays are different, secondarr should have
@@ -137,8 +137,8 @@ def test_coherence_resample(unequal_fs_series_data):
 
 
 def test_coherence_resample_arg(series_data):
-    """Ensure warning is raised by unequal sampling frequencies"""
-
+    """Ensure warning is raised by unequal sampling frequencies.
+    """
     firstarr, secondarr, seglen = series_data
     f_s = 0.001
 
