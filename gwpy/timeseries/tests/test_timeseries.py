@@ -1169,7 +1169,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert upsamped.sample_rate == factor * gw150914.sample_rate
         for valj, val in enumerate(gw150914):
             for fj in range(factor):
-                assert val == upsamped[factor * valj + fj]
+                numpy.testing.assert_equal(val, upsamped[factor * valj + fj])
 
     def test_upsample_repeat_factor_3_xindex(self, gw150914):
         """Test that repeat upsampling provides the correct xindex.
