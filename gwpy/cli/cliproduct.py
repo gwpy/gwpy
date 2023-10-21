@@ -40,6 +40,7 @@ from ..timeseries import (
     TimeSeriesDict,
 )
 from ..timeseries.timeseries import DEFAULT_FFT_METHOD
+from ..plot.colors import GW_OBSERVATORY_COLORS
 from ..plot.gps import (GPS_SCALES, GPSTransform)
 from ..plot.tex import label_to_latex
 from ..segments import DataQualityFlag
@@ -810,6 +811,33 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """Override when product needs multiple saves
         """
         self.plot = self.make_plot()
+
+    def _color_by_ifo(self):
+        """Return a list of colours to use for datasets.
+
+        In the specific case where each dataset name has a recognised IFO
+        prefix, and there is only one of each type, the list will contain
+        the relevant colour for that dataset, according to the colour scheme.
+
+        In all other cases a list of `None` is returned.
+        """
+        # get all name prefices
+        names = [name.split(":", 1)[0] for name in (
+            x.name or x.channel.name for x in self.timeseries
+        )]
+
+        # if not all prefixes are unique, don't do anything
+        nnames = len(names)
+        if not len(names) == len(set(names)):
+            return [None] * nnames
+
+        # if not all prefices are in the colour scheme, don't do anything
+        if not all(n in GW_OBSERVATORY_COLORS for n in names):
+            return [None] * nnames
+
+        # each prefix is in the colour scheme, and is unique, so use the
+        # assigned colour
+        return [GW_OBSERVATORY_COLORS[n] for n in names]
 
     # -- the one that does all the work ---------
 
