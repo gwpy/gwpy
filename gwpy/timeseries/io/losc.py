@@ -24,7 +24,7 @@ For more details, see :ref:`gwpy-table-io`.
 
 import os.path
 import re
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from math import ceil
 from urllib.parse import urlparse
 
@@ -190,7 +190,7 @@ def fetch_gwosc_data(
     out = None
     kwargs['cls'] = cls
 
-    with ProcessPoolExecutor(max_workers=nthreads) as executor:
+    with ThreadPoolExecutor(max_workers=nthreads) as executor:
         futures = []
         # each thread needs different kwargs
         for url in cache:
