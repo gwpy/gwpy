@@ -1169,18 +1169,20 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert upsamped.sample_rate == factor * gw150914.sample_rate
         for valj, val in enumerate(gw150914):
             for fj in range(factor):
-                numpy.testing.assert_equal(val, upsamped[factor * valj + fj])
+                # Each index of input valj maps to an index factor * valj
+                upj = factor * valj + fj  # index of each repeated sample
+                numpy.testing.assert_equal(val, upsamped[upj])
 
     def test_upsample_repeat_factor_3_xindex(self, gw150914):
-        """Test that repeat upsampling provides the correct xindex.
+        """Test that a repeat upsampled (3X) timeseries has a correct xindex.
         """
         factor = 3
         upsamped = gw150914.upsample_repeat(factor)
         upsamped.xindex  # generate the x index
         assert len(upsamped) == len(upsamped.xindex)
 
-    def test_upsample_repeat_exception(self, gw150914):
-        """Assert that non-integer factor raises a ValueError.
+    def test_upsample_repeat_float_exception(self, gw150914):
+        """Assert that upsampling by a non-integer factor raises a ValueError.
         """
         factor = 3.3
         with pytest.raises(ValueError):
