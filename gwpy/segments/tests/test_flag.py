@@ -602,8 +602,8 @@ class TestDataQualityDict(object):
         a = instance.copy()
         a &= reverse
         keys = list(a.keys())
-        utils.assert_flag_equal(a[keys[0]],
-                                instance[keys[0]] & reverse[keys[1]])
+        for key in keys:
+            utils.assert_flag_equal(a[key], instance[key] & reverse[key])
 
     def test_and(self, instance, reverse):
         a = instance.copy()
@@ -614,8 +614,8 @@ class TestDataQualityDict(object):
         a = instance.copy()
         a |= reverse
         keys = list(a.keys())
-        utils.assert_flag_equal(a[keys[0]],
-                                instance[keys[0]] | reverse[keys[1]])
+        for key in keys:
+            utils.assert_flag_equal(a[key], instance[key] | reverse[key])
 
     def test_or(self, instance, reverse):
         a = instance.copy()
@@ -626,8 +626,8 @@ class TestDataQualityDict(object):
         a = instance.copy()
         a -= reverse
         keys = list(a.keys())
-        utils.assert_flag_equal(a[keys[0]],
-                                instance[keys[0]] - reverse[keys[1]])
+        for key in keys:
+            utils.assert_flag_equal(a[key], instance[key] - reverse[key])
 
     def test_sub(self, instance, reverse):
         a = instance.copy(deep=True)
