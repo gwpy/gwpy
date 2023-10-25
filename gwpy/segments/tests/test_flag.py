@@ -349,8 +349,8 @@ class TestDataQualityFlag(object):
 
         diff = a - b
 
-        expected_known = _as_segmentlist((0, 2), (3, 7), (8, 10))
-        expected_active = _as_segmentlist((1, 2), (3, 4))
+        expected_known = _as_segmentlist((3, 7))
+        expected_active = _as_segmentlist((3, 4))
 
         expected_diff = self.TEST_CLASS(
             active=expected_active,
