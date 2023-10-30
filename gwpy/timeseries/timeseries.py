@@ -961,7 +961,7 @@ class TimeSeries(TimeSeriesBase):
         Parameters
         ----------
         factor: `int`
-                The number of times to repeat each element
+            The number of times to repeat each element
 
         Returns
         -------
