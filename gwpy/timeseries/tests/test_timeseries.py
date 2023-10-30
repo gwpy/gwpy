@@ -1160,33 +1160,37 @@ class TestTimeSeries(_TestTimeSeriesBase):
             new = data.resample(data.sample_rate)
             assert data is new
 
-    def test_upsample_repeat_factor_3(self, gw150914):
-        """Test that repeat upsampling by a factor of 3 works as intended.
+    def test_upsample_repeat_simple(self, gw150914):
+        """Test that upsample_repeat is correct for a simple case.
         """
         factor = 3
         upsamped = gw150914.upsample_repeat(factor)
-        upsamped.xindex  # generate the x index
+
         assert upsamped.sample_rate == factor * gw150914.sample_rate
-        for valj, val in enumerate(gw150914):
+        assert len(upsamped.xindex) == factor * len(gw150914.xindex)
+        assert upsamped.x0 == gw150914.x0
+        assert factor * upsamped.dx == gw150914.dx
+        assert upsamped.x0 == upsamped.xindex[0]
+
+        # since numpy.arange, which is used when generating an index anew,
+        # lacks precision, we must use approximate assertion
+        numpy.testing.assert_allclose(
+            gw150914.xindex.value,
+            upsamped.xindex[::factor].value
+        )
+
+        for j in range(len(gw150914)):
+            val = gw150914[j].value
             for fj in range(factor):
                 # Each index of input valj maps to an index factor * valj
-                upj = factor * valj + fj  # index of each repeated sample
+                upj = factor * j + fj  # index of each repeated sample
                 numpy.testing.assert_equal(val, upsamped[upj])
-
-    def test_upsample_repeat_factor_3_xindex(self, gw150914):
-        """Test that a repeat upsampled (3X) timeseries has a correct xindex.
-        """
-        factor = 3
-        upsamped = gw150914.upsample_repeat(factor)
-        upsamped.xindex  # generate the x index
-        assert len(upsamped) == len(upsamped.xindex)
 
     def test_upsample_repeat_float_exception(self, gw150914):
         """Assert that upsampling by a non-integer factor raises a ValueError.
         """
-        factor = 3.3
         with pytest.raises(ValueError):
-            gw150914.upsample_repeat(factor)
+            gw150914.upsample_repeat(3.3)
 
     def test_rms(self, gw150914):
         rms = gw150914.rms(1.)

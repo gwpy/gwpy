@@ -973,8 +973,6 @@ class TimeSeries(TimeSeriesBase):
             raise ValueError("Cannot upsample_repeat with non-integer factor.")
         repeat_inds = numpy.repeat(numpy.arange(len(self)), factor)
         new = self[repeat_inds]  # xindex should also be handled here
-        new.__metadata_finalize__(self)
-        new._unit = self.unit
         new.sample_rate = self.sample_rate * factor
         return new
 
