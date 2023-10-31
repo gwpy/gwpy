@@ -1172,19 +1172,20 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert factor * upsamped.dx == gw150914.dx
         assert upsamped.x0 == upsamped.xindex[0]
 
-        # since numpy.arange, which is used when generating an index anew,
-        # lacks precision, we must use approximate assertion
+        # Unlike the values, the xindex is not repeat expanded.
+        # Since numpy.arange, which is used when generating an index anew,
+        # lacks precision, we must use approximate assertion.
         numpy.testing.assert_allclose(
             gw150914.xindex.value,
             upsamped.xindex[::factor].value
         )
 
         for j in range(len(gw150914)):
-            val = gw150914[j].value
+            val = gw150914.value[j]
             for fj in range(factor):
                 # Each index of input valj maps to an index factor * valj
                 upj = factor * j + fj  # index of each repeated sample
-                numpy.testing.assert_equal(val, upsamped[upj])
+                numpy.testing.assert_equal(val, upsamped.value[upj])
 
     def test_upsample_repeat_float_exception(self, gw150914):
         """Assert that upsampling by a non-integer factor raises a ValueError.
