@@ -332,7 +332,13 @@ def inspiral_range_psd(psd, snr=8, mass1=1.4, mass2=1.4, horizon=False,
     )
     dist = (
         inspiral.cosmo.luminosity_distance(z_hor) if horizon else
-        range_func(f[f > 0], psd.value[f > 0], z_hor=z_hor, H=inspiral)
+        range_func(
+            f[f > 0],
+            psd.value[f > 0],
+            z_hor=z_hor,
+            H=inspiral,
+            detection_snr=snr,
+        )
     )
     # calculate the sensitive distance PSD
     (fz, hz) = inspiral.z_scale(z_hor)
@@ -436,7 +442,13 @@ def inspiral_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
     # return the sensitive distance metric
     return units.Quantity(
         inspiral.cosmo.luminosity_distance(z_hor) if horizon else
-        range_func(f[frange], psd.value[frange], z_hor=z_hor, H=inspiral),
+        range_func(
+            f[frange],
+            psd.value[frange],
+            z_hor=z_hor,
+            H=inspiral,
+            detection_snr=snr,
+        ),
         unit='Mpc',
     )
 
