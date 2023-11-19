@@ -30,7 +30,7 @@ import numpy
 
 from matplotlib import rc_context
 
-from ..plot.tex import HAS_TEX
+from ..plot.tex import has_tex
 from ..timeseries import TimeSeries
 from ..utils.decorators import deprecated_function
 from .utils import TemporaryFilename
@@ -70,7 +70,7 @@ def _test_usetex():
 
 
 SKIP_TEX = pytest.mark.skipif(
-    not HAS_TEX or not _test_usetex(),
+    not has_tex() or not _test_usetex(),
     reason='TeX is not available',
 )
 
