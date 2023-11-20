@@ -51,12 +51,12 @@ jobs:
 
     steps:
     - name: Get source code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
     - name: Cache conda packages
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         # increment to reset cache
         CACHE_NUMBER: 0
@@ -67,7 +67,7 @@ jobs:
 
     - name: Cache apt (Linux)
       if: matrix.os == 'Ubuntu'
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         # increment to reset cache
         CACHE_NUMBER: 0
@@ -167,7 +167,7 @@ jobs:
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pytest-conda-${{ matrix.os }}-${{ matrix.python-version }}
         path: pytest.xml

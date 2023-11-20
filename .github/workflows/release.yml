@@ -1,0 +1,54 @@
+# ---------------------------
+#
+# Prepare distributions of this project
+# and publish them to PyPI
+#
+# ---------------------------
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*'
+
+jobs:
+  dist:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get source code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install build requirements
+      run: python -m pip install build
+
+    - name: Create distributions
+      run: python -m build . --sdist --wheel --outdir dist/
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: dist/
+
+  pypi:
+    name: Upload release to pypi
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/gwpy
+    permissions:
+      id-token: write
+    steps:
+    - name: Download tarball
+      uses: actions/download-artifact@v3
+      with:
+        name: dist
+
+    - name: Publish package distributions to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
