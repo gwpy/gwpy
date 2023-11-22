@@ -23,7 +23,6 @@ import os.path
 import subprocess
 import tempfile
 from contextlib import contextmanager
-from distutils.version import LooseVersion
 from importlib import import_module
 from itertools import zip_longest
 from pathlib import Path
@@ -83,8 +82,9 @@ def skip_missing_dependency(module):  # pragma: no cover
     "be removed in GWpy 3.1.0",
 ))
 def module_older_than(module, minversion):  # pragma: no cover
+    from packaging.version import Version
     mod = import_module(module)
-    return LooseVersion(mod.__version__) < LooseVersion(minversion)
+    return Version(mod.__version__) < Version(minversion)
 
 
 @deprecated_function(message=(
