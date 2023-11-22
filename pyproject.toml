@@ -71,7 +71,7 @@ test = [
 ]
 # astronomy/cosmology calculations
 astro = [
-  "inspiral-range",
+  "inspiral-range >=0.5.0",
 ]
 # sphinx documentation
 docs = [
