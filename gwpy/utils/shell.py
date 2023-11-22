@@ -20,7 +20,6 @@
 """
 
 import warnings
-from distutils.spawn import find_executable
 from subprocess import (Popen, PIPE, CalledProcessError)
 
 from .decorators import deprecated_function
@@ -52,7 +51,8 @@ def which(program):
     ValueError
         if not executable program is found
     """
-    exe = find_executable(program)
+    from shutil import which
+    exe = which(program)
     if exe is None:
         raise ValueError("No executable '%s' found in PATH" % program)
     return exe
