@@ -98,7 +98,7 @@ dev = [
 # conda packages for development
 # NOTE: this isn't a valid extra to install with pip
 conda = [
-  "python-framel >=8.40.1",
+  "python-framel >=8.40.1,!=8.46.0",
   "python-ldas-tools-framecpp ; sys_platform != 'win32'",
   "python-nds2-client",
 ]
