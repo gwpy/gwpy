@@ -117,83 +117,86 @@ significantly speed up the search.
 The following table is an incomplete, but probably OK, reference to which
 dataset (``frametype``) you want to use for file-based data access:
 
-.. tabbed:: GEO-600
+.. md-tab-set::
+    :name: gwpy_gwdatafind_datasets
 
-   .. table:: GEO-600 datasets available with |gwdatafind|_
-      :name: gwdatafind-datasets-geo600
+    .. md-tab-item:: GEO-600
 
-      ========================  =====================================================
-      Dataset (frametype)       Description
-      ========================  =====================================================
-      ``G1_RDS_C01_L3``         The GEO-600 data, including calibrated strain *h(t)*
-      ========================  =====================================================
+        .. table:: GEO-600 datasets available with |gwdatafind|_
+            :name: gwdatafind-datasets-geo600
 
-.. tabbed:: LIGO-Hanford
+            ========================  =====================================================
+            Dataset (frametype)       Description
+            ========================  =====================================================
+            ``G1_RDS_C01_L3``         The GEO-600 data, including calibrated strain *h(t)*
+            ========================  =====================================================
 
-   .. table:: LIGO-Hanford datasets available with |gwdatafind|_
-      :name: gwdatafind-datasets-ligo-hanford
+    .. md-tab-item:: LIGO-Hanford
 
-      ========================  =====================================================
-      Dataset (frametype)       Description
-      ========================  =====================================================
-      ``H1_R``                  All auxiliary channels, stored at the native sampling
-                                rate
-      ``H1_T``                  Second trends of all channels, including
-                                ``.mean``, ``.min``, and ``.max``
-      ``H1_M``                  Minute trends of all channels, including
-                                ``.mean``, ``.min``, and ``.max``
-      ``H1_HOFT_C00``           Strain *h(t)* and metadata generated using the
-                                real-time calibration pipeline
-      ``H1_HOFT_CXY``           Strain *h(t)* and metadata generated using the
-                                off-line calibration pipeline at version ``XY``
-      ``H1_GWOSC_O2_4KHZ_R1``   4k Hz Strain *h(t)* and metadata as released by
-                                |GWOSC|_ for the O2 data release
-      ``H1_GWOSC_O2_16KHZ_R1``  16k Hz Strain *h(t)* and metadata as released by
-                                |GWOSC|_ for the O2 data release
-      ========================  =====================================================
+        .. table:: LIGO-Hanford datasets available with |gwdatafind|_
+            :name: gwdatafind-datasets-ligo-hanford
 
-.. tabbed:: LIGO-Livingston
+            ========================  =====================================================
+            Dataset (frametype)       Description
+            ========================  =====================================================
+            ``H1_R``                  All auxiliary channels, stored at the native sampling
+                                      rate
+            ``H1_T``                  Second trends of all channels, including
+                                      ``.mean``, ``.min``, and ``.max``
+            ``H1_M``                  Minute trends of all channels, including
+                                      ``.mean``, ``.min``, and ``.max``
+            ``H1_HOFT_C00``           Strain *h(t)* and metadata generated using the
+                                      real-time calibration pipeline
+            ``H1_HOFT_CXY``           Strain *h(t)* and metadata generated using the
+                                      off-line calibration pipeline at version ``XY``
+            ``H1_GWOSC_O2_4KHZ_R1``   4k Hz Strain *h(t)* and metadata as released by
+                                      |GWOSC|_ for the O2 data release
+            ``H1_GWOSC_O2_16KHZ_R1``  16k Hz Strain *h(t)* and metadata as released by
+                                      |GWOSC|_ for the O2 data release
+            ========================  =====================================================
 
-   .. table:: LIGO-Livingston datasets available with |gwdatafind|_
-      :name: gwdatafind-datasets-ligo-livingston
+    .. md-tab-item:: LIGO-Livingston
 
-      ========================  =====================================================
-      Dataset (frametype)       Description
-      ========================  =====================================================
-      ``L1_R``                  All auxiliary channels, stored at the native sampling
-                                rate
-      ``L1_T``                  Second trends of all channels, including
-                                ``.mean``, ``.min``, and ``.max``
-      ``L1_M``                  Minute trends of all channels, including
-                                ``.mean``, ``.min``, and ``.max``
-      ``L1_HOFT_C00``           Strain *h(t)* and metadata generated using the
-                                real-time calibration pipeline
-      ``L1_HOFT_CXY``           Strain *h(t)* and metadata generated using the
-                                off-line calibration pipeline at version ``XY``
-      ``L1_GWOSC_O2_4KHZ_R1``   4k Hz Strain *h(t)* and metadata as released by
-                                |GWOSC|_ for the O2 data release
-      ``L1_GWOSC_O2_16KHZ_R1``  16k Hz Strain *h(t)* and metadata as released by
-                                |GWOSC|_ for the O2 data release
-      ========================  =====================================================
+        .. table:: LIGO-Livingston datasets available with |gwdatafind|_
+            :name: gwdatafind-datasets-ligo-livingston
 
-.. tabbed:: Virgo
+            ========================  =====================================================
+            Dataset (frametype)       Description
+            ========================  =====================================================
+            ``L1_R``                  All auxiliary channels, stored at the native sampling
+                                      rate
+            ``L1_T``                  Second trends of all channels, including
+                                      ``.mean``, ``.min``, and ``.max``
+            ``L1_M``                  Minute trends of all channels, including
+                                      ``.mean``, ``.min``, and ``.max``
+            ``L1_HOFT_C00``           Strain *h(t)* and metadata generated using the
+                                      real-time calibration pipeline
+            ``L1_HOFT_CXY``           Strain *h(t)* and metadata generated using the
+                                      off-line calibration pipeline at version ``XY``
+            ``L1_GWOSC_O2_4KHZ_R1``   4k Hz Strain *h(t)* and metadata as released by
+                                      |GWOSC|_ for the O2 data release
+            ``L1_GWOSC_O2_16KHZ_R1``  16k Hz Strain *h(t)* and metadata as released by
+                                      |GWOSC|_ for the O2 data release
+            ========================  =====================================================
 
-   .. table:: Virgo datasets available with |gwdatafind|_
-      :name: gwdatafind-datasets-virgo
+    .. md-tab-item:: Virgo
 
-      ========================  =====================================================
-      Dataset (frametype)       Description
-      ========================  =====================================================
-      ``raw``                   All auxiliary channels, stored at the native sampling
-                                rate
-      ``V1O2Repro1A``           Strain *h(t)* and metadata for Observing run 3
-                                (``O3``) generated off-line using version ``1A``
-                                calibration; replace ``O2`` and ``1A`` as appropriate
-      ``V1_GWOSC_O2_4KHZ_R1``   4k Hz Strain *h(t)* and metadata as released by
-                                |GWOSC|_ for the O2 data release
-      ``V1_GWOSC_O2_16KHZ_R1``  16k Hz Strain *h(t)* and metadata as released by
-                                |GWOSC|_ for the O2 data release
-      ========================  =====================================================
+        .. table:: Virgo datasets available with |gwdatafind|_
+            :name: gwdatafind-datasets-virgo
+
+            ========================  =====================================================
+            Dataset (frametype)       Description
+            ========================  =====================================================
+            ``raw``                   All auxiliary channels, stored at the native sampling
+                                      rate
+            ``V1O2Repro1A``           Strain *h(t)* and metadata for Observing run 3
+                                      (``O3``) generated off-line using version ``1A``
+                                      calibration; replace ``O2`` and ``1A`` as appropriate
+            ``V1_GWOSC_O2_4KHZ_R1``   4k Hz Strain *h(t)* and metadata as released by
+                                      |GWOSC|_ for the O2 data release
+            ``V1_GWOSC_O2_16KHZ_R1``  16k Hz Strain *h(t)* and metadata as released by
+                                      |GWOSC|_ for the O2 data release
+            ========================  =====================================================
 
 .. admonition:: Not all datasets are available everywhere
 
