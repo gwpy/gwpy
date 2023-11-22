@@ -105,7 +105,6 @@ extensions = [
     'numpydoc',
     'matplotlib.sphinxext.plot_directive',
     #'sphinxcontrib.doxylink',  # noqa: E265
-    'gwpy.utils.sphinx.epydoc',
 ]
 
 # content management
@@ -215,16 +214,9 @@ docscrape_sphinx.IMPORT_MATPLOTLIB_RE = r'\b({})\b'.format('|'.join(parts))
 # configure inheritance diagram
 inheritance_graph_attrs = dict(rankdir='TB')
 
-# -- epydoc
+# -- doxylink
 
-# epydoc extension config for GLUE
-epydoc_mapping = {
-    'http://software.ligo.org/docs/glue/': [r'glue(\.|$)'],
-}
-
-# -- epydoc
-
-LALSUITE_DOCS = 'http://software.ligo.org/docs/lalsuite'
+LALSUITE_DOCS = 'https://lscsoft.docs.ligo.org/lalsuite'
 
 doxylink = {
     'lal': ('lal.tag', '%s/lal/' % LALSUITE_DOCS),
@@ -246,6 +238,7 @@ intersphinx_mapping = {
     'ligo.skymap': ('https://lscsoft.docs.ligo.org/ligo.skymap/', None),
     'ligo-segments': ('https://lscsoft.docs.ligo.org/ligo-segments/', None),
     'ligolw': ('https://docs.ligo.org/kipp.cannon/python-ligo-lw/', None),
+    'lscsoft-glue': ('https://lscsoft.docs.ligo.org/glue/', None),
     'matplotlib': ('https://matplotlib.org/', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'pycbc': ('https://pycbc.org/pycbc/latest/html/', None),
