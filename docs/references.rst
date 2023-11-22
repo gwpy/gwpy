@@ -60,13 +60,13 @@
 .. _LDAStools.frameCPP: https://computing.docs.ligo.org/ldastools/LDAS_Tools/ldas-tools-framecpp/
 
 .. |lal| replace:: `lal`
-.. _lal: http://software.ligo.org/docs/lalsuite/lal/
+.. _lal: https://lscsoft.docs.ligo.org/lalsuite/lal/
 
 .. |lal.LIGOTimeGPS| replace:: `lal.LIGOTimeGPS`
-.. _lal.LIGOTimeGPS: http://software.ligo.org/docs/lalsuite/lal/struct_l_i_g_o_time_g_p_s.html
+.. _lal.LIGOTimeGPS: https://lscsoft.docs.ligo.org/lalsuite/lal/struct_l_i_g_o_time_g_p_s.html
 
 .. |lalframe| replace:: `lalframe`
-.. _lalframe: http://software.ligo.org/docs/lalsuite/lalframe/
+.. _lalframe: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
 
 .. |MySQLdb| replace:: `MySQLdb`
 .. _MySQLdb: http://mysql-python.sourceforge.net/
