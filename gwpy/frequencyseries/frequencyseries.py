@@ -229,7 +229,7 @@ class FrequencySeries(Series):
         # so we account for it here
         dift = npfft.irfft(self.value * nout) / 2
         new = TimeSeries(dift, epoch=self.epoch, channel=self.channel,
-                         unit=self.unit, dx=1/self.dx/nout)
+                         name=self.name, unit=self.unit, dx=1/self.dx/nout)
         return new
 
     def zpk(self, zeros, poles, gain, analog=True):
