@@ -164,6 +164,13 @@ for unit, aliases in [
     (units.Unit('ct'), ('counts',)),
     (units.Unit('Celsius'), ('Degrees_C', 'DegC')),
     (units.Unit('Fahrenheit'), ('Degrees_F', 'DegF')),
+    # GW observatories like to record 'time' as the unit
+    (units.Unit('second'), (
+        'time',
+        'time [s]',
+        'Time [sec]',
+        'Time (sec)',
+    )),
 ]:
     unit.names.extend(aliases)
     for alias in aliases:
