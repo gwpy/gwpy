@@ -161,9 +161,9 @@ units.add_enabled_units(units_imperial)
 # 1) alternative names
 registry = units.get_current_unit_registry().registry
 for unit, aliases in [
-        (units.Unit('ct'), ('counts',)),
-        (units.Unit('Celsius'), ('Degrees_C', 'DegC')),
-        (units.Unit('Fahrenheit'), ('Degrees_F', 'DegF')),
+    (units.Unit('ct'), ('counts',)),
+    (units.Unit('Celsius'), ('Degrees_C', 'DegC')),
+    (units.Unit('Fahrenheit'), ('Degrees_F', 'DegF')),
 ]:
     unit.names.extend(aliases)
     for alias in aliases:
