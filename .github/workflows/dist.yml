@@ -119,6 +119,7 @@ jobs:
             --cov gwpy \
             --cov-report=xml \
             --disable-socket \
+            --allow-hosts=127.0.0.1 \
             --junitxml=pytest.xml \
             --pyargs gwpy \
         ;
