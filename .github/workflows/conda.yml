@@ -92,6 +92,9 @@ jobs:
         miniforge-variant: Miniforge3
         python-version: ${{ matrix.python-version }}
 
+    - name: Update conda
+      run: conda update --quiet --yes --name base conda conda-libmamba-solver mamba
+
     - name: Conda info
       run: conda info --all
 
