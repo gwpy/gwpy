@@ -36,6 +36,7 @@ from ._scipy import (
     rayleigh,
     welch,
 )
+from ._lpsd import lpsd
 from ._ui import (psd, spectrogram, average_spectrogram)
 
 # register deprecated methods
