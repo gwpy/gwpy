@@ -223,7 +223,11 @@ def from_gps(gps):
 # special case strings
 
 def _now():
-    return datetime.datetime.utcnow().replace(microsecond=0)
+    try:
+        now = datetime.datetime.now(datetime.UTC)
+    except AttributeError:  # python < 3.11
+        now = datetime.datetime.utcnow()
+    return now.replace(microsecond=0)
 
 
 def _today():
