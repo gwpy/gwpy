@@ -41,6 +41,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
     ('degrees_F', units.Unit('Fahrenheit')),
     ('time', units.second),  # LIGO default time 'unit'
     ('Time (sec)', units.second),  # Virgo default time 'unit'
+    ('Seconds', units.second),  # GWOSC default time 'unit'
 ])
 def test_parse_unit(arg, unit):
     assert parse_unit(arg, parse_strict='silent') == unit
