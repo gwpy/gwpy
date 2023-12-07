@@ -36,6 +36,7 @@ classifiers = [
 requires-python = ">=3.8"
 dependencies = [
   "astropy >=4.3.0",
+  "dateparser >=1.1.4",
   "dqsegdb2",
   "gwdatafind >=1.1.0",
   "gwosc >=0.5.3",
@@ -83,11 +84,8 @@ docs = [
 # development environments
 dev = [
   "ciecplib",
-  # for maya to work, see https://github.com/scrapinghub/dateparser/pull/1067
-  "dateparser >=1.1.2",
   "lalsuite ; sys_platform != 'win32'",
   "lscsoft-glue ; sys_platform != 'win32'",
-  "maya ; python_version < '3.11'",
   "psycopg2",
   "pycbc >=1.13.4 ; sys_platform != 'win32'",
   "pymysql",
