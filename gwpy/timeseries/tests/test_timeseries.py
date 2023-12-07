@@ -801,6 +801,22 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert fs.size == 129
         assert fs.dx == gw150914.sample_rate / 256
 
+    @pytest.mark.parametrize("data", [
+        [1., 0., -1., 0.],
+        [1., 2., 3., 2., 1., 0.],
+        numpy.arange(10),
+        numpy.random.random(100),
+    ])
+    def test_fft_ifft(self, data):
+        a = self.TEST_CLASS(data)
+        utils.assert_quantity_sub_equal(
+            a,
+            a.fft().ifft(),
+            almost_equal=True,
+            rtol=1e-7,
+            atol=1e-10,
+        )
+
     def test_average_fft(self, gw150914):
         # test all defaults
         fs = gw150914.average_fft()
