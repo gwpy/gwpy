@@ -79,6 +79,7 @@ class TestGPSMixin(object):
     @pytest.mark.parametrize('unit, name', [
         (None, None),
         ('second', 'seconds'),
+        (Unit('sday'), 'sdays'),  # no long_name
     ])
     def test_get_unit_name(self, unit, name):
         mix = self.TYPE(unit=unit)
