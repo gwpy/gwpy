@@ -170,6 +170,7 @@ for unit, aliases in [
         'time [s]',
         'Time [sec]',
         'Time (sec)',
+        'Seconds',  # GWOSC
     )),
 ]:
     unit.names.extend(aliases)
