@@ -32,6 +32,7 @@ on a system.
 """
 
 import importlib
+import os
 
 import numpy
 
@@ -115,11 +116,28 @@ def import_gwf_library(library, package=__package__):
 
 
 def get_default_gwf_api():
-    """Return the preferred GWF library
+    """Return the preferred GWF library.
+
+    This can be configured via the ``GWPY_FRAME_LIBRARY`` environment
+    variable, which can be set to the name of any of the interface modules
+    defined under `gwpy.timeseres.io.gwf`:
+
+    - ``"framecpp"``
+    - ``"framel"``
+    - ``"lalframe"``
+
+    Otherwise that list is manually searched in the order given above.
 
     Examples
     --------
-    If you have |LDAStools.frameCPP|_ installed:
+    If the environment variable ``GWPY_FRAME_LIBRARY`` is set:
+
+    >>> os.environ["GWPY_FRAME_LIBRARY"] = "FrameL"
+    >>> from gwpy.timeseries.io.gwf import get_default_gwf_api
+    >>> get_default_gwf_api()
+    'framel'
+
+    Or, if you have |LDAStools.frameCPP|_ installed:
 
     >>> from gwpy.timeseries.io.gwf import get_default_gwf_api
     >>> get_default_gwf_api()
@@ -134,9 +152,10 @@ def get_default_gwf_api():
 
     >>> get_default_gwf_api()
     ImportError: no GWF API available, please install a third-party GWF
-    library (framecpp, lalframe) and try again
+    library (framecpp, framel, lalframe) and try again
     """
-    for lib in APIS:
+    default = (os.getenv("GWPY_FRAME_LIBRARY") or APIS[0]).lower()
+    for lib in (default, *APIS):
         try:
             import_gwf_library(lib)
         except ImportError:
