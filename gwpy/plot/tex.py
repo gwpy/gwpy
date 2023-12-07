@@ -39,10 +39,12 @@ def _test_usetex():
     from matplotlib import (pyplot, rc_context)
     with rc_context({"text.usetex": True}):
         fig = pyplot.figure()
-        ax = fig.gca()
-        ax.set_xlabel(r"\LaTeX")
-        fig.canvas.draw()
-    pyplot.close(fig)
+        try:
+            ax = fig.gca()
+            ax.set_xlabel(r"\LaTeX")
+            fig.canvas.draw()
+        finally:
+            pyplot.close(fig)
 
 
 @lru_cache(maxsize=None)
