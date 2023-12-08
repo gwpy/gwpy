@@ -1500,12 +1500,10 @@ class DataQualityDict(OrderedDict):
                         **kwargs,
                     )}
                 except URLError as exc:
-                    if on_error == 'ignore':
-                        pass
-                    elif on_error == 'warn':
-                        warnings.warn('Error querying for %s: %s' % (key, exc))
-                    else:
+                    if on_error == "raise":
                         raise
+                    if on_error == "warn":
+                        warnings.warn(f"Error querying for '{key}': {exc}")
                     continue
             self[key].known &= tmp[key].known
             self[key].active = tmp[key].active
