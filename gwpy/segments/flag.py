@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2021)
+#               Cardiff University (2017-2023)
 #
 # This file is part of GWpy.
 #
@@ -1449,7 +1449,11 @@ class DataQualityDict(OrderedDict):
             if segments is None and source.netloc:
                 try:
                     tmp = {key: self[key].query(
-                        self[key].name, self[key].known, **kwargs)}
+                        self[key].name,
+                        self[key].known,
+                        url=source.geturl(),
+                        **kwargs,
+                    )}
                 except URLError as exc:
                     if on_error == 'ignore':
                         pass
