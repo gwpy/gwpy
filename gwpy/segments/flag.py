@@ -29,7 +29,6 @@ for handling multiple flags over the same global time interval.
 import datetime
 import json
 import operator
-import os
 import re
 import warnings
 from io import BytesIO
@@ -49,6 +48,7 @@ from astropy.utils.data import get_readable_fileobj
 from gwosc import timeline
 
 from dqsegdb2.query import query_segments
+from dqsegdb2.utils import get_default_host
 
 from ..io.mp import read_multi as io_read_multi
 from ..io.registry import compat as compat_registry
@@ -59,13 +59,12 @@ from .segments import Segment, SegmentList
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['DataQualityFlag', 'DataQualityDict']
 
+DEFAULT_SEGMENT_SERVER = get_default_host()
+
 re_IFO_TAG_VERSION = re.compile(
     r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
 re_IFO_TAG = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
 re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
-
-DEFAULT_SEGMENT_SERVER = os.getenv('DEFAULT_SEGMENT_SERVER',
-                                   'https://segments.ligo.org')
 
 
 # -- utilities ----------------------------------------------------------------
