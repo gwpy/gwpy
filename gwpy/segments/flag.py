@@ -355,7 +355,7 @@ class DataQualityFlag(object):
     # -- classmethods ---------------------------
 
     @classmethod
-    def query_dqsegdb(cls, flag, *args, **kwargs):
+    def query_dqsegdb(cls, flag, *args, host=DEFAULT_SEGMENT_SERVER, **kwargs):
         """Query the advanced LIGO DQSegDB for the given flag
 
         Parameters
@@ -368,10 +368,9 @@ class DataQualityFlag(object):
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
 
-        url : `str`, optional
-            URL of the segment database, defaults to
-            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
-            ``'https://segments.ligo.org'``
+        host : `str`
+            Name or URL of the DQSegDB instance to talk to.
+            Defaults to :func:`dqsegdb2.utils.get_default_host`.
 
         Returns
         -------
@@ -382,8 +381,16 @@ class DataQualityFlag(object):
         # parse arguments
         qsegs = _parse_query_segments(args, cls.query_dqsegdb)
 
-        # get server
-        url = kwargs.pop('url', DEFAULT_SEGMENT_SERVER)
+        # parse deprecated 'url' keyword as 'host'
+        url = kwargs.pop('url', None)
+        if url:
+            warnings.warn(
+                "the `url` keyword argument for `query_dqsegdb` "
+                "has been renamed `host`; this warning will become "
+                "an error in the future",
+                DeprecationWarning,
+            )
+            host = url
 
         # parse flag
         out = cls(name=flag)
@@ -399,7 +406,13 @@ class DataQualityFlag(object):
 
             # query
             try:
-                data = query_segments(flag, int(start), int(end), host=url)
+                data = query_segments(
+                    flag,
+                    int(start),
+                    int(end),
+                    host=host,
+                    **kwargs,
+                )
             except HTTPError as exc:
                 if exc.code == 404:  # if not found, annotate flag name
                     exc.msg += ' [{0}]'.format(flag)
@@ -976,7 +989,13 @@ class DataQualityDict(OrderedDict):
     # -- classmethods ---------------------------
 
     @classmethod
-    def query_dqsegdb(cls, flags, *args, **kwargs):
+    def query_dqsegdb(
+        cls,
+        flags,
+        *args,
+        host=DEFAULT_SEGMENT_SERVER,
+        **kwargs,
+    ):
         """Query the advanced LIGO DQSegDB for a list of flags.
 
         Parameters
@@ -989,6 +1008,10 @@ class DataQualityDict(OrderedDict):
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments.
 
+        host : `str`
+            Name or URL of the DQSegDB instance to talk to.
+            Defaults to :func:`dqsegdb2.utils.get_default_host`.
+
         on_error : `str`
             how to handle an error querying for one flag, one of
 
@@ -996,10 +1019,6 @@ class DataQualityDict(OrderedDict):
             - `'warn'`: print a warning
             - `'ignore'`: move onto the next flag as if nothing happened
 
-        url : `str`, optional
-            URL of the segment database, defaults to
-            ``$DEFAULT_SEGMENT_SERVER`` environment variable, or
-            ``'https://segments.ligo.org'``
 
         Returns
         -------
@@ -1020,7 +1039,13 @@ class DataQualityDict(OrderedDict):
         inq = Queue()
         outq = Queue()
         for i in range(len(flags)):
-            t = _QueryDQSegDBThread(inq, outq, qsegs, **kwargs)
+            t = _QueryDQSegDBThread(
+                inq,
+                outq,
+                qsegs,
+                host=host,
+                **kwargs,
+            )
             t.daemon = True
             t.start()
         for i, flag in enumerate(flags):
@@ -1435,8 +1460,13 @@ class DataQualityDict(OrderedDict):
         # perform query for all segments
         if source.netloc and segments is not None:
             segments = SegmentList(map(Segment, segments))
-            tmp = type(self).query(self.keys(), segments, url=source.geturl(),
-                                   on_error=on_error, **kwargs)
+            tmp = type(self).query_dqsegdb(
+                self.keys(),
+                segments,
+                host=source.geturl(),
+                on_error=on_error,
+                **kwargs,
+            )
         elif not source.netloc:
             tmp = type(self).read(source.geturl(), **kwargs)
         # apply padding and wrap to given known segments
@@ -1446,7 +1476,7 @@ class DataQualityDict(OrderedDict):
                     tmp = {key: self[key].query(
                         self[key].name,
                         self[key].known,
-                        url=source.geturl(),
+                        host=source.geturl(),
                         **kwargs,
                     )}
                 except URLError as exc:
