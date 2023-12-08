@@ -356,14 +356,14 @@ class DataQualityFlag(object):
 
     @classmethod
     def query_dqsegdb(cls, flag, *args, host=DEFAULT_SEGMENT_SERVER, **kwargs):
-        """Query the advanced LIGO DQSegDB for the given flag
+        """Query a DQSegDB server for a flag.
 
         Parameters
         ----------
         flag : `str`
             The name of the flag for which to query
 
-        *args
+        args
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
@@ -371,6 +371,10 @@ class DataQualityFlag(object):
         host : `str`
             Name or URL of the DQSegDB instance to talk to.
             Defaults to :func:`dqsegdb2.utils.get_default_host`.
+
+        kwargs
+            All other keyword arguments are passed to
+            :func:`dqsegdb2.query.query_segments`.
 
         Returns
         -------
@@ -970,9 +974,11 @@ class _QueryDQSegDBThread(Thread):
         i, flag = self.in_.get()
         self.in_.task_done()
         try:
-            self.out.put(
-                (i, DataQualityFlag.query_dqsegdb(flag, *self.args,
-                                                  **self.kwargs)))
+            self.out.put((i, DataQualityFlag.query_dqsegdb(
+                flag,
+                *self.args,
+                **self.kwargs,
+            )))
         except Exception as exc:
             self.out.put((i, exc))
         self.out.task_done()
@@ -994,6 +1000,7 @@ class DataQualityDict(OrderedDict):
         flags,
         *args,
         host=DEFAULT_SEGMENT_SERVER,
+        on_error="raise",
         **kwargs,
     ):
         """Query the advanced LIGO DQSegDB for a list of flags.
@@ -1003,7 +1010,7 @@ class DataQualityDict(OrderedDict):
         flags : `iterable`
             A list of flag names for which to query.
 
-        *args
+        args
             Either, two `float`-like numbers indicating the
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments.
@@ -1019,6 +1026,9 @@ class DataQualityDict(OrderedDict):
             - `'warn'`: print a warning
             - `'ignore'`: move onto the next flag as if nothing happened
 
+        kwargs
+            All other keyword arguments are passed to
+            :func:`dqsegdb2.query.query_segments`.
 
         Returns
         -------
@@ -1027,10 +1037,11 @@ class DataQualityDict(OrderedDict):
             pairs.
         """
         # check on_error flag
-        on_error = kwargs.pop('on_error', 'raise').lower()
         if on_error not in ['raise', 'warn', 'ignore']:
-            raise ValueError("on_error must be one of 'raise', 'warn', "
-                             "or 'ignore'")
+            raise ValueError(
+                "on_error must be one of 'raise', 'warn', or 'ignore', "
+                f"not '{on_error}'",
+            )
 
         # parse segments
         qsegs = _parse_query_segments(args, cls.query_dqsegdb)
@@ -1044,6 +1055,7 @@ class DataQualityDict(OrderedDict):
                 outq,
                 qsegs,
                 host=host,
+                on_error=on_error,
                 **kwargs,
             )
             t.daemon = True
@@ -1055,17 +1067,18 @@ class DataQualityDict(OrderedDict):
         inq.join()
         outq.join()
         new = cls()
-        results = list(zip(*sorted([outq.get() for i in range(len(flags))],
-                                   key=lambda x: x[0])))[1]
+        results = list(zip(*sorted(
+            [outq.get() for i in range(len(flags))],
+            key=lambda x: x[0],
+        )))[1]
         for result, flag in zip(results, flags):
             if isinstance(result, Exception):
-                result.args = ('%s [%s]' % (str(result), str(flag)),)
                 if on_error == 'ignore':
-                    pass
-                elif on_error == 'warn':
-                    warnings.warn(str(result))
-                else:
+                    continue
+                result.args = (f"{result} [{flag}]",)
+                if on_error != 'warn':
                     raise result
+                warnings.warn(str(result))
             else:
                 new[flag] = result
         return new
@@ -1404,8 +1417,14 @@ class DataQualityDict(OrderedDict):
             self[flag].coalesce()
         return self
 
-    def populate(self, source=DEFAULT_SEGMENT_SERVER,
-                 segments=None, pad=True, on_error='raise', **kwargs):
+    def populate(
+        self,
+        source=DEFAULT_SEGMENT_SERVER,
+        segments=None,
+        pad=True,
+        on_error='raise',
+        **kwargs,
+    ):
         """Query the segment database for each flag's active segments.
 
         This method assumes all of the metadata for each flag have been
@@ -1424,32 +1443,32 @@ class DataQualityDict(OrderedDict):
         Parameters
         ----------
         source : `str`
-            source of segments for this flag. This must be
+            Source of segments for this flag. This must be
             either a URL for a segment database or a path to a file on disk.
 
         segments : `SegmentList`, optional
-            a list of known segments during which to query, if not given,
+            A list of known segments during which to query, if not given,
             existing known segments for flags will be used.
 
         pad : `bool`, optional, default: `True`
-            apply the `~DataQualityFlag.padding` associated with each
+            Apply the `~DataQualityFlag.padding` associated with each
             flag, default: `True`.
 
         on_error : `str`
-            how to handle an error querying for one flag, one of
+            How to handle an error querying for one flag, one of
 
             - `'raise'` (default): raise the Exception
             - `'warn'`: print a warning
             - `'ignore'`: move onto the next flag as if nothing happened
 
         **kwargs
-            any other keyword arguments to be passed to
+            Any other keyword arguments to be passed to
             :meth:`DataQualityFlag.query` or :meth:`DataQualityFlag.read`.
 
         Returns
         -------
         self : `DataQualityDict`
-            a reference to the modified DataQualityDict
+            A reference to the modified DataQualityDict
         """
         # check on_error flag
         if on_error not in ['raise', 'warn', 'ignore']:
@@ -1457,6 +1476,7 @@ class DataQualityDict(OrderedDict):
                              "or 'ignore'")
         # format source
         source = urlparse(source)
+
         # perform query for all segments
         if source.netloc and segments is not None:
             segments = SegmentList(map(Segment, segments))
