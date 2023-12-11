@@ -28,6 +28,7 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Astronomy",
   "Topic :: Scientific/Engineering :: Physics",
 ]
@@ -70,7 +71,7 @@ test = [
 ]
 # astronomy/cosmology calculations
 astro = [
-  "inspiral-range",
+  "inspiral-range >=0.5.0",
 ]
 # sphinx documentation
 docs = [
