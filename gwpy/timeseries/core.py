@@ -1288,16 +1288,18 @@ class TimeSeriesBaseDict(OrderedDict):
             # find observatory for this group
             if observatory is None:
                 try:
-                    observatory = ''.join(
+                    obs = ''.join(
                         sorted(set(c.ifo[0] for c in channellist)))
                 except TypeError as exc:
                     raise ValueError(
                         "Cannot parse list of IFOs from channel names",
                     ) from exc
 
+            else:
+                obs = observatory
             # find frames
             cache = io_datafind.find_urls(
-                observatory,
+                obs,
                 frametype,
                 start,
                 end,
