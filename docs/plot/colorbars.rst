@@ -14,8 +14,9 @@ GWpy extends the built-in :mod:`matplotlib`
 :meth:`~matplotlib.figure.Figure.colorbar` functionality to improve the
 defaults in a number of ways:
 
-- callable from the :class:`~matplotlib.figure.Figure`, or directly from the
-  relevant :class:`~matplotlib.axes.Axes`
+- callable from the :class:`~gwpy.plot.Plot`
+  (subclass of :class:`~matplotlib.figure.Figure`),
+  or directly from the relevant :class:`~matplotlib.axes.Axes`
 - don't resize the anchor :class:`~matplotlib.axes.Axes`
 - simpler specification of log-norm colors
 - better log-scale ticks

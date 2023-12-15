@@ -39,6 +39,7 @@ from matplotlib.collections import PolyCollection
 from matplotlib.lines import Line2D
 from matplotlib.projections import register_projection
 
+from .colorbar import colorbar
 from .colors import format_norm
 from .gps import GPS_SCALES
 from .legend import HandlerLine2D
@@ -610,9 +611,10 @@ Call signatures""",
         --------
         Plot.colorbar
         """
-        return self.get_figure().colorbar(
-            mappable=mappable,
+        return colorbar(
+            self.get_figure(),
             ax=self,
+            mappable=mappable,
             fraction=fraction,
             **kwargs,
         )
