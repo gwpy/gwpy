@@ -30,12 +30,10 @@ import numpy
 from matplotlib import (figure, get_backend, _pylab_helpers)
 from matplotlib.artist import setp
 from matplotlib.gridspec import GridSpec
-from matplotlib.ticker import LogFormatterSciNotation
 from matplotlib.projections import get_projection_class
 
 from . import (colorbar as gcbar, utils)
 from .gps import GPS_SCALES
-from .log import LogFormatter
 from .rc import (rcParams, MPL_RCPARAMS, get_subplot_params)
 
 __all__ = ['Plot']
@@ -384,8 +382,7 @@ class Plot(figure.Figure):
 
         Notes
         -----
-        To revert to the default matplotlib behaviour, pass
-        ``use_axesgrid=False, fraction=0.15``.
+        To revert to the default matplotlib behaviour, pass ``fraction=0.15``.
 
         See also
         --------
@@ -414,50 +411,15 @@ class Plot(figure.Figure):
         >>> ax.colorbar(label='Value')
         >>> plot.show()
         """
-        # pre-process kwargs (and maybe create new Axes)
-        mappable, kwargs = gcbar.process_colorbar_kwargs(
+        cbar = gcbar.colorbar(
             self,
-            mappable,
             ax,
+            mappable,
             cax=cax,
             fraction=fraction,
             **kwargs,
         )
-
-        # generate colour bar
-        cbar = super().colorbar(mappable, **kwargs)
-
-        # force the minor ticks to be the same as the major ticks;
-        # in practice, this normally swaps out LogFormatterSciNotation to
-        # gwpy's LogFormatter;
-        # this is hacky, and would be improved using a
-        # subclass of Colorbar in the first place, but matplotlib's
-        # cbar_factory doesn't support that
-        longaxis = (
-            cbar.ax.yaxis if cbar.orientation == "vertical"
-            else cbar.ax.xaxis
-        )
-        if (
-            isinstance(cbar.formatter, LogFormatter)
-            and isinstance(
-                longaxis.get_minor_formatter(),
-                LogFormatterSciNotation,
-            )
-        ):
-            longaxis.set_minor_formatter(type(cbar.formatter)())
-
-        # record colorbar in parent object
         self.colorbars.append(cbar)
-
-        # update mappables for this axis
-        if emit:
-            ax = kwargs.pop('ax')
-            norm = mappable.norm
-            cmap = mappable.get_cmap()
-            for map_ in ax.collections + ax.images:
-                map_.set_norm(norm)
-                map_.set_cmap(cmap)
-
         return cbar
 
     # -- extra methods --------------------------
