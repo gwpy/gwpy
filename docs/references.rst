@@ -36,6 +36,9 @@
 .. |numpy| replace:: `numpy`
 .. _numpy: http://numpy.org/
 
+.. |nds2| replace:: `nds2`
+.. _nds2: https://wiki.ligo.org/Computing/NDSClient
+
 .. |scipy| replace:: `scipy`
 .. _scipy: http://www.scipy.org/
 
