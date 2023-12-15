@@ -56,6 +56,9 @@
 .. |framel| replace:: `framel`
 .. _framel: http://lappweb.in2p3.fr/virgo/FrameL/
 
+.. |GstLAL| replace:: GstLAL
+.. _GstLAL: https://lscsoft.docs.ligo.org/gstlal/
+
 .. |LDAStools.frameCPP| replace:: `LDAStools.frameCPP`
 .. _LDAStools.frameCPP: https://computing.docs.ligo.org/ldastools/LDAS_Tools/ldas-tools-framecpp/
 
