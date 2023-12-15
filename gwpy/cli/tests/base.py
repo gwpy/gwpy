@@ -291,9 +291,11 @@ class _TestImageProduct(_TestCliProduct):
         plotprod.set_plot_properties()
         if visible:
             label = plotprod.get_color_label()
-            assert plotprod.plot.colorbars[0].ax.get_ylabel() == label
+            coloraxes = plotprod.ax.child_axes[0]
+            assert coloraxes.get_ylabel() == label
         else:
-            assert not plotprod.plot.colorbars
+            # check our axes doesn't have any children
+            assert not plotprod.ax.child_axes
 
 
 class _TestFFTMixin:
