@@ -132,8 +132,6 @@ write_to = "gwpy/_version.py"
 [tool.coverage.run]
 source = [ "gwpy" ]
 omit = [
-  # ignore vendored sphinx extension
-  "gwpy/utils/sphinx/epydoc.py",
   # don't report coverage for _version.py
   # (generated automatically by setuptools-scm)
   "*/_version.py",

@@ -19,7 +19,7 @@
 """GWpy API to the LAL FFT routines
 
 See the `LAL TimeFreqFFT.h documentation
-<http://software.ligo.org/docs/lalsuite/lal/group___time_freq_f_f_t__h.html>`_
+<https://lscsoft.docs.ligo.org/lalsuite/lal/group___time_freq_f_f_t__h.html>`_
 for more details
 
 This module is deprecated and will be removed in a future release.
