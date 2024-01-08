@@ -100,7 +100,6 @@ extensions = [
     'sphinx.ext.linkcode',
     'sphinx.ext.ifconfig',
     'sphinx_automodapi.automodapi',
-    'sphinx_panels',
     'sphinxcontrib.programoutput',
     'numpydoc',
     'matplotlib.sphinxext.plot_directive',
@@ -245,13 +244,6 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'uproot': ('https://uproot.readthedocs.io/en/stable/', None),
     'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
-}
-
-# -- sphinx-panels
-
-panels_css_variables = {
-    "tabs-color-label-active": "#ff6e40;",
-    "tabs-size-label": ".8rem",
 }
 
 
