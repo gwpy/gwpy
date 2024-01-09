@@ -1263,12 +1263,19 @@ class DataQualityDict(OrderedDict):
 
         # parse a table into the target DataQualityDict
         def _parse_segments(table, listattr):
+            # handle missing *_ns columns in LIGO_LW XML
+            # (LIGO DMT doesn't/didn't write them)
+            if 'start_time_ns' in table.columnnames:
+                row_segment = operator.attrgetter("segment")
+            else:
+                row_segment = operator.attrgetter("start_time", "end_time")
+
             for row in table:
                 for flag in out:
                     # match row ID to list of IDs found for this flag
                     if int(row.segment_def_id) in id_[flag]:
                         getattr(out[flag], listattr).append(
-                            Segment(*map(gpstype, row.segment)),
+                            Segment(*map(gpstype, row_segment(row))),
                         )
                         break
 
