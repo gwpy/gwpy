@@ -39,7 +39,7 @@ This can be disabled by passing an empty ``handler_map`` to the
 Similarly, you can implement your own custom legend handler and overwrite
 things yourself.
 Below is a simple example, but for more details see
-:ref:`matplotlib:sphx_glr_tutorials_intermediate_legend_guide.py`:
+:external+matplotlib:ref:`legend_guide`.
 
 .. plot::
    :include-source:
@@ -49,13 +49,10 @@ Below is a simple example, but for more details see
    >>> from matplotlib.lines import Line2D
    >>> class MyHandler(HandlerLine2D):
    ...     def create_artists(self, *args, **kwargs):
-   ...         line, marker = super(MyHandler, self).create_artists(
-   ...             *args,
-   ...             **kwargs,
-   ...         )
+   ...         line, = super().create_artists(*args, **kwargs)
    ...         line.set_linewidth(4.)
    ...         line.set_linestyle('--')
-   ...         return line, marker
+   ...         return [line]
    >>> fig = pyplot.figure()
    >>> ax = fig.gca()
    >>> ax.plot(range(10), label='My data')

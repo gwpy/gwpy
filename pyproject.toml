@@ -75,6 +75,7 @@ astro = [
 ]
 # sphinx documentation
 docs = [
+  "matplotlib >=3.5.0",
   "numpydoc >=0.8.0",
   "Sphinx >=4.4.0",
   "sphinx-automodapi",
