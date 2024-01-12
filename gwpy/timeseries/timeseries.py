@@ -892,18 +892,28 @@ class TimeSeries(TimeSeriesBase):
         # apply filter
         return self.filter(*filt, unit='rad/sample', filtfilt=filtfilt)
 
-    def resample(self, rate, window='hamming', ftype='fir', n=None):
-        """Resample this Series to a new rate
+    def resample(
+        self,
+        rate,
+        window="hamming",
+        ftype="fir",
+        n=None,
+    ):
+        """Resample this Series to a new rate.
+
+        Upsampling, or downsampling by a non-integer factor calls out to
+        :func:`scipy.signal.resample`, while integer downsampling calls out
+        to :func:`scipy.signal.decimate`.
 
         Parameters
         ----------
-        rate : `float`
-            rate to which to resample this `Series`
+        rate : `float`, `astropy.units.Quantity`
+            Rate to which to resample this `Series`.
 
         window : `str`, `numpy.ndarray`, optional
-            window function to apply to signal in the Fourier domain,
+            Window function to apply to signal in the Fourier domain,
             see :func:`scipy.signal.get_window` for details on acceptable
-            formats, only used for `ftype='fir'` or irregular downsampling
+            formats, only used for `ftype='fir'` or irregular downsampling.
 
         ftype : `str`, optional
             type of filter, either 'fir' or 'iir', defaults to 'fir'
@@ -918,15 +928,16 @@ class TimeSeries(TimeSeriesBase):
             a new Series with the resampling applied, and the same
             metadata
         """
-        if n is None and ftype == 'iir':
-            n = 8
-        elif n is None:
-            n = 60
+        # calculate downsampling factor
+        if not isinstance(rate, units.Quantity):
+            rate = units.Quantity(rate, 1 / self.xunit)
+        downfactor = (self.sample_rate / rate).decompose()
+        if downfactor.unit != units.dimensionless_unscaled:
+            raise ValueError(f"invalid resampling rate '{rate}'")
+        downfactor = downfactor.value
 
-        if isinstance(rate, units.Quantity):
-            rate = rate.value
-        factor = (self.sample_rate.value / rate)
-        if math.isclose(factor, 1., rel_tol=1e-09, abs_tol=0.):
+        # if the factor is 1 (or extremely close to 1), do nothing
+        if math.isclose(downfactor, 1., rel_tol=1e-09, abs_tol=0.):
             warnings.warn(
                 "resample() rate matches current sample_rate ({}), returning "
                 "input data unmodified; please double-check your "
@@ -934,22 +945,33 @@ class TimeSeries(TimeSeriesBase):
                 UserWarning,
             )
             return self
+
+        def _repack(new):
+            """Repack the resampled array to look like the original object.
+            """
+            out = new.view(self.__class__)
+            out.__metadata_finalize__(self)
+            out._unit = self.unit
+            out.sample_rate = rate
+            return out
+
         # if integer down-sampling, use decimate
-        if factor.is_integer():
-            if ftype == 'iir':
-                filt = signal.cheby1(n, 0.05, 0.8/factor, output='zpk')
-            else:
-                filt = signal.firwin(n+1, 1./factor, window=window)
-            return self.filter(filt, filtfilt=True)[::int(factor)]
+        if downfactor.is_integer():
+            return _repack(signal.decimate(
+                self.value,
+                int(downfactor),
+                n=None,
+                ftype=ftype,
+                zero_phase=True,
+            ))
+
         # otherwise use Fourier filtering
-        else:
-            nsamp = int(self.shape[0] * self.dx.value * rate)
-            new = signal.resample(self.value, nsamp,
-                                  window=window).view(self.__class__)
-            new.__metadata_finalize__(self)
-            new._unit = self.unit
-            new.sample_rate = rate
-            return new
+        nsamp = int(self.shape[0] / downfactor)
+        return _repack(signal.resample(
+            self.value,
+            nsamp,
+            window=window,
+        ))
 
     def zpk(self, zeros, poles, gain, analog=True, unit='Hz', **kwargs):
         """Filter this `TimeSeries` by applying a zero-pole-gain filter
