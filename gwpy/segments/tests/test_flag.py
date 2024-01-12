@@ -375,6 +375,36 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(x.active, a.known & ~a.active)
         utils.assert_segmentlist_equal(x.known, a.known)
 
+    def test_difference_simple(self):
+        """Test that subtract works as intended for a simple case.
+
+        Tests regression against https://github.com/gwpy/gwpy/issues/1700
+
+        Returns
+        -------
+
+        """
+        known1 = _as_segmentlist((0, 2), (3, 7))
+        active1 = _as_segmentlist((1, 2), (3, 4), (5, 7))
+
+        known2 = _as_segmentlist((3, 7), (8, 10))
+        active2 = _as_segmentlist((4, 7), (9, 10))
+
+        a = self.TEST_CLASS(active=active1, known=known1)
+        b = self.TEST_CLASS(active=active2, known=known2)
+
+        diff = a - b
+
+        expected_known = _as_segmentlist((3, 7))
+        expected_active = _as_segmentlist((3, 4))
+
+        expected_diff = self.TEST_CLASS(
+            active=expected_active,
+            known=expected_known
+        )
+
+        utils.assert_flag_equal(diff, expected_diff)
+
     def test_coalesce(self):
         flag = self.create()
         flag.coalesce()
@@ -655,8 +685,8 @@ class TestDataQualityDict(object):
         a = instance.copy()
         a &= reverse
         keys = list(a.keys())
-        utils.assert_flag_equal(a[keys[0]],
-                                instance[keys[0]] & reverse[keys[1]])
+        for key in keys:
+            utils.assert_flag_equal(a[key], instance[key] & reverse[key])
 
     def test_and(self, instance, reverse):
         a = instance.copy()
@@ -667,8 +697,8 @@ class TestDataQualityDict(object):
         a = instance.copy()
         a |= reverse
         keys = list(a.keys())
-        utils.assert_flag_equal(a[keys[0]],
-                                instance[keys[0]] | reverse[keys[1]])
+        for key in keys:
+            utils.assert_flag_equal(a[key], instance[key] | reverse[key])
 
     def test_or(self, instance, reverse):
         a = instance.copy()
@@ -679,8 +709,8 @@ class TestDataQualityDict(object):
         a = instance.copy()
         a -= reverse
         keys = list(a.keys())
-        utils.assert_flag_equal(a[keys[0]],
-                                instance[keys[0]] - reverse[keys[1]])
+        for key in keys:
+            utils.assert_flag_equal(a[key], instance[key] - reverse[key])
 
     def test_sub(self, instance, reverse):
         a = instance.copy(deep=True)
