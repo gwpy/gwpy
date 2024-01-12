@@ -1622,7 +1622,7 @@ class TimeSeriesBaseList(list):
         del self[i:]
         return self
 
-    def join(self, pad=None, gap=None):
+    def join(self, pad=None, gap=None, min_gap=None):
         """Concatenate all of the elements of this list into a single object
 
         Parameters
@@ -1656,7 +1656,7 @@ class TimeSeriesBaseList(list):
         self.sort(key=lambda t: t.epoch.gps)
         out = self[0].copy()
         for series in self[1:]:
-            out.append(series, gap=gap, pad=pad)
+            out.append(series, gap=gap, pad=pad, min_gap=min_gap)
         return out
 
     def __getslice__(self, i, j):
