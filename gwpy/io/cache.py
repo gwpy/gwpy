@@ -23,6 +23,7 @@ and associated metadata for those files, designed to make identifying
 relevant data, and sieving large file lists, easier for the user.
 """
 
+import contextlib
 import os
 import warnings
 from collections import (namedtuple, OrderedDict)
@@ -49,6 +50,27 @@ else:
     HAS_CACHE = True
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+
+@contextlib.contextmanager
+def _silence_lal_debug_warnings():
+    """Temporarily silence debug warnings from LAL.
+    """
+    try:
+        import lal
+    except ImportError:
+        yield
+        return
+
+    debuglevel = lal.GetDebugLevel()
+    # silence LAL debug warnings
+    lal.ClobberDebugLevel(0)
+
+    try:
+        yield
+    finally:
+        # reset
+        lal.ClobberDebugLevel(debuglevel)
 
 
 def _preformat_entry(entry):
@@ -83,7 +105,8 @@ def _format_entry_ffl(entry):
 def _parse_entry_ffl(line, gpstype=LIGOTimeGPS):
     from ..segments import Segment
     path, start, dur, _, _ = line
-    start = gpstype(start)
+    with _silence_lal_debug_warnings():
+        start = gpstype(start)
     end = start + float(dur)
     try:
         observatory, description = os.path.basename(path).split('-', 2)[:2]

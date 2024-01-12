@@ -19,11 +19,9 @@
 """Tests for :mod:`gwpy.time`
 """
 
-from contextlib import nullcontext
 from datetime import datetime
 from decimal import Decimal
 from operator import attrgetter
-from unittest import mock
 
 import pytest
 
@@ -55,10 +53,6 @@ YESTERDAY = 1126137617
 
 
 @pytest.mark.freeze_time(FREEZE)
-@pytest.mark.parametrize("use_maya", (
-    False,
-    pytest.param(True, marks=pytest.mark.requires("maya")),
-))
 @pytest.mark.parametrize(("in_", "out"), [
     (1126259462, int(GW150914)),
     (1235635623.7500002, LIGOTimeGPS(1235635623, 750000200)),
@@ -66,6 +60,7 @@ YESTERDAY = 1126137617
     ('0', 0),
     ('Jan 1 2017', 1167264018),
     ('Sep 14 2015 09:50:45.391', GW150914),
+    ('Oct 30 2016 12:34 CST', 1161887657),
     ((2017, 1, 1), 1167264018),
     (datetime(2017, 1, 1), 1167264018),
     (Time(57754, format='mjd'), 1167264018),
@@ -83,57 +78,21 @@ YESTERDAY = 1126137617
     ('tomorrow', TOMORROW),
     ('yesterday', YESTERDAY),
 ])
-def test_to_gps(in_, out, use_maya):
-    """Test that :func:`to_gps` works with and without maya.
-    """
-    if use_maya:  # do nothing
-        ctx = nullcontext()
-    else:  # force 'install maya' to error to use dateutil
-        ctx = mock.patch.dict("sys.modules", {"maya": None})
-    with ctx:
-        assert time.to_gps(in_) == out
-
-
-@pytest.mark.requires("maya")
-@pytest.mark.parametrize(("in_", "out"), [
-    ('Oct 30 2016 12:34 CST', 1161887657),
-])
-def test_to_gps_maya(in_, out):
-    """Test that :func:`gwpy.time.to_gps` works with maya.
+def test_to_gps(in_, out):
+    """Test that :func:`to_gps` works.
     """
     assert time.to_gps(in_) == out
 
 
 @pytest.mark.parametrize(("in_", "err"), [
     (Quantity(1, 'm'), UnitConversionError),
-    ('random string', (ValueError, TypeError)),
+    ('random string', ValueError),
 ])
 def test_to_gps_error(in_, err):
     """Test that :func:`gwpy.time.to_gps` errors when it should.
     """
     with pytest.raises(err):
         time.to_gps(in_)
-
-
-@mock.patch.dict("sys.modules", {"maya": None})
-def test_to_gps_dateparser_error_propagation_nomaya():
-    with pytest.raises(
-        RuntimeWarning,
-        match=(
-            "tzname CST identified but not understood.(.*) "
-            "Try installing 'maya' (.*)"
-        ),
-    ):
-        time.to_gps("Oct 30 2016 12:34 CST")
-
-
-@pytest.mark.requires("maya")
-@mock.patch("maya.when", side_effect=ValueError("test chain"))
-def test_to_gps_dateparser_error_propagation_maya(_):
-    with pytest.raises(RuntimeWarning) as exc:
-        time.to_gps("Oct 30 2016 12:34 CST")
-    # validate that the maya exception was chained to the dateutil one
-    assert str(exc.value.__cause__) == "test chain"
 
 
 @pytest.mark.parametrize('in_, out', [

@@ -28,6 +28,7 @@ import numpy
 from gwdatafind.utils import file_segment
 
 from ...io.cache import write_cache
+from ...segments import Segment
 from ...testing.utils import (
     assert_dict_equal,
     assert_quantity_sub_equal,
@@ -184,3 +185,19 @@ def test_write_no_ifo(tmp_path, data):
         {None: data},
         tmp
     )
+
+
+def test_read_missing_sample():
+    """Check that giving non-sampled start time doesn't result in missing data.
+
+    See https://git.ligo.org/computing/helpdesk/-/issues/4774 and
+    https://git.ligo.org/lscsoft/lalsuite/-/issues/710.
+    """
+    data = TimeSeries.read(
+        TEST_GWF_PATH,
+        "H1:LDAS-STRAIN",
+        start=968654552.6709,
+        end=968654553,
+        format="gwf.lalframe",
+    )
+    assert data.span == Segment(968654552.670898432, 968654553.0)

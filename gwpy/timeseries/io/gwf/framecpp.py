@@ -401,6 +401,7 @@ def read_frvect(vect, epoch, start, end, name=None, series_class=TimeSeries):
     dim = vect.GetDim(0)
     dx = dim.dx
     x0 = dim.startX
+    xunit = dim.GetUnitX() or None
 
     # start and end GPS times of this FrVect
     dimstart = epoch + x0
@@ -428,8 +429,16 @@ def read_frvect(vect, epoch, start, end, name=None, series_class=TimeSeries):
     unit = vect.GetUnitY() or None
 
     # create array
-    series = series_class(arr, t0=dimstart+nxstart*dx, dt=dx, name=name,
-                          channel=name, unit=unit, copy=False)
+    series = series_class(
+        arr,
+        t0=dimstart+nxstart*dx,
+        dt=dx,
+        name=name,
+        channel=name,
+        xunit=xunit,
+        unit=unit,
+        copy=False,
+    )
 
     # add information to channel
     series.channel.sample_rate = series.sample_rate.value

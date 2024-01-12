@@ -28,6 +28,7 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Astronomy",
   "Topic :: Scientific/Engineering :: Physics",
 ]
@@ -36,6 +37,7 @@ classifiers = [
 requires-python = ">=3.8"
 dependencies = [
   "astropy >=4.3.0",
+  "dateparser >=1.1.4",
   "dqsegdb2",
   "gwdatafind >=1.1.0",
   "gwosc >=0.5.3",
@@ -60,7 +62,7 @@ dynamic = [
 test = [
   "coverage[toml] >=5.0",
   "pytest >=3.9.1",
-  "pytest-freezegun",
+  "pytest-freezer",
   "pytest-cov >=2.4.0",
   "pytest-requires",
   "pytest-socket",
@@ -69,7 +71,7 @@ test = [
 ]
 # astronomy/cosmology calculations
 astro = [
-  "inspiral-range",
+  "inspiral-range >=0.5.0",
 ]
 # sphinx documentation
 docs = [
@@ -83,11 +85,8 @@ docs = [
 # development environments
 dev = [
   "ciecplib",
-  # for maya to work, see https://github.com/scrapinghub/dateparser/pull/1067
-  "dateparser >=1.1.2",
   "lalsuite ; sys_platform != 'win32'",
   "lscsoft-glue ; sys_platform != 'win32'",
-  "maya ; python_version < '3.11'",
   "psycopg2",
   "pycbc >=1.13.4 ; sys_platform != 'win32'",
   "pymysql",
@@ -99,7 +98,8 @@ dev = [
 # conda packages for development
 # NOTE: this isn't a valid extra to install with pip
 conda = [
-  "python-framel >=8.40.1",
+  "lxml !=4.9.1 ; sys_platform == 'win32'",
+  "python-framel >=8.40.1,!=8.46.0",
   "python-ldas-tools-framecpp ; sys_platform != 'win32'",
   "python-nds2-client",
 ]
@@ -132,8 +132,6 @@ write_to = "gwpy/_version.py"
 [tool.coverage.run]
 source = [ "gwpy" ]
 omit = [
-  # ignore vendored sphinx extension
-  "gwpy/utils/sphinx/epydoc.py",
   # don't report coverage for _version.py
   # (generated automatically by setuptools-scm)
   "*/_version.py",

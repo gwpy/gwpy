@@ -87,7 +87,6 @@ def update_all_copyright(year=CURRENT_YEAR):
         "git", "grep", "-l", "-E", r"(\#|\*) Copyright",
     ]).strip().splitlines()
     ignore = {
-        "gwpy/utils/sphinx/epydoc.py",
         "docs/_static/js/copybutton.js",
     }
     for path in files:
