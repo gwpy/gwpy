@@ -23,6 +23,7 @@ import numpy
 import warnings
 
 import scipy.signal
+from astropy import units
 
 from ...frequencyseries import FrequencySeries
 from ._utils import scale_timeseries_unit
@@ -243,5 +244,5 @@ def coherence(timeseries, other, segmentlength, downsample=None,
         sdfunc=scipy.signal.coherence,
         **kwargs,
     )
-    out.override_unit("coherence")
+    out.override_unit(units.dimensionless_unscaled)
     return out
