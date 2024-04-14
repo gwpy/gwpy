@@ -215,7 +215,8 @@ class Qtransform(Spectrogram):
             outseg = Segment(gps, gps).protract(args.plot[self.plot_num])
 
             # use the precomputed ASD as the whitener if needed
-            if self.qxfrm_args.get("whiten"):
+            if type(self.qxfrm_args.get("whiten")) == bool and \
+                    self.qxfrm_args.get("whiten"):
                 self.qxfrm_args["whiten"] = asd
 
             # This section tries to optimize the amount of data that is
