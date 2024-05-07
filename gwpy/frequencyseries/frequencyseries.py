@@ -241,7 +241,6 @@ class FrequencySeries(Series):
             unit=self.unit,
             dx=(1/self.dx/nout).to(TimeSeries._default_xunit),
         )
-      
 
     def zpk(self, zeros, poles, gain, analog=True):
         """Filter this `FrequencySeries` by applying a zero-pole-gain filter
