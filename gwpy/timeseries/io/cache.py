@@ -19,22 +19,34 @@
 """I/O utilities for reading `TimeSeries` from a `list` of file paths.
 """
 
-from ...io.cache import (FILE_LIKE, read_cache, file_segment, sieve)
+from io import BytesIO
+from math import inf
+from os import PathLike
+
+from ...io.cache import (
+    FILE_LIKE,
+    file_segment,
+    read_cache,
+    write_cache,
+)
 from ...segments import Segment
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def preformat_cache(cache, start=None, end=None):
+def preformat_cache(cache, start=None, end=None, sort=file_segment):
     """Preprocess a `list` of file paths for reading.
 
-    - read the cache from the file (if necessary)
-    - sieve the cache to only include data we need
+    This function does the following:
+
+    - read the list of paths cache file (if necessary),
+    - sort the cache in time order (if possible),
+    - sieve the cache to only include data we need.
 
     Parameters
     ----------
-    cache : `list`, `str`
-        List of file paths, or path to a LAL-format cache file on disk.
+    cache : `list`, `str`, `pathlib.Path`
+        List of file paths, or path to a cache file.
 
     start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS start time of required data, defaults to start of data found;
@@ -44,31 +56,37 @@ def preformat_cache(cache, start=None, end=None):
         GPS end time of required data, defaults to end of data found;
         any input parseable by `~gwpy.time.to_gps` is fine.
 
+    sort : `callable`, optional
+        A callable key function by which to sort the file paths.
+
     Returns
     -------
     modcache : `list`
         A parsed, sieved list of paths based on the input arguments.
+
+    See also
+    --------
+    gwpy.io.cache.read_cache
+        For details of how the sorting and sieving is implemented
     """
-    # open cache file
-    if isinstance(cache, (str,) + FILE_LIKE):
-        return read_cache(cache, sort=file_segment,
-                          segment=Segment(start, end))
+    # if given a list of paths, write it to a file-like structure
+    # so that we can use read_cache to do all the work
+    if not isinstance(cache, (str, PathLike) + FILE_LIKE):
+        cachef = BytesIO()
+        write_cache(cache, cachef)
+        cachef.seek(0)
+        cache = cachef
 
-    # format existing cache file
-    cache = type(cache)(cache)  # copy cache
+    # need start and end times to sieve the cache
+    if start is None:
+        start = -inf
+    if end is None:
+        end = +inf
 
-    # sort cache
-    try:
-        cache.sort(key=file_segment)  # sort
-    except ValueError:
-        # if this failed, then the sieving will also fail, but lets proceed
-        # anyway, since the user didn't actually ask us to do this (but
-        # its a very good idea)
-        return cache
-
-    # sieve cache
-    if start is None:  # start time of earliest file
-        start = file_segment(cache[0])[0]
-    if end is None:  # end time of latest file
-        end = file_segment(cache[-1])[-1]
-    return sieve(cache, segment=Segment(start, end))
+    # read the cache
+    return read_cache(
+        cache,
+        coltype=type(start),
+        sort=sort,
+        segment=Segment(start, end),
+    )

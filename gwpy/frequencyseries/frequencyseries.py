@@ -227,10 +227,21 @@ class FrequencySeries(Series):
         # Undo normalization from TimeSeries.fft
         # The DC component does not have the factor of two applied
         # so we account for it here
-        dift = npfft.irfft(self.value * nout) / 2
-        new = TimeSeries(dift, epoch=self.epoch, channel=self.channel,
-                         name=self.name, unit=self.unit, dx=1/self.dx/nout)
-        return new
+        array = self.value.copy()
+        array[1:] /= 2.0
+        dift = npfft.irfft(
+            array * nout,
+            n=nout,
+        )
+        return TimeSeries(
+            dift,
+            epoch=self.epoch,
+            channel=self.channel,
+            name=self.name,
+            unit=self.unit,
+            dx=(1/self.dx/nout).to(TimeSeries._default_xunit),
+        )
+      
 
     def zpk(self, zeros, poles, gain, analog=True):
         """Filter this `FrequencySeries` by applying a zero-pole-gain filter

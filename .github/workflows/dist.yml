@@ -84,6 +84,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
     runs-on: ${{ matrix.os }}-latest
 
     defaults:
@@ -118,6 +119,7 @@ jobs:
             --cov gwpy \
             --cov-report=xml \
             --disable-socket \
+            --allow-hosts=127.0.0.1 \
             --junitxml=pytest.xml \
             --pyargs gwpy \
         ;

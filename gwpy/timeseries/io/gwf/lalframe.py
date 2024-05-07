@@ -155,6 +155,19 @@ def read(source, channels, start=None, end=None, series_class=TimeSeries,
     for name in channels:
         ts = _read_channel(stream, str(name), start=start, duration=duration)
         out[name] = series_class.from_lal(ts, copy=False)
+        tsend = ts.epoch + getattr(ts.data.data, "size", 0) * ts.deltaT
+        if (end - tsend) >= ts.deltaT:  # one (probably) sample missing
+            # if the available data simply didn't go all the way to the end
+            # lalframe would have errored (and we protect against that above),
+            # so we know there is data missing.
+            # see https://git.ligo.org/lscsoft/lalsuite/-/issues/710
+            ts = _read_channel(
+                stream,
+                str(name),
+                start=tsend,
+                duration=float(end - tsend),
+            )
+            out[name] = out[name].append(ts.data.data, inplace=False)
         lalframe.FrStreamSeek(stream, epoch)
     return out
 
