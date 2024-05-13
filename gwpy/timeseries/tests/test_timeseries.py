@@ -1381,7 +1381,9 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     def test_convolve(self):
         data = self.TEST_CLASS(
-            signal.hann(1024), sample_rate=512, epoch=-1
+            signal.get_window("hann", 1024),
+            sample_rate=512,
+            epoch=-1,
         )
         filt = numpy.array([1, 0])
 
