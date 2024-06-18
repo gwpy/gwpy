@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2021)
+#               Cardiff University (2017-2023)
 #
 # This file is part of GWpy.
 #
@@ -1263,12 +1263,19 @@ class DataQualityDict(OrderedDict):
 
         # parse a table into the target DataQualityDict
         def _parse_segments(table, listattr):
+            # handle missing *_ns columns in LIGO_LW XML
+            # (LIGO DMT doesn't/didn't write them)
+            if 'start_time_ns' in table.columnnames:
+                row_segment = operator.attrgetter("segment")
+            else:
+                row_segment = operator.attrgetter("start_time", "end_time")
+
             for row in table:
                 for flag in out:
                     # match row ID to list of IDs found for this flag
                     if int(row.segment_def_id) in id_[flag]:
                         getattr(out[flag], listattr).append(
-                            Segment(*map(gpstype, row.segment)),
+                            Segment(*map(gpstype, row_segment(row))),
                         )
                         break
 
@@ -1442,7 +1449,11 @@ class DataQualityDict(OrderedDict):
             if segments is None and source.netloc:
                 try:
                     tmp = {key: self[key].query(
-                        self[key].name, self[key].known, **kwargs)}
+                        self[key].name,
+                        self[key].known,
+                        url=source.geturl(),
+                        **kwargs,
+                    )}
                 except URLError as exc:
                     if on_error == 'ignore':
                         pass

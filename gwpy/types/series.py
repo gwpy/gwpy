@@ -123,6 +123,10 @@ class Series(Array):
 
         # set x-axis metadata from xindex
         if xindex is not None:
+
+            if len(xindex) != len(value):
+                raise ValueError('xindex must have the same length as data.')
+
             # warn about duplicate settings
             if dx is not None:
                 warn("xindex was given to %s(), dx will be ignored"
@@ -839,8 +843,7 @@ class Series(Array):
             N = min(self.shape[0], other.shape[0])
 
         # if units are the same, can shortcut
-        # NOTE: why not use isinstance here?
-        if type(other) == type(self) and other.unit == self.unit:
+        if isinstance(other, Series) and other.unit == self.unit:
             self.value[-N:] = other.value[-N:]
         # otherwise if its just a numpy array
         elif type(other) is type(self.value) or (  # noqa: E721
@@ -995,18 +998,13 @@ class Series(Array):
             )
             end = None
 
-        # check if series is irregular
-        try:
-            self.dx
-        except AttributeError:
-            irregular = True
-        else:
-            irregular = False
+        # check if we have an index to use when searching
+        have_xindex = getattr(self, '_xindex', None) is not None
 
         # find start index
         if start is None:
             idx0 = None
-        elif irregular:
+        elif have_xindex:
             idx0 = numpy.searchsorted(
                 self.xindex.value,
                 xtype(start),
@@ -1018,7 +1016,7 @@ class Series(Array):
         # find end index
         if end is None:
             idx1 = None
-        elif irregular:
+        elif have_xindex:
             idx1 = numpy.searchsorted(
                 self.xindex.value,
                 xtype(end),

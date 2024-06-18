@@ -28,7 +28,7 @@ from numpy import fft as npfft
 
 from scipy import signal
 
-from astropy.units import (Unit, Quantity)
+from astropy.units import Quantity
 
 from .window import (get_window, planck)
 
@@ -256,57 +256,38 @@ def fir_from_transfer(transfer, ntaps, window='hann', ncorner=None):
     return out
 
 
-def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):
-    """Convert an analogue ZPK filter to digital using a bilinear transform
+def convert_zpk_units(filt, unit):
+    """Convert zeros and poles created for a freq response in Hz to rad/s.
 
     Parameters
     ----------
-    zeros : array-like
-        list of zeros
+    filt : `tuple`
+        zeros, poles, gain
 
-    poles : array-like
-        list of poles
-
-    gain : `float`
-        filter gain
-
-    fs : `float`, `~astropy.units.Quantity`
-        sampling rate at which to evaluate bilinear transform, default: 1.
-
-    unit : `str`, `~astropy.units.Unit`
-        unit of inputs, one or 'Hz' or 'rad/s', default: ``'Hz'``
+    unit : `str`
+        ``'Hz'`` or ``'rad/s'``
 
     Returns
     -------
-    zpk : `tuple`
-        digital version of input zpk
+    zeros : `numpy.array` of `numpy.cfloat`
+    poles : `numpy.array` of `numpy.cfloat`
+    gain : input, unadjusted gain
     """
-    zeros = numpy.array(zeros, dtype=float, copy=False)
-    zeros = zeros[numpy.isfinite(zeros)]
-    poles = numpy.array(poles, dtype=float, copy=False)
-    gain = gain
+    zeros, poles, gain = filt
 
-    # convert from Hz to rad/s if needed
-    unit = Unit(unit)
-    if unit == Unit('Hz'):
-        zeros *= -2 * pi
-        poles *= -2 * pi
-    elif unit != Unit('rad/s'):
+    if unit == 'Hz':
+        for zi in range(len(zeros)):
+            zeros[zi] *= -2. * numpy.pi
+        for pj in range(len(poles)):
+            poles[pj] *= -2. * numpy.pi
+    elif unit not in ['rad/s', 'rad/sample']:
         raise ValueError("zpk can only be given with unit='Hz' "
-                         "or 'rad/s'")
+                         f"'rad/s', or 'rad/sample', not {unit}")
 
-    # convert to Z-domain via bilinear transform
-    fs = 2 * Quantity(fs, 'Hz').value
-    dpoles = (1 + poles/fs) / (1 - poles/fs)
-    dzeros = (1 + zeros/fs) / (1 - zeros/fs)
-    dzeros = numpy.concatenate((
-        dzeros, -numpy.ones(len(dpoles) - len(dzeros)),
-    ))
-    dgain = gain * numpy.prod(fs - zeros)/numpy.prod(fs - poles)
-    return dzeros, dpoles, dgain
+    return zeros, poles, gain
 
 
-def convert_to_digital(filter, sample_rate, unit='Hz'):
+def convert_to_digital(filter, sample_rate):
     """Convert an analog filter to digital via bilinear functions.
 
     This function always returns in zpk format.
@@ -340,7 +321,7 @@ def convert_to_digital(filter, sample_rate, unit='Hz'):
         filter = signal.bilinear(b, a, fs=sample_rate)
 
     elif form == 'zpk':
-        filter = bilinear_zpk(*filter, fs=sample_rate, unit=unit)
+        filter = signal.bilinear_zpk(*filter, fs=sample_rate)
 
     else:
         raise ValueError(f"Cannot convert {form}, only 'zpk' or 'ba'")

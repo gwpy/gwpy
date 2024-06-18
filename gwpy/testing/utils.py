@@ -23,7 +23,6 @@ import os.path
 import subprocess
 import tempfile
 from contextlib import contextmanager
-from distutils.version import LooseVersion
 from importlib import import_module
 from itertools import zip_longest
 from pathlib import Path
@@ -83,8 +82,9 @@ def skip_missing_dependency(module):  # pragma: no cover
     "be removed in GWpy 3.1.0",
 ))
 def module_older_than(module, minversion):  # pragma: no cover
+    from packaging.version import Version
     mod = import_module(module)
-    return LooseVersion(mod.__version__) < LooseVersion(minversion)
+    return Version(mod.__version__) < Version(minversion)
 
 
 @deprecated_function(message=(
@@ -148,26 +148,42 @@ def _assert_quantity(q1, q2, array_assertion=assert_array_equal):
     array_assertion(q1.value, q2.value)
 
 
-def assert_quantity_sub_equal(a, b, *attrs, **kwargs):
-    """Assert that two `~gwpy.types.Array` objects are the same (or almost)
+def assert_quantity_sub_equal(
+    a,
+    b,
+    *attrs,
+    almost_equal=False,
+    exclude=None,
+    **kwargs,
+):
+    """Assert that two `~gwpy.types.Array` objects are the same (or almost).
 
     Parameters
     ----------
     a, b : `~gwpy.types.Array`
-        the arrays two be tested (can be subclasses)
+        The arrays to be tested (can be subclasses).
 
     *attrs
-        the list of attributes to test, defaults to all
+        The list of attributes to test, defaults to all.
 
     almost_equal : `bool`, optional
-        allow the numpy array's to be 'almost' equal, default: `False`,
-        i.e. require exact matches
+        Allow the numpy array's to be 'almost' equal, default: `False`,
+        i.e. require exact matches.
 
     exclude : `list`, optional
-        a list of attributes to exclude from the test
+        A list of attributes to exclude from the test.
+
+    kwargs
+        Other keyword arguments are passed to the array comparison operator
+        `numpy.testing.assert_array_equal` or `numpy.testing.assert_allclose`.
+
+    See also
+    --------
+    numpy.testing.assert_array_equal
+    numpy.testing.assert_allclose
     """
     # get value test method
-    if kwargs.pop('almost_equal', False):
+    if almost_equal:
         assert_array = assert_allclose
     else:
         assert_array = assert_array_equal
@@ -175,8 +191,7 @@ def assert_quantity_sub_equal(a, b, *attrs, **kwargs):
     # parse attributes to be tested
     if not attrs:
         attrs = a._metadata_slots
-    exclude = kwargs.pop('exclude', [])
-    attrs = [attr for attr in attrs if attr not in exclude]
+    attrs = [attr for attr in attrs if attr not in (exclude or [])]
 
     # don't assert indexes that don't exist for both
     def _check_index(dim):
@@ -193,7 +208,7 @@ def assert_quantity_sub_equal(a, b, *attrs, **kwargs):
 
     # test data
     assert_attributes(a, b, *attrs)
-    assert_array(a.value, b.value)
+    assert_array(a.value, b.value, **kwargs)
 
 
 def assert_attributes(a, b, *attrs):

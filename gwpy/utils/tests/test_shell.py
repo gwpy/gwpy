@@ -20,9 +20,9 @@
 """
 
 import platform
+import shutil
 import subprocess
 import sys
-from distutils.spawn import find_executable
 
 import pytest
 
@@ -72,6 +72,6 @@ def test_shell_call_error_warn():
 
 def test_which():
     with pytest.warns(DeprecationWarning):
-        assert shell.which('python') == find_executable('python')
+        assert shell.which('python') == shutil.which('python')
     with pytest.raises(ValueError), pytest.warns(DeprecationWarning):
         shell.which('gwpy-no-executable')

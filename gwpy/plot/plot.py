@@ -369,13 +369,6 @@ class Plot(figure.Figure):
             The default (``fraction=0``) is to not resize the
             original axes at all.
 
-        use_axesgrid : `bool`
-            Use :mod:`mpl_toolkits.axes_grid1` to generate the
-            colorbar axes (default: `True`).
-            This takes precedence over the ``use_gridspec``
-            keyword argument from the upstream
-            :meth:`~matplotlib.figure.Figure.colorbar` method.
-
         emit : `bool`, optional
             If `True` update all mappables on `Axes` to match the same
             colouring as the colorbar.
@@ -421,26 +414,35 @@ class Plot(figure.Figure):
         >>> ax.colorbar(label='Value')
         >>> plot.show()
         """
-        # pre-process kwargs
+        # pre-process kwargs (and maybe create new Axes)
         mappable, kwargs = gcbar.process_colorbar_kwargs(
-            self, mappable, ax, cax=cax, fraction=fraction, **kwargs)
+            self,
+            mappable,
+            ax,
+            cax=cax,
+            fraction=fraction,
+            **kwargs,
+        )
 
         # generate colour bar
         cbar = super().colorbar(mappable, **kwargs)
 
-        # force the minor ticks to be the same as the major ticks
+        # force the minor ticks to be the same as the major ticks;
         # in practice, this normally swaps out LogFormatterSciNotation to
-        # gwpy's LogFormatter; # this is hacky, and would be improved using a
+        # gwpy's LogFormatter;
+        # this is hacky, and would be improved using a
         # subclass of Colorbar in the first place, but matplotlib's
         # cbar_factory doesn't support that
-        longaxis = (cbar.ax.yaxis if cbar.orientation == "vertical" else
-                    cbar.ax.xaxis)
+        longaxis = (
+            cbar.ax.yaxis if cbar.orientation == "vertical"
+            else cbar.ax.xaxis
+        )
         if (
-                isinstance(cbar.formatter, LogFormatter)
-                and isinstance(
-                    longaxis.get_minor_formatter(),
-                    LogFormatterSciNotation,
-                )
+            isinstance(cbar.formatter, LogFormatter)
+            and isinstance(
+                longaxis.get_minor_formatter(),
+                LogFormatterSciNotation,
+            )
         ):
             longaxis.set_minor_formatter(type(cbar.formatter)())
 
@@ -519,9 +521,11 @@ class Plot(figure.Figure):
             pass
 
         # add new axes
-        if ax.get_axes_locator():
+        try:
             divider = ax.get_axes_locator()._axes_divider
-        else:
+        except AttributeError:
+            # get_axes_locator() is None _or_ the _axes_divider property
+            # has been removed
             from mpl_toolkits.axes_grid1 import make_axes_locatable
             divider = make_axes_locatable(ax)
         if location not in {'top', 'bottom'}:

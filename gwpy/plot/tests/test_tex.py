@@ -39,6 +39,7 @@ def test_has_tex_missing_exe():
     """Test that `gwpy.plot.tex.has_tex` returns `False` when
     any one of the necessary executables is missing.
     """
+    plot_tex.has_tex.cache_clear()
     assert not plot_tex.has_tex()
 
 
@@ -47,6 +48,7 @@ def test_has_tex_bad_latex(_):
     """Test that `gwpy.plot.tex.has_tex` returns `False` when
     the LaTeX figure fails to render.
     """
+    plot_tex.has_tex.cache_clear()
     assert not plot_tex.has_tex()
 
 
@@ -57,6 +59,7 @@ def test_has_tex_true(_which_, _test_usetex):
     all of the necessary executables are found, and the LaTeX figure
     doesn't raise an exception.
     """
+    plot_tex.has_tex.cache_clear()
     assert plot_tex.has_tex()
 
 

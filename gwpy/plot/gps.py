@@ -164,8 +164,13 @@ class GPSMixin(object):
         """
         if not self.unit:
             return None
-        name = sorted(self.unit.names, key=len)[-1]
-        return name + "s"  # pluralise
+        try:
+            name = self.unit.long_names[0]
+        except IndexError:
+            name = self.unit.name
+        if len(name) > 1:
+            return name + "s"  # pluralise for humans
+        return name
 
     def get_scale(self):
         """The scale (in seconds) of the current GPS unit.

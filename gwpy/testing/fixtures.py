@@ -30,7 +30,7 @@ import numpy
 
 from matplotlib import rc_context
 
-from ..plot.tex import HAS_TEX
+from ..plot.tex import has_tex
 from ..timeseries import TimeSeries
 from ..utils.decorators import deprecated_function
 from .utils import TemporaryFilename
@@ -52,25 +52,8 @@ def tmpfile():
 
 # -- plotting -----------------------------------------------------------------
 
-def _test_usetex():
-    """Return `True` if we can render figures using `text.usetex`.
-    """
-    from matplotlib import pyplot
-    with rc_context(rc={'text.usetex': True}):
-        fig = pyplot.figure()
-        fig.gca()
-        try:
-            fig.canvas.draw()
-        except RuntimeError:
-            return False
-        else:
-            return True
-        finally:
-            pyplot.close(fig)
-
-
 SKIP_TEX = pytest.mark.skipif(
-    not HAS_TEX or not _test_usetex(),
+    not has_tex(),
     reason='TeX is not available',
 )
 

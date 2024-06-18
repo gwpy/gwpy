@@ -128,8 +128,9 @@ class TestFrequencySeries(_TestSeries):
         utils.assert_quantity_sub_equal(ts.fft().ifft(), ts)
         utils.assert_allclose(ts.fft().ifft().value, ts.value)
 
-    def test_filter(self, array):
-        a2 = array.filter([100], [1], 1e-2)
+    def test_filter_analog(self, array):
+        a2 = array.filter([100], [1], 1e-2, analog=True)
+        a3 = array.zpk([100], [1], 1e-2)
         assert isinstance(a2, type(array))
         utils.assert_quantity_equal(a2.frequencies, array.frequencies)
 
@@ -137,6 +138,48 @@ class TestFrequencySeries(_TestSeries):
         b, a, = signal.zpk2tf([100], [1], 1e-2)
         fresp = abs(signal.freqs(b, a, array.frequencies.value)[1])
         utils.assert_array_equal(a2.value, fresp * array.value)
+        utils.assert_array_equal(a3.value, fresp * array.value)
+
+    def test_filter_digital(self, array):
+        # fs is 2 * nyquist
+        fs = 2 * array.frequencies.value[-1]
+        z, p, k = signal.butter(
+            3,
+            30,
+            'low',
+            analog=False,
+            output='zpk',
+            fs=fs
+        )
+        za, pa, ka = signal.butter(
+            3,
+            30,
+            'low',
+            analog=True,
+            output='zpk'
+        )
+
+        a2 = array.filter(za, pa, ka, analog=True)
+        a3 = array.zpk(z, p, k, analog=False)
+        assert isinstance(a2, type(array))
+
+        utils.assert_quantity_equal(a2.frequencies, array.frequencies)
+
+        # manually rebuild the filter to test it works
+        fw, fr = signal.freqz_zpk(z, p, k, worN=array.frequencies.value, fs=fs)
+        fw_a, fr_a = signal.freqs_zpk(za, pa, ka, worN=array.frequencies.value)
+        fr_d = abs(fr)
+        fr_a = abs(fr_a)
+
+        assert numpy.allclose(a2.value, fr_a * array.value)
+        assert numpy.allclose(a3.value, fr_d * array.value)
+
+        # check that, in this case, digital and analog filters are close
+        # this check is not essential, since there is no guarantee
+        # filters will have the same frequency response after bilinear
+        # transform, but it is still useful
+        eps = 0.1 * numpy.abs(numpy.max(a3))
+        assert all(numpy.abs(a2.value-a3.value) < eps)
 
     def test_zpk(self, array):
         a2 = array.zpk([100], [1], 1e-2)

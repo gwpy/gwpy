@@ -815,8 +815,8 @@ class TimeSeries(TimeSeriesBase):
         filt = filter_design.highpass(frequency, self.sample_rate,
                                       fstop=fstop, gpass=gpass, gstop=gstop,
                                       analog=False, type=type, **kwargs)
-        # apply filter
-        return self.filter(*filt, filtfilt=filtfilt)
+        # filter_design.highpass returns rad/sample already
+        return self.filter(*filt, unit='rad/sample', filtfilt=filtfilt)
 
     def lowpass(self, frequency, gpass=2, gstop=30, fstop=None, type='iir',
                 filtfilt=True, **kwargs):
@@ -859,8 +859,8 @@ class TimeSeries(TimeSeriesBase):
         filt = filter_design.lowpass(frequency, self.sample_rate,
                                      fstop=fstop, gpass=gpass, gstop=gstop,
                                      analog=False, type=type, **kwargs)
-        # apply filter
-        return self.filter(*filt, filtfilt=filtfilt)
+        # apply filter, it is already rad/sample
+        return self.filter(*filt, unit='rad/sample', filtfilt=filtfilt)
 
     def bandpass(self, flow, fhigh, gpass=2, gstop=30, fstop=None, type='iir',
                  filtfilt=True, **kwargs):
@@ -907,7 +907,7 @@ class TimeSeries(TimeSeriesBase):
                                       fstop=fstop, gpass=gpass, gstop=gstop,
                                       analog=False, type=type, **kwargs)
         # apply filter
-        return self.filter(*filt, filtfilt=filtfilt)
+        return self.filter(*filt, unit='rad/sample', filtfilt=filtfilt)
 
     def resample(self, rate, window='hamming', ftype='fir', n=None):
         """Resample this Series to a new rate
@@ -968,7 +968,7 @@ class TimeSeries(TimeSeriesBase):
             new.sample_rate = rate
             return new
 
-    def zpk(self, zeros, poles, gain, analog=True, **kwargs):
+    def zpk(self, zeros, poles, gain, analog=True, unit='Hz', **kwargs):
         """Filter this `TimeSeries` by applying a zero-pole-gain filter
 
         Parameters
@@ -985,6 +985,10 @@ class TimeSeries(TimeSeriesBase):
         analog : `bool`, optional
             type of ZPK being applied, if `analog=True` all parameters
             will be converted in the Z-domain for digital filtering
+
+        unit: `str`
+            The frequency response units this filter was designed for
+            either Hz or rad/s. Default: 'Hz'.
 
         Returns
         -------
@@ -1003,7 +1007,14 @@ class TimeSeries(TimeSeriesBase):
 
         >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-        return self.filter(zeros, poles, gain, analog=analog, **kwargs)
+        return self.filter(
+            zeros,
+            poles,
+            gain,
+            analog=analog,
+            unit=unit,
+            **kwargs,
+        )
 
     def filter(self, *filt, **kwargs):
         """Filter this `TimeSeries` with an IIR or FIR filter
@@ -1030,6 +1041,10 @@ class TimeSeries(TimeSeriesBase):
         inplace : `bool`, optional
             if `True`, this array will be overwritten with the filtered
             version, default: `False`
+
+        unit: `str`
+            If zpk, the frequency response units this filter was designed for,
+             either Hz or rad/s. Default: 'Hz' if analog. Rad/s if digital.
 
         **kwargs
             other keyword arguments are passed to the filter method
@@ -1097,11 +1112,21 @@ class TimeSeries(TimeSeriesBase):
         # parse filter
         form, filt = filter_design.parse_filter(filt)
 
+        unit = kwargs.pop('unit', None)
+        if not unit:
+            if kwargs.get('analog', False):
+                unit = 'Hz'
+            else:
+                unit = 'rad/s'
+
+        # convert units if the system was designed in Hz
+        if form == "zpk":
+            filt = filter_design.convert_zpk_units(filt, unit)
+
         if kwargs.pop('analog', False):
             form, filt = filter_design.convert_to_digital(
                 filt,
                 sample_rate=self.sample_rate.to('Hz').value,
-                unit='Hz'
             )
 
         if form == 'zpk':

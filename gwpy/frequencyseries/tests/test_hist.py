@@ -106,7 +106,19 @@ class TestSpectralVariance(_TestArray2D):
         assert array.y0 == self.bins[0]
         assert array.dy == self.bins[1] - self.bins[0]
 
-    def test_crop_float_precision(self):
+    def test_crop_float_precision_last_value(self):
+        pytest.skip("float precision test not supported for SpectralVariance")
+
+    def test_crop_float_precision_last_value_float(self):
+        pytest.skip("float precision test not supported for SpectralVariance")
+
+    def test_crop_between_grid_points_is_floored(self):
+        pytest.skip("float precision test not supported for SpectralVariance")
+
+    def test_crop_float_precision_near_last_value_float(self):
+        pytest.skip("float precision test not supported for SpectralVariance")
+
+    def test_crop_float_precision_first_value_float(self):
         pytest.skip("float precision test not supported for SpectralVariance")
 
     def test_is_compatible_yindex(self, array):

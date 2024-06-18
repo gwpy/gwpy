@@ -100,12 +100,10 @@ extensions = [
     'sphinx.ext.linkcode',
     'sphinx.ext.ifconfig',
     'sphinx_automodapi.automodapi',
-    'sphinx_panels',
     'sphinxcontrib.programoutput',
     'numpydoc',
     'matplotlib.sphinxext.plot_directive',
     #'sphinxcontrib.doxylink',  # noqa: E265
-    'gwpy.utils.sphinx.epydoc',
 ]
 
 # content management
@@ -215,16 +213,9 @@ docscrape_sphinx.IMPORT_MATPLOTLIB_RE = r'\b({})\b'.format('|'.join(parts))
 # configure inheritance diagram
 inheritance_graph_attrs = dict(rankdir='TB')
 
-# -- epydoc
+# -- doxylink
 
-# epydoc extension config for GLUE
-epydoc_mapping = {
-    'http://software.ligo.org/docs/glue/': [r'glue(\.|$)'],
-}
-
-# -- epydoc
-
-LALSUITE_DOCS = 'http://software.ligo.org/docs/lalsuite'
+LALSUITE_DOCS = 'https://lscsoft.docs.ligo.org/lalsuite'
 
 doxylink = {
     'lal': ('lal.tag', '%s/lal/' % LALSUITE_DOCS),
@@ -236,6 +227,7 @@ doxylink = {
 # Intersphinx
 intersphinx_mapping = {
     'astropy': ('https://docs.astropy.org/en/stable/', None),
+    'dateparser': ('https://dateparser.readthedocs.io/en/stable/', None),
     'dateutil': ('https://dateutil.readthedocs.io/en/stable/', None),
     'dqsegdb2': ('https://dqsegdb2.readthedocs.io/en/stable/', None),
     # 'glue': ('https://docs.ligo.org/lscsoft/glue/', None),
@@ -245,19 +237,13 @@ intersphinx_mapping = {
     'ligo.skymap': ('https://lscsoft.docs.ligo.org/ligo.skymap/', None),
     'ligo-segments': ('https://lscsoft.docs.ligo.org/ligo-segments/', None),
     'ligolw': ('https://docs.ligo.org/kipp.cannon/python-ligo-lw/', None),
+    'lscsoft-glue': ('https://lscsoft.docs.ligo.org/glue/', None),
     'matplotlib': ('https://matplotlib.org/', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'pycbc': ('https://pycbc.org/pycbc/latest/html/', None),
     'python': ('https://docs.python.org/3/', None),
     'uproot': ('https://uproot.readthedocs.io/en/stable/', None),
     'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
-}
-
-# -- sphinx-panels
-
-panels_css_variables = {
-    "tabs-color-label-active": "#ff6e40;",
-    "tabs-size-label": ".8rem",
 }
 
 

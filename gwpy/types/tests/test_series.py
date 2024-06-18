@@ -111,6 +111,10 @@ class TestSeries(_TestArray):
         assert series.x0 == units.Quantity(1, 'Mpc')
         assert series.xspan == (x[0], x[-1] + x[-1] - x[-2])
 
+    def test_xindex_length_exception(self):
+        with pytest.raises(ValueError):
+            Series([1, 2, 3], xindex=[0])
+
     def test_xindex_dtype(self):
         x0 = numpy.longdouble(100)
         dx = numpy.float32(1e-4)
@@ -162,6 +166,32 @@ class TestSeries(_TestArray):
                 array.value[a], xindex=array.xindex[a],
                 name=array.name, epoch=array.epoch, unit=array.unit),
             )
+
+    def test_getitem_index(self, array):
+        """Test that __getitem__ also applies to an xindex.
+
+        When subsetting a Series with an iterable of integer indices,
+        make sure that the xindex, if it exists, is also subsetted. Tests
+        regression against https://github.com/gwpy/gwpy/issues/1680.
+        """
+        array.xindex  # create xindex
+        indices = numpy.array([0, 1, len(array)-1])
+        newarray = array[indices]
+
+        assert len(newarray) == 3
+        assert len(newarray) == len(newarray.value)
+        assert len(newarray.value) == len(newarray.xindex)
+
+    def test_single_getitem_not_created(self, array):
+        """Test that array[i] does not return an object with a new _xindex."""
+
+        # check that there is no xindex when a single value is accessed
+        with pytest.raises(AttributeError):
+            array[0].xindex
+
+        # we don't need this, we don't want it accidentally injected
+        with pytest.raises(AttributeError):
+            array[0]._xindex
 
     def test_empty_slice(self, array):
         """Check that we can slice a `Series` into nothing
@@ -221,8 +251,8 @@ class TestSeries(_TestArray):
         cropped = series.crop(start=25, end=75)
         utils.assert_quantity_equal(series[(x > 25) & (x < 75)], cropped)
 
-    def test_crop_float_precision(self):
-        """Verify the float precision of the crop function.
+    def test_crop_float_precision_last_value(self):
+        """Verify the float precision of Series.crop given the last index.
 
         This tests regression against https://github.com/gwpy/gwpy/issues/1601.
         """
@@ -233,6 +263,58 @@ class TestSeries(_TestArray):
         # assert that when we crop it, we only crop a single sample
         cropped = series.crop(end=1.)
         utils.assert_quantity_equal(series[:-1], cropped)
+
+    def test_crop_float_precision_last_value_float(self):
+        """Verify the float precision of the crop function with float end.
+
+        This tests regression against https://github.com/gwpy/gwpy/issues/1656.
+        """
+        arrlen = 500
+        xmax = 0.508463154883984
+        x_series = numpy.linspace(0, xmax, arrlen)
+        series = Series([0] * arrlen, xindex=x_series)
+        expected = series.xindex[-2]
+        assert series.crop(end=xmax).xindex[-1] == expected
+
+    def test_crop_between_grid_points_is_floored(self):
+        """Test that when we crop between xindex values, the result is floored.
+
+        This tests regression against https://github.com/gwpy/gwpy/issues/1656.
+        """
+        # e.g. x = [1, 2, 3], end = 2.5, result = [1, 2]
+        series = Series([0] * 3, xindex=[1, 2, 3])
+        assert all(series.crop(end=2.5).xindex == [1, 2])
+
+        series = Series([0] * 3, xindex=[1, 2, 3])
+        assert all(series.crop(start=2.5).xindex == [3])
+
+        series = Series([0] * 5, xindex=[1, 2, 3, 4, 5])
+        assert all(series.crop(start=2.5, end=4.5).xindex == [3, 4])
+
+    def test_crop_float_precision_near_last_value_float(self):
+        """Test the float precision of Series.crop with arg just under end.
+
+        This tests regression against https://github.com/gwpy/gwpy/issues/1656.
+        """
+        arrlen = 500
+        xmax = 0.508463154883984
+        x_series = numpy.linspace(0, xmax, arrlen)
+        series = Series([0] * arrlen, xindex=x_series)
+        expected = series.xindex[-2]
+        mid = (0.6 * series.xindex[-2] + 0.4 * series.xindex[-1])
+        assert series.crop(end=mid).xindex[-1] == expected
+
+    def test_crop_float_precision_first_value_float(self):
+        """Verify the float precision of the crop function with float start.
+
+        This tests regression against https://github.com/gwpy/gwpy/issues/1656.
+        """
+        arrlen = 500
+        xmin = 0.508463154883984
+        x_series = numpy.linspace(xmin, 1.0, arrlen)
+        series = Series([0] * arrlen, xindex=x_series)
+        expected = series.xindex[0]
+        assert series.crop(start=xmin).xindex[0] == expected
 
     def test_is_compatible(self, array):
         """Test the `Series.is_compatible` method

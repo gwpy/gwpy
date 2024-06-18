@@ -30,6 +30,8 @@ import pytest
 import numpy
 from numpy import testing as nptest
 
+from requests.exceptions import HTTPError
+
 from scipy import signal
 
 from astropy import units
@@ -89,6 +91,7 @@ NDS2_GW150914_CHANNEL = "L1:DCS-CALIB_STRAIN_C02"
 GWOSC_GW150914_FRAMETYPE = "L1_LOSC_16_V1"
 GWOSC_GW150914 = 1126259462
 GWOSC_GW150914_SEGMENT = Segment(GWOSC_GW150914-2, GWOSC_GW150914+2)
+GWOSC_GW150914_SEGMENT_32 = Segment(GWOSC_GW150914-16, GWOSC_GW150914+16)
 GWOSC_GW150914_DQ_BITS = {
     'hdf5': [
         'data present',
@@ -149,6 +152,22 @@ class TestTimeSeries(_TestTimeSeriesBase):
             GWOSC_GW150914_IFO,
             *GWOSC_GW150914_SEGMENT,
             sample_rate=16384,
+        )
+
+    @pytest.fixture(scope="class")
+    @pytest_skip_network_error
+    def gw150914_h1_32(self):
+        return self.TEST_CLASS.fetch_open_data(
+            "H1",
+            *GWOSC_GW150914_SEGMENT_32,
+        )
+
+    @pytest.fixture(scope="class")
+    @pytest_skip_network_error
+    def gw150914_l1_32(self):
+        return self.TEST_CLASS.fetch_open_data(
+            "L1",
+            *GWOSC_GW150914_SEGMENT_32,
         )
 
     # -- test class functionality ---------------
@@ -646,29 +665,65 @@ class TestTimeSeries(_TestTimeSeriesBase):
         "os.environ",
         {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
-    def test_find(self, gw150914_16384):
+    @pytest.mark.parametrize("kwargs", [
+        pytest.param({"verbose": True}, id="default"),
+        pytest.param({"observatory": GWOSC_GW150914_IFO[0]}, id="observatory"),
+    ])
+    def test_find(self, gw150914_16384, kwargs):
+        """Test that `TimeSeries.find()` can actually find data.
+        """
         ts = self.TEST_CLASS.find(
             GWOSC_GW150914_CHANNEL,
             *GWOSC_GW150914_SEGMENT,
             frametype=GWOSC_GW150914_FRAMETYPE,
+            **kwargs,
         )
-        utils.assert_quantity_sub_equal(ts, gw150914_16384,
-                                        exclude=['name', 'channel', 'unit'])
+        utils.assert_quantity_sub_equal(
+            ts,
+            gw150914_16384,
+            exclude=['name', 'channel', 'unit'],
+        )
 
-        # test observatory
-        ts2 = self.TEST_CLASS.find(
-            GWOSC_GW150914_CHANNEL,
-            *GWOSC_GW150914_SEGMENT,
-            frametype=GWOSC_GW150914_FRAMETYPE,
-            observatory=GWOSC_GW150914_IFO[0],
-        )
-        utils.assert_quantity_sub_equal(ts, ts2)
-        with pytest.raises(RuntimeError):
+    @pytest_skip_network_error
+    @mock.patch.dict(
+        "os.environ",
+        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+    )
+    def test_find_datafind_httperror(self):
+        """Test that HTTPErrors are presented in `find()`.
+        """
+        with pytest.raises(HTTPError):
             self.TEST_CLASS.find(
                 GWOSC_GW150914_CHANNEL,
                 *GWOSC_GW150914_SEGMENT,
                 frametype=GWOSC_GW150914_FRAMETYPE,
                 observatory='X',
+            )
+
+    @mock.patch.dict(
+        "os.environ",
+        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+    )
+    def test_find_datafind_runtimeerror(self):
+        """Test that empty datafind caches result in RuntimeErrors in `find()`.
+        """
+        with pytest.raises(RuntimeError):
+            self.TEST_CLASS.find(
+                GWOSC_GW150914_CHANNEL,
+                *GWOSC_GW150914_SEGMENT.shift(-1e8),  # no data available here!
+                frametype=GWOSC_GW150914_FRAMETYPE,
+            )
+
+    def test_find_observatory_error(self):
+        with pytest.raises(
+            ValueError,
+            match="Cannot parse list of IFOs from channel names",
+        ):
+            self.TEST_CLASS.find(
+                "Test",
+                0,
+                1,
+                frametype="X1_TEST",
             )
 
     @_gwosc_cvmfs
@@ -745,6 +800,22 @@ class TestTimeSeries(_TestTimeSeriesBase):
         fs = gw150914.fft(nfft=256)
         assert fs.size == 129
         assert fs.dx == gw150914.sample_rate / 256
+
+    @pytest.mark.parametrize("data", [
+        [1., 0., -1., 0.],
+        [1., 2., 3., 2., 1., 0.],
+        numpy.arange(10),
+        numpy.random.random(100),
+    ])
+    def test_fft_ifft(self, data):
+        a = self.TEST_CLASS(data)
+        utils.assert_quantity_sub_equal(
+            a,
+            a.fft().ifft(),
+            almost_equal=True,
+            rtol=1e-7,
+            atol=1e-10,
+        )
 
     def test_average_fft(self, gw150914):
         # test all defaults
@@ -1104,6 +1175,18 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # FIXME: this test needs to be more robust
         assert l2.sample_rate == 1024 * units.Hz
 
+    def test_resample_simple_upsample(self, gw150914):
+        """Test consistency when upsampling by 2x`
+        """
+        upsamp = gw150914.resample(gw150914.sample_rate.value * 2)
+        assert numpy.allclose(gw150914.value, upsamp.value[::2])
+
+    def test_resample_simple_downsample(self, gw150914):
+        """Test consistency when downsampling by 2x`
+        """
+        downsamp = gw150914.resample(gw150914.sample_rate.value // 2)
+        assert numpy.allclose(gw150914.value[::2], downsamp.value)
+
     def test_resample_noop(self):
         data = self.TEST_CLASS([1, 2, 3, 4, 5])
         with pytest.warns(UserWarning):
@@ -1370,6 +1453,155 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_quantity_sub_equal(
             gw150914.zpk(*zpk), gw150914.filter(*zpk, analog=True))
 
+    def test_highpass_happy_path(self, gw150914):
+        """Check that passband val are approx equal, stopband are not.
+        """
+        asd = gw150914.asd()
+        hp_asd = gw150914.highpass(100).asd()
+
+        eqinds = numpy.where(hp_asd.frequencies.value > 200)[0]
+        eqind0 = eqinds[0]
+
+        # be within 40% for all values after
+        # numpy allclose formula:
+        # |a-b| <= atol + rtol * |b|
+
+        assert numpy.allclose(
+            hp_asd[eqind0:].value,
+            asd[eqind0:].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+        # dont be within 40% for all value before
+        assert not numpy.allclose(
+            hp_asd[:eqind0].value,
+            asd[:eqind0].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+    def test_lowpass_happy_path(self, gw150914):
+        """Check that passband val are approx equal, stopband are not.
+        """
+        asd = gw150914.asd()
+        lp_asd = gw150914.lowpass(500).asd()
+
+        eqinds = numpy.where(lp_asd.frequencies.value < 500)[0]
+        eqind0 = eqinds[0]
+
+        # be within 40% for all values before
+        # numpy allclose formula:
+        # |a-b| <= atol + rtol * |b|
+
+        assert not numpy.allclose(
+            lp_asd[eqind0:].value,
+            asd[eqind0:].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+        # dont be within 40% for all value after
+        assert numpy.allclose(
+            lp_asd[:eqind0].value,
+            asd[:eqind0].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+    def test_notch_happy_path(self, gw150914):
+        """Check passband vals are approx equal, stopband are not.
+        """
+        nf = 10
+        notched = gw150914.notch(nf, filtfilt=True)
+        notched_asd = notched.asd()
+        asd = gw150914.asd()
+
+        n_eps = 3
+        eps = n_eps * notched_asd.df.value
+
+        # indices outside interval around 10 rad/s
+        l_inds = numpy.where(notched_asd.frequencies.value < nf - eps)[0]
+        r_inds = numpy.where(notched_asd.frequencies.value > nf + eps)[0]
+        # index at 10 rad/s
+        nf_ind = numpy.argmin(numpy.abs(notched_asd.frequencies.value - nf))
+        # indices inside interval around 10 rad/s
+        nf_inds = numpy.arange(nf_ind - n_eps, nf_ind + n_eps)
+
+        assert l_inds[-1] <= nf_ind
+        assert r_inds[0] >= nf_ind
+
+        # be within 40% for all values outside nbrhood
+        assert numpy.allclose(
+            notched_asd[l_inds].value,
+            asd[l_inds].value,
+            rtol=0.4,
+            atol=0,
+        )
+        assert numpy.allclose(
+            notched_asd[r_inds].value,
+            asd[r_inds].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+        # dont be within 40% for all values inside nbrhood
+        assert not numpy.allclose(
+            notched_asd[nf_inds].value,
+            asd[nf_inds].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+        # biggest difference between filtered and unfiltered
+        # should be at closest f to nf=10
+        absd = numpy.abs(notched_asd.value - asd.value)
+        assert numpy.isclose(absd[nf_ind], numpy.max(absd))
+
+    def test_bandpass_happy_path(self, gw150914):
+        """Check that passband val are approx equal, stopband are not.
+        """
+
+        asd = gw150914.asd()
+        bp_asd = gw150914.bandpass(100, 1000).asd()
+
+        eqinds = numpy.where(
+            numpy.logical_and(
+                bp_asd.frequencies.value > 100,
+                bp_asd.frequencies.value < 1000
+            )
+        )[0]
+
+        eqind0 = eqinds[0]
+        eqindn = eqinds[-1]
+
+        # be within 40% for all values after
+        # numpy allclose formula:
+        # |a-b| <= atol + rtol * |b|
+
+        assert numpy.allclose(
+            bp_asd[eqind0:eqindn].value,
+            asd[eqind0:eqindn].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+        # dont be within 40% for all value before
+        assert not numpy.allclose(
+            bp_asd[:eqind0].value,
+            asd[:eqind0].value,
+            rtol=0.4,
+            atol=0,
+        )
+
+        # or after
+        assert not numpy.allclose(
+            bp_asd[eqindn:].value,
+            asd[eqindn:].value,
+            rtol=0.4,
+            atol=0,
+        )
+
     def test_notch(self, gw150914):
         # test notch runs end-to-end
         gw150914.notch(60)
@@ -1460,28 +1692,30 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert comp.name == '%s >= 2.0' % (array.name)
         assert (array == array).name == '{0} == {0}'.format(array.name)
 
-    @pytest_skip_network_error
-    def test_transfer_function(self):
-        tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
-        tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        tf = tsh.transfer_function(tsl, fftlength=1.0, overlap=0.5)
+    def test_transfer_function(self, gw150914_h1_32, gw150914_l1_32):
+        tf = gw150914_h1_32.transfer_function(
+            gw150914_l1_32,
+            fftlength=1.0,
+            overlap=0.5,
+        )
         assert tf.df == 1 * units.Hz
         assert tf.frequencies[abs(tf).argmax()] == 516 * units.Hz
 
-    @pytest_skip_network_error
-    def test_coherence(self):
-        tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
-        tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        coh = tsh.coherence(tsl, fftlength=1.0)
+    def test_coherence(self, gw150914_h1_32, gw150914_l1_32):
+        coh = gw150914_h1_32.coherence(
+            gw150914_l1_32,
+            fftlength=1.0,
+        )
         assert coh.df == 1 * units.Hz
         assert coh.frequencies[coh.argmax()] == 60 * units.Hz
 
-    @pytest_skip_network_error
-    def test_coherence_spectrogram(self):
-        tsh = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
-        tsl = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
-        cohsg = tsh.coherence_spectrogram(tsl, 4, fftlength=1.0)
-        assert cohsg.t0 == tsh.t0
+    def test_coherence_spectrogram(self, gw150914_h1_32, gw150914_l1_32):
+        cohsg = gw150914_h1_32.coherence_spectrogram(
+            gw150914_l1_32,
+            4,
+            fftlength=1.0,
+        )
+        assert cohsg.t0 == gw150914_h1_32.t0
         assert cohsg.dt == 4 * units.second
         assert cohsg.df == 1 * units.Hz
         tmax, fmax = numpy.unravel_index(cohsg.argmax(), cohsg.shape)
