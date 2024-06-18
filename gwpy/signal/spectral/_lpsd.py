@@ -208,12 +208,16 @@ def _parse_overlap(overlap, total_duration):
 fft_registry.register_method(lpsd)
 
 
-def lpsd_coherence(self, other, fftlength=None, overlap=None, window='kaiser', **kwargs):
+def lpsd_coherence(timeseries, other, fftlength=None,
+                   overlap=None, window='kaiser', **kwargs):
     """Calculate the frequency-coherence between this `TimeSeries`
     and another using LPSD method.
 
     Parameters
     ----------
+    timeseries : `TimeSeries`
+        `TimeSeries` signal
+
     other : `TimeSeries`
         `TimeSeries` signal to calculate coherence with
 
@@ -225,7 +229,8 @@ def lpsd_coherence(self, other, fftlength=None, overlap=None, window='kaiser', *
         number of seconds of overlap between FFTs.
 
     window : `str`, `numpy.ndarray`, optional
-        Window function to apply to timeseries prior to FFT. See :func:`scipy.signal.get_window` 
+        Window function to apply to timeseries prior to FFT.
+        See :func:`scipy.signal.get_window`
         Defaults to 'kaiser'.
 
     **kwargs
@@ -239,7 +244,7 @@ def lpsd_coherence(self, other, fftlength=None, overlap=None, window='kaiser', *
     """
 
     csd = spectral.psd(
-        (self, other),
+        (timeseries, other),
         method_func=spectral.lpsd,
         fftlength=fftlength,
         overlap=overlap,
@@ -247,7 +252,7 @@ def lpsd_coherence(self, other, fftlength=None, overlap=None, window='kaiser', *
         **kwargs,
     )
     psd1 = spectral.psd(
-        self,
+        timeseries,
         method_func=spectral.lpsd,
         fftlength=fftlength,
         overlap=overlap,

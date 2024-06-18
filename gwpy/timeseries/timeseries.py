@@ -1259,8 +1259,10 @@ class TimeSeries(TimeSeriesBase):
 
         method_func = spectral.coherence
         if "method" in kwargs and kwargs["method"] == "lpsd":
-            kwargs["window_"] = window  # work-around to propagate 'window' argument intact
-            method_func = spectral.lpsd_coherence  # for LPSD method, calculate coherence with LPSD
+            kwargs["window_"] = window  # work-around 
+            # to propagate 'window' argument intact
+            method_func = spectral.lpsd_coherence  # for LPSD method, 
+            # calculate coherence with LPSD
 
         return spectral.psd(
             (self, other),
