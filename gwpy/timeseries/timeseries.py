@@ -1259,9 +1259,9 @@ class TimeSeries(TimeSeriesBase):
 
         method_func = spectral.coherence
         if "method" in kwargs and kwargs["method"] == "lpsd":
-            kwargs["window_"] = window  # work-around 
+            kwargs["window_"] = window  # work-around
             # to propagate 'window' argument intact
-            method_func = spectral.lpsd_coherence  # for LPSD method, 
+            method_func = spectral.lpsd_coherence  # for LPSD method,
             # calculate coherence with LPSD
 
         return spectral.psd(
@@ -1272,7 +1272,6 @@ class TimeSeries(TimeSeriesBase):
             window=window,
             **kwargs
         )
-
 
     def auto_coherence(self, dt, fftlength=None, overlap=None,
                        window='hann', **kwargs):
