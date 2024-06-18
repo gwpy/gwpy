@@ -11,13 +11,10 @@ Wrapper for LPSD method, see https://gitlab.com/uhh-gwd/lpsd
 
 import warnings
 import inspect
-import pandas
 import numpy
 
-from lpsd import lcsd
-from lpsd._lcsd import LCSD
-
 from ...frequencyseries import FrequencySeries
+from ...window import get_window
 from . import _registry as fft_registry
 from ._utils import scale_timeseries_unit
 
@@ -54,6 +51,10 @@ def lpsd(*args, **kwargs):
     fs: FrequencySeries
         resulting CSD
     """
+
+    import pandas
+    from lpsd import lcsd
+    from lpsd._lcsd import LCSD
 
     try:
         timeseries, nfft = args
@@ -129,17 +130,8 @@ def _parse_window(window):
         )
         window = "kaiser"
 
-    window_to_func = {
-        "kaiser": numpy.kaiser,
-        "hann": numpy.hanning,
-        "hanning": numpy.hanning,
-        "hamm": numpy.hamming,
-        "hamming": numpy.hamming,
-        "bartlett": numpy.bartlett,
-        "blackman": numpy.blackman,
-    }
     try:
-        window_function = window_to_func[window]
+        window_function = get_window(window)
     except KeyError as exc:
         raise KeyError(
             "Window " + window + "is not supported for LPSD averaging method"
@@ -214,3 +206,66 @@ def _parse_overlap(overlap, total_duration):
 
 
 fft_registry.register_method(lpsd)
+
+
+def lpsd_coherence(self, other, fftlength=None, overlap=None, window='kaiser', **kwargs):
+    """Calculate the frequency-coherence between this `TimeSeries`
+    and another using LPSD method.
+
+    Parameters
+    ----------
+    other : `TimeSeries`
+        `TimeSeries` signal to calculate coherence with
+
+    fftlength : `float`, optional
+        number of seconds in single FFT. User-specified value ignored,
+        algorithm calculates optimal segment lengths.
+
+    overlap : `float`, optional
+        number of seconds of overlap between FFTs.
+
+    window : `str`, `numpy.ndarray`, optional
+        Window function to apply to timeseries prior to FFT. See :func:`scipy.signal.get_window` 
+        Defaults to 'kaiser'.
+
+    **kwargs
+        any other keyword arguments accepted by :class:lpsd.lcsd
+
+    Returns
+    -------
+    coherence : `~gwpy.frequencyseries.FrequencySeries`
+        the coherence `FrequencySeries` of this `TimeSeries`
+        with the other
+    """
+
+    csd = spectral.psd(
+        (self, other),
+        method_func=spectral.lpsd,
+        fftlength=fftlength,
+        overlap=overlap,
+        window=window,
+        **kwargs,
+    )
+    psd1 = spectral.psd(
+        self,
+        method_func=spectral.lpsd,
+        fftlength=fftlength,
+        overlap=overlap,
+        window=window,
+        **kwargs,
+    )
+    psd2 = spectral.psd(
+        other,
+        method_func=spectral.lpsd,
+        fftlength=fftlength,
+        overlap=overlap,
+        window=window,
+        **kwargs,
+    )
+    coherence = numpy.abs(csd) ** 2 / psd1 / psd2
+    coherence.name = f"Coherence between {self.name} and {other.name}"
+    coherence.override_unit("coherence")
+    return coherence
+
+
+fft_registry.register_method(lpsd_coherence)

@@ -50,7 +50,6 @@ dependencies = [
   "requests",
   "scipy >=1.5.0",
   "tqdm >=4.10.0",
-  "lpsd >=1.0.3,<2.0"
 ]
 
 # dynamic properties set by tools
@@ -103,6 +102,11 @@ conda = [
   "python-framel >=8.40.1,!=8.46.0",
   "python-ldas-tools-framecpp ; sys_platform != 'win32'",
   "python-nds2-client",
+]
+# LPSD averaging method
+lpsd = [
+  "lpsd >=1.0.3,<2.0",
+  "pandas >=1.0,<3.0"
 ]
 
 [project.scripts]

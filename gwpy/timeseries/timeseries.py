@@ -1256,49 +1256,21 @@ class TimeSeries(TimeSeriesBase):
         scipy.signal.coherence
             for details of the coherence calculator
         """
-        if not kwargs.get("method") == "lpsd":
-            return spectral.psd(
-                (self, other),
-                spectral.coherence,
-                fftlength=fftlength,
-                overlap=overlap,
-                window=window,
-                **kwargs
-            )
-        # for LPSD method, calculate coherence "manually"
 
-        # work-around to propagate 'window' argument intact
-        # for LPSD averaging method
-        kwargs["window_"] = window
+        method_func = spectral.coherence
+        if "method" in kwargs and kwargs["method"] == "lpsd":
+            kwargs["window_"] = window  # work-around to propagate 'window' argument intact
+            method_func = spectral.lpsd_coherence  # for LPSD method, calculate coherence with LPSD
 
-        csd = spectral.psd(
+        return spectral.psd(
             (self, other),
-            method_func=spectral.lpsd,
+            method_func,
             fftlength=fftlength,
             overlap=overlap,
             window=window,
-            **kwargs,
+            **kwargs
         )
-        psd1 = spectral.psd(
-            self,
-            method_func=spectral.lpsd,
-            fftlength=fftlength,
-            overlap=overlap,
-            window=window,
-            **kwargs,
-        )
-        psd2 = spectral.psd(
-            other,
-            method_func=spectral.lpsd,
-            fftlength=fftlength,
-            overlap=overlap,
-            window=window,
-            **kwargs,
-        )
-        coherence = numpy.abs(csd) ** 2 / psd1 / psd2
-        coherence.name = f"Coherence between {self.name} and {other.name}"
-        coherence.override_unit("coherence")
-        return coherence
+
 
     def auto_coherence(self, dt, fftlength=None, overlap=None,
                        window='hann', **kwargs):
