@@ -1256,9 +1256,7 @@ class TimeSeries(TimeSeriesBase):
         scipy.signal.coherence
             for details of the coherence calculator
         """
-        if "method" in kwargs and kwargs["method"] == "lpsd":
-            pass
-        else:
+        if not kwargs.get("method") == "lpsd":
             return spectral.psd(
                 (self, other),
                 spectral.coherence,
