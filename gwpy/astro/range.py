@@ -25,7 +25,7 @@ import warnings
 from functools import wraps
 from math import pi
 
-from scipy.integrate import trapz
+from scipy.integrate import trapezoid
 from scipy.interpolate import interp1d
 
 from astropy import (
@@ -238,7 +238,7 @@ def sensemon_range(psd, snr=8, mass1=1.4, mass2=1.4, fmin=None, fmax=None,
     integrand = sensemon_range_psd(psd[frange], snr=snr, mass1=mass1,
                                    mass2=mass2, horizon=horizon)
     return (units.Quantity(
-        trapz(integrand.value, f.value[frange]),
+        trapezoid(integrand.value, f.value[frange]),
         unit=integrand.unit * units.Hertz,
     ) ** (1/2.)).to('Mpc')
 
@@ -528,7 +528,7 @@ def burst_range(psd, snr=8, energy=1e-2, fmin=100, fmax=500):
     # calculate integrand and integrate
     integrand = burst_range_spectrum(
         psd[frange], snr=snr, energy=energy) ** 3
-    out = trapz(integrand.value, f[frange])
+    out = trapezoid(integrand.value, f[frange])
     # normalize and return
     return (units.Quantity(
         out / (fmax - fmin),

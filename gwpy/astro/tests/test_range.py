@@ -24,7 +24,7 @@ from unittest import mock
 import pytest
 
 from astropy import units
-from scipy.integrate import trapz
+from scipy.integrate import trapezoid
 
 from ... import astro
 from ...testing import utils
@@ -71,7 +71,7 @@ def test_sensemon_range_psd(psd):
     r = astro.sensemon_range_psd(psd[frange])
     assert isinstance(r, FrequencySeries)
     utils.assert_quantity_almost_equal(
-        trapz(r, r.frequencies) ** (1/2.),
+        trapezoid(r, r.frequencies) ** (1/2.),
         TEST_RESULTS['sensemon_range'],
     )
     assert r.f0.value > 0
@@ -103,9 +103,8 @@ def test_inspiral_range_psd(psd):
     frange = (psd.frequencies.value < 4096)
     r = astro.inspiral_range_psd(psd[frange])
     assert isinstance(r, FrequencySeries)
-    print(trapz(r, r.frequencies) ** (1/2.))
     utils.assert_quantity_almost_equal(
-        trapz(r, r.frequencies) ** (1/2.),
+        trapezoid(r, r.frequencies) ** (1/2.),
         TEST_RESULTS['inspiral_range'],
     )
     assert r.f0.value > 0
@@ -129,7 +128,7 @@ def test_burst_range_spectrum(psd):
     r = astro.burst_range_spectrum(psd[frange])
     assert isinstance(r, FrequencySeries)
     utils.assert_quantity_almost_equal(
-        (trapz(r**3, f[frange]) / (400 * units.Hz)) ** (1/3.),
+        (trapezoid(r**3, f[frange]) / (400 * units.Hz)) ** (1/3.),
         TEST_RESULTS['burst_range'],
     )
     assert r.f0.value > 0
