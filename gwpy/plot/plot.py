@@ -85,14 +85,14 @@ def get_backend_mod(name=None):
     return importlib.import_module(backend_name)
 
 
-class Plot(figure.Figure):
+class Plot:
     """An extension of the core matplotlib `~matplotlib.figure.Figure`
 
     The `Plot` provides a number of methods to simplify generating
     figures from GWpy data objects, and modifying them on-the-fly in
     interactive mode.
     """
-    def __init__(self, *data, **kwargs):
+    def __init__(self, *data, fig=None, **kwargs):
 
         # get default x-axis scale if all axes have the same x-axis units
         kwargs.setdefault('xscale', _parse_xscale(
@@ -109,11 +109,17 @@ class Plot(figure.Figure):
         # initialise figure
         figure_kw = {key: kwargs.pop(key) for key in utils.FIGURE_PARAMS if
                      key in kwargs}
-        self._init_figure(**figure_kw)
-
+        if fig is None:
+            self.fig = None
+            self._init_figure(**figure_kw)
+        else:
+            self.fig = fig
         # initialise axes with data
         if data or kwargs.get("geometry"):
             self._init_axes(data, **kwargs)
+
+    def __getattr__(self,key):
+        return getattr(self.fig,key)
 
     def _init_figure(self, **kwargs):
         from matplotlib import pyplot
@@ -125,7 +131,7 @@ class Plot(figure.Figure):
         # create Figure
         num = kwargs.pop('num', max(pyplot.get_fignums() or {0}) + 1)
         self._parse_subplotpars(kwargs)
-        super().__init__(**kwargs)
+        self.fig = figure.Figure(**kwargs)
         self.number = num
 
         # add interactivity (scraped from pyplot.figure())
@@ -197,6 +203,7 @@ class Plot(figure.Figure):
             axes_kw["sharex"] = shared_with[sharex]
             axes_kw["sharey"] = shared_with[sharey]
             axes_kw['xscale'] = xscale if xscale else _parse_xscale(group)
+            axes_kw['projection'] = "gwpy"
             ax = axarr[row, col] = self.add_subplot(gs[row, col], **axes_kw)
 
             # plot data
@@ -284,7 +291,7 @@ class Plot(figure.Figure):
                 block = False
 
         # render
-        super().show(warn=warn)
+        self.fig.show(warn=warn)
 
         # don't block on ipython with interactive backends
         if block is None and interactive_backend():
