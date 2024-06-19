@@ -34,6 +34,11 @@ from math import modf
 import numpy
 
 from astropy.units import Quantity
+try:
+    from astropy.utils.compat.numpycompat import COPY_IF_NEEDED
+except ImportError:  # astropy < 6.1
+    from astropy.utils import minversion
+    COPY_IF_NEEDED = None if minversion(numpy, "2.0.0.dev") else False
 
 from ..detector import Channel
 from ..detector.units import parse_unit
@@ -119,8 +124,16 @@ class Array(Quantity):
             unit = parse_unit(unit, parse_strict='warn')
 
         # create new array
-        new = super().__new__(cls, value, unit=unit, dtype=dtype, copy=False,
-                              order=order, subok=subok, ndmin=ndmin)
+        new = super().__new__(
+            cls,
+            value,
+            unit=unit,
+            dtype=dtype,
+            copy=COPY_IF_NEEDED,
+            order=order,
+            subok=subok,
+            ndmin=ndmin,
+        )
 
         # explicitly copy here to get ownership of the data,
         # see (astropy/astropy#7244)
@@ -397,7 +410,7 @@ class Array(Quantity):
         out = super().__array_ufunc__(function, method, *inputs, **kwargs)
         # if a ufunc returns a scalar, return a Quantity
         if not out.ndim:
-            return Quantity(out, copy=False)
+            return Quantity(out, copy=COPY_IF_NEEDED)
         # otherwise return an array
         return out
 
