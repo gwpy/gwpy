@@ -253,28 +253,29 @@ class TestTimeSeries(_TestTimeSeriesBase):
                                         exclude=['channel'])
 
     @pytest.mark.parametrize('api', GWF_APIS)
-    def test_read_write_gwf_gps_errors(self, tmp_path, api):
+    def test_read_gwf_end_error(self, api):
+        """Test that reading past the end of available data fails.
+        """
         fmt = "gwf" if api is None else "gwf." + api
-        array = self.create(name='TEST')
-        tmp = tmp_path / "test.gwf"
-        array.write(tmp, format=fmt)
-
-        # check that reading past the end of the array fails
-        with pytest.raises((ValueError, RuntimeError)):
+        with pytest.raises(ValueError):
             self.TEST_CLASS.read(
-                tmp,
-                array.name,
+                utils.TEST_GWF_FILE,
+                "L1:LDAS-STRAIN",
                 format=fmt,
-                start=array.span[1],
+                start=utils.TEST_GWF_SPAN[1],
             )
 
-        # check that reading before the start of the array also fails
-        with pytest.raises((ValueError, RuntimeError)):
+    @pytest.mark.parametrize('api', GWF_APIS)
+    def test_read_gwf_negative_duration_error(self, api):
+        """Test that reading a negative duration fails.
+        """
+        fmt = "gwf" if api is None else "gwf." + api
+        with pytest.raises(ValueError):
             self.TEST_CLASS.read(
-                tmp,
-                array.name,
+                utils.TEST_GWF_FILE,
+                "L1:LDAS-STRAIN",
                 format=fmt,
-                end=array.span[0]-1,
+                end=utils.TEST_GWF_SPAN[0]-1,
             )
 
     @pytest.mark.parametrize('api', GWF_APIS)
