@@ -149,6 +149,10 @@ def read(source, channels, start=None, end=None, series_class=TimeSeries,
         end = epoch + streamdur
     end = min(epoch + streamdur, lalutils.to_lal_ligotimegps(end))
     duration = float(end - start)
+    if start >= (epoch + streamdur):
+        raise ValueError(
+            "cannot read data starting after stream ends",
+        )
     if duration < 0:
         raise ValueError(
             "cannot read data with negative duration",
