@@ -118,8 +118,8 @@ class Plot:
         if data or kwargs.get("geometry"):
             self._init_axes(data, **kwargs)
 
-    def __getattr__(self,key):
-        return getattr(self.fig,key)
+    def __getattr__(self, key):
+        return getattr(self.fig, key)
 
     def _init_figure(self, **kwargs):
         from matplotlib import pyplot
