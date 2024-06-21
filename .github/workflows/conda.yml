@@ -84,12 +84,16 @@ jobs:
         echo "Dir::Cache \"${APT_CACHE_DIR}\";" | sudo tee /etc/apt/apt.conf.d/99cache.conf
 
     - name: Configure conda
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
         activate-environment: test
-        miniforge-variant: Mambaforge
+        auto-update-conda: true
+        conda-solver: libmamba
+        miniforge-variant: Miniforge3
         python-version: ${{ matrix.python-version }}
-        use-mamba: true
+
+    - name: Update conda
+      run: conda update --quiet --yes --name base conda conda-libmamba-solver mamba
 
     - name: Conda info
       run: conda info --all
@@ -97,15 +101,15 @@ jobs:
     - name: Install dependencies with conda
       run: |
         # parse requirements to install as much as possible with conda
-        mamba create --name pip2conda pip2conda
-        mamba run -n pip2conda pip2conda \
+        conda create --name pip2conda pip2conda
+        conda run -n pip2conda pip2conda \
             --all \
             --output environment.txt \
             --python-version ${{ matrix.python-version }}
         echo "-----------------"
         cat environment.txt
         echo "-----------------"
-        mamba install --quiet --yes --name test --file environment.txt
+        conda install --quiet --yes --name test --file environment.txt
 
     - name: Install extra dependencies (Linux)
       if: matrix.os == 'Ubuntu'
