@@ -167,6 +167,7 @@ for unit, aliases in [
     # GW observatories like to record 'time' as the unit
     (units.Unit('second'), (
         'time',
+        'time (s)',
         'time [s]',
         'Time [sec]',
         'Time (sec)',
