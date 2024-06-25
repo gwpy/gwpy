@@ -73,7 +73,6 @@ def lpsd(*args, **kwargs):
             "segment lengths are calculated by the algorithm."
         )
 
-
     # Convert inputs to pandas.DataFrame
     df = pandas.DataFrame()
     df["x1"] = timeseries.value
