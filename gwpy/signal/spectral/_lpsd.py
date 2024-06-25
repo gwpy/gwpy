@@ -14,8 +14,8 @@ import inspect
 import numpy
 
 from ...frequencyseries import FrequencySeries
-from ...window import get_window
 from . import _registry as fft_registry
+from ._ui import psd
 from ._utils import scale_timeseries_unit
 
 
@@ -54,7 +54,6 @@ def lpsd(*args, **kwargs):
 
     import pandas
     from lpsd import lcsd
-    from lpsd._lcsd import LCSD
 
     try:
         timeseries, nfft = args
@@ -68,11 +67,12 @@ def lpsd(*args, **kwargs):
 
     # No fftlength for LPSD method.
     if kwargs.get("fftlength") or nfft != len(timeseries.value):
-        raise ValueError(
+        warnings.warn(
             "fftlength/nfft arguments are "
             "not supported by LPSD averaging method; "
             "segment lengths are calculated by the algorithm."
         )
+
 
     # Convert inputs to pandas.DataFrame
     df = pandas.DataFrame()
@@ -130,8 +130,17 @@ def _parse_window(window):
         )
         window = "kaiser"
 
+    window_to_func = {
+        "kaiser": numpy.kaiser,
+        "hann": numpy.hanning,
+        "hanning": numpy.hanning,
+        "hamm": numpy.hamming,
+        "hamming": numpy.hamming,
+        "bartlett": numpy.bartlett,
+        "blackman": numpy.blackman,
+    }
     try:
-        window_function = get_window(window)
+        window_function = window_to_func[window]
     except KeyError as exc:
         raise KeyError(
             "Window " + window + "is not supported for LPSD averaging method"
@@ -162,6 +171,8 @@ def _parse_kwargs(total_duration, kwargs):
         Window as a numpy function
 
     """
+    from lpsd._lcsd import LCSD
+
     # convert overlap given in number of seconds to percentage
     overlap = _parse_overlap(kwargs.pop("overlap", 0), total_duration)
 
@@ -222,7 +233,8 @@ def lpsd_coherence(timeseries, other, fftlength=None,
         `TimeSeries` signal to calculate coherence with
 
     fftlength : `float`, optional
-        number of seconds in single FFT. User-specified value ignored,
+        number of seconds in single FFT. Preserved for compatibility.
+        User-specified value ignored,
         algorithm calculates optimal segment lengths.
 
     overlap : `float`, optional
@@ -243,32 +255,29 @@ def lpsd_coherence(timeseries, other, fftlength=None,
         with the other
     """
 
-    csd = spectral.psd(
+    csd = psd(
         (timeseries, other),
-        method_func=spectral.lpsd,
-        fftlength=fftlength,
+        method_func=lpsd,
         overlap=overlap,
         window=window,
         **kwargs,
     )
-    psd1 = spectral.psd(
+    psd1 = psd(
         timeseries,
-        method_func=spectral.lpsd,
-        fftlength=fftlength,
+        method_func=lpsd,
         overlap=overlap,
         window=window,
         **kwargs,
     )
-    psd2 = spectral.psd(
+    psd2 = psd(
         other,
-        method_func=spectral.lpsd,
-        fftlength=fftlength,
+        method_func=lpsd,
         overlap=overlap,
         window=window,
         **kwargs,
     )
     coherence = numpy.abs(csd) ** 2 / psd1 / psd2
-    coherence.name = f"Coherence between {self.name} and {other.name}"
+    coherence.name = f"Coherence between {timeseries.name} and {other.name}"
     coherence.override_unit("coherence")
     return coherence
 
