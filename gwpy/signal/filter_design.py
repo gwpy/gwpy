@@ -79,22 +79,46 @@ def _design_iir(wp, ws, sample_rate, gpass, gstop,
         raise ValueError("'%s' is not a valid output form." % output)
 
 
-def _design_fir(wp, ws, sample_rate, gpass, gstop, window='hamming', **kwargs):
-    # pylint: disable=invalid-name
+def _design_fir(
+    wp,
+    ws,
+    sample_rate,
+    gpass,
+    gstop,
+    window='hamming',
+    **kwargs,
+):
+    """Design an FIR filter using `scipy.signal.firwin`.
+
+    This is just an internal convenience function to calculate the number of
+    taps based on the pass and stop band frequencies, and to set sensible
+    defaults for a few other keyword arguments.
+
+    See also
+    --------
+    scipy.signal.firwin
+        for details of how the FIR filters are actually generated
+    """
+    # format arguments
     wp = numpy.atleast_1d(wp)
     ws = numpy.atleast_1d(ws)
-    tw = abs(wp[0] - ws[0])
+    tw = wp[0] - ws[0]
+
+    # calculate the number of taps
     nt = num_taps(sample_rate, tw, gpass, gstop)
-    if wp[0] > ws[0]:
-        kwargs.setdefault('pass_zero', False)
-    if ws.shape == (1,):
-        kwargs.setdefault('width', ws - wp)
-    kwargs.setdefault('nyq', sample_rate/2.)
+
+    # set default kw based on the filter shape
+    if wp[0] > ws[0]:  # highpass
+        kwargs.setdefault("pass_zero", False)
+    if ws.shape == (1,):  # simple list of taps
+        kwargs.setdefault("width", ws - wp)
+
+    kwargs.setdefault("fs", sample_rate)
     return signal.firwin(nt, wp, window=window, **kwargs)
 
 
 def num_taps(sample_rate, transitionwidth, gpass, gstop):
-    """Returns the number of taps for an FIR filter with the given shape
+    """Returns the number of taps for an FIR filter with the given shape.
 
     Parameters
     ----------
@@ -102,7 +126,7 @@ def num_taps(sample_rate, transitionwidth, gpass, gstop):
         sampling rate of target data
 
     transitionwidth : `float`
-        the width (in the same units as `sample_rate` of the transition
+        the width (in the same units as `sample_rate`) of the transition
         from stop-band to pass-band
 
     gpass : `float`
@@ -122,12 +146,16 @@ def num_taps(sample_rate, transitionwidth, gpass, gstop):
     """
     gpass = 10 ** (-gpass / 10.)
     gstop = 10 ** (-gstop / 10.)
-    return int(
+    ntaps = int(
         2/3.
         * log10(1 / (10 * gpass * gstop))
         * sample_rate
-        / transitionwidth
+        / abs(transitionwidth)
     )
+    # highpass filters must have an odd number of taps
+    if transitionwidth > 0 and ntaps % 2 == 0:
+        return ntaps + 1
+    return ntaps
 
 
 def is_zpk(zpktup):
