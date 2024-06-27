@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -48,10 +49,10 @@ from .range import (
     burst_range_spectrum,
     inspiral_range,
     inspiral_range_psd,
+    range_spectrogram,
+    range_timeseries,
     sensemon_range,
     sensemon_range_psd,
-    range_timeseries,
-    range_spectrogram,
 )
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
