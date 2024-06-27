@@ -79,6 +79,13 @@ jobs:
             -e 's/requires-python = "==/requires-python = ">=/' \
             pyproject.toml
 
+    - name: Prepare experimental dependencies
+      if: matrix.experimental == true
+      run: |
+        # need https://github.com/gwastro/pycbc/pull/4699 to build
+        # with numpy 2
+        sed -i '/\"pycbc/d' pyproject.toml
+
     - name: Install system packages for experimental dependencies
       if: matrix.experimental == true
       run: |
