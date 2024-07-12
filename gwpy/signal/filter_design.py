@@ -30,6 +30,7 @@ from scipy import signal
 
 from astropy.units import (Unit, Quantity)
 
+from ..types.array import COPY_IF_NEEDED
 from .window import (get_window, planck)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -89,7 +90,7 @@ def _design_fir(wp, ws, sample_rate, gpass, gstop, window='hamming', **kwargs):
         kwargs.setdefault('pass_zero', False)
     if ws.shape == (1,):
         kwargs.setdefault('width', ws - wp)
-    kwargs.setdefault('nyq', sample_rate/2.)
+    kwargs.setdefault('fs', sample_rate)
     return signal.firwin(nt, wp, window=window, **kwargs)
 
 
@@ -281,9 +282,9 @@ def bilinear_zpk(zeros, poles, gain, fs=1.0, unit='Hz'):
     zpk : `tuple`
         digital version of input zpk
     """
-    zeros = numpy.array(zeros, dtype=float, copy=False)
+    zeros = numpy.array(zeros, dtype=float, copy=COPY_IF_NEEDED)
     zeros = zeros[numpy.isfinite(zeros)]
-    poles = numpy.array(poles, dtype=float, copy=False)
+    poles = numpy.array(poles, dtype=float, copy=COPY_IF_NEEDED)
     gain = gain
 
     # convert from Hz to rad/s if needed

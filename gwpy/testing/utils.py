@@ -34,12 +34,14 @@ from numpy.testing import (assert_array_equal, assert_allclose)
 
 from astropy.time import Time
 
-from ..utils.decorators import deprecated_function
+from gwpy.io.cache import file_segment
+from gwpy.utils.decorators import deprecated_function
 
 # -- useful constants ---------------------------------------------------------
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 TEST_GWF_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.gwf')
+TEST_GWF_SPAN = file_segment(TEST_GWF_FILE)
 TEST_HDF5_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.hdf')
 
 
@@ -328,11 +330,18 @@ def TemporaryFilename(*args, **kwargs):  # pylint: disable=invalid-name
             os.remove(name)
 
 
-def test_read_write(data, format,
-                    extension=None, autoidentify=True,
-                    read_args=[], read_kw={},
-                    write_args=[], write_kw={},
-                    assert_equal=assert_array_equal, assert_kw={}):
+def test_read_write(
+    data,
+    format,
+    extension=None,
+    autoidentify=True,
+    read_args=[],
+    read_kw={},
+    write_args=[],
+    write_kw={},
+    assert_equal=assert_quantity_sub_equal,
+    assert_kw={},
+):
     """Test that data can be written to and read from a file in some format
 
     Parameters

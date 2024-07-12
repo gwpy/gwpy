@@ -65,6 +65,7 @@ GRB_TYPE = re.compile(r'^(?!.*_GRB\d{6}([A-Z])?$)')  # *_GRBYYMMDD{A}
 HIGH_PRIORITY_TYPE = re.compile("({})".format("|".join((
     r'\A[A-Z]\d_HOFT_C\d\d(_T\d{7}_v\d)?\Z',  # X1_HOFT_CXY
     r'\AV1Online\Z',
+    r'\AHoftOnline\Z',
     r'\AV1O[0-9]+([A-Z]+)?Repro[0-9]+[A-Z]+\Z',  # V1OXReproXY
 ))))
 LOW_PRIORITY_TYPE = re.compile("({})".format("|".join((

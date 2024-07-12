@@ -50,7 +50,7 @@ LOWPASS_IIR_100HZ = signal.iirdesign(
     analog=False, ftype='cheby1', output='zpk',
 )
 LOWPASS_FIR_100HZ = signal.firwin(
-    30, 100, window='hamming', width=50., nyq=512.,
+    30, 100, window='hamming', width=50., fs=1024.,
 )
 
 HIGHPASS_IIR_100HZ = signal.iirdesign(
@@ -60,7 +60,7 @@ HIGHPASS_IIR_100HZ = signal.iirdesign(
     analog=False, ftype='cheby1', output='zpk',
 )
 HIGHPASS_FIR_100HZ = signal.firwin(
-    45, 100, window='hamming', pass_zero=False, width=-100/3., nyq=512.,
+    45, 100, window='hamming', pass_zero=False, width=-100/3., fs=1024.,
 )
 
 BANDPASS_IIR_100HZ_200HZ = signal.iirdesign(
@@ -70,7 +70,7 @@ BANDPASS_IIR_100HZ_200HZ = signal.iirdesign(
     analog=False, ftype='cheby1', output='zpk',
 )
 BANDPASS_FIR_100HZ_200HZ = signal.firwin(
-    45, (100, 200.), window='hamming', pass_zero=False, nyq=512.,
+    45, (100, 200.), window='hamming', pass_zero=False, fs=1024.,
 )
 
 
