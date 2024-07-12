@@ -175,11 +175,11 @@ class TestSpectrogram(_TestArray2D):
 
         # test simple filter
         a2 = array.filter(*zpk)
-        utils.assert_array_equal(array * fresp, a2)
+        utils.assert_quantity_sub_equal(array * fresp, a2)
 
         # test inplace filtering
         array.filter(lti, inplace=True)
-        utils.assert_array_equal(array, a2)
+        utils.assert_quantity_sub_equal(array, a2)
 
         # test errors
         with pytest.raises(TypeError):
