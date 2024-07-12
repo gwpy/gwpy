@@ -23,6 +23,8 @@ import numpy
 
 from astropy.units import Quantity
 
+from .array import COPY_IF_NEEDED
+
 
 class Index(Quantity):
     """1-D `~astropy.units.Quantity` array for indexing a `Series`
@@ -57,11 +59,11 @@ class Index(Quantity):
         """
         if dtype is None:
             dtype = max(
-                numpy.array(start, subok=True, copy=False).dtype,
-                numpy.array(step, subok=True, copy=False).dtype,
+                numpy.array(start, subok=True, copy=COPY_IF_NEEDED).dtype,
+                numpy.array(step, subok=True, copy=COPY_IF_NEEDED).dtype,
             )
-        start = Quantity(start, dtype=dtype, copy=False)
-        step = Quantity(step, dtype=dtype, copy=False).to(start.unit)
+        start = Quantity(start, dtype=dtype, copy=COPY_IF_NEEDED)
+        step = Quantity(step, dtype=dtype, copy=COPY_IF_NEEDED).to(start.unit)
         stop = start + step * num
         return cls(
             numpy.arange(
@@ -71,7 +73,7 @@ class Index(Quantity):
                 dtype=dtype,
             )[:num],
             unit=start.unit,
-            copy=False,
+            copy=COPY_IF_NEEDED,
         )
 
     @property

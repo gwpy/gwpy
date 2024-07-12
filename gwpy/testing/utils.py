@@ -330,11 +330,18 @@ def TemporaryFilename(*args, **kwargs):  # pylint: disable=invalid-name
             os.remove(name)
 
 
-def test_read_write(data, format,
-                    extension=None, autoidentify=True,
-                    read_args=[], read_kw={},
-                    write_args=[], write_kw={},
-                    assert_equal=assert_array_equal, assert_kw={}):
+def test_read_write(
+    data,
+    format,
+    extension=None,
+    autoidentify=True,
+    read_args=[],
+    read_kw={},
+    write_args=[],
+    write_kw={},
+    assert_equal=assert_quantity_sub_equal,
+    assert_kw={},
+):
     """Test that data can be written to and read from a file in some format
 
     Parameters

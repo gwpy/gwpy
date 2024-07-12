@@ -1074,18 +1074,22 @@ class TestTimeSeries(_TestTimeSeriesBase):
         fgram = gw150914.fftgram(1)
         fs = int(gw150914.sample_rate.value)
         f, t, sxx = signal.spectrogram(
-            gw150914, fs,
+            gw150914,
+            fs,
             window='hann',
             nperseg=fs,
             mode='complex',
         )
         utils.assert_array_equal(gw150914.t0.value + t, fgram.xindex.value)
         utils.assert_array_equal(f, fgram.yindex.value)
-        utils.assert_array_equal(sxx.T, fgram)
+        utils.assert_array_equal(sxx.T, fgram.value)
 
+    def test_fftgram_overlap(self, gw150914):
         fgram = gw150914.fftgram(1, overlap=0.5)
+        fs = int(gw150914.sample_rate.value)
         f, t, sxx = signal.spectrogram(
-            gw150914, fs,
+            gw150914,
+            fs,
             window='hann',
             nperseg=fs,
             noverlap=fs//2,
@@ -1093,7 +1097,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
         utils.assert_array_equal(gw150914.t0.value + t, fgram.xindex.value)
         utils.assert_array_equal(f, fgram.yindex.value)
-        utils.assert_array_equal(sxx.T, fgram)
+        utils.assert_array_equal(sxx.T, fgram.value)
 
     def test_spectral_variance(self, gw150914):
         variance = gw150914.spectral_variance(.5, method="median")
