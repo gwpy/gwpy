@@ -27,7 +27,12 @@ from itertools import zip_longest
 
 import numpy
 
-from matplotlib import (figure, get_backend, _pylab_helpers)
+from matplotlib import (
+    _pylab_helpers,
+    backends,
+    figure,
+    get_backend,
+)
 from matplotlib.artist import setp
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import LogFormatterSciNotation
@@ -53,7 +58,12 @@ iterable_types = (list, tuple, KeysView, ValuesView,)
 def interactive_backend():
     """Returns `True` if the current backend is interactive
     """
-    from matplotlib.rcsetup import interactive_bk
+    try:
+        interactive_bk = backends.backend_registry.list_builtin(
+            backends.BackendFilter.INTERACTIVE,
+        )
+    except AttributeError:  # matplotlib < 3.9.0
+        from matplotlib.rcsetup import interactive_bk
     return get_backend() in interactive_bk
 
 
