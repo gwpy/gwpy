@@ -65,6 +65,9 @@
 .. |lal.LIGOTimeGPS| replace:: `lal.LIGOTimeGPS`
 .. _lal.LIGOTimeGPS: https://lscsoft.docs.ligo.org/lalsuite/lal/struct_l_i_g_o_time_g_p_s.html
 
+.. |lal.REAL8TimeSeries| replace:: `lal.REAL8TimeSeries`
+.. _lal.REAL8TimeSeries: https://lscsoft.docs.ligo.org/lalsuite/lal/struct_r_e_a_l8_time_series.html
+
 .. |lalframe| replace:: `lalframe`
 .. _lalframe: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
 
