@@ -1,0 +1,30 @@
+spec:
+  inputs:
+
+---
+
+.linux:
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[skip linux\]/'
+      when: never
+  tags:
+    - saas-linux-medium-amd64
+
+.macos:
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[skip macos\]/'
+      when: never
+  tags:
+    - saas-macos-medium-m1
+  image: macos-14-xcode-15
+
+.windows:
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[skip windows\]/'
+      when: never
+  variables:
+    # windows gitlab runners don't support symbolic links, so we can't
+    # run the tests that rely upon them
+    PYTEST_ADDOPTS: "-k 'not table\\\\rate and not table\\\\tiles'"
+  tags:
+    - saas-windows-medium-amd64

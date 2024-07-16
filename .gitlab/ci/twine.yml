@@ -1,0 +1,34 @@
+# -- Publish
+
+spec:
+  inputs:
+    stage:
+      default: deploy
+      description: "Pipeline stage in which to add jobs"
+      type: string
+
+---
+
+include:
+  - local: .gitlab/ci/rules.yml
+
+twine:
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[skip deploy\]/'
+      when: never
+    - !reference [.rules_deploy, rules]
+  stage: $[[ inputs.stage ]]
+  image: python
+  variables:
+    GIT_STRATEGY: none
+    # don't ask questions
+    TWINE_NON_INTERACTIVE: "1"
+    # PyPI username
+    TWINE_USERNAME: "__token__"
+    # PyPI password (set this using a protected group or project variable)
+    TWINE_PASSWORD: ""
+  before_script:
+    - python -m pip install twine
+  script:
+    - python -m twine check *.tar.* *.whl
+    - python -m twine upload *.tar.* *.whl
