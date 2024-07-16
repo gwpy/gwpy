@@ -61,7 +61,7 @@ It's documentation is at
 https://lscsoft.docs.ligo.org/lalsuite/lal/
 
 GWpy provides utilities to transform to and from LAL objects
-(like the :lal:`XLALREAL8TimeSeries`) from/to their GWpy equivalent
+(like the |lal.REAL8TimeSeries|) from/to their GWpy equivalent
 (e.g. :class:`gwpy.timeseries.TimeSeries`).
 
 LAL can be installed using `Conda <https://conda.io>`__
