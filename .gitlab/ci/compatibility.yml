@@ -1,0 +1,79 @@
+# -- Check dependency compatibility
+#
+# These jobs check that the minimum versions are well specified,
+# and that this project is compatible with the new pre-relase
+# versions of anything we can find.
+#
+
+spec:
+  inputs:
+    stage:
+      default: test
+      description: "Pipeline stage in which to add jobs"
+      type: string
+    pytest_options:
+      default: ""
+      description: "Extra options to pass to pytest"
+      type: string
+    minimum_python_version:
+      default: "3.8"
+      description: "Python version for minimum dependency compatibility check"
+      type: string
+
+---
+
+include:
+  - local: .gitlab/ci/rules.yml
+
+  # configure minimum dependency compatibility job
+  - local: .gitlab/ci/test-job.yml
+    inputs:
+      stage: $[[ inputs.stage ]]
+      job_name: "compat_minimum"
+      install_target: "."
+      install_extra: "test"
+      pip_options: "--upgrade-strategy=only-if-needed"
+      pytest_options: $[[ inputs.pytest_options ]]
+
+  # configure experimental dependency compatibility job
+  - local: .gitlab/ci/test-job.yml
+    inputs:
+      stage: $[[ inputs.stage ]]
+      job_name: "compat_experimental"
+      install_target: "."
+      install_extra: "test,dev"
+      pip_options: "--upgrade --upgrade-strategy=eager --pre"
+      pytest_options: $[[ inputs.pytest_options ]]
+
+.compat_rules:
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[skip compat\]/'
+      when: never
+    - !reference [.rules_nightly, rules]
+    - !reference [.rules_full_test, rules]
+
+# test against the minimum specified requirements
+compat_minimum:
+  extends:
+    - .compat_minimum
+    - .compat_rules
+  image: python:$[[ inputs.minimum_python_version ]]
+  before_script:
+    # replace the requirements as follows:
+    #    >=X.Y.Z ---> X.Y.Z  (exact pin to minimum)
+    #    ^X.Y    ---> ~X.Y    (pin to X.Y.*)
+    - sed -i -E
+        -e 's/>=/==/'
+        -e 's/\^/~/'
+        pyproject.toml
+    # undo the change to python_requires
+    - sed -i -E
+        -e 's/requires-python = "==/requires-python = ">=/'
+        pyproject.toml
+
+# test against latest/pre-release versions
+compat_experimental:
+  extends:
+    - .compat_experimental
+    - .compat_rules
+  image: python:3

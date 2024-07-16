@@ -1,0 +1,32 @@
+# -- Build Python project distributions
+
+spec:
+  inputs:
+    stage:
+      default: build
+      description: "Pipeline stage in which to add jobs"
+      type: string
+
+---
+
+include:
+  - local: .gitlab/ci/rules.yml
+
+build:
+  rules: !reference [.rules_build, rules]
+  needs: []
+  stage: $[[ inputs.stage ]]
+  image: python
+  variables:
+    # get the full history for setuptools-scm
+    GIT_DEPTH: 0
+  before_script:
+    - python -m pip install build
+  script:
+    - python -m build . -o .
+    - python -m tarfile --list *.tar.*
+    - python -m zipfile --list *.whl
+  artifacts:
+    paths:
+      - "*.tar.*"
+      - "*.whl"

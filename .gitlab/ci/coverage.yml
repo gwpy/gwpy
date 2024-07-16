@@ -1,0 +1,32 @@
+# -- Python test coverage measurements
+
+spec:
+  inputs:
+
+---
+
+include:
+  - local: .gitlab/ci/rules.yml
+
+coverage:
+  stage: .post
+  image: python
+  rules: !reference [.rules_full_test, rules]
+  script:
+    # install coverage (with toml parsing extra)
+    - python -m pip install coverage[toml]
+    # combine coverage files from other jobs
+    - python -m coverage combine .coverage*
+    # write an HTML report
+    - python -m coverage html -d htmlcov
+    # print a report (for the record)
+    - python -m coverage report -m
+  allow_failure: true
+  artifacts:
+    name: htmlcov
+    expose_as: Coverage report
+    paths:
+      - htmlcov/index.html
+      - htmlcov
+  # report coverage here, now that we have all of the information
+  coverage: '/^TOTAL\s+.*\s+(\d+\.?\d*)%/'
