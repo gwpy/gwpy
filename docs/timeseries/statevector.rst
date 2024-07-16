@@ -63,7 +63,7 @@ Alternatively, applying a standard mathematical comparison to a regular
    ...     "H1:IMC-PWR_IN_OUT_DQ",
    ...     1186741850,
    ...     1186741870,
-   ...     host="losc-nds.ligo.org",
+   ...     host="nds.gwosc.org",
    ... )
    >>> threshold = 29.2 > laserpower.unit
    >>> above_29_2 = laserpower > threshold

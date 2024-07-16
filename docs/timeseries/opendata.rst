@@ -84,5 +84,5 @@ Accessing data from Auxiliary Channel Releases
 in a three-hour window around |GW170814|_ and throughout the entirety of O3.
 These data cannot be loaded using :meth:`TimeSeries.fetch_open_data`,
 but can be loaded using :meth:`TimeSeries.get`
-(or :meth:`TimeSeriesDict.get`), by specifying `host="losc-nds.ligo.org"`.
+(or :meth:`TimeSeriesDict.get`), by specifying `host="nds.gwosc.org"`.
 For more details, see :ref:`gwpy-timeseries-get`.
