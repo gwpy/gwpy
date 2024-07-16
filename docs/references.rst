@@ -74,6 +74,9 @@
 .. |MySQLdb| replace:: `MySQLdb`
 .. _MySQLdb: http://mysql-python.sourceforge.net/
 
+.. |nds2| replace:: ``NDS2``
+.. _nds2: https://wiki.ligo.org/Computing/NDSClient
+
 .. |numpydoc| replace:: `numpydoc`
 .. _numpydoc: https://numpydoc.readthedocs.io/
 
