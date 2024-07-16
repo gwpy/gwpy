@@ -98,6 +98,10 @@
 .. |uproot| replace:: `uproot`
 .. _uproot: https://uproot.readthedocs.io/
 
+.. -- Objects -----------------------------------
+
+.. |Table| replace:: :class:`~astropy.table.Table`
+
 .. -- Documents ---------------------------------
 
 .. |GWFSpec| replace:: LIGO-T970130
