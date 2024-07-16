@@ -236,7 +236,6 @@ intersphinx_mapping = {
     'h5py': ('https://docs.h5py.org/en/latest/', None),
     'ligo.skymap': ('https://lscsoft.docs.ligo.org/ligo.skymap/', None),
     'ligo-segments': ('https://lscsoft.docs.ligo.org/ligo-segments/', None),
-    'ligolw': ('https://docs.ligo.org/kipp.cannon/python-ligo-lw/', None),
     'lscsoft-glue': ('https://lscsoft.docs.ligo.org/glue/', None),
     'matplotlib': ('https://matplotlib.org/', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
