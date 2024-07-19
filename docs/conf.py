@@ -128,8 +128,8 @@ html_theme = "sphinx_immaterial"
 html_theme_options = {
     # metadata
     "repo_name": "GWpy",
-    "repo_type": "github",
-    "repo_url": "https://github.com/gwpy/gwpy",
+    "repo_type": "gitlab",
+    "repo_url": "https://gitlab.com/gwpy/gwpy",
     "edit_uri": "blob/main/docs",
     "globaltoc_collapse": True,
     # features
@@ -288,7 +288,7 @@ def linkcode_resolve(domain, info):
     ):
         return None
 
-    return "https://github.com/gwpy/gwpy/tree/{}/gwpy/{}".format(
+    return "https://gitlab.com/gwpy/gwpy/-/tree/{}/gwpy/{}".format(
         GWPY_GIT_REF,
         fileref,
     )

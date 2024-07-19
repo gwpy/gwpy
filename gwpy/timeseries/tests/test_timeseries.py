@@ -201,7 +201,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_read_ascii_header(self, tmpdir):
         """Check that ASCII files with headers are read without extra options
 
-        [regression: https://github.com/gwpy/gwpy/issues/1473]
+        [regression: https://gitlab.com/gwpy/gwpy/-/issues/1473]
         """
         txt = tmpdir / "text.txt"
         txt.write_text(
@@ -284,7 +284,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         """Check that each GWF API can read a series of files, either in
         a single process, or in multiple processes
 
-        Regression: https://github.com/gwpy/gwpy/issues/1486
+        Regression: https://gitlab.com/gwpy/gwpy/-/issues/1486
         """
         fmt = "gwf" if api is None else "gwf." + api
         a1 = self.create(name='TEST')
@@ -512,7 +512,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         """Check that `TimeSeries.read` with `gap='raise'` actually
         raises appropriately.
 
-        [regression: https://github.com/gwpy/gwpy/issues/1211]
+        [regression: https://gitlab.com/gwpy/gwpy/-/issues/1211]
         """
         from gwpy.io.cache import file_segment
         span = file_segment(utils.TEST_HDF5_FILE)

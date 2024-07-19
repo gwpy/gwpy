@@ -107,10 +107,10 @@ conda = [
 gwpy-plot = "gwpy.cli.gwpy_plot:main"
 
 [project.urls]
-"Bug Tracker" = "https://github.com/gwpy/gwpy/issues"
+"Bug Tracker" = "https://gitlab.com/gwpy/gwpy/-/issues"
 "Discussion Forum" = "https://gwpy.slack.com"
 "Documentation" = "https://gwpy.github.io/docs/"
-"Source Code" = "https://github.com/gwpy/gwpy"
+"Source Code" = "https://gitlab.com/gwpy/gwpy"
 
 [tool.setuptools]
 license-files = [ "LICENSE" ]

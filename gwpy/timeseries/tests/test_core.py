@@ -146,7 +146,7 @@ class TestTimeSeriesBase(_TestSeries):
     def test_sample_rate_ghz(self, array):
         """Test that very large sample rates don't get rounded to dt=0.
 
-        Regression: https://github.com/gwpy/gwpy/issues/1646
+        Regression: https://gitlab.com/gwpy/gwpy/-/issues/1646
         """
         array.sample_rate = 1e9
         assert array.dt.value > 0.
@@ -439,7 +439,7 @@ class TestTimeSeriesBaseDict(object):
     def test_plot_separate(self, instance):
         """Test plotting `TimeSeriesDict` on separate axes.
 
-        See https://github.com/gwpy/gwpy/issues/1609
+        See https://gitlab.com/gwpy/gwpy/-/issues/1609
         """
         with rc_context(rc={'text.usetex': False}):
             plot = instance.plot(separate=True)

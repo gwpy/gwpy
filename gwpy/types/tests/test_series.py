@@ -167,7 +167,7 @@ class TestSeries(_TestArray):
 
         When subsetting a Series with an iterable of integer indices,
         make sure that the xindex, if it exists, is also subsetted. Tests
-        regression against https://github.com/gwpy/gwpy/issues/1680.
+        regression against https://gitlab.com/gwpy/gwpy/-/issues/1680.
         """
         array.xindex  # create xindex
         indices = numpy.array([0, 1, len(array)-1])
@@ -249,7 +249,8 @@ class TestSeries(_TestArray):
     def test_crop_float_precision(self):
         """Verify the float precision of the crop function.
 
-        This tests regression against https://github.com/gwpy/gwpy/issues/1601.
+        This tests against regression of
+        https://gitlab.com/gwpy/gwpy/-/issues/1601.
         """
         # construct empty data array with the right shape for this array object
         shape = (101,) * self.TEST_CLASS._ndim
