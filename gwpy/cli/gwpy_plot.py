@@ -55,7 +55,7 @@ Examples:
     $ gwpy-plot coherencegram --chan H1:GDS-CALIB_STRAIN H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ --start 1126260017 --duration 600
 
 Written by {__author__}.
-Report bugs to https://github.com/gwpy/gwpy/issues/.
+Report bugs to https://gitlab.com/gwpy/gwpy/-/issues/.
 """  # noqa: E501
 
 
