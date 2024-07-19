@@ -61,4 +61,4 @@ ax1.set_title('Impact of earthquakes on LIGO')
 plot.show()
 
 # As we can see, the earthquake had a huge impact on the LIGO observatories,
-# severly imparing operations for several hours.
+# severly impairing operations for several hours.
