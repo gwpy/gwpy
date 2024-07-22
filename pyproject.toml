@@ -339,4 +339,8 @@ ignore_roles = [
 ]
 # rstcheck doesn't known about our referenced.txt which is implicitly included
 # in all pages via Sphinx's epilog option
-ignore_messages = "(Unknown target name:.*|Undefined substitution referenced: .*)"
+ignore_messages = [
+  "Hyperlink target .* is not referenced",
+  "Unknown target name:.*",
+  "Undefined substitution referenced: .*",
+]
