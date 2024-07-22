@@ -184,6 +184,12 @@ xfail_strict = true
 
 # -- ruff
 
+[tool.ruff]
+namespace-packages = [
+  ".gitlab/ci",
+  "examples",
+]
+
 [tool.ruff.lint]
 select = [
   # mccabe
