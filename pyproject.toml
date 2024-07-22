@@ -253,6 +253,7 @@ xfail_strict = true
 
 [tool.ruff]
 namespace-packages = [
+  ".gitlab/ci",
   "examples",
 ]
 
