@@ -1,0 +1,84 @@
+# -- Basic Pytest-based test template
+
+spec:
+  inputs:
+    stage:
+      default: test
+      description: "Pipeline stage in which to add jobs"
+      type: string
+    job_name:
+      default: test
+      description: "Name to give this job"
+      type: string
+    install_target:
+      default: "."
+      description: "Directory/distribution/package to install"
+      type: string
+    install_extra:
+      default: "test"
+      description: "Name of the extra feature group(s) to install when installing <install_target>"
+      type: string
+    pip_options:
+      default: ""
+      description: "Extra options to pass to pip install"
+      type: string
+    pytest_options:
+      default: ""
+      description: "Extra options to pass to pytest"
+      type: string
+    extra_test_commands:
+      default: []
+      description: "Extra test commands to run (after pytest)"
+      type: array
+
+---
+
+include:
+  - local: .gitlab/ci/python-base.yml
+
+.$[[ inputs.job_name ]]:
+  extends:
+    - .python_base
+  variables:
+    # store coverage in a file named for this job (to be combined later)
+    COVERAGE_FILE: ".coverage-${CI_JOB_NAME_SLUG}"
+    # cache downloaded data
+    GWPY_CACHE: "1"
+    # store caches in .cache
+    XDG_CACHE_HOME: "$CI_PROJECT_DIR/.cache"
+  script:
+    # create the cache directory (so that astropy will actually use it)
+    # (this isn't just 'mkdir -p ...' because Windows)
+    - python -c "import os;
+      from pathlib import Path;
+      (Path(os.getenv('XDG_CACHE_HOME')) / 'astropy').mkdir(parents=True, exist_ok=True)
+      "
+    # install pytest
+    - python -m pip install pytest pytest-cov $[[ inputs.pip_options ]]
+    - python -m pip install $[[ inputs.install_target ]][$[[ inputs.install_extra ]]] $[[ inputs.pip_options ]]
+    # list installed packages
+    - python -m pip list installed
+# run the tests
+    - python -m pytest --junit-xml=junit.xml $[[ inputs.pytest_options ]]
+    # run any extra tests
+    - $[[ inputs.extra_test_commands ]]
+    # format the coverage report
+    - python -m coverage xml -o coverage.xml
+  artifacts:
+    reports:
+      # coverage report
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+      # test report
+      junit: junit.xml
+    paths:
+      - .coverage*
+  coverage: null
+  cache:
+    # cache pip packages
+    - !reference [.python_base, cache]
+    # cache GWpy downloaded files
+    - key: "gwpy-${CI_JOB_NAME_SLUG}"
+      paths:
+        - .cache/astropy/download

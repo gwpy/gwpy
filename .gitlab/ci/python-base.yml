@@ -1,0 +1,37 @@
+# Common elements for Python components
+
+spec:
+  inputs:
+    cache_dir:
+      default: ".cache/pip"
+      description: "The path to cache to (relative to CI_PROJECT_DIR)"
+    image:
+      default: "python"
+      description: "The default image to use for jobs"
+    job_prefix:
+      default: ".python"
+      description: "Prefix to apply to all templates"
+
+---
+
+$[[ inputs.job_prefix ]]_image:
+  image: $[[ inputs.image ]]
+
+$[[ inputs.job_prefix ]]_cache:
+  variables:
+    PIP_CACHE_DIR: "${CI_PROJECT_DIR}/$[[ inputs.cache_dir ]]"
+  cache:
+    key: "pip-${CI_JOB_NAME_SLUG}"
+    paths:
+      - $[[ inputs.cache_dir ]]
+
+$[[ inputs.job_prefix ]]_base:
+  extends:
+    - $[[ inputs.job_prefix ]]_image
+    - $[[ inputs.job_prefix ]]_cache
+  retry:
+    # retry all jobs at most twice when gitlab-ci fails to start the job properly
+    # see https://docs.gitlab.com/ee/ci/yaml/#retry
+    max: 2
+    when:
+      - runner_system_failure

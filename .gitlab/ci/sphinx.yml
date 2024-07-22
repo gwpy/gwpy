@@ -1,0 +1,65 @@
+# -- Sphinx documentation
+
+spec:
+  inputs:
+    stage:
+      default: test
+      description: "Pipeline stage in which to add jobs"
+      type: string
+    image:
+      default: python
+      description: "Container image to build in"
+      type: string
+    requirements:
+      default: ""
+      description: "Extra packages to install with pip before building"
+      type: string
+    builder:
+      default: "html"
+      description: "Sphinx builder to use"
+      type: string
+    sphinx_sourcedir:
+      default: ""
+      description: "Path of directory containing the Sphinx conf.py (auto-discovered if not set)"
+      type: string
+    sphinx_options:
+      default: ""
+      description: "Extra options to pass to sphinx-build"
+      type: string
+    sphinx_outputdir:
+      default: "sphinx"
+      description: "Sphinx build output directory (relative to `$CI_PROJECT_DIR`)"
+      type: string
+
+---
+
+include:
+  - local: .gitlab/ci/rules.yml
+  - local: .gitlab/ci/python-base.yml
+  - local: .gitlab/ci/conda-test.yml
+    inputs:
+      job_name: ".conda_test"
+
+sphinx:
+  extends: .python_base
+  rules: !reference [.rules_full_test, rules]
+  stage: $[[ inputs.stage ]]
+  image: $[[ inputs.image ]]
+  before_script:
+    - !reference [.conda_test_linux, before_script]
+  script:
+    # install sphinx
+    - python -m pip install sphinx $[[ inputs.requirements ]]
+    - python -m pip list installed
+    # run sphinx
+    - python -m sphinx
+        -b $[[ inputs.builder ]]
+        $[[ inputs.sphinx_sourcedir | expand_vars ]]
+        $[[ inputs.sphinx_outputdir | expand_vars ]]
+        $[[ inputs.sphinx_options ]]
+  artifacts:
+    name: "sphinx"
+    expose_as: "Sphinx docs"
+    paths:
+      - $[[ inputs.sphinx_outputdir ]]/index.html
+      - $[[ inputs.sphinx_outputdir ]]
