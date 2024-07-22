@@ -41,6 +41,10 @@ spec:
     # not on branches with an open merge request
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
       when: never
+    # not on the default branch
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: never
+    # all other branches
     - if: $CI_COMMIT_BRANCH
 
 # -- job types
