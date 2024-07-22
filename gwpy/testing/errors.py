@@ -31,6 +31,7 @@ import requests.exceptions
 NETWORK_ERROR = (
     ConnectionError,
     requests.exceptions.ConnectionError,
+    requests.exceptions.ReadTimeout,
     socket.timeout,
     SSLError,
     URLError,
