@@ -129,15 +129,18 @@ write_to = "gwpy/_version.py"
 
 # -- coverage.py
 
-[tool.coverage.run]
-source = [ "gwpy" ]
+[tool.coverage.paths]
+source = [
+  "gwpy/",
+  "*/gwpy/",
+]
+
+[tool.coverage.report]
 omit = [
   # don't report coverage for _version.py
   # (generated automatically by setuptools-scm)
   "*/_version.py",
 ]
-
-[tool.coverage.report]
 # print report with one decimal point
 precision = 1
 
