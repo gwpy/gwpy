@@ -85,6 +85,19 @@ branch:
     also trigger code review by one of the GWpy maintainers, who may suggest
     modifications to your proposed changes.
 
+    If you are confident that your changes only impact a particular subsection
+    of the project, you can skip jobs in the CI/CD pipeline by adding one or
+    more of the following tags _in the merge request description_:
+
+    - `[skip compat]` - skip dependency-compatibility jobs
+    - `[skip linux]` - skip Linux-based test jobs (Python and Conda)
+    - `[skip macos]` - skip macOS-based test jobs (Python and Conda)
+    - `[skip windows]` - skip Windows-based test jobs (Python and Conda)
+    - `[skip deploy]` - skip deploying new distributions to PyPI
+
+    The merge request reviewer may ask you to remove one or more of these tags
+    before approval, to ensure that nothing breaks.
+
 -   To update your feature branch with the latest changes from the `main` branch
     of the `upstream` repository:
 
