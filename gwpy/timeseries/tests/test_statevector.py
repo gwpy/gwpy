@@ -144,29 +144,39 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
         assert flag.label == 'Label'
         assert flag.description == 'Description'
 
-    def test_override_unit(self):
-        return NotImplemented
+    def test_override_unit(self, array):
+        with pytest.raises(NotImplementedError):
+            super().test_override_unit(array)
 
     def test_is_compatible_error_unit(self):
-        return NotImplemented
+        pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
 
     def test_to_from_pycbc(self):
-        return NotImplemented
+        pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
 
-    def test_to_from_lal(self):
-        return NotImplemented
+    def test_to_from_lal(self, array):
+        with pytest.raises(NotImplementedError):
+            super().test_to_from_lal(array)
 
-    def test_to_from_lal_no_copy(self):
-        return NotImplemented
+    @pytest.mark.parametrize("copy", (False, True))
+    def test_to_from_lal_no_copy(self, array, copy):
+        with pytest.raises(NotImplementedError):
+            super().test_to_from_lal_no_copy(array, copy)
 
-    def test_to_from_lal_pow10_units(self):
-        return NotImplemented
+    @pytest.mark.requires("lal")
+    def test_to_from_lal_pow10_units(self, array):
+        with pytest.raises(NotImplementedError):
+            super().test_to_from_lal_pow10_units(array)
 
-    def test_to_from_lal_scaled_units(self):
-        return NotImplemented
+    @pytest.mark.requires("lal")
+    def test_to_from_lal_scaled_units(self, array):
+        with pytest.raises(NotImplementedError):
+            super().test_to_from_lal_scaled_units(array)
 
-    def test_to_from_lal_unrecognised_units(self):
-        return NotImplemented
+    @pytest.mark.requires("lal")
+    def test_to_from_lal_unrecognised_units(self, array):
+        with pytest.raises(NotImplementedError):
+            super().test_to_from_lal_unrecognised_units(array)
 
 
 # -- StateTimeSeriesDict ------------------------------------------------------
@@ -176,8 +186,8 @@ class TestStateTimeSeriesDict(_TestTimeSeriesBaseDict):
     ENTRY_CLASS = StateTimeSeries
     DTYPE = 'bool'
 
-    def test_resample(self):
-        return NotImplemented
+    def test_resample(self, instance):
+        pytest.skip(f"not implemented for {type(instance).__name__}")
 
 
 # -- Bits ---------------------------------------------------------------------
@@ -326,7 +336,9 @@ class TestStateVector(_TestTimeSeriesBase):
             array.resample(array.sample_rate * 1.5)
 
     def test_to_from_lal_scaled_units(self):
-        return NotImplemented
+        pytest.skip(
+            f"not implemented for {self.TEST_CLASS.__name__}",
+        )
 
     # -- data access ----------------------------
 
