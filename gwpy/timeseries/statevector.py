@@ -184,8 +184,10 @@ class StateTimeSeries(TimeSeriesBase):
     def unit(self):
         return units.dimensionless_unscaled
 
-    def override_unit(self, unit, parse_strict='raise'):
-        return NotImplemented
+    def override_unit(self, *args, **kwargs):
+        raise NotImplementedError(
+            f"overriding units is not supported for {type(self).__name__}",
+        )
 
     def _to_own_unit(self, value, check_precision=True):
         if isinstance(value, units.Quantity) and value.unit != self.unit:
