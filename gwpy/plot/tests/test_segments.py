@@ -136,7 +136,7 @@ class TestSegmentAxes(_TestAxes):
     # -- disable tests from upstream
 
     def test_imshow(self):
-        return NotImplemented
+        pytest.skip(f"not implemented for {type(self).__name__}")
 
 
 def test_segmentrectangle():
