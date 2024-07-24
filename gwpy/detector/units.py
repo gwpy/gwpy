@@ -187,7 +187,7 @@ units.def_unit(['NONE', 'undef'], namespace=_ns,
 
 # other dimenionless units
 units.def_unit('strain', namespace=_ns)
-units.def_unit('coherence', namespace=_ns)
+units.def_unit('coherence', represents=units.dimensionless_unscaled, namespace=_ns)
 
 # alias for 'second' but with prefices
 units.def_unit((['sec'], ['sec']), represents=units.second, prefixes=True,
