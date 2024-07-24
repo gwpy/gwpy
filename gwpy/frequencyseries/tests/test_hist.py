@@ -77,7 +77,8 @@ class TestSpectralVariance(_TestArray2D):
         utils.assert_array_equal(array.yindex, array.bins[:-1])
 
     def test_transpose(self, array):
-        return NotImplemented
+        with pytest.raises(NotImplementedError):
+            array.T
 
     # -- test utilities -------------------------
 
@@ -110,10 +111,10 @@ class TestSpectralVariance(_TestArray2D):
         pytest.skip("float precision test not supported for SpectralVariance")
 
     def test_is_compatible_yindex(self, array):
-        return NotImplemented
+        pytest.skip(f"not implemented for {type(self).__name__}")
 
     def test_is_compatible_error_yindex(self, array):
-        return NotImplemented
+        pytest.skip(f"not implemented for {type(self).__name__}")
 
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):
