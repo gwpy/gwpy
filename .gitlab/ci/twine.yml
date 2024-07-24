@@ -19,16 +19,47 @@ twine:
     - !reference [.rules_deploy, rules]
   stage: $[[ inputs.stage ]]
   image: python
+  environment:
+    name: $PYPI_REPOSITORY
+    url: https://$PYPI_HOSTNAME/project/$CI_PROJECT_NAME
+    deployment_tier: production
+  id_tokens:
+    PYPI_ID_TOKEN:
+      aud: $PYPI_REPOSITORY
   variables:
     GIT_STRATEGY: none
+    # PyPI server target
+    PYPI_REPOSITORY: "pypi"
+    PYPI_HOSTNAME: "pypi.org"
     # don't ask questions
     TWINE_NON_INTERACTIVE: "1"
     # PyPI username
     TWINE_USERNAME: "__token__"
-    # PyPI password (set this using a protected group or project variable)
-    TWINE_PASSWORD: ""
   before_script:
-    - python -m pip install twine
+    - python -m pip install id twine
   script:
+    # check files
     - python -m twine check *.tar.* *.whl
-    - python -m twine upload *.tar.* *.whl
+    # get API token
+    - oidc_token=$(python -m id pypi)
+    - resp=$(curl -X POST https://${PYPI_HOSTNAME}.org/_/oidc/mint-token -d "{\"token\":\"${oidc_token}\"}")
+    - api_token=$(python3 -c "import json,sys; data = json.load(sys.stdin); print(data['token'])" <<< "${resp}")
+    # upload
+    - python -m twine
+        upload
+        --repository ${PYPI_REPOSITORY}
+        *.tar.*
+        *.whl
+
+# needs to be separate, see https://gitlab.com/gitlab-org/gitlab/-/issues/365402
+twine_test:
+  extends: twine
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[skip deploy\]/'
+      when: never
+    - !reference [.rules_default, rules]
+  variables:
+    PYPI_REPOSITORY: "testpypi"
+    PYPI_HOSTNAME: "test.pypi.org"
+  environment:
+    deployment_tier: testing
