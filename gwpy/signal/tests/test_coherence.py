@@ -21,6 +21,8 @@
 
 __author__ = "Alex Southgate <alex.southgate@ligo.org>"
 
+import warnings
+
 import numpy as np
 import pytest
 import scipy.signal as sig
@@ -121,7 +123,11 @@ def test_coherence_resample(unequal_fs_series_data):
     # the first coherence val coh12 is broken intentionally since
     # secondarr data should not have fs_1, instead fs_2
     coh12 = spectral.coherence(first, second, segmentlength=seglen)
-    coh13 = spectral.coherence(first, third, segmentlength=seglen)
+    with pytest.warns(
+        UserWarning,
+        match="Sampling frequencies are unequal",
+    ):
+        coh13 = spectral.coherence(first, third, segmentlength=seglen)
 
     # get the frequency at minimum coherence, this should be the extra
     # component in secondarr
@@ -136,7 +142,7 @@ def test_coherence_resample(unequal_fs_series_data):
     assert not (4 <= maxf12.value <= 6)
 
 
-def test_coherence_resample_arg(series_data):
+def test_coherence_resample_downsample(series_data):
     """Ensure warning is raised by unequal sampling frequencies.
     """
     firstarr, secondarr, seglen = series_data
@@ -145,15 +151,30 @@ def test_coherence_resample_arg(series_data):
     first = TimeSeries(firstarr, sample_rate=f_s)
     second = TimeSeries(secondarr, sample_rate=f_s * 2.32)
 
-    with pytest.warns(UserWarning, match="Sampling frequencies are unequal"):
-        spectral.coherence(first, second, segmentlength=seglen)
+    with pytest.warns(
+        UserWarning,
+        match="Sampling frequencies are unequal",
+    ):
+        coh1 = spectral.coherence(first, second, segmentlength=seglen)
 
+    # check that forcibly disabling downsample results in an error
     with pytest.raises(ValueError):
-        spectral.coherence(first, second, segmentlength=seglen,
-                           downsample=False)
+        spectral.coherence(
+            first,
+            second,
+            segmentlength=seglen,
+            downsample=False,
+        )
 
-    coh1 = spectral.coherence(first, second, segmentlength=seglen)
-    coh2 = spectral.coherence(first, second, segmentlength=seglen,
-                              downsample=True)
+    # but that accepting downsampling gives you the same result as
+    # doing nothing (but doesn't emit a warning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        coh2 = spectral.coherence(
+            first,
+            second,
+            segmentlength=seglen,
+            downsample=True,
+        )
 
     assert all(np.array(coh1.data) == np.array(coh2.data))
