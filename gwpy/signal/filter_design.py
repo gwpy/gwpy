@@ -111,7 +111,7 @@ def _design_fir(
     if wp[0] > ws[0]:  # highpass
         kwargs.setdefault("pass_zero", False)
     if ws.shape == (1,):  # simple list of taps
-        kwargs.setdefault("width", ws - wp)
+        kwargs.setdefault("width", ws.item() - wp.item())
 
     kwargs.setdefault("fs", sample_rate)
     return signal.firwin(nt, wp, window=window, **kwargs)
