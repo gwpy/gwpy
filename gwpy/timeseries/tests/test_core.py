@@ -401,19 +401,12 @@ class TestTimeSeriesBaseDict(object):
 
     def test_resample(self, instance):
         if self.ENTRY_CLASS is TimeSeriesBase:  # currently only for subclasses
-            return NotImplemented
+            pytest.skip(f"not implemented for {type(instance).__name__}")
+
+        # for all subclasses
         a = instance.resample(.5)
         for key in a:
             assert a[key].dx == 1/.5 * a[key].xunit
-
-    def test_fetch(self):
-        return NotImplemented
-
-    def test_find(self):
-        return NotImplemented
-
-    def test_get(self):
-        return NotImplemented
 
     @pytest.mark.requires("nds2")
     def test_from_nds2_buffers(self):
