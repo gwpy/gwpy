@@ -19,6 +19,7 @@
 """Unit tests for :mod:`gwpy.cli`
 """
 
+import warnings
 from argparse import ArgumentParser
 from unittest import mock
 
@@ -237,7 +238,16 @@ class _TestCliProduct(object):
         xmin = min(series.xspan[0] for series in data)
         xmax = max(series.xspan[1] for series in data)
 
-        plotprod.set_plot_properties()
+        # ignore warnings from matplotlib about having no labels
+        # (because we have cut some corners in preparing this test)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="No artists with labels found to put in legend",
+                category=UserWarning,
+            )
+            plotprod.set_plot_properties()
+
         ax = plotprod.ax
 
         ymin, ymax = ax.get_ylim()
