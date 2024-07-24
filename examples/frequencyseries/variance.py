@@ -25,7 +25,7 @@ can wash out transient noise (as is often desired).
 
 The `SpectralVariance` histogram provide by `gwpy.frequencyseries` allows
 us to look at the spectral sensitivity in a different manner, displaying
-which frequencies sit at which amplitude _most_ of the time, but also
+which frequencies sit at which amplitude *most* of the time, but also
 highlighting excursions from normal behaviour.
 """
 
