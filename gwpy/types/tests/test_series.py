@@ -36,11 +36,10 @@ from .test_array import TestArray as _TestArray
 class TestSeries(_TestArray):
     TEST_CLASS = Series
 
-    def test_new(self):
-        array = super().test_new()
+    def assert_new(self, array):
+        super().assert_new(array)
         assert array.x0 == units.Quantity(0, self.TEST_CLASS._default_xunit)
         assert array.dx == units.Quantity(1, self.TEST_CLASS._default_xunit)
-        return array
 
     # -- test properties ------------------------
 

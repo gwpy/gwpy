@@ -53,7 +53,8 @@ class TestTimeSeriesBase(_TestSeries):
     def test_new(self):
         """Test `gwpy.timeseries.TimeSeriesBase` constructor
         """
-        array = super().test_new()
+        array = self.create()
+        super().test_new()
 
         # check time-domain metadata
         assert array.epoch == GPS_EPOCH
