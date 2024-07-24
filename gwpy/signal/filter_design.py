@@ -89,7 +89,7 @@ def _design_fir(wp, ws, sample_rate, gpass, gstop, window='hamming', **kwargs):
     if wp[0] > ws[0]:
         kwargs.setdefault('pass_zero', False)
     if ws.shape == (1,):
-        kwargs.setdefault('width', ws - wp)
+        kwargs.setdefault("width", ws.item() - wp.item())
     kwargs.setdefault('fs', sample_rate)
     return signal.firwin(nt, wp, window=window, **kwargs)
 
