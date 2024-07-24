@@ -65,11 +65,17 @@
 .. |lal.LIGOTimeGPS| replace:: `lal.LIGOTimeGPS`
 .. _lal.LIGOTimeGPS: https://lscsoft.docs.ligo.org/lalsuite/lal/struct_l_i_g_o_time_g_p_s.html
 
+.. |lal.REAL8TimeSeries| replace:: `lal.REAL8TimeSeries`
+.. _lal.REAL8TimeSeries: https://lscsoft.docs.ligo.org/lalsuite/lal/struct_r_e_a_l8_time_series.html
+
 .. |lalframe| replace:: `lalframe`
 .. _lalframe: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
 
 .. |MySQLdb| replace:: `MySQLdb`
 .. _MySQLdb: http://mysql-python.sourceforge.net/
+
+.. |nds2| replace:: ``NDS2``
+.. _nds2: https://wiki.ligo.org/Computing/NDSClient
 
 .. |numpydoc| replace:: `numpydoc`
 .. _numpydoc: https://numpydoc.readthedocs.io/
@@ -94,6 +100,10 @@
 
 .. |uproot| replace:: `uproot`
 .. _uproot: https://uproot.readthedocs.io/
+
+.. -- Objects -----------------------------------
+
+.. |Table| replace:: :class:`~astropy.table.Table`
 
 .. -- Documents ---------------------------------
 
