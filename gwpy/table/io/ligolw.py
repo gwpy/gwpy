@@ -58,7 +58,7 @@ try:
 except ImportError:
     pass
 else:
-    NUMPY_TYPE_MAP[LIGOTimeGPS] = numpy.float_
+    NUMPY_TYPE_MAP[LIGOTimeGPS] = numpy.float64
 
 
 # -- utilities ----------------------------------------------------------------
