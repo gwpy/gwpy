@@ -70,7 +70,7 @@ def test_to_astropy_table_empty():
     tab = EventTable(llwtable, columns=["peak", "ifo"])
     assert set(tab.colnames) == {"peak", "ifo"}
     assert tab['peak'].dtype.type is numpy.object_
-    assert tab['ifo'].dtype.type is numpy.unicode_
+    assert tab['ifo'].dtype.type is numpy.str_
 
 
 @pytest.mark.requires("ligo.lw.lsctables")
