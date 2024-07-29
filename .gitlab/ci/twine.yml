@@ -48,6 +48,7 @@ twine:
     - python -m twine
         upload
         --repository ${PYPI_REPOSITORY}
+        ${TWINE_OPTIONS:-}
         *.tar.*
         *.whl
 
@@ -61,5 +62,7 @@ twine_test:
   variables:
     PYPI_REPOSITORY: "testpypi"
     PYPI_HOSTNAME: "test.pypi.org"
+    # duplicate uploads are ok for testing
+    TWINE_OPTIONS: "--skip-existing"
   environment:
     deployment_tier: testing
