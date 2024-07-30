@@ -120,7 +120,7 @@ data-quality states of the detector.
    `data usage notes <https://gwosc.org/yellow_box/>`__
    page for details of the various bits (states) in the state vectors.
 
-To demonstate, we can download the `StateVector` associated with
+To demonstrate, we can download the `StateVector` associated with
 |GW200105|_, the first detection of a mixed black hole/neutron star
 binary system:
 
@@ -153,7 +153,7 @@ binary system:
 
 As can be seen, the list of :attr:`~StateVector.bits` is represented
 through the :class:`BitMask` class, recording the bits as a list with
-some metdata about their purpose.
+some metadata about their purpose.
 
 The `StateVector` fetched in the above example can then be parsed into a
 series of :class:`~gwpy.segments.DataQualityFlag` objects, recording the
