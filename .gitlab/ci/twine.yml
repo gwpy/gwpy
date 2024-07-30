@@ -34,8 +34,6 @@ twine:
     PYPI_HOSTNAME: "pypi.org"
     # don't ask questions
     TWINE_NON_INTERACTIVE: "1"
-    # PyPI username
-    TWINE_USERNAME: "__token__"
   before_script:
     - python -m pip install id twine
   script:
@@ -48,7 +46,9 @@ twine:
     # upload
     - python -m twine
         upload
-        --repository ${PYPI_REPOSITORY}
+        --username "__token__"
+        --password "${api_token}"
+        --repository "${PYPI_REPOSITORY}"
         ${TWINE_OPTIONS:-}
         *.tar.*
         *.whl
