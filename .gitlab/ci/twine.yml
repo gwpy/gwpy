@@ -42,7 +42,7 @@ twine:
     - python -m twine check *.tar.* *.whl
     # get API token
     - oidc_token=$(python -m id pypi)
-    - resp=$(curl -X POST https://${PYPI_HOSTNAME}.org/_/oidc/mint-token -d "{\"token\":\"${oidc_token}\"}")
+    - resp=$(curl -X POST https://${PYPI_HOSTNAME}/_/oidc/mint-token -d "{\"token\":\"${oidc_token}\"}")
     - api_token=$(python3 -c "import json,sys; data = json.load(sys.stdin); print(data['token'])" <<< "${resp}")
     # upload
     - python -m twine
