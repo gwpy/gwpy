@@ -88,23 +88,25 @@ class TestArray(object):
 
     # -- test basic construction ----------------
 
-    def test_new(self):
-        """Test Array creation
+    def assert_new(self, array):
+        """Run basic assertions for a new instance of the type under test.
         """
-        # test basic empty contructor
-        with pytest.raises(TypeError):
-            self.TEST_CLASS()
-
-        # test with some data
-        array = self.create()
         utils.assert_array_equal(array.value, self.data)
 
         # test that copy=True ensures owndata
         assert self.create(copy=False).flags.owndata is False
         assert self.create(copy=True).flags.owndata is True
 
-        # return array for subclasses to use
-        return array
+    def test_new_empty(self):
+        """Test that `Array()` raises an exception.
+        """
+        with pytest.raises(TypeError):
+            self.TEST_CLASS()
+
+    def test_new(self):
+        """Test Array creation.
+        """
+        self.assert_new(self.create())
 
     def test_unit(self, array):
         # test default unit is dimensionless

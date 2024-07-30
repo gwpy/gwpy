@@ -123,6 +123,7 @@ def skip_missing_optional_dependency(func):
 @pytest.mark.parametrize('script', EXAMPLES)
 @pytest.mark.filterwarnings(
     "ignore:Matplotlib is currently using agg",
+    "ignore:.*Agg is non-interactive",
 )
 @pytest_skip_network_error  # if there are network errors, we don't care
 @skip_nds_authentication_error
