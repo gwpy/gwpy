@@ -738,7 +738,8 @@ class Series(Array):
                  % (self.dtype, other.dtype))
         return True
 
-    def append(self, other, inplace=True, pad=None, gap=None, resize=True):
+    def append(self, other, inplace=True, pad=None, gap=None,
+               resize=True, min_gap=None):
         """Connect another series onto the end of the current one.
 
         Parameters
@@ -786,6 +787,8 @@ class Series(Array):
             gap = 'raise' if pad is None else 'pad'
         if pad is None and gap == 'pad':
             pad = 0.
+        if min_gap is None:
+            min_gap = self.dx.value
 
         # check metadata
         self.is_compatible(other)
@@ -797,7 +800,7 @@ class Series(Array):
             if gap == 'pad':
                 ngap = floor(
                     (other.xspan[0] - self.xspan[1]) / self.dx.value + 0.5)
-                if ngap < 1:
+                if ngap < 1 and other.xspan[0] - self.xspan[1] < min_gap:
                     raise ValueError(
                         "Cannot append {0} that starts before this one:\n"
                         "    {0} 1 span: {1}\n    {0} 2 span: {2}".format(
