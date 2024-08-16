@@ -26,18 +26,20 @@ The `DataQualityDict` is just a `dict` of flags, provided as a convenience
 for handling multiple flags over the same global time interval.
 """
 
+from __future__ import annotations
+
 import datetime
 import json
 import operator
 import re
 import warnings
+import typing
 from io import BytesIO
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
 from copy import (copy as shallowcopy, deepcopy)
 from functools import reduce
 from math import (floor, ceil)
-from queue import Queue
-from threading import Thread
 from urllib.error import (URLError, HTTPError)
 from urllib.parse import urlparse
 
@@ -60,6 +62,9 @@ from .connect import (
     DataQualityFlagWrite,
 )
 from .segments import Segment, SegmentList
+
+if typing.TYPE_CHECKING:
+    from ...typing import GpsLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ['DataQualityFlag', 'DataQualityDict']
@@ -363,9 +368,9 @@ class DataQualityFlag(object):
     @classmethod
     def query_dqsegdb(
         cls,
-        flag,
-        *args,
-        host=DEFAULT_SEGMENT_SERVER,
+        flag: str,
+        *args: GpsLike | Segment | SegmentList,
+        host: str = DEFAULT_SEGMENT_SERVER,
         **kwargs,
     ):
         """Query a DQSegDB server for a flag.
@@ -393,7 +398,22 @@ class DataQualityFlag(object):
         flag : `DataQualityFlag`
             A new `DataQualityFlag`, with the `known` and `active` lists
             filled appropriately.
-        """
+
+        Examples
+        --------
+        The GPS interval(s) of interest can be passed as two arguments
+        specifing the start and end of a single interval:
+
+        >>> DataQualityDict.query_dqsegdb(["X1:OBSERVING:1", "Y1:OBSERVING:1"], start, end)
+
+        Or, as a single `Segment`:
+
+        >>> DataQualityDict.query_dqsegdb(["X1:OBSERVING:1", "Y1:OBSERVING:1"], interval)
+
+        Or, as a `SegmentList` specifying multiple intervals.
+
+        >>> DataQualityDict.query_dqsegdb(["X1:OBSERVING:1", "Y1:OBSERVING:1"], intervals)
+        """  # noqa: E501
         # parse arguments
         qsegs = _parse_query_segments(args, cls.query_dqsegdb)
 
@@ -900,30 +920,6 @@ class DataQualityFlag(object):
         return new
 
 
-class _QueryDQSegDBThread(Thread):
-    """Threaded DQSegDB query
-    """
-    def __init__(self, inqueue, outqueue, *args, **kwargs):
-        Thread.__init__(self)
-        self.in_ = inqueue
-        self.out = outqueue
-        self.args = args
-        self.kwargs = kwargs
-
-    def run(self):
-        i, flag = self.in_.get()
-        self.in_.task_done()
-        try:
-            self.out.put((i, DataQualityFlag.query_dqsegdb(
-                flag,
-                *self.args,
-                **self.kwargs,
-            )))
-        except Exception as exc:
-            self.out.put((i, exc))
-        self.out.task_done()
-
-
 class DataQualityDict(OrderedDict):
     """An `~collections.OrderedDict` of (key, `DataQualityFlag`) pairs.
 
@@ -942,10 +938,11 @@ class DataQualityDict(OrderedDict):
     @classmethod
     def query_dqsegdb(
         cls,
-        flags,
-        *args,
-        host=DEFAULT_SEGMENT_SERVER,
-        on_error="raise",
+        flags: list[str],
+        *args: GpsLike | Segment | SegmentList,
+        host: str = DEFAULT_SEGMENT_SERVER,
+        on_error: str = "raise",
+        parallel: int = 10,
         **kwargs,
     ):
         """Query the advanced LIGO DQSegDB for a list of flags.
@@ -971,6 +968,10 @@ class DataQualityDict(OrderedDict):
             - `'warn'`: print a warning
             - `'ignore'`: move onto the next flag as if nothing happened
 
+        parallel : `int`
+            Maximum number of threads to use for parallel connections to
+            the DQSegDB host.
+
         kwargs
             All other keyword arguments are passed to
             :func:`dqsegdb2.query.query_segments`.
@@ -980,7 +981,22 @@ class DataQualityDict(OrderedDict):
         flagdict : `DataQualityDict`
             An ordered `DataQualityDict` of (name, `DataQualityFlag`)
             pairs.
-        """
+
+        Examples
+        --------
+        The GPS interval(s) of interest can be passed as two arguments
+        specifing the start and end of a single interval:
+
+        >>> DataQualityDict.query_dqsegdb(["X1:OBSERVING:1", "Y1:OBSERVING:1"], start, end)
+
+        Or, as a single `Segment`:
+
+        >>> DataQualityDict.query_dqsegdb(["X1:OBSERVING:1", "Y1:OBSERVING:1"], interval)
+
+        Or, as a `SegmentList` specifying multiple intervals.
+
+        >>> DataQualityDict.query_dqsegdb(["X1:OBSERVING:1", "Y1:OBSERVING:1"], intervals)
+        """  # noqa: E501
         # check on_error flag
         if on_error not in {"raise", "warn", "ignore"}:
             raise ValueError(
@@ -991,42 +1007,33 @@ class DataQualityDict(OrderedDict):
         # parse segments
         qsegs = _parse_query_segments(args, cls.query_dqsegdb)
 
-        # set up threading
-        inq = Queue()
-        outq = Queue()
-        for i in range(len(flags)):
-            t = _QueryDQSegDBThread(
-                inq,
-                outq,
-                qsegs,
-                host=host,
-                on_error=on_error,
-                **kwargs,
-            )
-            t.daemon = True
-            t.start()
-        for i, flag in enumerate(flags):
-            inq.put((i, flag))
-
-        # capture output
-        inq.join()
-        outq.join()
-        new = cls()
-        results = list(zip(*sorted(
-            [outq.get() for i in range(len(flags))],
-            key=lambda x: x[0],
-        )))[1]
-        for result, flag in zip(results, flags):
-            if isinstance(result, Exception):
-                result.args = f"{result} [{flag}]",
+        # thread function
+        def _query(flag):
+            try:
+                return cls._EntryClass.query(
+                    flag,
+                    qsegs,
+                    host=host,
+                    **kwargs,
+                )
+            except Exception as exc:
+                exc.args = f"{exc} [{flag}]",
                 if on_error == "raise":
                     raise
                 if on_error == "warn":
-                    warnings.warn(str(result))
-                continue
-            else:
-                new[flag] = result
-        return new
+                    warnings.warn(str(exc))
+
+        # execute queries in threads
+        out = cls()
+        parallel = min(parallel, len(flags))
+        with ThreadPoolExecutor(
+            max_workers=parallel,
+            thread_name_prefix=f"{cls.__name__}.query_dqsegdb",
+        ) as pool:
+            for flag in filter(None, pool.map(_query, flags)):
+                out[flag.name] = flag
+
+        return out
 
     # alias for compatibility
     query = query_dqsegdb
