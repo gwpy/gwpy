@@ -198,6 +198,18 @@ dataset (``frametype``) you want to use for file-based data access:
                                       |GWOSC|_ for the O2 data release
             ========================  =====================================================
 
+    .. md-tab-item:: KAGRA
+
+        .. table:: KAGRA datasets available with |gwdatafind|_
+            :name: gwdatafind-datasets-kagra
+
+            ========================  =====================================================
+            Dataset (frametype)       Description
+            ========================  =====================================================
+            ``K1_HOFT_C00``           Strain *h(t)* and metadata generated using the
+                                      real-time calibration pipeline
+            ========================  =====================================================
+
 .. admonition:: Not all datasets are available everywhere
 
    Not all datasets are available from all datafind servers.  Each LIGO Lab-operated
