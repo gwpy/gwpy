@@ -171,7 +171,7 @@ class TestSeries(_TestArray):
 
         When subsetting a Series with an iterable of integer indices,
         make sure that the xindex, if it exists, is also subsetted. Tests
-        regression against https://github.com/gwpy/gwpy/issues/1680.
+        regression against https://gitlab.com/gwpy/gwpy/-/issues/1680.
         """
         array.xindex  # create xindex
         indices = numpy.array([0, 1, len(array)-1])
@@ -253,7 +253,8 @@ class TestSeries(_TestArray):
     def test_crop_float_precision_last_value(self):
         """Verify the float precision of Series.crop given the last index.
 
-        This tests regression against https://github.com/gwpy/gwpy/issues/1601.
+        This tests against regression of
+        https://gitlab.com/gwpy/gwpy/-/issues/1601.
         """
         # construct empty data array with the right shape for this array object
         shape = (101,) * self.TEST_CLASS._ndim
@@ -266,7 +267,8 @@ class TestSeries(_TestArray):
     def test_crop_float_precision_last_value_float(self):
         """Verify the float precision of the crop function with float end.
 
-        This tests regression against https://github.com/gwpy/gwpy/issues/1656.
+        This tests against regression of
+        https://gitlab.com/gwpy/gwpy/-/issues/1656.
         """
         arrlen = 500
         xmax = 0.508463154883984
@@ -278,7 +280,8 @@ class TestSeries(_TestArray):
     def test_crop_between_grid_points_is_floored(self):
         """Test that when we crop between xindex values, the result is floored.
 
-        This tests regression against https://github.com/gwpy/gwpy/issues/1656.
+        This tests against regression of
+        https://gitlab.com/gwpy/gwpy/-/issues/1656.
         """
         # e.g. x = [1, 2, 3], end = 2.5, result = [1, 2]
         series = Series([0] * 3, xindex=[1, 2, 3])
@@ -293,7 +296,8 @@ class TestSeries(_TestArray):
     def test_crop_float_precision_near_last_value_float(self):
         """Test the float precision of Series.crop with arg just under end.
 
-        This tests regression against https://github.com/gwpy/gwpy/issues/1656.
+        This tests against regression of
+        https://gitlab.com/gwpy/gwpy/-/issues/1656.
         """
         arrlen = 500
         xmax = 0.508463154883984
@@ -306,7 +310,8 @@ class TestSeries(_TestArray):
     def test_crop_float_precision_first_value_float(self):
         """Verify the float precision of the crop function with float start.
 
-        This tests regression against https://github.com/gwpy/gwpy/issues/1656.
+        This tests against regression of
+        https://gitlab.com/gwpy/gwpy/-/issues/1656.
         """
         arrlen = 500
         xmin = 0.508463154883984

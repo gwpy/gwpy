@@ -36,78 +36,108 @@ contributing guide.
 
 ## Development model
 
-Contributions to GWpy are made via pull requests from GitHub users' forks of
-the main [gwpy repositories](https://github.com/gwpy/gwpy), following the
-[GitHub flow](https://guides.github.com/introduction/flow/) workflow.
+All contributions to GWpy code are made using the
+fork and [merge request][mergerequests] [workflow][forkworkflow],
+which must then be reviewed by one of the project maintainers.
+
 The basic idea is that all changes are proposed using a dedicated _feature_
 branch:
 
-- create the fork (if needed) by clicking _Fork_ in the upper-right corner of
-  <https://github.com/gwpy/gwpy/> - this only needs to be done once, ever
+-   Create the fork (if needed) by clicking _Fork_ in the upper-right corner of
+  <https://gitlab.com/gwpy/gwpy/> - this only needs to be done once, ever
 
-- clone the main repo, calling it `upstream` in the git configuration:
+-   Clone the main repo, calling it `upstream` in the git configuration:
 
-  ```bash
-  git clone https://github.com/gwpy/gwpy.git gwpy --origin upstream
-  cd gwpy
-  ```
+    ```bash
+    git clone git@gitlab.com:gwpy/gwpy.git gwpy --origin upstream
+    cd gwpy
+    ```
 
-- add your fork as the `origin` remote (replace `<username>` with your
-  GitHub username):
+-   Add your fork as the `origin` remote (replace `<username>` with your
+    GitLab username):
 
-  ```bash
-  git remote add origin git@github.com:<username>/gwpy.git
-  ```
+    ```bash
+    git remote add origin git@gitlab.com:<username>/gwpy.git
+    ```
 
-- create a new branch on which to work
+-   Create a new branch on which to work
 
-  ```bash
-  git checkout -b my-new-branch
-  ```
+    ```bash
+    git checkout -b my-new-branch
+    ```
 
-- make commits to that branch
+-   Cake commits to that branch
 
-- push changes to your remote on github.com
+-   Push changes to your remote on gitlab.com
 
-  ```bash
-  git push -u origin my-new-branch
-  ```
+    ```bash
+    git push -u origin my-new-branch
+    ```
 
-- open a merge request on github.com, this will trigger a code review by one
-  of the GWpy maintainers, who may suggest modifications to your proposed
-  changes
+    This will trigger a small
+    [CI/CD pipeline](https://about.gitlab.com/topics/ci-cd/) pipeline
+    that will build the project and run the highest-level tests.
+    If this pipeline fails, you should modify your code until it passes;
+    each `git push` will trigger a new pipeline.
 
-- to update your feature branch with the latest changes from the `main` branch
-  of the `upstream` repository:
+-   Open a merge request on gitlab.com, this will trigger the full CI/CD
+    pipeline, including the full test suite and code quality checks, and will
+    also trigger code review by one of the GWpy maintainers, who may suggest
+    modifications to your proposed changes.
 
-  ```bash
-  git pull --rebase upstream main
-  ```
+    If you are confident that your changes only impact a particular subsection
+    of the project, you can skip jobs in the CI/CD pipeline by adding one or
+    more of the following tags _in the merge request description_:
 
-  This `rebase` will pull in new changes from the `upstream/main` branch, but will
-  restage your commits on top of the newest upstream changes.
-  This changes the 'history' of your branch, which means you will need to `force`
-  git to push your changes to github.com:
+    - `[skip compat]` - skip dependency-compatibility jobs
+    - `[skip linux]` - skip Linux-based test jobs (Python and Conda)
+    - `[skip macos]` - skip macOS-based test jobs (Python and Conda)
+    - `[skip windows]` - skip Windows-based test jobs (Python and Conda)
+    - `[skip deploy]` - skip deploying new distributions to PyPI
 
-  ```bash
-  git push origin my-new-branch --force
-  ```
+    The merge request reviewer may ask you to remove one or more of these tags
+    before approval, to ensure that nothing breaks.
 
-- finally, if your Pull Request is merged, you should 'delete the source branch'
-  (there's a button), to keep your fork clean
+-   To update your feature branch with the latest changes from the `main` branch
+    of the `upstream` repository:
+
+    ```bash
+    git pull --rebase upstream main
+    ```
+
+    This `rebase` will pull in new changes from the `upstream/main` branch, but will
+    restage your commits on top of the newest upstream changes.
+    This changes the 'history' of your branch, which means you will need to `force`
+    git to push your changes to gitlab.com:
+
+    ```bash
+    git push origin my-new-branch --force
+    ```
+
+    You can also perform this operation directly from the GitLab merge request page,
+    by posting a comment with the following on a new line:
+
+    ```bash
+    /rebase
+    ```
+
+    For more details, please see <https://docs.gitlab.com/ee/topics/git/git_rebase.html>.
+
+-   Finally, if your Merge Request is merged, you should 'delete the source branch'
+    (there's a button), to keep your fork clean.
 
 ## Coding guidelines
 
 ### Python compatibility
 
-**GWpy code must be compatible with Python >= 3.7.**
+**GWpy code must be compatible with Python >= 3.8.**
 
 ### Style
 
 This package follows [PEP 8](https://www.python.org/dev/peps/pep-0008/),
 and all code should adhere to that as far as is reasonable.
 
-The first stage in the automated testing of pull requests is a job that runs
+The first stage in the automated testing of merge requests is a job that runs
 the [`flake8`](http://flake8.pycqa.org) linter, which checks the style of code
 in the repo. You can run this locally before committing changes via:
 
@@ -125,5 +155,6 @@ all new or modified lines.
 You can run the test suite locally from the root of the repository via:
 
 ```bash
-python3 -m pytest gwpy/
+python3 -m pip install .[dev,test]
+python3 -m pytest gwpy/ examples/
 ```
