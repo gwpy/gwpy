@@ -3,7 +3,7 @@
 [build-system]
 requires = [
   "setuptools>=61",
-  "setuptools_scm[toml]>=3.4.3",
+  "setuptools_scm[toml]>=4.1.0",
   "wheel",
 ]
 build-backend = "setuptools.build_meta"
@@ -125,6 +125,7 @@ include = [
 
 [tool.setuptools_scm]
 write_to = "gwpy/_version.py"
+version_scheme = "release-branch-semver"
 
 # -- coverage.py
 
