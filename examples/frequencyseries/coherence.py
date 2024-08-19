@@ -39,8 +39,8 @@ __currentmodule__ = 'gwpy.timeseries'
 from gwpy.timeseries import TimeSeriesDict
 
 # and then :meth:`~TimeSeriesDict.get` the data for the differential-arm
-# length signal (``H1:LSC-DARM_IN1_DQ``) and the PSL periscope accelerometer
-# (``H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ``):
+# length servo control loop error signal (``H1:LSC-DARM_IN1_DQ``) and the
+# PSL periscope accelerometer (``H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ``):
 data = TimeSeriesDict.get(
     ["H1:LSC-DARM_IN1_DQ", "H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ"],
     1186741560,
@@ -64,6 +64,7 @@ plot = coh.plot(
 plot.show()
 
 # We can clearly see the correlation between the periscope motion and the
-# differential arm length between 100 Hz and 1000 Hz.
-# Such physical couplings can mimic or mask a gravitational wave signal
-# inferred from the differential arm length motion.
+# differential-arm length servo control loop error signal between 100 Hz
+# and 1000 Hz. Such physical couplings can interfere, mask, or even mimic
+# a gravitational wave signal inferred from the differential arm
+# length motion.
