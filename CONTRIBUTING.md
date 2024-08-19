@@ -66,7 +66,7 @@ branch:
     git checkout -b my-new-branch
     ```
 
--   Cake commits to that branch
+-   Make commits to that branch
 
 -   Push changes to your remote on gitlab.com
 
