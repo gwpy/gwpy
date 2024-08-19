@@ -85,15 +85,20 @@ MOCK_ZENODO_API_RST = """
 """.strip()
 
 
-def pytest_skip_rate_limit(func):
-    """Execute `func` but skip if it raises a rate limit error
+def pytest_skip_zenodo_http_errors(func):
+    """Execute `func` but skip if it raises a known server-side error.
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except requests.HTTPError as exc:  # pragma: no cover
-            if str(exc).startswith("403 Client Error: rate limit exceeded"):
+            if (
+                # API rate limit
+                str(exc).startswith("403 Client Error: rate limit exceeded")
+                # Bad Gateway
+                or exc.response.status_code == 502
+            ):
                 pytest.skip(str(exc))
             raise
     return wrapper
@@ -101,7 +106,7 @@ def pytest_skip_rate_limit(func):
 
 @pytest.fixture
 @pytest_skip_network_error
-@pytest_skip_rate_limit
+@pytest_skip_zenodo_http_errors
 def latest():
     """Get the latest release of GWpy from the GitHub API.
     """
@@ -114,7 +119,7 @@ def latest():
 
 
 @pytest_skip_network_error
-@pytest_skip_rate_limit
+@pytest_skip_zenodo_http_errors
 def test_zenodo_format_citations_latest(latest):
     """Check that :func:`gwpy.utils.sphinx.zenodo.format_citations` includes
     the latest actual release in the output.
