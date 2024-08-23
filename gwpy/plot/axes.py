@@ -620,7 +620,7 @@ Call signatures""",
 
 # override default Axes with this one by registering a projection with the
 # same name
-
+Axes.name = "gwpy"
 register_projection(Axes)
 
 
