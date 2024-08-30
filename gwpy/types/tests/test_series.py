@@ -36,11 +36,10 @@ from .test_array import TestArray as _TestArray
 class TestSeries(_TestArray):
     TEST_CLASS = Series
 
-    def test_new(self):
-        array = super().test_new()
+    def assert_new(self, array):
+        super().assert_new(array)
         assert array.x0 == units.Quantity(0, self.TEST_CLASS._default_xunit)
         assert array.dx == units.Quantity(1, self.TEST_CLASS._default_xunit)
-        return array
 
     # -- test properties ------------------------
 
@@ -168,7 +167,7 @@ class TestSeries(_TestArray):
 
         When subsetting a Series with an iterable of integer indices,
         make sure that the xindex, if it exists, is also subsetted. Tests
-        regression against https://github.com/gwpy/gwpy/issues/1680.
+        regression against https://gitlab.com/gwpy/gwpy/-/issues/1680.
         """
         array.xindex  # create xindex
         indices = numpy.array([0, 1, len(array)-1])
@@ -250,7 +249,8 @@ class TestSeries(_TestArray):
     def test_crop_float_precision(self):
         """Verify the float precision of the crop function.
 
-        This tests regression against https://github.com/gwpy/gwpy/issues/1601.
+        This tests against regression of
+        https://gitlab.com/gwpy/gwpy/-/issues/1601.
         """
         # construct empty data array with the right shape for this array object
         shape = (101,) * self.TEST_CLASS._ndim

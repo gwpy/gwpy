@@ -1,0 +1,42 @@
+# -- Build Python project distributions
+
+spec:
+  inputs:
+    stage:
+      default: build
+      description: "Pipeline stage in which to add jobs"
+      type: string
+
+---
+
+include:
+  - local: .gitlab/ci/rules.yml
+
+build:
+  rules: !reference [.rules_build, rules]
+  needs: []
+  stage: $[[ inputs.stage ]]
+  image: python
+  variables:
+    # get the full history for setuptools-scm
+    GIT_DEPTH: 0
+  before_script:
+    - python -m pip install
+        build
+        setuptools
+  script:
+    # if running a default branch push pipeline, strip the +g<HASH> suffix
+    # from the version to give something that test.pypi.org will accept
+    - |
+      if [ "${CI_COMMIT_TAG}" = "" ] && [ "${CI_PIPELINE_SOURCE}" = "push" ] && [ "${CI_COMMIT_BRANCH}" = "${CI_DEFAULT_BRANCH}" ]; then
+        VERSION=$(python3 -c "from setuptools import setup; setup()" --version)
+        export SETUPTOOLS_SCM_PRETEND_VERSION=${VERSION%%+*}
+      fi
+    # generate the distributions
+    - python -m build . -o .
+    - python -m tarfile --list *.tar.*
+    - python -m zipfile --list *.whl
+  artifacts:
+    paths:
+      - "*.tar.*"
+      - "*.whl"

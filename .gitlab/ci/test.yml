@@ -1,0 +1,249 @@
+# -- GWpy test pipeline
+
+include:
+  # platform-specific job templates
+  - local: .gitlab/ci/platforms.yml
+
+  # basic test template
+  - local: .gitlab/ci/test-job.yml
+    inputs:
+      job_name: "basic_test"
+      pytest_options: "--color yes --cov gwpy --numprocesses auto gwpy/"
+      install_extra: "test"
+
+  # full test template
+  - local: .gitlab/ci/test-job.yml
+    inputs:
+      pytest_options: "--color yes --cov gwpy --durations 50 --numprocesses auto gwpy/ examples/"
+      install_extra: "dev,test"
+
+  # compatibility test template (smaller test suite)
+  - local: .gitlab/ci/compatibility.yml
+    inputs:
+      stage: test
+      minimum_python_version: "3.8"
+      pytest_options: "--color yes --cov gwpy --numprocesses auto gwpy/"
+
+  # measure coverage over all jobs
+  - local: .gitlab/ci/coverage.yml
+
+# -- templates
+
+# all development versions
+.dev_test:
+  extends: .test
+  parallel:
+    matrix:
+      - PYTHON_VERSION:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+
+# only well-supported production versions
+.prod_test:
+  extends: .test
+  parallel:
+    matrix:
+      - PYTHON_VERSION:
+          - "3.10"
+          - "3.11"
+
+.brew:
+  extends: .macos
+  variables:
+    HOMEBREW_CACHE: "$CI_PROJECT_DIR/.cache/brew"
+    HOMEBREW_NO_AUTO_UPDATE: 1
+  cache:
+    key: "brew-${CI_JOB_NAME_SLUG}"
+    paths:
+      - .cache/brew
+
+.choco:
+  extends: .windows
+  variables:
+    CHOCO_CACHE_DIR: ".cache/choco"
+  cache:
+    key: "choco-${CI_JOB_NAME_SLUG}"
+    paths:
+      - .cache/choco
+
+# -- basic tests for new branches without MRs
+#
+# This test matrix provides a sanity check for developers working
+# on new branches to ensure functionality before opening an MR and
+# running the full (expensive) pipeline. Features:
+#   - only runs on Linux on the well-supported Python versions,
+#   - doesn't run the examples
+#   - doesn't include the various dev dependencies
+#
+
+basic_test:
+  extends:
+    - .prod_test
+    - .basic_test
+  image: python:${PYTHON_VERSION}
+  rules:
+    - !reference [.rules_basic_test, rules]
+
+# -- python tests
+#
+# Full automated test suite on all supported Python versions for
+# multiple platforms.
+#
+# On macOS and Windows, we only test the well-supported Python versions,
+# ignore the old versions dopped by NEP29, and the latest versions that
+# don't have full compatibility across the dependencies (yet).
+#
+
+# Linux
+python_test_linux:
+  extends:
+    - .dev_test
+    - .linux
+  image: python:${PYTHON_VERSION}
+  rules:
+    - !reference [.linux, rules]
+    - !reference [.rules_full_test, rules]
+
+# macOS
+python_test_macos:
+  extends:
+    - .prod_test
+    - .brew
+  rules:
+    - !reference [.macos, rules]
+    - !reference [.rules_full_test, rules]
+  before_script:
+    # install Python using Homebrew
+    - brew install python@${PYTHON_VERSION}
+    - PYTHON="$(brew --prefix)/opt/python@${PYTHON_VERSION}/libexec/bin/python"
+    # create a virtual environment to work in
+    - $PYTHON -m venv --system-site-packages venv
+    - . ./venv/bin/activate
+  cache:
+    # cache pip packages
+    - !reference [.test, cache]
+    # and homebrew packages
+    - !reference [.brew, cache]
+
+# Windows
+python_test_windows:
+  extends:
+    - .prod_test
+    - .choco
+  rules:
+    - !reference [.windows, rules]
+    - !reference [.rules_full_test, rules]
+  before_script:
+    # install Python using Choco
+    - $PYTHON_VERSION_NODOTS = ${PYTHON_VERSION}.Replace('.', '')
+    - choco install
+        --cache $CHOCO_CACHE_DIR
+        --yes
+        python${PYTHON_VERSION_NODOTS}
+    - $env:PATH += ";C:\Python" + ${PYTHON_VERSION_NODOTS} + ";C:\Python" + ${PYTHON_VERSION_NODOTS} + "\Scripts"
+    - echo $PYTEST_ADDOPTS
+  cache:
+    # cache pip packages
+    - !reference [.test, cache]
+    # and choco packages
+    - !reference [.choco, cache]
+
+# -- conda tests
+#
+# Full test suite using Conda to provide the widest possible set of
+# dependencies
+#
+# Runs on the same platforms and Python versions as the full Python
+# tests defined above
+#
+
+.conda_create_test_env:
+  before_script:
+    - conda info --all
+    - conda create --quiet --yes --name pip2conda pip2conda
+    - conda run -n pip2conda pip2conda
+        --all
+        --output environment.txt
+        --python-version ${PYTHON_VERSION}
+    - cat environment.txt
+    - conda create --quiet --yes --name test --file environment.txt
+    - conda list --name test
+    - conda activate test
+
+.conda_test:
+  extends:
+    - .prod_test
+  stage: conda
+  variables:
+    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/.cache/conda/pkgs"
+  cache:
+    - !reference [.test, cache]
+    - key: "conda-${CI_JOB_NAME_SLUG}"
+      paths:
+        - .cache/conda/pkgs/*.conda
+
+# Linux
+conda_test_linux:
+  extends:
+    - .conda_test
+    - .linux
+  rules:
+    - !reference [.linux, rules]
+    - !reference [.rules_full_test, rules]
+  image: condaforge/miniforge3
+  before_script:
+    # configure CVMFS
+    - bash -ex .gitlab/ci/init-cvmfs.sh
+    # init conda
+    - . $(conda info --base)/etc/profile.d/conda.sh
+    # create test environment using pip2conda
+    - !reference [.conda_create_test_env, before_script]
+    # initialise credentials
+    - bash -ex .gitlab/ci/init-creds.sh
+
+# macOS
+conda_test_macos:
+  extends:
+    - .conda_test
+    - .brew
+  rules:
+    - !reference [.macos, rules]
+    - !reference [.rules_full_test, rules]
+  before_script:
+    # install miniforge using Homebrew
+    - brew install miniforge
+    # then do the same init as Linux
+    - !reference [conda_test_linux, before_script]
+  cache:
+    # cache conda packages
+    - !reference [.conda_test, cache]
+    # and homebrew packages
+    - !reference [.brew, cache]
+
+# Windows
+conda_test_windows:
+  extends:
+    - .conda_test
+    - .choco
+  rules:
+    - !reference [.windows, rules]
+    - !reference [.rules_full_test, rules]
+  before_script:
+    # install miniforge using choco
+    - choco install
+        --cache $CHOCO_CACHE_DIR
+        --yes
+        miniforge3
+    - $env:PATH += ";C:\tools\miniforge3\Scripts;C:\tools\miniforge3"
+    - conda init powershell
+    - . C:\tools\miniforge3\shell\condabin\conda-hook.ps1
+    # create the test environment using conda
+    - !reference [.conda_create_test_env, before_script]
+  cache:
+    # cache conda packages
+    - !reference [.conda_test, cache]
+    # and choco packages
+    - !reference [.choco, cache]

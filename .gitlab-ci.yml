@@ -1,0 +1,44 @@
+# -- GWpy CI/CD pipeline
+#
+# The configuration below is designed (badly, probably) to
+# maximise the test coverage (minimise risk of breakages)
+# whilst also minimising duplicate use of CI/CD credits for
+# the GWpy project or individual contributors.
+#
+
+stages:
+  - check
+  - build
+  - test
+  - conda
+  - docs
+  - deploy
+
+include:
+  # -- Quality assurance checks
+
+  - local: .gitlab/ci/qa.yml
+    inputs:
+      stage: check
+
+  # -- Build
+
+  - local: .gitlab/ci/python-dist.yml
+    inputs:
+      stage: build
+
+  # -- Test
+
+  - local: .gitlab/ci/test.yml
+
+  # -- Documentation
+
+  #- local: .gitlab/ci/sphinx.yml
+  #  inputs:
+  #    stage: docs
+
+  # -- Deploy release
+
+  - local: .gitlab/ci/twine.yml
+    inputs:
+      stage: deploy

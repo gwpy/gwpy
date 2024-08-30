@@ -28,7 +28,7 @@ This is done for the LIGO-Virgo detector network, with
 available from |GWOSC|.
 
 This example demonstrates how to download data segments from GWOSC, then
-use those to build a day-timescale spectrogram plot of LIGO-Hanford strain
+use those to build a multi-hour spectrogram plot of LIGO-Livingston strain
 data.
 """
 
@@ -45,12 +45,18 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 # read up on `The S6 Data Release <https://gwosc.org/S6/>`__).
 
 from gwpy.segments import DataQualityFlag
-h1segs = DataQualityFlag.fetch_open_data('H1_DATA',
-                                         'Sep 16 2010', 'Sep 17 2010')
+l1segs = DataQualityFlag.fetch_open_data(
+    "L1_DATA",
+    "Aug 17 2017 08:00",
+    "Aug 17 2017 16:00",
+)
 
 # For sanity, lets plot these segments:
 
-splot = h1segs.plot(figsize=[12, 3])
+splot = l1segs.plot(
+    figsize=[12, 3],
+    epoch="August 17 2017",
+)
 splot.show()
 splot.close()  # hide
 
@@ -60,22 +66,27 @@ splot.close()  # hide
 # We can use the :func:`abs` function to display the total amount of time
 # spent taking data:
 
-print(abs(h1segs.active))
+print(abs(l1segs.active))
 
 # .. currentmodule:: gwpy.timeseries
 #
 # Working with strain data
 # ------------------------
 #
-# Now, we can loop through the active segments of ``'H1_DATA'`` and fetch the
+# Now, we can loop through the active segments of ``'L1_DATA'`` and fetch the
 # strain `TimeSeries` for each segment, calculating a
 # :class:`~gwpy.spectrogram.Spectrogram` for each segment.
 
 from gwpy.timeseries import TimeSeries
 spectrograms = []
-for start, end in h1segs.active:
-    h1strain = TimeSeries.fetch_open_data('H1', start, end, verbose=True)
-    specgram = h1strain.spectrogram(30, fftlength=4) ** (1/2.)
+for start, end in l1segs.active:
+    l1strain = TimeSeries.fetch_open_data(
+        "L1",
+        start,
+        end,
+        verbose=True,
+    )
+    specgram = l1strain.spectrogram(30, fftlength=4) ** (1/2.)
     spectrograms.append(specgram)
 
 # Finally, we can build a :meth:`~gwpy.spectrogram.Spectrogram.plot`:
@@ -85,13 +96,16 @@ plot = Plot(figsize=(12, 6))
 ax = plot.gca()
 for specgram in spectrograms:
     ax.imshow(specgram)
-ax.set_xscale('auto-gps', epoch='Sep 16 2010')
-ax.set_xlim('Sep 16 2010', 'Sep 17 2010')
-ax.set_ylim(40, 2000)
-ax.set_yscale('log')
-ax.set_ylabel('Frequency [Hz]')
-ax.set_title('LIGO-Hanford strain data')
-ax.colorbar(cmap='viridis', norm='log', clim=(1e-23, 1e-19),
-            label=r'Strain noise [1/$\sqrt{\mathrm{Hz}}$]')
-plot.add_segments_bar(h1segs)
+ax.set_xscale("auto-gps", epoch="Aug 17 2017")
+ax.set_ylim(20, 2000)
+ax.set_yscale("log")
+ax.set_ylabel("Frequency [Hz]")
+ax.set_title("LIGO-Livingston strain data")
+ax.colorbar(
+    cmap="viridis",
+    norm="log",
+    clim=(5e-24, 1e-21),
+    label=r"Strain noise [1/$\sqrt{\mathrm{Hz}}$]",
+)
+plot.add_segments_bar(l1segs)
 plot.show()

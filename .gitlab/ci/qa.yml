@@ -1,0 +1,52 @@
+# -- Quality Assurance jobs
+
+spec:
+  inputs:
+    stage:
+      default: test
+      description: "Pipeline stage in which to add jobs"
+      type: string
+    project_dir:
+      default: "."
+      description: "Project directory to scan"
+      type: string
+    flake8_requirements:
+      default: ""
+      description: "Extra packages to install alongside flake8"
+      type: string
+
+---
+
+include:
+  - component: gitlab.com/components/sast/sast@2
+    inputs:
+      stage: $[[ inputs.stage ]]
+  - local: .gitlab/ci/rules.yml
+
+.qa:
+  extends: .rules_full_test
+  stage: $[[ inputs.stage ]]
+  needs: []
+
+semgrep-sast:
+  # NOTE: can't use 'extends' when overwriting job config
+  stage: $[[ inputs.stage ]]
+  needs: []
+  rules: !reference [.qa, rules]
+
+flake8:
+  extends: .qa
+  image: python
+  script:
+    - python -m pip install flake8 flake8-gl-codeclimate $[[ inputs.flake8_requirements ]]
+    - python -m flake8
+        $[[ inputs.project_dir ]]
+        --exit-zero
+    - python -m flake8
+        $[[ inputs.project_dir ]]
+        --exit-zero
+        --format gl-codeclimate
+        --output-file flake8.json
+  artifacts:
+    reports:
+      codequality: flake8.json

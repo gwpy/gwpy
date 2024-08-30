@@ -3,7 +3,7 @@
 [build-system]
 requires = [
   "setuptools>=61",
-  "setuptools_scm[toml]>=3.4.3",
+  "setuptools_scm[toml]>=4.1.0",
   "wheel",
 ]
 build-backend = "setuptools.build_meta"
@@ -47,7 +47,7 @@ dependencies = [
   "matplotlib >=3.3.0",
   "numpy >=1.19",
   "python-dateutil",
-  "requests",
+  "requests >=2.20.0",
   "scipy >=1.6.0",
   "tqdm >=4.10.0",
 ]
@@ -79,18 +79,17 @@ docs = [
   "Sphinx >=4.4.0",
   "sphinx-automodapi",
   "sphinx-immaterial >=0.7.3",
-  "sphinx-panels >=0.6.0",
   "sphinxcontrib-programoutput",
 ]
 # development environments
 dev = [
   "ciecplib",
+  "inspiral-range >=0.5.0",
   "lalsuite ; sys_platform != 'win32'",
   "lscsoft-glue ; sys_platform != 'win32'",
-  "psycopg2",
+  "psycopg2 ; sys_platform == 'linux'",
   "pycbc >=1.13.4 ; sys_platform != 'win32'",
   "pymysql",
-  "pyRXP",
   "python-ligo-lw >=1.7.0 ; sys_platform != 'win32'",
   "sqlalchemy",
   "uproot >=4.1.5",
@@ -108,10 +107,10 @@ conda = [
 gwpy-plot = "gwpy.cli.gwpy_plot:main"
 
 [project.urls]
-"Bug Tracker" = "https://github.com/gwpy/gwpy/issues"
+"Bug Tracker" = "https://gitlab.com/gwpy/gwpy/-/issues"
 "Discussion Forum" = "https://gwpy.slack.com"
 "Documentation" = "https://gwpy.github.io/docs/"
-"Source Code" = "https://github.com/gwpy/gwpy"
+"Source Code" = "https://gitlab.com/gwpy/gwpy"
 
 [tool.setuptools]
 license-files = [ "LICENSE" ]
@@ -126,18 +125,22 @@ include = [
 
 [tool.setuptools_scm]
 write_to = "gwpy/_version.py"
+version_scheme = "release-branch-semver"
 
 # -- coverage.py
 
-[tool.coverage.run]
-source = [ "gwpy" ]
+[tool.coverage.paths]
+source = [
+  "gwpy/",
+  "*/gwpy/",
+]
+
+[tool.coverage.report]
 omit = [
   # don't report coverage for _version.py
   # (generated automatically by setuptools-scm)
   "*/_version.py",
 ]
-
-[tool.coverage.report]
 # print report with one decimal point
 precision = 1
 

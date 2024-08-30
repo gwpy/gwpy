@@ -198,7 +198,7 @@ class TestArray2D(_TestSeries):
 
         But still represent the output as an `Array2D` with `Index` arrays.
 
-        This tests regression of https://github.com/gwpy/gwpy/issues/1504.
+        This tests regression of https://gitlab.com/gwpy/gwpy/-/issues/1504.
         """
         # create an array with indices
         a = self.create()
@@ -239,18 +239,14 @@ class TestArray2D(_TestSeries):
         with pytest.raises(IndexError):
             array.value_at(1.6, 4.8)
 
-    @pytest.mark.skip("not implemented for >1D arrays")
     def test_pad(self):
-        return NotImplemented
+        pytest.skip("not implemented for >1D arrays")
 
-    @pytest.mark.skip("not implemented for >1D arrays")
     def test_pad_index(self):
-        return NotImplemented
+        pytest.skip("not implemented for >1D arrays")
 
-    @pytest.mark.skip("not implemented for >1D arrays")
     def test_pad_asymmetric(self):
-        return NotImplemented
+        pytest.skip("not implemented for >1D arrays")
 
-    @pytest.mark.skip("not applicable for >1D arrays")
     def test_single_getitem_not_created(self):
-        return NotImplemented
+        pytest.skip("not implemented for >1D arrays")

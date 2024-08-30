@@ -63,7 +63,7 @@ def test_read_scaled_type_change(int32ts, tmp_path):
 
 
 def test_read_write_frvect_name(tmp_path):
-    """Test against regression of https://github.com/gwpy/gwpy/issues/1206
+    """Test against regression of https://gitlab.com/gwpy/gwpy/-/issues/1206
     """
     data = TimeSeries(
         numpy.random.random(10),

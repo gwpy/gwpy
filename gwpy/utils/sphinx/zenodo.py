@@ -62,7 +62,11 @@ def format_citations(
         "page": 1,
         "size": int(hits),
     }
-    resp = requests.get(apiurl, params)  # make the request
+    resp = requests.get(  # make the request
+        apiurl,
+        params=params,
+        timeout=30,
+    )
     resp.raise_for_status()  # make sure it worked
     records = resp.json()  # parse the response
 

@@ -53,7 +53,8 @@ class TestTimeSeriesBase(_TestSeries):
     def test_new(self):
         """Test `gwpy.timeseries.TimeSeriesBase` constructor
         """
-        array = super().test_new()
+        array = self.create()
+        super().test_new()
 
         # check time-domain metadata
         assert array.epoch == GPS_EPOCH
@@ -145,7 +146,7 @@ class TestTimeSeriesBase(_TestSeries):
     def test_sample_rate_ghz(self, array):
         """Test that very large sample rates don't get rounded to dt=0.
 
-        Regression: https://github.com/gwpy/gwpy/issues/1646
+        Regression: https://gitlab.com/gwpy/gwpy/-/issues/1646
         """
         array.sample_rate = 1e9
         assert array.dt.value > 0.
@@ -400,19 +401,12 @@ class TestTimeSeriesBaseDict(object):
 
     def test_resample(self, instance):
         if self.ENTRY_CLASS is TimeSeriesBase:  # currently only for subclasses
-            return NotImplemented
+            pytest.skip(f"not implemented for {type(instance).__name__}")
+
+        # for all subclasses
         a = instance.resample(.5)
         for key in a:
             assert a[key].dx == 1/.5 * a[key].xunit
-
-    def test_fetch(self):
-        return NotImplemented
-
-    def test_find(self):
-        return NotImplemented
-
-    def test_get(self):
-        return NotImplemented
 
     @pytest.mark.requires("nds2")
     def test_from_nds2_buffers(self):
@@ -445,7 +439,7 @@ class TestTimeSeriesBaseDict(object):
     def test_plot_separate(self, instance):
         """Test plotting `TimeSeriesDict` on separate axes.
 
-        See https://github.com/gwpy/gwpy/issues/1609
+        See https://gitlab.com/gwpy/gwpy/-/issues/1609
         """
         with rc_context(rc={'text.usetex': False}):
             plot = instance.plot(separate=True)

@@ -453,18 +453,20 @@ class DataQualityFlag(object):
         Examples
         --------
         >>> from gwpy.segments import DataQualityFlag
-        >>> print(DataQualityFlag.fetch_open_data('H1_DATA', 'Jan 1 2010',
-        ...                                       'Jan 2 2010'))
+        >>> print(DataQualityFlag.fetch_open_data(
+        ...     "H1_DATA",
+        ...     "Sep 14 2015",
+        ...     "Sep 15 2015",
+        ... ))
         <DataQualityFlag('H1:DATA',
-                         known=[[946339215 ... 946425615)],
-                         active=[[946340946 ... 946351800)
-                                 [946356479 ... 946360620)
-                                 [946362652 ... 946369150)
-                                 [946372854 ... 946382630)
-                                 [946395595 ... 946396751)
-                                 [946400173 ... 946404977)
-                                 [946412312 ... 946413577)
-                                 [946415770 ... 946422986)],
+                         known=[[1126224017 ... 1126310417)]
+                         active=[[1126251604 ... 1126252133)
+                                 [1126252291 ... 1126274322)
+                                 [1126276234 ... 1126281754)
+                               ...
+                                 [1126308670 ... 1126309577)
+                                 [1126309637 ... 1126309817)
+                                 [1126309877 ... 1126310417)]
                          description=None)>
         """
         start = to_gps(start).gpsSeconds

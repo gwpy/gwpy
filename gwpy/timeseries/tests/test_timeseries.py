@@ -201,7 +201,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     def test_read_ascii_header(self, tmpdir):
         """Check that ASCII files with headers are read without extra options
 
-        [regression: https://github.com/gwpy/gwpy/issues/1473]
+        [regression: https://gitlab.com/gwpy/gwpy/-/issues/1473]
         """
         txt = tmpdir / "text.txt"
         txt.write_text(
@@ -284,7 +284,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         """Check that each GWF API can read a series of files, either in
         a single process, or in multiple processes
 
-        Regression: https://github.com/gwpy/gwpy/issues/1486
+        Regression: https://gitlab.com/gwpy/gwpy/-/issues/1486
         """
         fmt = "gwf" if api is None else "gwf." + api
         a1 = self.create(name='TEST')
@@ -512,7 +512,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         """Check that `TimeSeries.read` with `gap='raise'` actually
         raises appropriately.
 
-        [regression: https://github.com/gwpy/gwpy/issues/1211]
+        [regression: https://gitlab.com/gwpy/gwpy/-/issues/1211]
         """
         from gwpy.io.cache import file_segment
         span = file_segment(utils.TEST_HDF5_FILE)
@@ -846,9 +846,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             gw150914.psd(abs(gw150914.span), method='lal_median_mean')
 
         # odd number of segments should warn
-        # pytest hides the second DeprecationWarning that should have been
-        # triggered here, for some reason
-        with pytest.warns(UserWarning):
+        with pytest.warns(UserWarning), pytest.deprecated_call():
             gw150914.psd(1, .5, method='lal_median_mean')
 
     @pytest.mark.parametrize('method', ('welch', 'bartlett', 'median'))
@@ -1022,18 +1020,16 @@ class TestTimeSeries(_TestTimeSeriesBase):
         pytest.param('pycbc', marks=pytest.mark.requires("pycbc.psd")),
     ])
     def test_spectrogram_median_mean(self, gw150914, library):
-        method = '{0}-median-mean'.format(library)
+        method = f"{library}-median-mean"
 
-        # median-mean warn on LAL if not given the correct data for an
-        # even number of FFTs.
-        # pytest only asserts a single warning, and UserWarning will take
-        # precedence apparently, so check that for lal
+        # the LAL implementation of median-mean warns if not given the
+        # correct amount of data for an even number of FFTs.
         if library == 'lal':
-            warn_ctx = pytest.warns(UserWarning)
+            lal_warn_ctx = pytest.warns(UserWarning)
         else:
-            warn_ctx = pytest.deprecated_call()
+            lal_warn_ctx = nullcontext()
 
-        with warn_ctx:
+        with pytest.deprecated_call(), lal_warn_ctx:
             sg = gw150914.spectrogram(
                 1.5,
                 fftlength=.5,

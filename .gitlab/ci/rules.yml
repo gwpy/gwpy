@@ -1,0 +1,70 @@
+# -- GWpy CI/CD workflow rules
+
+spec:
+  inputs:
+#    project_path:
+#      description: "Path of parent project for which to define rules"
+#      type: string
+
+---
+
+# -- basics
+
+# tag pipelines
+.rules_tag:
+  rules:
+    - if: $CI_COMMIT_TAG
+
+# default branch
+.rules_default:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# schedules on default branch
+.rules_default_schedule:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+# merge requests
+.rules_merge_request:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# new branches
+.rules_branch:
+  rules:
+    # not on branches with an open merge request
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+# -- job types
+
+# deployment jobs
+.rules_deploy:
+  rules:
+    - !reference [.rules_tag, rules]
+
+# nightly builds
+.rules_nightly:
+  rules:
+    - !reference [.rules_default_schedule, rules]
+
+# build jobs
+.rules_build:
+  rules:
+    - !reference [.rules_tag, rules]
+    - !reference [.rules_default, rules]
+    - !reference [.rules_merge_request, rules]
+    - !reference [.rules_branch, rules]
+
+# full test suite
+.rules_full_test:
+  rules:
+    - !reference [.rules_default, rules]
+    - !reference [.rules_merge_request, rules]
+
+# basic test suite
+.rules_basic_test:
+  rules:
+    - !reference [.rules_branch, rules]

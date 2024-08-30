@@ -60,10 +60,12 @@ We can extend previous examples of plotting a `~gwpy.timeseries.TimeSeries` with
    :nofigs:
 
    >>> from gwpy.timeseries import TimeSeries
-   >>> gwdata = TimeSeries.get('H1:LDAS-STRAIN', 'September 16 2010 06:40',
-   ...                         'September 16 2010 06:50')
+   >>> gwdata = TimeSeries.fetch_open_data(
+   ...     "H1",
+   ...     "Sep 14 2015 09:45",
+   ...     "Sep 14 2015 09:55",
+   ... )
    >>> specgram = gwdata.spectrogram(20, fftlength=8, overlap=4) ** (1/2.)
-
 
 .. _gwpy-spectrogram-plot:
 
@@ -78,9 +80,9 @@ We can extend the previous time-series example to include a plot:
    :context:
    :include-source:
 
-   >>> plot = specgram.plot(norm='log', vmin=1e-23, vmax=1e-19)
+   >>> plot = specgram.plot(norm='log', vmin=5e-24, vmax=1e-20)
    >>> ax = plot.gca()
-   >>> ax.set_ylim(40, 4000)
+   >>> ax.set_ylim(10, 2000)
    >>> ax.set_yscale('log')
    >>> ax.colorbar(label='GW strain ASD [strain/$\sqrt{\mathrm{Hz}}$]')
    >>> plot.show()
