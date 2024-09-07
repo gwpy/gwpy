@@ -24,6 +24,7 @@ For more details, see :ref:`gwpy-table-io`.
 
 import os.path
 import re
+from concurrent.futures import ThreadPoolExecutor
 from math import ceil
 from urllib.parse import urlparse
 
@@ -131,7 +132,14 @@ def _overlapping(files):
 
 # -- remote data access (the main event) --------------------------------------
 
-def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
+def fetch_gwosc_data(
+        detector,
+        start,
+        end,
+        nthreads=10,
+        cls=TimeSeries,
+        **kwargs
+):
     """Fetch GWOSC data for a given detector
 
     This function is for internal purposes only, all users should instead
@@ -181,16 +189,30 @@ def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
     # read data
     out = None
     kwargs['cls'] = cls
-    for url in cache:
-        keep = file_segment(url) & span
-        kwargs["start"], kwargs["end"] = keep
-        new = _fetch_gwosc_data_file(url, *args, **kwargs)
-        if is_gwf and (not args or args[0] is None):
-            args = (new.name,)
-        if out is None:
-            out = new.copy()
-        else:
-            out.append(new, resize=True)
+
+    with ThreadPoolExecutor(max_workers=nthreads) as executor:
+        futures = []
+        # each thread needs different kwargs
+        for url in cache:
+            keep = file_segment(url) & span
+            kwargs_copy = kwargs.copy()
+            kwargs_copy["start"], kwargs_copy["end"] = keep
+            future = executor.submit(
+                _fetch_gwosc_data_file,
+                url,
+                *args,
+                **kwargs_copy
+            )
+            futures.append(future)
+        for future in futures:
+            new = future.result()  # wait, we need the order to be preserved
+            if is_gwf and (not args or args[0] is None):
+                args = (new.name,)
+            if out is None:
+                out = new.copy()
+            else:
+                out.append(new, resize=True)
+
     return out
 
 
