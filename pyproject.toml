@@ -102,6 +102,11 @@ conda = [
   "python-ldas-tools-framecpp ; sys_platform != 'win32'",
   "python-nds2-client",
 ]
+# LPSD averaging method
+lpsd = [
+  "lpsd >=1.0.3,<2.0",
+  "pandas >=1.0,<3.0"
+]
 
 [project.scripts]
 gwpy-plot = "gwpy.cli.gwpy_plot:main"
