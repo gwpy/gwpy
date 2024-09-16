@@ -1194,6 +1194,39 @@ class TestTimeSeries(_TestTimeSeriesBase):
             new = data.resample(data.sample_rate)
             assert data is new
 
+    def test_upsample_repeat_simple(self, gw150914):
+        """Test that upsample_repeat is correct for a simple case.
+        """
+        factor = 3
+        upsamped = gw150914.upsample_repeat(factor)
+
+        assert upsamped.sample_rate == factor * gw150914.sample_rate
+        assert len(upsamped.xindex) == factor * len(gw150914.xindex)
+        assert upsamped.x0 == gw150914.x0
+        assert factor * upsamped.dx == gw150914.dx
+        assert upsamped.x0 == upsamped.xindex[0]
+
+        # Unlike the values, the xindex is not repeat expanded.
+        # Since numpy.arange, which is used when generating an index anew,
+        # lacks precision, we must use approximate assertion.
+        numpy.testing.assert_allclose(
+            gw150914.xindex.value,
+            upsamped.xindex[::factor].value
+        )
+
+        for j in range(len(gw150914)):
+            val = gw150914.value[j]
+            for fj in range(factor):
+                # Each index of input valj maps to an index factor * valj
+                upj = factor * j + fj  # index of each repeated sample
+                numpy.testing.assert_equal(val, upsamped.value[upj])
+
+    def test_upsample_repeat_float_exception(self, gw150914):
+        """Assert that upsampling by a non-integer factor raises a ValueError.
+        """
+        with pytest.raises(ValueError):
+            gw150914.upsample_repeat(3.3)
+
     def test_rms(self, gw150914):
         rms = gw150914.rms(1.)
         assert rms.sample_rate == 1 * units.Hz

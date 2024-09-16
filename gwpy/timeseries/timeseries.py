@@ -20,6 +20,7 @@
 """
 
 import math
+import numbers
 import warnings
 
 import numpy
@@ -950,6 +951,30 @@ class TimeSeries(TimeSeriesBase):
             new._unit = self.unit
             new.sample_rate = rate
             return new
+
+    def upsample_repeat(self, factor):
+        """Upsample this TimeSeries by repeating elements by an integer factor.
+
+        This will return a new TimeSeries with a new sample_rate equal to the
+        previous one multiplied by factor.
+
+        Parameters
+        ----------
+        factor: `int`
+            The number of times to repeat each element
+
+        Returns
+        -------
+        TimeSeries
+            a new Series with the resampling applied, and the same
+            metadata
+        """
+        if not isinstance(factor, numbers.Integral):
+            raise ValueError("Cannot upsample_repeat with non-integer factor.")
+        repeat_inds = numpy.repeat(numpy.arange(len(self)), factor)
+        new = self[repeat_inds]  # xindex should also be handled here
+        new.sample_rate = self.sample_rate * factor
+        return new
 
     def zpk(self, zeros, poles, gain, analog=True, unit='Hz', **kwargs):
         """Filter this `TimeSeries` by applying a zero-pole-gain filter
