@@ -181,9 +181,15 @@ class TestSeries(_TestArray):
         assert len(newarray) == len(newarray.value)
         assert len(newarray.value) == len(newarray.xindex)
 
+    def test_getitem_list_index(self, array):
+        """Test that __getitem__ works with list and numpy.array.
+        """
+        indices = numpy.array([0, 1, len(array) - 1])
+        lindices = [0, 1, len(array) - 1]
+        utils.assert_quantity_sub_equal(array[indices], array[lindices])
+
     def test_single_getitem_not_created(self, array):
         """Test that array[i] does not return an object with a new _xindex."""
-
         # check that there is no xindex when a single value is accessed
         with pytest.raises(AttributeError):
             array[0].xindex
