@@ -28,6 +28,8 @@ the main differential arm-length readout.
 Here we use use the :meth:`TimeSeries.coherence` method to highlight coupling
 of motion of a beam periscope attached to the main laser table into the
 strain output of the LIGO-Hanford interferometer.
+
+These data are available as part of the |GWOSC_AUX_RELEASE|_.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -36,21 +38,22 @@ __currentmodule__ = 'gwpy.timeseries'
 # First, we import the `TimeSeriesDict`
 from gwpy.timeseries import TimeSeriesDict
 
-# and then :meth:`~TimeSeriesDict.get` the data for the strain output
-# (``H1:GDS-CALIB_STRAIN``) and the PSL periscope accelerometer
-# (``H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ``):
+# and then :meth:`~TimeSeriesDict.get` the data for the differential-arm
+# length servo control loop error signal (``H1:LSC-DARM_IN1_DQ``) and the
+# PSL periscope accelerometer (``H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ``):
 data = TimeSeriesDict.get(
-    ['H1:GDS-CALIB_STRAIN', 'H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ'],
-    1126260017,
-    1126260617,
+    ["H1:LSC-DARM_IN1_DQ", "H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ"],
+    1186741560,
+    1186742160,
+    host="nds.gwosc.org",
 )
-hoft = data['H1:GDS-CALIB_STRAIN']
-acc = data['H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ']
+darm = data["H1:LSC-DARM_IN1_DQ"]
+acc = data["H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ"]
 
 # We can then calculate the :meth:`~TimeSeries.coherence` of one
 # `TimeSeries` with respect to the other, using an 2-second Fourier
 # transform length, with a 1-second (50%) overlap:
-coh = hoft.coherence(acc, fftlength=2, overlap=1)
+coh = darm.coherence(acc, fftlength=2, overlap=1)
 
 # Finally, we can :meth:`~gwpy.frequencyseries.FrequencySeries.plot` the
 # resulting data:
@@ -61,6 +64,7 @@ plot = coh.plot(
 plot.show()
 
 # We can clearly see the correlation between the periscope motion and the
-# strain data between 100 Hz and 1000 Hz. Once this was discovered the
-# motion was damped by modifying the structure of the periscope itself,
-# reducing the coupling into the gravitational-wave strain output.
+# differential-arm length servo control loop error signal between 100 Hz
+# and 1000 Hz. Such physical couplings can interfere, mask, or even mimic
+# a gravitational wave signal inferred from the differential arm
+# length motion.
