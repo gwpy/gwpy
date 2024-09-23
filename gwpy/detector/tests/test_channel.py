@@ -394,6 +394,19 @@ class TestChannel(object):
         assert c.dtype == numpy.dtype('float32')
         assert c.type == 'raw'
 
+    @pytest.mark.requires("arrakis")
+    def test_from_arrakis(self):
+        import arrakis
+        maker = arrakis.Channel.from_name(
+            "X1:TEST-CHANNEL",
+            numpy.dtype("int32"),
+            128,
+        )
+        chan = self.TEST_CLASS.from_arrakis(maker)
+        assert chan.name == maker.name
+        assert chan.sample_rate == maker.sample_rate * units.Hz
+        assert chan.dtype == maker.data_type
+
 
 # -- ChannelList --------------------------------------------------------------
 
