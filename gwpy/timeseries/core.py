@@ -63,6 +63,8 @@ if typing.TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
+    import arrakis
+
     from ..typing import (
         DTypeLike,
         GpsLike,
@@ -665,6 +667,46 @@ class TimeSeriesBase(Series):
         """
         kwargs.update(figsize=figsize, xscale=xscale)
         return super().plot(method=method, **kwargs)
+
+    @classmethod
+    def from_arrakis(
+        cls,
+        series: arrakis.Series,
+        copy: bool = True,
+        **metadata,
+    ):
+        """Construct a new series from an `arrakis.Series` object.
+
+        Parameters
+        ----------
+        series : `arrakis.Series`
+            The input Arrakis data series to read.
+
+        copy : `bool`, optional
+            If `True`, copy the contained data array to new to a new array.
+
+        **metadata
+            Any other metadata keyword arguments to pass to the `TimeSeries`
+            constructor.
+
+        Returns
+        -------
+        timeseries : `TimeSeries`
+            A new `TimeSeries` containing the data from the `arrakis.Series`
+            and the appropriate metadata.
+        """
+        # get Channel from buffer
+        channel = Channel.from_arrakis(series.channel)
+
+        # set default metadata
+        metadata.setdefault("channel", channel)
+        metadata.setdefault("epoch", LIGOTimeGPS(0, series.time_ns))
+        metadata.setdefault("dt", series.dt)
+        metadata.setdefault("unit", None)
+        metadata.setdefault("name", series.name)
+
+        # construct new TimeSeries-like object
+        return cls(series.data, copy=copy, **metadata)
 
     @classmethod
     def from_nds2_buffer(cls, buffer_, scaled=None, copy=True, **metadata):
@@ -1535,6 +1577,41 @@ class TimeSeriesBaseDict(OrderedDict):
             verbose=verbose,
             **kwargs,
         )) for c in channels)
+
+    @classmethod
+    def from_arrakis(
+        cls,
+        block: arrakis.SeriesBlock,
+        copy=True,
+        **metadata,
+    ):
+        """Construct a new dict from an `arrakis.SeriesBlock`.
+
+        Parameters
+        ----------
+        block : `arrakis.SeriesBlock`
+            The input Arrakis data to read.
+
+        copy : `bool`, optional
+            If `True`, copy the contained data array to new  to a new array.
+
+        **metadata
+            Any other metadata keyword arguments to pass to the `TimeSeries`
+            constructor.
+
+        Returns
+        -------
+        dict : `TimeSeriesDict`
+            A new `TimeSeriesDict` containing the data from the Arrakis block.
+        """
+        tsd = cls()
+        for name, series in block.items():
+            tsd[name] = tsd.EntryClass.from_arrakis(
+                series,
+                copy=copy,
+                **metadata,
+            )
+        return tsd
 
     @classmethod
     def from_nds2_buffers(cls, buffers, scaled=None, copy=True, **metadata):
