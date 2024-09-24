@@ -37,9 +37,13 @@ This module defines the following classes
 user-facing objects.**
 """
 
+from __future__ import annotations
+
 import sys
+import typing
 import warnings
 from collections import OrderedDict
+from inspect import signature
 from math import ceil
 
 import numpy
@@ -54,6 +58,16 @@ from ..detector import (Channel, ChannelList)
 from ..segments import SegmentList
 from ..time import (Time, LIGOTimeGPS, GPS_TYPES, to_gps)
 from ..utils import gprint
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import Any
+
+    from ..typing import (
+        DTypeLike,
+        GpsLike,
+        Self,
+    )
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -534,12 +548,24 @@ class TimeSeriesBase(Series):
         )[str(channel)]
 
     @classmethod
-    def get(cls, channel, start, end, pad=None, scaled=None,
-            dtype=None, verbose=False, allow_tape=None, **kwargs):
-        """Get data for this channel from frames or NDS
+    def get(
+        cls,
+        channel: str | Channel,
+        start: GpsLike,
+        end: GpsLike,
+        *,
+        source: str | None = None,
+        pad: float | None = None,
+        scaled: bool | None = None,
+        dtype: DTypeLike | None = None,
+        verbose: bool = False,
+        allow_tape: bool | None = None,
+        **kwargs,
+    ) -> Self:
+        """Get data for this channel.
 
-        This method dynamically accesses either frames on disk, or a
-        remote NDS2 server to find and return data for the given interval
+        This method attemps to get data any way it can, potentially iterating
+        over multiple available data sources.
 
         Parameters
         ----------
@@ -554,34 +580,48 @@ class TimeSeriesBase(Series):
             GPS end time of required data,
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        pad : `float`, optional
-            value with which to fill gaps in the source data,
+        source : `str`
+            The data source to use.
+            Give one of
+
+            "files"
+                Use |gwdatafind|_ to find the paths of local files
+                and then read them.
+
+            "nds2"
+                Use |nds2|_.
+
+        frametype : `str`
+            Name of frametype in which this channel is stored, by default
+            will search for all required frame types.
+
+        pad : `float`
+            Value with which to fill gaps in the source data,
             by default gaps will result in a `ValueError`.
 
-        scaled : `bool`, optional
+        scaled : `bool`
             apply slope and bias calibration to ADC data, for non-ADC data
-            this option has no effect
+            this option has no effect.
 
-        nproc : `int`, optional, default: `1`
-            number of parallel processes to use, serial process by
+        nproc : `int`, default: `1`
+            Number of parallel processes to use, serial process by
             default.
 
-        allow_tape : `bool`, optional, default: `None`
-            allow the use of frames that are held on tape, default is `None`
-            to attempt to allow the `TimeSeries.fetch` method to
-            intelligently select a server that doesn't use tapes for
-            data storage (doesn't always work), but to eventually allow
-            retrieving data from tape if required
+        allow_tape : `bool`, default: `None`
+            Allow the use of data files that are held on tape.
+            Default is `None` to attempt to allow the `TimeSeries.fetch`
+            method to intelligently select a server that doesn't use tapes
+            for data storage (doesn't always work), but to eventually allow
+            retrieving data from tape if required.
 
-        verbose : `bool`, optional
-            print verbose output about data access progress, if ``verbose``
-            is specified as a string, this defines the prefix for the
-            progress meter
+        verbose : `bool`
+            Print verbose output about data access progress.
+            If ``verbose`` is specified as a string, this defines the prefix
+            for the progress meter.
 
-        **kwargs
-            other keyword arguments to pass to either
-            :meth:`.find` (for direct GWF file access) or
-            :meth:`.fetch` for remote NDS2 access
+        kwargs
+            Other keyword arguments to pass to the data access function for
+            each data source.
 
         See also
         --------
@@ -591,8 +631,12 @@ class TimeSeriesBase(Series):
             for discovering and reading data from local GWF files
         """
         return cls.DictClass.get(
-            [channel], start, end, pad=pad, scaled=scaled, dtype=dtype,
-            verbose=verbose, allow_tape=allow_tape, **kwargs)[str(channel)]
+            [channel],
+            start,
+            end,
+            source=source,
+            **kwargs,
+        )[str(channel)]
 
     # -- utilities ------------------------------
 
@@ -1329,105 +1373,165 @@ class TimeSeriesBaseDict(OrderedDict):
         return out
 
     @classmethod
-    def get(cls, channels, start, end, pad=None, scaled=None,
-            dtype=None, verbose=False, allow_tape=None, **kwargs):
-        """Retrieve data for multiple channels from frames or NDS
+    def get(  # type: ignore[override]
+        cls,
+        channels: list[str | Channel],
+        start: GpsLike,
+        end: GpsLike,
+        *,
+        source: str | list[str] | None = None,
+        pad: float | None = None,
+        scaled: bool | None = None,
+        dtype: DTypeLike | None = None,
+        verbose: bool = False,
+        allow_tape: bool | None = None,
+        **kwargs,
+    ):
+        """Retrieve data for multiple channels from any data source.
 
-        This method dynamically accesses either frames on disk, or a
-        remote NDS2 server to find and return data for the given interval
+        This method attemps to get data any way it can, potentially iterating
+        over multiple available data sources.
 
         Parameters
         ----------
         channels : `list`
-            required data channels.
+            Required data channels.
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, defaults to end of data found;
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS end time of required data,
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        frametype : `str`, optional
-            name of frametype in which this channel is stored, by default
-            will search for all required frame types
+        source : `str`
+            The data source to use.
+            Give one of
 
-        pad : `float`, optional
-            value with which to fill gaps in the source data,
+            "files"
+                Use |gwdatafind|_ to find the paths of local files
+                and then read them.
+
+            "nds2"
+                Use |nds2|_.
+
+        frametype : `str`
+            Name of frametype in which this channel is stored, by default
+            will search for all required frame types.
+
+        pad : `float`
+            Value with which to fill gaps in the source data,
             by default gaps will result in a `ValueError`.
 
-        scaled : `bool`, optional
+        scaled : `bool`
             apply slope and bias calibration to ADC data, for non-ADC data
             this option has no effect.
 
-        nproc : `int`, optional, default: `1`
-            number of parallel processes to use, serial process by
+        nproc : `int`, default: `1`
+            Number of parallel processes to use, serial process by
             default.
 
-        allow_tape : `bool`, optional, default: `None`
-            allow the use of frames that are held on tape, default is `None`
-            to attempt to allow the `TimeSeries.fetch` method to
-            intelligently select a server that doesn't use tapes for
-            data storage (doesn't always work), but to eventually allow
-            retrieving data from tape if required
+        allow_tape : `bool`, default: `None`
+            Allow the use of data files that are held on tape.
+            Default is `None` to attempt to allow the `TimeSeries.fetch`
+            method to intelligently select a server that doesn't use tapes
+            for data storage (doesn't always work), but to eventually allow
+            retrieving data from tape if required.
 
-        verbose : `bool`, optional
-            print verbose output about data access progress, if ``verbose``
-            is specified as a string, this defines the prefix for the
-            progress meter
+        verbose : `bool`
+            Print verbose output about data access progress.
+            If ``verbose`` is specified as a string, this defines the prefix
+            for the progress meter.
 
-        **kwargs
-            other keyword arguments to pass to either
-            `TimeSeriesBaseDict.find` (for direct GWF file access) or
-            `TimeSeriesBaseDict.fetch` for remote NDS2 access
+        kwargs
+            Other keyword arguments to pass to the data access function for
+            each data source.
+
+        See also
+        --------
+        TimeSeries.find
+            For details of how data are accessed for ``source="files"``
+            and the supported keyword arguments.
+
+        TimeSeries.fetch
+            For details of how data are accessed for ``source="nds2"``
+            and the supported keyword arguments.
         """
-        # separate non-None nds2-only keywords here
-        nds_kw = {}
-        for key in ('host', 'port', 'connection', 'type', 'dtype'):
-            val = kwargs.pop(key, None)
-            if val is not None:
-                nds_kw[key] = val
+        # the list of places we can try to get data
+        sources: list[str]
+        if source is None:
+            sources = [
+                "files",
+                "NDS2",
+            ]
+        elif isinstance(source, str):
+            sources = [source]
+        else:
+            sources = list(source)
+        nsources = len(sources)
 
-        # try and find from frames
-        if not nds_kw:
-            if verbose:
-                gprint("Attempting to access data from frames...")
+        # record errors that happen along the way
+        error: Exception | None = None
+
+        GETTER: dict[str, tuple[Callable, dict[str, Any]]] = {
+            "files": (cls.find, {}),
+            "nds2": (cls.fetch, {}),
+        }
+        for source in sources:
             try:
-                return cls.find(channels, start, end, pad=pad, scaled=scaled,
-                                verbose=verbose,
-                                allow_tape=allow_tape or False,
-                                **kwargs)
-            except (ImportError, RuntimeError, ValueError) as exc:
+                getter, default_kwargs = GETTER[source.lower()]
+            except KeyError:
+                raise ValueError(f"invalid data source '{source}'")
+            params = [
+                p.name
+                for p in signature(getter).parameters.values()
+                if p.kind == p.KEYWORD_ONLY
+            ]
+            these_kwargs = default_kwargs | {
+                key: val for key, val in kwargs.items()
+                if key in params and val is not None
+            }
+            if verbose:
+                print(f"- Attempting data access from {source}", flush=True)
+            try:
+                return getter(
+                    channels,
+                    start,
+                    end,
+                    verbose=verbose,
+                    **these_kwargs,
+                )
+            except (
+                ImportError,  # optional dependency is missing
+                RuntimeError,
+                ValueError,
+            ) as exc:
+                if len(channels) == 1 and nsources == 1:
+                    raise
+                if error:
+                    # add this error to the chain of errors
+                    exc.__context__ = error
+                error = exc
                 if verbose:
-                    gprint(str(exc), file=sys.stderr)
-                    gprint("Failed to access data from frames, trying NDS...")
+                    print(str(exc), file=sys.stderr, flush=True)
+                    print(f"Data access from {source} failed", flush=True)
 
-        # remove kwargs for .find()
-        for key in ('nproc', 'frametype', 'frametype_match', 'observatory'):
-            kwargs.pop(key, None)
-        kwargs.update(nds_kw)  # replace nds keywords
-
-        # otherwise fetch from NDS
-        try:
-            return cls.fetch(channels, start, end, pad=pad, scaled=scaled,
-                             dtype=dtype, allow_tape=allow_tape,
-                             verbose=verbose, **kwargs)
-        except RuntimeError as exc:
-            # if all else fails, try and get each channel individually
-            if len(channels) == 1:
-                raise
-            else:
-                if verbose:
-                    gprint(str(exc), file=sys.stderr)
-                    gprint("Failed to access data for all channels as a "
-                           "group, trying individually:")
-                return cls(
-                    (c, cls.EntryClass.get(c, start, end, pad=pad,
-                                           scaled=scaled, dtype=dtype,
-                                           allow_tape=allow_tape,
-                                           verbose=verbose, **kwargs))
-                    for c in channels)
+        # if we got here then we failed to get all data at once
+        if len(channels) == 1:
+            raise RuntimeError("Failed to get data from any source.") from error
+        if verbose:
+            print(
+                "Failed to access data for all channels as a group, "
+                "trying individually:",
+            )
+        return cls((c, cls.EntryClass.get(
+            c,
+            start,
+            end,
+            verbose=verbose,
+            **kwargs,
+        )) for c in channels)
 
     @classmethod
     def from_nds2_buffers(cls, buffers, scaled=None, copy=True, **metadata):
