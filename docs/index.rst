@@ -83,6 +83,7 @@ Working with data
    astro/index
    logging
    env
+   tools/rds
 
 .. toctree::
    :maxdepth: 1

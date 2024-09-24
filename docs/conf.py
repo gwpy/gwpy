@@ -94,6 +94,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_design",
     "sphinx_gallery.gen_gallery",
+    "sphinxarg.ext",
     "sphinxcontrib.programoutput",
     "numpydoc",
     "matplotlib.sphinxext.plot_directive",
