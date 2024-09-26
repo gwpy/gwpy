@@ -10,7 +10,7 @@ Times and timestamps
 GPS time
 ========
 
-All gravitational-wave data are recorded with timestamps in the GPS time system (recording the absolute number of seconds since the start of the GPS epoch at midnight on January 6th 1980).
+All gravitational-wave data are recorded with timestamps in the GPS time system (recording the absolute number of seconds since the start of the GPS epoch, at midnight between January 5th and 6th 1980).
 
 The LIGO Scientific Collaboration stores such GPS times with nanosecond precision using the |LIGOTimeGPS| object.
 
