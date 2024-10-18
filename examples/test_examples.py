@@ -31,7 +31,7 @@ import pytest
 from matplotlib import use
 
 from gwpy.io.nds2 import NDSWarning
-from gwpy.testing.errors import pytest_skip_network_error
+from gwpy.testing.errors import pytest_skip_flaky_network
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -125,7 +125,7 @@ def skip_missing_optional_dependency(func):
     "ignore:Matplotlib is currently using agg",
     "ignore:.*Agg is non-interactive",
 )
-@pytest_skip_network_error  # if there are network errors, we don't care
+@pytest_skip_flaky_network  # if there are network errors, we don't care
 @skip_nds_authentication_error
 @skip_missing_optional_dependency
 def test_example(script):
