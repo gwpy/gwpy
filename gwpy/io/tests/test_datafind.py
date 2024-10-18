@@ -28,7 +28,7 @@ import gwdatafind
 
 from ...testing.errors import (
     pytest_skip_cvmfs_read_error,
-    pytest_skip_network_error,
+    pytest_skip_flaky_network,
 )
 from ...testing.utils import (
     TEST_GWF_FILE,
@@ -87,7 +87,7 @@ def _gwosc_gwdatafind(func):
         {"GWDATAFIND_SERVER": "datafind.gwosc.org:80"},
     )
     @pytest_skip_cvmfs_read_error  # skip CVMFS problems
-    @pytest_skip_network_error  # skip network problems
+    @pytest_skip_flaky_network  # skip network problems
     @pytest.mark.skipif(  # skip missing CVMFS repo
         not os.path.isdir('/cvmfs/gwosc.osgstorage.org/'),
         reason="GWOSC CVMFS repository not available",
@@ -236,7 +236,7 @@ def test_find_best_frametype_with_gaps_multiple():
 
 
 @pytest.mark.requires("LDAStools.frameCPP")
-@pytest_skip_network_error
+@pytest_skip_flaky_network
 @pytest.mark.skipif(
     "GWDATAFIND_SERVER" not in os.environ,
     reason='No GWDataFind server configured on this host',
