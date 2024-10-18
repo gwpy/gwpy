@@ -36,7 +36,7 @@ from ...plot import SegmentAxes
 from ...segments import (Segment, SegmentList,
                          DataQualityFlag, DataQualityDict)
 from ...testing import utils
-from ...testing.errors import pytest_skip_network_error
+from ...testing.errors import pytest_skip_flaky_network
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -601,7 +601,7 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(result.known, RESULT.known & segs)
         utils.assert_segmentlist_equal(result.active, RESULT.active & segs)
 
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     def test_fetch_open_data(self):
         segs = self.TEST_CLASS.fetch_open_data(
             'H1_DATA',
