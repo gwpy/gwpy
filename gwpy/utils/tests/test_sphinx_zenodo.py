@@ -25,7 +25,7 @@ import pytest
 
 import requests
 
-from ...testing.errors import pytest_skip_network_error
+from ...testing.errors import pytest_skip_flaky_network
 from ..sphinx import zenodo as gwpy_zenodo
 
 GITHUB_RELEASE_API_URL = "https://api.github.com/repos/gwpy/gwpy/releases"
@@ -105,7 +105,7 @@ def pytest_skip_zenodo_http_errors(func):
 
 
 @pytest.fixture
-@pytest_skip_network_error
+@pytest_skip_flaky_network
 @pytest_skip_zenodo_http_errors
 def latest():
     """Get the latest release of GWpy from the GitHub API.
@@ -118,7 +118,7 @@ def latest():
     return resp.json()[0]
 
 
-@pytest_skip_network_error
+@pytest_skip_flaky_network
 @pytest_skip_zenodo_http_errors
 def test_zenodo_format_citations_latest(latest):
     """Check that :func:`gwpy.utils.sphinx.zenodo.format_citations` includes
