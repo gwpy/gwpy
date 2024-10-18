@@ -164,6 +164,42 @@ filterwarnings = [
 ]
 xfail_strict = true
 
+# -- ruff
+
+[tool.ruff.lint]
+select = [
+  # mccabe
+  "C90",
+  # pycodestyle errors
+  "E",
+  # flake8-executable
+  "EXE",
+  # pyflakes
+  "F",
+  # isort
+  "I",
+  # pep8-naming
+  "N",
+  # pyupgrade
+  "UP",
+  # pycodestyle warnings
+  "W",
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-wrap-aliases = true
+
+[tool.ruff.lint.per-file-ignores]
+# ignore unused import in __init__
+"__init__.py" = [
+  "F401",
+]
+# ignore import location in example scripts
+"examples/**.py" = [
+  "E402",
+]
+
 # -- rstcheck
 
 [tool.rstcheck]

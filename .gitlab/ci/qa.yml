@@ -10,9 +10,13 @@ spec:
       default: "."
       description: "Project directory to scan"
       type: string
-    flake8_requirements:
+    requirements:
       default: ""
-      description: "Extra packages to install alongside flake8"
+      description: "Extra requirements to install with pip"
+      type: string
+    ruff_options:
+      default: ""
+      description: "Extra options to pass to ruff check"
       type: string
 
 ---
@@ -53,19 +57,23 @@ semgrep-sast:
       when: never
     - !reference [.qa, rules]
 
-flake8:
+ruff:
   extends: .qa
   image: python
   script:
-    - python -m pip install flake8 flake8-gl-codeclimate $[[ inputs.flake8_requirements ]]
-    - python -m flake8
-        $[[ inputs.project_dir ]]
-        --exit-zero
-    - python -m flake8
-        $[[ inputs.project_dir ]]
-        --exit-zero
-        --format gl-codeclimate
-        --output-file flake8.json
+    - python -m pip install
+          ruff
+          $[[ inputs.requirements ]]
+    - python -m ruff check
+          $[[ inputs.ruff_options ]]
+          $[[ inputs.project_dir ]]
+          --exit-zero
+    - python -m ruff check
+          $[[ inputs.ruff_options ]]
+          $[[ inputs.project_dir ]]
+          --exit-zero
+          --output-format gitlab
+          --output-file gl-ruff.json
   artifacts:
     reports:
-      codequality: flake8.json
+      codequality: gl-ruff.json
