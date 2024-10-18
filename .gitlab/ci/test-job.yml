@@ -47,6 +47,10 @@ include:
     # store caches in .cache
     XDG_CACHE_HOME: "$CI_PROJECT_DIR/.cache"
   script:
+    # print some basic information about python
+    - python --version
+    - python -m site
+    - python -m sysconfig
     # create the cache directory (so that astropy will actually use it)
     # (this isn't just 'mkdir -p ...' because Windows)
     - python -c "import os;
