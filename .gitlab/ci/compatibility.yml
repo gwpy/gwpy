@@ -76,4 +76,4 @@ compat_experimental:
   extends:
     - .compat_experimental
     - .compat_rules
-  image: python:3
+  image: python:3.12
