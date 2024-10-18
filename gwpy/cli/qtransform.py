@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) Joseph Areeda (2017-2020)
 #
 # This file is part of GWpy.

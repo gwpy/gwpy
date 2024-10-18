@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2014-2020)
 #
 # This file is part of GWpy.

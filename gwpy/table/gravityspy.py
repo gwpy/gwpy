@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) Scott Coughlin (2017-2021)
 #               Cardiff University (2021)
 #

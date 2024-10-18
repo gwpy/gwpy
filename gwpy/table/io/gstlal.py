@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) California Institute of Technology (2019-2022)
 #               Pensylvania State University (2019)
 #
