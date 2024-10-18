@@ -46,7 +46,7 @@ from ...table import EventTable
 from ...testing import (mocks, utils)
 from ...testing.errors import (
     pytest_skip_cvmfs_read_error,
-    pytest_skip_network_error,
+    pytest_skip_flaky_network,
 )
 from ...types import Index
 from ...time import LIGOTimeGPS
@@ -138,7 +138,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     # -- fixtures -------------------------------
 
     @pytest.fixture(scope='class')
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     def gw150914(self):
         return self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
@@ -146,7 +146,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     @pytest.fixture(scope='class')
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     def gw150914_16384(self):
         return self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
@@ -155,7 +155,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     @pytest.fixture(scope="class")
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     def gw150914_h1_32(self):
         return self.TEST_CLASS.fetch_open_data(
             "H1",
@@ -163,7 +163,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     @pytest.fixture(scope="class")
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     def gw150914_l1_32(self):
         return self.TEST_CLASS.fetch_open_data(
             "L1",
@@ -560,7 +560,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         'hdf5',
         pytest.param('gwf', marks=pytest.mark.requires("LDAStools.frameCPP")),
     ])
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     def test_fetch_open_data(self, gw150914, format):
         ts = self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
@@ -580,7 +580,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
         assert ts.sample_rate == 16384 * units.Hz
 
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     def test_fetch_open_data_error(self):
         """Test that TimeSeries.fetch_open_data raises errors it receives
         from the `gwosc` module.
@@ -685,7 +685,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=['name', 'channel', 'unit'],
         )
 
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     @mock.patch.dict(
         "os.environ",
         {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
