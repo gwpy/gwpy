@@ -85,10 +85,10 @@ docs = [
 dev = [
   "ciecplib",
   "inspiral-range >=0.5.0",
-  "lalsuite ; sys_platform != 'win32'",
+  "lalsuite ; sys_platform != 'win32' and python_version<='3.12'",
   "lscsoft-glue ; sys_platform != 'win32'",
   "psycopg2 ; sys_platform == 'linux'",
-  "pycbc >=1.13.4 ; sys_platform != 'win32'",
+  "pycbc >=1.13.4 ; sys_platform != 'win32' and python_version<='3.12'",
   "pymysql",
   "python-ligo-lw >=1.7.0 ; sys_platform != 'win32'",
   "sqlalchemy",
