@@ -24,7 +24,7 @@ include:
   - local: .gitlab/ci/rules.yml
 
 .qa:
-  extends: .rules_full_test
+  extends: .rules_qa_security
   stage: $[[ inputs.stage ]]
   needs: []
 
