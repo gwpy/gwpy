@@ -59,7 +59,7 @@ twine_test:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[skip deploy\]/'
       when: never
-    - !reference [.rules_default, rules]
+    - !reference [.rules_default_push, rules]
   variables:
     PYPI_REPOSITORY: "testpypi"
     PYPI_HOSTNAME: "test.pypi.org"

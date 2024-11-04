@@ -15,8 +15,13 @@ spec:
   rules:
     - if: $CI_COMMIT_TAG
 
-# default branch (push pipelines only, not schedules)
+# default branch (all pipelines)
 .rules_default:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+# default branch push (not schedules)
+.rules_default_push:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
 
@@ -54,17 +59,23 @@ spec:
 .rules_build:
   rules:
     - !reference [.rules_tag, rules]
-    - !reference [.rules_default, rules]
+    - !reference [.rules_default_push, rules]
     - !reference [.rules_merge_request, rules]
     - !reference [.rules_branch, rules]
 
 # full test suite
 .rules_full_test:
   rules:
-    - !reference [.rules_default, rules]
+    - !reference [.rules_default_push, rules]
     - !reference [.rules_merge_request, rules]
 
 # basic test suite
 .rules_basic_test:
   rules:
     - !reference [.rules_branch, rules]
+
+.rules_qa_security:
+  rules:
+    - !reference [.rules_default, rules]
+    - !reference [.rules_nightly, rules]
+    - !reference [.rules_merge_request, rules]
