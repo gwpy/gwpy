@@ -24,16 +24,18 @@ import pytest
 import numpy
 
 from matplotlib import (
-    __version__ as matplotlib_version,
     rcParams,
 )
 from matplotlib.collections import PolyCollection
 from matplotlib.lines import Line2D
 
+from packaging.version import Version
+
 from ...time import to_gps
 from ...types import (Series, Array2D)
 from ...testing import utils
 from .. import Axes
+from ..axes import matplotlib_version
 from .utils import AxesTestBase
 
 numpy.random.seed(0)
@@ -172,7 +174,7 @@ class TestAxes(AxesTestBase):
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
         ax.grid(True, which="both", axis="both")
         mesh = ax.pcolormesh(array)
-        if matplotlib_version >= "3.8.0":
+        if matplotlib_version >= Version("3.8.0"):
             utils.assert_array_equal(mesh.get_array(), array.T)
         else:  # matplotlib < 3.8.0
             utils.assert_array_equal(mesh.get_array(), array.T.flatten())
