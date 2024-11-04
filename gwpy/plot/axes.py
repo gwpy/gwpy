@@ -39,6 +39,8 @@ from matplotlib.collections import PolyCollection
 from matplotlib.lines import Line2D
 from matplotlib.projections import register_projection
 
+from packaging.version import Version
+
 from . import (Plot, colorbar as gcbar)
 from .colors import format_norm
 from .gps import GPS_SCALES
@@ -46,6 +48,8 @@ from .legend import HandlerLine2D
 from ..time import to_gps
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+matplotlib_version = Version(matplotlib_version)
 
 
 def log_norm(func):
@@ -86,7 +90,7 @@ def restore_grid(func):
     automatically removed a grid on a set of Axes. This decorator just
     undoes that.
     """
-    if matplotlib_version >= "3.7.0":
+    if matplotlib_version >= Version("3.7.0"):
         return func
 
     @wraps(func)
@@ -162,7 +166,7 @@ class Axes(_Axes):
         super().__init__(*args, **kwargs)
 
         # handle Series in `ax.plot()`
-        if matplotlib_version >= "3.8.0":
+        if matplotlib_version >= Version("3.8.0"):
             self._get_lines = PlotArgsProcessor()
         else:
             self._get_lines = PlotArgsProcessor(self)
