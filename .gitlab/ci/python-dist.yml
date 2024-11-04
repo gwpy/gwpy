@@ -28,7 +28,7 @@ build:
     # from the version to give something that test.pypi.org will accept
     - |
       if [ "${CI_COMMIT_TAG}" = "" ] && [ "${CI_PIPELINE_SOURCE}" = "push" ] && [ "${CI_COMMIT_BRANCH}" = "${CI_DEFAULT_BRANCH}" ]; then
-        python -m pip install setuptools-scm
+        python -m pip install -q setuptools-scm
         VERSION=$(python -m setuptools_scm);
         export SETUPTOOLS_SCM_PRETEND_VERSION=${VERSION%%+*};
         echo "Real version is '${VERSION}'";
