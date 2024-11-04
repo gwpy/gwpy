@@ -66,6 +66,7 @@ test = [
   "pytest-freezer",
   "pytest-cov >=2.4.0",
   "pytest-requires",
+  "pytest-rerunfailures",
   "pytest-socket",
   "pytest-xdist",
   "requests-mock",

@@ -32,7 +32,7 @@ from astropy import units
 from ...detector import Channel
 from ...time import (Time, LIGOTimeGPS)
 from ...testing import (mocks, utils)
-from ...testing.errors import pytest_skip_network_error
+from ...testing.errors import pytest_skip_flaky_network
 from ...types import Array2D
 from .. import (StateVector, StateVectorDict, StateVectorList,
                 StateTimeSeries, StateTimeSeriesDict, Bits)
@@ -349,7 +349,7 @@ class TestStateVector(_TestTimeSeriesBase):
             marks=pytest.mark.requires("LDAStools.frameCPP"),
         ),
     ])
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     def test_fetch_open_data(self, format):
         sv = self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,

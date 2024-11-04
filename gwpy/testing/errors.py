@@ -28,6 +28,9 @@ import pytest
 
 import requests.exceptions
 
+
+# -- Network/HTTP ---------------------
+
 NETWORK_ERROR = (
     ConnectionError,
     requests.exceptions.ConnectionError,
@@ -63,8 +66,15 @@ else:
     )
 
 
+pytest_rerun_flaky_httperror = pytest.mark.flaky(
+    reruns=2,
+    reruns_delay=5,
+    only_rerun=["HTTPError"],
+)
+
+
 def pytest_skip_network_error(func):
-    """Execute `func` but skip if it raises one of the network exceptions
+    """Execute `func` but skip if it raises one of the network exceptions.
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -72,9 +82,36 @@ def pytest_skip_network_error(func):
             return func(*args, **kwargs)
         except NETWORK_ERROR as exc:  # pragma: no cover
             pytest.skip(str(exc))
+        except requests.exceptions.HTTPError as exc:  # pragma: no cover
+            if (
+                500 <= exc.response.status_code < 600
+            ):
+                pytest.skip(str(exc))
+            raise
 
     return wrapper
 
+
+def pytest_skip_flaky_network(func):
+    """Decorate test ``func`` with all necessary network decorators.
+
+    A test decorated with this decorator will attempt behave as follows
+
+    - if an `HTTPError` is encountered, retry a couple of times with
+      a 5-second delay, then 'skip' if the response is a 5xx code,
+      otherwise fail,
+    - if any non-HTTP network-related error is encountered, skip
+      the test.
+    """
+    for dec in (
+        pytest_skip_network_error,
+        pytest_rerun_flaky_httperror,
+    ):
+        func = dec(func)
+    return func
+
+
+# -- CVMFS ----------------------------
 
 def pytest_skip_cvmfs_read_error(func):
     """Execute `func` but skip if a CVMFS file fails to open

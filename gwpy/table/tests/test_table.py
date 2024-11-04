@@ -37,7 +37,7 @@ from astropy.table import vstack
 from ...io import ligolw as io_ligolw
 from ...segments import (Segment, SegmentList)
 from ...testing import utils
-from ...testing.errors import pytest_skip_network_error
+from ...testing.errors import pytest_skip_flaky_network
 from ...time import LIGOTimeGPS
 from ...timeseries import (TimeSeries, TimeSeriesDict)
 from .. import (Table, EventTable, filters)
@@ -835,7 +835,7 @@ class TestEventTable(TestTable):
             t2,
         )
 
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     def test_fetch_open_data(self):
         table = self.TABLE.fetch_open_data("GWTC-1-confident")
         assert len(table)
@@ -847,7 +847,7 @@ class TestEventTable(TestTable):
         # check unit parsing worked
         assert table["luminosity_distance"].unit == "Mpc"
 
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     def test_fetch_open_data_kwargs(self):
         table = self.TABLE.fetch_open_data(
             "GWTC-1-confident",

@@ -24,7 +24,7 @@ import pytest
 
 import requests
 
-from ...testing.errors import pytest_skip_network_error
+from ...testing.errors import pytest_skip_flaky_network
 from .. import (
     gravityspy as table_gravityspy,
     GravitySpyTable,
@@ -49,7 +49,7 @@ class TestGravitySpyTable(_TestEventTable):
             timeout=60,
         )
 
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     def test_search(self):
         """Test `GravitySpyTable.search`
         """
@@ -97,7 +97,7 @@ class TestGravitySpyTable(_TestEventTable):
             )
             self.TABLE.search(gravityspy_id="abcde")
 
-    @pytest_skip_network_error
+    @pytest_skip_flaky_network
     def test_download(self, tmp_path):
         """Test `GravitySpyTable.download`
         """
