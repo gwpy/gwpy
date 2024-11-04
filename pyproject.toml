@@ -46,6 +46,7 @@ dependencies = [
   "ligotimegps >=1.2.1",
   "matplotlib >=3.3.0",
   "numpy >=1.19",
+  "packaging >=24.1",
   "python-dateutil",
   "requests >=2.20.0",
   "scipy >=1.6.0",
