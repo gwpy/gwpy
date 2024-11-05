@@ -237,6 +237,7 @@ class FrequencySeries(Series):
             dift,
             epoch=self.epoch,
             channel=self.channel,
+            name=self.name,
             unit=self.unit,
             dx=(1/self.dx/nout).to(TimeSeries._default_xunit),
         )
