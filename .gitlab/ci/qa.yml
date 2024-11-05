@@ -22,9 +22,18 @@ spec:
 ---
 
 include:
-  - component: gitlab.com/components/sast/sast@2
+  - component: gitlab.com/components/sast/sast@~latest
     inputs:
       stage: $[[ inputs.stage ]]
+      run_advanced_sast: true
+    rules:
+      - if: '$GITLAB_FEATURES =~ /\bsast_advanced\b/'
+  - component: gitlab.com/components/sast/sast@~latest
+    inputs:
+      stage: $[[ inputs.stage ]]
+      run_advanced_sast: false
+    rules:
+      - if: '$GITLAB_FEATURES !~ /\bsast_advanced\b/'
   - local: .gitlab/ci/rules.yml
 
 .qa:
@@ -32,11 +41,21 @@ include:
   stage: $[[ inputs.stage ]]
   needs: []
 
+gitlab-advanced-sast:
+  needs: !reference [.qa, needs]
+  rules:
+    # skip if we just can't run advanced sast
+    - if: '$GITLAB_FEATURES !~ /\bsast_advanced\b/'
+      when: never
+    - !reference [.qa, rules]
+
 semgrep-sast:
-  # NOTE: can't use 'extends' when overwriting job config
-  stage: $[[ inputs.stage ]]
-  needs: []
-  rules: !reference [.qa, rules]
+  needs: !reference [.qa, needs]
+  rules:
+    # skip if we can run advanced sast
+    - if: '$GITLAB_FEATURES =~ /\bsast_advanced\b/'
+      when: never
+    - !reference [.qa, rules]
 
 ruff:
   extends: .qa
