@@ -19,8 +19,8 @@
 """Handle TeX formatting for matplotlib output
 """
 
+import functools
 import re
-from functools import lru_cache
 from shutil import which
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -46,7 +46,7 @@ def _test_usetex():
             pyplot.close(fig)
 
 
-@lru_cache(maxsize=None)
+@functools.cache
 def has_tex():
     """Returns whether tex is installed on this system
 
