@@ -52,13 +52,13 @@ GWpy has the following strict requirements:
    |gwdatafind|_       ``>=1.1.0``
    |gwosc-mod|_        ``>=0.5.3``
    |h5py|_             ``>=3.0.0``
-   |ligo-segments|_    ``>=1.0.0``
+   |ligo-segments|_    ``>=1.3.0``
    |ligotimegps|_      ``>=1.2.1``
    |matplotlib|_       ``>=3.1.0``
-   |numpy|_            ``>=1.16.0``
+   |numpy|_            ``>=1.19.5``
    |dateutil|_
    |scipy|_            ``>=1.2.0``
-   |tqdm|_             ``>=4.10.0``
+   |tqdm|_             ``>=4.52.0``
    ==================  ===========================
 
 All of these will be installed using any of the above install methods.
