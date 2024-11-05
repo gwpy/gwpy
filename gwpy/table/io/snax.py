@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) Patrick Godwin (2019-2020)
 #
 # This file is part of GWpy.

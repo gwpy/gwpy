@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) California Institute of Technology (2022)
 #
 # This file is part of GWpy.

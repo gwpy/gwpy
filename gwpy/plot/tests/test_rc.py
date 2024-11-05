@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) Cardiff University (2018-2021)
 #
 # This file is part of GWpy.
