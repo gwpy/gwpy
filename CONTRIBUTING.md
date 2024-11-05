@@ -130,7 +130,7 @@ branch:
 
 ### Python compatibility
 
-**GWpy code must be compatible with Python >= 3.8.**
+**GWpy code must be compatible with Python >= 3.9.**
 
 ### Style
 
