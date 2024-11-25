@@ -24,7 +24,7 @@ from math import floor
 import numpy
 
 from astropy.units import (Unit, Quantity, second, dimensionless_unscaled)
-from astropy.io import registry as io_registry
+from astropy.io.registry import compat as compat_registry
 
 from . import sliceutils
 from .array import Array
@@ -416,7 +416,7 @@ class Series(Array):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
+        return compat_registry.read(cls, source, *args, **kwargs)
 
     def write(self, target, *args, **kwargs):
         """Write this `Series` to a file
@@ -437,7 +437,7 @@ class Series(Array):
 
         Notes
         -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+        return compat_registry.write(self, target, *args, **kwargs)
 
     # -- series plotting ------------------------
 

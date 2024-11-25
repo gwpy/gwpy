@@ -18,7 +18,7 @@
 """Read events from ROOT trees into Tables
 """
 
-from ...io import registry
+from ...io.registry import compat as compat_registry
 from ...io.utils import (file_path, identify_factory)
 from .. import (Table, EventTable)
 from .utils import (read_with_columns, read_with_selection)
@@ -110,7 +110,10 @@ def table_to_root(
 
 # register I/O
 for table_class in (Table, EventTable):
-    registry.register_reader('root', table_class, table_from_root)
-    registry.register_writer('root', table_class, table_to_root)
-    registry.register_identifier('root', table_class,
-                                 identify_factory('.root'))
+    compat_registry.register_reader('root', table_class, table_from_root)
+    compat_registry.register_writer('root', table_class, table_to_root)
+    compat_registry.register_identifier(
+        'root',
+        table_class,
+        identify_factory('.root'),
+    )

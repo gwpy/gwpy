@@ -44,7 +44,6 @@ from urllib.parse import urlparse
 
 from numpy import inf
 
-from astropy.io import registry as io_registry
 from astropy.utils.data import get_readable_fileobj
 
 from gwosc import timeline
@@ -52,6 +51,7 @@ from gwosc import timeline
 from dqsegdb2.query import query_segments
 
 from ..io.mp import read_multi as io_read_multi
+from ..io.registry import compat as compat_registry
 from ..time import to_gps, LIGOTimeGPS
 from ..utils.misc import if_not_none
 from .segments import Segment, SegmentList
@@ -568,7 +568,7 @@ class DataQualityFlag(object):
 
         Notes
         -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+        return compat_registry.write(self, target, *args, **kwargs)
 
     def populate(self, source=DEFAULT_SEGMENT_SERVER, segments=None,
                  pad=True, **kwargs):
@@ -1369,7 +1369,7 @@ class DataQualityDict(OrderedDict):
 
         Notes
         -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+        return compat_registry.write(self, target, *args, **kwargs)
 
     def coalesce(self):
         """Coalesce all segments lists in this `DataQualityDict`.

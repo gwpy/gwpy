@@ -22,7 +22,7 @@ These files should be in two-column x,y format
 
 from numpy import (savetxt, loadtxt, column_stack)
 
-from ...io import registry as io_registry
+from ...io.registry import compat as compat_registry
 from ...io.utils import identify_factory
 from .. import Series
 
@@ -85,8 +85,11 @@ def register_ascii_series_io(array_type, format='txt', identify=True,
         kwgs.update(kwargs)
         return write_ascii_series(series, output, **kwgs)
 
-    io_registry.register_reader(format, array_type, _read)
-    io_registry.register_writer(format, array_type, _write)
+    compat_registry.register_reader(format, array_type, _read)
+    compat_registry.register_writer(format, array_type, _write)
     if identify:
-        io_registry.register_identifier(format, array_type,
-                                        identify_factory(format))
+        compat_registry.register_identifier(
+            format,
+            array_type,
+            identify_factory(format),
+        )

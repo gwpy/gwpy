@@ -30,8 +30,7 @@ import numpy
 from astropy.units import (UnitBase, Quantity)
 
 from ...io import hdf5 as io_hdf5
-from ...io.registry import (register_reader, register_writer,
-                            register_identifier)
+from ...io.registry import compat as compat_registry
 from ...time import LIGOTimeGPS
 from .. import (DataQualityFlag, DataQualityDict, Segment, SegmentList)
 
@@ -339,14 +338,21 @@ def write_hdf5_segmentlist(seglist, output, path=None, **kwargs):
 
 # -- register -----------------------------------------------------------------
 
-register_reader('hdf5', SegmentList, read_hdf5_segmentlist)
-register_writer('hdf5', SegmentList, write_hdf5_segmentlist)
-register_identifier('hdf5', SegmentList, io_hdf5.identify_hdf5)
+compat_registry.register_reader('hdf5', SegmentList, read_hdf5_segmentlist)
+compat_registry.register_writer('hdf5', SegmentList, write_hdf5_segmentlist)
+compat_registry.register_identifier('hdf5', SegmentList, io_hdf5.identify_hdf5)
 
-register_reader('hdf5', DataQualityFlag, read_hdf5_flag)
-register_writer('hdf5', DataQualityFlag, write_hdf5_flag)
-register_identifier('hdf5', DataQualityFlag, io_hdf5.identify_hdf5)
+compat_registry.register_reader('hdf5', DataQualityFlag, read_hdf5_flag)
+compat_registry.register_writer('hdf5', DataQualityFlag, write_hdf5_flag)
+compat_registry.register_identifier(
+    'hdf5',
+    DataQualityFlag,
+    io_hdf5.identify_hdf5)
 
-register_reader('hdf5', DataQualityDict, read_hdf5_dict)
-register_writer('hdf5', DataQualityDict, write_hdf5_dict)
-register_identifier('hdf5', DataQualityDict, io_hdf5.identify_hdf5)
+compat_registry.register_reader('hdf5', DataQualityDict, read_hdf5_dict)
+compat_registry.register_writer('hdf5', DataQualityDict, write_hdf5_dict)
+compat_registry.register_identifier(
+    'hdf5',
+    DataQualityDict,
+    io_hdf5.identify_hdf5,
+)

@@ -26,7 +26,6 @@ import re
 from math import ceil
 from urllib.parse import urlparse
 
-from astropy.io import registry
 from astropy.units import Quantity
 from astropy.utils.data import get_readable_fileobj
 
@@ -38,6 +37,7 @@ from ...io.cache import (
     file_segment,
     sieve as sieve_cache,
 )
+from ...io.registry import compat as compat_registry
 from ...io.utils import file_path
 from ...detector.units import parse_unit
 from ...segments import Segment
@@ -298,5 +298,9 @@ def _gwf_channel(path, series_class=TimeSeries, verbose=False):
 
 
 # register
-registry.register_reader('hdf5.gwosc', TimeSeries, read_gwosc_hdf5)
-registry.register_reader('hdf5.gwosc', StateVector, read_gwosc_hdf5_state)
+compat_registry.register_reader('hdf5.gwosc', TimeSeries, read_gwosc_hdf5)
+compat_registry.register_reader(
+    'hdf5.gwosc',
+    StateVector,
+    read_gwosc_hdf5_state,
+)

@@ -24,7 +24,7 @@ from astropy.io.misc.hdf5 import read_table_hdf5
 from astropy.table import vstack
 
 from ...io.hdf5 import with_read_hdf5
-from ...io.registry import register_reader
+from ...io.registry import compat as compat_registry
 from .. import EventTable
 from .utils import (read_with_columns, read_with_selection)
 
@@ -112,4 +112,4 @@ def table_from_file(source, channels=None, on_missing="error", compact=False):
 
 
 # register for unified I/O
-register_reader('hdf5.snax', EventTable, table_from_file)
+compat_registry.register_reader('hdf5.snax', EventTable, table_from_file)

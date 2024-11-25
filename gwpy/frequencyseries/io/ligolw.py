@@ -18,12 +18,12 @@
 """LIGO_LW I/O registrations for gwpy.frequencyseries objects
 """
 
-from ...io import registry as io_registry
 from ...io.ligolw import is_ligolw
+from ...io.registry import compat as compat_registry
 from ...types.io.ligolw import read_series
 from .. import FrequencySeries
 
 # -- registration -------------------------------------------------------------
 
-io_registry.register_reader('ligolw', FrequencySeries, read_series)
-io_registry.register_identifier('ligolw', FrequencySeries, is_ligolw)
+compat_registry.register_reader('ligolw', FrequencySeries, read_series)
+compat_registry.register_identifier('ligolw', FrequencySeries, is_ligolw)

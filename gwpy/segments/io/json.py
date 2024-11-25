@@ -20,7 +20,7 @@
 
 import json
 
-from ...io import registry
+from ...io.registry import compat as compat_registry
 from ...io.utils import (
     identify_factory,
     with_open,
@@ -98,6 +98,6 @@ identify_json = identify_factory('json')  # pylint: disable=invalid-name
 
 # -- register -----------------------------------------------------------------
 
-registry.register_reader('json', DataQualityFlag, read_json_flag)
-registry.register_writer('json', DataQualityFlag, write_json_flag)
-registry.register_identifier('json', DataQualityFlag, identify_json)
+compat_registry.register_reader('json', DataQualityFlag, read_json_flag)
+compat_registry.register_writer('json', DataQualityFlag, write_json_flag)
+compat_registry.register_identifier('json', DataQualityFlag, identify_json)

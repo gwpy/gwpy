@@ -29,7 +29,7 @@ import numpy
 from gwosc.api import DEFAULT_URL as DEFAULT_GWOSC_URL
 
 from astropy.table import (Table, vstack)
-from astropy.io import registry
+from astropy.io.registry import compat as compat_registry
 
 from ..io.mp import read_multi as io_read_multi
 from ..time import gps_types
@@ -48,30 +48,30 @@ TIME_LIKE_COLUMN_NAMES = [
 
 def inherit_io_registrations(cls):
     parent = cls.__mro__[1]
-    for row in registry.get_formats(data_class=parent):
+    for row in compat_registry.get_formats(data_class=parent):
         name = row["Format"]
         # read
         if row["Read"].lower() == "yes":
-            registry.register_reader(
+            compat_registry.register_reader(
                 name,
                 cls,
-                registry.get_reader(name, parent),
+                compat_registry.get_reader(name, parent),
                 force=False,
             )
         # write
         if row["Write"].lower() == "yes":
-            registry.register_writer(
+            compat_registry.register_writer(
                 name,
                 cls,
-                registry.get_writer(name, parent),
+                compat_registry.get_writer(name, parent),
                 force=False,
             )
         # identify
         if row["Auto-identify"].lower() == "yes":
-            registry.register_identifier(
+            compat_registry.register_identifier(
                 name,
                 cls,
-                registry._identifiers[(name, parent)],
+                compat_registry._identifiers[(name, parent)],
                 force=False,
             )
     return cls
@@ -261,7 +261,7 @@ class EventTable(Table):
 
         Notes
         -----"""
-        return registry.write(self, target, *args, **kwargs)
+        return compat_registry.write(self, target, *args, **kwargs)
 
     @classmethod
     def fetch(cls, format_, *args, **kwargs):

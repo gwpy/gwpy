@@ -26,7 +26,7 @@ import numpy
 from scipy.io import wavfile
 
 from .. import TimeSeries
-from ...io import registry as io_registry
+from ...io.registry import compat as compat_registry
 
 WAV_SIGNATURE = ('RIFF', 'WAVE')
 
@@ -120,6 +120,6 @@ def is_wav(origin, filepath, fileobj, *args, **kwargs):
             return True
 
 
-io_registry.register_reader('wav', TimeSeries, read)
-io_registry.register_writer('wav', TimeSeries, write)
-io_registry.register_identifier('wav', TimeSeries, is_wav)
+compat_registry.register_reader('wav', TimeSeries, read)
+compat_registry.register_writer('wav', TimeSeries, write)
+compat_registry.register_identifier('wav', TimeSeries, is_wav)
