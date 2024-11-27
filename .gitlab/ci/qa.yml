@@ -18,6 +18,10 @@ spec:
       default: ""
       description: "Extra options to pass to ruff check"
       type: string
+    mypy_options:
+      default: ""
+      description: "Extra options to pass to mypy"
+      type: string
 
 ---
 
@@ -77,3 +81,29 @@ ruff:
   artifacts:
     reports:
       codequality: gl-ruff.json
+
+mypy:
+  extends: .qa
+  image: python
+  script:
+    - python -m pip install
+          mypy
+          mypy-gitlab-code-quality
+    # run mypy and print to console
+    - python -m mypy
+          $[[ inputs.mypy_options ]]
+          --install-types
+          --non-interactive
+          $[[ inputs.project_dir ]]
+      || exitcode="$?"
+    # run mypy again and format as code quality report
+    - python -m mypy
+          $[[ inputs.mypy_options ]]
+          --no-error-summary
+          $[[ inputs.project_dir ]]
+      | mypy-gitlab-code-quality > gl-mypy-code-quality.json || true
+    # propagate fatal exitcode
+    - if [ "${exitcode:-0}" -gt 1 ]; then exit ${exitcode}; fi
+  artifacts:
+    reports:
+      codequality: gl-mypy-code-quality.json
