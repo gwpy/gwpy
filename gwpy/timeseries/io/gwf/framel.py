@@ -24,7 +24,7 @@ import warnings
 
 import framel
 
-from ....io.gwf import _series_name
+from ....io.gwf.core import _series_name
 from ....io.utils import (
     file_list,
     file_path,

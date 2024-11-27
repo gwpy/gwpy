@@ -26,8 +26,7 @@ import numpy
 
 from LDAStools import frameCPP  # noqa: F401
 
-from ....io import gwf as io_gwf
-from ....io import _framecpp as io_framecpp
+from ....io.gwf import framecpp as io_framecpp
 from ....io.utils import file_list
 from ....segments import Segment
 from ....time import (LIGOTimeGPS, to_gps)
@@ -160,7 +159,7 @@ def read_gwf(filename, channels, start=None, end=None, scaled=None,
     span = Segment(start, end)
 
     # open file
-    stream = io_gwf.open_gwf(filename, 'r')
+    stream = io_framecpp.open_gwf(filename, 'r')
     nframes = stream.GetNumberOfFrames()
 
     # find channels
@@ -511,7 +510,7 @@ def write(tsdict, outfile,
     }
 
     # create frame
-    frame = io_gwf.create_frame(
+    frame = io_framecpp.create_frame(
         time=start,
         duration=duration,
         name=name,
@@ -533,7 +532,7 @@ def write(tsdict, outfile,
         _append_to_frame(frame, tsdict[key].crop(start, end), type=ctype, **kw)
 
     # write frame to file
-    io_gwf.write_frames(
+    io_framecpp.write_frames(
         outfile,
         [frame],
         compression=compression,
@@ -572,13 +571,13 @@ def _append_to_frame(frame, timeseries, type='proc', **kwargs):
 
     # create the data container
     if type.lower() == 'adc':
-        create = io_gwf.create_fradcdata
+        create = io_framecpp.create_fradcdata
         append = frame.AppendFrAdcData
     elif type.lower() == 'proc':
-        create = io_gwf.create_frprocdata
+        create = io_framecpp.create_frprocdata
         append = frame.AppendFrProcData
     elif type.lower() == 'sim':
-        create = io_gwf.create_frsimdata
+        create = io_framecpp.create_frsimdata
         append = frame.AppendFrSimData
     else:
         raise RuntimeError("Invalid channel type {!r}, please select one of "
@@ -586,6 +585,6 @@ def _append_to_frame(frame, timeseries, type='proc', **kwargs):
     frdata = create(timeseries, frame_epoch=epoch, **kwargs)
 
     # append an FrVect
-    frdata.AppendData(io_gwf.create_frvect(timeseries))
+    frdata.AppendData(io_framecpp.create_frvect(timeseries))
     append(frdata)
     return frdata

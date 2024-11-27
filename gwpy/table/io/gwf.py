@@ -79,10 +79,12 @@ def table_from_gwf(filename, name, columns=None, selection=None):
     selection : `str`, `list` of `str`
         one or more column selection strings to apply, e.g. ``'snr>6'``
     """
+    gwf_framecpp = io_gwf.import_backend("frameCPP")
+
     # open frame file
     if isinstance(filename, FILE_LIKE):
         filename = filename.name
-    stream = io_gwf.open_gwf(filename)
+    stream = gwf_framecpp.open_gwf(filename)
 
     # parse selections and map to column indices
     if selection is None:
@@ -133,10 +135,20 @@ def table_to_gwf(table, filename, name, **kwargs):
     """
     from LDAStools.frameCPP import (FrEvent, GPSTime)
 
+    gwf_framecpp = io_gwf.import_backend("frameCPP")
+
     # create frame
-    write_kw = {key: kwargs.pop(key) for
-                key in ('compression', 'compression_level') if key in kwargs}
-    frame = io_gwf.create_frame(name=name, **kwargs)
+    write_kw = {
+        key: kwargs.pop(key)
+        for key in (
+            "compression",
+            "compression_level",
+        ) if key in kwargs
+    }
+    frame = gwf_framecpp.create_frame(
+        name=name,
+        **kwargs,
+    )
 
     # append row by row
     names = table.dtype.names
@@ -158,7 +170,11 @@ def table_to_gwf(table, filename, name, **kwargs):
         ))
 
     # write frame to file
-    io_gwf.write_frames(filename, [frame], **write_kw)
+    gwf_framecpp.write_frames(
+        filename,
+        [frame],
+        **write_kw,
+    )
 
 
 # -- registration -------------------------------------------------------------
