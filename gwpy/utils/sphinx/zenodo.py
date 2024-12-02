@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2018-2023)
+# Copyright (C) Cardiff University (2018-)
 #
 # This file is part of GWpy.
 #
@@ -15,21 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import argparse
 import sys
 
 import requests
 
-DEFAULT_ZENODO_URL = "https://zenodo.org"
-DEFAULT_HITS = 10
+DEFAULT_ZENODO_URL: str = "https://zenodo.org"
+DEFAULT_HITS: int = 10
 
 
 def format_citations(
-    zid,
-    url=DEFAULT_ZENODO_URL,
-    hits=10,
-    tag_prefix="v",
-):
+    zid: int | str,
+    url: str = DEFAULT_ZENODO_URL,
+    hits: int = DEFAULT_HITS,
+    tag_prefix: str = "v",
+) -> str:
     """Query and format a citations page from Zenodo entries.
 
     Parameters
@@ -54,7 +56,7 @@ def format_citations(
     """
     # query for metadata
     apiurl = f"{url.rstrip('/')}/api/records"
-    params = {
+    params: dict[str, bool | int | str] = {
         "q": f"conceptrecid:{zid}",
         "allversions": True,
         "sort": "version",
@@ -97,7 +99,7 @@ def format_citations(
 
 # -- command-line usage ---------------
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
     """Create an `argparse.ArgumentParser` for this tool.
     """
     parser = argparse.ArgumentParser(
@@ -137,7 +139,7 @@ def create_parser():
     return parser
 
 
-def main(args=None):
+def main(args: list[str] | None = None) -> None:
     """Run this tool as a command-line script.
     """
     # parse arguments
@@ -162,4 +164,4 @@ def main(args=None):
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()

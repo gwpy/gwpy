@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -17,46 +18,51 @@
 
 """Utilies for interacting with the LIGO Algorithm Library.
 
-This module requires lal >= 6.14.0
+This module requires lal >= 6.14.0.
 """
+
+from __future__ import annotations
 
 import operator
 import re
-from collections import OrderedDict
+from collections.abc import Callable
 from fractions import Fraction
 from functools import reduce
-
-import numpy
-
-from astropy import units
+from types import ModuleType
 
 import lal
+import numpy
+from astropy import units
+from numpy.typing import DTypeLike
 
-from ..time import to_gps
 # import gwpy.detector.units to register other units now
 from ..detector import units as gwpy_units  # noqa: F401
+from ..time import (
+    LIGOTimeGPS,
+    to_gps,
+)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # -- type matching ------------------------------------------------------------
 
 # LAL type enum
-LAL_TYPE_STR = {
-    lal.I2_TYPE_CODE: 'INT2',
-    lal.I4_TYPE_CODE: 'INT4',
-    lal.I8_TYPE_CODE: 'INT8',
-    lal.U2_TYPE_CODE: 'UINT2',
-    lal.U4_TYPE_CODE: 'UINT4',
-    lal.U8_TYPE_CODE: 'UINT8',
-    lal.S_TYPE_CODE: 'REAL4',
-    lal.D_TYPE_CODE: 'REAL8',
-    lal.C_TYPE_CODE: 'COMPLEX8',
-    lal.Z_TYPE_CODE: 'COMPLEX16',
+LAL_TYPE_STR: dict[int, str] = {
+    lal.I2_TYPE_CODE: "INT2",
+    lal.I4_TYPE_CODE: "INT4",
+    lal.I8_TYPE_CODE: "INT8",
+    lal.U2_TYPE_CODE: "UINT2",
+    lal.U4_TYPE_CODE: "UINT4",
+    lal.U8_TYPE_CODE: "UINT8",
+    lal.S_TYPE_CODE: "REAL4",
+    lal.D_TYPE_CODE: "REAL8",
+    lal.C_TYPE_CODE: "COMPLEX8",
+    lal.Z_TYPE_CODE: "COMPLEX16",
 }
 
-LAL_TYPE_FROM_STR = {v: k for k, v in LAL_TYPE_STR.items()}
+LAL_TYPE_FROM_STR: dict[str, int] = {v: k for k, v in LAL_TYPE_STR.items()}
 
-LAL_TYPE_FROM_NUMPY = {
+LAL_TYPE_FROM_NUMPY: dict[type, int] = {
     numpy.int16: lal.I2_TYPE_CODE,
     numpy.int32: lal.I4_TYPE_CODE,
     numpy.int64: lal.I8_TYPE_CODE,
@@ -69,15 +75,20 @@ LAL_TYPE_FROM_NUMPY = {
     numpy.complex128: lal.Z_TYPE_CODE,
 }
 
-LAL_TYPE_STR_FROM_NUMPY = {k: LAL_TYPE_STR[v] for
-                           (k, v) in LAL_TYPE_FROM_NUMPY.items()}
-LAL_NUMPY_FROM_TYPE_STR = {v: k for k, v in LAL_TYPE_STR_FROM_NUMPY.items()}
+LAL_TYPE_STR_FROM_NUMPY: dict[type, str] = {
+    k: LAL_TYPE_STR[v] for (k, v) in LAL_TYPE_FROM_NUMPY.items()
+}
+LAL_NUMPY_FROM_TYPE_STR: dict[str, type] = {
+    v: k for k, v in LAL_TYPE_STR_FROM_NUMPY.items()
+}
 
-LAL_TYPE_REGEX = re.compile(r'(U?INT|REAL|COMPLEX)\d+')
+LAL_TYPE_REGEX: re.Pattern = re.compile(r'(U?INT|REAL|COMPLEX)\d+')
 
 
-def to_lal_type_str(pytype):
-    """Convert the input python type to a LAL type string
+def to_lal_type_str(
+    pytype: type | DTypeLike | str | int,
+) -> str:
+    """Convert the input python type to a LAL type string.
 
     Examples
     --------
@@ -101,25 +112,35 @@ def to_lal_type_str(pytype):
     Raises
     ------
     KeyError
-        if the input doesn't map to a LAL type string
+        If the input doesn't map to a LAL type string.
     """
     # noop
     if pytype in LAL_TYPE_FROM_STR:
-        return pytype
+        return pytype  # type: ignore[return-value]
 
     # convert type code
     if pytype in LAL_TYPE_STR:
-        return LAL_TYPE_STR[pytype]
+        return LAL_TYPE_STR[pytype]  # type: ignore[index]
 
     # convert python type
     try:
-        dtype = numpy.dtype(pytype)
-        return LAL_TYPE_STR_FROM_NUMPY[dtype.type]
-    except (TypeError, KeyError):
-        raise ValueError("Failed to map {!r} to LAL type string")
+        dtp: type = numpy.dtype(pytype).type  # type: ignore[arg-type]
+        return LAL_TYPE_STR_FROM_NUMPY[dtp]
+    except (
+        TypeError,  # failed to convert input to dtype
+        KeyError,  # dtype didn't match
+    ):
+        raise ValueError(
+            f"Failed to map '{pytype}' to LAL type string",
+        )
 
 
-def find_typed_function(pytype, prefix, suffix, module=lal):
+def find_typed_function(
+    pytype: type | DTypeLike,
+    prefix: str,
+    suffix: str,
+    module: ModuleType = lal,
+) -> Callable:
     """Returns the lal method for the correct type
 
     Parameters
@@ -145,26 +166,37 @@ def find_typed_function(pytype, prefix, suffix, module=lal):
     <built-in function CreateREAL8Sequence>
     """
     laltype = to_lal_type_str(pytype)
-    return getattr(module, '{0}{1}{2}'.format(prefix, laltype, suffix))
+    return getattr(module, f"{prefix}{laltype}{suffix}")
 
 
-def from_lal_type(laltype):
+def from_lal_type(laltype: type) -> type:
     """Convert the data type of a LAL instance or type into a numpy data type.
 
     Parameters
     ----------
     laltype : `SwigPyObject` or `type`
-        the input LAL instance or type
+        The input LAL instance or type.
 
     Returns
     -------
-    dtype : `type`
-        the numpy data type, such as `numpy.uint32`, `numpy.float64`, etc.
+    npytype : `type`
+        The numpy data type, such as `numpy.uint32`, `numpy.float64`, etc.
 
     Raises
     ------
     ValueError
-        if the numpy data type cannot be inferred from the LAL object
+        If the numpy data type cannot be inferred from the LAL object.
+
+    Examples
+    --------
+    >>> from_lal_type(lal.REAL8TimeSeries)
+    numpy.float64
+
+    This also works with instances of LAL series types:
+
+    >>> series = lal.CreateINT4TimeSeries("test", 0, 0, 1, "m", 10)
+    >>> from_lal_type(series)
+    numpy.int32
     """
     if not isinstance(laltype, type):
         laltype = type(laltype)
@@ -177,7 +209,8 @@ def from_lal_type(laltype):
 
 # -- units --------------------------------------------------------------------
 
-LAL_UNIT_INDEX = [  # the order corresponds to how LAL stores compound units
+LAL_UNIT_INDEX: list[units.Quantity] = [
+    # the order corresponds to how LAL stores compound units
     units.meter,
     units.kilogram,
     units.second,
@@ -188,21 +221,23 @@ LAL_UNIT_INDEX = [  # the order corresponds to how LAL stores compound units
 ]
 
 
-def to_lal_unit(aunit):
+def to_lal_unit(
+    aunit: units.Unit | str,
+) -> tuple[lal.Unit, float]:
     """Convert the input unit into a `lal.Unit` and a scaling factor.
 
     Parameters
     ----------
     aunit : `~astropy.units.Unit`, `str`
-        the input unit
+        The input unit.
 
     Returns
     -------
     unit : `lal.Unit`
-        the LAL representation of the base unit.
+        The LAL representation of the base unit.
 
     scale : `float`
-        the linear scaling factor that should be applied to any associated
+        The linear scaling factor that should be applied to any associated
         data, see _Notes_ below.
 
     Notes
@@ -232,7 +267,7 @@ def to_lal_unit(aunit):
     Raises
     ------
     ValueError
-        if LAL doesn't understand the base units for the input
+        If LAL doesn't understand the base units for the input.
     """
     # format incoming unit
     if isinstance(aunit, str):
@@ -264,25 +299,28 @@ def to_lal_unit(aunit):
     return lunit, scale
 
 
-def from_lal_unit(lunit):
-    """Convert a LALUnit` into a `~astropy.units.Unit`
+def from_lal_unit(
+    lunit: lal.Unit,
+) -> units.Unit:
+    """Convert a LALUnit` into a `~astropy.units.Unit`.
 
     Parameters
     ----------
     lunit : `lal.Unit`
-        the input unit
+        The input unit.
 
     Returns
     -------
     unit : `~astropy.units.Unit`
-        the Astropy representation of the input
+        The Astropy representation of the input.
 
     Raises
     ------
     TypeError
-        if ``lunit`` cannot be converted to `lal.Unit`
+        If ``lunit`` cannot be converted to `lal.Unit`.
+
     ValueError
-        if Astropy doesn't understand the base units for the input
+        If Astropy doesn't understand the base units for the input.
     """
     return reduce(
         operator.mul,
@@ -293,21 +331,23 @@ def from_lal_unit(lunit):
                 lunit.unitDenominatorMinusOne,
             ))
         ),
-    ) * 10**lunit.powerOfTen
+    ) * 10 ** lunit.powerOfTen
 
 
-def to_lal_ligotimegps(gps):
+def to_lal_ligotimegps(
+    gps: LIGOTimeGPS | float | str,
+) -> lal.LIGOTimeGPS:
     """Convert the given GPS time to a `lal.LIGOTimeGPS` object
 
     Parameters
     ----------
     gps : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
-        input GPS time, can be anything parsable by :meth:`~gwpy.time.to_gps`
+        Input GPS time, can be anything parsable by :meth:`~gwpy.time.to_gps`.
 
     Returns
     -------
     ligotimegps : `lal.LIGOTimeGPS`
-        a SWIG-LAL `~lal.LIGOTimeGPS` representation of the given GPS time
+        A SWIG-LAL `~lal.LIGOTimeGPS` representation of the given GPS time.
     """
     gps = to_gps(gps)
     return lal.LIGOTimeGPS(gps.gpsSeconds, gps.gpsNanoSeconds)
@@ -315,5 +355,6 @@ def to_lal_ligotimegps(gps):
 
 # -- detectors ----------------------------------------------------------------
 
-LAL_DETECTORS = OrderedDict((ifo.frDetector.prefix, ifo.frDetector) for ifo in
-                            lal.CachedDetectors)
+LAL_DETECTORS: dict[str, lal.FrDetector] = {
+    ifo.frDetector.prefix: ifo.frDetector for ifo in lal.CachedDetectors
+}

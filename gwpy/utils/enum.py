@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2019-2020)
+# Copyright (C) Cardiff University (2019-)
 #
 # This file is part of GWpy.
 #
@@ -15,9 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilties for enumerations
+"""Utilties for enumerations.
 """
 
+from __future__ import annotations
+
+import builtins
 from enum import Enum
 
 import numpy
@@ -29,15 +32,18 @@ class NumpyTypeEnum(Enum):
     """`~enum.Enum` of numpy types
     """
     @property
-    def dtype(self):
+    def dtype(self) -> numpy.dtype:
         return numpy.dtype(self.name.lower())
 
     @property
-    def type(self):
+    def type(self) -> type:
         return self.dtype.type
 
     @classmethod
-    def find(cls, type_):
+    def find(
+        cls,
+        type_: builtins.type | str,
+    ) -> Enum:
         """Returns the enumerated type corresponding to the given python type
         """
         try:

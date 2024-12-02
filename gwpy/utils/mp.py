@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Louisiana State University (2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,17 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilities for multi-processing
+"""Utilities for multi-processing.
 """
 
-import warnings
-from multiprocessing import (Queue, Process)
+from collections.abc import Callable
+from multiprocessing import (
+    Process,
+    Queue,
+)
 from operator import itemgetter
+from typing import Any
 
 from .progress import progress_bar
 
 
-def _process_in_out_queues(func, q_in, q_out):
+def _process_in_out_queues(
+    func: Callable,
+    q_in: Queue,
+    q_out: Queue,
+) -> None:
     """Iterate through a Queue, call, ``func`, and Queue the result
 
     Parameters
@@ -56,12 +65,17 @@ def _process_in_out_queues(func, q_in, q_out):
         # exceptions are returned and handled upstream
         try:
             q_out.put((idx, func(arg)))
-        except Exception as exc:  # pylint: disable=broad-except
+        except Exception as exc:
             q_out.put((idx, exc))
 
 
-def multiprocess_with_queues(nproc, func, inputs, verbose=False,
-                             **progress_kw):
+def multiprocess_with_queues(
+    nproc: int,
+    func: Callable,
+    inputs: list[Any],
+    verbose: bool = False,
+    **progress_kw,
+) -> list[Any]:
     """Map a function over a list of inputs using multiprocess
 
     This essentially duplicates `multiprocess.map` but allows for
@@ -92,12 +106,6 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
         the `list` of results from calling ``func(x)`` for each element
         of ``inputs``
     """
-    if progress_kw.pop('raise_exceptions', None) is not None:
-        warnings.warn("the `raise_exceptions` keyword to "
-                      "multiprocess_with_queues is deprecated, and will be "
-                      "removed in a future release, all exceptions will be "
-                      "raised if they occur", DeprecationWarning)
-
     # create progress bar for verbose output
     if bool(verbose):
         if not isinstance(verbose, bool):
@@ -124,8 +132,8 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
     # -------------------------------------------
 
     # create input and output queues
-    q_in = Queue()
-    q_out = Queue()
+    q_in: Queue = Queue()
+    q_out: Queue = Queue()
 
     # create child processes and start
     proclist = [
@@ -140,13 +148,14 @@ def multiprocess_with_queues(nproc, func, inputs, verbose=False,
         proc.start()
 
     # populate queue (no need to block in serial put())
-    sent = [q_in.put(x, block=False) for x in enumerate(inputs)]
+    for x in enumerate(inputs):
+        q_in.put(x, block=False)
     for _ in range(nproc):  # add sentinel for each process
         q_in.put((None, None))
 
     # get results
     res = []
-    for _ in range(len(sent)):
+    for _ in range(len(inputs)):
         x = q_out.get()
         if pbar:
             pbar.update()

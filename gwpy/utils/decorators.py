@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,24 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Decorators for GWpy
+"""Decorators for GWpy.
 """
+
+from __future__ import annotations
 
 import warnings
 from functools import wraps
+from typing import Callable
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-DEPRECATED_FUNCTION_WARNING = (
+DEPRECATED_FUNCTION_WARNING: str = (
     "{0.__module__}.{0.__name__} has been deprecated, and will be "
     "removed in a future release."
 )
 
 
-class deprecated_property(property):  # pylint: disable=invalid-name
-    """sub-class of `property` that invokes DeprecationWarning on every call
+class deprecated_property(property):  # noqa: N801
+    """Sub-class of `property` that invokes DeprecationWarning on every call.
     """
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+    def __init__(
+        self,
+        fget: Callable,
+        fset: Callable | None = None,
+        fdel: Callable | None = None,
+        doc: str | None = None,
+    ):
         # get name  of property
         pname = fget.__name__
 
@@ -40,11 +50,12 @@ class deprecated_property(property):  # pylint: disable=invalid-name
         def _warn(func):
             @wraps(func)
             def _wrapped(self, *args, **kwargs):
-                parent = type(self).__name__  # parent class name
-                warnings.warn('the {0}.{1} property is deprecated, and will '
-                              'be removed in a future release, please stop '
-                              'using it.'.format(parent, pname),
-                              DeprecationWarning)
+                warnings.warn(
+                    f"the {type(self).__name__}.{pname} property is deprecated "
+                    "and will be removed in a future release, please stop "
+                    "using it.",
+                    DeprecationWarning,
+                )
                 return func(self, *args, **kwargs)
 
             return _wrapped
@@ -60,21 +71,25 @@ class deprecated_property(property):  # pylint: disable=invalid-name
         super().__init__(fget, fset, fdel, doc)
 
 
-def deprecated_function(func=None, message=DEPRECATED_FUNCTION_WARNING):
-    """Adds a `DeprecationWarning` to a function
+def deprecated_function(
+    func: Callable | None = None,
+    message: str = DEPRECATED_FUNCTION_WARNING,
+) -> Callable:
+    """Adds a `DeprecationWarning` to a function.
 
     Parameters
     ----------
     func : `callable`
-        the function to decorate with a `DeprecationWarning`
+        The function to decorate with a `DeprecationWarning`.
 
     message : `str`, optional
-        the warning message to present
+        The warning message to present.
 
     Notes
     -----
-    The final warning message is formatted as ``message.format(func)``
-    so you can use attribute references to the function itself.
+    The final warning message is formatted using `str.format`,
+    e.g ``message.format(func)``, so you can use attribute references
+    to the function itself.
     See the default message as an example.
     """
     def _decorator(func):
@@ -92,8 +107,8 @@ def deprecated_function(func=None, message=DEPRECATED_FUNCTION_WARNING):
     return _decorator
 
 
-def return_as(returntype):
-    """Decorator to cast return of function as the given type
+def return_as(returntype: type) -> Callable:
+    """Decorator to cast return of function as the given type.
 
     Parameters
     ----------
@@ -108,8 +123,8 @@ def return_as(returntype):
                 return returntype(result)
             except (TypeError, ValueError) as exc:
                 exc.args = (
-                    'failed to cast return from {0} as {1}: {2}'.format(
-                        func.__name__, returntype.__name__, str(exc)),
+                    f"failed to cast return from {func.__name__} as "
+                    f"{returntype.__name__}: {exc}",
                 )
                 raise
         return wrapped

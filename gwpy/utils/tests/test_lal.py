@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -18,77 +19,110 @@
 """Unit test for utils module
 """
 
-import pytest
-
 import numpy
-
+import pytest
 from astropy import units
 
 # import necessary modules
-lal = pytest.importorskip('lal')
-utils_lal = pytest.importorskip('gwpy.utils.lal')
+lal = pytest.importorskip("lal")
+utils_lal = pytest.importorskip("gwpy.utils.lal")
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def test_to_lal_type_str():
-    assert utils_lal.to_lal_type_str(float) == 'REAL8'
-    assert utils_lal.to_lal_type_str(
-        numpy.dtype('float64')) == 'REAL8'
-    assert utils_lal.to_lal_type_str(11) == 'REAL8'
+@pytest.mark.parametrize(("arg", "result"), [
+    (float, "REAL8"),
+    (numpy.dtype("float64"), "REAL8"),
+    (11, "REAL8"),
+])
+def test_to_lal_type_str(arg, result):
+    """Test :func:`gwpy.utils.lal.to_lal_type_str`.
+    """
+    assert utils_lal.to_lal_type_str(arg) == result
+
+
+@pytest.mark.parametrize("arg", [
+    "blah",
+    numpy.int8,
+    20,
+])
+def test_to_lal_type_str_error(arg):
+    """Test :func:`gwpy.utils.lal.to_lal_type_str` error handling.
+    """
     with pytest.raises(ValueError):
-        utils_lal.to_lal_type_str('blah')
-    with pytest.raises(ValueError):
-        utils_lal.to_lal_type_str(numpy.int8)
-    with pytest.raises(ValueError):
-        utils_lal.to_lal_type_str(20)
+        utils_lal.to_lal_type_str(arg)
 
 
 def test_find_typed_function():
+    """Test :func:`gwpy.utils.lal.find_typed_function`.
+    """
     assert utils_lal.find_typed_function(
-        'REAL8', 'Create', 'Sequence') is lal.CreateREAL8Sequence
+        "REAL8",
+        "Create",
+        "Sequence",
+    ) is lal.CreateREAL8Sequence
 
-    try:
-        import lalframe
-    except ImportError:  # no lalframe
-        return
+
+@pytest.mark.requires("lalframe")
+def test_find_typed_function_module():
+    """Test :func:`gwpy.utils.lal.find_typed_function` with lalframe.
+    """
+    import lalframe
     utils_lal.find_typed_function(
-        'REAL4', 'FrStreamRead', 'TimeSeries',
-        module=lalframe) is lalframe.FrStreamReadREAL4TimeSeries
+        "REAL4",
+        "FrStreamRead",
+        "TimeSeries",
+        module=lalframe,
+    ) is lalframe.FrStreamReadREAL4TimeSeries
 
 
-@pytest.mark.parametrize(
-    'dtype',
-    [
-        numpy.int16,
-        numpy.int32,
-        numpy.int64,
-        numpy.uint16,
-        numpy.uint32,
-        numpy.uint64,
-        numpy.float32,
-        numpy.float64,
-        numpy.complex64,
-        numpy.complex128,
-    ]
-)
+@pytest.mark.parametrize("dtype", [
+    numpy.int16,
+    numpy.int32,
+    numpy.int64,
+    numpy.uint16,
+    numpy.uint32,
+    numpy.uint64,
+    numpy.float32,
+    numpy.float64,
+    numpy.complex64,
+    numpy.complex128,
+])
 def test_from_lal_type(dtype):
-    func = utils_lal.find_typed_function(dtype, 'Create', 'TimeSeries')
-    lalts = func(None, None, 0, 1., None, 1)
+    """Test :func:`gwpy.utils.lal.from_lal_type`.
+    """
+    func = utils_lal.find_typed_function(
+        dtype,
+        "Create",
+        "TimeSeries",
+    )
+    lalts = func(
+        None,
+        None,
+        0,
+        1.,
+        None,
+        1,
+    )
     assert utils_lal.from_lal_type(lalts) is dtype
     assert utils_lal.from_lal_type(type(lalts)) is dtype
 
 
-@pytest.mark.parametrize('name', [
-    'XXX',
-    'XXXCOMPLEX64ZZZ',
-    'INNT2',
-    'INT5',
-    'REAL42',
+@pytest.mark.parametrize("name", [
+    "XXX",
+    "XXXCOMPLEX64ZZZ",
+    "INNT2",
+    "INT5",
+    "REAL42",
 ])
 def test_from_lal_type_errors(name):
+    """Test :func:`gwpy.utils.lal.from_lal_type` error handling.
+    """
     lal_type = type(name, (), {})
-    with pytest.raises(ValueError, match='no known numpy'):
+    with pytest.raises(
+        ValueError,
+        match="no known numpy",
+    ):
         utils_lal.from_lal_type(lal_type)
 
 
@@ -108,7 +142,7 @@ def test_to_lal_unit_error():
         ValueError,
         match="^LAL has no unit corresponding to 'rad'$",
     ):
-        utils_lal.to_lal_unit('rad/s')
+        utils_lal.to_lal_unit("rad/s")
 
 
 @pytest.mark.parametrize(("in_", "out"), (
@@ -118,9 +152,16 @@ def test_to_lal_unit_error():
     ("10^3 m", "km"),
 ))
 def test_from_lal_unit(in_, out):
-    assert utils_lal.from_lal_unit(lal.Unit(in_)) == units.Unit(out)
+    """Test :func:`gwpy.utils.lal.from_lal_unit`.
+    """
+    assert utils_lal.from_lal_unit(
+        lal.Unit(in_),
+    ) == units.Unit(out)
 
 
 def test_to_lal_ligotimegps():
-    assert utils_lal.to_lal_ligotimegps(123.456) == (
-        lal.LIGOTimeGPS(123, 456000000))
+    """Test :func:`gwpy.utils.lal.to_lal_ligotimegps`.
+    """
+    assert utils_lal.to_lal_ligotimegps(
+        123.456,
+    ) == lal.LIGOTimeGPS(123, 456000000)

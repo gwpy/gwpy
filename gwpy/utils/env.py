@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (C) Cardiff University (2018-)
 #
 # This file is part of GWpy.
 #
@@ -15,23 +15,28 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Environment utilities for GWpy
+"""Environment utilities for GWpy.
 """
+
+from __future__ import annotations
 
 import os
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-TRUE = (
-    '1',
-    'y',
-    'yes',
-    'true',
+TRUE: tuple[str, ...] = (
+    "1",
+    "y",
+    "yes",
+    "true",
 )
 
 
-def bool_env(key, default=False):
-    """Parse an environment variable as a boolean switch
+def bool_env(
+    key: str,
+    default: bool = False,
+) -> bool:
+    """Parse an environment variable as a boolean switch.
 
     `True` is returned if the variable value matches one of the following:
 
@@ -40,27 +45,26 @@ def bool_env(key, default=False):
     - ``'yes'``
     - ``'true'``
 
-    The match is case-insensitive (so ``'Yes'`` will match as `True`)
+    The match is case-insensitive (so ``'Yes'`` will match as `True`).
 
     Parameters
     ----------
     key : `str`
-        the name of the environment variable to find
+        The name of the environment variable to find.
 
     default : `bool`
-        the default return value if the key is not found
+        The default return value if the key is not found.
 
     Returns
     -------
     True
-        if the environment variable matches as 'yes' or similar
+        If the environment variable matches as 'yes' or similar.
     False
-        otherwise
+        Otherwise.
 
     Examples
     --------
     >>> import os
-    >>> from gwpy.utils.env import bool_env
     >>> os.environ['GWPY_VALUE'] = 'yes'
     >>> print(bool_env('GWPY_VALUE'))
     True

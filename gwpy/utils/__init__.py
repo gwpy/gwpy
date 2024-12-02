@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,17 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Miscellaneous utilties for GWpy
+"""Miscellaneous utilties for GWpy.
 """
-
-from sys import stdout
 
 from .misc import (
     gprint,
     if_not_none,
-    null_context,
     round_to_power,
     unique,
 )
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

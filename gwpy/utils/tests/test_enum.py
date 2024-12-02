@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2019-2020)
+# Copyright (C) Cardiff University (2019-)
 #
 # This file is part of GWpy.
 #
@@ -18,9 +18,8 @@
 """Tests for :mod:`gwpy.utils.enum`
 """
 
-import pytest
-
 import numpy
+import pytest
 
 from .. import enum as gwpy_enum
 
@@ -30,7 +29,7 @@ class _MyEnum(gwpy_enum.NumpyTypeEnum):
     FLOAT32 = 200
 
 
-class TestNumpyTypeEnum(object):
+class TestNumpyTypeEnum:
     TEST_CLASS = _MyEnum
 
     def test_dtype(self):
