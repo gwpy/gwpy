@@ -30,6 +30,19 @@ from .. import kerberos as io_kerberos
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
+def requires_gssapi():
+    """Mark a function as requiring the `gssapi` module.
+
+    This needs special handling because `import gssapi` on Windows
+    can raise an `OSError` if a Kerberos implementation can't be
+    loaded.
+    """
+    return pytest.mark.requires(
+        "gssapi",
+        exc_type=(ImportError, OSError),
+    )
+
+
 @pytest.fixture(autouse=True)
 def mock_krb5_env():
     with mock.patch.dict(os.environ):
@@ -60,7 +73,7 @@ def test_kinit_no_gssapi():
         io_kerberos.kinit()
 
 
-@pytest.mark.requires("gssapi")
+@requires_gssapi()
 @mock.patch("sys.stdout.isatty", return_value=True)
 @mock.patch("gwpy.io.kerberos.input", return_value="rainer.weiss")
 @mock.patch("getpass.getpass", return_value="test")
@@ -92,7 +105,7 @@ def test_kinit_up(creds, acquire, getpass, input_, _, capsys):
     )
 
 
-@pytest.mark.requires("gssapi")
+@requires_gssapi()
 @mock.patch('gwpy.io.kerberos.input')
 @mock.patch('getpass.getpass')
 @mock.patch("gssapi.raw.acquire_cred_with_password")
@@ -117,7 +130,7 @@ def test_kinit_up_kwargs(creds, acquire, getpass, input_):
     )
 
 
-@pytest.mark.requires("gssapi")
+@requires_gssapi()
 def test_kinit_keytab_dne(tmp_path):
     """Test `gwpy.io.kerberos.kinit` with a non-existent keytab.
     """
@@ -135,7 +148,7 @@ def test_kinit_keytab_dne(tmp_path):
         )
 
 
-@pytest.mark.requires("gssapi")
+@requires_gssapi()
 @mock.patch.dict("os.environ")
 @mock.patch("gssapi.Credentials")
 @mock.patch("gwpy.io.kerberos._keytab_principal", lambda x: "rainer.weiss@LIGO.ORG")
@@ -176,7 +189,7 @@ def test_kinit_keytab(creds, tmp_path):
     )
 
 
-@pytest.mark.requires("gssapi")
+@requires_gssapi()
 def test_kinit_notty():
     """Test `gwpy.io.kerberos.kinit` raises an error in a non-interactive
     session if it needs to prompt for information.
@@ -188,7 +201,7 @@ def test_kinit_notty():
         io_kerberos.kinit()
 
 
-@pytest.mark.requires("gssapi")
+@requires_gssapi()
 @mock.patch("gwpy.io.kerberos._acquire_password")
 def test_kinit_error(_acquire_password):
     """Test that `gwpy.io.kerberos.kinit` propagates `GSSError`s appropriately.
@@ -210,7 +223,7 @@ def test_kinit_error(_acquire_password):
 
 # -- deprecated
 
-@pytest.mark.requires("gssapi")
+@requires_gssapi()
 @mock.patch("gwpy.io.kerberos._acquire_password")
 def test_kinit_krb5ccname(_):
     """Test that the ``krb5ccname`` keyword emits a deprecation warning.

@@ -60,9 +60,9 @@ dynamic = [
 [project.optional-dependencies]
 # test suite
 test = [
-  "pytest >=7.0.0",
-  "pytest-freezer",
+  "pytest >=8.2",
   "pytest-cov >=5.0.0",
+  "pytest-freezer",
   "pytest-requires",
   "pytest-rerunfailures",
   "pytest-socket",
@@ -167,6 +167,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = "-r a"
+minversion = "8.1"
 filterwarnings = [
   # https://github.com/gwastro/pycbc/pull/3701
   "ignore:`np.int` is a deprecated alias::pycbc..*",
