@@ -145,6 +145,15 @@ omit = [
 # print report with one decimal point
 precision = 1
 
+# -- mypy
+
+[tool.mypy]
+exclude = [
+  "^docs/",
+  "^examples/",
+]
+ignore_missing_imports = true
+
 # -- pytest
 
 [tool.pytest.ini_options]
