@@ -243,6 +243,8 @@ def read_gwosc_hdf5_state(
     start=None,
     end=None,
     copy=False,
+    dataset_name="DQmask",
+    maskset_name='DQDescriptions'
 ):
     """Read a `StateVector` from a GWOSC-format HDF file.
 
@@ -252,7 +254,7 @@ def read_gwosc_hdf5_state(
         path of HDF5 file, or open `H5File`
 
     path : `str`
-        path of HDF5 dataset to read.
+        path of HDF5 datasets to read.
 
     start : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         start GPS time of desired data
@@ -263,14 +265,20 @@ def read_gwosc_hdf5_state(
     copy : `bool`, default: `False`
         create a fresh-memory copy of the underlying array
 
+    dataset_name : `str`
+        HDF5 dataset where to read the bits
+
+    maskset_name : `str`
+        HDF5 dataset where to read the definition of each bits
+
     Returns
     -------
     data : `~gwpy.timeseries.TimeSeries`
         a new `TimeSeries` containing the data read from disk
     """
     # find data
-    dataset = io_hdf5.find_dataset(f, "%s/DQmask" % path)
-    maskset = io_hdf5.find_dataset(f, "%s/DQDescriptions" % path)
+    dataset = io_hdf5.find_dataset(f, "%s/%s" % (path, dataset_name))
+    maskset = io_hdf5.find_dataset(f, "%s/%s" % (path, maskset_name))
     # read data
     nddata = dataset[()]
     bits = [bytes.decode(bytes(b), "utf-8") for b in maskset[()]]
