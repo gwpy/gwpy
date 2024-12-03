@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2021)
+# Copyright (C) Cardiff University (2021-)
 #
 # This file is part of GWpy.
 #
@@ -15,22 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Error handling for the GWpy test suite
+"""Error handling for the GWpy test suite.
 """
 
 import socket
+from collections.abc import Callable
 from functools import wraps
 from ssl import SSLError
 from urllib.error import URLError
 
 import pytest
-
 import requests.exceptions
 
+# -- Network/HTTP --------------------
 
-# -- Network/HTTP ---------------------
-
-NETWORK_ERROR = (
+NETWORK_ERROR: tuple[type[Exception], ...] = (
     ConnectionError,
     requests.exceptions.ConnectionError,
     requests.exceptions.ReadTimeout,
@@ -55,8 +54,7 @@ except ImportError as exc:  # pragma: no cover
     # print a warning to tell the devs to update this module
     import warnings
     warnings.warn(
-        "failed to import exception types from pytest_socket: "
-        "{}".format(str(exc)),
+        f"failed to import exception types from pytest_socket: {exc}",
     )
 else:
     NETWORK_ERROR = NETWORK_ERROR + (
@@ -72,7 +70,9 @@ pytest_rerun_flaky_httperror = pytest.mark.flaky(
 )
 
 
-def pytest_skip_network_error(func):
+def pytest_skip_network_error(
+    func: Callable,
+) -> Callable:
     """Execute `func` but skip if it raises one of the network exceptions.
     """
     @wraps(func)
@@ -91,7 +91,9 @@ def pytest_skip_network_error(func):
     return wrapper
 
 
-def pytest_skip_flaky_network(func):
+def pytest_skip_flaky_network(
+    func: Callable,
+) -> Callable:
     """Decorate test ``func`` with all necessary network decorators.
 
     A test decorated with this decorator will attempt behave as follows
@@ -110,10 +112,12 @@ def pytest_skip_flaky_network(func):
     return func
 
 
-# -- CVMFS ----------------------------
+# -- CVMFS ---------------------------
 
-def pytest_skip_cvmfs_read_error(func):
-    """Execute `func` but skip if a CVMFS file fails to open
+def pytest_skip_cvmfs_read_error(
+    func: Callable,
+) -> Callable:
+    """Execute `func` but skip if a CVMFS file fails to open.
 
     This is most likely indicative of a broken CVMFS mount, which is not
     GWpy's problem.
