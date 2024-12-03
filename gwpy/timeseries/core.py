@@ -52,7 +52,7 @@ from gwosc.api import DEFAULT_URL as GWOSC_DEFAULT_HOST
 from ..types import Series
 from ..detector import (Channel, ChannelList)
 from ..segments import SegmentList
-from ..time import (Time, LIGOTimeGPS, gps_types, to_gps)
+from ..time import (Time, LIGOTimeGPS, GPS_TYPES, to_gps)
 from ..utils import gprint
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -72,7 +72,7 @@ _UFUNC_STRING = {
 # -- utilities ----------------------------------------------------------------
 
 def _format_time(gps):
-    if isinstance(gps, gps_types):
+    if isinstance(gps, GPS_TYPES):
         return float(gps)
     if isinstance(gps, Time):
         return gps.gps

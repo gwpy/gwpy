@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -21,9 +22,10 @@ Either pass a GPS time to convert to a date string, or a date string
 to convert to a GPS time.
 """
 
+from __future__ import annotations
+
 import argparse
 import datetime
-import sys
 
 from dateutil import tz
 
@@ -31,36 +33,54 @@ from .. import __version__
 from . import tconvert
 
 
-def main(args=None):
-    """Parse command-line arguments, tconvert inputs, and print
+def main(
+    args: list[str] | None = None,
+):
+    """Parse command-line arguments, tconvert inputs, and print.
     """
     # define command line arguments
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-V", "--version", action="version",
-                        version=__version__,
-                        help="show version number and exit")
-    parser.add_argument("-l", "--local", action="store_true", default=False,
-                        help="print datetimes in local timezone")
-    parser.add_argument("-f", "--format", type=str, action="store",
-                        default=r"%Y-%m-%d %H:%M:%S.%f %Z",
-                        help="output datetime format (default: %(default)r)")
-    parser.add_argument("input", help="GPS or datetime string to convert",
-                        nargs="*")
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=__version__,
+        help="show version number and exit",
+    )
+    parser.add_argument(
+        "-l",
+        "--local",
+        action="store_true",
+        default=False,
+        help="print datetimes in local timezone",
+    )
+    parser.add_argument(
+        "-f",
+        "--format",
+        type=str,
+        action="store",
+        default=r"%Y-%m-%d %H:%M:%S.%f %Z",
+        help="output datetime format (default: %(default)r)")
+    parser.add_argument(
+        "input",
+        help="GPS or datetime string to convert",
+        nargs="*",
+    )
 
     # parse and convert
-    args = parser.parse_args(args)
-    input_ = " ".join(args.input)
+    opts = parser.parse_args(args)
+    input_ = " ".join(opts.input)
     output = tconvert(input_)
 
     # print (now with timezones!)
     if isinstance(output, datetime.datetime):
         output = output.replace(tzinfo=tz.tzutc())
-        if args.local:
+        if opts.local:
             output = output.astimezone(tz.tzlocal())
-        print(output.strftime(args.format))
+        print(output.strftime(opts.format))
     else:
         print(output)
 
 
 if __name__ == "__main__":  # pragma: no-cover
-    sys.exit(main())
+    main()
