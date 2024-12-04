@@ -43,9 +43,7 @@ from ligo.segments import segment as LigoSegment
 from ....time import to_gps
 from ....io.gwf import identify_gwf
 from ....io import cache as io_cache
-from ....io.registry import (register_reader,
-                             register_writer,
-                             register_identifier)
+from ....io.registry import compat as compat_registry
 from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -368,14 +366,14 @@ def register_gwf_api(library):
     # -- register -------------------------------
 
     # register specific format
-    register_reader(fmt, TimeSeriesDict, read_timeseriesdict)
-    register_reader(fmt, TimeSeries, read_timeseries)
-    register_reader(fmt, StateVectorDict, read_statevectordict)
-    register_reader(fmt, StateVector, read_statevector)
-    register_writer(fmt, TimeSeriesDict, write_timeseriesdict)
-    register_writer(fmt, TimeSeries, write_timeseries)
-    register_writer(fmt, StateVectorDict, write_timeseriesdict)
-    register_writer(fmt, StateVector, write_timeseries)
+    compat_registry.register_reader(fmt, TimeSeriesDict, read_timeseriesdict)
+    compat_registry.register_reader(fmt, TimeSeries, read_timeseries)
+    compat_registry.register_reader(fmt, StateVectorDict, read_statevectordict)
+    compat_registry.register_reader(fmt, StateVector, read_statevector)
+    compat_registry.register_writer(fmt, TimeSeriesDict, write_timeseriesdict)
+    compat_registry.register_writer(fmt, TimeSeries, write_timeseries)
+    compat_registry.register_writer(fmt, StateVectorDict, write_timeseriesdict)
+    compat_registry.register_writer(fmt, StateVector, write_timeseries)
 
 
 # -- generic API for 'gwf' format ---------------------------------------------
@@ -400,9 +398,9 @@ def register_gwf_format(container):
         writer = get_writer(fmt, container)
         return writer(*args, **kwargs)
 
-    register_identifier('gwf', container, identify_gwf)
-    register_reader('gwf', container, read_)
-    register_writer('gwf', container, write_)
+    compat_registry.register_identifier('gwf', container, identify_gwf)
+    compat_registry.register_reader('gwf', container, read_)
+    compat_registry.register_writer('gwf', container, write_)
 
 
 # -- register frame API -------------------------------------------------------

@@ -22,7 +22,7 @@ import re
 
 from astropy.io.ascii import core
 
-from ...io import registry
+from ...io.registry import compat as compat_registry
 from .. import (Table, EventTable)
 from .utils import decorate_registered_reader
 
@@ -40,7 +40,7 @@ def table_from_cwb(source, *args, **kwargs):
     return EventTable.read(source, 'waveburst', *args, format='root', **kwargs)
 
 
-registry.register_reader('root.cwb', EventTable, table_from_cwb)
+compat_registry.register_reader('root.cwb', EventTable, table_from_cwb)
 
 
 # -- ASCII --------------------------------------------------------------------
@@ -116,10 +116,10 @@ class Cwb(core.BaseReader):
 
 
 # register for EventTable
-registry.register_reader(
+compat_registry.register_reader(
     "ascii.cwb",
     EventTable,
-    registry.get_reader("ascii.cwb", Table),
+    compat_registry.get_reader("ascii.cwb", Table),
 )
 decorate_registered_reader(
     "ascii.cwb",

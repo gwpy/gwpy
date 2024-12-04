@@ -20,7 +20,7 @@
 
 from astropy import units
 
-from ...io import registry as io_registry
+from ...io.registry import compat as compat_registry
 from ...io.hdf5 import (identify_hdf5, with_read_hdf5, with_write_hdf5)
 from ...types.io.hdf5 import (read_hdf5_array, write_hdf5_series)
 from .. import (TimeSeries, TimeSeriesDict,
@@ -118,13 +118,13 @@ def write_hdf5_dict(tsdict, h5f, group=None, **kwargs):
 # series classes
 for series_class in (TimeSeries, StateVector):
     reader = read_hdf5_factory(series_class)
-    io_registry.register_reader('hdf5', series_class, reader)
-    io_registry.register_writer('hdf5', series_class, write_hdf5_series)
-    io_registry.register_identifier('hdf5', series_class, identify_hdf5)
+    compat_registry.register_reader('hdf5', series_class, reader)
+    compat_registry.register_writer('hdf5', series_class, write_hdf5_series)
+    compat_registry.register_identifier('hdf5', series_class, identify_hdf5)
 
 # dict classes
 for dict_class in (TimeSeriesDict, StateVectorDict):
     reader = read_hdf5_factory(dict_class)
-    io_registry.register_reader('hdf5', dict_class, reader)
-    io_registry.register_writer('hdf5', dict_class, write_hdf5_dict)
-    io_registry.register_identifier('hdf5', dict_class, identify_hdf5)
+    compat_registry.register_reader('hdf5', dict_class, reader)
+    compat_registry.register_writer('hdf5', dict_class, write_hdf5_dict)
+    compat_registry.register_identifier('hdf5', dict_class, identify_hdf5)

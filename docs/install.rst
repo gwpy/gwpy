@@ -46,7 +46,7 @@ GWpy has the following strict requirements:
    ==================  ===========================
    Name                Constraints
    ==================  ===========================
-   |astropy|_          ``>=4.0``
+   |astropy|_          ``>=5.0``
    |dateparser|_       ``>=1.1.4``
    |dqsegdb2|_
    |gwdatafind|_       ``>=1.1.0``

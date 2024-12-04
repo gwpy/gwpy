@@ -24,7 +24,7 @@ from os.path import basename
 
 from astropy.table import join
 
-from ...io.registry import (register_reader, register_identifier)
+from ...io.registry import compat
 from ...io.ligolw import is_ligolw
 from .ligolw import read_table
 from .. import EventTable
@@ -181,10 +181,10 @@ def identify_gstlal(origin, filepath, fileobj, *args, **kwargs):
 
 
 # registers for unified I/O
-register_identifier(GSTLAL_FORMAT, EventTable, identify_gstlal)
-register_reader(GSTLAL_SNGL_FORMAT, EventTable, read_gstlal_sngl)
-register_reader(GSTLAL_COINC_FORMAT, EventTable, read_gstlal_coinc)
-register_reader(GSTLAL_FORMAT, EventTable, read_gstlal)
+compat.register_identifier(GSTLAL_FORMAT, EventTable, identify_gstlal)
+compat.register_reader(GSTLAL_SNGL_FORMAT, EventTable, read_gstlal_sngl)
+compat.register_reader(GSTLAL_COINC_FORMAT, EventTable, read_gstlal_coinc)
+compat.register_reader(GSTLAL_FORMAT, EventTable, read_gstlal)
 
 # -- processed columns --------------------------------------------------------
 #

@@ -70,7 +70,7 @@ from collections import OrderedDict
 
 from numpy import inf
 
-from ...io import registry
+from ...io.registry import compat as compat_registry
 from ...io.utils import (
     file_list,
     identify_factory,
@@ -164,7 +164,10 @@ def write_channel_list_file(channels, fobj):
     out.write(fobj)
 
 
-registry.register_reader('ini', ChannelList, read_channel_list_file)
-registry.register_identifier('ini', ChannelList,
-                             identify_factory('.ini', '.clf'))
-registry.register_writer('ini', ChannelList, write_channel_list_file)
+compat_registry.register_reader('ini', ChannelList, read_channel_list_file)
+compat_registry.register_identifier(
+    'ini',
+    ChannelList,
+    identify_factory('.ini', '.clf'),
+)
+compat_registry.register_writer('ini', ChannelList, write_channel_list_file)

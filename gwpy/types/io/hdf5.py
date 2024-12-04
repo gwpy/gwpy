@@ -25,7 +25,8 @@ from operator import attrgetter
 from astropy.units import (Quantity, UnitBase)
 
 from ...detector import Channel
-from ...io import (hdf5 as io_hdf5, registry as io_registry)
+from ...io import hdf5 as io_hdf5
+from ...io.registry import compat as compat_registry
 from ...time import LIGOTimeGPS
 from .. import (Array, Series, Index)
 
@@ -244,12 +245,15 @@ def register_hdf5_array_io(array_type, format='hdf5', identify=True):
         kwargs.setdefault('array_type', array_type)
         return read_hdf5_array(*args, **kwargs)
 
-    io_registry.register_reader(format, array_type, from_hdf5)
+    compat_registry.register_reader(format, array_type, from_hdf5)
     if issubclass(array_type, Series):
-        io_registry.register_writer(format, array_type, write_hdf5_series)
+        compat_registry.register_writer(format, array_type, write_hdf5_series)
     else:
-        io_registry.register_writer(format, array_type, write_hdf5_array)
+        compat_registry.register_writer(format, array_type, write_hdf5_array)
 
     if identify:
-        io_registry.register_identifier(format, array_type,
-                                        io_hdf5.identify_hdf5)
+        compat_registry.register_identifier(
+            format,
+            array_type,
+            io_hdf5.identify_hdf5,
+        )

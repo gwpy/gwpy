@@ -28,7 +28,6 @@ except ImportError:
 else:
     LIGOLW_TABLES = set(_TableByName.values())
 
-from ...io import registry
 from ...io.ligolw import (
     is_ligolw,
     patch_ligotimegps,
@@ -36,6 +35,7 @@ from ...io.ligolw import (
     to_table_type as to_ligolw_table_type,
     write_tables as write_ligolw_tables,
 )
+from ...io.registry import compat as compat_registry
 from .. import (Table, EventTable)
 from .utils import read_with_selection
 
@@ -401,6 +401,6 @@ for table_ in LIGOLW_TABLES:
     table_.__astropy_table__ = to_astropy_table
 
 for table_class in (Table, EventTable):
-    registry.register_reader('ligolw', table_class, read_table)
-    registry.register_writer('ligolw', table_class, write_table)
-    registry.register_identifier('ligolw', table_class, is_ligolw)
+    compat_registry.register_reader('ligolw', table_class, read_table)
+    compat_registry.register_writer('ligolw', table_class, write_table)
+    compat_registry.register_identifier('ligolw', table_class, is_ligolw)

@@ -23,30 +23,33 @@ This module imports a subset of the useful functions from
 """
 
 import sys
+import warnings
+from concurrent.futures import (
+    ThreadPoolExecutor,
+    as_completed,
+)
 from functools import wraps
 
-from astropy.io.registry import (  # noqa: F401
-    get_reader,
-    register_identifier as astropy_register_identifier,
-    register_reader,
-    register_writer,
+from astropy.io import registry as astropy_registry
+from astropy.io.registry import (
+    UnifiedReadWriteMethod,  # noqa: F401
+    compat,
 )
-try:
-    from astropy.io.registry.compat import default_registry
-except ModuleNotFoundError:  # astropy < 5
-    from astropy.io.registry import _get_valid_format as get_format
-else:
-    get_format = default_registry._get_valid_format
-
 from astropy.utils.data import get_readable_fileobj
 
-from .utils import (file_list, FILE_LIKE)
+from ..utils.env import bool_env
+from ..utils.progress import progress_bar
+from .utils import FILE_LIKE, file_list
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def identify_with_list(identifier):
-    """Decorate an I/O identifier to handle a list of files as input
+# -- utilities -----------------------
+
+def _identify_with_list(
+    identifier,
+):
+    """Decorate an I/O identifier to handle a list of files as input.
 
     This function tries to resolve a single file path as a `str` from any
     file-like or collection-of-file-likes to pass to the underlying
@@ -72,13 +75,25 @@ def identify_with_list(identifier):
     return decorated_func
 
 
-def register_identifier(data_format, data_class, identifier, force=False):
+# -- legacy format -------------------
+
+@wraps(compat.default_registry.register_identifier)
+def legacy_register_identifier(
+    data_format,
+    data_class,
+    identifier,
+    force=False,
+):
     # pylint: disable=missing-docstring
-    return astropy_register_identifier(
-        data_format, data_class, identify_with_list(identifier), force=force)
+    return compat.default_registry.register_identifier(
+        data_format,
+        data_class,
+        _identify_with_list(identifier),
+        force=force,
+    )
 
 
-register_identifier.__doc__ = astropy_register_identifier.__doc__
+compat.register_identifier = legacy_register_identifier
 
 
 def get_read_format(cls, source, args, kwargs):
@@ -93,12 +108,199 @@ def get_read_format(cls, source, args, kwargs):
         try:
             ctx = get_readable_fileobj(filepath, encoding='binary')
             fileobj = ctx.__enter__()  # pylint: disable=no-member
-        except IOError:
+        except OSError:
             raise
         except Exception:  # pylint: disable=broad-except
             fileobj = None
     try:
-        return get_format('read', cls, filepath, fileobj, args, kwargs)
+        return compat.default_registry._get_valid_format(
+            "read",
+            cls,
+            filepath,
+            fileobj,
+            args,
+            kwargs,
+        )
     finally:
         if ctx is not None:
             ctx.__exit__(*sys.exc_info())  # pylint: disable=no-member
+
+
+# -- Unified I/O format --------------
+
+class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
+    """UnifiedIORegistry that can handle reading files in parallel.
+    """
+    def identify_format(
+        self,
+        origin,
+        data_class_required,
+        path,
+        fileobj,
+        args,
+        kwargs,
+    ):
+        if fileobj is None:
+            try:
+                path = file_list(path)[0]
+            except (
+                IndexError,  # list is empty
+                ValueError,  # failed to parse as list-like
+            ):
+                pass
+        return super().identify_format(
+            origin,
+            data_class_required,
+            path,
+            fileobj,
+            args,
+            kwargs,
+        )
+
+    @wraps(astropy_registry.UnifiedIORegistry.register_identifier)
+    def register_identifier(
+        self,
+        data_format,
+        data_class,
+        identifier,
+        force=False,
+    ):
+        return super().register_identifier(
+            data_format,
+            data_class,
+            _identify_with_list(identifier),
+            force=force,
+        )
+
+
+REGISTRY = UnifiedIORegistry()
+
+
+class UnifiedRead(astropy_registry.UnifiedReadWrite):
+    """Base ``Class.read()`` implementation that handles parallel reads.
+    """
+    def __init__(self, instance, cls):
+        super().__init__(
+            instance,
+            cls,
+            "read",
+            registry=REGISTRY,
+        )
+
+    def _read_single_file(
+        self,
+        *args,
+        **kwargs,
+    ):
+        return self.registry.read(self._cls, *args, **kwargs)
+
+    @staticmethod
+    def _format_input_list(source):
+        """Format the input arguments to include a list of files.
+        """
+        # parse input as a list of files
+        try:  # try and map to a list of file-like objects
+            return file_list(source)
+        except ValueError:  # otherwise treat as single file
+            return [source]
+
+    def __call__(
+        self,
+        merge_function,
+        source,
+        *args,
+        format=None,
+        cache=None,
+        parallel=1,
+        verbose=False,
+        **kwargs,
+    ):
+        """Execute ``cls.read()``.
+
+        This method generalises parallel reading of lists of files for
+        any input class. The output of each parallel read is then merged
+        by ``merge_function`` which should have the following signature.
+
+            def merge_function(cls: Type, instances: list[Type]) -> Type
+
+        i.e take in the type object and a list of instances, and return
+        a single instance of the same type.
+        """
+        cls = self._cls
+
+        # handle deprecated keyword
+        if nproc := kwargs.pop("nproc", None):
+            warnings.warn(
+                f"the 'nproc' keyword to {cls.__name__}.read was renamed "
+                "parallel; this warning will be an error in the future.",
+                DeprecationWarning,
+            )
+            parallel = nproc
+
+        # set default cache based on environment
+        if cache is None:
+            cache = bool_env("GWPY_CACHE", False)
+
+        sources = self._format_input_list(source)
+
+        def _read(arg):
+            return self.registry.read(
+                self._cls,
+                arg,
+                *args,
+                format=format,
+                cache=cache,
+                **kwargs,
+            )
+
+        if verbose is True and format:
+            verbose = f"Reading ({format})"
+        elif verbose is True:
+            verbose = "Reading"
+        if verbose:
+            progress = progress_bar(
+                total=len(sources),
+                desc=verbose,
+            )
+        else:
+            progress = None
+        outputs = []
+        with ThreadPoolExecutor(
+            max_workers=parallel,
+        ) as pool:
+            futures = [pool.submit(_read, source) for source in sources]
+            for future in as_completed(futures):
+                outputs.append(future.result())
+                if progress:
+                    progress.update(1)
+
+        return merge_function(outputs)
+
+
+class UnifiedWrite(astropy_registry.UnifiedReadWrite):
+    """Base ``Class.write()`` implementation.
+    """
+    def __init__(self, instance, cls):
+        super().__init__(
+            instance,
+            cls,
+            "write",
+            registry=REGISTRY,
+        )
+
+    def __call__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        """Execute ``instance.write()``.
+        """
+        instance = self._instance
+        return self.registry.write(instance, *args, **kwargs)
+
+
+# -- registry functions
+
+register_reader = REGISTRY.register_reader
+register_writer = REGISTRY.register_writer
+register_identifier = REGISTRY.register_identifier

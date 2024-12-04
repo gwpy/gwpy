@@ -35,7 +35,7 @@ classifiers = [
 # requirements
 requires-python = ">=3.9"
 dependencies = [
-  "astropy >=4.3.0",
+  "astropy >=5.0.0",
   "dateparser >=1.1.4",
   "dqsegdb2",
   "gwdatafind >=1.1.0",

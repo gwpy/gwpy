@@ -24,7 +24,7 @@ from math import ceil
 from urllib.parse import urlparse
 
 from astropy import units
-from astropy.io import registry as io_registry
+from astropy.io.registry import compat as compat_registry
 
 from ..io import nds2 as io_nds2
 from ..time import to_gps
@@ -626,14 +626,14 @@ class ChannelList(list):
 
         Notes
         -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
+        return compat_registry.read(cls, source, *args, **kwargs)
 
     def write(self, target, *args, **kwargs):
         """Write a `ChannelList` to a file
 
         Notes
         -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+        return compat_registry.write(self, target, *args, **kwargs)
 
     @classmethod
     def from_names(cls, *names):

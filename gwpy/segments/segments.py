@@ -21,11 +21,10 @@ gravitational-wave laser interferometer was operating in a specific
 configuration.
 """
 
-from astropy.io import registry as io_registry
-
 from ligo.segments import (segment, segmentlist, segmentlistdict)
 
 from ..io.mp import read_multi as io_read_multi
+from ..io.registry import compat as compat_registry
 from ..utils.decorators import return_as
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -220,7 +219,7 @@ class SegmentList(segmentlist):
 
         Notes
         -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+        return compat_registry.write(self, target, *args, **kwargs)
 
 
 class SegmentListDict(segmentlistdict):

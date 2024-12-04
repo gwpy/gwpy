@@ -21,7 +21,7 @@
 import re
 
 from .. import (Segment, SegmentList)
-from ...io import registry
+from ...io.registry import compat as compat_registry
 from ...io.utils import (
     identify_factory,
     with_open,
@@ -151,7 +151,10 @@ def to_segwizard(segs, target, header=True, coltype=LIGOTimeGPS):
 
 # -- register -----------------------------------------------------------------
 
-registry.register_reader('segwizard', SegmentList, from_segwizard)
-registry.register_writer('segwizard', SegmentList, to_segwizard)
-registry.register_identifier('segwizard', SegmentList,
-                             identify_factory('txt', 'dat'))
+compat_registry.register_reader('segwizard', SegmentList, from_segwizard)
+compat_registry.register_writer('segwizard', SegmentList, to_segwizard)
+compat_registry.register_identifier(
+    'segwizard',
+    SegmentList,
+    identify_factory('txt', 'dat'),
+)

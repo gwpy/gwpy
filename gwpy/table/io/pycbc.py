@@ -26,7 +26,7 @@ import numpy
 import h5py
 
 from ...io.hdf5 import (identify_hdf5, with_read_hdf5)
-from ...io.registry import (register_reader, register_identifier)
+from ...io.registry import compat as compat_registry
 from .. import (Table, EventTable)
 from ..filter import (filter_table, parse_column_filters)
 
@@ -261,8 +261,17 @@ def identify_pycbc_live(origin, filepath, fileobj, *args, **kwargs):
 
 
 # register for unified I/O (with higher priority than HDF5 reader)
-register_identifier(PYCBC_LIVE_FORMAT, EventTable, identify_pycbc_live)
-register_reader(PYCBC_LIVE_FORMAT, EventTable, table_from_file, priority=1)
+compat_registry.register_identifier(
+    PYCBC_LIVE_FORMAT,
+    EventTable,
+    identify_pycbc_live,
+)
+compat_registry.register_reader(
+    PYCBC_LIVE_FORMAT,
+    EventTable,
+    table_from_file,
+    priority=1,
+)
 
 # -- processed columns --------------------------------------------------------
 #
