@@ -200,9 +200,9 @@ combine-as-imports = true
 force-wrap-aliases = true
 
 [tool.ruff.lint.per-file-ignores]
-# ignore unused import in __init__
 "__init__.py" = [
-  "F401",
+  "F401",  # unused-import
+  "F403",  # undefined-local-with-import-star
 ]
 # ignore import location in example scripts
 "examples/**.py" = [
