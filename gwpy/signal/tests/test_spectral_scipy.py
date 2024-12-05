@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2019-2020)
+# Copyright (C) Cardiff University (2019-)
 #
 # This file is part of GWpy.
 #
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.signal.spectral.scipy`
+"""Tests for :mod:`gwpy.signal.spectral.scipy`.
 
 Here we check `welch` thoroughly, and the others less so, because
 they just call out to the same method anyway.
@@ -33,7 +33,7 @@ def test_welch(noisy_sinusoid):
     # and has a median that matches the RMS withinn 10%
     assert psd.median().value == pytest.approx(1e-3, rel=1e-1)
     # check metadata
-    assert psd.unit == noisy_sinusoid.unit ** 2 / 'Hz'
+    assert psd.unit == noisy_sinusoid.unit ** 2 / "Hz"
     assert psd.channel is noisy_sinusoid.channel
     assert psd.name is noisy_sinusoid.name
 
@@ -46,6 +46,9 @@ def test_bartlett(noisy_sinusoid):
 def test_median(noisy_sinusoid):
     psd = fft_scipy.median(noisy_sinusoid, 4096, noverlap=2048)
     assert psd.max() == psd.value_at(500.)
-    assert psd.median() < fft_scipy.welch(noisy_sinusoid, 4096,
-                                          noverlap=2048).median()
+    assert psd.median() < fft_scipy.welch(
+        noisy_sinusoid,
+        4096,
+        noverlap=2048,
+    ).median()
     assert psd.median().value == pytest.approx(1e-3, rel=1e-1)
