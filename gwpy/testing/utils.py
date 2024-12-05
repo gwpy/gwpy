@@ -48,7 +48,7 @@ TEST_HDF5_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.hdf')
 
 @deprecated_function(message=(
     "gwpy.testing.utils.has is deprecated and will "
-    "be removed in GWpy 3.1.0",
+    "be removed in GWpy 3.1.0"
 ))
 def has(module):  # pragma: no cover
     """Test whether a module is available
@@ -66,7 +66,7 @@ def has(module):  # pragma: no cover
 @deprecated_function(message=(
     "gwpy.testing.utils.skip_missing_dependency is deprecated and will "
     "be removed in GWpy 3.1.0, please update your code to use "
-    "pytest.mark.requires from the pytest-requires package",
+    "pytest.mark.requires from the pytest-requires package"
 ))
 def skip_missing_dependency(module):  # pragma: no cover
     """Returns a mark generator to skip a test if the dependency is missing
@@ -80,7 +80,7 @@ def skip_missing_dependency(module):  # pragma: no cover
 
 @deprecated_function(message=(
     "gwpy.testing.utils.module_older_than is deprecated and will "
-    "be removed in GWpy 3.1.0",
+    "be removed in GWpy 3.1.0"
 ))
 def module_older_than(module, minversion):  # pragma: no cover
     from packaging.version import Version
@@ -90,7 +90,7 @@ def module_older_than(module, minversion):  # pragma: no cover
 
 @deprecated_function(message=(
     "gwpy.testing.utils.skip_minimum_version is deprecated and will "
-    "be removed in GWpy 3.1.0",
+    "be removed in GWpy 3.1.0"
 ))
 def skip_minimum_version(module, minversion):  # pragma: no cover
     """Returns a mark generator to skip a test if the dependency is too old
