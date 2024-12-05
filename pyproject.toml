@@ -60,10 +60,9 @@ dynamic = [
 [project.optional-dependencies]
 # test suite
 test = [
-  "coverage[toml] >=5.0",
-  "pytest >=3.9.1",
+  "pytest >=7.0.0",
   "pytest-freezer",
-  "pytest-cov >=2.4.0",
+  "pytest-cov >=5.0.0",
   "pytest-requires",
   "pytest-rerunfailures",
   "pytest-socket",
