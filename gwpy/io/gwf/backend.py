@@ -40,6 +40,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 # Preferentially ordered list of available GWF backends
 BACKENDS = [
     "frameCPP",
+    "LALFrame",
 ]
 
 
