@@ -36,6 +36,7 @@ from scipy import signal
 from astropy import units
 
 from ...frequencyseries import (FrequencySeries, SpectralVariance)
+from ...io.gwf import get_backend as get_gwf_backend
 from ...io.nds2 import NDSWarning
 from ...segments import (Segment, SegmentList, DataQualityFlag)
 from ...signal import filter_design
@@ -50,13 +51,12 @@ from ...testing.errors import (
 from ...types import Index
 from ...time import LIGOTimeGPS
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
-from ..io.gwf import get_default_gwf_api
 from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
 
 try:
-    get_default_gwf_api()
+    get_gwf_backend()
 except ImportError:
     HAVE_GWF_API = False
 else:

@@ -33,6 +33,7 @@ on a system.
 
 import importlib
 import os
+from functools import wraps
 
 import numpy
 
@@ -41,20 +42,17 @@ from astropy.io.registry import (get_reader, get_writer)
 from ligo.segments import segment as LigoSegment
 
 from ....time import to_gps
-from ....io.gwf import identify_gwf
+from ....io import gwf as io_gwf
 from ....io import cache as io_cache
 from ....io.registry import compat as compat_registry
 from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-# list of available APIs
-# --- read/write operations using format='gwf' will iterate in order
-# --- through this list, using whichever one imports correctly first
-APIS = [
-    'framecpp',
-    'framel',
-    'lalframe',
+BACKENDS = [
+    "frameCPP",
+    "FrameL",
+    "LALFrame",
 ]
 
 
@@ -99,100 +97,51 @@ def channel_dict_kwarg(value, channels, types=None, astype=None):
     return out
 
 
-def import_gwf_library(library, package=__package__):
-    """Utility method to import the relevant timeseries.io.gwf frame API
-
-    This is just a wrapper around :meth:`importlib.import_module` with
-    a slightly nicer error message
-    """
-    # import the frame library here to have any ImportErrors occur early
-    try:
-        return importlib.import_module('.%s' % library, package=package)
-    except ImportError as exc:
-        exc.args = ('Cannot import %s frame API: %s' % (library, str(exc)),)
-        raise
-
-
-def get_default_gwf_api():
-    """Return the preferred GWF library.
-
-    This can be configured via the ``GWPY_FRAME_LIBRARY`` environment
-    variable, which can be set to the name of any of the interface modules
-    defined under `gwpy.timeseres.io.gwf`:
-
-    - ``"framecpp"``
-    - ``"framel"``
-    - ``"lalframe"``
-
-    Otherwise that list is manually searched in the order given above.
-
-    Examples
-    --------
-    If the environment variable ``GWPY_FRAME_LIBRARY`` is set:
-
-    >>> os.environ["GWPY_FRAME_LIBRARY"] = "FrameL"
-    >>> from gwpy.timeseries.io.gwf import get_default_gwf_api
-    >>> get_default_gwf_api()
-    'framel'
-
-    Or, if you have |LDAStools.frameCPP|_ installed:
-
-    >>> from gwpy.timeseries.io.gwf import get_default_gwf_api
-    >>> get_default_gwf_api()
-    'framecpp'
-
-    Or, if you don't have |lalframe|_:
-
-    >>> get_default_gwf_api()
-    'lalframe'
-
-    Otherwise:
-
-    >>> get_default_gwf_api()
-    ImportError: no GWF API available, please install a third-party GWF
-    library (framecpp, framel, lalframe) and try again
-    """
-    default = (os.getenv("GWPY_FRAME_LIBRARY") or APIS[0]).lower()
-    for lib in (default, *APIS):
-        try:
-            import_gwf_library(lib)
-        except ImportError:
-            continue
-        else:
-            return lib
-    raise ImportError("no GWF API available, please install a third-party GWF "
-                      "library ({}) and try again".format(', '.join(APIS)))
-
-
 # -- generic I/O methods ------------------------------------------------------
 
-def register_gwf_api(library):
-    """Register a full set of GWF I/O methods for the given library
+def register_gwf_backend(backend):
+    """Register a full set of GWF I/O methods for the given backend.
 
-    The given frame library must define the following methods
+    The `timeseries.io.gwf` backend module must define the following methods:
 
     - `read` : which receives one of more frame files which can be assumed
                to be contiguous, and should return a `TimeSeriesDict`
     - `write` : which receives an output frame file path an a `TimeSeriesDict`
                 and does all of the work
 
-    Additionally, the library must store the name of the third-party
+    Additionally, the backend must store the name of the third-party
     dependency using the ``FRAME_LIBRARY`` variable.
     """
-    # import library to get details (don't require library to importable)
+    # import backend to get details (don't require backend to importable)
     try:
-        lib = import_gwf_library(library)
+        lib = io_gwf.import_backend(backend, package=__package__)
     except ImportError:
-        pass  # means any reads will fail at run-time
+        # _import_backend wrapper will fail before we get to this 'function'
+        libread_ = None
+        libwrite_ = None
     else:
         libread_ = lib.read
         libwrite_ = lib.write
 
     # set I/O format name
-    fmt = 'gwf.%s' % library
+    fmt = f"gwf.{backend.lower()}"
+
+    def _import_backend(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # import the frame backend to have any ImportErrors occur early
+            io_gwf.import_backend(
+                backend,
+                package=__package__,
+            )
+            return func(*args, **kwargs)
+
+        return wrapper
+
 
     # -- read -----------------------------------
 
+    @_import_backend
     def read_timeseriesdict(source, channels, start=None, end=None,
                             gap=None, pad=None, nproc=1,
                             series_class=TimeSeries, **kwargs):
@@ -227,8 +176,11 @@ def register_gwf_api(library):
         dict : :class:`~gwpy.timeseries.TimeSeriesDict`
             dict of (channel, `TimeSeries`) data pairs
         """
-        # import the frame library here to have any ImportErrors occur early
-        import_gwf_library(library)
+        # import the frame backend here to have any ImportErrors occur early
+        io_gwf.import_backend(
+            backend,
+            package=__package__,
+        )
 
         # -- from here read data
 
@@ -304,54 +256,7 @@ def register_gwf_api(library):
 
     # -- write ----------------------------------
 
-    def write_timeseriesdict(
-            data,
-            outfile,
-            start=None,
-            end=None,
-            type=None,
-            **kwargs,
-    ):
-        """Write a `TimeSeriesDict` to disk in GWF format
-
-        Parameters
-        ----------
-        tsdict : `TimeSeriesDict`
-            the data to write
-
-        outfile : `str`
-            the path of the output frame file
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS start time of required data,
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data,
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        type : `str`, optional
-            the type of the channel, one of 'adc', 'proc', 'sim', default
-            is 'proc' unless stored in the channel structure
-
-        name : `str`, optional
-            name of the project that created this GWF
-
-        run : `int`, optional
-            run number to write into frame header
-        """
-        # import the frame library here to have any ImportErrors occur early
-        import_gwf_library(library)
-
-        # then write using the relevant API
-        return libwrite_(
-            data,
-            outfile,
-            start=start,
-            end=end,
-            type=type,
-            **kwargs,
-        )
+    write_timeseriesdict = _import_backend(libwrite_)
 
     def write_timeseries(series, *args, **kwargs):
         """Write a `TimeSeries` to disk in GWF format
@@ -388,26 +293,32 @@ def register_gwf_format(container):
     container : `Series`, `dict`
         series class or series dict class to register
     """
+    def _backend():
+        return io_gwf.get_backend(
+            package=__package__,
+            backends=BACKENDS,
+        )
+
     def read_(*args, **kwargs):
-        fmt = 'gwf.{}'.format(get_default_gwf_api())
+        fmt = f"gwf.{_backend().lower()}"
         reader = get_reader(fmt, container)
         return reader(*args, **kwargs)
 
     def write_(*args, **kwargs):
-        fmt = 'gwf.{}'.format(get_default_gwf_api())
+        fmt = f"gwf.{_backend().lower()}"
         writer = get_writer(fmt, container)
         return writer(*args, **kwargs)
 
-    compat_registry.register_identifier('gwf', container, identify_gwf)
+    compat_registry.register_identifier('gwf', container, io_gwf.identify_gwf)
     compat_registry.register_reader('gwf', container, read_)
     compat_registry.register_writer('gwf', container, write_)
 
 
 # -- register frame API -------------------------------------------------------
 
-# register 'gwf.<api>' sub-format for each API
-for api in APIS:
-    register_gwf_api(api)
+# register 'gwf.<backend>' sub-format for each backend
+for backend in BACKENDS:
+    register_gwf_backend(backend)
 
 # register generic 'gwf' format for each container
 for container in (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict):
