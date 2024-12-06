@@ -1,5 +1,5 @@
 # Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2021)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -16,62 +16,68 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Convert GWpy example python files into rst files for sphinx documentation
+"""Convert GWpy example python files into rst files for sphinx documentation.
 """
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org'
 
-import argparse
-import sys
-from pathlib import Path
-
-METADATA = {
+METADATA: dict[str, str | None] = {
     # replacement for __metadata__ variables, use None to ignore
-    'author': 'sectionauthor',
-    'credits': None,
+    "author": "sectionauthor",
+    "credits": None,
 }
 
 
-def postprocess_code(code, context):
-    if any('plot.show()' in line for line in code):
+def postprocess_code(
+    code: list[str],
+    context: str,
+):
+    if any("plot.show()" in line for line in code):
         ctx = "close-figs"
     else:
-        code.insert(2, '   :nofigs:')
+        code.insert(2, "   :nofigs:")
         ctx = ""
 
-    code.insert(2, '   :context: {}'.format(context).rstrip())
-    code.append('')
-
+    code.insert(2, f"   :context: {context}".rstrip())
+    code.append("")
     return code, ctx
 
 
-def ex2rst(infile):
-    """Convert a Python example script into RST
+def ex2rst(infile: str | Path) -> str:
+    """Convert a Python example script into RST.
 
     Returns
     -------
     rst : `str`
-        the fully rendered RST text block
+        The fully rendered RST text block.
     """
     infile = Path(infile)
     lines = infile.read_text().splitlines()
-    ref = '-'.join((infile.parent.name, infile.with_suffix("").name))
+    ref = "-".join((
+        infile.parent.name,
+        infile.with_suffix("").name,
+    ))
 
-    output = []
-    header = ['.. _gwpy-example-%s:\n' % ref]
+    output: list[str] = []
+    header = [f".. _gwpy-example-{ref}:\n"]
 
     indoc = False
     incode = False
-    code = []
+    code: list[str] = []
     context = "reset"
 
     for i, line in enumerate(lines):
         # skip file header
-        if len(output) == 0 and line.startswith('#'):
+        if len(output) == 0 and line.startswith("#"):
             continue
 
         # hide lines
-        if line.endswith('# hide'):
+        if line.endswith("# hide"):
             continue
 
         # find block docs
@@ -84,29 +90,31 @@ def ex2rst(infile):
         # skip empty lines not in a block quote
         if not line and not indoc:
             if output:
-                output.append('')
+                output.append("")
             continue
 
         # finish code block
-        if incode and line.startswith(('"', '#', '__')):
+        if incode and line.startswith(('"', "#", "__")):
             incode = False
             code, context = postprocess_code(code, context)
             output.extend(code)
 
         # comments
-        if line.startswith('#'):
+        if line.startswith("#"):
             output.append(line[2:])
         # metadata
-        elif line.startswith('__'):
-            key, value = map(lambda x: x.strip(' _="\'').rstrip(' _="\''),
-                             line.split('=', 1))
+        elif line.startswith("__"):
+            key, value = map(
+                lambda x: x.strip(" _=\"'").rstrip(" _=\"'"),
+                line.split("=", 1),
+            )
             try:
                 metakey = METADATA[key]
             except KeyError:
-                header.append('.. %s:: %s\n' % (key, value))
+                header.append(f".. {key}:: {value}\n")
             else:
                 if metakey is not None:
-                    header.append('.. %s:: %s\n' % (METADATA[key], value))
+                    header.append(f".. {METADATA[key]}:: {value}\n")
         # block quote
         elif indoc:
             output.append(line.strip('"').rstrip('"'))
@@ -114,32 +122,34 @@ def ex2rst(infile):
         else:
             if not incode:  # restart code block
                 code = [
-                    '',
-                    '.. plot::',
-                    '   :include-source:',
-                    '',
+                    "",
+                    ".. plot::",
+                    "   :include-source:",
+                    "",
                 ]
-            code.append('   %s' % line)
+            code.append(f"   {line}")
             incode = True
 
         # end block quote
         if line == '"""' and indoc:
             indoc = False
         elif line.endswith('"""') and indoc:
-            output.append('')
+            output.append("")
             indoc = False
 
         if len(output) == 1:
-            output.append('#'*len(output[0]))
+            output.append("#" * len(output[0]))
 
     if incode:
         output.extend(postprocess_code(code, context)[0])
 
     output = header + output
-    return '\n'.join(output).replace('\n\n\n', '\n\n')
+    return "\n".join(output).replace("\n\n\n", "\n\n")
 
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
+    """Create an `~argparse.ArgumentParser` for this tool.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "infile",
@@ -157,21 +167,23 @@ def create_parser():
     return parser
 
 
-def main(args=None):
+def main(args: list[str] | None = None) -> None:
+    """Run this tool.
+    """
     # parse command line
     parser = create_parser()
-    args = parser.parse_args(args)
+    opts = parser.parse_args(args)
 
     # convert python to RST
-    rst = ex2rst(args.infile)
+    rst = ex2rst(opts.infile)
 
     # write output
-    if args.outfile:
-        with open(args.outfile, "w") as f:
+    if opts.outfile:
+        with open(opts.outfile, "w") as f:
             print(rst, file=f)
     else:
         print(rst)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2023)
+# Copyright (C) Cardiff University (2023-)
 #
 # This file is part of GWpy.
 #
@@ -21,7 +21,6 @@
 from functools import wraps
 
 import pytest
-
 import requests
 
 from ...testing.errors import pytest_skip_flaky_network
@@ -104,8 +103,6 @@ def pytest_skip_zenodo_http_errors(func):
 
 
 @pytest.fixture
-@pytest_skip_flaky_network
-@pytest_skip_zenodo_http_errors
 def latest():
     """Get the latest release of GWpy from the GitHub API.
     """

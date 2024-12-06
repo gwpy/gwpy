@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -36,15 +37,6 @@ def test_gprint(capsys):
     cap = capsys.readouterr()
     assert not cap.out
     assert cap.err == 'testx'
-
-
-def test_null_context():
-    """Test for :func:`gwpy.utils.misc.null_context`
-    """
-    with pytest.warns(DeprecationWarning):
-        ctx = utils_misc.null_context()
-    with ctx:
-        print('this should work')
 
 
 def test_round_to_power():

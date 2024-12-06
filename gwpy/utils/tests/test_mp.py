@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -18,6 +19,7 @@
 """Unit test for utils module
 """
 
+import sys
 from math import sqrt
 
 import pytest
@@ -36,13 +38,14 @@ def test_multiprocess_with_queues(capsys, nproc, verbose):
         sqrt,
         inputs,
         verbose=verbose,
+        file=sys.stdout,  # need to pass stdout for capsys to work
     )
     assert out == [1, 2, 3, 4, 5]
 
     # assert progress bar prints correctly
     stdout = capsys.readouterr().out.strip()
     if verbose is True:
-        assert stdout.startswith('Processing: ')
+        assert stdout.startswith("Processing: ")
     elif verbose is False:
         assert stdout == ''
     else:
@@ -58,14 +61,4 @@ def test_multiprocess_with_queues_errors(nproc):
             nproc,
             sqrt,
             [-1, -1, -1, -1],
-        )
-
-
-def test_multiprocess_with_queues_raise():
-    with pytest.deprecated_call():
-        utils_mp.multiprocess_with_queues(
-            1,
-            sqrt,
-            [1],
-            raise_exceptions=True,
         )
