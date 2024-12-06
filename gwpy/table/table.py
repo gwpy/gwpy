@@ -32,7 +32,7 @@ from astropy.table import (Table, vstack)
 from astropy.io.registry import compat as compat_registry
 
 from ..io.mp import read_multi as io_read_multi
-from ..time import gps_types
+from ..time import GPS_TYPES
 from .filter import (filter_table, parse_operator)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -132,17 +132,17 @@ class EventTable(Table):
         This method checks the name of the column against a hardcoded list
         of time-like names, then checks the `dtype` of the column (or the
         first element in the column) against a hardcoded list of time-like
-        dtypes (`gwpy.time.gps_types`).
+        dtypes (`gwpy.time.GPS_TYPES`).
         """
         # if the name looks like a time column, accept that
         if name.lower() in TIME_LIKE_COLUMN_NAMES:
             return True
 
         # if the dtype of this column looks right, accept that
-        if self[name].dtype in gps_types:
+        if self[name].dtype in GPS_TYPES:
             return True
         try:
-            return isinstance(self[name][0], gps_types)
+            return isinstance(self[name][0], GPS_TYPES)
         except IndexError:
             return False
 

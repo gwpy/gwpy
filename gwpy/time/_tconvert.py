@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -21,32 +22,51 @@ This method is inspired by the original tconvert utility, written by
 Peter Shawhan.
 """
 
+from __future__ import annotations
+
 import datetime
+from collections.abc import Callable
 from decimal import Decimal
 from numbers import Number
+from typing import (
+    SupportsFloat,
+    Union,
+)
 
+from astropy.time import Time
 from astropy.units import Quantity
-
 from dateparser import parse as dateparser_parse
 
-from . import (Time, LIGOTimeGPS)
+from . import LIGOTimeGPS
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__all__ = ['tconvert', 'to_gps', 'from_gps']
+GpsConvertible = Union[
+    SupportsFloat,
+    datetime.date,
+    str,
+]
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__all__ = [
+    "tconvert",
+    "to_gps",
+    "from_gps",
+]
 
 
-def tconvert(gpsordate='now'):
+def tconvert(
+    gpsordate: GpsConvertible = "now",
+) -> datetime.date | LIGOTimeGPS:
     """Convert GPS times to ISO-format date-times and vice-versa.
 
     Parameters
     ----------
     gpsordate : `float`, `astropy.time.Time`, `datetime.datetime`, ...
-        input gps or date to convert, many input types are supported
+        Input gps or date to convert, many input types are supported.
 
     Returns
     -------
     date : `datetime.datetime` or `LIGOTimeGPS`
-        converted gps or date
+        Converted gps or date.
 
     Notes
     -----
@@ -73,26 +93,34 @@ def tconvert(gpsordate='now'):
 
     while strings are automatically converted to `~gwpy.time.LIGOTimeGPS`:
 
-    >>> to_gps('Sep 14 2015 09:50:45.391')
+    >>> to_gps("Sep 14 2015 09:50:45.391")
     LIGOTimeGPS(1126259462, 391000000)
 
     Additionally, a few special-case words as supported, which all return
     `~gwpy.time.LIGOTimeGPS`:
 
-    >>> tconvert('now')
-    >>> tconvert('today')
-    >>> tconvert('tomorrow')
-    >>> tconvert('yesterday')
+    >>> tconvert("now")
+    >>> tconvert("today")
+    >>> tconvert("tomorrow")
+    >>> tconvert("yesterday")
     """
     # convert from GPS into datetime
     try:
-        float(gpsordate)  # if we can 'float' it, then its probably a GPS time
-    except (TypeError, ValueError):
+        # if we can 'float' it, then its probably a GPS time
+        float(gpsordate)  # type: ignore[arg-type]
+    except (
+        TypeError,
+        ValueError,
+    ):
         return to_gps(gpsordate)
     return from_gps(gpsordate)
 
 
-def to_gps(t, *args, **kwargs):
+def to_gps(
+    t: GpsConvertible,
+    *args,
+    **kwargs,
+) -> LIGOTimeGPS:
     """Convert any input date/time into a `LIGOTimeGPS`.
 
     Any input object that can be cast as a `~astropy.time.Time`
@@ -101,32 +129,32 @@ def to_gps(t, *args, **kwargs):
     Parameters
     ----------
     t : `float`, `~datetime.datetime`, `~astropy.time.Time`, `str`
-        the input time, any object that can be converted into a
+        The input time, any object that can be converted into a
         `LIGOTimeGPS`, `~astropy.time.Time`, or `~datetime.datetime`,
         is acceptable.
 
-    *args, **kwargs
-        other arguments to pass to pass to `~astropy.time.Time` if given
+    args, kwargs
+        Other arguments to pass to pass to `~astropy.time.Time` if given.
 
     Returns
     -------
     gps : `LIGOTimeGPS`
-        the number of GPS seconds (non-integer) since the start of the
+        The number of GPS seconds (non-integer) since the start of the
         epoch (January 6 1980).
 
     Raises
     ------
     TypeError
-        if a `str` input cannot be parsed as a `datetime.datetime`.
+        If a `str` input cannot be parsed as a `datetime.datetime`.
     ValueError
-        if the input cannot be cast as a `~astropy.time.Time` or
+        If the input cannot be cast as a `~astropy.time.Time` or
         `LIGOTimeGPS`.
 
     Examples
     --------
-    >>> to_gps('Jan 1 2017')
+    >>> to_gps("Jan 1 2017")
     LIGOTimeGPS(1167264018, 0)
-    >>> to_gps('Sep 14 2015 09:50:45.391')
+    >>> to_gps("Sep 14 2015 09:50:45.391")
     LIGOTimeGPS(1126259462, 391000000)
 
     >>> import datetime
@@ -134,7 +162,7 @@ def to_gps(t, *args, **kwargs):
     LIGOTimeGPS(1167264018, 0)
 
     >>> from astropy.time import Time
-    >>> to_gps(Time(57754, format='mjd'))
+    >>> to_gps(Time(57754, format="mjd"))
     LIGOTimeGPS(1167264018, 0)
     """
     # -- convert input to Time, or something we can pass to LIGOTimeGPS
@@ -142,10 +170,10 @@ def to_gps(t, *args, **kwargs):
     if isinstance(t, str):
         try:  # if str represents a number, leave it for LIGOTimeGPS to handle
             float(t)
-        except ValueError:  # str -> datetime.datetime
+        except ValueError:  # str -> datetime.date
             t = _str_to_datetime(t)
 
-    # tuple -> datetime.datetime
+    # tuple -> datetime.date
     if isinstance(t, (tuple, list)):
         t = datetime.datetime(*t)
 
@@ -155,7 +183,7 @@ def to_gps(t, *args, **kwargs):
 
     # Quantity -> float
     if isinstance(t, Quantity):
-        t = t.to('second').value
+        t = t.to("second").value
 
     # Number/Decimal -> str
     if isinstance(t, (Decimal, Number)):
@@ -168,10 +196,12 @@ def to_gps(t, *args, **kwargs):
     try:
         return LIGOTimeGPS(t)
     except (TypeError, ValueError):
-        return LIGOTimeGPS(float(t))
+        return LIGOTimeGPS(float(t))  # type: ignore[arg-type]
 
 
-def from_gps(gps):
+def from_gps(
+    gps: LIGOTimeGPS | float,
+):
     """Convert a GPS time into a `datetime.datetime`.
 
     Parameters
@@ -201,27 +231,31 @@ def from_gps(gps):
     """
     try:
         gps = LIGOTimeGPS(gps)
-    except (ValueError, TypeError, RuntimeError):
+    except (
+        ValueError,
+        TypeError,
+        RuntimeError,
+    ):
         gps = LIGOTimeGPS(float(gps))
     sec, nano = gps.gpsSeconds, gps.gpsNanoSeconds
     try:
-        date = Time(sec, format='gps', scale='utc').datetime
+        date = Time(sec, format="gps", scale="utc").datetime
     except ValueError as exc:
         if "within a leap second" in str(exc):
             exc.args = (
                 "cannot represent leap second using datetime.datetime, "
                 "consider using "
-                "astropy.time.Time({}, format=\"gps\", scale=\"utc\") "
-                "directly".format(gps),
+                f"astropy.time.Time({gps}, format=\"gps\", scale=\"utc\") "
+                "directly",
             )
         raise
-    return date + datetime.timedelta(microseconds=nano*1e-3)
+    return date + datetime.timedelta(microseconds=nano * 1e-3)
 
 
 # -- utilities ----------------------------------------------------------------
 # special case strings
 
-def _now():
+def _now() -> datetime.date:
     try:
         now = datetime.datetime.now(datetime.UTC)
     except AttributeError:  # python < 3.11
@@ -229,31 +263,33 @@ def _now():
     return now.replace(microsecond=0)
 
 
-def _today():
+def _today() -> datetime.date:
     return datetime.date.today()
 
 
-def _today_delta(**delta):
+def _today_delta(**delta) -> datetime.date:
     return _today() + datetime.timedelta(**delta)
 
 
-def _tomorrow():
+def _tomorrow() -> datetime.date:
     return _today_delta(days=1)
 
 
-def _yesterday():
+def _yesterday() -> datetime.date:
     return _today_delta(days=-1)
 
 
-DATE_STRINGS = {
-    'now': _now,
-    'today': _today,
-    'tomorrow': _tomorrow,
-    'yesterday': _yesterday,
+DATE_STRINGS: dict[str, Callable] = {
+    "now": _now,
+    "today": _today,
+    "tomorrow": _tomorrow,
+    "yesterday": _yesterday,
 }
 
 
-def _str_to_datetime(datestr):
+def _str_to_datetime(
+    datestr: str,
+) -> datetime.date:
     """Convert `str` to `datetime.datetime`.
     """
     # try known string
@@ -272,18 +308,24 @@ def _str_to_datetime(datestr):
         }
     )
     if result is None:
-        raise ValueError("failed to parse '{datestr}' as datetime")
+        raise ValueError(f"failed to parse '{datestr}' as datetime")
     return result
 
 
-def _datetime_to_time(dtm):
+def _datetime_to_time(
+    dtm: datetime.date,
+) -> Time:
+    """Convert `datetime.date` to `astropy.time.Time`.
+    """
     # astropy.time.Time requires datetime.datetime
     if not isinstance(dtm, datetime.datetime):
         dtm = datetime.datetime.combine(dtm, datetime.time.min)
-    return Time(dtm, scale='utc')
+    return Time(dtm, scale="utc")
 
 
-def _time_to_gps(time):
+def _time_to_gps(
+    time: Time,
+) -> LIGOTimeGPS:
     """Convert a `Time` into `LIGOTimeGPS`.
 
     This method uses `datetime.datetime` underneath, which restricts
@@ -292,14 +334,14 @@ def _time_to_gps(time):
     Parameters
     ----------
     time : `~astropy.time.Time`
-        formatted `Time` object to convert
+        Formatted `Time` object to convert.
 
     Returns
     -------
     gps : `LIGOTimeGPS`
-        Nano-second precision `LIGOTimeGPS` time
+        Nano-second precision `LIGOTimeGPS` time.
     """
     time = time.utc
     date = time.datetime
     micro = date.microsecond if isinstance(date, datetime.datetime) else 0
-    return LIGOTimeGPS(int(time.gps), int(micro*1e3))
+    return LIGOTimeGPS(int(time.gps), int(micro * 1e3))

@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -17,7 +18,7 @@
 
 """This module provides time conversion utilities.
 
-The :class:`~astropy.time.core.Time` object from the astropy package
+The :class:`~astropy.time.Time` object from the astropy package
 is imported for user convenience, and a GPS time conversion function
 is provided.
 
@@ -29,28 +30,15 @@ from importlib import import_module
 
 from astropy.time import Time
 
-# try and import LIGOTimeGPS from LAL, otherwise use the pure-python backup
-# provided by the ligotimegps package, its slower, but works
-try:
-    from lal import LIGOTimeGPS
-except ImportError:
-    from ligotimegps import LIGOTimeGPS
+from ._ligotimegps import (
+    GPS_TYPES,
+    GpsType,
+    LIGOTimeGPS,
+)
+from ._tconvert import (
+    from_gps,
+    tconvert,
+    to_gps,
+)
 
-from ._tconvert import (tconvert, to_gps, from_gps)
-
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-# build list of compatible gps types
-gps_types = []
-for _modname in ('lal', 'ligotimegps', 'glue.lal',):
-    try:
-        _mod = import_module(_modname)
-    except ImportError:  # library not installed
-        continue
-    try:
-        gps_types.append(getattr(_mod, 'LIGOTimeGPS'))
-    except AttributeError:  # no LIGOTimeGPS available
-        continue
-gps_types = tuple(gps_types)
-
-del import_module
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
