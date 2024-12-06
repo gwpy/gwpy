@@ -230,6 +230,7 @@ intersphinx_mapping = {
     'dateutil': ('https://dateutil.readthedocs.io/en/stable/', None),
     'dqsegdb2': ('https://dqsegdb2.readthedocs.io/en/stable/', None),
     # 'glue': ('https://docs.ligo.org/lscsoft/glue/', None),
+    'gssapi': ('https://pythongssapi.github.io/python-gssapi/', None),
     'gwdatafind': ('https://gwdatafind.readthedocs.io/en/stable/', None),
     'gwosc': ('https://gwosc.readthedocs.io/en/stable/', None),
     'h5py': ('https://docs.h5py.org/en/latest/', None),
