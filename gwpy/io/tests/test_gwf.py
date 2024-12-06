@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.io.gwf`
+"""Tests for :mod:`gwpy.io.gwf`.
 """
 
 import pytest
@@ -27,7 +28,7 @@ from ...testing.utils import (
 from .. import gwf as io_gwf
 from ..cache import file_segment
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 TEST_CHANNELS = [
     "H1:LDAS-STRAIN",
@@ -54,11 +55,11 @@ def _backend_param(backend, *args, **kwargs):
 parametrize_gwf_backends = pytest.mark.parametrize(
     "backend",
     [
-        # backend-agnostic selection (require LDASTools.frameCPP just to
+        # backend-agnostic selection (require lalframe just to
         # skip when there are NO GWF backends installed)
         pytest.param(
             None,  # choose any backend
-            marks=pytest.mark.requires("LDAStools.frameCPP"),
+            marks=pytest.mark.requires("lalframe"),
             id="any",
         ),
     ] + list(map(_backend_param, io_gwf.BACKENDS)),
@@ -66,14 +67,18 @@ parametrize_gwf_backends = pytest.mark.parametrize(
 
 
 def test_identify_gwf():
-    assert io_gwf.identify_gwf('read', TEST_GWF_FILE, None) is True
-    with open(TEST_GWF_FILE, 'rb') as gwff:
-        assert io_gwf.identify_gwf('read', None, gwff) is True
-    assert not io_gwf.identify_gwf('read', None, None)
+    """Test :func:`gwpy.io.gwf.identify_gwf`.
+    """
+    assert io_gwf.identify_gwf("read", TEST_GWF_FILE, None) is True
+    with open(TEST_GWF_FILE, "rb") as gwff:
+        assert io_gwf.identify_gwf("read", None, gwff) is True
+    assert not io_gwf.identify_gwf("read", None, None)
 
 
 @parametrize_gwf_backends
 def test_iter_channel_names(backend):
+    """Test :func:`gwpy.io.gwf.iter_channel_names`.
+    """
     # maybe need something better?
     from types import GeneratorType
     names = io_gwf.iter_channel_names(
@@ -86,6 +91,8 @@ def test_iter_channel_names(backend):
 
 @parametrize_gwf_backends
 def test_get_channel_names(backend):
+    """Test :func:`gwpy.io.gwf.get_channel_names`.
+    """
     assert io_gwf.get_channel_names(
         TEST_GWF_FILE,
         backend=backend,
@@ -94,6 +101,8 @@ def test_get_channel_names(backend):
 
 @parametrize_gwf_backends
 def test_num_channels(backend):
+    """Test :func:`gwpy.io.gwf.num_channels`.
+    """
     assert io_gwf.num_channels(
         TEST_GWF_FILE,
         backend=backend,
@@ -102,11 +111,13 @@ def test_num_channels(backend):
 
 @parametrize_gwf_backends
 def test_get_channel_type(backend):
+    """Test :func:`gwpy.io.gwf.get_channel_type`.
+    """
     assert io_gwf.get_channel_type(
-        'L1:LDAS-STRAIN',
+        TEST_CHANNELS[0],
         TEST_GWF_FILE,
         backend=backend,
-    ) == 'proc'
+    ) == "proc"
     with pytest.raises(
         ValueError,
         match=(
@@ -115,36 +126,45 @@ def test_get_channel_type(backend):
         ),
     ):
         io_gwf.get_channel_type(
-            'X1:NOT-IN_FRAME',
+            "X1:NOT-IN_FRAME",
             TEST_GWF_FILE,
             backend=backend,
         )
 
 
 @parametrize_gwf_backends
-def test_channel_in_frame(backend):
+@pytest.mark.parametrize(("channel", "result"), [
+    (TEST_CHANNELS[0], True),
+    ("X1:NOT-IN_FRAME", False),
+])
+def test_channel_in_frame(channel, result, backend):
+    """Test :func:`gwpy.io.gwf.channel_in_frame`.
+    """
     assert io_gwf.channel_in_frame(
-        'L1:LDAS-STRAIN',
+        channel,
         TEST_GWF_FILE,
         backend=backend,
-    ) is True
-    assert io_gwf.channel_in_frame(
-        'X1:NOT-IN_FRAME',
-        TEST_GWF_FILE,
-        backend=backend,
-    ) is False
+    ) is result
 
 
 @parametrize_gwf_backends
 def test_data_segments(backend):
+    """Test :func:`gwpy.io.gwf.data_segments`.
+    """
     assert_segmentlist_equal(
         io_gwf.data_segments(
             [TEST_GWF_FILE],
-            "L1:LDAS-STRAIN",
+            TEST_CHANNELS[0],
             backend=backend,
         ),
         [file_segment(TEST_GWF_FILE)],
     )
+
+
+@parametrize_gwf_backends
+def test_data_segments_missing(backend):
+    """Test :func:`gwpy.io.gwf.data_segments` with a bad channel name.
+    """
     with pytest.warns(UserWarning):
         assert_segmentlist_equal(
             io_gwf.data_segments(
