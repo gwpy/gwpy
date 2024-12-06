@@ -91,6 +91,11 @@ docs = [
   "sphinx-immaterial >=0.7.3",
   "sphinxcontrib-programoutput",
 ]
+# GWF I/O
+gwf = [
+  "lalsuite ; sys_platform != 'win32'",
+]
+
 # development environments
 dev = [
   "arrakis-python ; python_version >= '3.10'",
