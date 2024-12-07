@@ -85,10 +85,10 @@ docs = [
 dev = [
   "ciecplib",
   "inspiral-range >=0.5.0",
-  "lalsuite ; sys_platform != 'win32' and python_version<='3.12'",
+  "lalsuite ; sys_platform != 'win32'",
   "lscsoft-glue ; sys_platform != 'win32'",
   "psycopg2 ; sys_platform == 'linux'",
-  "pycbc >=1.13.4 ; sys_platform != 'win32' and python_version<='3.12'",
+  "pycbc >=1.13.4 ; sys_platform != 'win32'",
   "pymysql",
   "python-ligo-lw >=1.7.0 ; sys_platform != 'win32'",
   "sqlalchemy",
@@ -99,7 +99,7 @@ dev = [
 conda = [
   "lxml !=4.9.1 ; sys_platform == 'win32'",
   "python-framel >=8.40.1,!=8.46.0",
-  "python-ldas-tools-framecpp ; sys_platform != 'win32'",
+  "python-ldas-tools-framecpp ; sys_platform != 'win32' and python_version<'3.12'",
   "python-nds2-client",
 ]
 
