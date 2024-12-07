@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2021)
+# Copyright (C) Cardiff University (2021-)
 #
 # This file is part of GWpy.
 #
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Custom pytest marks for GWpy
+"""Custom pytest marks for GWpy.
 
 This is mainly to allow downstream users/builders/packagers to skip tests
 that require annoying/flaky configuration, or just take too long, e.g.
@@ -27,7 +27,7 @@ This module is imported in :mod:`gwpy.conftest` such that all marks are
 registered up front and visible via ``python -m pytest gwpy --markers``.
 """
 
-MARKS = {
+MARKS: dict[str, str] = {
     "cvmfs": "mark a test as requiring CVMFS",
 }
 
@@ -40,5 +40,5 @@ def _register_marks(config):
     for name, doc in MARKS.items():
         config.addinivalue_line(
             "markers",
-            "{}: {}".format(name, doc),
+            f"{name}: {doc}",
         )

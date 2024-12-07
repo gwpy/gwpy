@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,95 +16,47 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilties for the GWpy test suite
+"""Utilties for the GWpy test suite.
 """
 
-import os.path
+from __future__ import annotations
+
 import subprocess
 import tempfile
-from contextlib import contextmanager
-from importlib import import_module
+from collections.abc import Callable
 from itertools import zip_longest
 from pathlib import Path
-
-import pytest
+from typing import Any
 
 import numpy
-from numpy.testing import (assert_array_equal, assert_allclose)
-
+import pytest
 from astropy.time import Time
+from astropy.units import Quantity
+from numpy.testing import (
+    assert_allclose,
+    assert_array_equal,
+)
 
-from gwpy.io.cache import file_segment
-from gwpy.utils.decorators import deprecated_function
+from ..io.cache import file_segment
+from ..segments import (
+    DataQualityFlag,
+    SegmentList,
+)
+from ..types import Array
 
-# -- useful constants ---------------------------------------------------------
+# -- useful constants ----------------
 
-TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
-TEST_GWF_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.gwf')
+TEST_DATA_PATH = Path(__file__).parent / "data"
+TEST_DATA_DIR = str(TEST_DATA_PATH)
+TEST_GWF_FILE = str(TEST_DATA_PATH / "HLV-HW100916-968654552-1.gwf")
 TEST_GWF_SPAN = file_segment(TEST_GWF_FILE)
-TEST_HDF5_FILE = os.path.join(TEST_DATA_DIR, 'HLV-HW100916-968654552-1.hdf')
+TEST_HDF5_FILE = str(TEST_DATA_PATH / "HLV-HW100916-968654552-1.hdf")
 
 
-# -- dependencies -------------------------------------------------------------
+# -- dependencies --------------------
 
-@deprecated_function(message=(
-    "gwpy.testing.utils.has is deprecated and will "
-    "be removed in GWpy 3.1.0"
-))
-def has(module):  # pragma: no cover
-    """Test whether a module is available
-
-    Returns `True` if `import module` succeeded, otherwise `False`
-    """
-    try:
-        import_module(module)
-    except ImportError:
-        return False
-    else:
-        return True
-
-
-@deprecated_function(message=(
-    "gwpy.testing.utils.skip_missing_dependency is deprecated and will "
-    "be removed in GWpy 3.1.0, please update your code to use "
-    "pytest.mark.requires from the pytest-requires package"
-))
-def skip_missing_dependency(module):  # pragma: no cover
-    """Returns a mark generator to skip a test if the dependency is missing
-
-    .. deprecated:: 3.0.0
-       Use `pytest.mark.requires` from pytest-requires instead.
-    """
-    return pytest.mark.skipif(not has(module),
-                              reason='No module named %s' % module)
-
-
-@deprecated_function(message=(
-    "gwpy.testing.utils.module_older_than is deprecated and will "
-    "be removed in GWpy 3.1.0"
-))
-def module_older_than(module, minversion):  # pragma: no cover
-    from packaging.version import Version
-    mod = import_module(module)
-    return Version(mod.__version__) < Version(minversion)
-
-
-@deprecated_function(message=(
-    "gwpy.testing.utils.skip_minimum_version is deprecated and will "
-    "be removed in GWpy 3.1.0"
-))
-def skip_minimum_version(module, minversion):  # pragma: no cover
-    """Returns a mark generator to skip a test if the dependency is too old
-
-    .. deprecated:: 3.0.0
-    """
-    return pytest.mark.skipif(
-        module_older_than(module, minversion),
-        reason='requires {} >= {}'.format(module, minversion))
-
-
-def _has_kerberos_credential():
-    """Return `True` if the current user has a valid kerberos credential
+def _has_kerberos_credential() -> bool:
+    """Return `True` if the current user has a valid kerberos credential.
 
     This function just calls ``klist -s`` and returns `True` if the
     command returns a zero exit code, and `False` if it doesn't, or
@@ -115,7 +68,10 @@ def _has_kerberos_credential():
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (
+        subprocess.CalledProcessError,  # klist failed (no credential)
+        FileNotFoundError,  # klist isn't there
+    ):
         return False
     return True
 
@@ -127,34 +83,52 @@ skip_kerberos_credential = pytest.mark.skipif(
 )
 
 
-# -- assertions ---------------------------------------------------------------
+# -- assertions ----------------------
 
-def assert_quantity_equal(q1, q2):
-    """Assert that two `~astropy.units.Quantity` objects are the same
+def assert_quantity_equal(
+    q1: Quantity,
+    q2: Quantity,
+):
+    """Assert that two `~astropy.units.Quantity` objects are the same.
     """
-    _assert_quantity(q1, q2, array_assertion=assert_array_equal)
+    _assert_quantity(
+        q1,
+        q2,
+        array_assertion=assert_array_equal,
+    )
 
 
-def assert_quantity_almost_equal(q1, q2):
-    """Assert that two `~astropy.units.Quantity` objects are almost the same
+def assert_quantity_almost_equal(
+    q1: Quantity,
+    q2: Quantity,
+):
+    """Assert that two `~astropy.units.Quantity` objects are almost the same.
 
     This method asserts that the units are the same and that the values are
     equal within precision.
     """
-    _assert_quantity(q1, q2, array_assertion=assert_allclose)
+    _assert_quantity(
+        q1,
+        q2,
+        array_assertion=assert_allclose,
+    )
 
 
-def _assert_quantity(q1, q2, array_assertion=assert_array_equal):
-    assert q1.unit == q2.unit, "%r != %r" % (q1.unit, q2.unit)
+def _assert_quantity(
+    q1: Quantity,
+    q2: Quantity,
+    array_assertion: Callable = assert_array_equal,
+):
+    assert q1.unit == q2.unit, f"'{q1.unit}' != '{q2.unit}'"
     array_assertion(q1.value, q2.value)
 
 
 def assert_quantity_sub_equal(
-    a,
-    b,
-    *attrs,
-    almost_equal=False,
-    exclude=None,
+    a: Array,
+    b: Array,
+    *attrs: str,
+    almost_equal: bool = False,
+    exclude: list[str] | None = None,
     **kwargs,
 ):
     """Assert that two `~gwpy.types.Array` objects are the same (or almost).
@@ -184,6 +158,7 @@ def assert_quantity_sub_equal(
     numpy.testing.assert_allclose
     """
     # get value test method
+    assert_array: Callable
     if almost_equal:
         assert_array = assert_allclose
     else:
@@ -192,28 +167,32 @@ def assert_quantity_sub_equal(
     # parse attributes to be tested
     if not attrs:
         attrs = a._metadata_slots
-    attrs = [attr for attr in attrs if attr not in (exclude or [])]
+    checkattrs = [attr for attr in attrs if attr not in (exclude or [])]
 
     # don't assert indexes that don't exist for both
     def _check_index(dim):
-        index = "{}index".format(dim)
+        index = f"{dim}index"
         _index = "_" + index
         if (
             index in attrs
             and getattr(a, _index, "-") == "-"
             and getattr(b, _index, "-") == "-"
         ):
-            attrs.remove(index)
+            checkattrs.remove(index)
     _check_index("x")
     _check_index("y")
 
     # test data
-    assert_attributes(a, b, *attrs)
+    assert_attributes(a, b, *checkattrs)
     assert_array(a.value, b.value, **kwargs)
 
 
-def assert_attributes(a, b, *attrs):
-    """Assert that the attributes for two objects match
+def assert_attributes(
+    a: Array,
+    b: Array,
+    *attrs,
+):
+    """Assert that the attributes for two objects match.
 
     `attrs` should be `list` of attribute names that can be accessed
     with `getattr`
@@ -221,7 +200,7 @@ def assert_attributes(a, b, *attrs):
     for attr in attrs:
         x = getattr(a, attr, None)
         y = getattr(b, attr, None)
-        if isinstance(x, numpy.ndarray) and isinstance(b, numpy.ndarray):
+        if isinstance(x, numpy.ndarray) and isinstance(y, numpy.ndarray):
             assert_array_equal(x, y)
         elif isinstance(x, Time) and isinstance(y, Time):
             assert x.gps == y.gps
@@ -229,9 +208,15 @@ def assert_attributes(a, b, *attrs):
             assert x == y
 
 
-def assert_table_equal(a, b, is_copy=True, meta=False, check_types=True,
-                       almost_equal=False):
-    """Assert that two tables store the same information
+def assert_table_equal(
+    a: Array,
+    b: Array,
+    is_copy: bool = True,
+    meta: bool = False,
+    check_types: bool = True,
+    almost_equal: bool = False,
+):
+    """Assert that two tables store the same information.
     """
     # check column names are the same
     assert sorted(a.colnames) == sorted(b.colnames)
@@ -240,6 +225,7 @@ def assert_table_equal(a, b, is_copy=True, meta=False, check_types=True,
     if meta:
         assert a.meta == b.meta
 
+    assert_array: Callable
     if almost_equal:
         assert_array = assert_allclose
     else:
@@ -259,15 +245,22 @@ def assert_table_equal(a, b, is_copy=True, meta=False, check_types=True,
         assert numpy.may_share_memory(a[name], b[name]) is not is_copy
 
 
-def assert_segmentlist_equal(a, b):
+def assert_segmentlist_equal(
+    a: SegmentList,
+    b: SegmentList,
+):
     """Assert that two `SegmentList`s contain the same data
     """
     for aseg, bseg in zip_longest(a, b):
         assert aseg == bseg
 
 
-def assert_flag_equal(a, b, attrs=['name', 'ifo', 'tag', 'version']):
-    """Assert that two `DataQualityFlag`s contain the same data
+def assert_flag_equal(
+    a: DataQualityFlag,
+    b: DataQualityFlag,
+    attrs: list[str] = ["name", "ifo", "tag", "version"],
+):
+    """Assert that two `DataQualityFlag`s contain the same data.
     """
     assert_segmentlist_equal(a.active, b.active)
     assert_segmentlist_equal(a.known, b.known)
@@ -275,8 +268,14 @@ def assert_flag_equal(a, b, attrs=['name', 'ifo', 'tag', 'version']):
         assert getattr(a, attr) == getattr(b, attr)
 
 
-def assert_dict_equal(a, b, assert_value, *args, **kwargs):
-    """Assert that two `dict`s contain the same data
+def assert_dict_equal(
+    a: dict[Any, Any],
+    b: dict[Any, Any],
+    assert_value: Callable,
+    *args,
+    **kwargs,
+):
+    """Assert that two `dict`s contain the same data.
 
     Parameters
     ----------
@@ -294,7 +293,12 @@ def assert_dict_equal(a, b, assert_value, *args, **kwargs):
         assert_value(a[key], b[key], *args, **kwargs)
 
 
-def assert_zpk_equal(a, b, almost_equal=False):
+def assert_zpk_equal(
+    a: tuple[float, float, float],
+    b: tuple[float, float, float],
+    almost_equal: bool = False,
+):
+    assert_array: Callable
     if almost_equal:
         assert_array = assert_allclose
     else:
@@ -303,43 +307,19 @@ def assert_zpk_equal(a, b, almost_equal=False):
         assert_array(x, y)
 
 
-# -- I/O helpers --------------------------------------------------------------
-
-@contextmanager
-@deprecated_function
-def TemporaryFilename(*args, **kwargs):  # pylint: disable=invalid-name
-    """Create and return a temporary filename
-
-    Calls `tempfile.mktemp` to create a temporary filename, and deletes
-    the named file (if it exists) when the context ends.
-
-    This method **does not create the named file**.
-
-    Examples
-    --------
-    >>> with TemporaryFilename(suffix='.txt') as tmp:
-    ...     print(tmp)
-    '/var/folders/xh/jdrqg2bx3s5f4lkq0rf2903c0000gq/T/tmpnNxivL.txt'
-    """
-    name = tempfile.mktemp(*args, **kwargs)
-    try:
-        yield name
-    finally:
-        if os.path.isfile(name):
-            os.remove(name)
-
+# -- I/O helpers ---------------------
 
 def test_read_write(
-    data,
-    format,
-    extension=None,
-    autoidentify=True,
-    read_args=[],
-    read_kw={},
-    write_args=[],
-    write_kw={},
-    assert_equal=assert_quantity_sub_equal,
-    assert_kw={},
+    data: Array,
+    format: str,
+    extension: str | None = None,
+    autoidentify: bool = True,
+    read_args: list[Any] = [],
+    read_kw: dict[str, Any] = {},
+    write_args: list[Any] = [],
+    write_kw: dict[str, Any] = {},
+    assert_equal: Callable = assert_quantity_sub_equal,
+    assert_kw: dict[str, Any] = {},
 ):
     """Test that data can be written to and read from a file in some format
 
@@ -380,12 +360,12 @@ def test_read_write(
     # parse extension and add leading period
     if extension is None:
         extension = format
-    extension = '.%s' % extension.lstrip('.')
+    extension = f".{extension.lstrip('.')}"
 
-    DataClass = type(data)
+    DataClass = type(data)  # noqa: N806
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        tmp = Path(tmpdir) / "test.{}".format(extension)
+        tmp = Path(tmpdir) / f"test.{extension}"
 
         data.write(tmp, *write_args, format=format, **write_kw)
 
