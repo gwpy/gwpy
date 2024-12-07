@@ -37,7 +37,7 @@ requires-python = ">=3.9"
 dependencies = [
   "astropy >=5.0.0",
   "dateparser >=1.1.4",
-  "dqsegdb2",
+  "dqsegdb2 >=1.2.0",
   "gwdatafind >=1.1.0",
   "gwosc >=0.5.3",
   "h5py >=3.0.0",
