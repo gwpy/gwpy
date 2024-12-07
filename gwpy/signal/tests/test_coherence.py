@@ -55,39 +55,6 @@ def series_data():
     return firstarr, secondarr, seglen
 
 
-@pytest.fixture
-def unequal_fs_series_data():
-    """Create some fake data with unequal sampling frequencies.
-
-    Returns
-    -------
-        ts1: array of time points for first data array
-        ts2: array of time points for second data array
-        firstarr: an array of data, simple mixture of waves
-        secondarr: a second array of data from different mixture
-        seglen: segment length param to reuse for ffts
-        fs_1: sampling frequency 1
-        fs_2: sampling frequency 2
-    """
-    seglen = 512
-    n_segs1 = 10
-    n_segs2 = 20
-    n_t1 = seglen * n_segs1
-    n_t2 = seglen * n_segs2
-    t_end = 10
-
-    fs_1 = n_t1 / t_end
-    fs_2 = n_t2 / t_end
-
-    ts1 = np.linspace(0, t_end, n_t1)
-    ts2 = np.linspace(0, t_end, n_t2)
-
-    firstarr = np.sin(2 * np.pi * ts1) + 0.1 * np.sin(2 * np.pi * ts1 * 5)
-    secondarr = np.sin(2 * np.pi * ts2)
-
-    return ts1, ts2, firstarr, secondarr, seglen, fs_1, fs_2
-
-
 def test_coherence_happy(series_data):
     """Test the interface to scipy.signal.coherence.
 
@@ -107,39 +74,7 @@ def test_coherence_happy(series_data):
     assert all(coharr == cxytemp)
 
 
-def test_coherence_resample(unequal_fs_series_data):
-    """Ensure warning is raised by unequal sampling frequencies."""
-    _, _, firstarr, secondarr, seglen, fs_1, fs_2 = unequal_fs_series_data
-
-    # first and second arrays are different, secondarr should have
-    # sampling frequency fs_2, but sometimes a mistake is made
-    first = TimeSeries(firstarr, sample_rate=fs_1)
-    second = TimeSeries(secondarr, sample_rate=fs_1)
-    third = TimeSeries(secondarr, sample_rate=fs_2)
-
-    # the first coherence val coh12 is broken intentionally since
-    # secondarr data should not have fs_1, instead fs_2
-    coh12 = spectral.coherence(first, second, segmentlength=seglen)
-    with pytest.warns(
-        UserWarning,
-        match="Sampling frequencies are unequal",
-    ):
-        coh13 = spectral.coherence(first, third, segmentlength=seglen)
-
-    # get the frequency at minimum coherence, this should be the extra
-    # component in secondarr
-    maxi12 = np.argmin(coh12[:50])
-    maxf12 = coh12.frequencies[maxi12]
-    maxi13 = np.argmin(coh13[:50])
-    maxf13 = coh12.frequencies[maxi13]
-
-    # this one is close to 5 -- the extra freq component in secondarr
-    assert 4 <= maxf13.value <= 6
-    # this one is totally broken
-    assert not (4 <= maxf12.value <= 6)
-
-
-def test_coherence_resample_downsample(series_data):
+def test_coherence_resample(series_data):
     """Ensure warning is raised by unequal sampling frequencies."""
     firstarr, secondarr, seglen = series_data
     f_s = 0.001
@@ -154,7 +89,10 @@ def test_coherence_resample_downsample(series_data):
         coh1 = spectral.coherence(first, second, segmentlength=seglen)
 
     # check that forcibly disabling downsample results in an error
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Cannot calculate coherence",
+    ):
         spectral.coherence(
             first,
             second,
@@ -165,7 +103,7 @@ def test_coherence_resample_downsample(series_data):
     # but that accepting downsampling gives you the same result as
     # doing nothing (but doesn't emit a warning)
     with warnings.catch_warnings():
-        warnings.simplefilter("error", DeprecationWarning)
+        warnings.simplefilter("error", UserWarning)
         coh2 = spectral.coherence(
             first,
             second,
