@@ -41,6 +41,7 @@ include:
           - "3.10"
           - "3.11"
           - "3.12"
+          - "3.13"
 
 # only well-supported production versions
 .prod_test:
