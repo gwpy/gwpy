@@ -24,7 +24,7 @@ include:
     inputs:
       stage: test
       minimum_python_version: "3.9"
-      experimental_python_version: "3.12"
+      experimental_python_version: "3.13"
       pytest_options: "--color yes --cov gwpy --numprocesses auto gwpy/"
 
   # measure coverage over all jobs
