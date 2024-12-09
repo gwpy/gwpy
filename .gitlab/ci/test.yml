@@ -48,6 +48,7 @@ include:
       - PYTHON_VERSION:
           - "3.10"
           - "3.11"
+          - "3.12"
 
 .brew:
   extends: .macos
@@ -114,6 +115,12 @@ python_test_macos:
   rules:
     - !reference [.macos, rules]
     - !reference [.rules_full_test, rules]
+  parallel:
+    matrix:
+      - PYTHON_VERSION:
+          - "3.10"
+          - "3.11"
+          #- "3.12" <-- cannot build ligo-segments on macOS
   before_script:
     # install Python using Homebrew
     - brew install python@${PYTHON_VERSION}
