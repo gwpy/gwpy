@@ -19,6 +19,9 @@ spec:
       default: "3.9"
       description: "Python version for minimum dependency compatibility check"
       type: string
+    experimental_python_version:
+      default: "3.12"
+      description: "Python version for experimental dependency compatibility check"
 
 ---
 
@@ -96,7 +99,7 @@ compat_experimental:
   extends:
     - .compat_experimental
     - .compat_rules
-  image: "ghcr.io/astral-sh/uv:python3.12-bookworm"
+  image: "ghcr.io/astral-sh/uv:python$[[ inputs.experimental_python_version ]]-bookworm"
 
 # run dependency scanning against minimum specified requirements
 # (most likely to highlight issues)
