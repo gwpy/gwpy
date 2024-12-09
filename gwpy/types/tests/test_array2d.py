@@ -18,12 +18,10 @@
 """Unit tests for :mod:`gwpy.types.array2d`
 """
 
-import pytest
-
 import numpy
-
+import pytest
 from astropy import units
-from numpy import testing
+from numpy.testing import assert_array_equal
 
 from ...segments import Segment
 from ...testing import utils
@@ -224,8 +222,8 @@ class TestArray2D(_TestSeries):
         a = Array2D(rawa)
         exp = numpy.array([3, 11])
         ind1, ind2 = numpy.array([1, 3]), numpy.array([0, 2])
-        testing.assert_array_equal(rawa[ind1, ind2], exp)
-        testing.assert_array_equal(a[ind1, ind2].value, exp)
+        assert_array_equal(rawa[ind1, ind2], exp)
+        assert_array_equal(a[ind1, ind2].value, exp)
 
     def test_is_compatible_yindex(self):
         """Check that irregular arrays are compatible if their yindexes match
