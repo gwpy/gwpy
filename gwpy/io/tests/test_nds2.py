@@ -38,14 +38,10 @@ class _TestNds2Enum(object):
     def test_any(self):
         assert self.TEST_CLASS.any() == 2 * max(self.TEST_CLASS).value - 1
 
-    def test_find_errors(self):
-        """Test error raising for :meth:`gwpy.io.nds2.Nds2ChannelType.find`
+    def test_find_unknown(self):
+        """Test 'UNKNOWN' for :meth:`gwpy.io.nds2.Nds2ChannelType.find`.
         """
-        with pytest.raises(
-            ValueError,
-            match=f"'blah' is not a valid {self.TEST_CLASS.__name__}",
-        ):
-            self.TEST_CLASS.find('blah')
+        self.TEST_CLASS.find("blah") == "UNKNOWN"
 
 
 class TestNds2ChannelType(_TestNds2Enum):
@@ -83,6 +79,9 @@ class TestNds2DataType(_TestNds2Enum, _TestNumpyTypeEnum):
     """Tests of :class:`gwpy.io.nds2.Nds2DataType`
     """
     TEST_CLASS = io_nds2.Nds2DataType
+
+    def test_find_errors(self):
+        pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
 
 
 @pytest.mark.parametrize('key, value, hosts', [

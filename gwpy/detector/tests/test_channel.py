@@ -176,12 +176,9 @@ class TestChannel(object):
         assert getattr(c, 'type') == type_
         assert getattr(c, 'ndstype') == ndstype
 
-    def test_type_ndstype_error(self):
-        with pytest.raises(
-            ValueError,
-            match="^'blah' is not a valid Nds2ChannelType$",
-        ):
-            self.TEST_CLASS('', type="blah")
+    def test_type_ndstype_unknown(self):
+        assert self.TEST_CLASS('', type="blah").type == "UNKNOWN"
+        assert self.TEST_CLASS('', type="blah").ndstype == 0
 
     @pytest.mark.parametrize(("arg", "dtype"), [
         (None, None),

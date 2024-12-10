@@ -150,10 +150,8 @@ class _Nds2Enum(enum.IntFlag):
             for item in cls:
                 if name.lower() == item.nds2name.lower():
                     return item
-        # bail out
-        raise ValueError(
-            f"'{name}' is not a valid {cls.__name__}",
-        )
+        # return unknown
+        return cls["UNKNOWN"]
 
 
 Nds2ChannelType = _Nds2Enum(
@@ -163,7 +161,13 @@ Nds2ChannelType = _Nds2Enum(
 
 
 class _Nds2DataType(NumpyTypeEnum, _Nds2Enum):
-    pass
+    @classmethod
+    def find(cls, name):
+        try:
+            return super().find(name)
+        except ValueError:
+            # return unknown
+            return cls(0)
 
 
 Nds2DataType = _Nds2DataType(
