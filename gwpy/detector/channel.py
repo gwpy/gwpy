@@ -23,6 +23,7 @@ from copy import copy
 from math import ceil
 from urllib.parse import urlparse
 
+import numpy
 from astropy import units
 from astropy.io.registry import compat as compat_registry
 
@@ -32,6 +33,11 @@ from ..utils.misc import if_not_none
 from .units import parse_unit
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+try:
+    BOOL_TYPES = {bool, numpy.bool, numpy.dtype(bool)}
+except AttributeError:  # numpy < 2.0
+    BOOL_TYPES = {bool, numpy.bool_, numpy.dtype(bool)}
 
 QUOTE_REGEX = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 
@@ -286,6 +292,8 @@ class Channel(object):
     def dtype(self, type_):
         if type_ is None:
             self._dtype = None
+        elif type_ in BOOL_TYPES:  # NDS2 doesn't support bool
+            self._dtype = numpy.dtype(bool)
         else:
             self._dtype = io_nds2.Nds2DataType.find(type_).dtype
 

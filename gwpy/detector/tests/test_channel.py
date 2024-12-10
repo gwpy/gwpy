@@ -183,13 +183,14 @@ class TestChannel(object):
         ):
             self.TEST_CLASS('', type="blah")
 
-    @pytest.mark.parametrize('arg, dtype', [
+    @pytest.mark.parametrize(("arg", "dtype"), [
         (None, None),
         (16, numpy.dtype('float64')),
         (float, numpy.dtype('float64')),
         ('float', numpy.dtype('float64')),
         ('float64', numpy.dtype('float64')),
         ('u4', numpy.dtype('uint32')),
+        (bool, numpy.dtype("bool")),
     ])
     def test_dtype(self, arg, dtype):
         new = self.TEST_CLASS('test', dtype=arg)
