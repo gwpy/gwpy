@@ -621,9 +621,8 @@ Writing tables in PyCBC Live HDF5 format is not supported at this time.
 GstLAL (``LIGO_LW`` XML)
 ========================
 
-GstLAL is a low-latency search for gravitational waves from compact
-binary coalescences, built using |GStreamer|_ elements and tools from the
-:ref:`gwpy-external-lalsuite` library.
+|GstLAL|_ is a low-latency search for gravitational waves from compact
+binary coalescences.
 This search writes files on the LIGO Data Grid (LIGO.ORG-authenticated users
 only) in ``LIGO_LW`` XML format, containing tables of events.
 
