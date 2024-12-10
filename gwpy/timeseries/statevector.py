@@ -172,7 +172,7 @@ class StateTimeSeries(TimeSeriesBase):
         if isinstance(data, (list, tuple)):
             data = numpy.asarray(data)
         if not isinstance(data, cls):
-            data = data.astype(bool)
+            data = data.astype(bool, copy=False)
         return super().__new__(
             cls, data, t0=t0, dt=dt, sample_rate=sample_rate, times=times,
             name=name, channel=channel, **kwargs)
