@@ -277,8 +277,8 @@ def read_gwosc_hdf5_state(
 
     Returns
     -------
-    data : `~gwpy.timeseries.TimeSeries`
-        a new `TimeSeries` containing the data read from disk
+    data : `~gwpy.timeseries.StateVector`
+        a new `StateVector` containing the data read from disk
     """
     # find data
     dataset = io_hdf5.find_dataset(f, "%s/%s" % (path, dataset_name))
