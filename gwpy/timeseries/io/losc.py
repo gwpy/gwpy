@@ -244,7 +244,8 @@ def read_gwosc_hdf5_state(
     end=None,
     copy=False,
     dataset_name="DQmask",
-    maskset_name='DQDescriptions'
+    maskset_name="DQDescriptions",
+    name="Data quality"
 ):
     """Read a `StateVector` from a GWOSC-format HDF file.
 
@@ -271,6 +272,9 @@ def read_gwosc_hdf5_state(
     maskset_name : `str`
         HDF5 dataset where to read the definition of each bits
 
+    name : `str`
+        Name of the returned `~gwpy.timeseries.StateVector`
+
     Returns
     -------
     data : `~gwpy.timeseries.TimeSeries`
@@ -291,7 +295,7 @@ def read_gwosc_hdf5_state(
     else:
         xunit = parse_unit(dataset.attrs["Xunits"])
         dt = Quantity(dt, xunit)
-    return StateVector(nddata, bits=bits, t0=epoch, name="Data quality",
+    return StateVector(nddata, bits=bits, t0=epoch, name=name,
                        dx=dt, copy=copy).crop(start=start, end=end)
 
 
