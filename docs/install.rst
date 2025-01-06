@@ -52,7 +52,7 @@ GWpy has the following strict requirements:
    |gwdatafind|_       ``>=1.1.0``
    |gwosc-mod|_        ``>=0.5.3``
    |h5py|_             ``>=3.0.0``
-   |ligo-segments|_    ``>=1.3.0``
+   |igwn-segments|_    ``>=2.0.0``
    |ligotimegps|_      ``>=1.2.1``
    |matplotlib|_       ``>=3.1.0``
    |numpy|_            ``>=1.19.5``

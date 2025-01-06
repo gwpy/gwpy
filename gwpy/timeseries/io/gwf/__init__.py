@@ -39,7 +39,7 @@ import numpy
 
 from astropy.io.registry import (get_reader, get_writer)
 
-from ligo.segments import segment as LigoSegment
+from igwn_segments import segment as LigoSegment
 
 from ....time import to_gps
 from ....io import gwf as io_gwf

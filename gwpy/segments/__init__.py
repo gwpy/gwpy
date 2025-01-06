@@ -18,7 +18,7 @@
 """This module provides classes for generating and manipulating
 data segments of the form [gps_start, gps_end).
 
-The core of this module is adapted from |ligo-segments|_.
+The core of this module is adapted from |igwn-segments|_.
 """
 
 from .segments import (Segment, SegmentList, SegmentListDict)

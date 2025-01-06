@@ -24,8 +24,8 @@
 .. |h5py| replace:: `h5py`
 .. _h5py: http://docs.h5py.org/en/latest/
 
-.. |ligo-segments| replace:: `ligo-segments`
-.. _ligo-segments: https://lscsoft.docs.ligo.org/ligo-segments/
+.. |igwn-segments| replace:: `igwn-segments`
+.. _igwn-segments: https://igwn-segments.readthedocs.io/
 
 .. |ligotimegps| replace:: `ligotimegps`
 .. _ligotimegps: https://github.com/gwpy/ligotimegps/
