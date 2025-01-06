@@ -45,7 +45,7 @@ from unittest import mock
 
 import gwdatafind
 
-from ligo.segments import segment as LigoSegment
+from igwn_segments import segment as LigoSegment
 
 from ..time import to_gps
 from . import ffldatafind
