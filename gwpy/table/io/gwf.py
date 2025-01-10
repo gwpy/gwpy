@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Louisiana State University (2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,16 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from GWF FrEvent structures into a Table
+"""Read events from GWF FrEvent structures into a Table.
 """
 
 from astropy.table import Table
-from astropy.io import registry as io_registry
 
-from ...table import EventTable
-from ...time import LIGOTimeGPS
 from ...io import gwf as io_gwf
 from ...io.cache import FILE_LIKE
+from ...io.registry import default_registry
+from ...time import LIGOTimeGPS
+from .. import EventTable
 from ..filter import parse_column_filters
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -34,15 +35,21 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 def _columns_from_frevent(frevent):
-    """Get list of column names from frevent
+    """Get list of column names from frevent.
     """
     params = dict(frevent.GetParam())
-    return (['time', 'amplitude', 'probability', 'timeBefore', 'timeAfter',
-             'comment'] + list(params.keys()))
+    return ([
+        "time",
+        "amplitude",
+        "probability",
+        "timeBefore",
+        "timeAfter",
+        "comment",
+    ] + list(params.keys()))
 
 
 def _row_from_frevent(frevent, columns, selection):
-    """Generate a table row from an FrEvent
+    """Generate a table row from an FrEvent.
 
     Filtering (``selection``) is done here, rather than in the table reader,
     to enable filtering on columns that aren't being returned.
@@ -180,6 +187,18 @@ def table_to_gwf(table, filename, name, **kwargs):
 # -- registration -------------------------------------------------------------
 
 for table_class in (Table, EventTable):
-    io_registry.register_reader('gwf', table_class, table_from_gwf)
-    io_registry.register_writer('gwf', table_class, table_to_gwf)
-    io_registry.register_identifier('gwf', table_class, io_gwf.identify_gwf)
+    default_registry.register_reader(
+        "gwf",
+        table_class,
+        table_from_gwf,
+    )
+    default_registry.register_writer(
+        "gwf",
+        table_class,
+        table_to_gwf,
+    )
+    default_registry.register_identifier(
+        "gwf",
+        table_class,
+        io_gwf.identify_gwf,
+    )

@@ -31,8 +31,12 @@ from gwosc.api import DEFAULT_URL as DEFAULT_GWOSC_URL
 from astropy.table import (Table, vstack)
 from astropy.io.registry import compat as compat_registry
 
-from ..io.mp import read_multi as io_read_multi
+from ..io.registry import UnifiedReadWriteMethod
 from ..time import GPS_TYPES
+from .connect import (
+    EventTableRead,
+    EventTableWrite,
+)
 from .filter import (filter_table, parse_operator)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -176,92 +180,8 @@ class EventTable(Table):
 
     # -- i/o ------------------------------------
 
-    @classmethod
-    def read(cls, source, *args, **kwargs):  # pylint: disable=arguments-differ
-        """Read data into an `EventTable`
-
-        Parameters
-        ----------
-        source : `str`, `list`
-            Source of data, any of the following:
-
-            - `str` path of single data file,
-            - `str` path of LAL-format cache file,
-            - `list` of paths.
-
-        *args
-            other positional arguments will be passed directly to the
-            underlying reader method for the given format
-
-        format : `str`, optional
-            the format of the given source files; if not given, an attempt
-            will be made to automatically identify the format
-
-        columns : `list` of `str`, optional
-            the list of column names to read
-
-        selection : `str`, or `list` of `str`, optional
-            one or more column filters with which to downselect the
-            returned table rows as they as read, e.g. ``'snr > 5'``;
-            multiple selections should be connected by ' && ', or given as
-            a `list`, e.g. ``'snr > 5 && frequency < 1000'`` or
-            ``['snr > 5', 'frequency < 1000']``
-
-        nproc : `int`, optional, default: 1
-            number of CPUs to use for parallel reading of multiple files
-
-        verbose : `bool`, optional
-            print a progress bar showing read status, default: `False`
-
-        .. note::
-
-           Keyword arguments other than those listed here may be required
-           depending on the `format`
-
-        Returns
-        -------
-        table : `EventTable`
-
-        Raises
-        ------
-        astropy.io.registry.IORegistryError
-            if the `format` cannot be automatically identified
-        IndexError
-            if ``source`` is an empty list
-
-        Notes
-        -----"""
-        return io_read_multi(vstack, cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this table to a file
-
-        Parameters
-        ----------
-        target: `str`
-            filename for output data file
-
-        *args
-            other positional arguments will be passed directly to the
-            underlying writer method for the given format
-
-        format : `str`, optional
-            format for output data; if not given, an attempt will be made
-            to automatically identify the format based on the `target`
-            filename
-
-        **kwargs
-            other keyword arguments will be passed directly to the
-            underlying writer method for the given format
-
-        Raises
-        ------
-        astropy.io.registry.IORegistryError
-            if the `format` cannot be automatically identified
-
-        Notes
-        -----"""
-        return compat_registry.write(self, target, *args, **kwargs)
+    read = UnifiedReadWriteMethod(EventTableRead)
+    write = UnifiedReadWriteMethod(EventTableWrite)
 
     @classmethod
     def fetch(cls, format_, *args, **kwargs):

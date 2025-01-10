@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -22,8 +23,11 @@ import re
 
 from astropy.io.ascii import core
 
-from ...io.registry import compat as compat_registry
-from .. import (Table, EventTable)
+from ...io.registry import default_registry
+from .. import (
+    EventTable,
+    Table,
+)
 from .utils import decorate_registered_reader
 
 
@@ -82,10 +86,10 @@ class Omega(core.BaseReader):
 
 # register for EventTable
 # (to populate that object's docstring)
-compat_registry.register_reader(
-    'ascii.omega',
+default_registry.register_reader(
+    "ascii.omega",
     EventTable,
-    compat_registry.get_reader("ascii.omega", Table),
+    default_registry.get_reader("ascii.omega", Table),
 )
 decorate_registered_reader(
     "ascii.omega",

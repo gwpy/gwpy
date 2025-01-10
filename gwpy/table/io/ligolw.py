@@ -1,5 +1,5 @@
 # Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2021)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -35,8 +35,11 @@ from ...io.ligolw import (
     to_table_type as to_ligolw_table_type,
     write_tables as write_ligolw_tables,
 )
-from ...io.registry import compat as compat_registry
-from .. import (Table, EventTable)
+from ...io.registry import default_registry
+from .. import (
+    EventTable,
+    Table,
+)
 from .utils import read_with_selection
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -44,10 +47,10 @@ __all__ = []
 
 # methods to exclude from get_as_columns conversions
 GET_AS_EXCLUDE = [
-    'column',
-    'username',
-    'table',
-    'time_slide_id',
+    "column",
+    "username",
+    "table",
+    "time_slide_id",
 ]
 
 # map custom object types to numpy-compatible type
@@ -401,6 +404,6 @@ for table_ in LIGOLW_TABLES:
     table_.__astropy_table__ = to_astropy_table
 
 for table_class in (Table, EventTable):
-    compat_registry.register_reader('ligolw', table_class, read_table)
-    compat_registry.register_writer('ligolw', table_class, write_table)
-    compat_registry.register_identifier('ligolw', table_class, is_ligolw)
+    default_registry.register_reader("ligolw", table_class, read_table)
+    default_registry.register_writer("ligolw", table_class, write_table)
+    default_registry.register_identifier("ligolw", table_class, is_ligolw)

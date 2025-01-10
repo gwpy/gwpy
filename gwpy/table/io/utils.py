@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,13 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilities for Table I/O
+"""Utilities for Table I/O.
 """
 
 import functools
 
-from astropy.io import registry
-
+from ...io.registry import default_registry
 from .. import EventTable
 from ..filter import filter_table
 
@@ -80,10 +80,11 @@ def read_with_selection(func):
 # better
 
 def decorate_registered_reader(
-        name,
-        data_class=EventTable,
-        columns=True,
-        selection=True,
+    name,
+    data_class=EventTable,
+    columns=True,
+    selection=True,
+    registry=default_registry,
 ):
     """Wrap an existing registered reader to use GWpy's input decorators
 
@@ -112,5 +113,12 @@ def decorate_registered_reader(
     return registry.register_reader(name, data_class, wrapped, force=True)
 
 
-for row in registry.get_formats(data_class=EventTable, readwrite="Read"):
-    decorate_registered_reader(row["Format"], data_class=EventTable)
+for row in default_registry.get_formats(
+    data_class=EventTable,
+    readwrite="Read",
+):
+    decorate_registered_reader(
+        row["Format"],
+        data_class=EventTable,
+        registry=default_registry,
+    )

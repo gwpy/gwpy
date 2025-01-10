@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -18,21 +19,30 @@
 """Read events from an Omicron-format ROOT file.
 """
 
-from ...io.registry import compat as compat_registry
+from ...io.registry import default_registry
 from .. import EventTable
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 def table_from_omicron(source, *args, **kwargs):
-    """Read an `EventTable` from an Omicron ROOT file
+    """Read an `EventTable` from an Omicron ROOT file.
 
     This function just redirects to the format='root' reader with appropriate
     defaults.
     """
     if not args:  # only default treename if args not given
-        kwargs.setdefault('treename', 'triggers')
-    return EventTable.read(source, *args, format='root', **kwargs)
+        kwargs.setdefault("treename", "triggers")
+    return EventTable.read(
+        source,
+        *args,
+        format="root",
+        **kwargs,
+    )
 
 
-compat_registry.register_reader('root.omicron', EventTable, table_from_omicron)
+default_registry.register_reader(
+    "root.omicron",
+    EventTable,
+    table_from_omicron,
+)

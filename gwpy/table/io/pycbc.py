@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from the PyCBC live online GW search
+"""Read events from the PyCBC live online GW search.
 """
 
 import re
@@ -26,8 +27,11 @@ import numpy
 import h5py
 
 from ...io.hdf5 import (identify_hdf5, with_read_hdf5)
-from ...io.registry import compat as compat_registry
-from .. import (Table, EventTable)
+from ...io.registry import default_registry
+from .. import (
+    EventTable,
+    Table,
+)
 from ..filter import (filter_table, parse_column_filters)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -251,22 +255,26 @@ def empty_hdf5_file(h5f, ifo=None):
 def identify_pycbc_live(origin, filepath, fileobj, *args, **kwargs):
     """Identify a PyCBC Live file as an HDF5 with the correct name.
     """
-    return bool(
-        identify_hdf5(origin, filepath, fileobj, *args, **kwargs)
-        and (
-            filepath is not None
-            and PYCBC_FILENAME.match(basename(filepath))
-        )
-    )
+    # first, check that this is a valid HDF5 file
+    if not identify_hdf5(origin, filepath, fileobj, *args, **kwargs):
+        return False
+
+    # next, check that the filename matches what we expect from PyCBC live
+    # -- this is terrible, but it's the best I can think of
+    if filepath is None and fileobj is not None:  # need file name
+        filepath = getattr(fileobj, "name", None)
+    if filepath is not None:
+        return PYCBC_FILENAME.match(basename(filepath))
+    return False
 
 
 # register for unified I/O (with higher priority than HDF5 reader)
-compat_registry.register_identifier(
+default_registry.register_identifier(
     PYCBC_LIVE_FORMAT,
     EventTable,
     identify_pycbc_live,
 )
-compat_registry.register_reader(
+default_registry.register_reader(
     PYCBC_LIVE_FORMAT,
     EventTable,
     table_from_file,

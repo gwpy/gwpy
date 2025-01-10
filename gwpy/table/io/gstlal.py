@@ -1,5 +1,6 @@
-# Copyright (C) California Institute of Technology (2019-2022)
-#               Pensylvania State University (2019)
+# Copyright (C) Pensylvania State University (2019)
+#               California Institute of Technology (2019-2022)
+#               Cardiff University (2024-)
 #
 # This file is part of GWpy.
 #
@@ -24,10 +25,10 @@ from os.path import basename
 
 from astropy.table import join
 
-from ...io.registry import compat
 from ...io.ligolw import is_ligolw
-from .ligolw import read_table
+from ...io.registry import default_registry
 from .. import EventTable
+from .ligolw import read_table
 from .pycbc import get_mchirp
 
 __author__ = 'Derk Davis <derek.davis@ligo.org>'
@@ -181,10 +182,13 @@ def identify_gstlal(origin, filepath, fileobj, *args, **kwargs):
 
 
 # registers for unified I/O
-compat.register_identifier(GSTLAL_FORMAT, EventTable, identify_gstlal)
-compat.register_reader(GSTLAL_SNGL_FORMAT, EventTable, read_gstlal_sngl)
-compat.register_reader(GSTLAL_COINC_FORMAT, EventTable, read_gstlal_coinc)
-compat.register_reader(GSTLAL_FORMAT, EventTable, read_gstlal)
+default_registry.register_identifier(GSTLAL_FORMAT, EventTable, identify_gstlal)
+for fmt, reader in (
+    (GSTLAL_SNGL_FORMAT, read_gstlal_sngl),
+    (GSTLAL_COINC_FORMAT, read_gstlal_coinc),
+    (GSTLAL_FORMAT, read_gstlal),
+):
+    default_registry.register_reader(fmt, EventTable, reader)
 
 # -- processed columns --------------------------------------------------------
 #

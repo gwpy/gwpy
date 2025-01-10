@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,13 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from ROOT trees into Tables
+"""Read events from ROOT trees into Tables.
 """
 
-from ...io.registry import compat as compat_registry
-from ...io.utils import (file_path, identify_factory)
-from .. import (Table, EventTable)
-from .utils import (read_with_columns, read_with_selection)
+from ...io.registry import default_registry
+from ...io.root import identify_root
+from ...io.utils import file_path
+from .. import (
+    EventTable,
+    Table,
+)
+from .utils import (
+    read_with_columns,
+    read_with_selection,
+)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -110,10 +118,6 @@ def table_to_root(
 
 # register I/O
 for table_class in (Table, EventTable):
-    compat_registry.register_reader('root', table_class, table_from_root)
-    compat_registry.register_writer('root', table_class, table_to_root)
-    compat_registry.register_identifier(
-        'root',
-        table_class,
-        identify_factory('.root'),
-    )
+    default_registry.register_reader("root", table_class, table_from_root)
+    default_registry.register_writer("root", table_class, table_to_root)
+    default_registry.register_identifier("root", table_class, identify_root)

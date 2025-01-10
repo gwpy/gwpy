@@ -26,17 +26,18 @@ from . import utils
 # other readers are defined in their own modules, and are responsible
 # for applying the decorators themselves.
 from . import (
-    ligolw,  # ligo.lw XML format
-    root,  # generic ROOT stuff
-    omicron,  # Omicron ROOT format
-    omega,  # Omega ASCII format
     cwb,  # cWB ROOT and ASCII formats
-    pycbc,  # PyCBC (Live) HDF5
-    gstlal,  # GstLAL ligo.lw XML format
-    hacr,  # Hierarchichal Algorithm for Curves and Ridges
-    gwf,  # GWF FrEvents (e.g. MBTA)
     gravityspy,  # Gravity Spy Triggers
+    gstlal,  # GstLAL ligo.lw XML format
+    gwf,  # GWF FrEvents (e.g. MBTA)
+    hacr,  # Hierarchichal Algorithm for Curves and Ridges
+    ligolw,  # ligo.lw XML format
+    omega,  # Omega ASCII format
+    omicron,  # Omicron ROOT format
+    pycbc,  # PyCBC (Live) HDF5
+    root,  # generic ROOT stuff
     snax,  # SNAX HDF5 features
+    #hdf5,
 )
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

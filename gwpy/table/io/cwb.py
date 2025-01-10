@@ -22,8 +22,11 @@ import re
 
 from astropy.io.ascii import core
 
-from ...io.registry import compat as compat_registry
-from .. import (Table, EventTable)
+from ...io.registry import default_registry
+from .. import (
+    EventTable,
+    Table,
+)
 from .utils import decorate_registered_reader
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -37,10 +40,16 @@ def table_from_cwb(source, *args, **kwargs):
     This function just redirects to the format='root' reader with appropriate
     defaults.
     """
-    return EventTable.read(source, 'waveburst', *args, format='root', **kwargs)
+    return EventTable.read(
+        source,
+        "waveburst",
+        *args,
+        format="root",
+        **kwargs,
+    )
 
 
-compat_registry.register_reader('root.cwb', EventTable, table_from_cwb)
+default_registry.register_reader("root.cwb", EventTable, table_from_cwb)
 
 
 # -- ASCII --------------------------------------------------------------------
@@ -116,10 +125,10 @@ class Cwb(core.BaseReader):
 
 
 # register for EventTable
-compat_registry.register_reader(
+default_registry.register_reader(
     "ascii.cwb",
     EventTable,
-    compat_registry.get_reader("ascii.cwb", Table),
+    default_registry.get_reader("ascii.cwb", Table),
 )
 decorate_registered_reader(
     "ascii.cwb",
