@@ -21,7 +21,7 @@ gravitational-wave laser interferometer was operating in a specific
 configuration.
 """
 
-from ligo.segments import (segment, segmentlist, segmentlistdict)
+from igwn_segments import (segment, segmentlist, segmentlistdict)
 
 from ..io.mp import read_multi as io_read_multi
 from ..io.registry import compat as compat_registry
