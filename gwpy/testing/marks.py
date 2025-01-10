@@ -29,7 +29,7 @@ registered up front and visible via ``python -m pytest gwpy --markers``.
 """
 
 MARKS = {
-    "cvmfs": "mark a test as requiring CVMFS",
+    # nothing here, used to support 'cvmfs' but that was removed
 }
 
 

@@ -201,8 +201,6 @@ conda_test_linux:
     - !reference [.rules_full_test, rules]
   image: condaforge/miniforge3
   before_script:
-    # configure CVMFS
-    - bash -ex .gitlab/ci/init-cvmfs.sh
     # init conda
     - . $(conda info --base)/etc/profile.d/conda.sh
     # create test environment using pip2conda

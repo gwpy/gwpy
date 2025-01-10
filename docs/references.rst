@@ -3,9 +3,6 @@
 .. |astropy| replace:: `astropy`
 .. _astropy: http://www.astropy.org/
 
-.. |CVMFS| replace:: CVMFS
-.. _CVMFS: https://cvmfs.readthedocs.io/
-
 .. |dateparser| replace:: `dateparser`
 .. _dateparser: https://dateparser.readthedocs.io
 
@@ -126,6 +123,12 @@
 
 .. |LIGO-T050017| replace:: LIGO-T050017
 .. _LIGO-T050017: https://dcc.ligo.org/LIGO-T050017/public
+
+.. |OSDF| replace:: OSDF
+.. _OSDF: https://osg-htc.org/services/osdf.html
+
+.. |OSDFl| replace:: the Open Science Data Federation (OSDF)
+.. _OSDF: https://osg-htc.org/services/osdf.html
 
 .. -- Event science summaries -------------------
 

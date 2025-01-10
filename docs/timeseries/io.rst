@@ -45,7 +45,8 @@ are archived in :ref:`GWF <gwpy-timeseries-io-gwf>` files stored at the
 relevant observatory.
 These data are available locally to authenticated users of the associated
 computing centres (typically collaboration members), but are also
-distributed using |CVMFS|_ and are available remotely using :ref:`gwpy-external-nds2`.
+distributed as part of |OSDFl|_ and are available remotely using
+:ref:`gwpy-external-nds2`.
 Access to these data is restricted to active collaboration members.
 
 Additionally |GWOSCl|_ hosts publicly-accessible 'open' data, with *event*
