@@ -120,7 +120,7 @@ def _gwosc_cvmfs(func):
     """
     for dec in (
         pytest.mark.cvmfs,
-        pytest.mark.requires("LDAStools.frameCPP"),
+        pytest.mark.requires("lalframe"),
         pytest.mark.skipif(
             not os.path.isdir('/cvmfs/gwosc.osgstorage.org/'),
             reason="GWOSC CVMFS repository not available",
@@ -557,7 +557,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.mark.parametrize('format', [
         'hdf5',
-        pytest.param('gwf', marks=pytest.mark.requires("LDAStools.frameCPP")),
+        pytest.param('gwf', marks=pytest.mark.requires("lalframe")),
     ])
     @pytest_skip_flaky_network
     def test_fetch_open_data(self, gw150914, format):
