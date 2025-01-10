@@ -33,7 +33,7 @@ BACKEND_LIBRARY = {
 
 
 @mock.patch.dict("os.environ")
-@pytest.mark.requires(BACKEND_LIBRARY["frameCPP"])  # need at least one backend
+@pytest.mark.requires(BACKEND_LIBRARY["LALFrame"])  # need at least one backend
 def test_get_backend():
     """Test that :func:`get_backend` returns a sensible value.
     """
