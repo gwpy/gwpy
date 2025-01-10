@@ -18,12 +18,19 @@
 """Tests for :mod:`gwpy.table.io.ligolw`
 """
 
-import pytest
+import os
 
 import numpy
+import pytest
 from numpy.testing import assert_array_equal
 
+from ...testing.errors import pytest_skip_network_error
 from .. import EventTable
+
+REMOTE_XML_FILE = (
+    "https://gitlab.com/gwpy/gwpy/-/raw/v3.0.10/gwpy/testing/data/"
+    "H1-LDAS_STRAIN-968654552-10.xml.gz"
+)
 
 
 # -- fixtures -----------------------------------------------------------------
@@ -86,3 +93,18 @@ def test_read_process_table():
     tab = EventTable(llwtable)
     assert len(tab) == 2
     assert tab[0]["ifos"] == "G1,H1"
+
+
+@pytest_skip_network_error
+@pytest.mark.requires("ligo.lw.lsctables")
+def test_read_remote_file():
+    """Test that we can read remote files over HTTP.
+    """
+    tab = EventTable.read(
+        REMOTE_XML_FILE,
+        cache=False,
+        format="ligolw",
+        tablename="sngl_burst",
+    )
+    assert len(tab) == 2052
+    assert tab[0]["snr"] == pytest.approx(0.69409615)
