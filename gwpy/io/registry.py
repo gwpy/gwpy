@@ -39,37 +39,36 @@ from astropy.utils.data import get_readable_fileobj
 
 from ..utils.env import bool_env
 from ..utils.progress import progress_bar
-from .utils import FILE_LIKE, file_list
+from .utils import (
+    FILE_LIKE,
+    file_list,
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 # -- utilities -----------------------
 
-def _identify_with_list(
+def list_identifier(
     identifier,
 ):
     """Decorate an I/O identifier to handle a list of files as input.
 
     This function tries to resolve a single file path as a `str` from any
-    file-like or collection-of-file-likes to pass to the underlying
-    identifier for comparison.
+    one or more file-like objects in the ``filepath`` or ``args`` inputs
+    to pass to the underlying identifier for comparison.
     """
     @wraps(identifier)
     def decorated_func(origin, filepath, fileobj, *args, **kwargs):
-        # pylint: disable=missing-docstring
+        target = filepath  # thing to search
+        if target is None and args:
+            target = args[0]
         try:
-            filepath = file_list(filepath)[0]
-        except ValueError:
-            if filepath is None:
-                try:
-                    files = file_list(args[0])
-                except (IndexError, ValueError):
-                    pass
-                else:
-                    if files:
-                        filepath = files[0]
-        except IndexError:
+            filepath = file_list(target)[0]
+        except (
+            IndexError,  # empty list
+            ValueError,  # target can't be resolved as a list of file-like
+        ):
             pass
         return identifier(origin, filepath, fileobj, *args, **kwargs)
     return decorated_func
@@ -88,7 +87,7 @@ def legacy_register_identifier(
     return compat.default_registry.register_identifier(
         data_format,
         data_class,
-        _identify_with_list(identifier),
+        list_identifier(identifier),
         force=force,
     )
 
@@ -167,7 +166,7 @@ class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
         return super().register_identifier(
             data_format,
             data_class,
-            _identify_with_list(identifier),
+            list_identifier(identifier),
             force=force,
         )
 
