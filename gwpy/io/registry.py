@@ -28,6 +28,7 @@ from concurrent.futures import (
     ThreadPoolExecutor,
     as_completed,
 )
+from contextlib import nullcontext
 from functools import wraps
 
 from astropy.io import registry as astropy_registry
@@ -39,6 +40,7 @@ from astropy.utils.data import get_readable_fileobj
 
 from ..utils.env import bool_env
 from ..utils.progress import progress_bar
+from .remote import open_remote_file
 from .utils import (
     FILE_LIKE,
     file_list,
@@ -232,6 +234,9 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
 
         i.e take in the type object and a list of instances, and return
         a single instance of the same type.
+
+        This method also generalises downloading files from remote URLs
+        over HTTP or via `fsspec`.
         """
         cls = self._cls
 
@@ -248,18 +253,14 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
         if cache is None:
             cache = bool_env("GWPY_CACHE", False)
 
+        # get the input as a list of inputs
         sources = self._format_input_list(source)
 
-        def _read(arg):
-            return self.registry.read(
-                self._cls,
-                arg,
-                *args,
-                format=format,
-                cache=cache,
-                **kwargs,
-            )
-
+        # handle progress based on the number of inputs
+        show_progress = False  # single file download progress
+        if len(sources) == 1:
+            show_progress = verbose
+            verbose = False
         if verbose is True and format:
             verbose = f"Reading ({format})"
         elif verbose is True:
@@ -271,6 +272,41 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
             )
         else:
             progress = None
+
+        remote_kwargs = {
+            key: kwargs.pop(key) for key in (
+                "sources",
+                "http_headers",
+                "use_fsspec",
+                "fsspec_kwargs",
+            ) if key in kwargs
+        }
+
+        # single file reader
+        def _read(arg):
+            # if arg is a str, presume it represents a URI, so try and open it
+            if isinstance(arg, str):
+                ctx = open_remote_file(
+                    arg,
+                    cache=cache,
+                    show_progress=show_progress,
+                    **remote_kwargs,
+                )
+            # otherwise just pass it along unmodified
+            else:
+                ctx = nullcontext(arg)
+
+            with ctx as file:
+                return self.registry.read(
+                    self._cls,
+                    file,
+                    *args,
+                    format=format,
+                    cache=cache,
+                    **kwargs,
+                )
+
+        # read all files in parallel threads
         outputs = []
         with ThreadPoolExecutor(
             max_workers=parallel,
