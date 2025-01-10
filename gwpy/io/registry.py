@@ -181,12 +181,17 @@ default_registry = UnifiedIORegistry()
 class UnifiedRead(astropy_registry.UnifiedReadWrite):
     """Base ``Class.read()`` implementation that handles parallel reads.
     """
-    def __init__(self, instance, cls):
+    def __init__(
+        self,
+        instance,
+        cls,
+        registry=default_registry,
+    ):
         super().__init__(
             instance,
             cls,
             "read",
-            registry=default_registry,
+            registry=registry,
         )
 
     def _read_single_file(
@@ -282,12 +287,17 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
 class UnifiedWrite(astropy_registry.UnifiedReadWrite):
     """Base ``Class.write()`` implementation.
     """
-    def __init__(self, instance, cls):
+    def __init__(
+        self,
+        instance,
+        cls,
+        registry=default_registry,
+    ):
         super().__init__(
             instance,
             cls,
             "write",
-            registry=default_registry,
+            registry=registry,
         )
 
     def __call__(
