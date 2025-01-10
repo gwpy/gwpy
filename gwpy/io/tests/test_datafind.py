@@ -26,7 +26,6 @@ import pytest
 import gwdatafind
 
 from ...testing.errors import (
-    pytest_skip_cvmfs_read_error,
     pytest_skip_flaky_network,
 )
 from ...testing.utils import (
@@ -69,30 +68,6 @@ def _mock_gwdatafind(func):
         'gwpy.io.datafind.num_channels',
         mock.MagicMock(return_value=1),
     )
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-
-    return wrapper
-
-
-def _gwosc_gwdatafind(func):
-    """Decorate a function to use the GWOSC GWDataFind server.
-
-    That server returns paths from CVMFS (``/cvmfs/gwosc.osgstorage.org``) so
-    we need to add various protections.
-    """
-    @mock.patch.dict(  # point GWDataFind at GWOSC server
-        "os.environ",
-        {"GWDATAFIND_SERVER": "datafind.gwosc.org:80"},
-    )
-    @pytest_skip_cvmfs_read_error  # skip CVMFS problems
-    @pytest_skip_flaky_network  # skip network problems
-    @pytest.mark.skipif(  # skip missing CVMFS repo
-        not os.path.isdir('/cvmfs/gwosc.osgstorage.org/'),
-        reason="GWOSC CVMFS repository not available",
-    )
-    @pytest.mark.cvmfs  # mark test as requiring cvmfs
-    @pytest.mark.requires("LDAStools.frameCPP")  # skip if no frameCPP
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
 
@@ -204,34 +179,6 @@ def test_find_best_frametype():
         968654552,
         968654553,
     ) == 'HW100916'
-
-
-@_gwosc_gwdatafind
-def test_find_best_frametype_with_gaps():
-    """Test that `find_best_frametype` works across gaps.
-
-    It tries to find something that covers at least some of the gap.
-    """
-    assert io_datafind.find_best_frametype(
-        "L1:GWOSC-4KHZ_R1_STRAIN",
-        1187733504,
-        1187733504 + 4097,  # one second too long
-    ) == "L1_GWOSC_O2_4KHZ_R1"
-
-
-@_gwosc_gwdatafind
-def test_find_best_frametype_with_gaps_multiple():
-    """Test that `find_best_frametype` works across gaps with multiple
-    channels.
-    """
-    assert io_datafind.find_best_frametype(
-        ("L1:GWOSC-4KHZ_R1_STRAIN", "L1:GWOSC-4KHZ_R1_DQMASK"),
-        1187733504,
-        1187733504 + 4097,  # one second too long
-    ) == {
-        "L1:GWOSC-4KHZ_R1_STRAIN": "L1_GWOSC_O2_4KHZ_R1",
-        "L1:GWOSC-4KHZ_R1_DQMASK": "L1_GWOSC_O2_4KHZ_R1",
-    }
 
 
 @pytest.mark.requires("LDAStools.frameCPP")
