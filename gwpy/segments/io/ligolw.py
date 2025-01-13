@@ -33,11 +33,7 @@ from ...io.ligolw import (
     read_table,
     write_tables,
 )
-from ...io.registry import (
-    register_identifier,
-    register_reader,
-    register_writer,
-)
+from ...io.registry import default_registry
 from ...segments import (
     DataQualityDict,
     DataQualityFlag,
@@ -184,11 +180,11 @@ def write_ligolw(flags, target, attrs=None, **kwargs):
 # -- register -----------------------------------------------------------------
 
 # register methods for DataQualityDict
-register_reader("ligolw", DataQualityFlag, read_ligolw_flag)
-register_writer("ligolw", DataQualityFlag, write_ligolw)
-register_identifier("ligolw", DataQualityFlag, is_ligolw)
+default_registry.register_reader("ligolw", DataQualityFlag, read_ligolw_flag)
+default_registry.register_writer("ligolw", DataQualityFlag, write_ligolw)
+default_registry.register_identifier("ligolw", DataQualityFlag, is_ligolw)
 
 # register methods for DataQualityDict
-register_reader("ligolw", DataQualityDict, read_ligolw_dict)
-register_writer("ligolw", DataQualityDict, write_ligolw)
-register_identifier("ligolw", DataQualityDict, is_ligolw)
+default_registry.register_reader("ligolw", DataQualityDict, read_ligolw_dict)
+default_registry.register_writer("ligolw", DataQualityDict, write_ligolw)
+default_registry.register_identifier("ligolw", DataQualityDict, is_ligolw)
