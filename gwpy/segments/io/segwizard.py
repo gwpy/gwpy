@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -20,27 +21,36 @@
 
 import re
 
-from .. import (Segment, SegmentList)
-from ...io.registry import compat as compat_registry
+from ...io.registry import (
+    register_identifier,
+    register_reader,
+    register_writer,
+)
 from ...io.utils import (
     identify_factory,
     with_open,
 )
 from ...time import LIGOTimeGPS
+from .. import (
+    Segment,
+    SegmentList,
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-_FLOAT_PAT = r'([\d.+-eE]+)'
+_FLOAT_PAT = r"([\d.+-eE]+)"
 # simple two-column (gpsstart, gpsend)
 TWO_COL_REGEX = re.compile(
-    r'\A\s*{float}\s+{float}\s*\Z'.format(float=_FLOAT_PAT))
+    rf"\A\s*{_FLOAT_PAT}\s+{_FLOAT_PAT}\s*\Z",
+)
 # three column (gpsstart, gpsend, duration)
 THREE_COL_REGEX = re.compile(
-    r'\A\s*{float}\s+{float}\s+{float}\s*\Z'.format(float=_FLOAT_PAT))
+    rf"\A\s*{_FLOAT_PAT}\s+{_FLOAT_PAT}\s+{_FLOAT_PAT}\s*\Z",
+)
 # four column (index, gpsstart, gpsend, duration)
 FOUR_COL_REGEX = re.compile(
-    r'\A\s*([\d]+)\s+{float}\s+{float}\s+{float}\s*\Z'.format(
-        float=_FLOAT_PAT))
+    rf"\A\s*([\d]+)\s+{_FLOAT_PAT}\s+{_FLOAT_PAT}\s+{_FLOAT_PAT}\s*\Z",
+)
 
 
 # -- read ---------------------------------------------------------------------
@@ -75,7 +85,9 @@ def from_segwizard(source, gpstype=LIGOTimeGPS, strict=True):
     out = SegmentList()
     fmt_pat = None
     for line in source:
-        if line.startswith(('#', ';')):  # comment
+        if isinstance(line, bytes):
+            line = line.decode("utf-8")
+        if line.startswith(("#", ";")):  # comment
             continue
         # determine line format
         if fmt_pat is None:
@@ -93,7 +105,7 @@ def _line_format(line):
     for pat in (FOUR_COL_REGEX, THREE_COL_REGEX, TWO_COL_REGEX):
         if pat.match(line):
             return pat
-    raise ValueError("unable to parse segment from line {!r}".format(line))
+    raise ValueError(f"unable to parse segment from line '{line}'")
 
 
 def _format_segment(tokens, strict=True, gpstype=LIGOTimeGPS):
@@ -106,7 +118,7 @@ def _format_segment(tokens, strict=True, gpstype=LIGOTimeGPS):
     seg = Segment(gpstype(start), gpstype(end))
     if strict and not float(abs(seg)) == float(dur):
         raise ValueError(
-            "segment {0!r} has incorrect duration {1!r}".format(seg, dur),
+            f"segment {seg} has incorrect duration {dur}",
         )
     return seg
 
@@ -151,10 +163,10 @@ def to_segwizard(segs, target, header=True, coltype=LIGOTimeGPS):
 
 # -- register -----------------------------------------------------------------
 
-compat_registry.register_reader('segwizard', SegmentList, from_segwizard)
-compat_registry.register_writer('segwizard', SegmentList, to_segwizard)
-compat_registry.register_identifier(
-    'segwizard',
+register_reader("segwizard", SegmentList, from_segwizard)
+register_writer("segwizard", SegmentList, to_segwizard)
+register_identifier(
+    "segwizard",
     SegmentList,
-    identify_factory('txt', 'dat'),
+    identify_factory("txt", "dat"),
 )

@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,14 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/output routines for the `gwpy.segments` classes
+"""Input/output routines for the `gwpy.segments` classes.
 """
 
-from . import (  # pylint: disable=unused-import
-    ligolw,  # LIGO_LW XML
-    segwizard,  # LIGO SegWizard ASCII
-    hdf5,  # HDF5
-    json,  # segments-web.ligo.org JSON
+from . import (
+    hdf5,
+    json,
+    ligolw,
+    segwizard,
 )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

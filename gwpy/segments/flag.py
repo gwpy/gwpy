@@ -50,10 +50,15 @@ from gwosc import timeline
 from dqsegdb2.query import query_segments
 from dqsegdb2.utils import get_default_host
 
-from ..io.mp import read_multi as io_read_multi
-from ..io.registry import compat as compat_registry
+from ..io.registry import UnifiedReadWriteMethod
 from ..time import to_gps, LIGOTimeGPS
 from ..utils.misc import if_not_none
+from .connect import (
+    DataQualityDictRead,
+    DataQualityDictWrite,
+    DataQualityFlagRead,
+    DataQualityFlagWrite,
+)
 from .segments import Segment, SegmentList
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -348,6 +353,11 @@ class DataQualityFlag(object):
         """
         return abs(self.active - self.known) == 0
 
+    # -- i/o ------------------------------------
+
+    read = UnifiedReadWriteMethod(DataQualityFlagRead)
+    write = UnifiedReadWriteMethod(DataQualityFlagWrite)
+
     # -- classmethods ---------------------------
 
     @classmethod
@@ -498,73 +508,6 @@ class DataQualityFlag(object):
                    label=flag)
 
     @classmethod
-    def read(cls, source, *args, **kwargs):
-        """Read segments from file into a `DataQualityFlag`.
-
-        Parameters
-        ----------
-        filename : `str`
-            path of file to read
-
-        name : `str`, optional
-            name of flag to read from file, otherwise read all segments.
-
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        coltype : `type`, optional, default: `float`
-            datatype to force for segment times, only valid for
-            ``format='segwizard'``.
-
-        strict : `bool`, optional, default: `True`
-            require segment start and stop times match printed duration,
-            only valid for ``format='segwizard'``.
-
-        coalesce : `bool`, optional
-            if `True` coalesce the all segment lists before returning,
-            otherwise return exactly as contained in file(s).
-
-        nproc : `int`, optional, default: 1
-            number of CPUs to use for parallel reading of multiple files
-
-        verbose : `bool`, optional, default: `False`
-            print a progress bar showing read status
-
-        Returns
-        -------
-        dqflag : `DataQualityFlag`
-            formatted `DataQualityFlag` containing the active and known
-            segments read from file.
-
-        Raises
-        ------
-        IndexError
-            if ``source`` is an empty list
-
-        Notes
-        -----"""
-        if 'flag' in kwargs:  # pragma: no cover
-            warnings.warn('\'flag\' keyword was renamed \'name\', this '
-                          'warning will result in an error in the future')
-            kwargs.setdefault('name', kwargs.pop('flags'))
-        coalesce = kwargs.pop('coalesce', False)
-
-        def combiner(flags):
-            """Combine `DataQualityFlag` from each file into a single object
-            """
-            out = flags[0]
-            for flag in flags[1:]:
-                out.known += flag.known
-                out.active += flag.active
-            if coalesce:
-                return out.coalesce()
-            return out
-
-        return io_read_multi(combiner, cls, source, *args, **kwargs)
-
-    @classmethod
     def from_veto_def(cls, veto):
         """Define a `DataQualityFlag` from a `VetoDef`
 
@@ -584,13 +527,6 @@ class DataQualityFlag(object):
                    description=veto.comment, padding=pad)
 
     # -- methods --------------------------------
-
-    def write(self, target, *args, **kwargs):
-        """Write this `DataQualityFlag` to file
-
-        Notes
-        -----"""
-        return compat_registry.write(self, target, *args, **kwargs)
 
     def populate(self, source=DEFAULT_SEGMENT_SERVER, segments=None,
                  pad=True, **kwargs):
@@ -996,6 +932,11 @@ class DataQualityDict(OrderedDict):
     """
     _EntryClass = DataQualityFlag
 
+    # -- i/o ------------------------------------
+
+    read = UnifiedReadWriteMethod(DataQualityDictRead)
+    write = UnifiedReadWriteMethod(DataQualityDictWrite)
+
     # -- classmethods ---------------------------
 
     @classmethod
@@ -1089,80 +1030,6 @@ class DataQualityDict(OrderedDict):
 
     # alias for compatibility
     query = query_dqsegdb
-
-    @classmethod
-    def read(cls, source, names=None, format=None, **kwargs):
-        """Read segments from file into a `DataQualityDict`
-
-        Parameters
-        ----------
-        source : `str`
-            path of file to read
-
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        names : `list`, optional, default: read all names found
-            list of names to read, by default all names are read separately.
-
-        coalesce : `bool`, optional
-            if `True` coalesce the all segment lists before returning,
-            otherwise return exactly as contained in file(s).
-
-        nproc : `int`, optional, default: 1
-            number of CPUs to use for parallel reading of multiple files
-
-        verbose : `bool`, optional, default: `False`
-            print a progress bar showing read status
-
-        Returns
-        -------
-        flagdict : `DataQualityDict`
-            a new `DataQualityDict` of `DataQualityFlag` entries with
-            ``active`` and ``known`` segments seeded from the XML tables
-            in the given file.
-
-        Notes
-        -----"""
-        on_missing = kwargs.pop('on_missing', 'error')
-        coalesce = kwargs.pop('coalesce', False)
-
-        if 'flags' in kwargs:  # pragma: no cover
-            warnings.warn('\'flags\' keyword was renamed \'names\', this '
-                          'warning will result in an error in the future')
-            names = kwargs.pop('flags')
-
-        def combiner(inputs):
-            out = cls()
-
-            # check all names are contained
-            required = set(names or [])
-            found = set(name for dqdict in inputs for name in dqdict)
-            for name in required - found:  # validate all names are found once
-                msg = '{!r} not found in any input file'.format(name)
-                if on_missing == 'ignore':
-                    continue
-                if on_missing == 'warn':
-                    warnings.warn(msg)
-                else:
-                    raise ValueError(msg)
-
-            # combine flags
-            for dqdict in inputs:
-                for flag in dqdict:
-                    try:  # repeated occurence
-                        out[flag].known.extend(dqdict[flag].known)
-                        out[flag].active.extend(dqdict[flag].active)
-                    except KeyError:  # first occurence
-                        out[flag] = dqdict[flag]
-            if coalesce:
-                return out.coalesce()
-            return out
-
-        return io_read_multi(combiner, cls, source, names=names,
-                             format=format, on_missing='ignore', **kwargs)
 
     @classmethod
     def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
@@ -1406,13 +1273,6 @@ class DataQualityDict(OrderedDict):
         return segdeftab, segsumtab, segtab
 
     # -- methods --------------------------------
-
-    def write(self, target, *args, **kwargs):
-        """Write this `DataQualityDict` to file
-
-        Notes
-        -----"""
-        return compat_registry.write(self, target, *args, **kwargs)
 
     def coalesce(self):
         """Coalesce all segments lists in this `DataQualityDict`.

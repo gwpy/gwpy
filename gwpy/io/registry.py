@@ -157,7 +157,6 @@ class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
             kwargs,
         )
 
-    @wraps(astropy_registry.UnifiedIORegistry.register_identifier)
     def register_identifier(
         self,
         data_format,
@@ -171,6 +170,10 @@ class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
             _identify_with_list(identifier),
             force=force,
         )
+
+    register_identifier.__doc__ = (
+        astropy_registry.UnifiedIORegistry.register_identifier.__doc__
+    )
 
 
 REGISTRY = UnifiedIORegistry()

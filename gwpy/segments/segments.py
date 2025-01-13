@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -23,9 +24,12 @@ configuration.
 
 from igwn_segments import (segment, segmentlist, segmentlistdict)
 
-from ..io.mp import read_multi as io_read_multi
-from ..io.registry import compat as compat_registry
+from ..io.registry import UnifiedReadWriteMethod
 from ..utils.decorators import return_as
+from .connect import (
+    SegmentListRead,
+    SegmentListWrite,
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -161,65 +165,8 @@ class SegmentList(segmentlist):
 
     # -- i/o ------------------------------------
 
-    @classmethod
-    def read(cls, source, format=None, coalesce=False, **kwargs):
-        # pylint: disable=redefined-builtin
-        """Read segments from file into a `SegmentList`
-
-        Parameters
-        ----------
-        filename : `str`
-            path of file to read
-
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        coalesce : `bool`, optional
-            if `True` coalesce the segment list before returning,
-            otherwise return exactly as contained in file(s).
-
-        **kwargs
-            other keyword arguments depend on the format, see the online
-            documentation for details (:ref:`gwpy-segments-io`)
-
-        Returns
-        -------
-        segmentlist : `SegmentList`
-            `SegmentList` active and known segments read from file.
-
-        Raises
-        ------
-        IndexError
-            if ``source`` is an empty list
-
-        Notes
-        -----"""
-        def combiner(listofseglists):
-            """Combine `SegmentList` from each file into a single object
-            """
-            out = cls(seg for seglist in listofseglists for seg in seglist)
-            if coalesce:
-                return out.coalesce()
-            return out
-
-        return io_read_multi(combiner, cls, source, format=format, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `SegmentList` to a file
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format.
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        Notes
-        -----"""
-        return compat_registry.write(self, target, *args, **kwargs)
+    read = UnifiedReadWriteMethod(SegmentListRead)
+    write = UnifiedReadWriteMethod(SegmentListWrite)
 
 
 class SegmentListDict(segmentlistdict):
