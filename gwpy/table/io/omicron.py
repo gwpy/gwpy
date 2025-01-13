@@ -18,7 +18,7 @@
 """Read events from an Omicron-format ROOT file.
 """
 
-from ...io import registry
+from ...io.registry import compat as compat_registry
 from .. import EventTable
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -35,4 +35,4 @@ def table_from_omicron(source, *args, **kwargs):
     return EventTable.read(source, *args, format='root', **kwargs)
 
 
-registry.register_reader('root.omicron', EventTable, table_from_omicron)
+compat_registry.register_reader('root.omicron', EventTable, table_from_omicron)

@@ -22,11 +22,7 @@
 import json
 from typing import IO
 
-from ...io.registry import (
-    register_identifier,
-    register_reader,
-    register_writer,
-)
+from ...io.registry import default_registry
 from ...io.utils import (
     identify_factory,
     with_open,
@@ -104,6 +100,10 @@ def write_json_flag(
 
 # -- register ------------------------
 
-register_reader("json", DataQualityFlag, read_json_flag)
-register_writer("json", DataQualityFlag, write_json_flag)
-register_identifier("json", DataQualityFlag, identify_factory("json"))
+default_registry.register_reader("json", DataQualityFlag, read_json_flag)
+default_registry.register_writer("json", DataQualityFlag, write_json_flag)
+default_registry.register_identifier(
+    "json",
+    DataQualityFlag,
+    identify_factory("json"),
+)
