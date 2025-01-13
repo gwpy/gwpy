@@ -176,7 +176,7 @@ class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
     )
 
 
-REGISTRY = UnifiedIORegistry()
+default_registry = UnifiedIORegistry()
 
 
 class UnifiedRead(astropy_registry.UnifiedReadWrite):
@@ -187,7 +187,7 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
             instance,
             cls,
             "read",
-            registry=REGISTRY,
+            registry=default_registry,
         )
 
     def _read_single_file(
@@ -288,7 +288,7 @@ class UnifiedWrite(astropy_registry.UnifiedReadWrite):
             instance,
             cls,
             "write",
-            registry=REGISTRY,
+            registry=default_registry,
         )
 
     def __call__(
@@ -300,10 +300,3 @@ class UnifiedWrite(astropy_registry.UnifiedReadWrite):
         """
         instance = self._instance
         return self.registry.write(instance, *args, **kwargs)
-
-
-# -- registry functions
-
-register_reader = REGISTRY.register_reader
-register_writer = REGISTRY.register_writer
-register_identifier = REGISTRY.register_identifier
