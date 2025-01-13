@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -18,18 +19,26 @@
 """Tests for :mod:`gwpy.segments.segments`
 """
 
-import pytest
-
 import h5py
-
+import pytest
 from astropy.table import Table
 
+from ...testing.errors import pytest_skip_flaky_network
 from ...testing.utils import (
+    TEST_DATA_PATH,
     assert_segmentlist_equal,
     assert_table_equal
 )
 from ...time import LIGOTimeGPS
 from .. import (Segment, SegmentList)
+
+TEST_SEGWIZARD_FILE = TEST_DATA_PATH / "X1-GWPY_TEST_SEGMENTS-0-10.txt"
+TEST_SEGWIZARD_URI = (
+    "https://gitlab.com/gwpy/gwpy/-/raw/v3.0.10/"
+    + TEST_SEGWIZARD_FILE.relative_to(
+        TEST_DATA_PATH.parent.parent.parent,
+    ).as_posix()
+)
 
 
 # -- Segment ------------------------------------------------------------------
@@ -159,3 +168,11 @@ class TestSegmentList(object):
         sl2 = self.TEST_CLASS.read(tmp, gpstype=float)
         assert_segmentlist_equal(sl2, segmentlist)
         assert isinstance(sl2[0][0], float)
+
+    @pytest_skip_flaky_network
+    def test_read_remote(self):
+        """Test that reading directly from a remote URI works.
+        """
+        local = self.TEST_CLASS.read(TEST_SEGWIZARD_FILE)
+        remote = self.TEST_CLASS.read(TEST_SEGWIZARD_URI, cache=False)
+        assert_segmentlist_equal(local, remote)
