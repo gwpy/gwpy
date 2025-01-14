@@ -148,6 +148,7 @@ precision = 1
 # -- mypy
 
 [tool.mypy]
+check_untyped_defs = true
 exclude = [
   "^docs/",
   "^examples/",
