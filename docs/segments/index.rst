@@ -25,7 +25,7 @@ The :class:`Segment` and :class:`SegmentList` classes
 
 GWpy provides a number of classes for generating and manipulating such
 segments, enhancing the functionality provided by the (excellent)
-:mod:`ligo.segments` package.
+|igwn-segments|_ package.
 All credits for their usefulness go to the authors of that package.
 
 These basic objects are as follows:

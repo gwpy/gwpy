@@ -10,43 +10,100 @@ spec:
       default: "."
       description: "Project directory to scan"
       type: string
-    flake8_requirements:
+    requirements:
       default: ""
-      description: "Extra packages to install alongside flake8"
+      description: "Extra requirements to install with pip"
+      type: string
+    ruff_options:
+      default: ""
+      description: "Extra options to pass to ruff check"
+      type: string
+    mypy_options:
+      default: ""
+      description: "Extra options to pass to mypy"
       type: string
 
 ---
 
 include:
-  - component: gitlab.com/components/sast/sast@2
+  - component: gitlab.com/components/sast/sast@~latest
     inputs:
       stage: $[[ inputs.stage ]]
+      run_advanced_sast: true
+    rules:
+      - if: '$GITLAB_FEATURES =~ /\bsast_advanced\b/'
+  - component: gitlab.com/components/sast/sast@~latest
+    inputs:
+      stage: $[[ inputs.stage ]]
+      run_advanced_sast: false
+    rules:
+      - if: '$GITLAB_FEATURES !~ /\bsast_advanced\b/'
   - local: .gitlab/ci/rules.yml
 
 .qa:
-  extends: .rules_full_test
+  extends: .rules_qa_security
   stage: $[[ inputs.stage ]]
   needs: []
+
+gitlab-advanced-sast:
+  needs: !reference [.qa, needs]
+  rules:
+    # skip if we just can't run advanced sast
+    - if: '$GITLAB_FEATURES !~ /\bsast_advanced\b/'
+      when: never
+    - !reference [.qa, rules]
 
 semgrep-sast:
-  # NOTE: can't use 'extends' when overwriting job config
-  stage: $[[ inputs.stage ]]
-  needs: []
-  rules: !reference [.qa, rules]
+  needs: !reference [.qa, needs]
+  rules:
+    # skip if we can run advanced sast
+    - if: '$GITLAB_FEATURES =~ /\bsast_advanced\b/'
+      when: never
+    - !reference [.qa, rules]
 
-flake8:
+ruff:
   extends: .qa
   image: python
   script:
-    - python -m pip install flake8 flake8-gl-codeclimate $[[ inputs.flake8_requirements ]]
-    - python -m flake8
-        $[[ inputs.project_dir ]]
-        --exit-zero
-    - python -m flake8
-        $[[ inputs.project_dir ]]
-        --exit-zero
-        --format gl-codeclimate
-        --output-file flake8.json
+    - python -m pip install
+          ruff
+          $[[ inputs.requirements ]]
+    - python -m ruff check
+          $[[ inputs.ruff_options ]]
+          $[[ inputs.project_dir ]]
+          --exit-zero
+    - python -m ruff check
+          $[[ inputs.ruff_options ]]
+          $[[ inputs.project_dir ]]
+          --exit-zero
+          --output-format gitlab
+          --output-file gl-ruff.json
   artifacts:
     reports:
-      codequality: flake8.json
+      codequality: gl-ruff.json
+
+mypy:
+  extends: .qa
+  image: python
+  script:
+    - python -m pip install
+          mypy
+          mypy-gitlab-code-quality
+    # run mypy and print to console
+    - python -m mypy
+          $[[ inputs.mypy_options ]]
+          --install-types
+          --non-interactive
+          $[[ inputs.project_dir ]]
+      || exitcode="$?"
+    # run mypy again and format as code quality report
+    - python -m mypy
+          $[[ inputs.mypy_options ]]
+          --no-error-summary
+          $[[ inputs.project_dir ]]
+      | mypy-gitlab-code-quality > gl-mypy-code-quality.json || true
+    # propagate fatal exitcode
+    - if [ "${exitcode:-0}" -gt 1 ]; then exit ${exitcode}; fi
+  artifacts:
+    reports:
+      codequality: gl-mypy-code-quality.json

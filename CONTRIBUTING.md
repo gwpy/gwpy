@@ -130,7 +130,7 @@ branch:
 
 ### Python compatibility
 
-**GWpy code must be compatible with Python >= 3.8.**
+**GWpy code must be compatible with Python >= 3.9.**
 
 ### Style
 
@@ -138,11 +138,11 @@ This package follows [PEP 8](https://www.python.org/dev/peps/pep-0008/),
 and all code should adhere to that as far as is reasonable.
 
 The first stage in the automated testing of merge requests is a job that runs
-the [`flake8`](http://flake8.pycqa.org) linter, which checks the style of code
+the [Ruff](https://docs.astral.sh/ruff/) linter, which checks the style of code
 in the repo. You can run this locally before committing changes via:
 
 ```bash
-python3 -m flake8
+python -m ruff .
 ```
 
 ### Testing

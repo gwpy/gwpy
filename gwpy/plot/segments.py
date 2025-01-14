@@ -27,7 +27,7 @@ from matplotlib.projections import register_projection
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 
-import ligo.segments
+import igwn_segments
 
 from .axes import Axes
 from .colors import tint
@@ -44,10 +44,10 @@ class SegmentAxes(Axes):
     This `SegmentAxes` provides custom methods for displaying any of
 
     - `~gwpy.segments.DataQualityFlag`
-    - `~gwpy.segments.Segment` or :class:`ligo.segments.segment`
-    - `~gwpy.segments.SegmentList` or :class:`ligo.segments.segmentlist`
+    - `~gwpy.segments.Segment` or :class:`igwn_segments.segment`
+    - `~gwpy.segments.SegmentList` or :class:`igwn_segments.segmentlist`
     - `~gwpy.segments.SegmentListDict` or
-      :class:`ligo.segments.segmentlistdict`
+      :class:`igwn_segments.segmentlistdict`
 
     Parameters
     ----------
@@ -84,9 +84,9 @@ class SegmentAxes(Axes):
             return self.plot_dict
         if isinstance(obj, DataQualityFlag):
             return self.plot_flag
-        if isinstance(obj, ligo.segments.segmentlistdict):
+        if isinstance(obj, igwn_segments.segmentlistdict):
             return self.plot_segmentlistdict
-        if isinstance(obj, ligo.segments.segmentlist):
+        if isinstance(obj, igwn_segments.segmentlist):
             return self.plot_segmentlist
         raise TypeError(
             f"no known {type(self).__name__}.plot_xxx method "
@@ -106,7 +106,7 @@ class SegmentAxes(Axes):
                 - `~gwpy.segments.SegmentList`
                 - `~gwpy.segments.SegmentListDict`
 
-            or equivalent types upstream from :mod:`ligo.segments`
+            or equivalent types upstream from :mod:`igwn_segments`
 
         kwargs
             keyword arguments applicable to `~matplotib.axes.Axes.plot`
@@ -442,7 +442,7 @@ class SegmentFormatter(Formatter):
         for patch in self.axis.axes.patches:
             if not patch.get_label() or patch.get_label() == '_nolegend_':
                 continue
-            if t in ligo.segments.segment(*patch.get_bbox().intervaly):
+            if t in igwn_segments.segment(*patch.get_bbox().intervaly):
                 return patch.get_label()
         return ''
 

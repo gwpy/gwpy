@@ -16,7 +16,7 @@ spec:
       description: "Extra options to pass to pytest"
       type: string
     minimum_python_version:
-      default: "3.8"
+      default: "3.9"
       description: "Python version for minimum dependency compatibility check"
       type: string
 
@@ -45,6 +45,14 @@ include:
       pip_options: "--upgrade --upgrade-strategy=eager --pre"
       pytest_options: $[[ inputs.pytest_options ]]
 
+  # configure dependency scanning
+  - component: gitlab.com/components/dependency-scanning/main@~latest
+    inputs:
+      # dependency-scanning needs to run _after_ the test job that generated
+      # the requirements.txt file
+      stage: $[[ inputs.stage ]]
+      job_name: "dependency-scanning"
+
 .compat_rules:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[skip compat\]/'
@@ -70,10 +78,28 @@ compat_minimum:
     - sed -i -E
         -e 's/requires-python = "==/requires-python = ">=/'
         pyproject.toml
+    # use pip-compile to generate requirements.txt for dependency scanning
+    - python -m venv .piptools
+    - .piptools/bin/python -m pip install pip-tools
+    - .piptools/bin/pip-compile
+        --extra test
+        --output-file requirements.txt
+        --verbose
+    - rm -rf .piptools
+  artifacts:
+    paths:
+      - .coverage*
+      - requirements.txt
 
 # test against latest/pre-release versions
 compat_experimental:
   extends:
     - .compat_experimental
     - .compat_rules
-  image: python:3
+  image: python:3.12
+
+# run dependency scanning against minimum specified requirements
+# (most likely to highlight issues)
+dependency-scanning:
+  needs: ["compat_minimum"]
+  rules: !reference [.compat_rules, rules]

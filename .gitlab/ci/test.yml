@@ -21,7 +21,7 @@ include:
   - local: .gitlab/ci/compatibility.yml
     inputs:
       stage: test
-      minimum_python_version: "3.8"
+      minimum_python_version: "3.9"
       pytest_options: "--color yes --cov gwpy --numprocesses auto gwpy/"
 
   # measure coverage over all jobs
@@ -35,7 +35,6 @@ include:
   parallel:
     matrix:
       - PYTHON_VERSION:
-          - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
@@ -49,6 +48,7 @@ include:
       - PYTHON_VERSION:
           - "3.10"
           - "3.11"
+          - "3.12"
 
 .brew:
   extends: .macos
@@ -115,6 +115,12 @@ python_test_macos:
   rules:
     - !reference [.macos, rules]
     - !reference [.rules_full_test, rules]
+  parallel:
+    matrix:
+      - PYTHON_VERSION:
+          - "3.10"
+          - "3.11"
+          #- "3.12" <-- cannot build ligo-segments on macOS
   before_script:
     # install Python using Homebrew
     - brew install python@${PYTHON_VERSION}
@@ -195,8 +201,6 @@ conda_test_linux:
     - !reference [.rules_full_test, rules]
   image: condaforge/miniforge3
   before_script:
-    # configure CVMFS
-    - bash -ex .gitlab/ci/init-cvmfs.sh
     # init conda
     - . $(conda info --base)/etc/profile.d/conda.sh
     # create test environment using pip2conda

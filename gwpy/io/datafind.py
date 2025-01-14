@@ -22,7 +22,7 @@ Automatic discovery of file paths for both LIGO and Virgo index solutions
 (``gwdatafind`` or ``ffl``, respectvely) is supported.
 
 The functions in this module are highly reliant on having local access to
-files (either directly, or via NFS, or CVMFS).
+files (either directly, or via NFS/fuse).
 
 Data discovery using the DataFind service requires the `gwdatafind` Python
 package (a dependency of ``gwpy``), and either the ``GW_DATAFIND_SERVER``
@@ -45,7 +45,7 @@ from unittest import mock
 
 import gwdatafind
 
-from ligo.segments import segment as LigoSegment
+from igwn_segments import segment as LigoSegment
 
 from ..time import to_gps
 from . import ffldatafind

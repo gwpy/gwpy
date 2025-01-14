@@ -32,7 +32,7 @@ from collections import defaultdict
 from functools import lru_cache
 from warnings import warn
 
-from ligo.segments import (
+from igwn_segments import (
     segment,
     segmentlist,
 )

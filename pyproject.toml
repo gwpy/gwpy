@@ -24,7 +24,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -34,7 +33,7 @@ classifiers = [
 ]
 
 # requirements
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
   "astropy >=4.3.0",
   "dateparser >=1.1.4",
@@ -42,14 +41,15 @@ dependencies = [
   "gwdatafind >=1.1.0",
   "gwosc >=0.5.3",
   "h5py >=3.0.0",
-  "ligo-segments >=1.0.0",
+  "igwn-segments >=2.0.0",
   "ligotimegps >=1.2.1",
   "matplotlib >=3.3.0",
-  "numpy >=1.19",
+  "numpy >=1.19.5",
+  "packaging >=24.1",
   "python-dateutil",
   "requests >=2.20.0",
   "scipy >=1.6.0",
-  "tqdm >=4.10.0",
+  "tqdm >=4.52.0",
 ]
 
 # dynamic properties set by tools
@@ -99,7 +99,7 @@ dev = [
 conda = [
   "lxml !=4.9.1 ; sys_platform == 'win32'",
   "python-framel >=8.40.1,!=8.46.0",
-  "python-ldas-tools-framecpp ; sys_platform != 'win32'",
+  "python-ldas-tools-framecpp ; sys_platform != 'win32' and python_version<'3.12'",
   "python-nds2-client",
 ]
 
@@ -144,6 +144,15 @@ omit = [
 # print report with one decimal point
 precision = 1
 
+# -- mypy
+
+[tool.mypy]
+exclude = [
+  "^docs/",
+  "^examples/",
+]
+ignore_missing_imports = true
+
 # -- pytest
 
 [tool.pytest.ini_options]
@@ -162,6 +171,42 @@ filterwarnings = [
   "ignore:distutils Version::distutils",  # actually setuptools._distutils
 ]
 xfail_strict = true
+
+# -- ruff
+
+[tool.ruff.lint]
+select = [
+  # mccabe
+  "C90",
+  # pycodestyle errors
+  "E",
+  # flake8-executable
+  "EXE",
+  # pyflakes
+  "F",
+  # isort
+  "I",
+  # pep8-naming
+  "N",
+  # pyupgrade
+  "UP",
+  # pycodestyle warnings
+  "W",
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-wrap-aliases = true
+
+[tool.ruff.lint.per-file-ignores]
+# ignore unused import in __init__
+"__init__.py" = [
+  "F401",
+]
+# ignore import location in example scripts
+"examples/**.py" = [
+  "E402",
+]
 
 # -- rstcheck
 

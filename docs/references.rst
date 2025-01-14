@@ -3,9 +3,6 @@
 .. |astropy| replace:: `astropy`
 .. _astropy: http://www.astropy.org/
 
-.. |CVMFS| replace:: CVMFS
-.. _CVMFS: https://cvmfs.readthedocs.io/
-
 .. |dateparser| replace:: `dateparser`
 .. _dateparser: https://dateparser.readthedocs.io
 
@@ -24,8 +21,8 @@
 .. |h5py| replace:: `h5py`
 .. _h5py: http://docs.h5py.org/en/latest/
 
-.. |ligo-segments| replace:: `ligo-segments`
-.. _ligo-segments: https://lscsoft.docs.ligo.org/ligo-segments/
+.. |igwn-segments| replace:: `igwn-segments`
+.. _igwn-segments: https://igwn-segments.readthedocs.io/
 
 .. |ligotimegps| replace:: `ligotimegps`
 .. _ligotimegps: https://github.com/gwpy/ligotimegps/
@@ -126,6 +123,12 @@
 
 .. |LIGO-T050017| replace:: LIGO-T050017
 .. _LIGO-T050017: https://dcc.ligo.org/LIGO-T050017/public
+
+.. |OSDF| replace:: OSDF
+.. _OSDF: https://osg-htc.org/services/osdf.html
+
+.. |OSDFl| replace:: the Open Science Data Federation (OSDF)
+.. _OSDF: https://osg-htc.org/services/osdf.html
 
 .. -- Event science summaries -------------------
 
