@@ -219,6 +219,10 @@ force-wrap-aliases = true
 "examples/**.py" = [
   "E402",
 ]
+# ignore unused imoports in typing.py helper module
+"gwpy/typing.py" = [
+  "F401",  # unused-import
+]
 
 # -- rstcheck
 
