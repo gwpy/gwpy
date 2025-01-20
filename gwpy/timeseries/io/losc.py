@@ -243,8 +243,8 @@ def read_gwosc_hdf5_state(
     start=None,
     end=None,
     copy=False,
-    dataset_name="DQmask",
-    maskset_name="DQDescriptions",
+    bits_dataset="DQmask",
+    def_dataset="DQDescriptions",
     name="Data quality"
 ):
     """Read a `StateVector` from a GWOSC-format HDF file.
@@ -266,10 +266,10 @@ def read_gwosc_hdf5_state(
     copy : `bool`, default: `False`
         create a fresh-memory copy of the underlying array
 
-    dataset_name : `str`
+    bits_dataset : `str`
         HDF5 dataset where to read the bits
 
-    maskset_name : `str`
+    def_dataset : `str`
         HDF5 dataset where to read the definition of each bits
 
     name : `str`
@@ -281,21 +281,21 @@ def read_gwosc_hdf5_state(
         a new `StateVector` containing the data read from disk
     """
     # find data
-    dataset = io_hdf5.find_dataset(f, "%s/%s" % (path, dataset_name))
-    maskset = io_hdf5.find_dataset(f, "%s/%s" % (path, maskset_name))
+    bits_ds = io_hdf5.find_dataset(f, "%s/%s" % (path, bits_dataset))
+    def_ds = io_hdf5.find_dataset(f, "%s/%s" % (path, def_dataset))
     # read data
-    nddata = dataset[()]
-    bits = [bytes.decode(bytes(b), "utf-8") for b in maskset[()]]
+    bits = bits_ds[()]
+    bit_def = [bytes.decode(bytes(b), "utf-8") for b in def_ds[()]]
     # read metadata
-    epoch = dataset.attrs["Xstart"]
+    epoch = bits_ds.attrs["Xstart"]
     try:
-        dt = dataset.attrs["Xspacing"]
+        dt = bits_ds.attrs["Xspacing"]
     except KeyError:
         dt = Quantity(1, "s")
     else:
-        xunit = parse_unit(dataset.attrs["Xunits"])
+        xunit = parse_unit(bits_ds.attrs["Xunits"])
         dt = Quantity(dt, xunit)
-    return StateVector(nddata, bits=bits, t0=epoch, name=name,
+    return StateVector(bits, bits=bit_def, t0=epoch, name=name,
                        dx=dt, copy=copy).crop(start=start, end=end)
 
 
