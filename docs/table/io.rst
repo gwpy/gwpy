@@ -138,8 +138,8 @@ Filtered queries
 ================
 
 The columns returned can be selected using the ``column`` keyword,
-and mathematical selection filters can be applied on-the-fly
-using the ``selection`` keyword:
+and mathematical condition filters can be applied on-the-fly
+using the ``where`` keyword:
 
 .. code-block:: python
    :name: gwpy-table-io-fetch_open_data-filtered
@@ -147,7 +147,7 @@ using the ``selection`` keyword:
 
    >>> t = EventTable.fetch_open_data(
    ...     "GWTC-2",
-   ...     selection="mass_1_source < 4",
+   ...     where="mass_1_source < 4",
    ...     columns=["name", "mass_1_source", "mass_2_source", "luminosity_distance"],
    ... )
    >>> print(t)
@@ -183,9 +183,9 @@ directly:
 
    >>> from gwpy.table import GravitySpyTable
    >>> blips = GravitySpyTable.fetch(
-   ...     "gravityspy",
-   ...     "glitches",
-   ...     selection="Label=Blip",
+   ...     source="gravityspy",
+   ...     tablename="glitches",
+   ...     where="Label=Blip",
    ... )
 
 .. warning::

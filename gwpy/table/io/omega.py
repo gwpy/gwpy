@@ -22,76 +22,80 @@
 import re
 
 from astropy.io.ascii import core
+from astropy.io.registry import (
+    get_reader as astropy_get_reader,
+    get_writer as astropy_get_writer,
+)
 
-from ...io.registry import default_registry
 from .. import (
     EventTable,
     Table,
 )
-from .utils import decorate_registered_reader
+from .utils import read_with_columns_and_where
 
 
 class OmegaHeader(core.BaseHeader):
     """Parser for Omega ASCII header
     """
-    def get_cols(self, lines):
-        """Initialize Column objects from a multi-line ASCII header
+    def get_cols(self, lines: list[str]):
+        """Initialize Column objects from a multi-line ASCII header.
 
         Parameters
         ----------
-        lines : `list`
-            List of table lines
+        lines : `list` or `str`
+            List of table lines.
         """
-        re_name_def = re.compile(r'^\s*%\s+(?P<colname>\w+)')
+        re_name_def = re.compile(r"^\s*%\s+(?P<colname>\w+)")
         self.names = []
         for line in lines:
             if not line:  # ignore empty lines in header (windows)
                 continue
-            if not line.startswith('%'):  # end of header lines
+            if not line.startswith("%"):  # end of header lines
                 break
             match = re_name_def.search(line)
             if match:
-                self.names.append(match.group('colname'))
+                self.names.append(match.group("colname"))
 
         if not self.names:
             raise core.InconsistentTableError(
-                'No column names found in Omega header')
+                "No column names found in Omega header",
+            )
 
-        self.cols = []  # pylint: disable=attribute-defined-outside-init
+        self.cols = []
         for name in self.names:
             col = core.Column(name=name)
             self.cols.append(col)
 
     def write(self, lines):
         for name in self.colnames:
-            lines.append('%% %s' % name)
+            lines.append(f"% {name}")
 
 
 class OmegaData(core.BaseData):
     """Parser for Omega ASCII data
     """
-    comment = '%'
+    comment = "%"
 
 
 class Omega(core.BaseReader):
-    """Read an Omega file
+    """Read an Omega file.
     """
-    _format_name = 'omega'
+    _format_name = "omega"
     _io_registry_can_write = True
-    _description = 'Omega format table'
+    _description = "Omega format table"
 
     header_class = OmegaHeader
     data_class = OmegaData
 
 
 # register for EventTable
-# (to populate that object's docstring)
-default_registry.register_reader(
+EventTable.read.registry.register_reader(
     "ascii.omega",
     EventTable,
-    default_registry.get_reader("ascii.omega", Table),
+    read_with_columns_and_where(astropy_get_reader("ascii.omega", Table)),
 )
-decorate_registered_reader(
+EventTable.write.registry.register_writer(
     "ascii.omega",
     EventTable,
+    astropy_get_writer("ascii.omega", Table),
 )

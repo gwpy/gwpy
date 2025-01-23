@@ -17,213 +17,298 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from the GstLAL online GW search
+"""Read events from the GstLAL online GW search.
 """
 
+from __future__ import annotations
+
 import re
+import typing
 from os.path import basename
 
 from astropy.table import join
 
 from ...io.ligolw import is_ligolw
-from ...io.registry import default_registry
 from .. import EventTable
 from .ligolw import read_table
-from .pycbc import get_mchirp
+from .utils import (
+    DYNAMIC_COLUMN_FUNC,
+    DYNAMIC_COLUMN_INPUT,
+    dynamic_columns,
+)
 
-__author__ = 'Derk Davis <derek.davis@ligo.org>'
-__credits__ = 'Patrick Godwin <patrick.godwin@ligo.org>'
+if typing.TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
+    from typing import IO
 
-GSTLAL_FORMAT = 'ligolw.gstlal'
-GSTLAL_SNGL_FORMAT = 'ligolw.gstlal.sngl'
-GSTLAL_COINC_FORMAT = 'ligolw.gstlal.coinc'
+    from astropy.table import (
+        Column,
+        Table,
+    )
+    from ligo.lw.ligolw import Document
 
-GSTLAL_FILENAME = re.compile('([A-Z][0-9])+-LLOID-[0-9.]+-[0-9.]+.xml.gz')
+__author__ = "Derk Davis <derek.davis@ligo.org>"
+__credits__ = "Patrick Godwin <patrick.godwin@ligo.org>"
 
+GSTLAL_FORMAT = "ligolw.gstlal"
+GSTLAL_SNGL_FORMAT = "ligolw.gstlal.sngl"
+GSTLAL_COINC_FORMAT = "ligolw.gstlal.coinc"
+
+GSTLAL_FILENAME = re.compile("([A-Z][0-9])+-LLOID-[0-9.]+-[0-9.]+.xml.gz")
+
+
+# -- identify ------------------------
+
+def identify_gstlal(
+    origin: str,
+    filepath: str | Path | None,
+    fileobj: IO | None,
+    *args,
+    **kwargs,
+) -> bool:
+    """Identify a GstLAL file as a ligolw file with the correct name.
+    """
+    return (
+        is_ligolw(origin, filepath, fileobj, *args, **kwargs)
+        and (
+            filepath is not None
+            and GSTLAL_FILENAME.match(basename(filepath))
+        )
+    )
+
+
+# -- read ----------------------------
 
 # singles format
-def read_gstlal_sngl(source, **kwargs):
-    """Read a `sngl_inspiral` table from one or more GstLAL LIGO_LW XML files
+def read_gstlal_sngl(
+    source: str | Path | IO | Document | list[str | Path | IO],
+    columns: list[str] | None = None,
+    tablename: str = "sngl_inspiral",
+    **kwargs,
+) -> Table:
+    """Read a `sngl_inspiral` table from one or more GstLAL LIGO_LW XML files.
 
-    source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
-        one or more open files, file paths, or LIGO_LW `Document` objects
+    source : `file`, `str`, `~ligo.lw.ligolw.Document`, `list`
+        One or more open files or file paths, or a single LIGO_LW ``Document``.
 
-    **kwargs
-        keyword arguments for the read, or conversion functions
+    kwargs
+        Other keyword arguments are passed to `Table.read(format="ligolw")`.
 
     See also
     --------
     gwpy.io.ligolw.read_table
-        for details of keyword arguments for the read operation
+        For details of keyword arguments for the read operation.
+
     gwpy.table.io.ligolw.to_astropy_table
-        for details of keyword arguments for the conversion operation
+        for details of keyword arguments for the conversion operation.
     """
     from ligo.lw import lsctables
-    extra_cols = []
-    derived_cols = []
-    val_col = lsctables.TableByName['sngl_inspiral'].validcolumns
-    if 'columns' in kwargs:
-        for name in kwargs['columns'].copy():
-            if name in GET_COLUMN:
-                derived_cols.append(name)
-                kwargs['columns'].remove(name)
-                required_cols = GET_COLUMN_EXTRA[name]
-                missing_cols = [c for c in required_cols
-                                if c not in kwargs['columns']]
-                for r_col in missing_cols:
-                    kwargs['columns'].append(r_col)
-                    extra_cols.append(r_col)
-            elif name not in val_col:
-                name_list = list(val_col.keys())+list(GET_COLUMN.keys())
-                raise ValueError(f"'{name}' is not a valid column name. "
-                                 f"Valid column names: {name_list}")
-    events = read_table(source, tablename='sngl_inspiral', **kwargs)
-    for col_name in derived_cols:
-        col_data = GET_COLUMN[col_name](events)
-        events.add_column(col_data, name=col_name)
-    for col_name in extra_cols:
-        events.remove_column(col_name)
+
+    # handle column selection
+    read_cols, dynamic_cols = dynamic_columns(
+        columns,
+        lsctables.TableByName[tablename].validcolumns,
+        GET_COLUMN_EXTRA,
+    )
+
+    # read the table
+    events = read_table(
+        source,
+        tablename=tablename,
+        columns=read_cols or None,
+        **kwargs,
+    )
+
+    if dynamic_cols:
+        # generate requested derived columns on-the-fly
+        for col_name in dynamic_cols:
+            col_data = GET_COLUMN[col_name](events)
+            events.add_column(col_data, name=col_name)
+        # remove columns that were only added to generate a derived column
+        for col_name in (read_cols or set()) - dynamic_cols:
+            events.remove_column(col_name)
+
     return events
 
 
 # coinc format
-def read_gstlal_coinc(source, **kwargs):
+def read_gstlal_coinc(
+    source: str | Path | IO | Document | list[str | Path | IO],
+    columns: list[str] | None = None,
+    **kwargs,
+) -> Table:
     """Read a `Table` containing coincident event information
-    from one or more GstLAL LIGO_LW XML files
+    from one or more GstLAL LIGO_LW XML files.
 
-    source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
-        one or more open files, file paths, or LIGO_LW `Document` objects
+    Parameters
+    ----------
+    source : `file`, `str`, `~ligo.lw.ligolw.Document`, `list`
+        One or more open files or file paths, or a single LIGO_LW ``Document``.
 
-    **kwargs
-        keyword arguments for the read, or conversion functions
+    kwargs
+        Other keyword arguments are passed to `Table.read(format="ligolw")`.
 
     See also
     --------
     gwpy.io.ligolw.read_table
-        for details of keyword arguments for the read operation
+        For details of keyword arguments for the read operation.
+
     gwpy.table.io.ligolw.to_astropy_table
-        for details of keyword arguments for the conversion operation
+        for details of keyword arguments for the conversion operation.
     """
-    from ligo.lw import lsctables
-    extra_cols = []
-    if 'columns' in kwargs:
-        columns = kwargs['columns']
-        kwargs.pop('columns')
-        val_col_inspiral = lsctables.TableByName['coinc_inspiral'].validcolumns
-        val_col_event = lsctables.TableByName['coinc_event'].validcolumns
+    from ligo.lw.lsctables import TableByName
+    extra_cols = set()
+
+    if columns:
+        # if columns were given, separate them into coinc_inspiral and
+        # coinc_event columns
+        columns = set(columns)
+        val_col_inspiral = set(TableByName["coinc_inspiral"].validcolumns)
+        val_col_event = set(TableByName["coinc_event"].validcolumns)
         for name in columns:
-            if (name not in val_col_inspiral) and (name not in val_col_event):
-                name_list = list(val_col_inspiral.keys()) + \
-                    list(val_col_event.keys())
-                raise ValueError(f"'{name}' is not a valid column name. "
-                                 f"Valid column names: {name_list}")
-        if 'coinc_event_id' not in columns:
-            columns.append('coinc_event_id')
-            extra_cols.append('coinc_event_id')
-        inspiral_cols = [col for col in columns if col in val_col_inspiral]
-        event_cols = [col for col in columns if col in val_col_event]
-        inspiral_cols.append('coinc_event_id')
-        coinc_inspiral = read_table(source, tablename='coinc_inspiral',
-                                    columns=inspiral_cols, **kwargs)
-        coinc_event = read_table(source, tablename='coinc_event',
-                                 columns=event_cols, **kwargs)
+            if name not in (valid := val_col_inspiral | val_col_event):
+                raise ValueError(
+                    f"'{name}' is not a valid column name. "
+                    f"Valid column names: '{', '.join(valid)}'",
+                )
+        if "coinc_event_id" not in columns:
+            columns.add("coinc_event_id")
+            extra_cols.add("coinc_event_id")
+        inspiral_cols = columns & val_col_inspiral
+        inspiral_cols.add("coinc_event_id")
+        event_cols = columns & val_col_event
     else:
-        coinc_inspiral = read_table(source, tablename='coinc_inspiral',
-                                    **kwargs)
-        coinc_event = read_table(source, tablename='coinc_event', **kwargs)
-    events = join(coinc_inspiral, coinc_event, keys="coinc_event_id",
-                  metadata_conflicts='silent')
-    events.meta['tablename'] = 'gstlal_coinc_inspiral'
+        inspiral_cols = None
+        event_cols = None
+
+    # read tables
+    coinc_inspiral = read_table(
+        source,
+        tablename="coinc_inspiral",
+        columns=inspiral_cols,
+        **kwargs,
+    )
+    coinc_event = read_table(
+        source,
+        tablename="coinc_event",
+        columns=event_cols,
+        **kwargs,
+    )
+
+    # join events based on coincs
+    events = join(
+        coinc_inspiral,
+        coinc_event,
+        keys="coinc_event_id",
+        metadata_conflicts="silent",
+    )
+    events.meta["tablename"] = "gstlal_coinc_inspiral"
+
+    # remove extra columns that we had to read but the user didn't ask for
     for col_name in extra_cols:
         events.remove_column(col_name)
+
     return events
 
 
 # combined format
-def read_gstlal(source, triggers='sngl', **kwargs):
-    """Read a `Table` from one or more GstLAL LIGO_LW XML files
+def read_gstlal(
+    source: str | Path | IO | Document | list[str | Path | IO],
+    triggers: str = "sngl",
+    **kwargs,
+) -> Table:
+    """Read a `Table` from one or more GstLAL LIGO_LW XML files.
 
-    source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
-        one or more open files, file paths, or LIGO_LW `Document` objects
+    source : `file`, `str`, `~ligo.lw.ligolw.Document`, `list`
+        One or more open files or file paths, or a single LIGO_LW ``Document``.
 
     triggers : `str`, optional
-        the `Name` of the relevant `Table` to read, if not given a table will
-        be returned if only one exists in the document(s).
-        'sngl' for single-detector trigger information,
-        'coinc' for coincident trigger information
+        One of
 
-    **kwargs
-        keyword arguments for the read, or conversion functions
+        "sngl"
+            For single-detector trigger information.
+
+        "coinc"
+            For coincident trigger information.
+
+    kwargs
+        Other keyword arguments are passed to `Table.read(format="ligolw")`.
 
     See also
     --------
-    gwpy.io.ligolw.read_table
-        for details of keyword arguments for the read operation
-    gwpy.table.io.ligolw.to_astropy_table
-        for details of keyword arguments for the conversion operation
+    gwpy.table.io.gstlal.read_gstlal_sngl
+    gwpy.table.io.gstlal.read_gstlal_coinc
     """
-
-    if triggers == 'sngl':
+    if triggers == "sngl":
         return read_gstlal_sngl(source, **kwargs)
-    if triggers == 'coinc':
+    if triggers == "coinc":
         return read_gstlal_coinc(source, **kwargs)
-    else:
-        raise ValueError("The 'triggers' argument must be 'sngl' or 'coinc'")
-
-
-def identify_gstlal(origin, filepath, fileobj, *args, **kwargs):
-    """Identify a GstLAL file as a ligolw file with the correct name
-    """
-    if is_ligolw(origin, filepath, fileobj, *args, **kwargs) and (
-            filepath is not None
-            and GSTLAL_FILENAME.match(basename(filepath))):
-        return True
-    return False
+    raise ValueError(
+        f"triggers must be 'sngl' or 'coinc', got '{triggers}'",
+    )
 
 
 # registers for unified I/O
-default_registry.register_identifier(GSTLAL_FORMAT, EventTable, identify_gstlal)
+EventTable.read.registry.register_identifier(
+    GSTLAL_FORMAT,
+    EventTable,
+    identify_gstlal,
+)
 for fmt, reader in (
     (GSTLAL_SNGL_FORMAT, read_gstlal_sngl),
     (GSTLAL_COINC_FORMAT, read_gstlal_coinc),
     (GSTLAL_FORMAT, read_gstlal),
 ):
-    default_registry.register_reader(fmt, EventTable, reader)
+    EventTable.read.registry.register_reader(fmt, EventTable, reader)
 
-# -- processed columns --------------------------------------------------------
+# -- processed columns ---------------
 #
 # Here we define methods required to build commonly desired columns that
 # are just a combination of the basic columns.
 #
-# Each method should take in a `~gwpy.table.Table` and return a `numpy.ndarray`
+# Each method should take in a `~gwpy.table.Table` and return a
+# `numpy.ndarray` or `~gwpy.table.Column`.
 
-GET_COLUMN = {}
-GET_COLUMN_EXTRA = {}
+GET_COLUMN: dict[str, Callable] = {}
+GET_COLUMN_EXTRA: dict[str, set] = {}
 
 
-def get_snr_chi(events, snr_pow=2., chi_pow=2.):
-    """Calculate the 'SNR chi' column for this GstLAL ligolw table group
+def get_snr_chi(
+    events: Table,
+    snr_pow: float = 2.,
+    chi_pow: float = 2.,
+) -> Column:
+    """Calculate the 'SNR chi' column for this GstLAL ligolw table group.
     """
-    snr = events['snr'][:]
-    chisq = events['chisq'][:]
+    snr = events["snr"][:]
+    chisq = events["chisq"][:]
     snr_chi = snr**snr_pow / chisq**(chi_pow/2.)
     return snr_chi
 
 
-GET_COLUMN['snr_chi'] = get_snr_chi
-GET_COLUMN_EXTRA['snr_chi'] = ['snr', 'chisq']
+GET_COLUMN["snr_chi"] = get_snr_chi
+GET_COLUMN_EXTRA["snr_chi"] = {"snr", "chisq"}
 
 
-def get_chi_snr(events, snr_pow=2., chi_pow=2.):
+def get_chi_snr(
+    events: Table,
+    snr_pow: float = 2.,
+    chi_pow: float = 2.,
+) -> Column:
     """Calculate the 'chi SNR' column for this GstLAL ligolw table group,
     reciprocal of the 'SNR chi' column
     """
-    return 1./get_snr_chi(events, snr_pow, chi_pow)
+    return 1. / get_snr_chi(events, snr_pow, chi_pow)
 
 
-GET_COLUMN['chi_snr'] = get_chi_snr
-GET_COLUMN_EXTRA['chi_snr'] = ['snr', 'chisq']
+GET_COLUMN["chi_snr"] = get_chi_snr
+GET_COLUMN_EXTRA["chi_snr"] = {"snr", "chisq"}
 
-# use same function as pycbc
-GET_COLUMN['mchirp'] = get_mchirp
-GET_COLUMN_EXTRA['mchirp'] = ['mass1', 'mass2']
+# use the generic mass functions
+for _key in {
+    "mchirp",
+    "mtotal",
+}:
+    GET_COLUMN[_key] = DYNAMIC_COLUMN_FUNC[_key]
+    GET_COLUMN_EXTRA[_key] = DYNAMIC_COLUMN_INPUT[_key]

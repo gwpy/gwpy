@@ -25,15 +25,18 @@ from operator import attrgetter
 from math import ceil
 
 import numpy
-
+from astropy.table import (
+    Table,
+)
 from gwosc.api import DEFAULT_URL as DEFAULT_GWOSC_URL
 
-from astropy.table import (Table, vstack)
-from astropy.io.registry import compat as compat_registry
-
-from ..io.registry import UnifiedReadWriteMethod
+from ..io.registry import (
+    UnifiedReadWriteMethod,
+    inherit_unified_io,
+)
 from ..time import GPS_TYPES
 from .connect import (
+    EventTableFetch,
     EventTableRead,
     EventTableWrite,
 )
@@ -49,37 +52,6 @@ TIME_LIKE_COLUMN_NAMES = [
 
 
 # -- utilities ----------------------------------------------------------------
-
-def inherit_io_registrations(cls):
-    parent = cls.__mro__[1]
-    for row in compat_registry.get_formats(data_class=parent):
-        name = row["Format"]
-        # read
-        if row["Read"].lower() == "yes":
-            compat_registry.register_reader(
-                name,
-                cls,
-                compat_registry.get_reader(name, parent),
-                force=False,
-            )
-        # write
-        if row["Write"].lower() == "yes":
-            compat_registry.register_writer(
-                name,
-                cls,
-                compat_registry.get_writer(name, parent),
-                force=False,
-            )
-        # identify
-        if row["Auto-identify"].lower() == "yes":
-            compat_registry.register_identifier(
-                name,
-                cls,
-                compat_registry._identifiers[(name, parent)],
-                force=False,
-            )
-    return cls
-
 
 def _rates_preprocess(func):
     @wraps(func)
@@ -115,7 +87,7 @@ def _rates_preprocess(func):
 
 # -- Table --------------------------------------------------------------------
 
-@inherit_io_registrations
+@inherit_unified_io
 class EventTable(Table):
     """A container for a table of events.
 
@@ -182,120 +154,48 @@ class EventTable(Table):
 
     read = UnifiedReadWriteMethod(EventTableRead)
     write = UnifiedReadWriteMethod(EventTableWrite)
+    fetch = UnifiedReadWriteMethod(EventTableFetch)
 
     @classmethod
-    def fetch(cls, format_, *args, **kwargs):
-        """Fetch a table of events from a database
-
-        Parameters
-        ----------
-        format : `str`, `~sqlalchemy.engine.Engine`
-            the format of the remote data, see _Notes_ for a list of
-            registered formats, OR an SQL database `Engine` object
-
-        *args
-            all other positional arguments are specific to the
-            data format, see below for basic usage
-
-        columns : `list` of `str`, optional
-            the columns to fetch from the database table, defaults to all
-
-        selection : `str`, or `list` of `str`, optional
-            one or more column filters with which to downselect the
-            returned table rows as they as read, e.g. ``'snr > 5'``;
-            multiple selections should be connected by ' && ', or given as
-            a `list`, e.g. ``'snr > 5 && frequency < 1000'`` or
-            ``['snr > 5', 'frequency < 1000']``
-
-        **kwargs
-            all other positional arguments are specific to the
-            data format, see the online documentation for more details
-
-
-        Returns
-        -------
-        table : `EventTable`
-            a table of events recovered from the remote database
-
-        Examples
-        --------
-        >>> from gwpy.table import EventTable
-
-        To download a table of all blip glitches from the Gravity Spy database:
-
-        >>> EventTable.fetch(
-        ...     'gravityspy',
-        ...     'glitches',
-        ...     selection=['ml_label=Blip', 'ml_confidence>0.9'],
-        ... )
-
-        To download a table from any SQL-type server
-
-        >>> from sqlalchemy.engine import create_engine
-        >>> engine = create_engine(...)
-        >>> EventTable.fetch(engine, 'mytable')
-
-        Notes
-        -----"""
-        # handle open database engine
-        try:
-            from sqlalchemy.engine import Engine
-        except ImportError:
-            pass
-        else:
-            if isinstance(format_, Engine):
-                from .io.sql import fetch
-                return cls(fetch(format_, *args, **kwargs))
-
-        # standard registered fetch
-        from .io.fetch import get_fetcher
-        fetcher = get_fetcher(format_, cls)
-        out = fetcher(*args, **kwargs)
-        if not isinstance(out, cls):
-            if issubclass(cls, type(out)):
-                try:
-                    return cls(out)
-                except Exception as exc:
-                    exc.args = (
-                        "could not convert fetch() output to {0}: {1}".format(
-                            cls.__name__, str(exc),
-                        ),
-                    )
-                    raise
-            raise TypeError(
-                "fetch() should return a {0} instance".format(cls.__name__),
-            )
-        return out
-
-    @classmethod
-    def fetch_open_data(cls, catalog, columns=None, selection=None,
-                        host=DEFAULT_GWOSC_URL, **kwargs):
+    def fetch_open_data(
+        cls,
+        catalog,
+        columns=None,
+        where=None,
+        host=DEFAULT_GWOSC_URL,
+        **kwargs,
+    ):
         """Fetch events from an open-data catalogue hosted by GWOSC.
+
+        This is an alias for `EventTable.fetch(format='gwosc')`.
 
         Parameters
         ----------
         catalog : `str`
-            the name of the catalog to fetch, e.g. ``'GWTC-1-confident'``
+            The name of the catalog to fetch, e.g. ``'GWTC-1-confident'``.
 
         columns : `list` of `str`, optional
-            the list of column names to read
+            The list of column names to read.
 
-        selection : `str`, or `list` of `str`, optional
-            one or more column filters with which to downselect the
-            returned events as they as read, e.g. ``'mass1 < 30'``;
-            multiple selections should be connected by ' && ', or given as
-            a `list`, e.g. ``'mchirp < 3 && distance < 500'`` or
+        where : `str`, or `list` of `str`, optional
+            One or more column filters with which to downselect the
+            returned table rows as they as read, e.g. ``'snr > 5'``,
+            similar to a SQL ``WHERE`` statement.
+            Multiple conditions should be connected by ' && ' or ' and ',
+            or given a `list`, e.g. ``'mchirp < 3 && distance < 500'`` or
             ``['mchirp < 3', 'distance < 500']``
 
         host : `str`, optional
-            the open-data host to use
+            The open-data host to use.
         """
-        from .io.losc import fetch_catalog
-        tab = fetch_catalog(catalog, columns=columns, selection=selection,
-                            host=host, **kwargs)
-        if type(tab) is cls:  # don't copy unless we need to
-            return tab
-        return cls(tab)
+        return cls.fetch(
+            source="gwosc",
+            catalog=catalog,
+            columns=columns,
+            where=where,
+            host=host,
+            **kwargs,
+        )
 
     # -- ligolw compatibility -------------------
 

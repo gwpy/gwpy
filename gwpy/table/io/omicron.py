@@ -19,30 +19,45 @@
 """Read events from an Omicron-format ROOT file.
 """
 
-from ...io.registry import default_registry
+from __future__ import annotations
+
+import typing
+
+from astropy.table import Table
+
 from .. import EventTable
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+if typing.TYPE_CHECKING:
+    from pathlib import Path
+    from typing import IO
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def table_from_omicron(source, *args, **kwargs):
+def table_from_omicron(
+    source: str | Path | IO,
+    format: str = "root",
+    treename: str = "triggers",
+    **kwargs,
+) -> Table:
     """Read an `EventTable` from an Omicron ROOT file.
 
     This function just redirects to the format='root' reader with appropriate
     defaults.
+
+    See `EventTable.read.help('root')` for more details.
     """
-    if not args:  # only default treename if args not given
-        kwargs.setdefault("treename", "triggers")
-    return EventTable.read(
+    return Table.read(
         source,
-        *args,
-        format="root",
+        format=format,
+        treename=treename,
         **kwargs,
     )
 
 
-default_registry.register_reader(
-    "root.omicron",
-    EventTable,
-    table_from_omicron,
-)
+for _klass in (Table, EventTable):
+    _klass.read.registry.register_reader(
+        "root.omicron",
+        _klass,
+        table_from_omicron,
+    )

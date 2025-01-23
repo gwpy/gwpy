@@ -101,10 +101,28 @@ dev = [
   "sqlalchemy",
   "uproot >=4.1.5",
 ]
+# GravitySpy
+gravityspy = [
+  "pandas",
+  "psycopg2",
+  "sqlalchemy",
+]
+# HACR
+hacr = [
+  "pandas",
+  "pymysql",
+  "sqlalchemy",
+]
 # Kerberos authentication
 kerberos = [
   "gssapi",
 ]
+# SQL
+sql = [
+  "pandas",
+  "sqlalchemy",
+]
+
 # conda packages for development
 # NOTE: this isn't a valid extra to install with pip
 conda = [
