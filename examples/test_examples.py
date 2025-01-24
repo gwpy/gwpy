@@ -102,17 +102,24 @@ def skip_nds_authentication_error(func):
 
 
 def skip_missing_optional_dependency(func):
-    """Ignore missing optional dependencies
+    """Ignore missing optional dependencies (mainly in `TimeSeries.get`).
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)  # run the test
-        except ImportError as exc:  # pragma: no-cover
+        except (
+            ImportError,  # direct import error
+            RuntimeError,  # chained error
+        ) as exc:
+            msg = str(exc)
+            while exc.__cause__:  # walk up the error chain
+                exc = exc.__cause__
+                msg += f" caused by '{exc}'"
             # needs an optional dependency
-            if "gwpy" in str(exc):
+            if not isinstance(exc, ImportError):
                 raise
-            pytest.skip(str(exc))
+            pytest.skip(msg)
 
     return wrapper
 

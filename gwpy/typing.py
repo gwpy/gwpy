@@ -1,5 +1,4 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (C) Cardiff University (2024-)
 #
 # This file is part of GWpy.
 #
@@ -16,30 +15,32 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides time conversion utilities.
-
-The :class:`~astropy.time.Time` object from the astropy package
-is imported for user convenience, and a GPS time conversion function
-is provided.
-
-All other time conversions can be easily completed using the `Time`
-object.
+"""Type annotation tools for GWpy.
 """
 
-from importlib import import_module
+# noqa: F401
 
-from astropy.time import Time
+try:
+    from typing import Self
+except ImportError:  # python < 3.11
+    from typing_extensions import Self
 
-from ._ligotimegps import (
-    GPS_TYPES,
-    GpsType,
-    LIGOTimeGPS,
+from astropy.units import UnitBase
+from astropy.units.typing import (
+    QuantityLike,
 )
-from ._tconvert import (
+from numpy.typing import (
+    ArrayLike,
+    DTypeLike,
+)
+
+from .time import (
     GpsConvertible,
-    from_gps,
-    tconvert,
-    to_gps,
+    GpsType,
 )
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+# Gps types
+GpsLike = GpsType | GpsConvertible
+
+# Unit types
+UnitLike = UnitBase | str | None

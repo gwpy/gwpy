@@ -778,7 +778,10 @@ class StateVector(TimeSeriesBase):
 
     @classmethod
     def get(cls, channel, start, end, bits=None, **kwargs):
-        """Get data for this channel from frames or NDS
+        """Get `StateVector` data for this channel.
+
+        This method attemps to get data any way it can, potentially iterating
+        over multiple available data sources.
 
         Parameters
         ----------
@@ -796,13 +799,13 @@ class StateVector(TimeSeriesBase):
         bits : `Bits`, `list`, optional
             definition of bits for this `StateVector`
 
-        pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or ``gap='pad'`` is given
+        source : `str`, `list`
+            Data source(s) to use to get the data.
+            One of:
 
-        dtype : `numpy.dtype`, `str`, `type`, or `dict`
-            numeric data type for returned data, e.g. `numpy.float`, or
-            `dict` of (`channel`, `dtype`) pairs
+            - ``"files"`` - use |gwdatafind|_ to find the paths of local files
+              and then read them
+            - ``"nds2"`` - use |nds2|_
 
         nproc : `int`, optional, default: `1`
             number of parallel processes to use, serial process by
@@ -812,16 +815,18 @@ class StateVector(TimeSeriesBase):
             print verbose output about NDS progress.
 
         **kwargs
-            other keyword arguments to pass to either
-            :meth:`.find` (for direct GWF file access) or
-            :meth:`.fetch` for remote NDS2 access
+            Other keyword arguments to pass to the data access function for
+            each data source.
 
         See also
         --------
-        StateVector.fetch
-            for grabbing data from a remote NDS2 server
         StateVector.find
-            for discovering and reading data from local GWF files
+            For details of how data are accessed for ``source="files"``
+            and the supported keyword arguments.
+
+        StateVector.fetch
+            For details of how data are accessed for ``source="nds2"``
+            and the supported keyword arguments.
         """
         new = cls.DictClass.get([channel], start, end, **kwargs)[channel]
         if bits:
