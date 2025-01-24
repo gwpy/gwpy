@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Cardiff University (2025-)
 #
 # This file is part of GWpy.
 #
@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/Output routines for the Spectrogram.
+"""ASCII I/O registrations for `gwpy.spectrogram` objects.
 """
 
-from . import (
-    ascii,
-    hdf5,
-)
+from ...types.io.ascii import register_ascii_io
+from .. import Spectrogram
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+# -- registration --------------------
+
+register_ascii_io(Spectrogram, format="csv", delimiter=",")
