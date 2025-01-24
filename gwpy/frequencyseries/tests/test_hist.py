@@ -96,6 +96,11 @@ class TestSpectralVariance(_TestArray2D):
         ):
             array[0, ::2]
 
+    # -- test i/o -------------------------------
+
+    def test_read_write_csv(self, array):
+        pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
+
     # -- test methods ---------------------------
 
     def test_init(self, array):
@@ -122,10 +127,10 @@ class TestSpectralVariance(_TestArray2D):
         pytest.skip("float precision test not supported for SpectralVariance")
 
     def test_is_compatible_yindex(self, array):
-        pytest.skip(f"not implemented for {type(self).__name__}")
+        pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
 
     def test_is_compatible_error_yindex(self, array):
-        pytest.skip(f"not implemented for {type(self).__name__}")
+        pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
 
     def test_plot(self, array):
         with rc_context(rc={'text.usetex': False}):

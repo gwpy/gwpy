@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Cardiff University (2017-2020)
 #
 # This file is part of GWpy.
 #
@@ -19,11 +19,11 @@
 """
 
 from ...io.ligolw import is_ligolw
-from ...io.registry import compat as compat_registry
 from ...types.io.ligolw import read_series
 from .. import FrequencySeries
 
-# -- registration -------------------------------------------------------------
+# -- registration --------------------
 
-compat_registry.register_reader('ligolw', FrequencySeries, read_series)
-compat_registry.register_identifier('ligolw', FrequencySeries, is_ligolw)
+registry = FrequencySeries.read.registry
+registry.register_reader("ligolw", FrequencySeries, read_series)
+registry.register_identifier("ligolw", FrequencySeries, is_ligolw)

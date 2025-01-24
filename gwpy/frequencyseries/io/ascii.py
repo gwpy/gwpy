@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -18,10 +18,10 @@
 """ASCII I/O registrations for gwpy.frequencyseries objects
 """
 
-from ...types.io.ascii import register_ascii_series_io
+from ...types.io.ascii import register_ascii_io
 from .. import FrequencySeries
 
-# -- registration -------------------------------------------------------------
+# -- registration --------------------
 
-register_ascii_series_io(FrequencySeries, format='txt')
-register_ascii_series_io(FrequencySeries, format='csv', delimiter=',')
+register_ascii_io(FrequencySeries, format="txt")
+register_ascii_io(FrequencySeries, format="csv", delimiter=",")
