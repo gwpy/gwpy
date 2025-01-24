@@ -19,13 +19,13 @@
 """Read SegmentLists from seg-wizard format ASCII files
 """
 
+from __future__ import annotations
+
 import re
+import typing
 
 from ...io.registry import default_registry
-from ...io.utils import (
-    identify_factory,
-    with_open,
-)
+from ...io.utils import with_open
 from ...time import LIGOTimeGPS
 from .. import (
     Segment,
@@ -49,16 +49,48 @@ FOUR_COL_REGEX = re.compile(
 )
 
 
-# -- read ---------------------------------------------------------------------
+# -- identify ------------------------
+
+def _is_segwizard(
+    origin: str,
+    filepath: str,
+    fileobj: typing.IO,
+    *args,
+    **kwargs,
+):
+    """Return `True` if the given file looks like a segwizard file.
+
+    When introspecting a file contents, this method only recognises the
+    four-column seg/start/stop/duration format written by
+    `igwn_segments.utils.tosegwizard`.
+    """
+    if fileobj is not None:
+        pos = fileobj.seek(0)
+        try:
+            header = fileobj.readline()
+        finally:
+            fileobj.seek(pos)
+        cols = header.strip().split()
+        return cols == [b"#", b"seg", b"start", b"stop", b"duration"]
+    if filepath is not None:
+        return filepath.endswith((".dat", ".txt"))
+    return False
+
+
+# -- read ----------------------------
 
 @with_open
-def from_segwizard(source, gpstype=LIGOTimeGPS, strict=True):
-    """Read segments from a segwizard format file into a `SegmentList`
+def from_segwizard(
+    source: typing.IO,
+    gpstype: type = LIGOTimeGPS,
+    strict: bool = True,
+) -> SegmentList:
+    """Read segments from a segwizard format file into a `SegmentList`.
 
     Parameters
     ----------
-    source : `file`, `str`
-        An open file, or file path, from which to read
+    source : `file`, `str`, `pathlib.Path`
+        An open file, or file path, from which to read.
 
     gpstype : `type`, optional
         The numeric type to which to cast times (from `str`) when reading.
@@ -90,21 +122,34 @@ def from_segwizard(source, gpstype=LIGOTimeGPS, strict=True):
             fmt_pat = _line_format(line)
         # parse line
         tokens, = fmt_pat.findall(line)
-        out.append(_format_segment(tokens[-3:], gpstype=gpstype,
-                                   strict=strict))
+        out.append(_format_segment(
+            tokens[-3:],
+            gpstype=gpstype,
+            strict=strict,
+        ))
     return out
 
 
-def _line_format(line):
+def _line_format(
+    line: str,
+) -> re.Pattern:
     """Determine the column format pattern for a line in an ASCII segment file.
     """
-    for pat in (FOUR_COL_REGEX, THREE_COL_REGEX, TWO_COL_REGEX):
+    for pat in (
+        FOUR_COL_REGEX,
+        THREE_COL_REGEX,
+        TWO_COL_REGEX,
+    ):
         if pat.match(line):
             return pat
     raise ValueError(f"unable to parse segment from line '{line}'")
 
 
-def _format_segment(tokens, strict=True, gpstype=LIGOTimeGPS):
+def _format_segment(
+    tokens: list[str],
+    strict: bool = True,
+    gpstype: type = LIGOTimeGPS,
+) -> Segment:
     """Format a list of tokens parsed from an ASCII file into a segment.
     """
     try:
@@ -119,10 +164,15 @@ def _format_segment(tokens, strict=True, gpstype=LIGOTimeGPS):
     return seg
 
 
-# -- write --------------------------------------------------------------------
+# -- write ---------------------------
 
 @with_open(mode="w", pos=1)
-def to_segwizard(segs, target, header=True, coltype=LIGOTimeGPS):
+def to_segwizard(
+    segs: SegmentList,
+    target: typing.TextIO,
+    header: bool = True,
+    coltype: type = LIGOTimeGPS,
+):
     """Write the given `SegmentList` to a file in SegWizard format.
 
     Parameters
@@ -130,8 +180,8 @@ def to_segwizard(segs, target, header=True, coltype=LIGOTimeGPS):
     segs : :class:`~gwpy.segments.SegmentList`
         The list of segments to write.
 
-    target : `file`, `str`
-        An open file, or file path, to which to write.
+    target : `io.TextIOBase`
+        A file open for writing in text mode.
 
     header : `bool`, optional
         Print a column header into the file, default: `True`.
@@ -157,12 +207,12 @@ def to_segwizard(segs, target, header=True, coltype=LIGOTimeGPS):
         )
 
 
-# -- register -----------------------------------------------------------------
+# -- register ------------------------
 
 default_registry.register_reader("segwizard", SegmentList, from_segwizard)
 default_registry.register_writer("segwizard", SegmentList, to_segwizard)
 default_registry.register_identifier(
     "segwizard",
     SegmentList,
-    identify_factory("txt", "dat"),
+    _is_segwizard,
 )

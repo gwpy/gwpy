@@ -28,6 +28,7 @@ from concurrent.futures import (
     ThreadPoolExecutor,
     as_completed,
 )
+from contextlib import nullcontext
 from functools import wraps
 
 from astropy.io import registry as astropy_registry
@@ -39,37 +40,37 @@ from astropy.utils.data import get_readable_fileobj
 
 from ..utils.env import bool_env
 from ..utils.progress import progress_bar
-from .utils import FILE_LIKE, file_list
+from .remote import open_remote_file
+from .utils import (
+    FILE_LIKE,
+    file_list,
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 # -- utilities -----------------------
 
-def _identify_with_list(
+def list_identifier(
     identifier,
 ):
     """Decorate an I/O identifier to handle a list of files as input.
 
     This function tries to resolve a single file path as a `str` from any
-    file-like or collection-of-file-likes to pass to the underlying
-    identifier for comparison.
+    one or more file-like objects in the ``filepath`` or ``args`` inputs
+    to pass to the underlying identifier for comparison.
     """
     @wraps(identifier)
     def decorated_func(origin, filepath, fileobj, *args, **kwargs):
-        # pylint: disable=missing-docstring
+        target = filepath  # thing to search
+        if target is None and args:
+            target = args[0]
         try:
-            filepath = file_list(filepath)[0]
-        except ValueError:
-            if filepath is None:
-                try:
-                    files = file_list(args[0])
-                except (IndexError, ValueError):
-                    pass
-                else:
-                    if files:
-                        filepath = files[0]
-        except IndexError:
+            filepath = file_list(target)[0]
+        except (
+            IndexError,  # empty list
+            ValueError,  # target can't be resolved as a list of file-like
+        ):
             pass
         return identifier(origin, filepath, fileobj, *args, **kwargs)
     return decorated_func
@@ -88,7 +89,7 @@ def legacy_register_identifier(
     return compat.default_registry.register_identifier(
         data_format,
         data_class,
-        _identify_with_list(identifier),
+        list_identifier(identifier),
         force=force,
     )
 
@@ -167,7 +168,7 @@ class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
         return super().register_identifier(
             data_format,
             data_class,
-            _identify_with_list(identifier),
+            list_identifier(identifier),
             force=force,
         )
 
@@ -182,12 +183,17 @@ default_registry = UnifiedIORegistry()
 class UnifiedRead(astropy_registry.UnifiedReadWrite):
     """Base ``Class.read()`` implementation that handles parallel reads.
     """
-    def __init__(self, instance, cls):
+    def __init__(
+        self,
+        instance,
+        cls,
+        registry=default_registry,
+    ):
         super().__init__(
             instance,
             cls,
             "read",
-            registry=default_registry,
+            registry=registry,
         )
 
     def _read_single_file(
@@ -228,6 +234,9 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
 
         i.e take in the type object and a list of instances, and return
         a single instance of the same type.
+
+        This method also generalises downloading files from remote URLs
+        over HTTP or via `fsspec`.
         """
         cls = self._cls
 
@@ -244,18 +253,14 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
         if cache is None:
             cache = bool_env("GWPY_CACHE", False)
 
+        # get the input as a list of inputs
         sources = self._format_input_list(source)
 
-        def _read(arg):
-            return self.registry.read(
-                self._cls,
-                arg,
-                *args,
-                format=format,
-                cache=cache,
-                **kwargs,
-            )
-
+        # handle progress based on the number of inputs
+        show_progress = False  # single file download progress
+        if len(sources) == 1:
+            show_progress = verbose
+            verbose = False
         if verbose is True and format:
             verbose = f"Reading ({format})"
         elif verbose is True:
@@ -267,6 +272,41 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
             )
         else:
             progress = None
+
+        remote_kwargs = {
+            key: kwargs.pop(key) for key in (
+                "sources",
+                "http_headers",
+                "use_fsspec",
+                "fsspec_kwargs",
+            ) if key in kwargs
+        }
+
+        # single file reader
+        def _read(arg):
+            # if arg is a str, presume it represents a URI, so try and open it
+            if isinstance(arg, str):
+                ctx = open_remote_file(
+                    arg,
+                    cache=cache,
+                    show_progress=show_progress,
+                    **remote_kwargs,
+                )
+            # otherwise just pass it along unmodified
+            else:
+                ctx = nullcontext(arg)
+
+            with ctx as file:
+                return self.registry.read(
+                    self._cls,
+                    file,
+                    *args,
+                    format=format,
+                    cache=cache,
+                    **kwargs,
+                )
+
+        # read all files in parallel threads
         outputs = []
         with ThreadPoolExecutor(
             max_workers=parallel,
@@ -283,12 +323,17 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
 class UnifiedWrite(astropy_registry.UnifiedReadWrite):
     """Base ``Class.write()`` implementation.
     """
-    def __init__(self, instance, cls):
+    def __init__(
+        self,
+        instance,
+        cls,
+        registry=default_registry,
+    ):
         super().__init__(
             instance,
             cls,
             "write",
-            registry=default_registry,
+            registry=registry,
         )
 
     def __call__(
