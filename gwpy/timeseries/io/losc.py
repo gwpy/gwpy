@@ -245,7 +245,7 @@ def read_gwosc_hdf5_state(
     copy=False,
     bits_dataset="DQmask",
     def_dataset="DQDescriptions",
-    name="Data quality"
+    name="Data quality",
 ):
     """Read a `StateVector` from a GWOSC-format HDF file.
 
