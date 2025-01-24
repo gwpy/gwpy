@@ -382,7 +382,7 @@ class TimeSeriesBase(Series):
                         version=None, format='hdf5',
                         host=GWOSC_DEFAULT_HOST, verbose=False,
                         cache=None, **kwargs):
-        """Fetch open-access data from |GWOSCl|_.
+        """Fetch open-access data from GWOSC.
 
         Parameters
         ----------
