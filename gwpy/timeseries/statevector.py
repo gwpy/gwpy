@@ -28,18 +28,31 @@ statement of instrumental operation
 """
 
 from functools import wraps
-from math import (ceil, log)
+from math import (
+    ceil,
+    log,
+)
 
 import numpy
-
 from astropy import units
 
-from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
-                   as_series_dict_class)
-from ..types import Array2D
 from ..detector import Channel
-from ..time import Time
 from ..io.nds2 import Nds2ChannelType
+from ..io.registry import UnifiedReadWriteMethod
+from ..time import Time
+from ..types import Array2D
+from .connect import (
+    StateVectorDictRead,
+    StateVectorDictWrite,
+    StateVectorRead,
+    StateVectorWrite,
+)
+from .core import (
+    TimeSeriesBase,
+    TimeSeriesBaseDict,
+    TimeSeriesBaseList,
+    as_series_dict_class,
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -574,6 +587,11 @@ class StateVector(TimeSeriesBase):
             return value * self.unit
         return value
 
+    # -- i/o --------------------------
+
+    read = UnifiedReadWriteMethod(StateVectorRead)
+    write = UnifiedReadWriteMethod(StateVectorWrite)
+
     # -- StateVector methods --------------------
 
     def get_bit_series(self, bits=None):
@@ -604,90 +622,6 @@ class StateVector(TimeSeriesBase):
                 self.value >> i & 1, name=bit, epoch=self.x0.value,
                 channel=self.channel, sample_rate=self.sample_rate)
         return self._bitseries
-
-    @classmethod
-    def read(cls, source, *args, **kwargs):
-        """Read data into a `StateVector`
-
-        Parameters
-        ----------
-        source : `str`, `list`
-            Source of data, any of the following:
-
-            - `str` path of single data file,
-            - `str` path of LAL-format cache file,
-            - `list` of paths.
-
-        channel : `str`, `~gwpy.detector.Channel`
-            the name of the channel to read, or a `Channel` object.
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
-            GPS start time of required data,
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, defaults to end of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        bits : `list`, optional
-            list of bits names for this `StateVector`, give `None` at
-            any point in the list to mask that bit
-
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        nproc : `int`, optional, default: `1`
-            number of parallel processes to use, serial process by
-            default.
-
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the underlying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
-        pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
-
-        Raises
-        ------
-        IndexError
-            if ``source`` is an empty list
-
-        Examples
-        --------
-        To read the S6 state vector, with names for all the bits::
-
-            >>> sv = StateVector.read(
-                'H-H1_LDAS_C02_L2-968654592-128.gwf', 'H1:IFO-SV_STATE_VECTOR',
-                bits=['Science mode', 'Conlog OK', 'Locked',
-                      'No injections', 'No Excitations'],
-                dtype='uint32')
-
-        then you can convert these to segments
-
-            >>> segments = sv.to_dqflags()
-
-        or to read just the interferometer operations bits::
-
-            >>> sv = StateVector.read(
-                'H-H1_LDAS_C02_L2-968654592-128.gwf', 'H1:IFO-SV_STATE_VECTOR',
-                bits=['Science mode', None, 'Locked'], dtype='uint32')
-
-        Running `to_dqflags` on this example would only give 2 flags, rather
-        than all five.
-
-        Alternatively the `bits` attribute can be reset after reading, but
-        before any further operations.
-
-        Notes
-        -----"""
-        return super().read(source, *args, **kwargs)
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
         """Convert this `StateVector` into a `~gwpy.segments.DataQualityDict`
@@ -963,64 +897,10 @@ class StateVectorDict(TimeSeriesBaseDict):
                                                  'StateVector')
     EntryClass = StateVector
 
-    @classmethod
-    def read(cls, source, *args, **kwargs):
-        """Read data for multiple bit vector channels into a `StateVectorDict`
+    # -- i/o -------------------------
 
-        Parameters
-        ----------
-        source : `str`, `list`
-            Source of data, any of the following:
-
-            - `str` path of single data file,
-            - `str` path of LAL-format cache file,
-            - `list` of paths.
-
-        channels : `~gwpy.detector.channel.ChannelList`, `list`
-            a list of channels to read from the source.
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str` optional
-            GPS start time of required data, anything parseable by
-            :meth:`~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, anything parseable by
-            :meth:`~gwpy.time.to_gps` is fine
-
-        bits : `list` of `lists`, `dict`, optional
-            the ordered list of interesting bit lists for each channel,
-            or a `dict` of (`channel`, `list`) pairs
-
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        nproc : `int`, optional, default: ``1``
-            number of parallel processes to use, serial process by
-            default.
-
-        gap : `str`, optional
-            how to handle gaps in the cache, one of
-
-            - 'ignore': do nothing, let the underlying reader method handle it
-            - 'warn': do nothing except print a warning to the screen
-            - 'raise': raise an exception upon finding a gap (default)
-            - 'pad': insert a value to fill the gaps
-
-        pad : `float`, optional
-            value with which to fill gaps in the source data, only used if
-            gap is not given, or `gap='pad'` is given
-
-        Returns
-        -------
-        statevectordict : `StateVectorDict`
-            a `StateVectorDict` of (`channel`, `StateVector`) pairs. The keys
-            are guaranteed to be the ordered list `channels` as given.
-
-        Notes
-        -----"""
-        return super().read(source, *args, **kwargs)
+    read = UnifiedReadWriteMethod(StateVectorDictRead)
+    write = UnifiedReadWriteMethod(StateVectorDictWrite)
 
 
 class StateVectorList(TimeSeriesBaseList):

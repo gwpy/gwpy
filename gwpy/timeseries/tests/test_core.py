@@ -153,6 +153,11 @@ class TestTimeSeriesBase(_TestSeries):
     def test_duration(self, array):
         assert array.duration == array.t0 + array.shape[0] * array.dt
 
+    # -- test i/o -------------------------------
+
+    def test_read_write_csv(self, *args, **kwargs):
+        pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
+
     # -- test methods ---------------------------
 
     def test_plot(self, array):

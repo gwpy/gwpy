@@ -1,5 +1,5 @@
 # Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2022)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -37,7 +37,6 @@ from ...io.cache import (
     file_segment,
     sieve as sieve_cache,
 )
-from ...io.registry import compat as compat_registry
 from ...io.utils import file_path
 from ...detector.units import parse_unit
 from ...segments import Segment
@@ -298,9 +297,13 @@ def _gwf_channel(path, series_class=TimeSeries, verbose=False):
 
 
 # register
-compat_registry.register_reader('hdf5.gwosc', TimeSeries, read_gwosc_hdf5)
-compat_registry.register_reader(
-    'hdf5.gwosc',
+TimeSeries.read.registry.register_reader(
+    "hdf5.gwosc",
+    TimeSeries,
+    read_gwosc_hdf5,
+)
+StateVector.read.registry.register_reader(
+    "hdf5.gwosc",
     StateVector,
     read_gwosc_hdf5_state,
 )

@@ -22,6 +22,7 @@ import os.path
 import warnings
 from contextlib import nullcontext
 from itertools import (chain, product)
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -61,6 +62,15 @@ except ImportError:
     HAVE_GWF_API = False
 else:
     HAVE_GWF_API = True
+
+# remote URL for test .gwf file
+TEST_HDF5_URL = (
+    "https://gitlab.com/gwpy/gwpy/-/raw/v3.0.10/"
+    + Path(utils.TEST_HDF5_FILE).relative_to(
+        utils.TEST_DATA_PATH.parent.parent.parent,
+    ).as_posix()
+)
+
 
 GWF_APIS = [
     pytest.param(
@@ -189,6 +199,31 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert array.epoch.gps == array.x0.value
 
     # -- test I/O -------------------------------
+
+    def test_read_cache(self, tmp_path):
+        """Test that `TimeSeries.read` handles caches well.
+        """
+        # create an array and write it to a file
+        array = self.create(t0=0, dt=10/self.data.size, name="TEST1")
+        file1 = tmp_path / "X-data-0-10.h5"
+        array.write(file1)
+
+        # create a second array, but don't write it
+        file2 = tmp_path / "X-data-10-10.h5"
+
+        # create a cache that talks about both files
+        cache = [file1, file2]
+
+        # check that when reading _and_ asking for times covered by the
+        # first file, the cache is appropriately filtered
+        data = self.TEST_CLASS.read(
+            cache,
+            "TEST1",
+            format="hdf5",
+            start=0,
+            end=10,
+        )
+        utils.assert_quantity_sub_equal(array, data)
 
     @pytest.mark.parametrize('format', ['txt', 'csv'])
     def test_read_write_ascii(self, array, format):
@@ -524,6 +559,21 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 end=span[1]+1.,
                 gap="raise",
             )
+
+    @pytest_skip_flaky_network
+    def test_read_remote(self):
+        """Test that reading directly from a remote URI works.
+        """
+        local = self.TEST_CLASS.read(
+            utils.TEST_HDF5_FILE,
+            "H1:LDAS-STRAIN",
+        )
+        remote = self.TEST_CLASS.read(
+            TEST_HDF5_URL,
+            "H1:LDAS-STRAIN",
+            cache=False,
+        )
+        utils.assert_quantity_sub_equal(local, remote)
 
     @pytest.mark.requires("nds2")
     def test_from_nds2_buffer_dynamic_scaled(self):
