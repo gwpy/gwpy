@@ -183,7 +183,7 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
 class TestStateTimeSeriesDict(_TestTimeSeriesBaseDict):
     TEST_CLASS = StateTimeSeriesDict
     ENTRY_CLASS = StateTimeSeries
-    DTYPE = 'bool'
+    DTYPE = bool
 
     def test_resample(self, instance):
         pytest.skip(f"not implemented for {type(instance).__name__}")
