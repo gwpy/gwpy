@@ -24,10 +24,14 @@ from math import floor
 import numpy
 
 from astropy.units import (Unit, Quantity, second, dimensionless_unscaled)
-from astropy.io.registry import compat as compat_registry
 
+from ..io.registry import UnifiedReadWriteMethod
 from . import sliceutils
 from .array import Array
+from .connect import (
+    SeriesRead,
+    SeriesWrite,
+)
 from .index import Index
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -376,68 +380,8 @@ class Series(Array):
 
     # -- series i/o -----------------------------
 
-    @classmethod
-    def read(cls, source, *args, **kwargs):
-        """Read data into a `Series`
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format, the
-        parameters below are common to most formats.
-
-        Parameters
-        ----------
-        source : `str`, `list`
-            Source of data, any of the following:
-
-            - `str` path of single data file,
-            - `str` path of LAL-format cache file,
-            - `list` of paths.
-
-        *args
-            Other arguments are (in general) specific to the given
-            ``format``.
-
-        format : `str`, optional
-            Source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        **kwargs
-            Other keywords are (in general) specific to the given ``format``.
-
-        Returns
-        -------
-        data : `Series`
-
-        Raises
-        ------
-        IndexError
-            if ``source`` is an empty list
-
-        Notes
-        -----"""
-        return compat_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `Series` to a file
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format, the
-        parameters below are common to most formats.
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        format : `str`, optional
-            output format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        Notes
-        -----"""
-        return compat_registry.write(self, target, *args, **kwargs)
+    read = UnifiedReadWriteMethod(SeriesRead)
+    write = UnifiedReadWriteMethod(SeriesWrite)
 
     # -- series plotting ------------------------
 

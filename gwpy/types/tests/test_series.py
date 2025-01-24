@@ -142,6 +142,20 @@ class TestSeries(_TestArray):
         series = self.create(xindex=x)
         assert series.xspan == (x[0], x[-1] + x[-1] - x[-2])
 
+    # -- test i/o -------------------------------
+
+    def test_read_write_csv(self, array):
+        utils.test_read_write(
+            array,
+            "csv",
+            assert_equal=utils.assert_quantity_sub_equal,
+            assert_kw={"exclude": [
+                "name",
+                "channel",
+                "unit",
+            ]},
+        )
+
     # -- test methods ---------------------------
 
     def test_getitem(self, array):
