@@ -159,7 +159,7 @@ class TimeSeriesBase(Series):
     """
     _default_xunit = units.second
     _print_slots = ('t0', 'dt', 'name', 'channel')
-    DictClass = None
+    DictClass: type[TimeSeriesBaseDict]
 
     def __new__(cls, data, unit=None, t0=None, dt=None, sample_rate=None,
                 times=None, channel=None, name=None, **kwargs):
