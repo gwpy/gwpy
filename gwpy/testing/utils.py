@@ -360,7 +360,7 @@ def test_read_write(
     # parse extension and add leading period
     if extension is None:
         extension = format
-    extension = f".{extension.lstrip('.')}"
+    extension = extension.lstrip('.')
 
     DataClass = type(data)  # noqa: N806
 
