@@ -29,7 +29,7 @@ __currentmodule__ = "gwpy.table"
 
 from gwpy.table import EventTable
 events = EventTable.fetch_open_data(
-    "GWTC-1-confident",
+    "GWTC",
     columns=("mass_1_source", "mass_2_source"),
 )
 events.add_column(
@@ -40,9 +40,9 @@ events.add_column(
 # and can generate a new `~gwpy.plot.Plot` using the
 # :meth:`~EventTable.hist` method:
 
-plot = events.hist("mtotal", bins=10, range=(0, 100), histtype="stepfilled")
+plot = events.hist("mtotal", bins=20, range=(0, 100), histtype="stepfilled")
 ax = plot.gca()
 ax.set_xlabel(r"Total mass [M$_{\odot}$]")
 ax.set_ylabel("Number of events")
-ax.set_title("GWTC-1-confident")
+ax.set_title("GWTC events")
 plot.show()

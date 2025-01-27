@@ -31,12 +31,12 @@ __currentmodule__ = "gwpy.table"
 
 from gwpy.table import EventTable
 events = EventTable.fetch_open_data(
-    "GWTC-1-confident",
+    "GWTC",
     columns=(
         "mass_1_source",
         "mass_2_source",
-        "chirp_mass_source",
-        "luminosity_distance"
+        "luminosity_distance",
+        "network_matched_filter_snr",
     ),
 )
 
@@ -45,9 +45,9 @@ events = EventTable.fetch_open_data(
 
 plot = events.scatter(
     "mass_1_source", "mass_2_source",
-    color="chirp_mass_source"
+    color="network_matched_filter_snr",
 )
-plot.colorbar(label="Chirp_mass [{}]".format(r"M$_{\odot}$"))
+plot.colorbar(label="Signal-to-noise ratio (SNR)")
 plot.show()
 
 # We can similarly plot how the total event mass is distributed with
