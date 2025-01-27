@@ -9,7 +9,6 @@
    :numbered:
 
    public
-   filter
    whiten
    correlate
    blrms
