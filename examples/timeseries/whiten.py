@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -18,43 +18,85 @@
 
 """Whitening a `TimeSeries`
 
-.. warning::
-
-   This example requires LIGO.ORG credentials for data access.
-
 Most data recorded from a gravitational-wave interferometer carry information
 across a wide band of frequencies, typically up to a few kiloHertz, but
 often it is the case that the low-frequency amplitude dwarfs that of the
 high-frequency content, making discerning high-frequency features difficult.
+This is especially true of the LIGO differential arm strain measurement,
+which encodes any gravitational wave signals that are present.
 
 We employ a technique called 'whitening' to normalize the power at all
 frequencies so that excess power at any frequency is more obvious.
 
-We demonstrate below with an auxiliary signal recording transmitted power
-in one of the interferometer arms, which recorded two large glitches with
-a frequency of around 5-50Hz.
+We demonstrate below the LIGO-Livingston gravitational-wave strain
+measurement signal around |GW200129_065458|_, the loudest signal as yet
+detected by LIGO.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = "gwpy.timeseries"
 
-# First, we import the `TimeSeries` and :meth:`~TimeSeries.get` the data:
+# First, we use the |gwosc-mod| Python client to get the GPS time of the
+# event:
+
+from gwosc.datasets import event_gps
+gps = event_gps("GW200129_065458")
+
+# Then we can import the `TimeSeries` object and fetch the strain data using
+# :meth:`TimeSeries.fetch_open_data` in a window around that event:
+
 from gwpy.timeseries import TimeSeries
-data = TimeSeries.get("H1:ASC-Y_TR_A_NSUM_OUT_DQ", 1123084671, 1123084703)
+data = TimeSeries.fetch_open_data("L1", int(gps) - 64, int(gps) + 64)
 
-# Now, we can `~TimeSeries.whiten` the data to enhance the higher-frequency
-# content
-white = data.whiten(4, 2)
+# To demonstrate the relative power across the frequency band, we can
+# quickly estimate an Amplitude Spectral Density (ASD) for these data:
 
-# and can `~TimeSeries.plot` both the original and whitened data
+asd = data.asd(fftlength=8)
+plot = asd.plot(
+    xlim=(8, 1000),
+    ylabel="Strain ASD [$1/\\sqrt{Hz}$]",
+)
+plot.show()
+plot.close()  # hide
+
+# The ASD clearly shows the dominance in amplitude of the lowest frequency
+# components of the data, where the seismic noise around the observatory
+# is most impactful.
+# We can now :meth:`~TimeSeries.whiten` the data to to normalise the
+# amplitudes across the frequency range:
+
+white = data.whiten(fftlength=8)
+
+# and can `~TimeSeries.plot` both the original and whitened data around the
+# event time:
+
 from gwpy.plot import Plot
-plot = Plot(data, white, separate=True, sharex=True)
-plot.axes[0].set_ylabel("Y-arm power [counts]", fontsize=16)
-plot.axes[1].set_ylabel("Whitened amplitude", fontsize=16)
+plot = Plot(
+    data,
+    white,
+    separate=True,
+    sharex=True,
+    epoch=gps,
+    xlim=(gps - 1, gps + 1),
+)
+plot.axes[0].set_ylabel("Strain amplitude", fontsize=16)
+plot.axes[1].set_ylabel("Whitened strain amplitude", fontsize=16)
+plot.show()
+plot.close()  # hide
+
+# The top figure is dominated by the low-frequency noise, whereas the
+# whitened data below highlights a few spikes in the data at higher
+# frequencies.
+#
+# We can zoom in very close around the event time:
+
+plot = white.crop(gps - .1, gps + .1).plot(
+    ylabel="Whitened strain amplitude",
+)
+plot.axes[0].set_epoch(gps)
 plot.show()
 
-# Here we see two large spikes that are completely undetected in the raw
-# `TimeSeries`, but are very obvious in the whitened data. We can also see
-# tapering effects at the boundaries as the whitening filter settles in,
-# meaning that the first and last ~second of data are corrupted and should
-# be discarded before further processing.
+# Here, centred around time 0.03 is the clear signature of a binary black hole
+# merger, |GW200129_065458|_.
+# This signal is completely hidden in the unfiltered data, but the simple act
+# of whitening has exposed the loudest gravitational-wave event ever detected!
