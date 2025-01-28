@@ -50,6 +50,7 @@ dependencies = [
   "requests >=2.20.0",
   "scipy >=1.6.0",
   "tqdm >=4.52.0",
+  "typing-extensions ; python_version<'3.11'"
 ]
 
 # dynamic properties set by tools
