@@ -56,6 +56,8 @@ def nds2_buffer(
     name: str | None = None,
     slope: float = 1,
     offset: float = 0,
+    channel_type: int = 2,
+    data_type: int = 8,
 ) -> mock.MagicMock:
     """Create a mocked `nds2.buffer`.
     """
@@ -63,7 +65,13 @@ def nds2_buffer(
     epoch = LIGOTimeGPS(epoch)
     ndsbuffer = mock.create_autospec(nds2.buffer)
     ndsbuffer.length = len(data)
-    ndsbuffer.channel = nds2_channel(channel, sample_rate, unit)
+    ndsbuffer.channel = nds2_channel(
+        channel,
+        sample_rate,
+        unit,
+        channel_type=channel_type,
+        data_type=data_type,
+    )
     ndsbuffer.name = name or ndsbuffer.channel.name
     ndsbuffer.sample_rate = sample_rate
     ndsbuffer.gps_seconds = epoch.gpsSeconds
@@ -92,6 +100,8 @@ def nds2_channel(
     name: str,
     sample_rate: float,
     unit: UnitBase,
+    channel_type: int = 2,
+    data_type: int = 8,
 ) -> mock.MagicMock:
     """Create a mocked `nds2.channel`.
     """
@@ -100,9 +110,9 @@ def nds2_channel(
     channel.name = name
     channel.sample_rate = sample_rate
     channel.signal_units = unit
-    channel.channel_type = 2
+    channel.channel_type = channel_type
     channel.channel_type_to_string = nds2.channel.channel_type_to_string
-    channel.data_type = 8
+    channel.data_type = data_type
     for attr, value in inspect.getmembers(
         nds2.channel,
         predicate=lambda x: isinstance(x, int),
@@ -126,6 +136,9 @@ def nds2_connection(
     NdsConnection.get_port.return_value = int(port)
     NdsConnection.get_protocol.return_value = int(protocol)
 
+    # store buffers internally
+    NdsConnection._buffers = list(buffers)
+
     def iterate(
         start: float,
         end: float,
@@ -138,35 +151,44 @@ def nds2_connection(
             if Channel.from_nds2(b.channel).ndsname in names
         ]]
 
-    NdsConnection.iterate = iterate
+    NdsConnection.iterate = mock.Mock(side_effect=iterate)
 
     def find_channels(
-        name: str,
-        ctype: int,
-        dtype: int,
+        channel_glob: str = "*",
+        channel_type_mask: int = nds2.channel.DEFAULT_CHANNEL_MASK,
+        data_type_mask: int = nds2.channel.DEFAULT_DATA_MASK,
         min_sample_rate: float = nds2.channel.MIN_SAMPLE_RATE,
         max_sample_rate: float = nds2.channel.MAX_SAMPLE_RATE,
     ) -> list[nds2.channel]:
-        return [b.channel for b in buffers if b.channel.name == name]
+        out = []
+        for b in NdsConnection._buffers:
+            chan = b.channel
+            if (
+                chan.name == channel_glob
+                and chan.sample_rate >= min_sample_rate
+                and chan.sample_rate <= max_sample_rate
+            ):
+                out.append(chan)
+        return out
 
-    NdsConnection.find_channels = find_channels
+    NdsConnection.find_channels = mock.Mock(side_effect=find_channels)
 
     def get_availability(
         names: list[str],
     ) -> nds2.availability_list_type:
         out = []
-        for buff in buffers:
+        for buff in NdsConnection._buffers:
             name = '{0.name},{0.type}'.format(Channel.from_nds2(buff.channel))
             if name not in names:
                 segs = []
             else:
                 start = buff.gps_seconds + buff.gps_nanoseconds * 1e-9
-                end = start + buff.sample_rate * buff.length
+                end = start + buff.length / buff.sample_rate
                 segs = [(start, end)]
             out.append(nds2_availability(name, segs))
         return out
 
-    NdsConnection.get_availability = get_availability
+    NdsConnection.get_availability = mock.Mock(side_effect=get_availability)
 
     return NdsConnection
 
