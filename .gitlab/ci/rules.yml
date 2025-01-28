@@ -70,7 +70,7 @@ spec:
 # full test suite
 .rules_full_test:
   rules:
-    - !reference [.rules_default_push, rules]
+    - !reference [.rules_default, rules]
     - !reference [.rules_merge_request, rules]
 
 # basic test suite
