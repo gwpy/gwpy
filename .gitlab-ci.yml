@@ -25,6 +25,8 @@ default:
       - job_execution_timeout
       - runner_system_failure
       - stuck_or_timeout_failure
+  # no job should take more than an hour
+  timeout: 1h
 
 include:
   # -- Quality assurance checks
