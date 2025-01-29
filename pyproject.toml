@@ -147,6 +147,12 @@ source = [
 ]
 
 [tool.coverage.report]
+exclude_lines = [
+  # ignore when asked
+  "pragma: no( |-)cover",
+  # don't complain about typing blocks
+  "if (typing\\.)?TYPE_CHECKING",
+]
 omit = [
   # don't report coverage for _version.py
   # (generated automatically by setuptools-scm)
