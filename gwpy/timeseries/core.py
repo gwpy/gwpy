@@ -425,6 +425,9 @@ class TimeSeriesBase(Series):
             useful if the same remote data are to be accessed multiple times.
             Set `GWPY_CACHE=1` in the environment to auto-cache.
 
+        timeout : `float`, optional
+            the time to wait for a response from the GWOSC server.
+
         **kwargs
             any other keyword arguments are passed to the `TimeSeries.read`
             method that parses the file that was downloaded

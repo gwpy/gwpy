@@ -59,10 +59,16 @@ GWOSC_LOCATE_KWARGS = (
 
 # -- utilities ----------------------------------------------------------------
 
-def _download_file(url, cache=None, verbose=False):
+def _download_file(url, cache=None, verbose=False, timeout=None, **kwargs):
     if cache is None:
         cache = bool_env('GWPY_CACHE', False)
-    return get_readable_fileobj(url, cache=cache, show_progress=verbose)
+    return get_readable_fileobj(
+        url,
+        cache=cache,
+        show_progress=verbose,
+        remote_timeout=timeout,
+        **kwargs,
+    )
 
 
 def _fetch_gwosc_data_file(url, *args, **kwargs):
@@ -71,6 +77,7 @@ def _fetch_gwosc_data_file(url, *args, **kwargs):
     cls = kwargs.pop('cls', TimeSeries)
     cache = kwargs.pop('cache', None)
     verbose = kwargs.pop('verbose', False)
+    timeout = kwargs.pop('timeout', None)  # astropy will set a default
 
     # match file format
     if url.endswith('.gz'):
@@ -84,7 +91,7 @@ def _fetch_gwosc_data_file(url, *args, **kwargs):
     elif ext == '.gwf':
         kwargs.setdefault('format', 'gwf')
 
-    with _download_file(url, cache, verbose=verbose) as rem:
+    with _download_file(url, cache, verbose=verbose, timeout=timeout) as rem:
         # get channel for GWF if not given
         if ext == ".gwf" and (not args or args[0] is None):
             args = (_gwf_channel(rem, cls, kwargs.get("verbose")),)
