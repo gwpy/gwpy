@@ -23,26 +23,34 @@ from __future__ import annotations
 
 import subprocess
 import tempfile
-from collections.abc import Callable
+import typing
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any
 
 import numpy
 import pytest
 from astropy.time import Time
-from astropy.units import Quantity
 from numpy.testing import (
     assert_allclose,
     assert_array_equal,
 )
 
 from ..io.cache import file_segment
-from ..segments import (
-    DataQualityFlag,
-    SegmentList,
-)
-from ..types import Array
+
+if typing.TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Iterable,
+    )
+    from typing import Any
+
+    from astropy.units import Quantity
+
+    from ..segments import (
+        DataQualityFlag,
+        SegmentList,
+    )
+    from ..types import Array
 
 # -- useful constants ----------------
 
@@ -236,7 +244,8 @@ def assert_table_equal(
         cola = a[name]
         colb = b[name]
         if check_types:
-            assert cola.dtype == colb.dtype
+            assert cola.dtype == colb.dtype, \
+                f"{name} dtype mismatch: {cola.dtype} != {colb.dtype}"
         assert_array(cola, colb)
 
     # check that the tables are copied or the same data
@@ -314,9 +323,9 @@ def test_read_write(
     format: str,
     extension: str | None = None,
     autoidentify: bool = True,
-    read_args: list[Any] = [],
+    read_args: Iterable[Any] = [],
     read_kw: dict[str, Any] = {},
-    write_args: list[Any] = [],
+    write_args: Iterable[Any] = [],
     write_kw: dict[str, Any] = {},
     assert_equal: Callable = assert_quantity_sub_equal,
     assert_kw: dict[str, Any] = {},

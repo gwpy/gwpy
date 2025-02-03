@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Louisiana State University (2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,69 +16,106 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from GWF FrEvent structures into a Table
+"""Read events from GWF FrEvent structures into a Table.
 """
 
-from astropy.table import Table
-from astropy.io import registry as io_registry
+from __future__ import annotations
 
-from ...table import EventTable
-from ...time import LIGOTimeGPS
+import typing
+
+from astropy.table import Table
+
 from ...io import gwf as io_gwf
 from ...io.cache import FILE_LIKE
+from ...time import LIGOTimeGPS
+from .. import EventTable
 from ..filter import parse_column_filters
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterable
+    from pathlib import Path
+    from typing import IO
+
+    from LDASTools.frameCPP import FrEvent
+
+    from ..filter import FilterSpec
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-# -- read ---------------------------------------------------------------------
+# -- read ----------------------------
 
-
-def _columns_from_frevent(frevent):
-    """Get list of column names from frevent
+def _columns_from_frevent(frevent: FrEvent) -> list[str]:
+    """Get list of column names from frevent.
     """
     params = dict(frevent.GetParam())
-    return (['time', 'amplitude', 'probability', 'timeBefore', 'timeAfter',
-             'comment'] + list(params.keys()))
+    return [
+        "time",
+        "amplitude",
+        "probability",
+        "timeBefore",
+        "timeAfter",
+        "comment",
+    ] + list(params.keys())
 
 
-def _row_from_frevent(frevent, columns, selection):
-    """Generate a table row from an FrEvent
+def _row_from_frevent(
+    frevent: FrEvent,
+    columns: Iterable[str],
+    where: Iterable[FilterSpec],
+) -> list[str | float] | None:
+    """Generate a table row from an FrEvent.
 
-    Filtering (``selection``) is done here, rather than in the table reader,
+    Filtering (``where``) is done here, rather than in the table reader,
     to enable filtering on columns that aren't being returned.
+
+    Returns `None` if this event doesn't match the ``where`` conditions.
     """
     # read params
     params = dict(frevent.GetParam())
-    params['time'] = float(LIGOTimeGPS(*frevent.GetGTime()))
-    params['amplitude'] = frevent.GetAmplitude()
-    params['probability'] = frevent.GetProbability()
-    params['timeBefore'] = frevent.GetTimeBefore()
-    params['timeAfter'] = frevent.GetTimeAfter()
-    params['comment'] = frevent.GetComment()
+    params["time"] = float(LIGOTimeGPS(*frevent.GetGTime()))
+    params["amplitude"] = frevent.GetAmplitude()
+    params["probability"] = frevent.GetProbability()
+    params["timeBefore"] = frevent.GetTimeBefore()
+    params["timeAfter"] = frevent.GetTimeAfter()
+    params["comment"] = frevent.GetComment()
+
     # filter
-    if not all(op_(params[c], t) for c, op_, t in selection):
+    if not all(op_(params[c], t) for c, op_, t in where):
         return None
+
     # return event as list
     return [params[c] for c in columns]
 
 
-def table_from_gwf(filename, name, columns=None, selection=None):
-    """Read a Table from FrEvent structures in a GWF file (or files)
+def table_from_gwf(
+    filename: str | Path | IO,
+    name: str,
+    columns: Iterable[str] | None = None,
+    where: str | list[str] | None = None,
+) -> Table:
+    """Read a Table from FrEvent structures in a GWF file (or files).
+
+    This method requires |LDAStools.frameCPP|_.
 
     Parameters
     ----------
-    filename : `str`
-        path of GWF file to read
+    filename : `str`, `pathlib.Path`, `file`
+        The path of GWF file to read.
 
     name : `str`
-        name associated with the `FrEvent` structures
+        The name associated with the `FrEvent` structures.
 
     columns : `list` of `str`
-        list of column names to read
+        List of column names to read.
 
-    selection : `str`, `list` of `str`
-        one or more column selection strings to apply, e.g. ``'snr>6'``
+    where : `str`, `list` of `str`
+        One or more filter condition strings to apply, e.g. ``'snr>6'``.
+
+    Returns
+    -------
+    Table
+        A table of rows read from the GWF input.
     """
     gwf_framecpp = io_gwf.import_backend("frameCPP")
 
@@ -86,10 +124,10 @@ def table_from_gwf(filename, name, columns=None, selection=None):
         filename = filename.name
     stream = gwf_framecpp.open_gwf(filename)
 
-    # parse selections and map to column indices
-    if selection is None:
-        selection = []
-    selection = parse_column_filters(selection)
+    # parse where conditions and map to column indices
+    if where is None:
+        where = []
+    conditions = parse_column_filters(where)
 
     # read events row by row
     data = []
@@ -104,16 +142,21 @@ def table_from_gwf(filename, name, columns=None, selection=None):
         if columns is None:
             columns = _columns_from_frevent(frevent)
         # read row with filter
-        row = _row_from_frevent(frevent, columns, selection)
-        if row is not None:  # if passed selection
+        row = _row_from_frevent(frevent, columns, conditions)
+        if row is not None:  # if passed condition
             data.append(row)
 
     return Table(rows=data, names=columns)
 
 
-# -- write --------------------------------------------------------------------
+# -- write ---------------------------
 
-def table_to_gwf(table, filename, name, **kwargs):
+def table_to_gwf(
+    table: Table,
+    filename: str | Path,
+    name: str,
+    **kwargs,
+):
     """Create a new `~frameCPP.FrameH` and fill it with data
 
     Parameters
@@ -124,16 +167,27 @@ def table_to_gwf(table, filename, name, **kwargs):
     filename : `str`
         the name of the file to write into
 
-    **kwargs
-        other keyword arguments (see below for references)
+    name: `str`, optional
+        The name to give the ``FrameH`` object **and** each ``FrEvent``.
+
+    kwargs
+        Other keyword arguments are passed to the GWF creator and writer
+        functions (see below).
 
     See also
     --------
     gwpy.io.gwf.create_frame
+        For details of how the GWF ``FrameH`` structure is created and
+        any valid keyword arguments.
+
     gwpy.io.gwf.write_frames
-        for documentation of keyword arguments
+        For details of the GWF ``FrEvent`` structures are created, and
+        any valid keyword arguments.
     """
-    from LDAStools.frameCPP import (FrEvent, GPSTime)
+    from LDAStools.frameCPP import (
+        FrEvent,
+        GPSTime,
+    )
 
     gwf_framecpp = io_gwf.import_backend("frameCPP")
 
@@ -154,18 +208,18 @@ def table_to_gwf(table, filename, name, **kwargs):
     names = table.dtype.names
     for row in table:
         rowd = dict((n, row[n]) for n in names)
-        gps = LIGOTimeGPS(rowd.pop('time', 0))
+        gps = LIGOTimeGPS(rowd.pop("time", 0))
         frame.AppendFrEvent(FrEvent(
             str(name),
-            str(rowd.pop('comment', '')),
-            str(rowd.pop('inputs', '')),
+            str(rowd.pop("comment", "")),
+            str(rowd.pop("inputs", "")),
             GPSTime(gps.gpsSeconds, gps.gpsNanoSeconds),
-            float(rowd.pop('timeBefore', 0)),
-            float(rowd.pop('timeAfter', 0)),
-            int(rowd.pop('eventStatus', 0)),
-            float(rowd.pop('amplitude', 0)),
-            float(rowd.pop('probability', -1)),
-            str(rowd.pop('statistics', '')),
+            float(rowd.pop("timeBefore", 0)),
+            float(rowd.pop("timeAfter", 0)),
+            int(rowd.pop("eventStatus", 0)),
+            float(rowd.pop("amplitude", 0)),
+            float(rowd.pop("probability", -1)),
+            str(rowd.pop("statistics", "")),
             list(rowd.items()),  # remaining params as tuple
         ))
 
@@ -177,9 +231,24 @@ def table_to_gwf(table, filename, name, **kwargs):
     )
 
 
-# -- registration -------------------------------------------------------------
+# -- registration --------------------
 
-for table_class in (Table, EventTable):
-    io_registry.register_reader('gwf', table_class, table_from_gwf)
-    io_registry.register_writer('gwf', table_class, table_to_gwf)
-    io_registry.register_identifier('gwf', table_class, io_gwf.identify_gwf)
+for klass in (Table, EventTable):
+    # read
+    klass.read.registry.register_reader(
+        "gwf",
+        klass,
+        table_from_gwf,
+    )
+    # write
+    klass.write.registry.register_writer(
+        "gwf",
+        klass,
+        table_to_gwf,
+    )
+    # identify
+    klass.read.registry.register_identifier(
+        "gwf",
+        klass,
+        io_gwf.identify_gwf,
+    )

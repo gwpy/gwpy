@@ -18,23 +18,21 @@
 """Tests for :mod:`gwpy.table.io.pycbc` and its integration with `EventTable`.
 """
 
-import pytest
-
+import h5py
 import numpy
+import pytest
 from numpy.random import randn
 
-import h5py
-
-from .. import EventTable
-from ..filter import filter_table
-from ..io import pycbc as io_pycbc
 from ...frequencyseries import FrequencySeries
 from ...testing.utils import (
     assert_array_equal,
     assert_quantity_sub_equal,
     assert_table_equal,
 )
-
+from .. import EventTable
+from ..filter import filter_table
+from ..io import pycbc as io_pycbc
+from .utils import random_table
 
 # -- fixtures -----------------------------------
 
@@ -43,9 +41,9 @@ def h5file():
     """Create an empty in-memory HDF5 file.
     """
     with h5py.File(
-        'test',
-        mode='w-',
-        driver='core',
+        "test",
+        mode="w-",
+        driver="core",
         backing_store=False,
     ) as h5f:
         yield h5f
@@ -55,22 +53,22 @@ def h5file():
 def pycbclivetable():
     """A populated `EventTable` in PyCBC format.
     """
-    names = [
-        'a',
-        'b',
-        'c',
-        'chisq',
-        'd',
-        'e',
-        'f',
-        'mass1',
-        'mass2',
-        'snr',
-    ]
-    rows = []
-    for i, name in enumerate(names):
-        rows.append(randn(100) * 1000)
-    return EventTable(rows, names=names)
+    return random_table(
+        names = [
+            "a",
+            "b",
+            "c",
+            "chisq",
+            "chisq_dof",
+            "d",
+            "e",
+            "f",
+            "mass1",
+            "mass2",
+            "snr",
+        ],
+        length=100,
+    )
 
 
 @pytest.fixture
@@ -85,17 +83,17 @@ def pycbclivefile(tmp_path, pycbclivetable, pycbclivepsd):
     """A fully-formed PyCBC-format HDF5 file.
     """
     # create table
-    loudest = (pycbclivetable['snr'] > 500).nonzero()[0]
+    loudest = (pycbclivetable["snr"] > 500).nonzero()[0]
 
     # manually create pycbc_live-format HDF5 file
     tmp = tmp_path / "X1-Live-0-0.hdf"
     with h5py.File(tmp, "w") as h5f:
-        group = h5f.create_group('X1')
+        group = h5f.create_group("X1")
         for col in pycbclivetable.columns:
             group.create_dataset(data=pycbclivetable[col], name=col)
-        group.create_dataset('loudest', data=loudest)
-        group.create_dataset('psd', data=pycbclivepsd.value)
-        group['psd'].attrs['delta_f'] = pycbclivepsd.df.to('Hz').value
+        group.create_dataset("loudest", data=loudest)
+        group.create_dataset("psd", data=pycbclivepsd.value)
+        group["psd"].attrs["delta_f"] = pycbclivepsd.df.to("Hz").value
 
     return tmp
 
@@ -106,7 +104,6 @@ def pycbclivefile(tmp_path, pycbclivetable, pycbclivepsd):
 @pytest.mark.parametrize(("filename", "result"), [
     ("X1-Live-0-0.h5", True),
     ("X1-Live-0-0.hdf5", True),
-    ("X1-Live-0-0.h5", True),
     ("X1-MY_DATA-0-0.h5", False),
 ])
 def test_idenfity_pycbc_live(tmp_path, filename, result):
@@ -156,7 +153,7 @@ def test_read_pycbc_live(pycbclivetable, pycbclivefile, fmt):
     """
     table = EventTable.read(pycbclivefile, format=fmt)
     assert_table_equal(pycbclivetable, table)
-    assert table.meta['ifo'] == 'X1'
+    assert table.meta["ifo"] == "X1"
 
 
 def test_read_pycbc_live_kwargs(pycbclivetable, pycbclivefile):
@@ -164,8 +161,8 @@ def test_read_pycbc_live_kwargs(pycbclivetable, pycbclivefile):
     """
     table = EventTable.read(
         pycbclivefile,
-        format='hdf5.pycbc_live',
-        ifo='X1',
+        format="hdf5.pycbc_live",
+        ifo="X1",
     )
     assert_table_equal(pycbclivetable, table)
 
@@ -179,7 +176,7 @@ def test_read_pycbc_live_loudest(pycbclivetable, pycbclivefile):
         format="hdf5.pycbc_live",
         loudest=True,
     )
-    assert_table_equal(pycbclivetable.filter('snr > 500'), table)
+    assert_table_equal(table, pycbclivetable.filter("snr > 500"))
 
 
 def test_read_pycbc_live_extended_metadata(
@@ -194,15 +191,15 @@ def test_read_pycbc_live_extended_metadata(
         format="hdf5.pycbc_live",
         extended_metadata=True,  # default
     )
-    assert_table_equal(pycbclivetable, table)
+    assert_table_equal(table, pycbclivetable)
     assert_array_equal(
-        table.meta['loudest'],
-        (pycbclivetable['snr'] > 500).nonzero()[0],
+        table.meta["loudest"],
+        (pycbclivetable["snr"] > 500).nonzero()[0],
     )
     assert_quantity_sub_equal(
-        table.meta['psd'],
+        table.meta["psd"],
         pycbclivepsd,
-        exclude=['name', 'channel', 'unit', 'epoch'])
+        exclude=["name", "channel", "unit", "epoch"])
 
 
 def test_read_pycbc_live_extended_metadata_false(
@@ -217,7 +214,7 @@ def test_read_pycbc_live_extended_metadata_false(
         format="hdf5.pycbc_live",
         extended_metadata=False,
     )
-    assert table.meta == {'ifo': 'X1'}
+    assert table.meta == {"ifo": "X1"}
 
 
 def test_read_pycbc_live_multiple_ifos(
@@ -227,7 +224,7 @@ def test_read_pycbc_live_multiple_ifos(
     """Check that `EventTable` can handle multiple IFOs in a PyCBC-Live file
     """
     with h5py.File(pycbclivefile, "r+") as h5f:
-        h5f.create_group('Z1')
+        h5f.create_group("Z1")
     with pytest.raises(
         ValueError,
         match="PyCBC live HDF5 file contains dataset groups",
@@ -237,10 +234,10 @@ def test_read_pycbc_live_multiple_ifos(
     # but check that we can still read the original
     table = EventTable.read(
         pycbclivefile,
-        format='hdf5.pycbc_live',
-        ifo='X1',
+        format="hdf5.pycbc_live",
+        ifo="X1",
     )
-    assert_table_equal(pycbclivetable, table)
+    assert_table_equal(table, pycbclivetable)
 
 
 def test_read_pycbc_live_processed_columns(
@@ -257,30 +254,30 @@ def test_read_pycbc_live_processed_columns(
         columns=["mchirp", "new_snr"],
     )
     mchirp = (
-        (pycbclivetable['mass1'] * pycbclivetable['mass2']) ** (3/5.)
-        / (pycbclivetable['mass1'] + pycbclivetable['mass2']) ** (1/5.)
+        (pycbclivetable["mass1"] * pycbclivetable["mass2"]) ** (3/5.)
+        / (pycbclivetable["mass1"] + pycbclivetable["mass2"]) ** (1/5.)
     )
-    assert_array_equal(table['mchirp'], mchirp)
+    assert_array_equal(table["mchirp"], mchirp)
 
 
-def test_read_pycbc_live_selection_columns(
+def test_read_pycbc_live_filter_columns(
     pycbclivetable,
     pycbclivefile,
 ):
-    """Check that the selection and columns kwargs work when
+    """Check that the ``where`` and ``columns`` kwargs work when
     reading from a PyCBC-Live file.
     """
-    # test with selection and columns
+    # test with 'where' filter and columns
     table = EventTable.read(
         pycbclivefile,
-        format='hdf5.pycbc_live',
-        ifo='X1',
-        selection='snr>.5',
+        format="hdf5.pycbc_live",
+        ifo="X1",
+        where="snr>.5",
         columns=("a", "b", "mass1"),
     )
     assert_table_equal(
         table,
-        filter_table(pycbclivetable, 'snr>.5')[("a", "b", "mass1")],
+        filter_table(pycbclivetable, "snr>.5")[("a", "b", "mass1")],
     )
 
 
@@ -292,12 +289,12 @@ def test_read_pycbc_live_regression_1081(
     """
     table = EventTable.read(
         pycbclivefile,
-        format='hdf5.pycbc_live',
-        ifo='X1',
-        selection='snr>.5',
+        format="hdf5.pycbc_live",
+        ifo="X1",
+        where="snr>.5",
         columns=("a", "b", "snr"),
     )
     assert_table_equal(
         table,
-        filter_table(pycbclivetable, 'snr>.5')[("a", "b", "snr")],
+        filter_table(pycbclivetable, "snr>.5")[("a", "b", "snr")],
     )

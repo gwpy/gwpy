@@ -345,3 +345,47 @@ class UnifiedWrite(astropy_registry.UnifiedReadWrite):
         """
         instance = self._instance
         return self.registry.write(instance, *args, **kwargs)
+
+
+# -- utilities -----------------------
+
+def inherit_unified_io(klass):
+    """Re-register all Unified I/O readers/writes/identifiers from a parent
+    class to a child.
+
+    Only works with the first parent in the inheritance tree.
+
+    This allows the Unified I/O registrations for the child class to be
+    modified independently of the parent.
+    """
+    parent = klass.__mro__[1]
+    parent_registry = parent.read.registry
+    child_registry = klass.read.registry
+    for row in parent_registry.get_formats(data_class=parent):
+        name = row["Format"]
+
+        # read
+        if row["Read"].lower() == "yes":
+            child_registry.register_reader(
+                name,
+                klass,
+                parent_registry.get_reader(name, parent),
+                force=False,
+            )
+        # write
+        if row["Write"].lower() == "yes":
+            child_registry.register_writer(
+                name,
+                klass,
+                parent_registry.get_writer(name, parent),
+                force=False,
+            )
+        # identify
+        if row["Auto-identify"].lower() == "yes":
+            child_registry.register_identifier(
+                name,
+                klass,
+                parent_registry._identifiers[(name, parent)],
+                force=False,
+            )
+    return klass

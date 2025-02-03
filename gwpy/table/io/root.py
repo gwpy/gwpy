@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,105 +16,248 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from ROOT trees into Tables
+"""Read events from ROOT trees into Tables.
 """
 
-from ...io.registry import compat as compat_registry
-from ...io.utils import (file_path, identify_factory)
-from .. import (Table, EventTable)
-from .utils import (read_with_columns, read_with_selection)
+from __future__ import annotations
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+import typing
+
+from ...io.root import identify_root
+from ...io.utils import file_path
+from .. import (
+    EventTable,
+    Table,
+)
+from .utils import read_with_columns_and_where
+
+if typing.TYPE_CHECKING:
+    from pathlib import Path
+    from typing import IO
+
+    import uproot
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def _get_treename(source, trees):
-    """Return the name of the only tree in the trees
+def get_treename(
+    rootdir: uproot.ReadOnlyDirectory,
+) -> str:
+    """Return the name of the only tree in this root directory.
+
+    Parameters
+    ----------
+    rootdir : `uproot.reading.ReadOnlyDirectory`
+        The ROOT object to inspect.
 
     Raises
     ------
     ValueError
-        if multiple trees are found
+        If multiple trees are found.
     """
-    if not trees:  # nothing to read?
-        raise ValueError("No trees found in %s" % source)
+    source = rootdir.file_path
 
-    # get list of all names
-    names = [
-        name.decode("utf-8") if isinstance(name, bytes) else name
-        for name in trees
-    ]
-    if len(names) == 1:
-        return names[0]
-    raise ValueError(
-        "Multiple trees found in {}, please select one via the "
-        "`treename` keyword argument, e.g. `treename='events'`. "
-        "Available trees are: '{}'.".format(
-            source,
-            "', '".join(names),
-        ),
-    )
+    if not rootdir:  # nothing to read?
+        raise ValueError(
+            "No trees found in '{source}'",
+        )
+
+    # find one and only one tree
+    try:
+        tree, = rootdir.iterkeys(
+            recursive=True,
+            cycle=False,
+        )
+    except ValueError as exc:
+        raise ValueError(
+            f"Multiple trees found in {source}, please select one via the "
+            "`treename` keyword argument, e.g. `treename='events'`. "
+            "Available trees are: '{', '.join(names)}'.",
+        ) from exc
+    return tree
 
 
-@read_with_columns
-@read_with_selection
-def table_from_root(source, treename=None, **kwargs):
-    """Read a Table from a ROOT tree
+@read_with_columns_and_where
+def table_from_root(
+    source: str | Path | IO,
+    treename: str | None = None,
+    **kwargs,
+) -> Table:
+    """Read a Table from a ROOT file.
+
+    Requires: |uproot|_.
+
+    Parameters
+    ----------
+    source : `str`, `pathlib.Path`
+        The file path or object from which to read. See `uproot.open`
+        for details on acceptable inputs.
+
+    treename : `str`, optional
+        The name of the ``TTree`` to read.
+        Required unless ``source`` contains exactly one ``TTree``.
+
+    columns : `list` of `str`, optional
+        List of column names to read.
+
+    where : `str`, `list` of `str`, optional
+        One or more column filters with which to downselect the
+        returned table rows as they as read, e.g. ``'snr > 5'``,
+        similar to a SQL ``WHERE`` statement.
+        Multiple conditions should be connected by ' && ' or ' and ',
+        or given as a `list`, e.g. ``'snr > 5 && frequency < 1000'`` or
+        ``['snr > 5', 'frequency < 1000']``.
+
+    kwargs
+        All other keyword arguments are either passed to
+        `uproot.open` or to the `~astropy.table.Table` constructor.
+
+    Raises
+    ------
+    ValueError
+        If ``treename=None`` is given and multiple trees exist in
+        the ``source``.
+
+    KeyError
+        If ``treename`` is given but no tree is found with that name.
+
+    See also
+    --------
+    uproot.open
+        For details of how ROOT files are parsed and what keyword
+        arguments should be supported.
+
+    astropy.table.Table
+        For details of the keyword arguments supported when creating tables.
     """
     import uproot
 
+    # handle uproot.open keywords
+    createkw = {
+        # valid for uproot 5.5.1
+        k: kwargs.pop(k) for k in {
+            "object_cache",
+            "array_cache",
+            "custom_classes",
+            "decompression_executor",
+            "interpretation_executor",
+            "handler",
+            "timeout",
+            "max_num_elements"
+            "num_workers"
+            "use_threads"
+            "num_fallback_workers"
+            "begin_chunk_size"
+            "minimal_ttree_metadata"
+        } if k in kwargs
+    }
+
     path = file_path(source)
-    with uproot.open(path) as trees:
+    with uproot.open(path, **createkw) as rootdir:
         # find tree name
         if treename is None:
-            treename = _get_treename(path, trees)
+            treename = get_treename(rootdir)
 
         # read branches from tree
-        try:
-            return Table(trees[treename].arrays(library="np"), **kwargs)
-        except TypeError:  # uproot < 4
-            return Table(trees[treename].arrays(namedecode="utf-8"), **kwargs)
+        return Table(rootdir[treename].arrays(library="np"), **kwargs)
 
 
 def table_to_root(
-        table,
-        filename,
-        treename="tree",
-        overwrite=False,
-        append=False,
-        **kwargs,
+    table: Table,
+    filename: str | Path | IO,
+    treename: str = "tree",
+    overwrite: bool = False,
+    append: bool =False,
+    **kwargs,
 ):
-    """Write a Table to a ROOT file
+    """Write a Table to a ROOT file.
+
+    Requires: |uproot|_.
+
+    Parameters
+    ----------
+    filename : `str`, `pathlib.Path`
+        Filename or object to write to.
+
+    treename : `str`
+        Name of the ROOT ``TTree`` to create for this table.
+
+    overwrite : `bool`
+        If `True` over-write an existing file of the same name.
+        Default is `False`.
+
+    append : `bool`
+        If `True` append a new ``TTree`` to an existing file.
+        Default is `False`.
+
+    kwargs
+        All other keyword arguments are passed to the relevant
+        `uproot` functions for creating/updating a file and
+        writing a ``TTree``.
+
+    Raises
+    ------
+    FileExistsError
+        If ``overwrite=False, append=False`` is given and the
+        target filename already exists.
+
+    OSError
+        If ``append=True`` is given and the target filename does not
+        already exist.
+
+    See also
+    --------
+    uproot.create
+        For details of how new files are created and what keyword
+        arguments should be supported.
+        This is called if ``overwrite=False, append=False`` is given.
+
+    uproot.update
+        For details of how existing files are updated and what keyword
+        arguments should be supported.
+        This is called if ``append=True`` is given.
+
+    uproot.recreate
+        For details of how existing files are over-written and what keyword
+        arguments should be supported.
+        This is called if ``overwrite=True, append=False`` is given.
+
+    uproot.writing.writable.WritableDirectory.mktree
+        For deatils of how ``TTree`` objects are created and what keyword
+        arguments should be supported.
     """
     import uproot
 
+    # handle file creation/update options
     createkw = {
         k: kwargs.pop(k) for k in {
             "initial_directory_bytes",
+            "initial_streamers_bytes",
             "uuid_function",
+            "compression",
         } if k in kwargs
     }
-    if append:
-        create_func = uproot.update
-    elif overwrite:
+    if overwrite:
         create_func = uproot.recreate
+    elif append:
+        create_func = uproot.update
     else:
         create_func = uproot.create
 
+    # create file
     with create_func(filename, **createkw) as outf:
+        # create the tree
         tree = outf.mktree(
             treename,
             dict(table.dtype.descr),
             **kwargs,
         )
+        # add data to it
         tree.extend(dict(table.columns))
 
 
 # register I/O
-for table_class in (Table, EventTable):
-    compat_registry.register_reader('root', table_class, table_from_root)
-    compat_registry.register_writer('root', table_class, table_to_root)
-    compat_registry.register_identifier(
-        'root',
-        table_class,
-        identify_factory('.root'),
-    )
+for klass in (Table, EventTable):
+    klass.read.registry.register_reader("root", klass, table_from_root)
+    klass.write.registry.register_writer("root", klass, table_to_root)
+    klass.read.registry.register_identifier("root", klass, identify_root)

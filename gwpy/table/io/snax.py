@@ -1,4 +1,5 @@
 # Copyright (C) Patrick Godwin (2019-2020)
+#               Cardiff University (2020-)
 #
 # This file is part of GWpy.
 #
@@ -15,51 +16,75 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from SNAX
+"""Read events from SNAX.
 """
 
+from __future__ import annotations
+
+import typing
 import warnings
 
 from astropy.io.misc.hdf5 import read_table_hdf5
-from astropy.table import vstack
+from astropy.table import (
+    Table,
+    vstack,
+)
 
 from ...io.hdf5 import with_read_hdf5
-from ...io.registry import compat as compat_registry
 from .. import EventTable
-from .utils import (read_with_columns, read_with_selection)
+from .utils import (
+    read_with_columns,
+    read_with_where,
+)
 
-__author__ = 'Patrick Godwin <patrick.godwin@ligo.org>'
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    import h5py
+
+__author__ = "Patrick Godwin <patrick.godwin@ligo.org>"
 
 
 @read_with_columns
-@read_with_selection
+@read_with_where
 @with_read_hdf5
-def table_from_file(source, channels=None, on_missing="error", compact=False):
-    """Read an `EventTable` from a SNAX HDF5 file
+def table_from_file(
+    source: h5py.Group,
+    channels: Iterable[str] | None = None,
+    on_missing: str = "error",
+    compact: bool = False,
+) -> Table:
+    """Read an `EventTable` from a SNAX HDF5 file.
 
     Parameters
     ----------
-    source : `h5py.File`
-        the file path of open `h5py` object from which to read the data
+    source : `str`, `pathlib.Path`, `file`, `h5py.File`
+        The file path of open `h5py` object from which to read the data.
 
     channels : `str` or `list`, optional
-        the channel(s) to read data from. if no channels selected,
-        read in all channels
+        The channel(s) to read data from. if no channels selected,
+        read in all channels.
 
     on_missing: `str`, optional
-        how to proceed when channels requested are missing. choose one from:
-            * ``'warn'``: emit a warning when missing channels are discovered
-            * ``'error'``: raise an exception
-        default is 'error'.
+        How to proceed when channels requested are missing. One of:
 
-    compact : `bool`, optional, default: False
-        whether to store a compact integer representation in the channel
+        "warn"
+            Emit a warning when missing channels are discovered.
+
+        "error"
+            Raise an exception.
+
+        Default is ``"error"``
+
+    compact : `bool`, optional
+        Whether to store a compact integer representation in the channel
         column rather than the full channel name, instead storing a mapping
         (`channel_map`) in the table metadata.
+        Default is `False`.
 
     Returns
     -------
-    table : `~gwpy.table.EventTable`
+    table : `~astropy.table.Table`
     """
     # format channels appropriately
     if isinstance(channels, str):
@@ -85,7 +110,8 @@ def table_from_file(source, channels=None, on_missing="error", compact=False):
                 warnings.warn(msg)
             else:
                 raise ValueError(
-                    'on_missing argument must be one of "warn" or "error"')
+                    "on_missing argument must be one of 'warn' or 'error'",
+                )
         channels = channels & found
 
     # read data, adding in 'channel' column
@@ -112,4 +138,8 @@ def table_from_file(source, channels=None, on_missing="error", compact=False):
 
 
 # register for unified I/O
-compat_registry.register_reader('hdf5.snax', EventTable, table_from_file)
+EventTable.read.registry.register_reader(
+    "hdf5.snax",
+    EventTable,
+    table_from_file,
+)

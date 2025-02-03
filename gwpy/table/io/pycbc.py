@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,59 +16,116 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from the PyCBC live online GW search
+"""Read events from the PyCBC live online GW search.
 """
 
+from __future__ import annotations
+
 import re
+import typing
 from os.path import basename
 
-import numpy
-
 import h5py
+import numpy
+from astropy.table import Table
 
-from ...io.hdf5 import (identify_hdf5, with_read_hdf5)
-from ...io.registry import compat as compat_registry
-from .. import (Table, EventTable)
-from ..filter import (filter_table, parse_column_filters)
+from ...io.hdf5 import (
+    identify_hdf5,
+    with_read_hdf5,
+)
+from .. import EventTable
+from ..filter import (
+    filter_table,
+    parse_column_filters,
+)
+from .utils import (
+    DYNAMIC_COLUMN_FUNC,
+    DYNAMIC_COLUMN_INPUT,
+)
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__credits__ = 'Alex Nitz <alex.nitz@ligo.org>'
+if typing.TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
+    from typing import (
+        IO,
+        Any,
+    )
 
-PYCBC_LIVE_FORMAT = 'hdf5.pycbc_live'
+    from ...frequencyseries import FrequencySeries
 
-META_COLUMNS = {'psd', 'loudest'}
-PYCBC_FILENAME = re.compile('([A-Z][0-9])+-Live-[0-9.]+-[0-9.]+.(h5|hdf|hdf5)')
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__credits__ = "Alex Nitz <alex.nitz@ligo.org>"
+
+PYCBC_LIVE_FORMAT = "hdf5.pycbc_live"
+
+META_COLUMNS: set[str] = {
+    "loudest",
+    "psd",
+}
+PYCBC_FILENAME = re.compile(
+    "([A-Z][0-9])+-Live-[0-9.]+-[0-9.]+.(h5|hdf|hdf5)",
+)
+
+
+def _get_column(
+    source: h5py.Group,
+    name: str,
+    loudest: numpy.ndarray | None = None,
+):
+    """Read a `~astropy.table.Column` from a PyCBC `h5py.Group`.
+    """
+    try:  # normal column
+        arr = source[name][:]
+    except KeyError:
+        # try and generate the column on-the-fly
+        if name in GET_COLUMN:
+            arr = GET_COLUMN[name](source)
+        else:
+            raise
+    if loudest is not None:  # return only the loudest events
+        arr = arr[loudest]
+    return Table.Column(arr, name=name)
 
 
 @with_read_hdf5
-def table_from_file(source, ifo=None, columns=None, selection=None,
-                    loudest=False, extended_metadata=True):
-    """Read a `Table` from a PyCBC live HDF5 file
+def table_from_file(
+    source: h5py.Group,
+    ifo: str | None = None,
+    columns: list[str] | None = None,
+    where: str | list[str] | None = None,
+    loudest: bool = False,
+    extended_metadata: bool = True,
+) -> Table:
+    """Read a `Table` from a PyCBC live HDF5 file.
+
+    The PyCBC project stores tabular data in HDF5 files using an `h5py.Group`
+    to describe the table, and `h5py.Dataset` structures for each column.
 
     Parameters
     ----------
-    source : `str`, `h5py.File`, `h5py.Group`
-        the file path of open `h5py` object from which to read the data
+    source : `str`, `pathlib.Path`, `file`, `h5py.Group`
+        The file path or open `h5py` object from which to read the data.
 
     ifo : `str`, optional
-        the interferometer prefix (e.g. ``'G1'``) to read; this is required
-        if reading from a file path or `h5py.File` and the containing file
-        stores data for multiple interferometers
+        The interferometer prefix (e.g. ``'G1'``) to read; this is required
+        if reading from a file path or a `h5py.File` and the containing file
+        stores data for multiple interferometers.
 
-    columns : `list` or `str`, optional
-        the list of column names to read, defaults to all in group
+    columns : `list` of `str`, optional
+        The list of column names to include in returned table.
+        Default is all columns.
 
     loudest : `bool`, optional
-        read only those events marked as 'loudest',
-        default: `False` (read all)
+        If `True` read only those events marked as 'loudest'.
+        Default is `False` (read all rows in the table).
 
     extended_metadata : `bool`, optional
-        record non-column datasets found in the H5 group (e.g. ``'psd'``)
-        in the ``meta`` dict, default: `True`
+        If `True` record non-column datasets found in the H5 group (e.g. ``'psd'``)
+        in the ``meta`` dict. Default is `True`.
 
     Returns
     -------
-    table : `~gwpy.table.EventTable`
+    table : `~astropy.table.Table`
     """
     # find group
     if isinstance(source, h5py.File):
@@ -75,15 +133,13 @@ def table_from_file(source, ifo=None, columns=None, selection=None,
 
     # -- by this point 'source' is guaranteed to be an h5py.Group
 
-    # parse default columns
-    if columns is None:
-        columns = list(_get_columns(source))
-    readcols = set(columns)
+    # list of columns to read (default: everything that's there)
+    read_cols = set(columns or _get_columns(source))
 
-    # parse selections
-    selection = parse_column_filters(selection or [])
-    if selection:
-        readcols.update(list(zip(*selection))[0])
+    # parse where conditions
+    filters = parse_column_filters(where or [])
+    if filters:  # add necessary columns to read list
+        read_cols.update(fs.column for fs in filters)
 
     # set up meta dict
     meta = {'ifo': ifo}
@@ -91,91 +147,115 @@ def table_from_file(source, ifo=None, columns=None, selection=None,
     if extended_metadata:
         meta.update(_get_extended_metadata(source))
 
+    # extract loudest array index
+    loudidx: numpy.ndarray | None = None
     if loudest:
-        loudidx = source['loudest'][:]
+        loudidx = source["loudest"][:]
 
     # map data to columns
-    data = []
-    for name in readcols:
-        # convert hdf5 dataset into Column
-        try:
-            arr = source[name][:]
-        except KeyError:
-            if name in GET_COLUMN:
-                arr = GET_COLUMN[name](source)
-            else:
-                raise
-        if loudest:
-            arr = arr[loudidx]
-        data.append(Table.Column(arr, name=name))
+    data = [
+        _get_column(source, name, loudest=loudidx)
+        for name in read_cols
+    ]
 
-    # read, applying selection filters, and column filters
-    return filter_table(Table(data, meta=meta), selection)[columns]
+    # read, applying filters, and column filters
+    tab = Table(data, meta=meta)
+    if filters:
+        tab = filter_table(tab, filters)
+    if columns:  # return only the columns the user asked for
+        return tab[columns]
+    return tab
 
 
-def _find_table_group(h5file, ifo=None):
-    """Find the right `h5py.Group` within the given `h5py.File`
+def _find_table_group(
+    h5file: h5py.Group,
+    ifo: str | None = None,
+) -> tuple[h5py.Group, str]:
+    """Find the right `h5py.Group` within the given `h5py.File`.
     """
-    exclude = ('background',)
+    exclude = ("background",)
     if ifo is None:
         try:
-            ifo, = [key for key in h5file if key not in exclude]
+            ifo, = (key for key in h5file if key not in exclude)
         except ValueError as exc:
-            exc.args = ("PyCBC live HDF5 file contains dataset groups "
-                        "for multiple interferometers, please specify "
-                        "the prefix of the relevant interferometer via "
-                        "the `ifo` keyword argument, e.g: `ifo=G1`",)
+            exc.args = (
+                "PyCBC live HDF5 file contains dataset groups "
+                "for multiple interferometers, please specify "
+                "the prefix of the relevant interferometer via "
+                "the `ifo` keyword argument, e.g: `ifo=G1`",
+            )
             raise
     try:
         return h5file[ifo], ifo
     except KeyError as exc:
-        exc.args = ("No group for ifo %r in PyCBC live HDF5 file" % ifo,)
+        exc.args = f"No group for ifo '{ifo}' in PyCBC live HDF5 file",
         raise
 
 
-def _get_columns(h5group):
-    """Find valid column names from a PyCBC HDF5 Group
+def _get_columns(h5group: h5py.Group) -> set[str]:
+    """Find valid column names from a PyCBC HDF5 Group.
 
     Returns a `set` of names.
     """
     columns = set()
     for name in sorted(h5group):
+        # not a column, or one to ignore
         if (
             not isinstance(h5group[name], h5py.Dataset)
-            or name == 'template_boundaries'
+            or name == "template_boundaries"
         ):
             continue
-        if name.endswith('_template') and name[:-9] in columns:
+
+        # template parameters, ignore those
+        if (
+            name.endswith("_template")
+            and name[:-9] in columns
+        ):
             continue
+
         columns.add(name)
     return columns - META_COLUMNS
 
 
-def _get_extended_metadata(h5group):
-    """Extract the extended metadata for a PyCBC table in HDF5
+def _parse_psd(dataset: h5py.Dataset) -> FrequencySeries:
+    """Parse a PyCBC PSD from an `h5py.Dataset`.
+
+    Returns
+    -------
+    gwpy.frequencyseries.FrequencySeries
+    """
+    from gwpy.frequencyseries import FrequencySeries
+    return FrequencySeries(
+        dataset[:],
+        f0=0,
+        df=dataset.attrs["delta_f"],
+        name="pycbc_live",
+    )
+
+
+def _get_extended_metadata(h5group: h5py.Group) -> dict[str, Any]:
+    """Extract the extended metadata for a PyCBC table in HDF5.
 
     This method packs non-table-column datasets in the given h5group into
-    a metadata `dict`
+    a metadata `dict`.
 
     Returns
     -------
     meta : `dict`
-       the metadata dict
+       The metadata dict.
     """
     meta = dict()
 
     # get PSD
     try:
-        psd = h5group['psd']
+        psdds = h5group["psd"]
     except KeyError:
         pass
     else:
-        from gwpy.frequencyseries import FrequencySeries
-        meta['psd'] = FrequencySeries(
-            psd[:], f0=0, df=psd.attrs['delta_f'], name='pycbc_live')
+        meta["psd"] = _parse_psd(psdds)
 
     # get everything else
-    for key in META_COLUMNS - {'psd'}:
+    for key in META_COLUMNS - {"psd"}:
         try:
             value = h5group[key][:]
         except KeyError:
@@ -186,8 +266,11 @@ def _get_extended_metadata(h5group):
     return meta
 
 
-def filter_empty_files(files, ifo=None):
-    """Remove empty PyCBC-HDF5 files from a list
+def filter_empty_files(
+    files: list[str],
+    ifo: str | None = None,
+) -> list[str]:
+    """Remove empty PyCBC-HDF5 files from a list.
 
     Parameters
     ----------
@@ -195,42 +278,45 @@ def filter_empty_files(files, ifo=None):
         A list of file paths to test.
 
     ifo : `str`, optional
-        prefix for the interferometer of interest (e.g. ``'L1'``),
-        include this for a more robust test of 'emptiness'
+        Prefix for the interferometer of interest (e.g. ``'L1'``),
+        include this for a more robust test of 'emptiness'.
 
     Returns
     -------
     nonempty : `list`
-        the subset of the input ``files`` that are considered not empty
+        The subset of the input ``files`` that are considered not empty.
 
     See also
     --------
     empty_hdf5_file
-        for details of the 'emptiness' test
+        For details of the 'emptiness' test.
     """
     return type(files)([f for f in files if not empty_hdf5_file(f, ifo=ifo)])
 
 
 @with_read_hdf5
-def empty_hdf5_file(h5f, ifo=None):
-    """Determine whether PyCBC-HDF5 file is empty
+def empty_hdf5_file(
+    h5f: h5py.File,
+    ifo: str | None = None,
+) -> bool:
+    """Determine whether a PyCBC-HDF5 file is empty.
 
     A file is considered empty if it contains no groups at the base level,
     or if the ``ifo`` group contains only the ``psd`` dataset.
 
     Parameters
     ----------
-    h5f : `str`
-        path of the pycbc_live file to test
+    h5f : `str`, `pathlib.Path`, `h5py.File`
+        The path of the pycbc_live file to test.
 
     ifo : `str`, optional
-        prefix for the interferometer of interest (e.g. ``'L1'``),
-        include this for a more robust test of 'emptiness'
+        Prefix for the interferometer of interest (e.g. ``'L1'``),
+        include this for a more robust test of 'emptiness'.
 
     Returns
     -------
     empty : `bool`
-        `True` if the file looks to have no content, otherwise `False`
+        `True` if the file looks to have no content, otherwise `False`.
     """
     # the decorator opens the HDF5 file for us, so h5f is guaranteed to
     # be an h5py.Group object
@@ -248,64 +334,94 @@ def empty_hdf5_file(h5f, ifo=None):
     return True
 
 
-def identify_pycbc_live(origin, filepath, fileobj, *args, **kwargs):
+def identify_pycbc_live(
+    origin: str,
+    filepath: str | Path | None,
+    fileobj: IO | None,
+    *args,
+    **kwargs,
+) -> bool:
     """Identify a PyCBC Live file as an HDF5 with the correct name.
     """
+    # first, check that this is a valid HDF5 file
+    if not identify_hdf5(origin, filepath, fileobj, *args, **kwargs):
+        return False
+
+    # next, check that the filename matches what we expect from PyCBC live
+    # -- this is terrible, but it's the best I can think of
+    if filepath is None and fileobj is not None:  # need file name
+        filepath = getattr(fileobj, "name", None)
     return bool(
-        identify_hdf5(origin, filepath, fileobj, *args, **kwargs)
-        and (
-            filepath is not None
-            and PYCBC_FILENAME.match(basename(filepath))
-        )
+        filepath is not None
+        and PYCBC_FILENAME.match(basename(filepath))
     )
 
 
 # register for unified I/O (with higher priority than HDF5 reader)
-compat_registry.register_identifier(
+EventTable.read.registry.register_identifier(
     PYCBC_LIVE_FORMAT,
     EventTable,
     identify_pycbc_live,
 )
-compat_registry.register_reader(
+EventTable.read.registry.register_reader(
     PYCBC_LIVE_FORMAT,
     EventTable,
     table_from_file,
     priority=1,
 )
 
-# -- processed columns --------------------------------------------------------
+# -- processed columns ---------------
 #
 # Here we define methods required to build commonly desired columns that
 # are just a combination of the basic columns.
 #
 # Each method should take in an `~h5py.Group` and return a `numpy.ndarray`
 
-GET_COLUMN = {}
+GET_COLUMN: dict[str, Callable] = {}
+GET_COLUMN_EXTRA: dict[str, set[str]] = dict()
 
 
-def _new_snr_scale(redx2, q=6., n=2.):  # pylint: disable=invalid-name
+def _new_snr_scale(
+    redx2: float | numpy.ndarray,
+    q: float = 6.,
+    n: float = 2.,
+) -> float | numpy.ndarray:
     return (.5 * (1. + redx2 ** (q/n))) ** (-1./q)
 
 
-def get_new_snr(h5group, q=6., n=2.):  # pylint:  disable=invalid-name
-    """Calculate the 'new SNR' column for this PyCBC HDF5 table group
+def get_new_snr(
+    h5group: h5py.Group,
+    q: float = 6.,
+    n: float = 2.,
+) -> numpy.ndarray:
+    """Calculate the 'new SNR' column for this PyCBC HDF5 table group.
     """
-    newsnr = h5group['snr'][:].copy()
-    rchisq = h5group['chisq'][:]
+    newsnr = h5group["snr"][:].copy()
+    rchisq = h5group["chisq"][:]
     idx = numpy.where(rchisq > 1.)[0]
     newsnr[idx] *= _new_snr_scale(rchisq[idx], q=q, n=n)
     return newsnr
 
 
-GET_COLUMN['new_snr'] = get_new_snr
+GET_COLUMN["new_snr"] = get_new_snr
+GET_COLUMN_EXTRA["new_snr"] = {"snr", "chisq"}
 
+# use the generic mass functions
+for _key in {
+    "mchirp",
+    "mtotal",
+}:
+    GET_COLUMN[_key] = DYNAMIC_COLUMN_FUNC[_key]
+    GET_COLUMN_EXTRA[_key] = DYNAMIC_COLUMN_INPUT[_key]
 
-def get_mchirp(h5group):
-    """Calculate the chipr mass column for this PyCBC HDF5 table group
-    """
-    mass1 = h5group['mass1'][:]
-    mass2 = h5group['mass2'][:]
-    return (mass1 * mass2) ** (3/5.) / (mass1 + mass2) ** (1/5.)
-
-
-GET_COLUMN['mchirp'] = get_mchirp
+# update custom columns using pycbc's ranking function dict
+try:
+    from pycbc.events.ranking import (
+        required_datasets,
+        sngls_ranking_function_dict,
+    )
+except ImportError:
+    pass
+else:
+    GET_COLUMN.update(sngls_ranking_function_dict)
+    GET_COLUMN_EXTRA.update(required_datasets)

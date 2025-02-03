@@ -201,7 +201,7 @@ def to_gps(
 
 def from_gps(
     gps: LIGOTimeGPS | float,
-):
+) -> datetime.datetime:
     """Convert a GPS time into a `datetime.datetime`.
 
     Parameters
@@ -255,7 +255,7 @@ def from_gps(
 # -- utilities ----------------------------------------------------------------
 # special case strings
 
-def _now() -> datetime.date:
+def _now() -> datetime.datetime:
     try:
         now = datetime.datetime.now(datetime.UTC)
     except AttributeError:  # python < 3.11
@@ -289,7 +289,7 @@ DATE_STRINGS: dict[str, Callable] = {
 
 def _str_to_datetime(
     datestr: str,
-) -> datetime.date:
+) -> datetime.datetime:
     """Convert `str` to `datetime.datetime`.
     """
     # try known string

@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -18,21 +19,45 @@
 """Read events from an Omicron-format ROOT file.
 """
 
-from ...io.registry import compat as compat_registry
+from __future__ import annotations
+
+import typing
+
+from astropy.table import Table
+
 from .. import EventTable
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+if typing.TYPE_CHECKING:
+    from pathlib import Path
+    from typing import IO
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def table_from_omicron(source, *args, **kwargs):
-    """Read an `EventTable` from an Omicron ROOT file
+def table_from_omicron(
+    source: str | Path | IO,
+    format: str = "root",
+    treename: str = "triggers",
+    **kwargs,
+) -> Table:
+    """Read an `EventTable` from an Omicron ROOT file.
 
     This function just redirects to the format='root' reader with appropriate
     defaults.
+
+    See `EventTable.read.help('root')` for more details.
     """
-    if not args:  # only default treename if args not given
-        kwargs.setdefault('treename', 'triggers')
-    return EventTable.read(source, *args, format='root', **kwargs)
+    return Table.read(
+        source,
+        format=format,
+        treename=treename,
+        **kwargs,
+    )
 
 
-compat_registry.register_reader('root.omicron', EventTable, table_from_omicron)
+for _klass in (Table, EventTable):
+    _klass.read.registry.register_reader(
+        "root.omicron",
+        _klass,
+        table_from_omicron,
+    )

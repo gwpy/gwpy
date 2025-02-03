@@ -15,85 +15,382 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilities for database queries
+"""Utilities for database queries.
+
+All functions in this module require |sqlalchemy|_.
 """
+
+from __future__ import annotations
+
+import operator
+import typing
+from functools import reduce
 
 from astropy.table import Table
 
-from ..filter import (OPERATORS, parse_column_filters)
+from .. import EventTable
+from ..filter import parse_column_filters
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+if typing.TYPE_CHECKING:
+    from collections.abc import (
+        Mapping,
+        Sequence,
+    )
+    from typing import (
+        Any,
+        TypeAlias,
+    )
 
+    import sqlalchemy
 
-def format_db_selection(selection, engine=None):
-    """Format a column filter selection as a SQL database WHERE string
-    """
-    # parse selection for SQL query
-    if selection is None:
-        return ''
-    selections = []
-    for col, op_, value in parse_column_filters(selection):
-        if engine and engine.name == 'postgresql':
-            col = '"%s"' % col
-        try:
-            opstr = [key for key in OPERATORS if OPERATORS[key] is op_][0]
-        except KeyError:
-            raise ValueError("Cannot format database 'WHERE' command with "
-                             "selection operator %r" % op_)
-        selections.append('{0} {1} {2!r}'.format(col, opstr, value))
-    if selections:
-        return 'WHERE %s' % ' AND '.join(selections)
-    return ''
+    WhereExpression: TypeAlias = sqlalchemy.SQLColumnExpression | str | None
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def fetch(engine, tablename, columns=None, selection=None, **kwargs):
-    """Fetch data from an SQL table into an `EventTable`
+# -- utilities -----------------------
+
+def format_where(
+    condition: WhereExpression | list[WhereExpression],
+) -> sqlalchemy.SQLColumnExpression | None:
+    """Format a column filter condition as a SQL ``WHERE`` expression.
+
+    Requires: |sqlalchemy|_.
 
     Parameters
     ----------
-    engine : `sqlalchemy.engine.Engine`
-        the database engine to use when connecting
-
-    table : `str`,
-        The name of table you are attempting to receive triggers
-        from.
-
-    selection
-        other filters you would like to supply
-        underlying reader method for the given format
-
-    .. note::
-
-       For now it will attempt to automatically connect you
-       to a specific DB. In the future, this may be an input
-       argument.
+    condition : `str`, `list` of `str`
+        A column filter string or list of filters.
+        Each entry should be parseable using
+        `gwpy.table.filter.parse_column_filter`.
 
     Returns
     -------
-    table : `GravitySpyTable`
+    expression : `sqlalchemy.SQLColumnExpression`, `None`
+        The formatted query expression, suitable for application using
+        `~sqlalchemy.sql.expression.Select.where`.
+        `None` will be returned if no ``WHERE`` expression is created
+        (``condition`` is `None` or an empty iterable).
+
+    Examples
+    --------
+    >>> format_where(['snr > 10', 'frequency < 1000'])
+    <sqlalchemy.sql.elements.BooleanClauseList object at 0x7f0d7faf78f0>
+    >>> print(format_where(['snr > 10', 'frequency < 1000']))
+    snr > :snr_1 AND frequency < :frequency_1
     """
-    import pandas as pd
+    from sqlalchemy import (
+        Column,
+        SQLColumnExpression,
+    )
 
-    # parse columns for SQL query
+    # parse condition for SQL query
+    if condition is None:
+        return None
+
+    if isinstance(condition, str):
+        condition = [condition]
+
+    expressions = []
+    for item in condition:
+        if item is None:
+            continue
+        if isinstance(item, SQLColumnExpression):
+            expressions.append(item)
+        else:
+            for col, op_, value in parse_column_filters(item):
+                expressions.append(op_(Column(col), value))
+    if expressions:
+        return reduce(operator.and_, expressions)
+    return None
+
+
+def format_query(
+    tablename: str | sqlalchemy.TableClause,
+    columns: list[str | sqlalchemy.Column] | None = None,
+    where: str | list[str] | None = None,
+    order_by: str | sqlalchemy.Column | None = None,
+    order_by_desc: bool = False,
+) -> sqlalchemy.Select:
+    """Format a SQL query using `sqlalchemy`.
+
+    Requires: |sqlalchemy|_.
+
+    Parameters
+    ----------
+    tablename: `str`
+        The name of the database table to ``SELECT FROM``.
+
+    columns : `list` of `str`, optional
+        The list of columns to ``SELECT``.
+
+    where : `str`, `list` of `str`, optional
+        A filter or list of filters to apply as ``WHERE`` conditions.
+
+    order_by : `str`, optional
+        The column to ``ORDER BY``.
+
+    order_by_desc : `bool`, optional
+        If `True`, apply ``order_by`` with the ``DESC`` flag.
+        Default is `False` (``ASC``).
+
+    Returns
+    -------
+    statement : `sqlalchemy.sql.expression.Select`
+        The formatted ``SELECT`` statement, suitable for passing to
+        `sqlalchemy.engine.Connection.execute` or `pandas.read_sql`.
+    """
+    from sqlalchemy import (
+        Column,
+        asc,
+        desc,
+        select,
+        table,
+    )
+
+    # parse columns
     if columns is None:
-        columnstr = '*'
+        columns = ["*"]
     else:
-        columnstr = ', '.join('"%s"' % c for c in columns)
-
-    # parse selection for SQL query
-    selectionstr = format_db_selection(selection, engine=engine)
+        columns = list(map(Column, columns))
 
     # build SQL query
-    qstr = 'SELECT %s FROM %s %s' % (columnstr, tablename, selectionstr)
+    query = select(*columns).select_from(table(tablename))
+    if (expr := format_where(where)) is not None:
+        query = query.where(expr)
+    if order_by:
+        if order_by_desc:
+            return query.order_by(desc(Column(order_by)))
+        return query.order_by(asc(Column(order_by)))
+    return query
+
+
+# -- misc queries --------------------
+
+def get_columns(
+    tablename: str,
+    engine: sqlalchemy.Engine,
+) -> dict[str, type]:
+    """Return the names and types of the columns in a database table.
+
+    This is just a wrapper around
+    `sqlalchemy.engine.reflection.Inspector.get_columns`.
+
+    Parameters
+    ----------
+    tablename : `str`
+        The name of table to inspect.
+
+    engine : `sqlalchemy.engine.Engine`, optional
+        The database engine to use when connecting.
+
+    Returns
+    -------
+    names : `dict` of (`str`, `type`) pairs
+        The name and type of each column found in the database.
+    """
+    from sqlalchemy import inspect
+
+    inspector = inspect(engine)
+    return {
+        col["name"]: col["type"].python_type
+        for col in inspector.get_columns(tablename)
+    }
+
+
+# -- fetch ---------------------------
+
+def create_engine(
+    drivername: str,
+    username: str | None = None,
+    password: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    database: str | None = None,
+    query: Mapping[str, Sequence[str] | str] | None = None,
+    **kwargs,
+):
+    """Create a new `sqlalchemy.engine.Engine`.
+
+    Requires: |sqlalchemy|_.
+
+    Parameters
+    ----------
+    drivername : `str`
+        Database backend and driver name.
+
+    user : `str`, optional
+        The username for authentication to the database.
+
+    password : `str`, optional
+        The password for authentication to the database.
+
+    host : `str`, optional
+        The name of the remote database host.
+
+    post : `int`, optional
+        Port to connect to on ``host``.
+
+    database : `str`, optional
+        The name of the database to connect to.
+
+    query : `dict`, optional
+        Query parameters.
+
+    kwargs
+        Other keyword arguments are passed to `sqlalchemy.create_engine`.
+
+    Returns
+    -------
+    engine : `sqlalchemy.engine.Engine`
+        A new engine.
+
+    See also
+    --------
+    sqlalchemy.engine.URL.create
+        For details of how URLs are constructed.
+    sqlalchemy.create_engine
+        For documentation on the engine.
+    """
+    from sqlalchemy import (
+        URL,
+        create_engine,
+    )
+
+    url = URL.create(
+        drivername,
+        username=username,
+        password=password,
+        host=host,
+        port=port,
+        database=database,
+        query=query,
+    )
+    return create_engine(url, **kwargs)
+
+
+def fetch(
+    # query options
+    tablename: str | sqlalchemy.TableClause,
+    columns: list[str | sqlalchemy.Column] | None = None,
+    where: str | list[str] | None = None,
+    order_by: str | None = None,
+    order_by_desc: bool = False,
+    # connection options
+    engine: sqlalchemy.Engine | None = None,
+    drivername: str | None = None,
+    username: str | None = None,
+    password: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    database: str | None = None,
+    query: dict[str, Any] | None = None,
+    **kwargs,
+) -> Table:
+    """Fetch data from an SQL table into a `Table`.
+
+    Requires: |sqlalchemy|_.
+
+    Parameters
+    ----------
+    tablename : `str`
+        The name of table you are attempting to receive triggers
+        from.
+
+    where : `str`, `list` of `str`, optional
+        A filter or list of filters to apply as ``WHERE`` conditions,
+        e.g. ``'snr > 5'``.
+        Multiple conditions should be connected by ' && ', or given as
+        a `list`, e.g. ``'snr > 5 && frequency < 1000'`` or
+        ``['snr > 5', 'frequency < 1000']``
+
+    order_by : `str`, optional
+        The column to ``ORDER BY``.
+
+    order_by_desc : `bool`, optional
+        If `True`, apply ``order_by`` with the ``DESC`` flag.
+        Default is `False` (``ASC``).
+
+    engine : `sqlalchemy.engine.Engine`, optional
+        The database engine to use when connecting.
+
+    drivername : `str`, optional
+        Database backend and driver name.
+        This is required if ``engine`` is not specified.
+
+    user : `str`, optional
+        The username for authentication to the database.
+
+    password : `str`, optional
+        The password for authentication to the database.
+
+    host : `str`, optional
+        The name of the remote database host.
+
+    post : `int`, optional
+        Port to connect to on ``host``.
+
+    database : `str`, optional
+        The name of the database to connect to.
+
+    query : `dict`, optional
+        Query parameters.
+
+    Returns
+    -------
+    table : `Table`
+        The table of data received from the SQL query.
+    """
+    import pandas
+
+    # create engine
+    if engine is None:
+        engine = create_engine(
+            drivername=drivername,
+            username=username,
+            password=password,
+            host=host,
+            port=port,
+            database=database,
+            query=query,
+        )
+
+    # build query
+    qstr = format_query(
+        tablename,
+        columns=columns,
+        where=where,
+        order_by=order_by,
+        order_by_desc=order_by_desc,
+    )
+
+    # kwargs for Table.from_pandas
+    index = kwargs.pop("index", False)
+    units = kwargs.pop("units", None)
 
     # perform query
-    tab = pd.read_sql(qstr, engine, **kwargs)
+    dataframe = pandas.read_sql(
+        qstr,
+        engine,
+        **kwargs,
+    )
 
     # Convert unicode columns to string
-    types = tab.apply(lambda x: pd.api.types.infer_dtype(x.values))
+    types = dataframe.apply(lambda x: pandas.api.types.infer_dtype(x.values))
+    if not dataframe.empty:
+        for col in types[types == "unicode"].index:
+            dataframe[col] = dataframe[col].astype(str)
 
-    if not tab.empty:
-        for col in types[types == 'unicode'].index:
-            tab[col] = tab[col].astype(str)
+    # return Table
+    return Table.from_pandas(
+        dataframe,
+        index=index,
+        units=units,
+    ).filled()
 
-    return Table.from_pandas(tab).filled()
+
+EventTable.fetch.registry.register_reader(
+    "sql",
+    EventTable,
+    fetch,
+)

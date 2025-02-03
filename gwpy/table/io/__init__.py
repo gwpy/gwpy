@@ -18,25 +18,27 @@
 """Input/output methods for tabular data.
 """
 
-# utils.py provides some decorators, but importantly applies those
-# decorators _automatically_ to the existing registered readers
-# provided by astropy, so this needs to come first.
-from . import utils
+# apply useful decorators to the I/O formats provided by Astropy
+# _before_ we add any of our own
+from .. import EventTable                # noqa: I001
+from . import reg                        # noqa: I001
+reg.wrap_unified_io_readers(EventTable)  # noqa: I001
 
 # other readers are defined in their own modules, and are responsible
 # for applying the decorators themselves.
-from . import (
-    ligolw,  # ligo.lw XML format
-    root,  # generic ROOT stuff
-    omicron,  # Omicron ROOT format
-    omega,  # Omega ASCII format
+from . import (  # noqa: E402
     cwb,  # cWB ROOT and ASCII formats
-    pycbc,  # PyCBC (Live) HDF5
-    gstlal,  # GstLAL ligo.lw XML format
-    hacr,  # Hierarchichal Algorithm for Curves and Ridges
-    gwf,  # GWF FrEvents (e.g. MBTA)
     gravityspy,  # Gravity Spy Triggers
+    gstlal,  # GstLAL ligo.lw XML format
+    gwf,  # GWF FrEvents (e.g. MBTA)
+    gwosc,  # GWOSC
+    hacr,  # Hierarchichal Algorithm for Curves and Ridges
+    ligolw,  # ligo.lw XML format
+    omega,  # Omega ASCII format
+    omicron,  # Omicron ROOT format
+    pycbc,  # PyCBC (Live) HDF5
+    root,  # generic ROOT stuff
     snax,  # SNAX HDF5 features
 )
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
