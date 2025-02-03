@@ -24,6 +24,7 @@ Developer note: **none of the fixtures here should declare autouse=True**.
 """
 
 from collections.abc import Iterator
+from unittest import mock
 
 import numpy
 import pytest
@@ -31,6 +32,7 @@ from matplotlib import rc_context
 
 from ..plot.tex import has_tex
 from ..timeseries import TimeSeries
+from . import mocks
 
 # -- plotting ------------------------
 
@@ -99,3 +101,31 @@ def corrupt_noisy_sinusoid(
     noisy_sinusoid.value[int(size // 2):int(size // 2) + 10] *= 50.
     noisy_sinusoid.name = "corrupt noisy sinusoid"
     return noisy_sinusoid
+
+
+# -- NDS2 fixtures -------------------
+
+@pytest.fixture
+def nds2_connection():
+    nds2conn = mocks.nds2_connection(
+        buffers=[
+            mocks.nds2_buffer(
+                "X1:test",
+                numpy.random.random(128),
+                1000000000,
+                16,
+                "m",
+            ),
+            mocks.nds2_buffer(
+                "Y1:test",
+                numpy.random.random(1024),
+                1000000000,
+                128,
+                "V",
+            ),
+        ],
+    )
+    with mock.patch("nds2.connection") as mockconn:
+        mockconn.return_value = nds2conn
+        nds2conn.connect = mockconn
+        yield nds2conn

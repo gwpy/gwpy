@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -19,123 +20,151 @@
 to LIGO data.
 """
 
+from __future__ import annotations
+
 import enum
 import operator
 import os
 import re
+import typing
 import warnings
-from collections import OrderedDict
-from functools import (reduce, wraps)
+from functools import (
+    reduce,
+    wraps,
+)
 
 from ..time import to_gps
 from ..utils.enum import NumpyTypeEnum
 from .kerberos import kinit
 
+if typing.TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Iterable,
+        Iterator,
+    )
+
+    import nds2
+
+    from ..detector import Channel
+    from ..segments import SegmentListDict
+    from ..typing import (
+        GpsLike,
+        Self,
+    )
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # regular expression to match LIGO-standard NDS1 hostnames (e.g x1nds0)
-NDS1_HOSTNAME = re.compile(r'[a-z]1nds[0-9]\Z')
+NDS1_HOSTNAME = re.compile(r"[a-z]1nds[0-9]\Z")
 
 # map of default hosts for each interferometer prefix
-DEFAULT_HOSTS = OrderedDict([
-    (None, ('nds.ligo.caltech.edu', 31200)),
-    ('H1', ('nds.ligo-wa.caltech.edu', 31200)),
-    ('H0', ('nds.ligo-wa.caltech.edu', 31200)),
-    ('L1', ('nds.ligo-la.caltech.edu', 31200)),
-    ('L0', ('nds.ligo-la.caltech.edu', 31200)),
-    ('V1', ('nds.ligo.caltech.edu', 31200)),
-    ('C1', ('nds40.ligo.caltech.edu', 31200)),
-    ('C0', ('nds40.ligo.caltech.edu', 31200)),
-])
-
-# -- NDS2 types ---------------------------------------------------------------
-
-# -- correct as of nds2-client 0.16.6
-# channel type
-_NDS2_CHANNEL_TYPE = {
-    "UNKNOWN": (0, "UNKNOWN"),
-    "ONLINE": (1, "online"),
-    "RAW": (2, "raw"),
-    "RDS": (4, "reduced"),
-    "STREND": (8, "s-trend"),
-    "MTREND": (16, "m-trend"),
-    "TEST_POINT": (32, "test-pt"),
-    "STATIC": (64, "static"),
+DEFAULT_HOSTS = {
+    None: ("nds.ligo.caltech.edu", None),
+    "H1": ("nds.ligo-wa.caltech.edu", None),
+    "H0": ("nds.ligo-wa.caltech.edu", None),
+    "L1": ("nds.ligo-la.caltech.edu", None),
+    "L0": ("nds.ligo-la.caltech.edu", None),
+    "V1": ("nds.ligo.caltech.edu", None),
+    "C1": ("nds40.ligo.caltech.edu", None),
+    "C0": ("nds40.ligo.caltech.edu", None),
 }
-# data type
-_NDS2_DATA_TYPE = {
-    "UNKNOWN": (0, "UNKNOWN"),
-    "INT16": (1, "int_2"),
-    "INT32": (2, "int_4"),
-    "INT64": (4, "int_8"),
-    "FLOAT32": (8, "real_2"),
-    "FLOAT64": (16, "real_4"),
-    "COMPLEX32": (32, "complex_8"),
-    "UINT32": (64, "uint_4"),
-}
+GWOSC_NDS2_HOSTS = [
+    ("nds.gwosc.org", None),
+]
 
-# try and override dicts with actual from nds2
+# minimum and maximum acceptable sample rates
+MIN_SAMPLE_RATE = 0.
+MAX_SAMPLE_RATE = 1e12
+
+# -- NDS2 types ----------------------
+
+def _nds2_attr_dict(prefix, to_string):
+    """Regenerate the relevant nds2 type dict from `nds2.channel` itself.
+    """
+    chan = nds2.channel
+    for name in filter(
+        operator.methodcaller("startswith", prefix),
+        chan.__dict__,
+    ):
+        attr = getattr(chan, name)
+        yield name[len(prefix):], (attr, to_string(attr))
+
+
+_NDS2_CHANNEL_TYPE: dict[str, tuple[int, str]]
+_NDS2_DATA_TYPE: dict[str, tuple[int, str]]
 try:
     import nds2
-except ModuleNotFoundError:  # nds2 not found, that's ok
-    pass
+except ModuleNotFoundError:
+    # nds2 not found, that's ok, use a static copy
+    #     correct as of nds2-client 0.16.16
+    # channel type
+    _NDS2_CHANNEL_TYPE = {
+        "UNKNOWN": (0, "UNKNOWN"),
+        "ONLINE": (1, "online"),
+        "RAW": (2, "raw"),
+        "RDS": (4, "reduced"),
+        "STREND": (8, "s-trend"),
+        "MTREND": (16, "m-trend"),
+        "TEST_POINT": (32, "test-pt"),
+        "STATIC": (64, "static"),
+    }
+    # data type
+    _NDS2_DATA_TYPE = {
+        "UNKNOWN": (0, "UNKNOWN"),
+        "INT16": (1, "int_2"),
+        "INT32": (2, "int_4"),
+        "INT64": (4, "int_8"),
+        "FLOAT32": (8, "real_2"),
+        "FLOAT64": (16, "real_4"),
+        "COMPLEX32": (32, "complex_8"),
+        "UINT32": (64, "uint_4"),
+    }
 else:
-    def _nds2_attr_dict(prefix, to_string):
-        """Regenerate the relevant nds2 type dict from `nds2.channel` itself
-        """
-        chan = nds2.channel
-        for name in filter(
-            operator.methodcaller('startswith', prefix),
-            chan.__dict__,
-        ):
-            attr = getattr(chan, name)
-            yield name[len(prefix):], (attr, to_string(attr))
+    MIN_SAMPLE_RATE = nds2.channel.MIN_SAMPLE_RATE
+    MAX_SAMPLE_RATE = nds2.channel.MAX_SAMPLE_RATE
 
+    # channel type
     _NDS2_CHANNEL_TYPE = dict(_nds2_attr_dict(
         "CHANNEL_TYPE_",
         nds2.channel.channel_type_to_string,
     ))
+    # data type
     _NDS2_DATA_TYPE = dict(_nds2_attr_dict(
         "DATA_TYPE_",
         nds2.channel.data_type_to_string,
     ))
 
 
-# -- enums --------------------------------------------------------------------
+# -- enums ---------------------------
 
 class _Nds2Enum(enum.IntFlag):
-    """Base class for NDS2 enums
+    """Base class for NDS2 enums.
     """
-    def __new__(cls, value, nds2name=None):
+    def __new__(
+        cls,
+        value: int,
+        nds2name: str,
+    ):
         obj = int.__new__(cls, value)
         obj._value_ = value
-        obj.nds2name = nds2name  # will be None for bitwise operations
+        obj.nds2name = nds2name  # type: ignore[attr-defined]
         return obj
 
     @classmethod
-    def any(cls):
-        """The logical OR of all members in this enum
+    def any(cls) -> Self:
+        """The logical OR of all members in this enum.
         """
-        return reduce(operator.or_, cls).value
+        return reduce(operator.or_, cls)
 
     @classmethod
-    def nds2names(cls):
-        """The list of all recognised NDS2 names for this type
+    def nds2names(cls) -> list[str]:
+        """The list of all recognised NDS2 names for this type.
         """
         return [x.nds2name for x in cls]
 
     @classmethod
-    def names(cls):
-        """DEPRECATED: see ``.nds2names()``
-        """
-        warnings.warn(
-            f"{cls.__name__}.names has been renamed {cls.__name__}.nds2names",
-            DeprecationWarning,
-        )
-        return cls.nds2names()
-
-    @classmethod
-    def find(cls, name):
+    def find(cls, name: str | int) -> Self:
         """Returns the NDS2 type corresponding to the given name
         """
         name = str(name)
@@ -155,12 +184,15 @@ class _Nds2Enum(enum.IntFlag):
 
 
 Nds2ChannelType = _Nds2Enum(
-    "Nds2ChannelType",
-    _NDS2_CHANNEL_TYPE,
+    "Nds2ChannelType",  # type: ignore[arg-type]
+    _NDS2_CHANNEL_TYPE,  # type: ignore[arg-type]
 )
+Nds2ChannelType.__doc__ = "NDS2 channel type with descriptive name."
 
 
 class _Nds2DataType(NumpyTypeEnum, _Nds2Enum):
+    """NDS2 data type with descriptive name.
+    """
     @classmethod
     def find(cls, name):
         try:
@@ -171,12 +203,12 @@ class _Nds2DataType(NumpyTypeEnum, _Nds2Enum):
 
 
 Nds2DataType = _Nds2DataType(
-    "Nds2DataType",
-    _NDS2_DATA_TYPE,
+    "Nds2DataType",  # type: ignore[arg-type]
+    _NDS2_DATA_TYPE,  # type: ignore[arg-type]
 )
 
 
-# -- warning suppression ------------------------------------------------------
+# -- warning suppression -------------
 
 class NDSWarning(UserWarning):
     """Warning about communicating with the Network Data Server
@@ -184,20 +216,28 @@ class NDSWarning(UserWarning):
     pass
 
 
-warnings.simplefilter('always', NDSWarning)
+# always display these warnings
+warnings.simplefilter("always", NDSWarning)
 
 
-# -- query utilities ----------------------------------------------------------
+# -- query utilities -----------------
 
-def _get_nds2_name(channel):
-    """Returns the NDS2-formatted name for a channel
+def _get_nds2_name(
+    channel: str | Channel | nds2.channel,
+) -> str:
+    """Returns the NDS2-formatted name for a channel.
 
     Understands how to format NDS name strings from
     `gwpy.detector.Channel` and `nds2.channel` objects
     """
-    if hasattr(channel, 'ndsname'):  # gwpy.detector.Channel
+    from ..detector import Channel
+
+    if isinstance(channel, Channel):
         return channel.ndsname
-    if hasattr(channel, 'channel_type'):  # nds2.channel
+
+    import nds2
+
+    if isinstance(channel, nds2.channel):
         return ",".join((
             channel.name,
             channel.channel_type_to_string(channel.channel_type),
@@ -205,24 +245,29 @@ def _get_nds2_name(channel):
     return str(channel)
 
 
-def _get_nds2_names(channels):
-    """Maps `_get_nds2_name` for a list of input channels
+def _get_nds2_names(
+    channels: Iterable[str | Channel | nds2.channel],
+) -> Iterator[str]:
+    """Maps `_get_nds2_name` for a list of input channels.
     """
     return map(_get_nds2_name, channels)
 
 
-# -- connection utilities -----------------------------------------------------
+# -- connection utilities ------------
 
-def parse_nds_env(env='NDSSERVER'):
-    """Parse the NDSSERVER environment variable into a list of hosts
+def parse_nds_env(
+    env: str = "NDSSERVER",
+) -> list[tuple[str, int | None]]:
+    """Parse the NDSSERVER environment variable into a list of hosts.
 
     Parameters
     ----------
     env : `str`, optional
-        environment variable name to use for server order,
-        default ``'NDSSERVER'``. The contents of this variable should
-        be a comma-separated list of `host:port` strings, e.g.
-        ``'nds1.server.com:80,nds2.server.com:80'``
+        Shell environment variable name to use for server order.
+        Default is ``"NDSSERVER"``.
+        The contents of this variable should be a comma-separated
+        list of ``host:port`` strings, e.g.
+        ``"nds1.server.com:80,nds2.server.com:80"``.
 
     Returns
     -------
@@ -231,85 +276,125 @@ def parse_nds_env(env='NDSSERVER'):
         pair
     """
     hosts = []
-    for host in os.getenv(env).split(','):
+    for host in os.environ[env].split(","):
         try:
-            host, port = host.rsplit(':', 1)
+            host, portstr = host.rsplit(":", 1)
         except ValueError:
             port = None
         else:
-            port = int(port)
+            port = int(portstr)
         if (host, port) not in hosts:
             hosts.append((host, port))
     return hosts
 
 
-def host_resolution_order(ifo, env='NDSSERVER', epoch='now',
-                          lookback=14*86400):
-    """Generate a logical ordering of NDS (host, port) tuples for this IFO
+def host_resolution_order(
+    ifo: str,
+    env: str | None = "NDSSERVER",
+    epoch: GpsLike = "now",
+    lookback: float = 14*86400,
+    include_gwosc : bool = True,
+) -> list[tuple[str, int | None]]:
+    """Generate a logical ordering of NDS (host, port) tuples for this IFO.
 
     Parameters
     ----------
     ifo : `str`
-        prefix for IFO of interest
+        Prefix for IFO of interest.
+
     env : `str`, optional
-        environment variable name to use for server order,
-        default ``'NDSSERVER'``. The contents of this variable should
-        be a comma-separated list of `host:port` strings, e.g.
-        ``'nds1.server.com:80,nds2.server.com:80'``
-    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
-        GPS epoch of data requested
-    lookback : `float`
-        duration of spinning-disk cache. This value triggers defaulting to
-        the CIT NDS2 server over those at the LIGO sites
+        Shell environment variable name to use for server order.
+        Default is ``"NDSSERVER"``.
+        The contents of this variable should be a comma-separated
+        list of ``host:port`` strings, e.g.
+        ``"nds1.server.com:80,nds2.server.com:80"``.
+        Pass ``env=None`` to disable parsing any environment variable.
+
+    epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS epoch of data requested.
+
+    lookback : `float`, optional
+        Duration of spinning-disk cache. This value triggers defaulting to
+        the CIT NDS2 server over those at the LIGO sites.
+        Default is two weeks.
+
+    include_gwosc : `bool`, optional
+        If `True` include the |GWOSC|_ NDS2 instance in the list.
 
     Returns
     -------
     hro : `list` of `2-tuples <tuple>`
-        ordered `list` of ``(host, port)`` tuples
+        Drdered `list` of ``(host, port)`` tuples.
+
+    Examples
+    --------
+    With no environment settings:
+
+    >>> host_resolution_order('H1')
+    [('nds.ligo-wa.caltech.edu', None),
+     ('nds.ligo.caltech.edu', None),
+     ('nds.gwosc.org', None),
+    ]
+    >>> host_resolution_order('H1', include_gwosc=False))
+    [('nds.ligo-wa.caltech.edu', None), ('nds.ligo.caltech.edu', None)]
     """
     hosts = []
+
     # if given environment variable exists, it will contain a
     # comma-separated list of host:port strings giving the logical ordering
     if env and os.getenv(env):
         hosts = parse_nds_env(env)
-    # If that host fails, return the server for this IFO and the backup at CIT
-    if to_gps('now') - to_gps(epoch) > lookback:
+
+    # add our ordered list based on the IFO and the lookback time
+    # (at LIGO, the LIGO-Caltech data centre has more data on disk than
+    #  the observatory data centres do, so prefer Caltech for older data)
+    if to_gps("now") - to_gps(epoch) > lookback:
         ifolist = [None, ifo]
     else:
         ifolist = [ifo, None]
+
     for difo in ifolist:
         try:
-            host, port = DEFAULT_HOSTS[difo]
+            ifodefault = DEFAULT_HOSTS[difo]
         except KeyError:
             # unknown default NDS2 host for detector, if we don't have
             # hosts already defined (either by NDSSERVER or similar)
             # we should warn the user
             if not hosts:
-                warnings.warn(f"No default host found for ifo '{ifo}'")
+                warnings.warn(
+                    f"no default host found for ifo '{ifo}'",
+                )
         else:
-            if (host, port) not in hosts:
-                hosts.append((host, port))
-    return list(hosts)
+            if ifodefault not in hosts:
+                hosts.append(ifodefault)
+
+    # append the GWOSC NDS2 instance(s) to the list, just in case.
+    if include_gwosc:
+        hosts.extend(GWOSC_NDS2_HOSTS)
+
+    return hosts
 
 
-def connect(host, port=None):
-    """Open an `nds2.connection` to a given host and port
+def connect(
+    host: str,
+    port: int | None = None,
+) -> nds2.connection:
+    """Open an `nds2.connection` to a given host and port.
 
     Parameters
     ----------
     host : `str`
-        name of server with which to connect
+        Name of server with which to connect.
 
     port : `int`, optional
-        connection port
+        Connection port.
 
     Returns
     -------
     connection : `nds2.connection`
-        a new open connection to the given NDS host
+        A new open connection to the given NDS host.
     """
     import nds2
-    # pylint: disable=no-member
 
     # set default port for NDS1 connections (required, I think)
     if port is None and NDS1_HOSTNAME.match(host):
@@ -320,8 +405,11 @@ def connect(host, port=None):
     return nds2.connection(host, port)
 
 
-def auth_connect(host, port=None):
-    """Open an `nds2.connection` handling simple authentication errors
+def auth_connect(
+    host: str,
+    port: int | None = None,
+) -> nds2.connection:
+    """Open an `nds2.connection` handling simple authentication errors.
 
     This method will catch exceptions related to kerberos authentication,
     and execute a kinit() for the user before attempting to connect again.
@@ -329,49 +417,65 @@ def auth_connect(host, port=None):
     Parameters
     ----------
     host : `str`
-        name of server with which to connect
+        Name of server with which to connect.
 
     port : `int`, optional
-        connection port
+        Connection port.
 
     Returns
     -------
     connection : `nds2.connection`
-        a new open connection to the given NDS host
+        A new open connection to the given NDS host.
+
+    See also
+    --------
+    gwpy.io.nds2.connect
+        For details of opening connections.
     """
     try:
         return connect(host, port)
     except RuntimeError as exc:
-        if 'Request SASL authentication' not in str(exc):
+        if "Request SASL authentication" not in str(exc):
             raise
-    warnings.warn(f"Error authenticating against {host}:{port}", NDSWarning)
+    warnings.warn(
+        f"error authenticating against {host}:{port}, "
+        "attempting Kerberos kinit()",
+        NDSWarning,
+    )
     kinit()
     return connect(host, port)
 
 
-def open_connection(func):
+def open_connection(func: Callable) -> Callable:
     """Decorate a function to create a `nds2.connection` if required
     """
     @wraps(func)
-    def wrapped_func(*args, **kwargs):  # pylint: disable=missing-docstring
-        if kwargs.get('connection', None) is None:
+    def wrapped_func(*args, **kwargs):
+        if kwargs.get("connection", None) is None:
             try:
-                host = kwargs.pop('host')
+                host = kwargs.pop("host")
             except KeyError:
-                raise TypeError("one of `connection` or `host` is required "
-                                "to query NDS2 server")
-            kwargs['connection'] = auth_connect(host, kwargs.pop('port', None))
+                raise TypeError(
+                    "one of `connection` or `host` is required "
+                    "to query NDS2 server",
+                )
+            kwargs["connection"] = auth_connect(
+                host,
+                kwargs.pop("port", None),
+            )
         return func(*args, **kwargs)
     return wrapped_func
 
 
-def parse_nds2_enums(func):
-    """Decorate a function to translate a type string into an integer
+def parse_nds2_enums(func: Callable) -> Callable:
+    """Decorate a function to translate a type string into an integer.
     """
     @wraps(func)
-    def wrapped_func(*args, **kwargs):  # pylint: disable=missing-docstring
-        for kwd, enum_ in (('type', Nds2ChannelType),
-                           ('dtype', Nds2DataType)):
+    def wrapped_func(*args, **kwargs):
+        for kwd, enum_ in (
+            ("type", Nds2ChannelType),
+            ("dtype", Nds2DataType),
+        ):
             if kwargs.get(kwd, None) is None:
                 kwargs[kwd] = enum_.any()
             elif not isinstance(kwargs[kwd], int):
@@ -380,15 +484,17 @@ def parse_nds2_enums(func):
     return wrapped_func
 
 
-def reset_epoch(func):
-    """Wrap a function to reset the epoch when finished
+def reset_epoch(func: Callable) -> Callable:
+    """Wrap a function to reset the epoch when finished.
 
     This is useful for functions that wish to use `connection.set_epoch`.
     """
     @wraps(func)
-    def wrapped_func(*args, **kwargs):  # pylint: disable=missing-docstring
-        connection = kwargs.get('connection', None)
-        epoch = connection.current_epoch() if connection else None
+    def wrapped_func(*args, **kwargs):
+        if (connection := kwargs.get("connection", None)) is not None:
+            epoch = connection.current_epoch()
+        else:
+            epoch = None
         try:
             return func(*args, **kwargs)
         finally:
@@ -397,58 +503,65 @@ def reset_epoch(func):
     return wrapped_func
 
 
-# -- query methods ------------------------------------------------------------
+# -- query methods -------------------
 
 @open_connection
 @reset_epoch
 @parse_nds2_enums
-def find_channels(channels, connection=None, host=None, port=None,
-                  sample_rate=None, type=Nds2ChannelType.any(),
-                  dtype=Nds2DataType.any(), unique=False, epoch='ALL'):
-    # pylint: disable=unused-argument,redefined-builtin
-    """Query an NDS2 server for channel information
+def find_channels(
+    channels: list[str],
+    connection: nds2.connection | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    sample_rate: float | tuple[float, float] | None = None,
+    type: int = Nds2ChannelType.any(),
+    dtype: int = Nds2DataType.any(),
+    unique: bool = False,
+    epoch: str | tuple[int, int] = "ALL",
+) -> list[nds2.channel]:
+    """Query an NDS2 server for channel information.
 
     Parameters
     ----------
     channels : `list` of `str`
-        list of channel names to query, each can include bash-style globs
+        List of channel names to query, each can include bash-style globs.
 
     connection : `nds2.connection`, optional
-        open NDS2 connection to use for query
+        Open NDS2 connection to use for query.
 
     host : `str`, optional
-        name of NDS2 server to query, required if ``connection`` is not
-        given
+        Name of NDS2 server to query, required if ``connection`` is not
+        given.
 
     port : `int`, optional
-        port number on host to use for NDS2 connection
+        Port number on host to use for NDS2 connection.
 
     sample_rate : `int`, `float`, `tuple`, optional
-        a single number, representing a specific sample rate to match,
-        or a tuple representing a ``(low, high)` interval to match
+        A single number, representing a specific sample rate to match,
+        or a tuple representing a ``(low, high)` interval to match.
 
     type : `int`, optional
-        the NDS2 channel type to match
+        The NDS2 channel type to match.
 
     dtype : `int`, optional
-        the NDS2 data type to match
+        The NDS2 data type to match.
 
     unique : `bool`, optional, default: `False`
-        require one (and only one) match per channel
+        Require one (and only one) match per channel.
 
     epoch : `str`, `tuple` of `int`, optional
-        the NDS epoch to restrict to, either the name of a known epoch,
-        or a 2-tuple of GPS ``[start, stop)`` times
+        The NDS epoch to restrict to, either the name of a known epoch,
+        or a 2-tuple of GPS ``[start, stop)`` times.
 
     Returns
     -------
     channels : `list` of `nds2.channel`
-        list of NDS2 channel objects
+        List of NDS2 channel objects.
 
     See also
     --------
     nds2.connection.find_channels
-        for documentation on the underlying query method
+        For documentation on the underlying query method.
 
     Examples
     --------
@@ -457,64 +570,99 @@ def find_channels(channels, connection=None, host=None, port=None,
     [<G1:DER_DATA_H (16384Hz, RDS, FLOAT64)>]
     """
     # set epoch
-    if not isinstance(epoch, tuple):
-        epoch = (epoch or 'ALL',)
-    connection.set_epoch(*epoch)
+    if isinstance(epoch, tuple):
+        connection.set_epoch(*epoch)
+    else:
+        connection.set_epoch(epoch or "ALL")
 
-    # format sample_rate as tuple for find_channels call
+    # format {min,max}_sample_rate options
+    kwargs = {}
     if isinstance(sample_rate, (int, float)):
-        sample_rate = (sample_rate, sample_rate)
-    elif sample_rate is None:
-        sample_rate = tuple()
+        kwargs["min_sample_rate"] = sample_rate
+        kwargs["max_sample_rate"] = sample_rate
+    elif sample_rate is not None:
+        kwargs["min_sample_rate"], kwargs["max_sample_rate"] = sample_rate
 
     # query for channels
     out = []
     for name in _get_nds2_names(channels):
-        out.extend(_find_channel(connection, name, type, dtype, sample_rate,
-                                 unique=unique))
+        out.extend(_find_channel(
+            connection,
+            channel_glob=name,
+            channel_type_mask=type,
+            data_type_mask=dtype,
+            unique=unique,
+            **kwargs,
+        ))
     return out
 
 
-def _find_channel(connection, name, ctype, dtype, sample_rate, unique=False):
-    """Internal method to find a single channel
+def _find_channel(
+    connection: nds2.connection,
+    channel_glob: str = "*",
+    channel_type_mask: int = Nds2ChannelType.any().value,
+    data_type_mask: int = Nds2DataType.any().value,
+    min_sample_rate: float = MIN_SAMPLE_RATE,
+    max_sample_rate: float = MAX_SAMPLE_RATE,
+    unique: bool = False,
+) -> list[nds2.channel]:
+    """Internal method to find a single channel.
 
     Parameters
     ----------
     connection : `nds2.connection`, optional
-        open NDS2 connection to use for query
+        Open NDS2 connection to use for query
 
-    name : `str`
-        the name of the channel to find
+    channel_glob : `str`, optional
+        The name of the channel to find.
 
-    ctype : `int`
-        the NDS2 channel type to match
+    channel_type_mask : `int`, optional
+        The NDS2 channel type to match.
 
-    dtype : `int`
-        the NDS2 data type to match
+    data_type_mask : `int`, optional
+        The NDS2 data type to match.
 
-    sample_rate : `tuple`
-        a pre-formatted rate tuple (see `find_channels`)
+    min_sample_rate : `float`, optional
+        The lowest sample rate to match.
 
-    unique : `bool`, optional, default: `False`
-        require one (and only one) match per channel
+    max_sample_rate : `float`, optional
+        The highest sample rate to match.
+
+    unique : `bool`, optional
+        Require one (and only one) match per channel.
 
     Returns
     -------
     channels : `list` of `nds2.channel`
-        list of NDS2 channel objects, if `unique=True` is given the list
+        List of NDS2 channel objects, if `unique=True` is given the list
         is guaranteed to have only one element.
+
+    Raises
+    ------
+    ValueError
+        If ``unique=True`` and more than one channel is found.
 
     See also
     --------
     nds2.connection.find_channels
-        for documentation on the underlying query method
+        For documentation of all arguments and on the underlying query method.
     """
     # parse channel type from name,
     # e.g. 'L1:GDS-CALIB_STRAIN,reduced' -> 'L1:GDS-CALIB_STRAIN', 'reduced'
-    name, ctype = _strip_ctype(name, ctype, connection.get_protocol())
+    channel_glob, channel_type_mask = _strip_ctype(
+        channel_glob,
+        channel_type_mask,
+        connection.get_protocol(),
+    )
 
     # query NDS2
-    found = connection.find_channels(name, ctype, dtype, *sample_rate)
+    found = connection.find_channels(
+        channel_glob,
+        channel_type_mask,
+        data_type_mask,
+        min_sample_rate,
+        max_sample_rate,
+    )
 
     # if don't care about defaults, just return now
     if not unique:
@@ -523,102 +671,126 @@ def _find_channel(connection, name, ctype, dtype, sample_rate, unique=False):
     # if two results, remove 'online' copy (if present)
     #    (if no online channels present, this does nothing)
     if len(found) == 2:
-        found = [c for c in found if
-                 c.channel_type != Nds2ChannelType.ONLINE.value]
+        online = Nds2ChannelType.ONLINE.value  # type: ignore[attr-defined]
+        found = [c for c in found if c.channel_type != online]
 
     # if not unique result, panic
     if len(found) != 1:
-        raise ValueError(f"unique NDS2 channel match not found for '{name}'")
+        raise ValueError(
+            f"unique NDS2 channel match not found for '{channel_glob}'",
+        )
 
     return found
 
 
-def _strip_ctype(name, ctype, protocol=2):
-    """Strip the ctype from a channel name for the given nds server version
+def _strip_ctype(
+    name: str,
+    ctype: int,
+    protocol: int = 2,
+) -> tuple[str, int]:
+    """Strip the ctype from a channel name for the given nds server version.
 
     This is needed because NDS1 servers store trend channels _including_
     the suffix, but not raw channels, and NDS2 doesn't do this.
     """
     # parse channel type from name (e.g. 'L1:GDS-CALIB_STRAIN,reduced')
     try:
-        name, ctypestr = name.rsplit(',', 1)
+        name, ctypestr = name.rsplit(",", 1)
     except ValueError:
-        pass
-    else:
-        ctype = Nds2ChannelType.find(ctypestr).value
-        # NDS1 stores channels with trend suffix, so we put it back:
-        if protocol == 1 and ctype in (
-                Nds2ChannelType.STREND.value,
-                Nds2ChannelType.MTREND.value
-        ):
-            name += f',{ctypestr}'
+        return name, ctype
+
+    ctype = Nds2ChannelType.find(ctypestr).value
+
+    # NDS1 stores channels with trend suffix, so we put it back:
+    if protocol == 1 and ctype in (
+        Nds2ChannelType.STREND.value,  # type: ignore[attr-defined]
+        Nds2ChannelType.MTREND.value  # type: ignore[attr-defined]
+    ):
+        name += f",{ctypestr}"
+
     return name, ctype
 
 
 @open_connection
 @reset_epoch
-def get_availability(channels, start, end,
-                     connection=None, host=None, port=None):
-    # pylint: disable=unused-argument
-    """Query an NDS2 server for data availability
+def get_availability(
+    channels: list[str],
+    start: int,
+    end: int,
+    connection: nds2.connection | None = None,
+    **kwargs,
+) -> SegmentListDict:
+    """Query an NDS2 server for data availability.
 
     Parameters
     ----------
     channels : `list` of `str`
-        list of channel names to query; this list is mapped to NDS channel
-        names using :func:`find_channels`.
+        List of channel names to query; this list is mapped to NDS channel
+        names using :func:`find_channels`..
 
     start : `int`
-        GPS start time of query
+        GPS start time of query.
 
     end : `int`
-        GPS end time of query
+        GPS end time of query.
 
     connection : `nds2.connection`, optional
-        open NDS2 connection to use for query
+        Open NDS2 connection to use for query.
 
     host : `str`, optional
-        name of NDS2 server to query, required if ``connection`` is not
-        given
+        Name of NDS2 server to query, required if ``connection`` is not
+        given.
 
     port : `int`, optional
-        port number on host to use for NDS2 connection
+        Port number on host to use for NDS2 connection.
 
     Returns
     -------
     segdict : `~gwpy.segments.SegmentListDict`
-        dict of ``(name, SegmentList)`` pairs
+        Dict of ``(name, SegmentList)`` pairs.
 
     Raises
     ------
     ValueError
-        if the given channel name cannot be mapped uniquely to a name
+        If the given channel name cannot be mapped uniquely to a name
         in the NDS server database.
 
     See also
     --------
     nds2.connection.get_availability
-        for documentation on the underlying query method
+        For documentation on the underlying query method.
     """
-    from ..segments import (Segment, SegmentList, SegmentListDict)
+    from ..segments import (
+        Segment,
+        SegmentList,
+        SegmentListDict,
+    )
+
     connection.set_epoch(start, end)
+
     # map user-given real names to NDS names
-    names = list(map(
-        _get_nds2_name, find_channels(channels, epoch=(start, end),
-                                      connection=connection, unique=True),
-    ))
+    names = list(map(_get_nds2_name, find_channels(
+        channels,
+        epoch=(start, end),
+        connection=connection,
+        unique=True,
+    )))
+
     # query for availability
     result = connection.get_availability(names)
+
     # map to segment types
     out = SegmentListDict()
     for name, result in zip(channels, result):
-        out[name] = SegmentList([Segment(s.gps_start, s.gps_stop) for s in
-                                 result.simple_list()])
+        out[name] = SegmentList([
+            Segment(s.gps_start, s.gps_stop)
+            for s in result.simple_list()
+        ])
     return out
 
 
-def minute_trend_times(start, end):
-    """Expand a [start, end) interval for use in querying for minute trends
+def minute_trend_times(start: int, end: int) -> tuple[int, int]:
+    """Expand a [start, end) interval for use in querying for minute trends.
 
     NDS2 requires start and end times for minute trends to be a multiple of
     60 (to exactly match the time of a minute-trend sample), so this function
@@ -627,17 +799,22 @@ def minute_trend_times(start, end):
     Parameters
     ----------
     start : `int`
-        GPS start time of query
+        GPS start time of query.
 
     end : `int`
-        GPS end time of query
+        GPS end time of query.
 
     Returns
     -------
     mstart : `int`
-        ``start`` rounded down to nearest multiple of 60
+        ``start`` rounded down to nearest multiple of 60.
     mend : `int`
-        ``end`` rounded up to nearest multiple of 60
+        ``end`` rounded up to nearest multiple of 60.
+
+    Examples
+    --------
+    >>> minute_trend_times(123, 456)
+    (120, 480)
     """
     if start % 60:
         start = int(start) // 60 * 60

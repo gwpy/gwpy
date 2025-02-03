@@ -18,17 +18,22 @@
 """Unit test for detector module
 """
 
-from unittest import mock
-
-import pytest
-
 import numpy
-
+import pytest
 from astropy import units
 
-from ...segments import SegmentListDict
-from ...testing import (utils, mocks)
-from .. import (Channel, ChannelList)
+from ...segments import (
+    Segment,
+    SegmentList,
+)
+from ...testing import (
+    mocks,
+    utils,
+)
+from .. import (
+    Channel,
+    ChannelList,
+)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -362,31 +367,22 @@ class TestChannel(object):
                         idp="https://idp.example.com/profile/SAML2/SOAP/ECP",
                     )
 
-    @pytest.mark.parametrize('name', ('X1:TEST-CHANNEL', 'Y1:TEST_CHANNEL'))
     @pytest.mark.requires("nds2")
-    def test_query_nds2(self, name):
-        # mock NDS2 query
-        ndsb = mocks.nds2_buffer('X1:TEST-CHANNEL', [], 0, 64, 'm')
-        if ndsb.name == name:
-            buffers = [ndsb]
-        else:
-            buffers = []
-        conn = mocks.nds2_connection(buffers=buffers)
-        with mock.patch('nds2.connection') as ndsc, \
-                mock.patch('nds2.buffer', ndsb):
-            ndsc.return_value = conn
+    def test_query_nds2(self, nds2_connection):
+        c = self.TEST_CLASS.query_nds2("X1:test", host="test")
+        assert c.name == "X1:test"
+        assert c.sample_rate == 16 * units.Hz
+        assert c.unit == units.m
+        assert c.dtype == numpy.dtype('float32')
+        assert c.type == 'raw'
 
-            # test query_nds2
-            if buffers:
-                c = self.TEST_CLASS.query_nds2(name, host='test')
-                assert c.name == name
-                assert c.sample_rate == 64 * units.Hz
-                assert c.unit == units.m
-                assert c.dtype == numpy.dtype('float32')
-                assert c.type == 'raw'
-            else:
-                with pytest.raises(ValueError):
-                    c = self.TEST_CLASS.query_nds2(name, host='test')
+    @pytest.mark.requires("nds2")
+    def test_query_nds2_error(self, nds2_connection):
+        with pytest.raises(
+            ValueError,
+            match="unique NDS2 channel match not found for 'Z1:test'",
+        ):
+            self.TEST_CLASS.query_nds2("Z1:test", host="test")
 
     @pytest.mark.requires("nds2")
     def test_from_nds2(self):
@@ -437,44 +433,36 @@ class TestChannelList(object):
         assert cl == instance[1:]
 
     @pytest.mark.requires("nds2")
-    def test_query_nds2(self):
-        # mock NDS2 query
-        buffers = []
-        for name, fs in zip(self.NAMES[:-1], self.SAMPLE_RATES[:-1]):
-            buffers.append(mocks.nds2_buffer(name, [], 0, fs, 'm'))
-        conn = mocks.nds2_connection(buffers=buffers)
-        with mock.patch('nds2.connection') as ndsc:
-            ndsc.return_value = conn
-
-            # test query_nds2
-            c = self.TEST_CLASS.query_nds2(self.NAMES[:-1], host='test')
-            assert len(c) == len(self.NAMES) - 1
-            assert c[0].name == self.NAMES[0]
-            assert c[0].sample_rate == self.SAMPLE_RATES[0] * units.Hz
-
-            # check errors
-            assert len(
-                self.TEST_CLASS.query_nds2([self.NAMES[-1]], host='test')) == 0
+    def test_query_nds2(self, nds2_connection):
+        # test query_nds2
+        c = self.TEST_CLASS.query_nds2(
+            ["X1:test", "Y1:test"],
+            host="test",
+        )
+        assert len(c) == 2
+        assert c[0].name == "X1:test"
+        assert c[0].sample_rate == 16 * units.Hz
 
     @pytest.mark.requires("nds2")
-    def test_query_nds2_availability(self):
-        # mock NDS2 connection
-        ndsb = mocks.nds2_buffer(self.NAMES[0], [], 0, 64, 'm')
-        conn = mocks.nds2_connection(buffers=[ndsb])
-        # mock availability
-        availability = [mocks.nds2_availability(self.NAMES[0],
-                                                [(0, 10), (20, 30)])]
-        conn.get_availability = lambda x: availability
+    def test_query_nds2_error(self, nds2_connection):
+        # check errors
+        assert len(
+            self.TEST_CLASS.query_nds2(["Z1:test"], host="test"),
+        ) == 0
 
-        with mock.patch('nds2.connection') as ndsc:
-            ndsc.return_value = conn
-
-            avail = self.TEST_CLASS.query_nds2_availability(
-                [self.NAMES[0]], 0, 30, host='test')
-
-            assert isinstance(avail, SegmentListDict)
-            utils.assert_segmentlist_equal(avail[self.NAMES[0]],
-                                           [(0, 10), (20, 30)])
+    @pytest.mark.requires("nds2")
+    def test_query_nds2_availability(self, nds2_connection):
+        avail = self.TEST_CLASS.query_nds2_availability(
+            ["X1:test"],
+            1000000000,
+            1000000010,
+            host="test",
+        )
+        utils.assert_dict_equal(
+            avail,
+            {"X1:test": SegmentList([Segment(1000000000, 1000000008)])},
+            utils.assert_segmentlist_equal,
+        )
 
     def test_read_write_omega_config(self, tmp_path):
         tmp = tmp_path / "config.ini"
