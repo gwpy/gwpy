@@ -566,6 +566,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             *GWOSC_GW150914_SEGMENT,
             format=format,
             verbose=True,
+            timeout=60,
         )
         utils.assert_quantity_sub_equal(ts, gw150914,
                                         exclude=['name', 'unit', 'channel'])
@@ -576,6 +577,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             *GWOSC_GW150914_SEGMENT,
             format=format,
             sample_rate=16384,
+            timeout=60,
         )
         assert ts.sample_rate == 16384 * units.Hz
 
