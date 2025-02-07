@@ -21,14 +21,17 @@
 import warnings
 
 import numpy
-
-from matplotlib import (use, rcParams)
+from matplotlib import (
+    rcParams,
+    use,
+)
 
 # force Agg for all tests
 use('agg', force=True)
 
 # register custom fixtures for all test modules
 from .testing.fixtures import *  # noqa: E402,F401,F403
+
 # define marks (registered below)
 from .testing.marks import _register_marks  # noqa: E402
 
@@ -47,6 +50,16 @@ warnings.filterwarnings('ignore', message=".*non-GUI backend.*")
 rcParams.update({
     'text.usetex': False,  # TeX is slow most of the time
 })
+
+# -- gpstime compatibility
+# import gpstime now so that the first import is never during a
+# pytest run using xdist where the multiple workers try and download
+# the leap seconds file at the same time, and then fall over each other
+
+try:
+    import gpstime  # noqa: F401
+except ImportError:  # not installed
+    pass
 
 
 # -- pytest configuration

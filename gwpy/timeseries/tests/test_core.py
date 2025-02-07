@@ -164,6 +164,43 @@ class TestTimeSeriesBase(_TestSeries):
             plot.save(BytesIO(), format='png')
             plot.close()
 
+    @pytest.mark.requires("arrakis")
+    @pytest.mark.parametrize("copy", (False, True))
+    def test_from_arrakis(self, copy):
+        """Test :meth:`TimeSeriesBase.from_arrakis`.
+        """
+        from arrakis import Channel as ArrakisChannel
+        from arrakis.block import Series as ArrakisSeries
+
+        # create arrakis objects
+        achan = ArrakisChannel.from_name(
+            "X1:TEST-CHANNEL",
+            self.data.dtype,
+            128,
+        )
+        aseries = ArrakisSeries(
+            data=self.data,
+            time_ns=int(1e18),
+            channel=achan,
+        )
+
+        # convert to TimeSeries
+        ts = self.TEST_CLASS.from_arrakis(aseries, copy=copy)
+
+        # check data
+        utils.assert_array_equal(ts.value, self.data)
+        assert shares_memory(ts.value, aseries.data) is not copy
+
+        # check metadata
+        assert ts.name == aseries.name
+        assert ts.t0 == aseries.t0 * units.s
+        assert ts.dt == aseries.dt * units.s
+        assert ts.sample_rate == aseries.sample_rate * units.Hz
+        assert abs(ts.span) == aseries.duration
+        utils.assert_array_equal(ts.times.value, aseries.times)
+        # see https://git.ligo.org/ngdd/arrakis-python/-/issues/22:
+        assert ts.unit == units.dimensionless_unscaled
+
     @pytest.mark.requires("nds2")
     def test_from_nds2_buffer(self):
         # build fake buffer
@@ -406,6 +443,62 @@ class TestTimeSeriesBaseDict(object):
         a = instance.resample(.5)
         for key in a:
             assert a[key].dx == 1/.5 * a[key].xunit
+
+    @pytest.mark.requires("arrakis")
+    @pytest.mark.parametrize("copy", (False, True))
+    def test_from_arrakis(self, copy):
+        """Test :meth:`TimeSeriesBaseDict.from_arrakis`.
+        """
+        from arrakis import (
+            Channel as ArrakisChannel,
+            SeriesBlock as ArrakisBlock,
+        )
+
+        # arrakis metadata (channels)
+        channels = {
+            "X1:TEST-CHANNEL_1": ArrakisChannel.from_name(
+                "X1:TEST-CHANNEL_1",
+                data_type=self.DTYPE,
+                sample_rate=64,
+            ),
+            "X1:TEST-CHANNEL_2": ArrakisChannel.from_name(
+                "X1:TEST-CHANNEL_2",
+                data_type=self.DTYPE,
+                sample_rate=128,
+            ),
+        }
+
+        # arrakis block
+        block = ArrakisBlock(
+            int(1e18),
+            {chan.name: numpy.random.random(
+                10 * chan.sample_rate,
+            ).astype(self.DTYPE) for chan in channels.values()},
+            channels,
+        )
+
+        # convert to TimeSeries
+        tsd = self.TEST_CLASS.from_arrakis(block, copy=copy)
+
+        # check keys match
+        assert list(tsd) == list(map(str, block.channels))
+
+        for key in tsd:
+            # check data
+            aseries = block[key]
+            ts = tsd[key]
+            utils.assert_array_equal(ts.value, aseries.data)
+            assert shares_memory(ts.value, aseries.data) is not copy
+
+            # check metadata
+            assert ts.name == aseries.name
+            assert ts.t0 == aseries.t0 * units.s
+            assert ts.dt == aseries.dt * units.s
+            assert ts.sample_rate == aseries.sample_rate * units.Hz
+            assert abs(ts.span) == aseries.duration
+            utils.assert_array_equal(ts.times.value, aseries.times)
+            # see https://git.ligo.org/ngdd/arrakis-python/-/issues/22:
+            assert ts.unit == units.dimensionless_unscaled
 
     @pytest.mark.requires("nds2")
     def test_from_nds2_buffers(self):

@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -18,7 +19,10 @@
 """This module defines the `Channel` and `ChannelList` classes.
 """
 
+from __future__ import annotations
+
 import re
+import typing
 from copy import copy
 from math import ceil
 from urllib.parse import urlparse
@@ -31,6 +35,11 @@ from ..io import nds2 as io_nds2
 from ..time import to_gps
 from ..utils.misc import if_not_none
 from .units import parse_unit
+
+if typing.TYPE_CHECKING:
+    import arrakis
+
+    from ..typing import Self
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -484,6 +493,29 @@ class Channel(object):
             unit=nds2channel.signal_units or None,
             dtype=nds2channel.data_type,
             type=nds2channel.channel_type,
+        )
+
+    @classmethod
+    def from_arrakis(
+        cls,
+        arrakischannel: arrakis.Channel,
+    ) -> Self:
+        """Generate a new channel using an existing `arrakis.Channel`.
+
+        Parameters
+        ----------
+        arrakischannel : `arrakis.Channel`
+            The input channel from Arrakis to parse.
+
+        Returns
+        -------
+        channel : `gwpy.detector.Channel`
+            A new `Channel`.
+        """
+        return cls(
+            arrakischannel.name,
+            sample_rate=arrakischannel.sample_rate,
+            dtype=arrakischannel.data_type,
         )
 
     # -- methods --------------------------------
