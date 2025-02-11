@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,25 +16,48 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Basic HDF5 I/O methods for Array and sub-classes
+"""Basic HDF5 I/O methods for Array and sub-classes.
 """
 
+from __future__ import annotations
+
 import pickle
+import typing
 from decimal import Decimal
+from functools import (
+    partial,
+    wraps,
+)
 from operator import attrgetter
 
-from astropy.units import (Quantity, UnitBase)
+from astropy.units import (
+    Quantity,
+    UnitBase,
+)
 
 from ...detector import Channel
 from ...io import hdf5 as io_hdf5
-from ...io.registry import compat as compat_registry
 from ...time import LIGOTimeGPS
-from .. import (Array, Series, Index)
+from .. import (
+    Array,
+    Index,
+    Series,
+)
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+if typing.TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
+    from typing import (
+        IO,
+        Any,
+    )
 
-ATTR_TYPE_MAP = {
-    Quantity: attrgetter('value'),
+    import h5py
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+ATTR_TYPE_MAP: dict[type, Callable] = {
+    Quantity: attrgetter("value"),
     Channel: str,
     UnitBase: str,
     Decimal: float,
@@ -41,47 +65,58 @@ ATTR_TYPE_MAP = {
 }
 
 
-# -- read ---------------------------------------------------------------------
+# -- read ----------------------------
 
 @io_hdf5.with_read_hdf5
-def read_hdf5_array(source, path=None, array_type=Array):
-    """Read an `Array` from the given HDF5 object
+def read_hdf5_array(
+    source: h5py.Group,
+    path: str | None = None,
+    array_type: type[Array] = Array,
+) -> Array:
+    """Read an `Array` from the given HDF5 object.
 
     Parameters
     ----------
-    source : `str`, :class:`h5py.HLObject`
-        path to HDF file on disk, or open `h5py.HLObject`.
+    source : `str`, `Path`, `file`, `h5py.File`, `h5py.Group`
+        Path to HDF5 file on disk, or open `h5py.Group`.
 
-    path : `str`
-        path in HDF hierarchy of dataset.
+    path : `str`, optional
+        Path of dataset in HDF5 file.
+        This option is required if the ``source`` contains more than a single
+        dataset.
 
     array_type : `type`
-        desired return type
+        Desired return type.
     """
     dataset = io_hdf5.find_dataset(source, path=path)
     attrs = dict(dataset.attrs)
     # unpickle channel object
     try:
-        attrs['channel'] = _unpickle_channel(attrs['channel'])
+        attrs["channel"] = _unpickle_channel(attrs["channel"])
     except KeyError:  # no channel stored
         pass
     # unpack byte strings for python3
     for key in attrs:
         if isinstance(attrs[key], bytes):
-            attrs[key] = attrs[key].decode('utf-8')
+            attrs[key] = attrs[key].decode("utf-8")
     return array_type(dataset[()], **attrs)
 
 
-def _unpickle_channel(raw):
-    """Try and unpickle a channel with sensible error handling
+def _unpickle_channel(raw, **kwargs) -> str:
+    """Try and unpickle a channel with sensible error handling.
     """
     try:
-        return pickle.loads(raw)
-    except (ValueError, pickle.UnpicklingError, EOFError, TypeError,
-            IndexError) as exc:
+        return pickle.loads(raw, **kwargs)
+    except (
+        ValueError,
+        pickle.UnpicklingError,
+        EOFError,
+        TypeError,
+        IndexError,
+    ) as exc:
         # maybe not pickled
         if isinstance(raw, bytes):
-            raw = raw.decode('utf-8')
+            raw = raw.decode("utf-8")
         try:  # test if this is a valid channel name
             Channel.MATCH.match(raw)
         except ValueError:
@@ -89,19 +124,19 @@ def _unpickle_channel(raw):
         return raw
 
 
-# -- write --------------------------------------------------------------------
+# -- write ---------------------------
 
-class IgnoredAttribute(ValueError):
-    """Internal exception to indicate an attribute to be ignored
+class IgnoredAttributeError(ValueError):
+    """Internal exception to indicate an attribute to be ignored.
     """
     pass
 
 
-def _format_metadata_attribute(value):
-    """Format a value for writing to HDF5 as a `h5py.Dataset` attribute
+def _format_metadata_attribute(value: Any) -> Any:
+    """Format a value for writing to HDF5 as a `h5py.Dataset` attribute.
     """
     if value is None or (isinstance(value, Index) and value.regular):
-        raise IgnoredAttribute
+        raise IgnoredAttributeError
 
     # map type to something HDF5 can handle
     for typekey, func in ATTR_TYPE_MAP.items():
@@ -110,15 +145,19 @@ def _format_metadata_attribute(value):
     return value
 
 
-def write_array_metadata(dataset, array):
-    """Write metadata for ``array`` into the `h5py.Dataset`
+def write_array_metadata(
+    dataset: h5py.Dataset,
+    array: Array,
+):
+    """Write metadata for ``array`` into the `h5py.Dataset`.
     """
-    for attr in ('unit',) + array._metadata_slots:
+    for attr in ("unit",) + array._metadata_slots:
         # format attribute
         try:
             value = _format_metadata_attribute(
-                getattr(array, '_%s' % attr, None))
-        except IgnoredAttribute:
+                getattr(array, f"_{attr}", None),
+            )
+        except IgnoredAttributeError:
             continue
 
         # store attribute
@@ -133,60 +172,78 @@ def write_array_metadata(dataset, array):
 
 
 @io_hdf5.with_write_hdf5
-def write_hdf5_array(array, h5g, path=None, attrs=None,
-                     append=False, overwrite=False,
-                     compression='gzip', **kwargs):
-    """Write the ``array`` to an `h5py.Dataset`
+def write_hdf5_array(
+    array: Array,
+    h5g: h5py.Group,
+    path: str | None = None,
+    attrs: dict[str, Any] | None = None,
+    append: bool = False,
+    overwrite: bool = False,
+    compression: str = "gzip",
+    **kwargs,
+) -> h5py.Dataset:
+    """Write ``array`` to a `h5py.Dataset`.
 
     Parameters
     ----------
     array : `gwpy.types.Array`
-        the data object to write
+        The data object to write.
 
-    h5g : `str`, `h5py.Group`
-        a file path to write to, or an `h5py.Group` in which to create
-        a new dataset
+    h5g : `str`, `Path`, `file`, `h5py.Group`
+        A file path to write to, or an `h5py.Group` in which to create
+        a new dataset.
 
     path : `str`, optional
-        the path inside the group at which to create the new dataset,
-        defaults to ``array.name``
+        The path inside the group at which to create the new dataset,
+        defaults to ``array.name``.
 
     attrs : `dict`, optional
-        extra metadata to write into `h5py.Dataset.attrs`, on top of
-        the default metadata
+        Extra metadata to write into `h5py.Dataset.attrs`, on top of
+        the default metadata.
 
     append : `bool`, default: `False`
-        if `True`, write new dataset to existing file, otherwise an
-        exception will be raised if the output file exists (only used if
-        ``f`` is `str`)
+        Tf `True`, write new dataset to existing file, otherwise an
+        exception will be raised if the output file exists.
+        Default is `False`.
 
     overwrite : `bool`, default: `False`
-        if `True`, overwrite an existing dataset in an existing file,
+        If `True`, overwrite an existing dataset in an existing file,
         otherwise an exception will be raised if a dataset exists with
-        the given name (only used if ``f`` is `str`)
+        the given name.
+        Default is `False`.
 
     compression : `str`, `int`, optional
-        compression option to pass to :meth:`h5py.Group.create_dataset`
+        Compression option to pass to :meth:`h5py.Group.create_dataset`.
 
-    **kwargs
-        other keyword arguments for :meth:`h5py.Group.create_dataset`
+    kwargs
+        Other keyword arguments for :meth:`h5py.Group.create_dataset`.
 
     Returns
     -------
     datasets : `h5py.Dataset`
-        the newly created dataset
+        The newly created dataset.
+
+    See also
+    --------
+    h5py.Group.create_dataset
+        For documentation of other valid keyword arguments.
     """
     if path is None:
         path = array.name
     if path is None:
-        raise ValueError("Cannot determine HDF5 path for %s, "
-                         "please set ``name`` attribute, or pass ``path=`` "
-                         "keyword when writing" % type(array).__name__)
+        raise ValueError(
+            f"Cannot determine HDF5 path for {type(array).__name__}, "
+            "please set `name` attribute, or pass `path` keyword when writing",
+        )
 
     # create dataset
-    dset = io_hdf5.create_dataset(h5g, path, overwrite=overwrite,
-                                  data=array.value, compression=compression,
-                                  **kwargs)
+    dset = io_hdf5.create_dataset(
+        h5g,
+        path,
+        overwrite=overwrite,
+        data=array.value,
+        compression=compression,
+        **kwargs)
 
     # write default metadata
     write_array_metadata(dset, array)
@@ -199,8 +256,8 @@ def write_hdf5_array(array, h5g, path=None, attrs=None,
     return dset
 
 
-def format_index_array_attrs(series):
-    """Format metadata attributes for and indexed array
+def format_index_array_attrs(series: Series) -> dict[str, Any]:
+    """Format metadata attributes for and indexed array.
 
     This function is used to provide the necessary metadata to meet
     the (proposed) LIGO Common Data Format specification for series data
@@ -208,11 +265,11 @@ def format_index_array_attrs(series):
     """
     attrs = {}
     # loop through named axes
-    for i, axis in zip(range(series.ndim), ('x', 'y')):
+    for i, axis in zip(range(series.ndim), ("x", "y")):
         # find property names
-        unit = '{}unit'.format(axis)
-        origin = '{}0'.format(axis)
-        delta = 'd{}'.format(axis)
+        unit = f"{axis}unit"
+        origin = f"{axis}0"
+        delta = f"d{axis}"
 
         # store attributes
         aunit = getattr(series, unit)
@@ -224,35 +281,60 @@ def format_index_array_attrs(series):
     return attrs
 
 
-def write_hdf5_series(series, output, path=None, attrs=None, **kwargs):
+@wraps(write_hdf5_array)
+def write_hdf5_series(
+    series: Series,
+    output: str | Path | IO | h5py.Group,
+    path: str | None = None,
+    attrs: dict[str, Any] | None = None,
+    **kwargs,
+) -> h5py.Dataset:
     """Write a Series to HDF5.
 
-    See :func:`write_hdf5_array` for details of arguments and keywords.
+    See `write_hdf5_array` for details of arguments and keywords.
     """
     if attrs is None:
         attrs = format_index_array_attrs(series)
-    return write_hdf5_array(series, output, path=path, attrs=attrs, **kwargs)
+    return write_hdf5_array(
+        series,
+        output,
+        path=path,
+        attrs=attrs,
+        **kwargs,
+    )
 
 
-# -- register -----------------------------------------------------------------
+# -- register ------------------------
 
-def register_hdf5_array_io(array_type, format='hdf5', identify=True):
-    """Registry read() and write() methods for the HDF5 format
+def register_hdf5_array_io(
+    array_type: type[Array],
+    format: str = "hdf5",
+    read: bool = True,
+    write: bool = True,
+    identify: bool = True,
+):
+    """Registry read() and write() methods for the HDF5 format.
     """
-    def from_hdf5(*args, **kwargs):
-        """Read an array from HDF5
-        """
-        kwargs.setdefault('array_type', array_type)
-        return read_hdf5_array(*args, **kwargs)
+    if read:
+        array_type.read.registry.register_reader(
+            format,
+            array_type,
+            partial(read_hdf5_array, array_type=array_type),
+        )
 
-    compat_registry.register_reader(format, array_type, from_hdf5)
-    if issubclass(array_type, Series):
-        compat_registry.register_writer(format, array_type, write_hdf5_series)
-    else:
-        compat_registry.register_writer(format, array_type, write_hdf5_array)
+    if write:
+        if issubclass(array_type, Series):
+            writer = write_hdf5_series
+        else:
+            writer = write_hdf5_array
+        array_type.write.registry.register_writer(
+            format,
+            array_type,
+            writer,
+        )
 
     if identify:
-        compat_registry.register_identifier(
+        array_type.read.registry.register_identifier(
             format,
             array_type,
             io_hdf5.identify_hdf5,

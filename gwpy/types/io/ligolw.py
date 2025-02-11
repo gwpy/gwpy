@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,18 +15,34 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read/write series in LIGO_LW-XML
+"""Read/write series in LIGO_LW XML.
 """
 
-from .. import Series
+from __future__ import annotations
+
+import typing
+
 from ...io.ligolw import read_ligolw
 from ...time import to_gps
+from .. import Series
+
+if typing.TYPE_CHECKING:
+    from pathlib import Path
+    from typing import (
+        IO,
+        Any,
+    )
+
+    from ligo.lw import ligolw
+
+    from ...time import LIGOTimeGPS
+    from ...typing import GpsLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def series_contenthandler():
-    """Build a `~xml.sax.handlers.ContentHandler` to read a LIGO_LW <Array>
+def series_contenthandler() -> ligolw.LIGOLwContentHandler:
+    """Build a `~ligo.lw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``.
     """
     from ligo.lw import (
         ligolw,
@@ -37,15 +53,15 @@ def series_contenthandler():
     @ligolw_array.use_in
     @ligolw_param.use_in
     class ArrayContentHandler(ligolw.LIGOLWContentHandler):
-        """`~xml.sax.handlers.ContentHandler` to read a LIGO_LW ``<Array>``
+        """`~ligo.lw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``.
         """
         pass
 
     return ArrayContentHandler
 
 
-def _match_name(elem, name):
-    """Returns `True` if the ``elem``'s Name matches ``name``
+def _match_name(elem: ligolw.Element, name: str) -> bool:
+    """Return `True` if the ``elem``'s Name matches ``name``.
     """
     try:
         return elem.Name == name
@@ -53,8 +69,8 @@ def _match_name(elem, name):
         return False
 
 
-def _get_time(time):
-    """Returns the Time element of a ``<LIGO_LW>``.
+def _get_time(time: ligolw.Element) -> LIGOTimeGPS:
+    """Return the Time element of a ``<LIGO_LW>``.
     """
     from ligo.lw.ligolw import Time
     if not isinstance(time, Time):
@@ -63,8 +79,11 @@ def _get_time(time):
     return to_gps(time.pcdata)
 
 
-def _match_time(elem, gps):
-    """Returns `True` if the ``elem``'s ``<Time>`` matches ``gps``
+def _match_time(
+    elem: ligolw.Element,
+    gps: LIGOTimeGPS,
+) -> bool:
+    """Return `True` if the ``elem``'s ``<Time>`` matches ``gps``.
 
     This will return `False` if not exactly one ``<Time>`` element
     is found.
@@ -75,11 +94,23 @@ def _match_time(elem, gps):
         return False
 
 
-def _match_array(xmldoc, name=None, epoch=None, **params):
-    from ligo.lw.ligolw import Array
-    from ligo.lw.param import (Param, get_param)
+def _match_array(
+    xmldoc: ligolw.Document,
+    name: str | None = None,
+    epoch: LIGOTimeGPS | None = None,
+    **params,
+) -> ligolw.Array:
+    """Return the LIGO_LW ``<Array>`` element that matches the request.
 
-    def _is_match(arr):
+    Raises ValueError if not exactly one match is found.
+    """
+    from ligo.lw.ligolw import Array
+    from ligo.lw.param import (
+        Param,
+        get_param,
+    )
+
+    def _is_match(arr: ligolw.Array) -> bool:
         """Work out whether this `<Array>` element matches the request
         """
         parent = arr.parentNode
@@ -134,7 +165,10 @@ def _match_array(xmldoc, name=None, epoch=None, **params):
     return arr
 
 
-def _update_metadata_from_ligolw(array, kwargs):
+def _update_metadata_from_ligolw(
+    array: ligolw.Array,
+    kwargs: dict[str, Any],
+):
     from ligo.lw.ligolw import Time
     from ligo.lw.param import get_param
 
@@ -146,10 +180,10 @@ def _update_metadata_from_ligolw(array, kwargs):
     except ValueError:
         pass
     else:
-        kwargs.setdefault('epoch', _get_time(time))
+        kwargs.setdefault("epoch", _get_time(time))
 
     # copy over certain other params, if they exist
-    for key in ('channel',):
+    for key in ("channel",):
         try:
             kwargs[key] = get_param(parent, key)
         except ValueError:
@@ -158,32 +192,37 @@ def _update_metadata_from_ligolw(array, kwargs):
     return kwargs
 
 
-def read_series(source, name=None, epoch=None, contenthandler=None, **params):
-    """Read a `Series` from ``LIGO_LW`` XML
+def read_series(
+    source: str | Path | IO | ligolw.Document,
+    name: str | None = None,
+    epoch: GpsLike = None,
+    contenthandler: ligolw.ContentHandler | None = None,
+    **params,
+) -> Series:
+    """Read a `Series` from ``LIGO_LW`` XML.
 
     Parameters
     ----------
-    source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`
-        file path or open ``LIGO_LW``-format XML file
+    source : `file`, `str`, `~ligo.lw.ligolw.Document`
+        File path or open ``LIGO_LW``-format XML file.
 
     name : `str`, optional
-        name of the relevant ``<Array>`` element to read
+        Name of the relevant ``<Array>`` element to read.
 
     epoch : `float`, `int`, optional
-        GPS time epoch of ``<LIGO_LW>`` element to read
+        GPS time epoch of ``<LIGO_LW>`` element to read.
 
-    contenthandler : `~xml.sax.handler.ContentHandler`, optional
-        the content handler to use when parsing the document, see
-        :func:`series_contenthandler` for the default handler
+    contenthandler : `~ligo.lw.ligolw.ContentHandler`, optional
+        The content handler to use when parsing the document.
 
-    **params
-        other ``<Param>`` ``(name, value)`` pairs to use in matching
-        the parent correct ``<LIGO_LW>`` element to read
+    params
+        Other ``<Param>`` ``(name, value)`` pairs to use in matching
+        the parent correct ``<LIGO_LW>`` element to read.
 
     Returns
     -------
     series : `~gwpy.types.Series`
-        a series with metadata read from the ``<Array>``
+        A series with metadata read from the ``<Array>``.
     """
     from ligo.lw.ligolw import Dim
 
@@ -202,20 +241,18 @@ def read_series(source, name=None, epoch=None, contenthandler=None, **params):
     xunit = xdim.Unit
     if ydim.n > Series._ndim + 1:  # check that we can store these data
         raise ValueError(
-            "Cannot parse LIGO_LW Array with {} dimensions in a Series".format(
-                ydim.n,
-            ),
+            f"cannot parse LIGO_LW Array with {ydim.n} dimensions in a Series",
         )
 
     # parse metadata
     array_kw = {
-        'name': array.Name,
-        'unit': array.Unit,
-        'xunit': xunit,
+        "name": array.Name,
+        "unit": array.Unit,
+        "xunit": xunit,
     }
 
     # update metadata from parent <LIGO_LW> element
-    array_kw = _update_metadata_from_ligolw(array, array_kw)
+    _update_metadata_from_ligolw(array, array_kw)
 
     # normalize units (mainly for FrequencySeries)
     if array_kw.get("xunit") == "s^-1":

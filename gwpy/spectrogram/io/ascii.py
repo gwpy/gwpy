@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2017-2020)
+# Copyright (C) Cardiff University (2025-)
 #
 # This file is part of GWpy.
 #
@@ -15,15 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""LIGO_LW I/O registrations for gwpy.frequencyseries objects
+"""ASCII I/O registrations for `gwpy.spectrogram` objects.
 """
 
-from ...io.ligolw import is_ligolw
-from ...types.io.ligolw import read_series
-from .. import FrequencySeries
+from ...types.io.ascii import register_ascii_io
+from .. import Spectrogram
 
 # -- registration --------------------
 
-registry = FrequencySeries.read.registry
-registry.register_reader("ligolw", FrequencySeries, read_series)
-registry.register_identifier("ligolw", FrequencySeries, is_ligolw)
+register_ascii_io(Spectrogram, format="csv", delimiter=",")

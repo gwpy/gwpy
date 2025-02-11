@@ -19,14 +19,17 @@
 """
 
 import numpy
-
-from astropy.io import registry as io_registry
 from astropy.units import Quantity
 
+from ..io.registry import UnifiedReadWriteMethod
+from ..segments import Segment
 from ..types import Array2D
 from ..types.sliceutils import null_slice
-from ..segments import Segment
 from . import FrequencySeries
+from .connect import (
+    SpectralVarianceRead,
+    SpectralVarianceWrite,
+)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['SpectralVariance']
@@ -147,66 +150,10 @@ class SpectralVariance(Array2D):
             f"transposing a {type(self).__name__} is not supported",
         )
 
-    # -- i/O ------------------------------------
+    # -- i/o ------------------------------------
 
-    @classmethod
-    def read(cls, source, *args, **kwargs):
-        """Read data into a `SpectralVariance`
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format, the
-        parameters below are common to most formats.
-
-        Parameters
-        ----------
-        source : `str`, `list`
-            Source of data, any of the following:
-
-            - `str` path of single data file,
-            - `str` path of LAL-format cache file,
-            - `list` of paths.
-
-        *args
-            Other arguments are (in general) specific to the given
-            ``format``.
-
-        format : `str`, optional
-            Source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        **kwargs
-            Other keywords are (in general) specific to the given ``format``.
-
-        Raises
-        ------
-        IndexError
-            if ``source`` is an empty list
-
-        Notes
-        -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `SpectralVariance` to a file
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format, the
-        parameters below are common to most formats.
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        format : `str`, optional
-            output format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+    read = UnifiedReadWriteMethod(SpectralVarianceRead)
+    write = UnifiedReadWriteMethod(SpectralVarianceWrite)
 
     # -- methods --------------------------------
 

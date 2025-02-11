@@ -19,7 +19,8 @@
 """
 
 from . import (
-    hdf5
+    ascii,
+    hdf5,
 )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

@@ -23,9 +23,14 @@ from warnings import warn
 
 from astropy.units import (Unit, Quantity)
 
+from ..io.registry import UnifiedReadWriteMethod
 from . import sliceutils
-from .series import Series
+from .connect import (
+    Array2DRead,
+    Array2DWrite,
+)
 from .index import Index
+from .series import Series
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -301,6 +306,12 @@ class Array2D(Series):
             trans.x0 = self.y0
             trans.dx = self.dy
         return trans
+
+
+    # -- Array2D i/o ----------------------------
+
+    read = UnifiedReadWriteMethod(Array2DRead)
+    write = UnifiedReadWriteMethod(Array2DWrite)
 
     # -- Array2D methods ------------------------
 

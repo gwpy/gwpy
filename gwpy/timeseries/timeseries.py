@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,23 +16,45 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Array with metadata
+"""The `TimeSeries`.
 """
 
 import math
 import warnings
 
 import numpy
+from astropy import units
 from numpy import fft as npfft
 from scipy import signal
 
-from astropy import units
-
-from ..segments import (Segment, SegmentList, DataQualityFlag)
-from ..signal import (filter_design, qtransform, spectral)
-from ..signal.window import (get_window, recommended_overlap, planck)
-from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList,
-                   as_series_dict_class)
+from ..io.registry import UnifiedReadWriteMethod
+from ..segments import (
+    DataQualityFlag,
+    Segment,
+    SegmentList,
+)
+from ..signal import (
+    filter_design,
+    qtransform,
+    spectral,
+)
+from ..signal.window import (
+    get_window,
+    planck,
+    recommended_overlap,
+)
+from .connect import (
+    TimeSeriesDictRead,
+    TimeSeriesDictWrite,
+    TimeSeriesRead,
+    TimeSeriesWrite,
+)
+from .core import (
+    TimeSeriesBase,
+    TimeSeriesBaseDict,
+    TimeSeriesBaseList,
+    as_series_dict_class,
+)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -126,6 +149,13 @@ class TimeSeries(TimeSeriesBase):
     >>> plot = series.plot()
     >>> plot.show()
     """
+    # -- i/o -------------------------
+
+    read = UnifiedReadWriteMethod(TimeSeriesRead)
+    write = UnifiedReadWriteMethod(TimeSeriesWrite)
+
+    # -- signal processing -----------
+
     def fft(self, nfft=None):
         """Compute the one-dimensional discrete Fourier transform of
         this `TimeSeries`.
@@ -754,7 +784,7 @@ class TimeSeries(TimeSeriesBase):
             **kwargs
         )
 
-    # -- TimeSeries filtering -------------------
+    # -- filtering -------------------
 
     def highpass(self, frequency, gpass=2, gstop=30, fstop=None, type='iir',
                  filtfilt=True, **kwargs):
@@ -2406,6 +2436,10 @@ class TimeSeriesDict(TimeSeriesBaseDict):  # pylint: disable=missing-docstring
     __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
                                                  'TimeSeries')
     EntryClass = TimeSeries
+
+    read = UnifiedReadWriteMethod(TimeSeriesDictRead)
+    write = UnifiedReadWriteMethod(TimeSeriesDictWrite)
+
 
 
 class TimeSeriesList(TimeSeriesBaseList):  # pylint: disable=missing-docstring

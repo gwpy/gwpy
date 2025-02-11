@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Louisiana State University (2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -30,7 +31,7 @@ from ...segments import (Segment, SegmentList)
 from ...utils import gprint
 from ...utils.progress import progress_bar
 from .. import (TimeSeries)
-from .core import _pad_series
+from ..connect import _pad_series
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

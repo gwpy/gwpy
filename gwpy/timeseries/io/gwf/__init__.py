@@ -31,21 +31,33 @@ preferred, in the instance that both lalframe and frameCPP are available
 on a system.
 """
 
+from __future__ import annotations
+
 import importlib
 import os
+import typing
 from functools import wraps
 
 import numpy
-
-from astropy.io.registry import (get_reader, get_writer)
-
 from igwn_segments import segment as LigoSegment
 
+from ....io import (
+    cache as io_cache,
+    gwf as io_gwf,
+)
 from ....time import to_gps
-from ....io import gwf as io_gwf
-from ....io import cache as io_cache
-from ....io.registry import compat as compat_registry
-from ... import (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict)
+from ... import (
+    StateVector,
+    StateVectorDict,
+    TimeSeries,
+    TimeSeriesDict,
+)
+
+if typing:
+    from ...core import (
+        TimeSeriesBase,
+        TimeSeriesBaseDict,
+    )
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -270,28 +282,28 @@ def register_gwf_backend(backend):
 
     # -- register -------------------------------
 
-    # register specific format
-    compat_registry.register_reader(fmt, TimeSeriesDict, read_timeseriesdict)
-    compat_registry.register_reader(fmt, TimeSeries, read_timeseries)
-    compat_registry.register_reader(fmt, StateVectorDict, read_statevectordict)
-    compat_registry.register_reader(fmt, StateVector, read_statevector)
-    compat_registry.register_writer(fmt, TimeSeriesDict, write_timeseriesdict)
-    compat_registry.register_writer(fmt, TimeSeries, write_timeseries)
-    compat_registry.register_writer(fmt, StateVectorDict, write_timeseriesdict)
-    compat_registry.register_writer(fmt, StateVector, write_timeseries)
+    # register gwf.<backend> format
+    for klass, reader, writer in (
+        (TimeSeries, read_timeseries, write_timeseries),
+        (TimeSeriesDict, read_timeseriesdict, write_timeseriesdict),
+        (StateVector, read_statevector, write_timeseries),
+        (StateVectorDict, read_statevectordict, write_timeseriesdict),
+    ):
+        klass.read.registry.register_reader(fmt, klass, reader)
+        klass.write.registry.register_writer(fmt, klass, writer)
 
 
 # -- generic API for 'gwf' format ---------------------------------------------
 
-def register_gwf_format(container):
+def register_gwf_format(klass: type[TimeSeriesBase | TimeSeriesBaseDict]):
     """Register I/O methods for `format='gwf'`
 
     The created methods loop through the registered sub-formats.
 
     Parameters
     ----------
-    container : `Series`, `dict`
-        series class or series dict class to register
+    klass : `Series`, `dict`
+        Series class or series dict class to register
     """
     def _backend():
         return io_gwf.get_backend(
@@ -299,19 +311,23 @@ def register_gwf_format(container):
             backends=BACKENDS,
         )
 
+    get_reader = klass.read.registry.get_reader
+
     def read_(*args, **kwargs):
         fmt = f"gwf.{_backend().lower()}"
-        reader = get_reader(fmt, container)
+        reader = get_reader(fmt, klass)
         return reader(*args, **kwargs)
+
+    get_writer = klass.write.registry.get_writer
 
     def write_(*args, **kwargs):
         fmt = f"gwf.{_backend().lower()}"
-        writer = get_writer(fmt, container)
+        writer = get_writer(fmt, klass)
         return writer(*args, **kwargs)
 
-    compat_registry.register_identifier('gwf', container, io_gwf.identify_gwf)
-    compat_registry.register_reader('gwf', container, read_)
-    compat_registry.register_writer('gwf', container, write_)
+    klass.read.registry.register_identifier('gwf', klass, io_gwf.identify_gwf)
+    klass.read.registry.register_reader('gwf', klass, read_)
+    klass.write.registry.register_writer('gwf', klass, write_)
 
 
 # -- register frame API -------------------------------------------------------
@@ -320,6 +336,11 @@ def register_gwf_format(container):
 for backend in BACKENDS:
     register_gwf_backend(backend)
 
-# register generic 'gwf' format for each container
-for container in (TimeSeries, TimeSeriesDict, StateVector, StateVectorDict):
-    register_gwf_format(container)
+# register generic 'gwf' format for each class
+for klass in (
+    TimeSeries,
+    TimeSeriesDict,
+    StateVector,
+    StateVectorDict,
+):
+    register_gwf_format(klass)

@@ -47,17 +47,29 @@ from inspect import signature
 from math import ceil
 
 import numpy
-
 from astropy import units
-from astropy.io import registry as io_registry
-
 from gwosc.api import DEFAULT_URL as GWOSC_DEFAULT_HOST
 
-from ..types import Series
-from ..detector import (Channel, ChannelList)
+from ..detector import (
+    Channel,
+    ChannelList,
+)
+from ..io.registry import UnifiedReadWriteMethod
 from ..segments import SegmentList
-from ..time import (Time, LIGOTimeGPS, GPS_TYPES, to_gps)
+from ..time import (
+    GPS_TYPES,
+    LIGOTimeGPS,
+    Time,
+    to_gps,
+)
+from ..types import Series
 from ..utils import gprint
+from .connect import (
+    TimeSeriesBaseDictRead,
+    TimeSeriesBaseDictWrite,
+    TimeSeriesBaseRead,
+    TimeSeriesBaseWrite,
+)
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
@@ -73,7 +85,11 @@ if typing.TYPE_CHECKING:
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-__all__ = ['TimeSeriesBase', 'TimeSeriesBaseDict', 'TimeSeriesBaseList']
+__all__ = [
+    "TimeSeriesBase",
+    "TimeSeriesBaseDict",
+    "TimeSeriesBaseList",
+]
 
 
 _UFUNC_STRING = {
@@ -271,75 +287,12 @@ class TimeSeriesBase(Series):
         return units.Quantity(self.span[1] - self.span[0], self.xunit,
                               dtype=float)
 
+    # -- TimeSeries i/o -------------------------
+
+    read = UnifiedReadWriteMethod(TimeSeriesBaseRead)
+    write = UnifiedReadWriteMethod(TimeSeriesBaseWrite)
+
     # -- TimeSeries accessors -------------------
-
-    @classmethod
-    def read(cls, source, *args, **kwargs):
-        """Read data into a `TimeSeries`
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format, the parameters
-        below are common to most formats.
-
-        Parameters
-        ----------
-        source : `str`, `list`
-            Source of data, any of the following:
-
-            - `str` path of single data file,
-            - `str` path of LAL-format cache file,
-            - `list` of paths.
-
-        name : `str`, `~gwpy.detector.Channel`
-            the name of the channel to read, or a `Channel` object.
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS start time of required data, defaults to start of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, defaults to end of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        nproc : `int`, optional
-            number of parallel processes to use, serial process by
-            default.
-
-        pad : `float`, optional
-            value with which to fill gaps in the source data,
-            by default gaps will result in a `ValueError`.
-
-        Raises
-        ------
-        IndexError
-            if ``source`` is an empty list
-
-        Notes
-        -----"""
-        from .io.core import read as timeseries_reader
-        return timeseries_reader(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `TimeSeries` to a file
-
-        Parameters
-        ----------
-        target : `str`
-            path of output file
-
-        format : `str`, optional
-            output format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
 
     @classmethod
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
@@ -944,73 +897,8 @@ class TimeSeriesBaseDict(OrderedDict):
             )
             raise
 
-    @classmethod
-    def read(cls, source, *args, **kwargs):
-        """Read data for multiple channels into a `TimeSeriesDict`
-
-        Parameters
-        ----------
-        source : `str`, `list`
-            Source of data, any of the following:
-
-            - `str` path of single data file,
-            - `str` path of LAL-format cache file,
-            - `list` of paths.
-
-        channels : `~gwpy.detector.channel.ChannelList`, `list`
-            a list of channels to read from the source.
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str` optional
-            GPS start time of required data, anything parseable by
-            :func:`~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, anything parseable by
-            :func:`~gwpy.time.to_gps` is fine
-
-        format : `str`, optional
-            source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        nproc : `int`, optional
-            number of parallel processes to use, serial process by
-            default.
-
-        pad : `float`, optional
-            value with which to fill gaps in the source data,
-            by default gaps will result in a `ValueError`.
-
-        Returns
-        -------
-        tsdict : `TimeSeriesDict`
-            a `TimeSeriesDict` of (`channel`, `TimeSeries`) pairs. The keys
-            are guaranteed to be the ordered list `channels` as given.
-
-        Notes
-        -----"""
-        from .io.core import read as timeseries_reader
-        return timeseries_reader(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `TimeSeriesDict` to a file
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format.
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        format : `str`, optional
-            output format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+    read = UnifiedReadWriteMethod(TimeSeriesBaseDictRead)
+    write = UnifiedReadWriteMethod(TimeSeriesBaseDictWrite)
 
     def __iadd__(self, other):
         return self.append(other)

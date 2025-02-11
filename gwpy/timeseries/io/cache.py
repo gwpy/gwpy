@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Louisiana State University (2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -18,6 +19,9 @@
 """I/O utilities for reading `TimeSeries` from a `list` of file paths.
 """
 
+from __future__ import annotations
+
+import typing
 from io import BytesIO
 from math import inf
 from os import PathLike
@@ -30,22 +34,34 @@ from ...io.cache import (
 )
 from ...segments import Segment
 
+if typing.TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
+    from typing import IO
+
+    from ...typing import GpsLike
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def preformat_cache(cache, start=None, end=None, sort=file_segment):
+def preformat_cache(
+    cache: list | str | Path | IO,
+    start: GpsLike | None = None,
+    end: GpsLike | None = None,
+    sort: Callable = file_segment,
+) -> list[str]:
     """Preprocess a `list` of file paths for reading.
 
     This function does the following:
 
-    - read the list of paths cache file (if necessary),
-    - sort the cache in time order (if possible),
-    - sieve the cache to only include data we need.
+    1. read the list of paths cache file (if necessary),
+    2. sort the cache in time order (if possible),
+    3. sieve the cache to only include data we need.
 
     Parameters
     ----------
-    cache : `list`, `str`, `pathlib.Path`
-        List of file paths, or path to a cache file.
+    cache : `list`, `str`, `pathlib.Path`, `file`
+        List of file paths, or a reference to a cache file.
 
     start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS start time of required data, defaults to start of data found;

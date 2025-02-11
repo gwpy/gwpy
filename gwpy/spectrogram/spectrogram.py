@@ -22,15 +22,24 @@
 import warnings
 
 import numpy
-
 from astropy import units
-from astropy.io import registry as io_registry
 
-from ..types import (Array2D, Series)
-from ..timeseries import (TimeSeries, TimeSeriesList)
-from ..timeseries.core import _format_time
+from ..io.registry import UnifiedReadWriteMethod
 from ..frequencyseries import FrequencySeries
 from ..frequencyseries._fdcommon import fdfilter
+from ..timeseries import (
+    TimeSeries,
+    TimeSeriesList,
+)
+from ..timeseries.core import _format_time
+from ..types import (
+    Array2D,
+    Series,
+)
+from .connect import (
+    SpectrogramRead,
+    SpectrogramWrite,
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
@@ -221,63 +230,8 @@ class Spectrogram(Array2D):
 
     # -- Spectrogram i/o ------------------------
 
-    @classmethod
-    def read(cls, source, *args, **kwargs):
-        """Read data into a `Spectrogram`
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format, the
-        parameters below are common to most formats.
-
-        Parameters
-        ----------
-        source : `str`, `list`
-            Source of data, any of the following:
-
-            - `str` path of single data file,
-            - `str` path of LAL-format cache file,
-            - `list` of paths.
-
-        *args
-            Other arguments are (in general) specific to the given
-            ``format``.
-
-        format : `str`, optional
-            Source format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        **kwargs
-            Other keywords are (in general) specific to the given ``format``.
-
-        Returns
-        -------
-        specgram : `Spectrogram`
-
-        Notes
-        -----"""
-        return io_registry.read(cls, source, *args, **kwargs)
-
-    def write(self, target, *args, **kwargs):
-        """Write this `Spectrogram` to a file
-
-        Arguments and keywords depend on the output format, see the
-        online documentation for full details for each format, the
-        parameters below are common to most formats.
-
-        Parameters
-        ----------
-        target : `str`
-            output filename
-
-        format : `str`, optional
-            output format identifier. If not given, the format will be
-            detected if possible. See below for list of acceptable
-            formats.
-
-        Notes
-        -----"""
-        return io_registry.write(self, target, *args, **kwargs)
+    read = UnifiedReadWriteMethod(SpectrogramRead)
+    write = UnifiedReadWriteMethod(SpectrogramWrite)
 
     # -- Spectrogram methods --------------------
 
