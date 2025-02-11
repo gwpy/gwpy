@@ -12,7 +12,7 @@ FrameL
    :target: https://anaconda.org/conda-forge/python-framel
 
 FrameL is a library for reading and writing data in GWF format defined
-in |GWFSpec|_.
+in |LIGO-T970130|_.
 The main library is written in C and documented at
 
 https://lappweb.in2p3.fr/virgo/FrameL/

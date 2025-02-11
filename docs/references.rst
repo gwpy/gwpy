@@ -125,8 +125,8 @@
 
 .. -- Documents ---------------------------------
 
-.. |GWFSpec| replace:: LIGO-T970130
-.. _GWFSpec: https://dcc.ligo.org/LIGO-T970130/public
+.. |LIGO-T970130| replace:: LIGO-T970130
+.. _LIGO-T970130: https://dcc.ligo.org/LIGO-T970130/public
 
 .. -- Other references --------------------------
 
