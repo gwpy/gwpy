@@ -21,6 +21,7 @@
 
 import re
 import warnings
+from contextlib import nullcontext
 from io import BytesIO
 from unittest import mock
 from urllib.error import HTTPError
@@ -868,20 +869,46 @@ class TestDataQualityDict(object):
     @mock.patch('gwpy.segments.flag.query_segments', mock_query_segments)
     def test_query_dqsegdb(self):
         result = self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS, 0, 10)
-        RESULT = QUERY_RESULTC
         assert isinstance(result, self.TEST_CLASS)
-        utils.assert_dict_equal(result, RESULT, utils.assert_flag_equal)
+        utils.assert_dict_equal(
+            result,
+            QUERY_RESULTC,
+            utils.assert_flag_equal,
+        )
 
-        # check all values of on_error
-        with pytest.warns(UserWarning) as record:
+    @mock.patch('gwpy.segments.flag.query_segments', mock_query_segments)
+    @pytest.mark.parametrize(("on_error, ctx"), [
+        # does nothing
+        ("ignore", nullcontext()),
+        # emits a warning
+        ("warn", pytest.warns(UserWarning)),
+        # propagates the exception from the thread
+        ("raise", pytest.raises(
+            HTTPError,
+            match=r"HTTP Error 404: Not found \[X1:BLAHBLAH:1\]",
+        )),
+        # invalid value
+        ("blah", pytest.raises(ValueError, match="on_error must be one of")),
+    ])
+    def test_query_dqsegdb_on_error(self, on_error, ctx):
+        with ctx as record:
             result = self.TEST_CLASS.query_dqsegdb(
-                QUERY_FLAGS + ['X1:BLAHBLAH:1'], 0, 10, on_error='warn')
-            result = self.TEST_CLASS.query_dqsegdb(
-                QUERY_FLAGS + ['X1:BLAHBLAH:1'], 0, 10, on_error='ignore')
-        utils.assert_dict_equal(result, RESULT, utils.assert_flag_equal)
-        assert len(record) == 1  # check on_error='ignore' didn't warn
-        with pytest.raises(ValueError):
-            self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS, 0, 10, on_error='blah')
+                QUERY_FLAGS + ['X1:BLAHBLAH:1'],
+                0,
+                10,
+                on_error=on_error,
+                nthreads=2,
+            )
+        if on_error == "warn":
+            assert len(record) == 1  # check on_error='ignore' didn't warn
+        elif on_error != "ignore":
+            return  # exception has been asserted
+        assert isinstance(result, self.TEST_CLASS)
+        utils.assert_dict_equal(
+            result,
+            QUERY_RESULTC,
+            utils.assert_flag_equal,
+        )
 
     @mock.patch('gwpy.segments.flag.query_segments', mock_query_segments)
     def test_populate(self):
