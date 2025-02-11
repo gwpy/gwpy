@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Louisiana State University (2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -21,42 +22,62 @@ This module provides the methods that eventually get called by TimeSeries.xxx,
 so isn't really for direct user interaction.
 """
 
+from __future__ import annotations
+
+import typing
 from functools import wraps
 
 import numpy
-
+from astropy.units import Quantity
 from scipy.signal import (
     get_window,
     periodogram as scipy_periodogram,
 )
 
-from astropy.units import Quantity
-
-from . import _utils as fft_utils
 from ...utils import mp as mp_utils
-from ..window import (canonical_name, recommended_overlap)
+from ..window import (
+    canonical_name,
+    recommended_overlap,
+)
+from . import _utils as fft_utils
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+if typing.TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import Any
+
+    from astropy.units.typing import QuantityLike
+    from numpy.typing import NDArray
+
+    from ...frequencyseries import FrequencySeries
+    from ...spectrogram import Spectrogram
+    from ...timeseries import TimeSeries
+    from ...types import Series
+    from ..window import WindowLike
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-# -- handle physical quantities and set defaults ------------------------------
+# -- handle physical quantities and set defaults
 
-def seconds_to_samples(x, rate):
-    """Convert a value in seconds to a number of samples for a given rate
+def seconds_to_samples(
+    x: QuantityLike,
+    rate: QuantityLike,
+) -> int:
+    """Convert a value in seconds to a number of samples for a given rate.
 
     Parameters
     ----------
     x : `float`, `~astropy.units.Quantity`
-        number of seconds (or `Quantity` in any time units)
+        Number of seconds (or `Quantity` in any time units).
 
     rate : `float`, `~astropy.units.Quantity`
-        the rate of the relevant data, in Hertz (or `Quantity` in
-        any frequency units)
+        The rate of the relevant data, in Hertz (or `Quantity` in
+        any frequency units).
 
     Returns
     -------
     nsamp : `int`
-        the number of samples corresponding to the relevant quantities
+        The number of samples corresponding to the relevant quantities.
 
     Examples
     --------
@@ -68,11 +89,15 @@ def seconds_to_samples(x, rate):
     >>> seconds_to_samples(4 * units.second, 16.384 * units.kiloHertz)
     65536
     """
-    return int((Quantity(x, 's') * rate).decompose().value)
+    return int((Quantity(x, "s") * rate).decompose().value)
 
 
-def normalize_fft_params(series, kwargs=None, func=None):
-    """Normalize a set of FFT parameters for processing
+def normalize_fft_params(
+    series: TimeSeries,
+    kwargs: dict[str, Any] | None = None,
+    func: Callable | None = None,
+) -> dict[str, Any]:
+    """Normalize a set of FFT parameters for processing.
 
     This method reads the ``fftlength`` and ``overlap`` keyword arguments
     (presumed to be values in seconds), works out sensible defaults,
@@ -88,13 +113,13 @@ def normalize_fft_params(series, kwargs=None, func=None):
     Parameters
     ----------
     series : `gwpy.timeseries.TimeSeries`
-        the data that will be processed using an FFT-based method
+        The data that will be processed using an FFT-based method.
 
     kwargs : `dict`
-        the dict of keyword arguments passed by the user
+        The dict of keyword arguments passed by the user.
 
     func : `callable`, optional
-        the FFT method that will be called
+        The FFT method that will be called.
 
     Examples
     --------
@@ -111,9 +136,9 @@ def normalize_fft_params(series, kwargs=None, func=None):
     if kwargs is None:
         kwargs = dict()
     samp = series.sample_rate
-    fftlength = kwargs.pop('fftlength', None) or series.duration
-    overlap = kwargs.pop('overlap', None)
-    window = kwargs.pop('window', None)
+    fftlength = kwargs.pop("fftlength", None) or series.duration
+    overlap = kwargs.pop("overlap", None)
+    window = kwargs.pop("window", None)
 
     # parse function library and name
     if func is None:
@@ -126,63 +151,85 @@ def normalize_fft_params(series, kwargs=None, func=None):
     nfft = seconds_to_samples(fftlength, samp)
 
     # overlap -> noverlap
-    noverlap = _normalize_overlap(overlap, window, nfft, samp, method=method)
+    noverlap = _normalize_overlap(
+        overlap,
+        window,
+        nfft,
+        samp,
+        method=method,
+    )
 
     # create window
-    window = _normalize_window(window, nfft, library, series.dtype)
+    window = _normalize_window(
+        window,
+        nfft,
+        library,
+        series.dtype,
+    )
     if window is not None:  # allow FFT methods to use their own defaults
-        kwargs['window'] = window
+        kwargs["window"] = window
 
     # create FFT plan for LAL
-    if library == 'lal' and kwargs.get('plan', None) is None:
+    if library == "lal" and kwargs.get("plan", None) is None:
         from ._lal import generate_fft_plan
-        kwargs['plan'] = generate_fft_plan(nfft, dtype=series.dtype)
+        kwargs["plan"] = generate_fft_plan(nfft, dtype=series.dtype)
 
     kwargs.update({
-        'nfft': nfft,
-        'noverlap': noverlap,
+        "nfft": nfft,
+        "noverlap": noverlap,
     })
     return kwargs
 
 
-def _normalize_overlap(overlap, window, nfft, samp, method='welch'):
-    """Normalise an overlap in physical units to a number of samples
+def _normalize_overlap(
+    overlap,
+    window,
+    nfft,
+    samp,
+    method="welch",
+) -> int:
+    """Normalise an overlap in physical units to a number of samples.
 
     Parameters
     ----------
     overlap : `float`, `Quantity`, `None`
-        the overlap in some physical unit (seconds)
+        The overlap in some physical unit (seconds).
 
     window : `str`
-        the name of the window function that will be used, only used
-        if `overlap=None` is given
+        The name of the window function that will be used, only used
+        if `overlap=None` is given.
 
     nfft : `int`
-        the number of samples that will be used in the fast Fourier
-        transform
+        The number of samples that will be used in the fast Fourier
+        transform.
 
     samp : `Quantity`
-        the sampling rate (Hz) of the data that will be transformed
+        The sampling rate (Hz) of the data that will be transformed.
 
     method : `str`
-        the name of the averaging method, default: `'welch'`, only
-        used to return `0` for `'bartlett'` averaging
+        The name of the averaging method, default: `'welch'`, only
+        used to return `0` for `'bartlett'` averaging.
 
     Returns
     -------
     noverlap : `int`
-        the number of samples to be be used for the overlap
+        The number of samples to be be used for the overlap.
     """
-    if method == 'bartlett':
+    if method == "bartlett":
         return 0
     if overlap is None and isinstance(window, str):
-        return recommended_overlap(window, nfft)
+        return int(recommended_overlap(window, nfft))
     if overlap is None:
         return 0
     return seconds_to_samples(overlap, samp)
 
 
-def _normalize_window(window, nfft, library, dtype):
+def _normalize_window(
+    window: WindowLike,
+    nfft: int,
+    library: str | None,
+    dtype: type,
+):
     """Normalise a window specification for a PSD calculation
 
     Parameters
@@ -205,10 +252,10 @@ def _normalize_window(window, nfft, library, dtype):
     window : `numpy.ndarray`, `lal.REAL8Window`
         a numpy-, or `LAL`-format window array
     """
-    if library == '_lal' and isinstance(window, numpy.ndarray):
+    if library == "_lal" and isinstance(window, numpy.ndarray):
         from ._lal import window_from_array
         return window_from_array(window, dtype=dtype)
-    if library == '_lal':
+    if library == "_lal":
         from ._lal import generate_window
         return generate_window(nfft, window=window, dtype=dtype)
     if isinstance(window, str):
@@ -218,8 +265,8 @@ def _normalize_window(window, nfft, library, dtype):
     return window
 
 
-def set_fft_params(func):
-    """Decorate a method to automatically convert quantities to samples
+def set_fft_params(func: Callable) -> Callable:
+    """Decorate a method to automatically convert quantities to samples.
     """
     @wraps(func)
     def wrapped_func(series, method_func, *args, **kwargs):
@@ -241,7 +288,12 @@ def set_fft_params(func):
 # -- processing functions -----------------------------------------------------
 
 @set_fft_params
-def psd(timeseries, method_func, *args, **kwargs):
+def psd(
+    timeseries: TimeSeries | tuple[TimeSeries, TimeSeries],
+    method_func: Callable,
+    *args,
+    **kwargs,
+) -> FrequencySeries:
     """Generate a PSD using a method function
 
     All arguments are presumed to be given in physical units
@@ -261,35 +313,42 @@ def psd(timeseries, method_func, *args, **kwargs):
     return _psdn(timeseries, method_func, *args, **kwargs)
 
 
-def _psdn(timeseries, method_func, *args, **kwargs):
-    """Generate a PSD using a method function with FFT arguments in samples
+def _psdn(
+    timeseries: TimeSeries | tuple[TimeSeries, TimeSeries],
+    method_func: Callable,
+    *args,
+    **kwargs,
+) -> FrequencySeries:
+    """Generate a PSD using a method function with FFT arguments in samples.
 
-    All arguments are presumed to be in sample counts, not physical units
+    All arguments are presumed to be in sample counts, not physical units.
 
     Parameters
     ----------
     timeseries : `~gwpy.timeseries.TimeSeries`, `tuple`
-        the data to process, or a 2-tuple of series to correlate
+        The data to process, or a 2-tuple of series to correlate.
 
     method_func : `callable`
-        the function that will be called to perform the signal processing
+        The function that will be called to perform the signal processing.
 
-    *args, **kwargs
-        other arguments to pass to ``method_func`` when calling
+    args, kwargs
+        Other arguments to pass to ``method_func`` when calling.
     """
-    # unpack tuple of timeseries for cross spectrum
-    try:
-        timeseries, other = timeseries
-    # or just calculate PSD
-    except ValueError:
-        return method_func(timeseries, kwargs.pop('nfft'), *args, **kwargs)
+    data: tuple[TimeSeries, ...]
+    if isinstance(timeseries, tuple):
+        data = timeseries
     else:
-        return method_func(timeseries, other, kwargs.pop('nfft'),
-                           *args, **kwargs)
+        data = (timeseries,)
+    return method_func(
+        *data,
+        kwargs.pop("nfft"),
+        *args,
+        **kwargs,
+    )
 
 
-def _psd(bundle):
-    """Calculate a single PSD for a spectrogram
+def _psd(bundle) -> FrequencySeries:
+    """Calculate a single PSD for a spectrogram.
     """
     series, method_func, args, kwargs = bundle
     psd_ = _psdn(series, method_func, *args, **kwargs)
@@ -297,39 +356,51 @@ def _psd(bundle):
     return psd_
 
 
-def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
-    """Generate an average spectrogram using a method function
+def average_spectrogram(
+    timeseries: TimeSeries | tuple[TimeSeries, TimeSeries],
+    method_func: Callable,
+    stride: float,
+    *args,
+    nproc=1,
+    **kwargs,
+) -> Spectrogram:
+    """Generate an average spectrogram using a method function.
 
     Each time bin of the resulting spectrogram is a PSD generated using
-    the method_func
+    the method_func.
     """
-    # unpack CSD TimeSeries pair, or single timeseries
-    try:
-        timeseries, other = timeseries
-    except ValueError:
-        timeseries = timeseries
-        other = None
-
     from ...spectrogram import Spectrogram
 
-    nproc = kwargs.pop('nproc', 1)
+    # unpack CSD TimeSeries pair, or single timeseries
+    if isinstance(timeseries, tuple):
+        timeseries, other = timeseries
+    else:
+        other = None
 
     # get params
     epoch = timeseries.t0.value
     nstride = seconds_to_samples(stride, timeseries.sample_rate)
-    kwargs['fftlength'] = kwargs.pop('fftlength', stride) or stride
+    kwargs["fftlength"] = kwargs.pop("fftlength", stride) or stride
     normalize_fft_params(timeseries, kwargs=kwargs, func=method_func)
-    nfft = kwargs['nfft']
-    noverlap = kwargs['noverlap']
+    nfft = kwargs["nfft"]
+    noverlap = kwargs["noverlap"]
 
     # sanity check parameters
     if nstride > timeseries.size:
-        raise ValueError("stride cannot be greater than the duration of "
-                         "this TimeSeries")
+        raise ValueError(
+            f"stride ({nstride} samples) cannot be greater than the "
+            f"size of this TimeSeries ({timeseries.size})",
+        )
     if nfft > nstride:
-        raise ValueError("fftlength cannot be greater than stride")
+        raise ValueError(
+            f"fftlength ({nfft} samples) cannot be greater than "
+            f"stride ({nstride})",
+        )
     if noverlap >= nfft:
-        raise ValueError("overlap must be less than fftlength")
+        raise ValueError(
+            f"overlap ({noverlap} samples) must be less than "
+            f"fftlength ({nfft})",
+        )
 
     # define chunks
     tschunks = _chunk_timeseries(timeseries, nstride, noverlap)
@@ -347,18 +418,18 @@ def average_spectrogram(timeseries, method_func, stride, *args, **kwargs):
     return Spectrogram.from_spectra(*psds, epoch=epoch, dt=stride)
 
 
-def _periodogram(bundle):
-    """Calculate a single periodogram for a spectrogram
+def _periodogram(bundle: tuple[NDArray, dict[str, Any]]) -> NDArray:
+    """Calculate a single periodogram for a spectrogram.
     """
     series, kwargs = bundle
     return scipy_periodogram(series, **kwargs)[1]
 
 
-def spectrogram(timeseries, **kwargs):
-    """Generate a spectrogram by stacking periodograms
+def spectrogram(timeseries: TimeSeries, **kwargs) -> Spectrogram:
+    """Generate a spectrogram by stacking periodograms.
 
     Each time bin of the resulting spectrogram is a PSD estimate using
-    a :func:`scipy.signal.periodogram`
+    a :func:`scipy.signal.periodogram`.
     """
     from ...spectrogram import Spectrogram
 
@@ -366,15 +437,18 @@ def spectrogram(timeseries, **kwargs):
     normalize_fft_params(timeseries, kwargs=kwargs)
 
     # get params
-    sampling = timeseries.sample_rate.to('Hz').value
-    nproc = kwargs.pop('nproc', 1)
-    nfft = kwargs.get('nfft')
-    noverlap = kwargs.pop('noverlap')
+    sampling = timeseries.sample_rate.to("Hz").value
+    nproc: int = kwargs.pop("nproc", 1)
+    nfft: int = kwargs["nfft"]
+    noverlap: int = kwargs.pop("noverlap")
     nstride = nfft - noverlap
 
     # sanity check parameters
     if noverlap >= nfft:
-        raise ValueError("overlap must be less than fftlength")
+        raise ValueError(
+            "overlap ({noverlap} samples) must be less than "
+            "fftlength ({nfft})",
+        )
 
     # define chunks
     chunks = []
@@ -405,23 +479,29 @@ def spectrogram(timeseries, **kwargs):
     # create output spectrogram
     unit = fft_utils.scale_timeseries_unit(
         timeseries.unit, scaling=kwargs.get('scaling', 'density'))
-    out = Spectrogram(numpy.empty((numtimes, numfreqs),
-                                  dtype=timeseries.dtype),
-                      copy=False, dt=nstride * timeseries.dt, t0=timeseries.t0,
-                      f0=0, df=sampling/nfft, unit=unit,
-                      name=timeseries.name, channel=timeseries.channel)
+    out = Spectrogram(
+        numpy.empty((numtimes, numfreqs), dtype=timeseries.dtype),
+        copy=False,
+        dt=nstride * timeseries.dt,
+        t0=timeseries.t0,
+        f0=0,
+        df=sampling / nfft,
+        unit=unit,
+        name=timeseries.name,
+        channel=timeseries.channel,
+    )
 
     # normalize over-dense grid
     density = nfft // nstride
-    weights = get_window('triangle', density)
+    weights = get_window("triangle", density)
     for i in range(numtimes):
         # get indices of overlapping columns
-        x = max(0, i+1-density)
-        y = min(i+1, numtimes-density+1)
+        x = max(0, i + 1 - density)
+        y = min(i + 1, numtimes - density + 1)
         if x == 0:
             wgt = weights[-y:]
         elif y == numtimes - density + 1:
-            wgt = weights[:y-x]
+            wgt = weights[:y - x]
         else:
             wgt = weights
         # calculate weighted average
@@ -430,7 +510,13 @@ def spectrogram(timeseries, **kwargs):
     return out
 
 
-def _chunk_timeseries(series, nstride, noverlap):
+def _chunk_timeseries(
+    series: Series,
+    nstride: int,
+    noverlap: int,
+):
+    """Split a `Series` into overlapping chunks.
+    """
     # define chunks
     x = 0
     step = nstride - int(noverlap // 2.)  # the first step is smaller
@@ -445,8 +531,8 @@ def _chunk_timeseries(series, nstride, noverlap):
         step = nstride  # subsequent steps are the standard size
 
 
-def _fft_library(method_func):
-    mod = method_func.__module__.rsplit('.', 1)[-1]
-    if mod == 'median_mean':
+def _fft_library(method_func: Callable) -> str:
+    mod = method_func.__module__.rsplit(".", 1)[-1]
+    if mod == "median_mean":
         return "lal"
     return mod

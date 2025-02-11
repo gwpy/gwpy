@@ -1,4 +1,5 @@
-# Copyright (C) Alex Urban (2018-2020)
+# Copyright (C) Louisiana State University (2018-2020)
+#               Cardiff University (2018-)
 #
 # This file is part of GWpy.
 #
@@ -15,28 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.signal.qtransform`
+"""Tests for :mod:`gwpy.signal.qtransform`.
 """
 
 import numpy
 from numpy import testing as nptest
 from scipy.signal import gausspulse
 
-from .. import qtransform
-from ...table import EventTable
 from ...segments import Segment
+from ...table import EventTable
 from ...timeseries import TimeSeries
+from .. import qtransform
 
-__author__ = 'Alex Urban <alexander.urban@ligo.org>'
+__author__ = "Alex Urban <alexander.urban@ligo.org>"
 
 
 # -- global variables ---------------------------------------------------------
 
 # create noise and a glitch template at 1000 Hz
 NOISE = TimeSeries(
-    numpy.random.normal(size=4096 * 10), sample_rate=4096, epoch=-5)
+    numpy.random.normal(size=4096 * 10),
+    sample_rate=4096,
+    epoch=-5,
+)
 GLITCH = TimeSeries(
-    gausspulse(NOISE.times.value, fc=500)*10, sample_rate=4096)
+    gausspulse(NOISE.times.value, fc=500) * 10,
+    sample_rate=4096,
+)
 DATA = NOISE + GLITCH
 
 # global test objects
@@ -65,7 +71,7 @@ def test_q_scan():
     # test spectrogram output
     assert ts_qspecgram.q == QSPECGRAM.q
     assert ts_qspecgram.shape == QSPECGRAM.shape
-    assert ts_qspecgram.dtype == numpy.dtype('float32')
+    assert ts_qspecgram.dtype == numpy.dtype("float32")
     nptest.assert_allclose(ts_qspecgram.value, QSPECGRAM.value)
 
 
@@ -75,21 +81,25 @@ def test_unnormalised_q_scan():
 
     # test spectrogram output
     assert ts_qspecgram.q == QSPECGRAM.q
-    assert ts_qspecgram.dtype == numpy.dtype('float64')
+    assert ts_qspecgram.dtype == numpy.dtype("float64")
 
 
 def test_q_scan_fd():
     # create test object from frequency-domain input
     fdata = DATA.fft()
     fs_qgram, far = qtransform.q_scan(
-        fdata, duration=abs(DATA.span), sampling=DATA.sample_rate.value,
-        search=SEARCH, epoch=fdata.epoch.value)
+        fdata,
+        duration=abs(DATA.span),
+        sampling=DATA.sample_rate.value,
+        search=SEARCH,
+        epoch=fdata.epoch.value,
+    )
     fs_qspecgram = fs_qgram.interpolate()
 
     # test that the output is the same
     assert far == FAR
     assert fs_qspecgram.q == QSPECGRAM.q
-    assert fs_qspecgram.dtype == numpy.dtype('float32')
+    assert fs_qspecgram.dtype == numpy.dtype("float32")
     assert fs_qspecgram.shape == QSPECGRAM.shape
     nptest.assert_allclose(fs_qspecgram.value, QSPECGRAM.value, rtol=3e-2)
 
@@ -97,21 +107,24 @@ def test_q_scan_fd():
 def test_qtable():
     # test EventTable output
     qtable = QGRAM.table()
-    imax = qtable['energy'].argmax()
+    imax = qtable["energy"].argmax()
     assert isinstance(qtable, EventTable)
-    assert qtable.meta['q'] == QGRAM.plane.q
-    nptest.assert_almost_equal(qtable['time'][imax], QGRAM.peak['time'])
-    nptest.assert_almost_equal(qtable['duration'][imax], 1/1638.4)
-    nptest.assert_almost_equal(qtable['frequency'][imax],
-                               QGRAM.peak['frequency'])
+    assert qtable.meta["q"] == QGRAM.plane.q
+    nptest.assert_almost_equal(qtable["time"][imax], QGRAM.peak["time"])
+    nptest.assert_almost_equal(qtable["duration"][imax], 1 / 1638.4)
     nptest.assert_almost_equal(
-        qtable['bandwidth'][imax],
-        2 * numpy.pi ** (1/2.) * qtable['frequency'][imax] / QGRAM.plane.q)
-    nptest.assert_almost_equal(qtable['energy'][imax], QGRAM.peak['energy'])
+        qtable["frequency"][imax],
+        QGRAM.peak["frequency"],
+    )
+    nptest.assert_almost_equal(
+        qtable["bandwidth"][imax],
+        2 * numpy.pi ** (1 / 2.) * qtable["frequency"][imax] / QGRAM.plane.q,
+    )
+    nptest.assert_almost_equal(qtable["energy"][imax], QGRAM.peak["energy"])
 
     # it's enough to check consistency between the shape of time and
     # frequency columns, because of the way they're calculated
-    assert qtable['time'].shape == qtable['frequency'].shape
+    assert qtable["time"].shape == qtable["frequency"].shape
 
     # test that too high an SNR threshold returns an empty table
     assert len(QGRAM.table(snrthresh=1e9)) == 0

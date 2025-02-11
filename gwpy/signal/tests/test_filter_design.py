@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,25 +16,22 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.signal.filter_design`
+"""Tests for :mod:`gwpy.signal.filter_design`.
 """
 
 from unittest import mock
 
 import numpy
-
 import pytest
-
 from astropy import units
-
 from scipy import signal
 
 from ...testing import utils
 from .. import filter_design
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-ONE_HZ = units.Quantity(1, 'Hz')
+ONE_HZ = units.Quantity(1, "Hz")
 
 # -- filters --------------------------
 
@@ -55,8 +53,8 @@ def notch_60():
         1,  # max passband loss (dB)
         10,  # min stopband loss (dB)
         analog=False,
-        ftype='ellip',
-        output='zpk',
+        ftype="ellip",
+        output="zpk",
     )
 
 
@@ -68,8 +66,8 @@ def lowpass_100_iir():
         2,
         30,
         analog=False,
-        ftype='cheby1',
-        output='zpk',
+        ftype="cheby1",
+        output="zpk",
     )
 
 
@@ -78,7 +76,7 @@ def lowpass_100_fir():
     return signal.firwin(
         30,
         LOWPASS_F,
-        window='hamming',
+        window="hamming",
         width=50.,
         fs=FILTER_FS,
     )
@@ -88,12 +86,12 @@ def lowpass_100_fir():
 def highpass_100_iir():
     return signal.iirdesign(
         HIGHPASS_F / FILTER_NYQ,
-        HIGHPASS_F * 2/3. / FILTER_NYQ,
+        HIGHPASS_F * 2 / 3. / FILTER_NYQ,
         2,
         30,
         analog=False,
-        ftype='cheby1',
-        output='zpk',
+        ftype="cheby1",
+        output="zpk",
     )
 
 
@@ -104,7 +102,7 @@ def highpass_100_fir():
         HIGHPASS_F,
         window="hamming",
         pass_zero=False,
-        width=-HIGHPASS_F/3.,
+        width=-HIGHPASS_F / 3.,
         fs=FILTER_FS,
     )
 
@@ -113,12 +111,12 @@ def highpass_100_fir():
 def bandpass_100_200_iir():
     return signal.iirdesign(
         (LOWPASS_F / FILTER_NYQ, HIGHPASS_F / FILTER_NYQ),
-        (LOWPASS_F * 2/3. / FILTER_NYQ, HIGHPASS_F * 3/2. / FILTER_NYQ),
+        (LOWPASS_F * 2 / 3. / FILTER_NYQ, HIGHPASS_F * 3 / 2. / FILTER_NYQ),
         2,
         30,
         analog=False,
-        ftype='cheby1',
-        output='zpk',
+        ftype="cheby1",
+        output="zpk",
     )
 
 
@@ -127,7 +125,7 @@ def bandpass_100_200_fir():
     return signal.firwin(
         45,
         BANDPASS_F,
-        window='hamming',
+        window="hamming",
         pass_zero=False,
         fs=FILTER_FS,
     )
@@ -159,7 +157,7 @@ def test_fir_from_transfer():
     """Test :func:`gwpy.signal.filter_design.fir_from_transfer`.
     """
     frequencies = numpy.arange(0, 64)
-    fseries = numpy.cos(2*numpy.pi*frequencies)
+    fseries = numpy.cos(2 * numpy.pi * frequencies)
 
     # prepare the time domain filter
     fir = filter_design.fir_from_transfer(fseries, ntaps=10)
@@ -190,7 +188,7 @@ def test_notch_fir_notimplemented():
     """Test :func:`gwpy.signal.filter_design.notch` with an FIR filter.
     """
     with pytest.raises(NotImplementedError):
-        filter_design.notch(60, 16384, type='fir')
+        filter_design.notch(60, 16384, type="fir")
 
 
 def test_lowpass_iir(lowpass_100_iir):
@@ -203,7 +201,7 @@ def test_lowpass_iir(lowpass_100_iir):
 def test_lowpass_fir(lowpass_100_fir):
     """Test :func:`gwpy.signal.filter_design.lowpass` with an FIR filter.
     """
-    fir = filter_design.lowpass(LOWPASS_F, FILTER_FS, type='fir')
+    fir = filter_design.lowpass(LOWPASS_F, FILTER_FS, type="fir")
     utils.assert_allclose(fir, lowpass_100_fir)
 
 
@@ -217,7 +215,7 @@ def test_highpass_iir(highpass_100_iir):
 def test_highpass_fir(highpass_100_fir):
     """Test :func:`gwpy.signal.filter_design.highpass` with an FIR filter.
     """
-    fir = filter_design.highpass(HIGHPASS_F, FILTER_FS, type='fir')
+    fir = filter_design.highpass(HIGHPASS_F, FILTER_FS, type="fir")
     utils.assert_allclose(fir, highpass_100_fir)
 
 
@@ -231,7 +229,7 @@ def test_bandpass_iir(bandpass_100_200_iir):
 def test_bandpass_fir(bandpass_100_200_fir):
     """Test :func:`gwpy.signal.filter_design.bandpass` with an FIR filter.
     """
-    fir = filter_design.bandpass(LOWPASS_F, HIGHPASS_F, FILTER_FS, type='fir')
+    fir = filter_design.bandpass(LOWPASS_F, HIGHPASS_F, FILTER_FS, type="fir")
     utils.assert_allclose(fir, bandpass_100_200_fir)
 
 
@@ -277,7 +275,7 @@ def test_convert_to_digital_zpk(example_zpk_fs_tuple):
 
     dform, dfilt = filter_design.convert_to_digital((z, p, k), fs)
 
-    assert dform == 'zpk'
+    assert dform == "zpk"
     assert dfilt == signal.bilinear_zpk(z, p, k, fs)
 
 
@@ -287,16 +285,16 @@ def test_convert_to_digital_ba(example_zpk_fs_tuple):
 
     # this should be converted to ZPK form
     dform, dfilt = filter_design.convert_to_digital((b, a), fs)
-    assert dform == 'zpk'
+    assert dform == "zpk"
     assert dfilt == signal.bilinear_zpk(z, p, k, fs)
 
 
-def test_convert_to_digital_fir(example_zpk_fs_tuple):
+def test_convert_to_digital_fir():
     fs = 0.1
     b = numpy.array([1, 0.2, 0.5])
     # this should be converted to ZPK form
     dform, dfilt = filter_design.convert_to_digital(b, fs)
-    assert dform == 'ba'
+    assert dform == "ba"
     assert numpy.allclose(dfilt, signal.bilinear(b, [1], fs))
 
 
@@ -307,23 +305,26 @@ def test_convert_to_digital_complex_type_preserved():
     Tests regression against:
     https://gitlab.com/gwpy/gwpy/-/issues/1630#note_2001485594
     """
-    z, p, k = signal.butter(3, 30, 'low', analog=True, output='zpk')
+    z, p, k = signal.butter(3, 30, "low", analog=True, output="zpk")
     form, filt = filter_design.convert_to_digital((z, p, k), 100)
-    zd, pd, kd = filt
-    assert p.dtype == pd.dtype
-    assert numpy.iscomplexobj(pd)
+    assert form == "zpk"
+    assert p.dtype == filt[1].dtype
+    assert numpy.iscomplexobj(filt[1])
 
 
 def test_convert_to_digital_invalid_form():
-    with mock.patch('gwpy.signal.filter_design.parse_filter') as tmp_mock:
+    with mock.patch("gwpy.signal.filter_design.parse_filter") as tmp_mock:
         tmp_mock.return_value = ("invalid", [1, 2, 3])
-        with pytest.raises(ValueError, match='convert invalid'):
+        with pytest.raises(
+            ValueError,
+            match="convert 'invalid'",
+        ):
             filter_design.convert_to_digital([1, 2, 3], sample_rate=1)
 
 
-def test_convert_to_digital_fir_still_zpk(example_zpk_fs_tuple):
-    """ Test that a filter with poles at zero after bilinear is ZPK. """
-
+def test_convert_to_digital_fir_still_zpk():
+    """Test that a filter with poles at zero after bilinear is ZPK.
+    """
     # Why do we always return zpk? We do so for all IIR filters.
     # Only a filter with all poles equal to -2*fs would be a
     # FIR after bilinear transform. However, here, such a filter
@@ -344,7 +345,5 @@ def test_convert_to_digital_fir_still_zpk(example_zpk_fs_tuple):
         (z, p, k),
         fs,
     )
-    assert dform == 'zpk'
-
-    dz, dp, dk = dfilt
-    assert numpy.allclose(numpy.array(dp), 0)
+    assert dform == "zpk"
+    assert numpy.allclose(numpy.array(dfilt[1]), 0)

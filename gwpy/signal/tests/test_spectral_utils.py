@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2013-2020)
+# Copyright (C) Louisiana State University (2013-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,29 +16,30 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for signal module
+"""Tests for :mod:`gwpy.signal.spectral._utils`.
 """
 
 import pytest
-
-from astropy import units
+from astropy.units import Unit
 
 from ..spectral import _utils as fft_utils
 
 
-def test_scale_timeseries_unit():
-    """Test :func:`gwpy.signal.spectral.utils.scale_timeseries_units`
+@pytest.mark.parametrize(("unit", "kwargs", "result"), [
+    (Unit("m"), {}, Unit("m^2/Hz")),
+    (Unit("m"), {"scaling": "density"}, Unit("m^2/Hz")),
+    (Unit("m"), {"scaling": "spectrum"}, Unit("m^2")),
+    (None, {}, Unit("Hz^-1")),
+])
+def test_scale_timeseries_unit(unit, kwargs, result):
+    """Test :func:`gwpy.signal.spectral._utils.scale_timeseries_units`.
     """
-    scale_ = fft_utils.scale_timeseries_unit
-    u = units.Unit('m')
-    # check default
-    assert scale_(u) == units.Unit('m^2/Hz')
-    # check scaling='density'
-    assert scale_(u, scaling='density') == units.Unit('m^2/Hz')
-    # check scaling='spectrum'
-    assert scale_(u, scaling='spectrum') == units.Unit('m^2')
-    # check anything else raises an exception
-    with pytest.raises(ValueError):
-        scale_(u, scaling='other')
-    # check null unit
-    assert scale_(None) == units.Unit('Hz^-1')
+    assert fft_utils.scale_timeseries_unit(unit, **kwargs) == result
+
+
+def test_scale_timeseries_unit_error():
+    with pytest.raises(
+        ValueError,
+        match="^unknown scaling: 'other'$",
+    ):
+        fft_utils.scale_timeseries_unit(None, scaling="other")

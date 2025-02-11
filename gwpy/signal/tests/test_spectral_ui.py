@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2013-2020)
+# Copyright (C) Louisiana State University (2013-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,16 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for signal module
+"""Tests for :mod:`gwpy.signal.spectral._ui`.
 """
 
 import numpy
-
 import pytest
-
-from scipy import signal
-
 from astropy import units
+from scipy import signal
 
 from ...testing.utils import (
     assert_array_equal,
@@ -34,31 +32,40 @@ from ...timeseries import TimeSeries
 from ..spectral import _ui as fft_ui
 
 
-def test_seconds_to_samples():
-    """Test :func:`gwpy.signal.spectral.ui.seconds_to_samples`
+@pytest.mark.parametrize(("secs", "rate", "result"), [
+    # all floats
+    (4, 256, 1024),
+    # duration as a quantity
+    (1 * units.minute, 16, 960),
+    # duration and rate as quantities
+    (4 * units.second, 16.384 * units.kiloHertz, 65536),
+])
+def test_seconds_to_samples(secs, rate, result):
+    """Test :func:`gwpy.signal.spectral.ui.seconds_to_samples`.
     """
-    assert fft_ui.seconds_to_samples(4, 256) == 1024
-    assert fft_ui.seconds_to_samples(1 * units.minute, 16) == 960
-    assert fft_ui.seconds_to_samples(
-        4 * units.second, 16.384 * units.kiloHertz) == 65536
+    assert fft_ui.seconds_to_samples(secs, rate) == result
 
 
 def test_normalize_fft_params():
-    """Test :func:`gwpy.signal.spectral.ui.normalize_fft_params`
+    """Test :func:`gwpy.signal.spectral.ui.normalize_fft_params`.
     """
-    ftp = fft_ui.normalize_fft_params(
-        TimeSeries(numpy.zeros(1024), sample_rate=256))
-    assert ftp == {'nfft': 1024, 'noverlap': 0}
+    assert fft_ui.normalize_fft_params(
+        TimeSeries(numpy.zeros(1024), sample_rate=256),
+    ) == {
+        "nfft": 1024,
+        "noverlap": 0,
+    }
 
 
 def test_normalize_fft_params_window_str():
     ftp = fft_ui.normalize_fft_params(
         TimeSeries(numpy.zeros(1024), sample_rate=256),
-        {'window': 'hann'})
-    win = signal.get_window('hann', 1024)
-    assert ftp.pop('nfft') == 1024
-    assert ftp.pop('noverlap') == 512
-    assert_array_equal(ftp.pop('window'), win)
+        {"window": "hann"},
+    )
+    win = signal.get_window("hann", 1024)
+    assert ftp.pop("nfft") == 1024
+    assert ftp.pop("noverlap") == 512
+    assert_array_equal(ftp.pop("window"), win)
     assert not ftp
 
 
@@ -78,24 +85,26 @@ def test_normalize_fft_params_window_array():
 ])
 def test_normalize_fft_params_window_lal(win):
     import lal
+
     from gwpy.signal.spectral._lal import welch
+
     ftp = fft_ui.normalize_fft_params(
         TimeSeries(numpy.zeros(1024, dtype="float32"), sample_rate=256),
-        kwargs={'window': win},
+        kwargs={"window": win},
         func=welch,
     )
     assert isinstance(ftp.pop("window"), lal.REAL4Window)
 
 
 def test_chunk_timeseries():
-    """Test :func:`gwpy.signal.spectral.ui._chunk_timeseries`
+    """Test :func:`gwpy.signal.spectral.ui._chunk_timeseries`.
     """
     a = TimeSeries(numpy.arange(400))
     chunks = list(fft_ui._chunk_timeseries(a, 100, 50))
     for i, (idxa, idxb) in enumerate([
-            (None, 150),
-            (75, 225),
-            (175, 325),
-            (250, 400),
+        (None, 150),
+        (75, 225),
+        (175, 325),
+        (250, 400),
     ]):
         assert_quantity_sub_equal(chunks[i], a[idxa:idxb])

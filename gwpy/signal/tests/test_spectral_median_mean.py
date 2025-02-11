@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (C) Louisiana State University (2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for :mod:`gwpy.signal.spectral._median_mean`
+"""Tests for :mod:`gwpy.signal.spectral._median_mean`.
 """
 
 from unittest import mock
@@ -35,7 +36,7 @@ from ..spectral import _median_mean as fft_median_mean
     side_effect=(None, ImportError),
 )
 def test_median_mean(lal_func, pycbc_func):
-    """Check that the registered "median-mean" method works
+    """Check that the registered "median-mean" method works.
 
     Should resolve in this order to
 

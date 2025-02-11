@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,44 +16,90 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Custom filtering utilities for the `TimeSeries`
+"""Custom filtering utilities for the `TimeSeries`.
 """
 
+from __future__ import annotations
+
 import operator
+import typing
 from functools import reduce
-from math import (pi, log10)
+from math import (
+    log10,
+    pi,
+)
 
 import numpy
+from astropy.units import Quantity
 from numpy import fft as npfft
-
 from scipy import signal
 
-from astropy.units import Quantity
+from .window import (
+    get_window,
+    planck,
+)
 
-from .window import (get_window, planck)
+# filter type definitions
+if typing.TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import (
+        Any,
+        SupportsFloat,
+        TypeAlias,
+    )
+
+    from astropy.units.typing import QuantityLike
+    from numpy.typing import (
+        ArrayLike,
+        NDArray,
+    )
+
+    from .window import WindowLike
+
+    # FIR
+    TapsType: TypeAlias = NDArray
+    # IIR
+    SosType: TypeAlias = NDArray
+    ZpkType: TypeAlias = tuple[NDArray, NDArray, float]
+    BAType: TypeAlias = tuple[NDArray, NDArray]
+    IirFilterType: TypeAlias = signal.lti | ZpkType | BAType
+    # generic
+    FilterType: TypeAlias = TapsType | IirFilterType
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__all__ = ['lowpass', 'highpass', 'bandpass', 'notch', 'concatenate_zpks']
+__all__ = [
+    "lowpass",
+    "highpass",
+    "bandpass",
+    "notch",
+    "concatenate_zpks",
+]
 
 
-def _as_float(x):
-    try:
-        return float(x.value)
-    except AttributeError:
-        return float(x)
+def _as_float(
+    x: QuantityLike,
+    unit: str = "Hz",
+) -> float:
+    return Quantity(x, unit).value
 
 
-TWO_PI = 2 * pi
-FIRWIN_DEFAULTS = {
-    'window': 'hann',
-}
+TWO_PI: float = 2 * pi
 
 
-# -- core filter design utilities ---------------------------------------------
+# -- core filter design utilities ----
 
-def _design_iir(wp, ws, sample_rate, gpass, gstop,
-                analog=False, ftype='cheby1', output='zpk'):
-    # pylint: disable=invalid-name
+def _design_iir(
+    wp: float | ArrayLike,
+    ws: float | ArrayLike,
+    sample_rate: float,
+    gpass: float,
+    gstop: float,
+    analog: bool = False,
+    ftype: str = "cheby1",
+    output: str = "zpk",
+) -> IirFilterType:
+    """Design an IIR filter using `scipy.signal.iirdesign`.
+    """
     nyq = sample_rate / 2.
     wp = numpy.atleast_1d(wp)
     ws = numpy.atleast_1d(ws)
@@ -62,31 +109,36 @@ def _design_iir(wp, ws, sample_rate, gpass, gstop,
     else:  # convert Hz to half-cycles / sample
         wp /= nyq
         ws /= nyq
-    z, p, k = signal.iirdesign(wp, ws, gpass, gstop, analog=analog,
-                               ftype=ftype, output='zpk')
+    z, p, k = signal.iirdesign(
+        wp,
+        ws, gpass,
+        gstop,
+        analog=analog,
+        ftype=ftype,
+        output="zpk",
+    )
     if analog:  # convert back to Hz
         z /= -TWO_PI
         p /= -TWO_PI
         k *= TWO_PI ** z.size / -TWO_PI ** p.size
-    if output == 'zpk':
+    if output == "zpk":
         return z, p, k
-    elif output == 'ba':
+    if output == "ba":
         return signal.zpk2tf(z, p, k)
-    elif output == 'sos':
+    if output == "sos":
         return signal.zpk2sos(z, p, k)
-    else:
-        raise ValueError("'%s' is not a valid output form." % output)
+    raise ValueError(f"'{output}' is not a valid output form")
 
 
 def _design_fir(
-    wp,
-    ws,
-    sample_rate,
-    gpass,
-    gstop,
-    window='hamming',
+    wp: float | ArrayLike,
+    ws: float | ArrayLike,
+    sample_rate: float,
+    gpass: float,
+    gstop: float,
+    window: str = "hamming",
     **kwargs,
-):
+) -> TapsType:
     """Design an FIR filter using `scipy.signal.firwin`.
 
     This is just an internal convenience function to calculate the number of
@@ -116,28 +168,48 @@ def _design_fir(
     return signal.firwin(nt, wp, window=window, **kwargs)
 
 
-def num_taps(sample_rate, transitionwidth, gpass, gstop):
+def _design(
+    type: str,
+    *args,
+    **kwargs,
+) -> FilterType:
+    """Convenience function to select between `_design_iir` and `_design_fir`.
+    """
+    design_func: Callable
+    if type == "iir":
+        design_func = _design_iir
+    else:
+        design_func = _design_fir
+    return design_func(*args, **kwargs)
+
+
+def num_taps(
+    sample_rate: float,
+    transitionwidth: float,
+    gpass: float,
+    gstop: float,
+) -> int:
     """Returns the number of taps for an FIR filter with the given shape.
 
     Parameters
     ----------
     sample_rate : `float`
-        sampling rate of target data
+        Sampling rate of target data.
 
     transitionwidth : `float`
-        the width (in the same units as `sample_rate`) of the transition
-        from stop-band to pass-band
+        The width (in the same units as `sample_rate`) of the transition
+        from stop-band to pass-band.
 
     gpass : `float`
-        the maximum loss in the passband (dB)
+        The maximum loss in the passband (dB).
 
     gstop : `float`
-        the minimum attenuation in the stopband (dB)
+        The minimum attenuation in the stopband (dB).
 
     Returns
     -------
     numtaps : `int`
-       the number of taps for an FIR filter
+       The number of taps for an FIR filter.
 
     Notes
     -----
@@ -146,7 +218,7 @@ def num_taps(sample_rate, transitionwidth, gpass, gstop):
     gpass = 10 ** (-gpass / 10.)
     gstop = 10 ** (-gstop / 10.)
     ntaps = int(
-        2/3.
+        2 / 3.
         * log10(1 / (10 * gpass * gstop))
         * sample_rate
         / abs(transitionwidth)
@@ -157,14 +229,14 @@ def num_taps(sample_rate, transitionwidth, gpass, gstop):
     return ntaps
 
 
-def is_zpk(zpktup):
-    """Determin whether the given tuple is a ZPK-format filter definition
+def is_zpk(zpktup: Any) -> bool:
+    """Return `True` if ``zpktup`` looks like a ZPK-format filter definition.
 
     Returns
     -------
     iszpk : `bool`
-        `True` if the ``zpktup`` looks like a ZPK-format filter definition,
-        otherwise `False`
+        `True` if input argument looks like a 3-tuple giving arrays of
+        zeros and poles, and a gain (`float`).
     """
     return (
         isinstance(zpktup, (tuple, list))
@@ -175,21 +247,24 @@ def is_zpk(zpktup):
     )
 
 
-def truncate_transfer(transfer, ncorner=None):
+def truncate_transfer(
+    transfer: numpy.ndarray,
+    ncorner: int | None = None,
+) -> numpy.ndarray:
     """Smoothly zero the edges of a frequency domain transfer function
 
     Parameters
     ----------
     transfer : `numpy.ndarray`
-        transfer function to start from, must have at least ten samples
+        Transfer function to start from, must have at least ten samples.
 
     ncorner : `int`, optional
-        number of extra samples to zero off at low frequency, default: `None`
+        Number of extra samples to zero off at low frequency.
 
     Returns
     -------
     out : `numpy.ndarray`
-        the smoothly truncated transfer function
+        The smoothly-truncated transfer function.
 
     Notes
     -----
@@ -198,35 +273,41 @@ def truncate_transfer(transfer, ncorner=None):
     `ncorner` extra samples will be zeroed on the left as a hard highpass
     filter.
 
-    See :func:`~gwpy.signal.window.planck` for more information.
+    See also
+    --------
+    gwpy.signal.window.planck
     """
     nsamp = transfer.size
     ncorner = ncorner if ncorner else 0
     out = transfer.copy()
     out[0:ncorner] = 0
-    out[ncorner:nsamp] *= planck(nsamp-ncorner, nleft=5, nright=5)
+    out[ncorner:nsamp] *= planck(nsamp - ncorner, nleft=5, nright=5)
     return out
 
 
-def truncate_impulse(impulse, ntaps, window='hann'):
-    """Smoothly truncate a time domain impulse response
+def truncate_impulse(
+    impulse: numpy.ndarray,
+    ntaps: int,
+    window: WindowLike = "hann",
+):
+    """Smoothly truncate a time domain impulse response.
 
     Parameters
     ----------
     impulse : `numpy.ndarray`
-        the impulse response to start from
+        The impulse response to start from.
 
     ntaps : `int`
-        number of taps in the final filter
+        Number of taps in the final filter.
 
-    window : `str`, `numpy.ndarray`, optional
-        window function to truncate with, default: ``'hann'``
-        see :func:`scipy.signal.get_window` for details on acceptable formats
+    window : `str`, `float`, `tuple`, `numpy.ndarray`
+        Window to truncate with, see `scipy.signal.get_window`
+        for details on acceptable formats.
 
     Returns
     -------
     out : `numpy.ndarray`
-        the smoothly truncated impulse response
+        The smoothly truncated impulse response.
     """
     out = impulse.copy()
     trunc_start = int(ntaps / 2)
@@ -238,28 +319,33 @@ def truncate_impulse(impulse, ntaps, window='hann'):
     return out
 
 
-def fir_from_transfer(transfer, ntaps, window='hann', ncorner=None):
-    """Design a Type II FIR filter given an arbitrary transfer function
+def fir_from_transfer(
+    transfer: numpy.ndarray,
+    ntaps: int,
+    window: WindowLike = "hann",
+    ncorner: int | None = None,
+):
+    """Design a Type II FIR filter given an arbitrary transfer function.
 
     Parameters
     ----------
     transfer : `numpy.ndarray`
-        transfer function to start from, must have at least ten samples
+        Transfer function to start from, must have at least ten samples.
 
     ntaps : `int`
-        number of taps in the final filter, must be an even number
+        Number of taps in the final filter, must be an even number.
 
     window : `str`, `numpy.ndarray`, optional
-        window function to truncate with, default: ``'hann'``
-        see :func:`scipy.signal.get_window` for details on acceptable formats
+        Window function to truncate with, see `scipy.signal.get_window`
+        for details on acceptable formats.
 
     ncorner : `int`, optional
-        number of extra samples to zero off at low frequency, default: `None`
+        Number of extra samples to zero off at low frequency.
 
     Returns
     -------
     out : `numpy.ndarray`
-        A time domain FIR filter of length `ntaps`
+        A time domain FIR filter of length `ntaps`.
 
     Notes
     -----
@@ -271,28 +357,34 @@ def fir_from_transfer(transfer, ntaps, window='hann', ncorner=None):
     See also
     --------
     scipy.signal.remez
-        an alternative FIR filter design using the Remez exchange algorithm
+        An alternative FIR filter design using the Remez exchange algorithm.
     """
     # truncate and highpass the transfer function
     transfer = truncate_transfer(transfer, ncorner=ncorner)
     # compute and truncate the impulse response
     impulse = npfft.irfft(transfer)
-    impulse = truncate_impulse(impulse, ntaps=ntaps, window=window)
+    impulse = truncate_impulse(
+        impulse,
+        ntaps=ntaps,
+        window=window,
+    )
     # wrap around and normalise to construct the filter
-    out = numpy.roll(impulse, int(ntaps/2 - 1))[0:ntaps]
-    return out
+    return numpy.roll(impulse, int(ntaps / 2 - 1))[0:ntaps]
 
 
-def convert_zpk_units(filt, unit):
+def convert_zpk_units(
+    filt: ZpkType,
+    unit: str,
+):
     """Convert zeros and poles created for a freq response in Hz to rad/s.
 
     Parameters
     ----------
     filt : `tuple`
-        zeros, poles, gain
+        Zeros, poles, gain.
 
     unit : `str`
-        ``'Hz'`` or ``'rad/s'``
+        ``'Hz'`` or ``'rad/s'``.
 
     Returns
     -------
@@ -307,34 +399,39 @@ def convert_zpk_units(filt, unit):
             zeros[zi] *= -2. * numpy.pi
         for pj in range(len(poles)):
             poles[pj] *= -2. * numpy.pi
-    elif unit not in ['rad/s', 'rad/sample']:
-        raise ValueError("zpk can only be given with unit='Hz' "
-                         f"'rad/s', or 'rad/sample', not {unit}")
+    elif unit not in [
+        "rad/s",
+        "rad/sample",
+    ]:
+        raise ValueError(
+            "zpk can only be given with unit='Hz', 'rad/s', or 'rad/sample', "
+            f"not '{unit}'",
+        )
 
     return zeros, poles, gain
 
 
-def convert_to_digital(filter, sample_rate):
+def convert_to_digital(
+    filter,
+    sample_rate: float,
+) -> tuple[str, IirFilterType]:
     """Convert an analog filter to digital via bilinear functions.
-
-    This function always returns in zpk format.
 
     Parameters
     ----------
     filter: `tuple`
-        filter values
+        Input filter to convert.
 
     sample_rate: `float`
-
-    unit: `str`
+        Sample rate of digital data that will be filtered.
 
     Returns
     -------
     dform : `str`
-        type of filter, 'zpk' format
+        Type of filter.
 
-    dfilter: 'tuple'
-        digital filter values
+    dfilter : 'tuple'
+        Digital filter values.
     """
     # This will always end up returning zpk form.
     # If FIR, bilinear will convert it to IIR.
@@ -343,35 +440,35 @@ def convert_to_digital(filter, sample_rate):
 
     form, filter = parse_filter(filter)
 
-    if form == 'ba':
+    if form == "ba":
         b, a = filter
-        filter = signal.bilinear(b, a, fs=sample_rate)
+        return form, signal.bilinear(b, a, fs=sample_rate)
 
-    elif form == 'zpk':
-        filter = signal.bilinear_zpk(*filter, fs=sample_rate)
+    if form == 'zpk':
+        return form, signal.bilinear_zpk(*filter, fs=sample_rate)
 
-    else:
-        raise ValueError(f"Cannot convert {form}, only 'zpk' or 'ba'")
-
-    return form, filter
+    raise ValueError(f"Cannot convert '{form}', only 'zpk' or 'ba'")
 
 
-def parse_filter(args):
-    """Parse arbitrary input args into a TF or ZPK filter definition
+def parse_filter(
+    args: FilterType,
+) -> tuple[str, BAType | ZpkType]:
+    """Parse arbitrary input args into a TF or ZPK filter definition.
 
     Parameters
     ----------
     args : `tuple`, `~scipy.signal.lti`
-        filter definition, normally just captured positional ``*args``
-        from a function call
+        Filter definition, normally just captured positional ``*args``
+        from a function call.
 
     Returns
     -------
     ftype : `str`
-        either ``'ba'`` or ``'zpk'``
+        Either ``'ba'`` or ``'zpk'``.
+
     filt : `tuple`
-        the filter components for the returned `ftype`, either a 2-tuple
-        for with transfer function components, or a 3-tuple for ZPK
+        The filter components for the returned `ftype`, either a 2-tuple
+        for with transfer function components, or a 3-tuple for ZPK.
     """
     # unpack filter
     if isinstance(args, tuple) and len(args) == 1:
@@ -380,12 +477,12 @@ def parse_filter(args):
 
     # parse FIR filter
     if isinstance(args, numpy.ndarray) and args.ndim == 1:  # fir
-        b, a = args, [1.]
-        return 'ba', (b, a)
+        b, a = args, numpy.ones(1)
+        return "ba", (b, a)
 
     # parse IIR filter
     try:
-        lti = args.to_zpk()
+        lti = args.to_zpk()  # type: ignore[union-attr]
     except AttributeError:
         if (
             isinstance(args, numpy.ndarray)
@@ -397,44 +494,52 @@ def parse_filter(args):
             lti = signal.lti(*args)
         lti = lti.to_zpk()
 
-    return 'zpk', (lti.zeros, lti.poles, lti.gain)
+    return "zpk", (lti.zeros, lti.poles, lti.gain)
 
 
-# -- user methods -------------------------------------------------------------
+# -- user methods --------------------
 
-def lowpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
-            **kwargs):
+def lowpass(
+    frequency: SupportsFloat,
+    sample_rate: SupportsFloat,
+    fstop: float | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: str = "iir",
+    **kwargs,
+) -> FilterType:
     """Design a low-pass filter for the given cutoff frequency
 
     Parameters
     ----------
     frequency : `float`
-        corner frequency of low-pass filter (Hertz)
+        Corner frequency of low-pass filter (Hertz).
 
     sample_rate : `float`
-        sampling rate of target data (Hertz)
+        Sampling rate of target data (Hertz).
 
     fstop : `float`, optional
-        edge-frequency of stop-band (Hertz)
+        Edge-frequency of stop-band (Hertz).
 
     gpass : `float`, optional, default: 2
-        the maximum loss in the passband (dB)
+        The maximum loss in the passband (dB).
 
     gstop : `float`, optional, default: 30
-        the minimum attenuation in the stopband (dB)
+        The minimum attenuation in the stopband (dB).
 
     type : `str`, optional, default: ``'iir'``
-        the filter type, either ``'iir'`` or ``'fir'``
+        The filter type, either ``'iir'`` or ``'fir'``.
 
-    **kwargs
-        other keyword arguments are passed directly to
-        :func:`~scipy.signal.iirdesign` or :func:`~scipy.signal.firwin`
+    kwargs
+        Other keyword arguments are passed directly to
+        :func:`~scipy.signal.iirdesign` or :func:`~scipy.signal.firwin`.
 
     Returns
     -------
     filter
-        the formatted filter. the output format for an IIR filter depends
-        on the input arguments, default is a tuple of `(zeros, poles, gain)`
+        The formatted filter.
+        The output format for an IIR filter depends on the input arguments,
+        default is a tuple of ``(zeros, poles, gain)``.
 
     Notes
     -----
@@ -457,46 +562,59 @@ def lowpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     sample_rate = _as_float(sample_rate)
     frequency = _as_float(frequency)
     if fstop is None:
-        fstop = min(frequency * 1.5, sample_rate/2.)
-    if type == 'iir':
-        return _design_iir(frequency, fstop, sample_rate, gpass, gstop,
-                           **kwargs)
-    return _design_fir(frequency, fstop, sample_rate, gpass, gstop, **kwargs)
+        fstop = min(frequency * 1.5, sample_rate / 2.)
+    return _design(
+        type,
+        frequency,
+        fstop,
+        sample_rate,
+        gpass,
+        gstop,
+        **kwargs,
+    )
 
 
-def highpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
-             **kwargs):
-    """Design a high-pass filter for the given cutoff frequency
+def highpass(
+    frequency: SupportsFloat,
+    sample_rate: SupportsFloat,
+    fstop: float | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: str = "iir",
+    **kwargs,
+) -> FilterType:
+    """Design a high-pass filter for the given cutoff frequency.
 
     Parameters
     ----------
-    frequency : `float`
-        corner frequency of high-pass filter
+    frequency : `float`, `~astropy.units.Quantity`
+        Corner frequency of high-pass filter.
 
-    sample_rate : `float`
-        sampling rate of target data
+    sample_rate : `float`, `~astropy.units.Quantity`
+        Sampling rate of target data.
 
-    fstop : `float`, optional
-        edge-frequency of stop-band
+    fstop : `float`
+        Edge-frequency of stop-band.
 
-    gpass : `float`, optional, default: 2
-        the maximum loss in the passband (dB)
+    gpass : `float`
+        The maximum loss in the passband (dB)
 
-    gstop : `float`, optional, default: 30
-        the minimum attenuation in the stopband (dB)
+    gstop : `float`
+        The minimum attenuation in the stopband (dB).
 
-    type : `str`, optional, default: ``'iir'``
-        the filter type, either ``'iir'`` or ``'fir'``
+    type : `str`
+        The filter type, either ``'iir'`` or ``'fir'``.
 
-    **kwargs
-        other keyword arguments are passed directly to
-        :func:`~scipy.signal.iirdesign` or :func:`~scipy.signal.firwin`
+    kwargs
+        Other keyword arguments are passed directly to
+        :func:`~scipy.signal.iirdesign` or :func:`~scipy.signal.firwin`.
 
     Returns
     -------
     filter
-        the formatted filter. the output format for an IIR filter depends
-        on the input arguments, default is a tuple of `(zeros, poles, gain)`
+        The formatted filter.
+        The output format for an IIR filter depends on the input arguments,
+        default is a tuple of ``(zeros, poles, gain)``.
 
     Notes
     -----
@@ -519,50 +637,63 @@ def highpass(frequency, sample_rate, fstop=None, gpass=2, gstop=30, type='iir',
     sample_rate = _as_float(sample_rate)
     frequency = _as_float(frequency)
     if fstop is None:
-        fstop = frequency * 2/3.
-    if type == 'iir':
-        return _design_iir(frequency, fstop, sample_rate, gpass, gstop,
-                           **kwargs)
-    return _design_fir(frequency, fstop, sample_rate, gpass, gstop,
-                       **kwargs)
+        fstop = frequency * 2 / 3.
+    return _design(
+        type,
+        frequency,
+        fstop,
+        sample_rate,
+        gpass,
+        gstop,
+        **kwargs,
+    )
 
 
-def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
-             type='iir', **kwargs):
-    """Design a band-pass filter for the given cutoff frequencies
+def bandpass(
+    flow: SupportsFloat,
+    fhigh: SupportsFloat,
+    sample_rate: SupportsFloat,
+    fstop: tuple[float, float] | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: str = "iir",
+    **kwargs,
+) -> FilterType:
+    """Design a band-pass filter for the given cutoff frequencies.
 
     Parameters
     ----------
-    flow : `float`
-        lower corner frequency of pass band
+    flow : `float`, `~astropy.units.Quantity`
+        Lower corner frequency of pass band.
 
-    fhigh : `float`
-        upper corner frequency of pass band
+    fhigh : `float`, `~astropy.units.Quantity`
+        Upper corner frequency of pass band.
 
-    sample_rate : `float`
-        sampling rate of target data
+    sample_rate : `float`, `~astropy.units.Quantity`
+        Sampling rate of target data.
 
-    fstop : `tuple` of `float`, optional
-        `(low, high)` edge-frequencies of stop band
+    fstop : `tuple` of `float`
+        `(low, high)` edge-frequencies of stop band.
 
-    gpass : `float`, optional, default: 2
-        the maximum loss in the passband (dB)
+    gpass : `float`
+        The maximum loss in the passband (dB).
 
-    gstop : `float`, optional, default: 30
-        the minimum attenuation in the stopband (dB)
+    gstop : `float`
+        The minimum attenuation in the stopband (dB).
 
-    type : `str`, optional, default: ``'iir'``
-        the filter type, either ``'iir'`` or ``'fir'``
+    type : `str`
+        The filter type, either ``'iir'`` or ``'fir'``.
 
-    **kwargs
-        other keyword arguments are passed directly to
-        :func:`~scipy.signal.iirdesign` or :func:`~scipy.signal.firwin`
+    kwargs
+        Other keyword arguments are passed directly to
+        :func:`~scipy.signal.iirdesign` or :func:`~scipy.signal.firwin`.
 
     Returns
     -------
     filter
-        the formatted filter. the output format for an IIR filter depends
-        on the input arguments, default is a tuple of `(zeros, poles, gain)`
+        The formatted filter.
+        The output format for an IIR filter depends on the input arguments,
+        default is a tuple of `(zeros, poles, gain)`.
 
     Notes
     -----
@@ -586,43 +717,62 @@ def bandpass(flow, fhigh, sample_rate, fstop=None, gpass=2, gstop=30,
     flow = _as_float(flow)
     fhigh = _as_float(fhigh)
     if fstop is None:
-        fstop = (flow * 2/3.,
-                 min(fhigh * 1.5, sample_rate/2.))
+        fstop = (
+            flow * 2 / 3.,
+            min(fhigh * 1.5, sample_rate / 2.),
+        )
     fstop = (_as_float(fstop[0]), _as_float(fstop[1]))
-    if type == 'iir':
-        return _design_iir((flow, fhigh), fstop, sample_rate, gpass, gstop,
-                           **kwargs)
-    return _design_fir((flow, fhigh), fstop, sample_rate, gpass, gstop,
-                       pass_zero=False, **kwargs)
+    if type == "fir":
+        kwargs.setdefault("pass_zero", False)
+    return _design(
+        type,
+        (flow, fhigh),
+        fstop,
+        sample_rate,
+        gpass,
+        gstop,
+        **kwargs,
+    )
 
 
-def notch(frequency, sample_rate, type='iir', output='zpk', **kwargs):
-    """Design a ZPK notch filter for the given frequency and sampling rate
+def notch(
+    frequency: SupportsFloat,
+    sample_rate: SupportsFloat,
+    type: str = "iir",
+    output: str = "zpk",
+    **kwargs,
+) -> IirFilterType:
+    """Design a ZPK notch filter for the given frequency and sampling rate.
 
     Parameters
     ----------
     frequency : `float`, `~astropy.units.Quantity`
-        frequency (default in Hertz) at which to apply the notch
+        Frequency (default in Hertz) at which to apply the notch.
+
     sample_rate : `float`, `~astropy.units.Quantity`
-        number of samples per second for `TimeSeries` to which this notch
-        filter will be applied
+        Number of samples per second for `TimeSeries` to which this notch
+        filter will be applied.
+
     type : `str`, optional, default: 'iir'
-        type of filter to apply, currently only 'iir' is supported
+        Type of filter to apply, currently only 'iir' is supported.
+
     output : `str`, optional, default: 'zpk'
-        output format for notch
-    **kwargs
-        other keyword arguments to pass to `scipy.signal.iirdesign`
+        Output format for notch.
+
+    kwargs
+        Other keyword arguments to pass to `scipy.signal.iirdesign`.
 
     Returns
     -------
     filter
-        the formatted filter; the output format for an IIR filter depends
-        on the input arguments, default is a tuple of `(zeros, poles, gain)`
+        The formatted filter.
+        The output format for an IIR filter depends on the input arguments,
+        default is a tuple of ``(zeros, poles, gain)``.
 
     See also
     --------
     scipy.signal.iirdesign
-        for details on the IIR filter design method and the output formats
+        For details on the IIR filter design method and the output formats.
 
     Notes
     -----
@@ -642,43 +792,47 @@ def notch(frequency, sample_rate, type='iir', output='zpk', **kwargs):
     >>> plot = BodePlot(n, sample_rate=4096)
     >>> plot.show()
     """
-    frequency = Quantity(frequency, 'Hz').value
-    sample_rate = Quantity(sample_rate, 'Hz').value
-    nyq = 0.5 * sample_rate
-    df = 1.0  # pylint: disable=invalid-name
+    frequency = _as_float(frequency)
+    sample_rate = _as_float(sample_rate)
+    df = 1.0
     df2 = 0.1
-    low1 = (frequency - df)/nyq
-    high1 = (frequency + df)/nyq
-    low2 = (frequency - df2)/nyq
-    high2 = (frequency + df2)/nyq
-    if type == 'iir':
-        kwargs.setdefault('gpass', 1)
-        kwargs.setdefault('gstop', 10)
-        kwargs.setdefault('ftype', 'ellip')
-        return signal.iirdesign([low1, high1], [low2, high2], output=output,
-                                **kwargs)
-    else:
-        raise NotImplementedError("Generating %r notch filters has not been "
-                                  "implemented yet" % type)
+    low1 = (frequency - df)
+    high1 = (frequency + df)
+    low2 = (frequency - df2)
+    high2 = (frequency + df2)
+    if type == "iir":
+        kwargs.setdefault("gpass", 1)
+        kwargs.setdefault("gstop", 10)
+        kwargs.setdefault("ftype", "ellip")
+        return _design_iir(
+            [low1, high1],
+            [low2, high2],
+            sample_rate,
+            output=output,
+            **kwargs,
+        )
+    raise NotImplementedError(
+        f"Generating {type} notch filters has not been implemented yet",
+    )
 
 
-def concatenate_zpks(*zpks):
-    """Concatenate a list of zero-pole-gain (ZPK) filters
+def concatenate_zpks(*zpks: ZpkType) -> ZpkType:
+    """Concatenate a list of zero-pole-gain (ZPK) filters.
 
     Parameters
     ----------
     *zpks
-        one or more zero-pole-gain format, each one should be a 3-`tuple`
-        containing an array of zeros, an array of poles, and a gain `float`
+        One or more zero-pole-gain format, each one should be a 3-`tuple`
+        containing an array of zeros, an array of poles, and a gain `float`.
 
     Returns
     -------
     zeros : `numpy.ndarray`
-        the concatenated array of zeros
+        The concatenated array of zeros.
     poles : `numpy.ndarray`
-        the concatenated array of poles
+        The concatenated array of poles.
     gain : `float`
-        the overall gain
+        The overall gain.
 
     Examples
     --------
@@ -697,6 +851,8 @@ def concatenate_zpks(*zpks):
     >>> plot.show()
     """
     zeros, poles, gains = zip(*zpks)
-    return (numpy.concatenate(zeros),
-            numpy.concatenate(poles),
-            reduce(operator.mul, gains, 1))
+    return (
+        numpy.concatenate(zeros),
+        numpy.concatenate(poles),
+        reduce(operator.mul, gains, 1),
+    )

@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2023)
+# Copyright (C) Cardiff University (2023-)
 #
 # This file is part of GWpy.
 #
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Custom filtering utilities for the `TimeSeries`
+"""Custom filtering utilities for the `TimeSeries`.
 """
 
 __author__ = "Alex Southgate <alex.southgate@ligo.org>"
@@ -101,7 +101,7 @@ def test_coherence_happy(series_data):
     second = TimeSeries(secondarr, sample_rate=f_s)
 
     coh = spectral.coherence(first, second, segmentlength=seglen)
-    ftemp, cxytemp = sig.coherence(firstarr, secondarr, f_s, nperseg=seglen)
+    _, cxytemp = sig.coherence(firstarr, secondarr, f_s, nperseg=seglen)
 
     coharr = np.array(coh.data)
 
@@ -111,7 +111,7 @@ def test_coherence_happy(series_data):
 def test_coherence_resample(unequal_fs_series_data):
     """Ensure warning is raised by unequal sampling frequencies.
     """
-    ts1, ts2, firstarr, secondarr, seglen, fs_1, fs_2 = unequal_fs_series_data
+    _, _, firstarr, secondarr, seglen, fs_1, fs_2 = unequal_fs_series_data
 
     # first and second arrays are different, secondarr should have
     # sampling frequency fs_2, but sometimes a mistake is made

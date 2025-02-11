@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (C) Cardiff University (2018-)
 #
 # This file is part of GWpy.
 #
@@ -15,5 +15,5 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.signal`
+"""Tests for :mod:`gwpy.signal`.
 """

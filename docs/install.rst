@@ -57,7 +57,7 @@ GWpy has the following strict requirements:
    |matplotlib|_       ``>=3.1.0``
    |numpy|_            ``>=1.20.0``
    |dateutil|_
-   |scipy|_            ``>=1.2.0``
+   |scipy|_            ``>=1.8.0``
    |tqdm|_             ``>=4.52.0``
    ==================  ===========================
 

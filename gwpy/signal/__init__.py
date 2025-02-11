@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2016-2020)
+# Copyright (C) Louisiana State University (2016-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -15,11 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""The `gwpy.signal` module provides signal-processing utilities that
-extend the functionality of `scipy.signal` (and others) for specific GW data
-applications.
+"""Signal processing utilities for GWpy.
 
-See the sub-modules for more details.
+:mod:`gwpy.signal` provides signal-processing utilities that extend the
+functionality of :mod:`scipy.signal` (and others) for specific GW data
+applications.
 """
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
