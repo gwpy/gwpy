@@ -181,7 +181,7 @@ def test_find_best_frametype():
     ) == 'HW100916'
 
 
-@pytest.mark.requires("LDAStools.frameCPP")
+@pytest.mark.requires("lalframe")
 @pytest_skip_flaky_network
 @pytest.mark.skipif(
     "GWDATAFIND_SERVER" not in os.environ,

@@ -427,7 +427,7 @@ class TimeSeriesBase(Series):
             the data format to download and parse, default: ``'h5py'``
 
             - ``'hdf5'``
-            - ``'gwf'`` - requires |LDAStools.frameCPP|_
+            - ``'gwf'`` - requires |lalframe|_
 
         host : `str`, optional
             HTTP host name of GWOSC server to access
