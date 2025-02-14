@@ -20,12 +20,11 @@
 
 import os
 import re
-from unittest import mock
 
 import pytest
 
 from ... import cli
-from .base import (update_namespace, mock_nds2_connection)
+from .base import update_namespace
 from .test_spectrogram import TestCliSpectrogram as _TestCliSpectrogram
 
 
@@ -69,16 +68,10 @@ class TestCliQtransform(_TestCliSpectrogram):
         assert prod.get_suptitle() == f'Q-transform: {prod.chan_list[0]}'
 
     @pytest.mark.requires("nds2")
-    def test_run(self, prod):
-        conn, _ = mock_nds2_connection()
-        outf = 'X1-TEST_CHANNEL-5.0-0.5.png'
-        with mock.patch('nds2.connection') as mocker:
-            mocker.return_value = conn
-            try:
-                prod.run()
-                assert os.path.isfile(outf)
-            finally:
-                if os.path.isfile(outf):
-                    os.remove(outf)
-            assert prod.plot_num == 1
-            assert not prod.has_more_plots()
+    def test_run(self, prod, tmp_path, nds2_connection):
+        outf = "X1-TEST_CHANNEL-5.0-0.5.png"
+        prod.outdir = tmp_path
+        prod.run()
+        assert os.path.isfile(outf)
+        assert prod.plot_num == 1
+        assert not prod.has_more_plots()
