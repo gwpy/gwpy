@@ -67,6 +67,39 @@ GWOSC_GW150914_DQ_BITS = {
     ],
 }
 
+# GWOSC_GW150914_INJ_NAME, GWOSC_GW150914_INJ_KWARGS and GWOSC_GW150914_INJ_BITS
+# are used to test reading of injections
+GWOSC_GW150914_INJ_NAME = {
+    "hdf5": "quality/injections",
+    "gwf": "L1:GWOSC-4KHZ_R1_INJMASK",
+}
+GWOSC_GW150914_INJ_KWARGS = {
+    "hdf5": {
+        "path": "quality/injections",
+        "bits_dataset": "Injmask",
+        "def_dataset": "InjDescriptions",
+    },
+    "gwf": {
+        "channel": GWOSC_GW150914_INJ_NAME["gwf"],
+    },
+}
+GWOSC_GW150914_INJ_BITS = {
+    "hdf5": [
+        "Passes NO_CBC_HW_INJ test",
+        "Passes NO_BURST_HW_INJ test",
+        "Passes NO_DETCHAR_HW_INJ test",
+        "Passes NO_CW_HW_INJ test",
+        "Passes NO_STOCH_HW_INJ test",
+    ],
+    "gwf": [
+        "NO_CBC_HW_INJ",
+        "NO_BURST_HW_INJ",
+        "NO_DETCHAR_HW_INJ",
+        "NO_CW_HW_INJ",
+        "NO_STOCH_HW_INJ",
+    ],
+}
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
@@ -365,6 +398,42 @@ class TestStateVector(_TestTimeSeriesBase):
         )
         utils.assert_quantity_sub_equal(sv, ref, exclude=["channel", "bits"])
         assert sorted(map(str, sv.bits)) == sorted(map(str, ref.bits))
+
+
+    @pytest.mark.parametrize("format", [
+        "hdf5",
+        pytest.param(  # only frameCPP actually reads units properly
+            "gwf",
+            marks=pytest.mark.requires("LDAStools.frameCPP"),
+        ),
+    ])
+    @pytest_skip_flaky_network
+    def test_fetch_open_data_injection(self, format):
+        """
+        This test checks that we are able to read and fetch the injection bits
+        from GWOSC files (see #1811).
+
+        To do so, we download the injection data from GWOSC and compare it to a
+        known StateVector.
+        """
+        inj = self.TEST_CLASS.fetch_open_data(
+            GWOSC_GW150914_IFO,
+            *GWOSC_GW150914_SEGMENT,
+            format=format,
+            version=3,
+            **GWOSC_GW150914_INJ_KWARGS[format]
+        )
+        # We know that the first bytes are equal to 23
+        ref = StateVector(
+            [23, 23, 23, 23],
+            unit="",
+            t0=GWOSC_GW150914_SEGMENT[0],
+            dt=1,
+            name=GWOSC_GW150914_INJ_NAME[format],
+            bits=GWOSC_GW150914_INJ_BITS[format],
+        )
+        utils.assert_quantity_sub_equal(inj, ref, exclude=["channel", "bits"])
+        assert sorted(map(str, inj.bits)) == sorted(map(str, ref.bits))
 
     @pytest.mark.requires("nds2")
     def test_from_nds2_buffer(self):
