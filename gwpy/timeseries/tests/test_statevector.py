@@ -43,7 +43,7 @@ from .test_timeseries import (
 )
 
 GWOSC_GW150914_DQ_NAME = {
-    "hdf5": "Data quality",
+    "hdf5": "quality/simple",
     "gwf": "L1:GWOSC-4KHZ_R1_DQMASK",
 }
 GWOSC_GW150914_DQ_BITS = {

@@ -245,7 +245,6 @@ def read_gwosc_hdf5_state(
     copy=False,
     bits_dataset="DQmask",
     def_dataset="DQDescriptions",
-    name="Data quality",
 ):
     """Read a `StateVector` from a GWOSC-format HDF file.
 
@@ -255,7 +254,7 @@ def read_gwosc_hdf5_state(
         path of HDF5 file, or open `H5File`
 
     path : `str`
-        path of HDF5 datasets to read.
+        path of HDF5 datasets to read (will be used as name of the dataset).
 
     start : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         start GPS time of desired data
@@ -271,9 +270,6 @@ def read_gwosc_hdf5_state(
 
     def_dataset : `str`
         HDF5 dataset where to read the definition of each bits
-
-    name : `str`
-        Name of the returned `~gwpy.timeseries.StateVector`
 
     Returns
     -------
@@ -295,7 +291,7 @@ def read_gwosc_hdf5_state(
     else:
         xunit = parse_unit(bits_ds.attrs["Xunits"])
         dt = Quantity(dt, xunit)
-    return StateVector(bits, bits=bit_def, t0=epoch, name=name,
+    return StateVector(bits, bits=bit_def, t0=epoch, name=path,
                        dx=dt, copy=copy).crop(start=start, end=end)
 
 

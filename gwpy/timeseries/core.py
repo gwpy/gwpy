@@ -461,7 +461,7 @@ class TimeSeriesBase(Series):
                     unit: Unit(dimensionless),
                     t0: 1126259446.0 s,
                     dt: 1.0 s,
-                    name: Data quality,
+                    name: quality/simple,
                     channel: None,
                     bits: Bits(0: data present
                                1: passes cbc CAT1 test
