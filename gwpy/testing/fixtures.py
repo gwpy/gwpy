@@ -23,7 +23,10 @@ here are available to test functions/methods by default.
 Developer note: **none of the fixtures here should declare autouse=True**.
 """
 
-from collections.abc import Iterator
+from __future__ import annotations
+
+import os
+import typing
 from unittest import mock
 
 import numpy
@@ -33,6 +36,9 @@ from matplotlib import rc_context
 from ..plot.tex import has_tex
 from ..timeseries import TimeSeries
 from . import mocks
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterator
 
 # -- plotting ------------------------
 
@@ -106,26 +112,44 @@ def corrupt_noisy_sinusoid(
 # -- NDS2 fixtures -------------------
 
 @pytest.fixture
-def nds2_connection():
-    nds2conn = mocks.nds2_connection(
-        buffers=[
-            mocks.nds2_buffer(
-                "X1:test",
+def nds2_connection(request):
+    """An open mocked NDS2 connection.
+
+    Set ``NDS2_CONNECTION_FIXTURE_DATA`` as an iterable of `TimeSeries` in
+    the test class or module to customise the data buffers available.
+
+    This fixture also mocks out `os.environ` and pop's any GWDataFind
+    server variables, in an attempt to ensure that NDS2 is used by
+    `TimeSeries.get` and friends.
+    """
+    data = None
+    for scope in (request.instance, request.module):
+        if data := getattr(scope, "NDS2_CONNECTION_FIXTURE_DATA", None):
+            break
+    else:
+        data = [
+            TimeSeries(
                 numpy.random.random(128),
-                1000000000,
-                16,
-                "m",
+                name="X1:test",
+                t0=1000000000,
+                sample_rate=16,
+                unit="m",
             ),
-            mocks.nds2_buffer(
-                "Y1:test",
+            TimeSeries(
                 numpy.random.random(1024),
-                1000000000,
-                128,
-                "V",
+                name="Y1:test",
+                t0=1000000000,
+                sample_rate=128,
+                unit="V",
             ),
-        ],
+        ]
+    nds2conn = mocks.nds2_connection(
+        buffers=map(mocks.nds2_buffer_from_timeseries, data),
     )
-    with mock.patch("nds2.connection") as mockconn:
+    mock_environ = mock.patch.dict("os.environ")
+    with mock.patch("nds2.connection") as mockconn, mock_environ:
+        os.environ.pop("GWDATAFIND_SERVER", "")
+        os.environ.pop("LIGO_DATAFIND_SERVER", "")
         mockconn.return_value = nds2conn
         nds2conn.connect = mockconn
         yield nds2conn
