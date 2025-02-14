@@ -29,6 +29,7 @@ from ..detector import Channel
 from ..time import LIGOTimeGPS
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Iterable
     from typing import (
         Any,
         TypeAlias,
@@ -124,7 +125,7 @@ def nds2_channel(
 def nds2_connection(
     host: str = "nds.test.gwpy",
     port: int = 31200,
-    buffers: list[Any] = [],
+    buffers: Iterable[Any] = [],
     protocol: int = 2,
 ) -> mock.MagicMock:
     """Create a mock an `nds2.connection` that returns the given buffers.
@@ -144,10 +145,10 @@ def nds2_connection(
         end: float,
         names: list[str],
     ):
-        if not buffers:
+        if not NdsConnection._buffers:
             return []
         return [[
-            b for b in buffers
+            b for b in NdsConnection._buffers
             if Channel.from_nds2(b.channel).ndsname in names
         ]]
 
