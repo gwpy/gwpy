@@ -19,6 +19,9 @@
 """GWF I/O utilities for frameCPP.
 """
 
+from __future__ import annotations
+
+import typing
 import warnings
 from enum import IntEnum
 
@@ -32,17 +35,35 @@ from ...time import (
 )
 from ...utils.enum import NumpyTypeEnum
 from ..utils import file_path
-from .core import _series_name
+from .core import (
+    FRDATA_TYPES,
+    _series_name,
+)
+
+if typing.TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Iterable,
+        Iterator,
+    )
+    from pathlib import Path
+    from typing import (
+        IO,
+        Literal,
+    )
+
+    from ...types import Series
+    from ...typing import GpsLike
 
 _FrVect = frameCPP.FrVect
 
 # -- detectors -----------------------
 
-DetectorLocation = IntEnum(
-    "DetectorLocation",
-    {key[18:]: val for key, val in vars(frameCPP).items() if
-     key.startswith("DETECTOR_LOCATION_")},
-)
+DETECTORS: dict[str, int] = {
+    key[18:]: val for key, val in vars(frameCPP).items()
+    if key.startswith("DETECTOR_LOCATION_")
+}
+DetectorLocation = IntEnum("DetectorLocation", DETECTORS)
 
 
 # -- type mapping --------------------
@@ -123,33 +144,62 @@ class FrProcDataSubType(IntEnum):
 
 # -- I/O functions -------------------
 
-def open_gwf(filename, mode='r'):
-    """Open a filename for reading or writing GWF format data
+
+@typing.overload
+def open_gwf(
+    gwf: str | Path | IO | frameCPP.IFrameFStream | frameCPP.OFrameFStream,
+    mode: Literal["r"],
+) -> frameCPP.IFrameFStream:
+    ...
+
+@typing.overload
+def open_gwf(
+    gwf: str | Path | IO | frameCPP.IFrameFStream | frameCPP.OFrameFStream,
+    mode: Literal["w"],
+) -> frameCPP.OFrameFStream:
+    ...
+
+def open_gwf(
+    gwf: str | Path | IO | frameCPP.IFrameFStream | frameCPP.OFrameFStream,
+    mode: str = "r",
+) -> frameCPP.IFrameFStream | frameCPP.OFrameFStream:
+    """Open a stream for reading or writing GWF format data.
 
     Parameters
     ----------
-    filename : `str`
-        the path to read from, or write to
+    gwf : `str`, `pathlib.Path`, `file`, or open frameCPP stream
+        The path to read from, or write to. Already open GWF streams
+        are returned unmodified, if the type matches the mode.
 
     mode : `str`, optional
-        either ``'r'`` (read) or ``'w'`` (write)
+        The mode with which to open the file, either `r` or `w`.
 
     Returns
     -------
-    `LDAStools.frameCPP.IFrameFStream`
-        the input frame stream (if `mode='r'`), or
-    `LDAStools.frameCPP.IFrameFStream`
-        the output frame stream (if `mode='w'`)
+    stream : `LDAStools.frameCPP.IFrameFStream`, or `LDAStools.frameCPP.OFrameFStream`
+        The file stream for reading or writing.
     """
-    if mode not in ('r', 'w'):
+    # check mode
+    if mode not in ("r", "w"):
         raise ValueError("mode must be either 'r' or 'w'")
-    filename = file_path(filename)
-    if mode == 'r':
-        return frameCPP.IFrameFStream(str(filename))
-    return frameCPP.OFrameFStream(str(filename))
+    # match open file stream
+    if mode == "r" and isinstance(gwf, frameCPP.IFrameFStream):
+        return gwf
+    if mode == "w" and isinstance(gwf, frameCPP.OFrameFStream):
+        return gwf
+    # open a new stream
+    filename = file_path(gwf)
+    if mode == "r":
+        return frameCPP.IFrameFStream(filename)
+    return frameCPP.OFrameFStream(filename)
 
 
-def write_frames(filename, frames, compression='GZIP', compression_level=None):
+def write_frames(
+    gwf: str | Path | IO,
+    frames: Iterable[frameCPP.FrameH],
+    compression: int | str = "GZIP",
+    compression_level: int | None = None,
+):
     """Write a list of frame objects to a file
 
     **Requires:** |LDAStools.frameCPP|_
@@ -177,50 +227,59 @@ def write_frames(filename, frames, compression='GZIP', compression_level=None):
         methods, otherwise ``0``
     """
     # handle compression arguments
-    if not isinstance(compression, int):
-        compression = Compression[compression]
+    comp: Compression
+    if isinstance(compression, int):
+        comp = Compression(compression)
+    else:
+        comp = Compression[compression]
     if compression_level is None:
-        compression_level = DefaultCompressionLevel[compression.name]
+        compression_level = DefaultCompressionLevel[comp.name].value
 
-    # open stream
-    stream = open_gwf(filename, 'w')
+    # open stream for writing
+    stream = open_gwf(gwf, "w")
 
     # write frames one-by-one
     if isinstance(frames, frameCPP.FrameH):
         frames = [frames]
     for frame in frames:
-        stream.WriteFrame(frame, int(compression), int(compression_level))
+        stream.WriteFrame(frame, int(comp.value), int(compression_level))
     # stream auto-closes (apparently)
 
 
-def create_frame(time=0, duration=None, name='gwpy', run=-1, ifos=None):
-    """Create a new :class:`~LDAStools.frameCPP.FrameH`
+def create_frame(
+    time: GpsLike = 0,
+    duration: float | None = None,
+    name: str = "gwpy",
+    run: int = -1,
+    ifos: Iterable[str] | None = None,
+) -> frameCPP.FrameH:
+    """Create a new :class:`~LDAStools.frameCPP.FrameH`.
 
     **Requires:** |LDAStools.frameCPP|_
 
     Parameters
     ----------
     time : `float`, optional
-        frame start time in GPS seconds
+        Frame start time in GPS seconds.
 
     duration : `float`, optional
-        frame length in seconds
+        Frame length in seconds.
 
     name : `str`, optional
-        name of project or other experiment description
+        Name of project or other experiment description.
 
     run : `int`, optional
-        run number (number < 0 reserved for simulated data); monotonic for
-        experimental runs
+        Run number (number < 0 reserved for simulated data); monotonic for
+        experimental runs.
 
     ifos : `list`, optional
-        list of interferometer prefices (e.g. ``'L1'``) associated with this
-        frame
+        List of interferometer prefices (e.g. ``'L1'``) associated with this
+        frame.
 
     Returns
     -------
     frame : :class:`~LDAStools.frameCPP.FrameH`
-        the newly created frame header
+        The newly created frame header.
     """
     # create frame
     frame = frameCPP.FrameH()
@@ -245,9 +304,14 @@ def create_frame(time=0, duration=None, name='gwpy', run=-1, ifos=None):
     return frame
 
 
-def create_fradcdata(series, frame_epoch=0,
-                     channelgroup=0, channelid=0, nbits=16):
-    """Create a `~frameCPP.FrAdcData` from a `~gwpy.types.Series`
+def create_fradcdata(
+    series: Series,
+    frame_epoch: GpsLike = 0,
+    channelgroup: int = 0,
+    channelid: int = 0,
+    nbits: int = 16,
+) -> frameCPP.FrAdcData:
+    """Create a `~frameCPP.FrAdcData` from a `~gwpy.types.Series`.
 
     .. note::
 
@@ -289,13 +353,13 @@ def create_fradcdata(series, frame_epoch=0,
     return frdata
 
 
-def _get_series_trange(series):
+def _get_series_trange(series: Series) -> float:
     if series.xunit.is_equivalent('s'):
         return abs(series.xspan)
     return 0
 
 
-def _get_series_frange(series):
+def _get_series_frange(series: Series) -> float:
     if series.xunit.is_equivalent('Hz'):  # FrequencySeries
         return abs(series.xspan)
     elif series.ndim == 2 and series.yunit.is_equivalent('Hz'):  # Spectrogram
@@ -303,10 +367,19 @@ def _get_series_frange(series):
     return 0
 
 
-def create_frprocdata(series, frame_epoch=0, comment=None,
-                      type=None, subtype=None, trange=None,
-                      fshift=0, phase=0, frange=None, bandwidth=0):
-    """Create a `~frameCPP.FrAdcData` from a `~gwpy.types.Series`
+def create_frprocdata(
+    series: Series,
+    frame_epoch: GpsLike = 0,
+    comment: str | None = None,
+    type: int | str | None = None,
+    subtype: int | str | None = None,
+    trange: float | None = None,
+    fshift: float = 0,
+    phase: float = 0,
+    frange: float | None = None,
+    bandwidth: float = 0,
+) -> frameCPP.FrProcData:
+    """Create a `~frameCPP.FrProcData` from a `~gwpy.types.Series`.
 
     .. note::
 
@@ -375,8 +448,14 @@ def create_frprocdata(series, frame_epoch=0, comment=None,
     )
 
 
-def create_frsimdata(series, frame_epoch=0, comment=None, fshift=0, phase=0):
-    """Create a `~frameCPP.FrAdcData` from a `~gwpy.types.Series`
+def create_frsimdata(
+    series: Series,
+    frame_epoch: GpsLike = 0,
+    comment: str | None = None,
+    fshift: float = 0,
+    phase: float = 0,
+) -> frameCPP.FrSimData:
+    """Create a `~frameCPP.FrSimData` from a `~gwpy.types.Series`.
 
     .. note::
 
@@ -421,8 +500,8 @@ def create_frsimdata(series, frame_epoch=0, comment=None, fshift=0, phase=0):
     )
 
 
-def create_frvect(series):
-    """Create a `~frameCPP.FrVect` from a `~gwpy.types.Series`
+def create_frvect(series: Series) -> frameCPP.FrVect:
+    """Create a `~frameCPP.FrVect` from a `~gwpy.types.Series`.
 
     .. note::
 
@@ -431,12 +510,12 @@ def create_frvect(series):
     Parameters
     ----------
     series : `~gwpy.types.Series`
-        the input data array to store
+        The input data array to store.
 
     Returns
     -------
-    frvect : `~frameCPP.FrVect`
-        the newly created data vector
+    frvect : :class:`LDASTools.frameCPP.FrVect`
+        The newly created data vector.
     """
     # create dimensions
     dims = frameCPP.Dimension(
@@ -449,7 +528,7 @@ def create_frvect(series):
     # create FrVect
     vect = frameCPP.FrVect(
         _series_name(series),  # name
-        int(FrVectType.find(series.dtype)),  # data type enum
+        int(FrVectType.find(series.dtype).value),  # data type enum
         series.ndim,  # num dimensions
         dims,  # dimension object
         str(series.unit),  # unit
@@ -463,37 +542,104 @@ def create_frvect(series):
 
 # -- utilities -----------------------
 
-def _iter_channels(framefile):
-    """Yields the name and type of each channel in a GWF file TOC
+@typing.overload
+def _iter_toc(
+    gwf: str | Path | IO | frameCPP.IFrameFStream,
+    type: str | None,
+    count: Literal[True],
+) -> Iterator[int]:
+    ...
+
+@typing.overload
+def _iter_toc(
+    gwf: str | Path | IO | frameCPP.IFrameFStream,
+    type: str | None,
+    count: Literal[False],
+) -> Iterator[tuple[str, str]]:
+    ...
+
+def _iter_toc(
+    gwf: str | Path | IO | frameCPP.IFrameFStream,
+    type: str | None = None,
+    count: bool = False,
+) -> Iterator[tuple[str, str] | int]:
+    """Yields the name and type of each channel in a GWF file TOC.
 
     **Requires:** |LDAStools.frameCPP|_
 
     Parameters
     ----------
-    framefile : `str`, `LDAStools.frameCPP.IFrameFStream`
-        path of GWF file, or open file stream, to read
+    gwf : `str`, `LDAStools.frameCPP.IFrameFStream`
+        Path of GWF file, or open file stream, to read.
+
+    type : `str`, optional
+        Only yield items of the given type (case insensitive).
+        Default is all types 'adc', 'proc', 'or 'sim'.
+
+    Yields
+    ------
+    name, type : `str`, `str`
+        The data channel name and type (one of 'adc', 'proc', or 'sim').
     """
-    if not isinstance(framefile, frameCPP.IFrameFStream):
-        framefile = open_gwf(framefile, 'r')
-    toc = framefile.GetTOC()
-    for typename in ('Sim', 'Proc', 'ADC'):
-        typen = typename.lower()
-        for name in getattr(toc, f"Get{typename}")():
-            yield name, typen
+    stream = open_gwf(gwf, mode="r")
+    toc = stream.GetTOC()
+    if type is None:
+        types = FRDATA_TYPES
+    else:
+        types = (type,)
+    for typename in map(str.lower, types):
+        if typename == "adc":
+            getter = toc.GetADC
+        else:
+            getter = getattr(toc, f"Get{typename.title()}")
+        if count:  # just count, don't unpack
+            yield len(getter())
+            continue
+        for name in getter():
+            yield name, typename
 
 
-def _channel_segments(path, channel, warn=True):
+def _count_toc(
+    gwf: str | Path | IO | frameCPP.IFrameFStream,
+    type: str | None = None,
+) -> int:
+    """Yield the names and types of channels listed in the TOC for a GWF file.
+
+    Parameters
+    ----------
+    gwf : `str`, `pathlib.Path`, `file`, `lalframe.FrameUFrFile`
+        Path of GWF file, or open file stream, to read.
+
+    Yields
+    ------
+    name : `str`
+        The name of a channel
+    type : `str`
+        The ``FrVect`` type of the channel, one of ``"sim"``, ``"proc"``,
+        or ``"adc"``.
+    """
+    return sum(_iter_toc(gwf, type=type, count=True))
+
+
+def _channel_segments(
+    gwf: str | Path | IO | frameCPP.IFrameFStream,
+    channel: str,
+    warn: bool = True,
+) -> Iterator[Segment]:
     """Yields the segments containing data for ``channel`` in this GWF path
     """
-    stream = open_gwf(path)
+    stream = open_gwf(gwf, mode="r")
+
     # get segments for frames
     toc = stream.GetTOC()
     secs = toc.GetGTimeS()
     nano = toc.GetGTimeN()
     dur = toc.GetDt()
 
-    readers = [getattr(stream, f"ReadFr{type_.title()}Data") for
-               type_ in ("proc", "sim", "adc")]
+    readers: tuple[Callable, ...] = tuple(
+        getattr(stream, f"ReadFr{type_.title()}Data")
+        for type_ in FRDATA_TYPES
+    )
 
     # for each segment, try and read the data for this channel
     for i, (s, ns, dt) in enumerate(zip(secs, nano, dur)):
@@ -502,29 +648,35 @@ def _channel_segments(path, channel, warn=True):
                 read(i, channel)
             except (IndexError, ValueError):
                 continue
-            readers = [read]  # use this one from now on
+            readers = (read,)  # use this one from now on
             epoch = LIGOTimeGPS(s, ns)
             yield Segment(epoch, epoch + dt)
             break
         else:  # none of the readers worked for this channel, warn
             if warn:
                 warnings.warn(
-                    f"'{channel}' not found in frame {i} of {path}",
+                    f"'{channel}' not found in frame {i} of {gwf}",
                 )
 
 
-def _get_type(type_, enum):
+def _get_type(
+    type_: int | str,
+    enum: type[IntEnum],
+) -> int:
     """Handle a type string, or just return an `int`
 
     Only to be called in relation to FrProcDataType and FrProcDataSubType
     """
     if isinstance(type_, int):
         return type_
-    return enum[str(type_).upper()]
+    return enum[str(type_).upper()].value
 
 
-def _get_frprocdata_type(series, type_):
-    """Determine the appropriate `FrProcDataType` for this series
+def _get_frprocdata_type(
+    series: Series,
+    type_: int | str | None,
+) -> int:
+    """Determine the appropriate `FrProcDataType` for this series.
 
     Notes
     -----
@@ -533,27 +685,28 @@ def _get_frprocdata_type(series, type_):
     if type_ is not None:  # format user value
         return _get_type(type_, FrProcDataType)
 
-    if series.ndim == 1 and series.xunit.is_equivalent("s"):
-        type_ = FrProcDataType.TIME_SERIES
-    elif series.ndim == 1 and series.xunit.is_equivalent("Hz"):
-        type_ = FrProcDataType.FREQUENCY_SERIES
-    elif series.ndim == 1:
-        type_ = FrProcDataType.OTHER_1D_SERIES_DATA
-    elif (
-            series.ndim == 2
-            and series.xunit.is_equivalent("s")
-            and series.yunit.is_equivalent("Hz")
+    if series.ndim == 1:
+        if series.xunit.is_equivalent("s"):
+            return FrProcDataType.TIME_SERIES.value
+        if series.xunit.is_equivalent("Hz"):
+            return FrProcDataType.FREQUENCY_SERIES.value
+        return FrProcDataType.OTHER_1D_SERIES_DATA.value
+    if (
+        series.ndim == 2
+        and series.xunit.is_equivalent("s")
+        and series.yunit.is_equivalent("Hz")
     ):
-        type_ = FrProcDataType.TIME_FREQUENCY
-    elif series.ndim > 2:
-        type_ = FrProcDataType.MULTI_DIMENSIONAL
-    else:
-        type_ = FrProcDataType.UNKNOWN
+        return FrProcDataType.TIME_FREQUENCY.value
+    if series.ndim > 2:
+        return FrProcDataType.MULTI_DIMENSIONAL.value
 
-    return type_
+    return FrProcDataType.UNKNOWN.value
 
 
-def _get_frprocdata_subtype(series, subtype):
+def _get_frprocdata_subtype(
+    series: Series,
+    subtype: int | str | None,
+) -> int:
     """Determine the appropriate `FrProcDataSubType` for this series
 
     Notes
@@ -563,6 +716,6 @@ def _get_frprocdata_subtype(series, subtype):
     if subtype is not None:  # format user value
         return _get_type(subtype, FrProcDataSubType)
 
-    if series.unit == 'coherence':
-        return FrProcDataSubType.COHERENCE
-    return FrProcDataSubType.UNKNOWN
+    if series.unit == "coherence":
+        return FrProcDataSubType.COHERENCE.value
+    return FrProcDataSubType.UNKNOWN.value

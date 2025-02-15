@@ -137,12 +137,12 @@ def test_get_channel_type(backend):
     (TEST_CHANNELS[0], True),
     ("X1:NOT-IN_FRAME", False),
 ])
-def test_channel_in_frame(channel, result, backend):
-    """Test :func:`gwpy.io.gwf.channel_in_frame`.
+def test_channel_exists(channel, result, backend):
+    """Test :func:`gwpy.io.gwf.channel_exists`.
     """
-    assert io_gwf.channel_in_frame(
-        channel,
+    assert io_gwf.channel_exists(
         TEST_GWF_FILE,
+        channel,
         backend=backend,
     ) is result
 
