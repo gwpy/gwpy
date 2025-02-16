@@ -18,6 +18,9 @@
 """GWF I/O utilities using LALFrame.
 """
 
+from __future__ import annotations
+
+import typing
 import warnings
 from collections.abc import Iterator
 
@@ -25,20 +28,30 @@ import lalframe
 
 from ...segments import Segment
 from ...time import LIGOTimeGPS
+from ..utils import file_path
+from .core import FRDATA_TYPES
+
+if typing.TYPE_CHECKING:
+    from pathlib import Path
+    from typing import (
+        IO,
+        Literal,
+    )
 
 
 def open_gwf(
-    path: str,
+    gwf: str | Path | IO | lalframe.FrameUFrFile,
     mode: str = "r",
 ) -> lalframe.FrameUFrFile:
     """Open a GWF file using LALFrame.
 
     Parameters
     ----------
-    path : `str`
-        The path to read.
+    gwf : `str`, `pathlib.Path`, `file`, or open frameCPP stream
+        The path to read from, or write to. Already open GWF streams
+        are returned unmodified, if the type matches the mode.
 
-    mode : `str`
+    mode : `str`, optional
         The mode with which to open the file, either `r` or `w`.
 
     Returns
@@ -46,8 +59,10 @@ def open_gwf(
     frfile : `lalframe.FrameUFrFile`
         The opened file object.
     """
-    if isinstance(path, lalframe.FrameUFrFile):
-        return path
+    if isinstance(gwf, lalframe.FrameUFrFile):
+        return gwf
+
+    path = file_path(gwf)
     try:
         return lalframe.FrameUFrFileOpen(path, mode)
     except RuntimeError as exc:
@@ -56,13 +71,35 @@ def open_gwf(
         raise
 
 
-def _iter_channels(path: str) -> Iterator[tuple[str, str]]:
+@typing.overload
+def _iter_toc(
+    gwf: str | Path | IO | lalframe.FrameUFrFile,
+    type: str | None,
+    count: Literal[True],
+) -> Iterator[int]:
+    ...
+
+
+@typing.overload
+def _iter_toc(
+    gwf: str | Path | IO | lalframe.FrameUFrFile,
+    type: str | None,
+    count: Literal[False],
+) -> Iterator[tuple[str, str]]:
+    ...
+
+
+def _iter_toc(
+    gwf: str | Path | IO | lalframe.FrameUFrFile,
+    type: str | None = None,
+    count: bool = False,
+) -> Iterator[tuple[str, str] | int]:
     """Yield the names and types of channels listed in the TOC for a GWF file.
 
     Parameters
     ----------
-    path : `str`
-        The path to read.
+    gwf : `str`, `pathlib.Path`, `file`, `lalframe.FrameUFrFile`
+        Path of GWF file, or open file stream, to read.
 
     Yields
     ------
@@ -72,19 +109,69 @@ def _iter_channels(path: str) -> Iterator[tuple[str, str]]:
         The ``FrVect`` type of the channel, one of ``"sim"``, ``"proc"``,
         or ``"adc"``.
     """
-    frfile = open_gwf(path)
+    frfile = open_gwf(gwf)
     frtoc = lalframe.FrameUFrTOCRead(frfile)
-    for typename in ("Sim", "Proc", "Adc"):
-        typen = typename.lower()
-        count = getattr(lalframe, f"FrameUFrTOCQuery{typename}N")(frtoc)
-        get = getattr(lalframe, f"FrameUFrTOCQuery{typename}Name")
-        for i in range(count):
+    if type is None:
+        types = FRDATA_TYPES
+    else:
+        types = (type,)
+    for typename in map(str.lower, types):
+        typet = typename.title()
+        num = getattr(lalframe, f"FrameUFrTOCQuery{typet}N")(frtoc)
+        if count:
+            yield num
+            continue
+        get = getattr(lalframe, f"FrameUFrTOCQuery{typet}Name")
+        for i in range(num):
             name = get(frtoc, i)
-            yield name, typen
+            yield name, typename
+
+
+def _count_toc(
+    gwf: str | Path | IO | lalframe.FrameUFrFile,
+    type: str | None = None,
+) -> int:
+    """Yield the names and types of channels listed in the TOC for a GWF file.
+
+    Parameters
+    ----------
+    gwf : `str`, `pathlib.Path`, `file`, `lalframe.FrameUFrFile`
+        Path of GWF file, or open file stream, to read.
+
+    Yields
+    ------
+    name : `str`
+        The name of a channel
+    type : `str`
+        The ``FrVect`` type of the channel, one of ``"sim"``, ``"proc"``,
+        or ``"adc"``.
+    """
+    return sum(_iter_toc(gwf, type=type, count=True))
+
+
+def _channel_exists(
+    gwf: str | Path | IO | lalframe.FrameUFrFile,
+    name: str,
+) -> bool:
+    """Return `True` if a channel (name) exists in a file.
+    """
+    frfile = open_gwf(gwf)
+    frtoc = lalframe.FrameUFrTOCRead(frfile)
+    nframes = lalframe.FrameUFrTOCQueryNFrame(frtoc)
+    for i in range(nframes):
+        try:
+            lalframe.FrameUFrChanRead(frfile, name, i)
+        except RuntimeError as exc:
+            if str(exc) == "Wrong name":
+                continue
+            raise
+        else:
+            return True
+    return False
 
 
 def _channel_segments(
-    path: str,
+    gwf: str | Path | IO | lalframe.FrameUFrFile,
     name: str,
     warn: bool = True,
 ) -> Iterator[Segment]:
@@ -92,8 +179,8 @@ def _channel_segments(
 
     Parameters
     ----------
-    path : `str`
-        The path to read.
+    gwf : `str`, `pathlib.Path`, `file`, `lalframe.FrameUFrFile`
+        Path of GWF file, or open file stream, to read.
 
     name : `str`
         The name of the channel to read.
@@ -107,7 +194,7 @@ def _channel_segments(
     gwpy.segments.Segment
         A GPS time segment for which data are available in the file.
     """
-    frfile = open_gwf(path)
+    frfile = open_gwf(gwf)
     frtoc = lalframe.FrameUFrTOCRead(frfile)
 
     # get segments for frames
@@ -118,7 +205,7 @@ def _channel_segments(
         except RuntimeError as exc:
             if str(exc) == "Wrong name" and warn:
                 warnings.warn(
-                    f"'{name}' not found in frame {i} of {path}",
+                    f"'{name}' not found in frame {i} of {gwf}",
                 )
                 continue
             raise

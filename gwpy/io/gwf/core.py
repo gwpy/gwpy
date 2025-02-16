@@ -18,81 +18,149 @@
 """Core I/O utilities for GWF files.
 """
 
+from __future__ import annotations
+
+import typing
+
 from ...segments import SegmentList
 from ..cache import read_cache
 from .backend import get_backend_function
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+if typing.TYPE_CHECKING:
+    from pathlib import Path
+    from typing import IO
+
+    from ...detector import Channel
+    from ...types import Series
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # first 4 bytes of any valid GWF file (see LIGO-T970130 §4.3.1)
-GWF_SIGNATURE = b'IGWD'
+GWF_SIGNATURE = b"IGWD"
+
+FRDATA_TYPES: tuple[str, ...] = (
+    "ADC",
+    "Proc",
+    "Sim",
+)
 
 
 # -- i/o -----------------------------
 
-def identify_gwf(origin, filepath, fileobj, *args, **kwargs):
-    """Identify a filename or file object as GWF
+def identify_gwf(
+    origin: str,
+    filepath: str | None,
+    fileobj: IO | None,
+    *args,
+    **kwargs,
+) -> bool:
+    """Identify a filename or file object as GWF.
 
     This function is overloaded in that it will also identify a cache file
     as 'gwf' if the first entry in the cache contains a GWF file extension
     """
-    # pylint: disable=unused-argument
-
     # try and read file descriptor
     if fileobj is not None:
         loc = fileobj.tell()
         fileobj.seek(0)
         try:
-            if fileobj.read(4) == GWF_SIGNATURE:
-                return True
+            signature = fileobj.read(len(GWF_SIGNATURE))
         finally:
             fileobj.seek(loc)
+        return signature == GWF_SIGNATURE
+
+    # otherwise read file extension
     if filepath is not None:
-        if filepath.endswith('.gwf'):
+        if filepath.endswith(".gwf"):
             return True
-        if filepath.endswith(('.lcf', '.cache')):
+        if filepath.endswith((".lcf", ".cache")):
             try:
                 cache = read_cache(filepath)
             except OSError:
                 return False
             else:
-                if cache[0].path.endswith('.gwf'):
-                    return True
+                return cache[0].path.endswith(".gwf")
+
+    return False
 
 
 # -- utilities -----------------------
 
-def num_channels(framefile, backend=None):
-    """Find the total number of channels in this framefile.
+def _from_backend(func, backend, *args, **kwargs):
+    """Import a function for the given backend and execute it.
+    """
+    impl = get_backend_function(func, backend=backend)
+    return impl(*args, **kwargs)
+
+
+def _iter_toc(
+    gwf: str | Path | IO,
+    type: str | None = None,
+    backend: str | None = None,
+):
+    """Import the ``_iter_toc`` implementation from the backend and run.
+    """
+    return _from_backend("_iter_toc", backend, gwf, type=type)
+
+
+def _count_toc(
+    gwf: str | Path | IO,
+    type: str | None = None,
+    backend: str | None = None,
+):
+    """Import the ``_count_toc`` implementation from the backend and run.
+    """
+    return _from_backend("_count_toc", backend, gwf, type=type)
+
+
+def num_channels(
+    gwf: str | Path | IO,
+    type: str | None = None,
+    backend: str | None = None,
+) -> int:
+    """Find the total number of channels in this GWF file.
 
     Requires a GWF backend library.
 
     Parameters
     ----------
-    framefile : `str`
-        path to GWF-format file on disk
+    gwf : `str`
+        GWF file to read.
+
+    type : `str`
+        The `Fr` structure type to match (one of 'adc', 'sim', or 'proc').
+        Default is to match all types.
+
+    backend : `str`, optional
+        The GWF backend to use. Default is 'any'.
 
     Returns
     -------
     n : `int`
-        the total number of channels found in the table of contents for this
-        file
+        The total number of channels found in the table of contents.
     """
-    return len(get_channel_names(framefile, backend=backend))
+    return _count_toc(gwf, type=type, backend=backend)
 
 
-def get_channel_type(channel, framefile, backend=None):
-    """Find the channel type in a given GWF file
+def get_channel_type(
+    channel: str | Channel,
+    gwf: str | Path | IO,
+    backend: str | None = None,
+):
+    """Find the channel type in a given GWF file.
 
     Requires a GWF backend library.
 
     Parameters
     ----------
     channel : `str`, `~gwpy.detector.Channel`
-        name of data channel to find
+        Name of data channel to find.
 
-    framefile : `str`
-        path of GWF file in which to search
+    gwf : `str`
+        GWF file to read.
+
+    backend : `str`, optional
+        The GWF backend to use. Default is 'any'.
 
     Returns
     -------
@@ -104,51 +172,68 @@ def get_channel_type(channel, framefile, backend=None):
     ValueError
         if the channel is not found in the table-of-contents
     """
-    _iter_channels = get_backend_function("_iter_channels", backend=backend)
     channel = str(channel)
-    for name, type_ in _iter_channels(framefile):
+    for name, type_ in _iter_toc(gwf, backend=backend):
         if channel == name:
             return type_
     raise ValueError(
-        f"'{channel}' not found in table-of-contents for {framefile}",
+        f"'{channel}' not found in table-of-contents for {gwf}",
     )
 
 
-def channel_in_frame(channel, framefile, backend=None):
-    """Determine whether a channel is stored in this framefile
+def channel_exists(
+    gwf: str | Path | IO,
+    channel: str | Channel,
+    backend: str | None = None,
+) -> bool:
+    """Determine whether a channel exists in a GWF file.
 
     Requires a GWF backend library.
 
     Parameters
     ----------
     channel : `str`
-        name of channel to find
+        Name of data channel to find.
 
-    framefile : `str`
-        path of GWF file to test
+    gwf : `str`
+        GWF file to read.
+
+    backend : `str`, optional
+        The GWF backend to use. Default is 'any'.
 
     Returns
     -------
     inframe : `bool`
         whether this channel is included in the table of contents for
-        the given framefile
+        the given GWF file.
     """
-    channel = str(channel)
-    for name in iter_channel_names(framefile, backend=backend):
-        if channel == name:
-            return True
-    return False
+    try:
+        return _from_backend("_channel_exists", backend, gwf, channel)
+    except NotImplementedError:
+        # no backend-specific optimisation
+        return str(channel) in iter_channel_names(gwf, backend=backend)
 
 
-def iter_channel_names(framefile, backend=None):
+def iter_channel_names(
+    gwf: str | Path | IO,
+    type: str | None = None,
+    backend: str | None = None,
+):
     """Iterate over the names of channels found in a GWF file
 
     Requires a GWF backend library.
 
     Parameters
     ----------
-    framefile : `str`
-        path of GWF file to read
+    gwf : `str`
+        GWF file to read.
+
+    type : `str`
+        The `Fr` structure type to match (one of 'adc', 'sim', or 'proc').
+        Default is to match all types.
+
+    backend : `str`, optional
+        The GWF backend to use. Default is 'any'.
 
     Returns
     -------
@@ -156,27 +241,34 @@ def iter_channel_names(framefile, backend=None):
         an iterator that will loop over the names of channels as read from
         the table of contents of the given GWF file
     """
-    _iter_channels = get_backend_function(
-        "_iter_channels",
-        backend=backend,
-    )
-    for name, _ in _iter_channels(framefile):
+    for name, _ in _iter_toc(gwf, type=type, backend=backend):
         yield name
 
 
-def get_channel_names(framefile, backend=None):
+def get_channel_names(
+    gwf: str | Path | IO,
+    type: str | None = None,
+    backend: str | None = None,
+):
     """Return a list of all channel names found in a GWF file
 
     This method just returns
 
-    >>> list(iter_channel_names(framefile))
+    >>> list(iter_channel_names(gwf))
 
     Requires a GWF backend library.
 
     Parameters
     ----------
-    framefile : `str`
-        path of GWF file to read
+    gwf : `str`
+        GWF file to read.
+
+    type : `str`
+        The `Fr` structure type to match (one of 'adc', 'sim', or 'proc').
+        Default is to match all types.
+
+    backend : `str`, optional
+        The GWF backend to use. Default is 'any'.
 
     Returns
     -------
@@ -184,11 +276,16 @@ def get_channel_names(framefile, backend=None):
         a `list` of channel names as read from the table of contents of
         the given GWF file
     """
-    return list(iter_channel_names(framefile, backend=backend))
+    return list(iter_channel_names(gwf, type=type, backend=backend))
 
 
-def data_segments(paths, channel, warn=True, backend=None):
-    """Returns the segments containing data for a channel
+def data_segments(
+    paths: list[str],
+    channel: str,
+    warn: bool = True,
+    backend: str | None = None,
+):
+    """Returns the segments containing data for a channel.
 
     Requires a GWF backend library.
 
@@ -199,13 +296,17 @@ def data_segments(paths, channel, warn=True, backend=None):
     Parameters
     ----------
     paths : `list` of `str`
-        a list of GWF file paths
+        A list of GWF file paths.
 
     channel : `str`
-        the name to check in each frame
+        Name of data channel to find.
 
     warn : `bool`, optional
-        emit a `UserWarning` when a channel is not found in a frame
+        If `True`, emit a `UserWarning` when a channel is not found
+        in a frame, otherwise silently ignore.
+
+    backend : `str`, optional
+        The GWF backend to use. Default is 'any'.
 
     Returns
     -------
@@ -224,30 +325,20 @@ def data_segments(paths, channel, warn=True, backend=None):
     return segments.coalesce()
 
 
-def _get_type(type_, enum):
-    """Handle a type string, or just return an `int`
+def _series_name(series: Series) -> str | None:
+    """Returns the 'name' of a `Series` that should be written to GWF.
 
-    Only to be called in relation to FrProcDataType and FrProcDataSubType
-    """
-    if isinstance(type_, int):
-        return type_
-    return enum[str(type_).upper()]
-
-
-def _series_name(series):
-    """Returns the 'name' of a `Series` that should be written to GWF
-
-    This is basically `series.name or str(series.channel) or ""`
+    This is basically `series.name or str(series.channel) or ""`.
 
     Parameters
     ----------
     series : `gwpy.types.Series`
-        the input series that will be written
+        The input series that will be written.
 
     Returns
     -------
     name : `str`
-        the name to use when storing this series
+        The name to use when storing this series.
     """
     return (
         series.name
