@@ -18,15 +18,13 @@
 """Tests for `gwpy-plot` command line module `gwpy.cli.gwpy_plot`
 """
 
-from unittest import mock
-
 import pytest
 
 from .. import (
     PRODUCTS,
     gwpy_plot,
 )
-from .base import mock_nds2_connection
+from .base import NDS2_CONNECTION_FIXTURE_DATA  # noqa: F401
 
 
 @pytest.mark.parametrize("mode", [None] + list(PRODUCTS.keys()))
@@ -38,19 +36,15 @@ def test_gwpy_plot_help(mode):
 
 
 @pytest.mark.requires("nds2")
-def test_gwpy_plot_timeseries(tmp_path):
+def test_gwpy_plot_timeseries(tmp_path, nds2_connection):
     tmp = tmp_path / "plot.png"
-    with mock.patch(
-        'nds2.connection',
-        return_value=mock_nds2_connection()[0],
-    ):
-        args = [
-            "timeseries",
-            "--chan", "X1:TEST-CHANNEL",
-            "--start", 0,
-            "--nds2-server", "nds.test.gwpy",  # don't use datafind
-            "--out", str(tmp),
-        ]
-        exitcode = gwpy_plot.main(args)
-        assert not exitcode  # passed
-        assert tmp.is_file()  # plot was created
+    args = [
+        "timeseries",
+        "--chan", "X1:TEST-CHANNEL",
+        "--start", 0,
+        "--nds2-server", "nds.test.gwpy",  # don't use datafind
+        "--out", str(tmp),
+    ]
+    exitcode = gwpy_plot.main(args)
+    assert not exitcode  # passed
+    assert tmp.is_file()  # plot was created

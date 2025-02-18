@@ -20,7 +20,6 @@
 
 import warnings
 from argparse import ArgumentParser
-from unittest import mock
 
 import pytest
 
@@ -32,30 +31,36 @@ from ...cli import cliproduct
 from ...frequencyseries import FrequencySeries
 from ...timeseries import TimeSeries
 from ...plot import Plot
-from ...testing import (utils, mocks)
+from ...testing import utils
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-
-# -- utilities ----------------------------------------------------------------
 
 def _random_data(*shape):
     return random.rand(*shape)
 
 
-def mock_nds2_connection():
-    random.seed(0)
-    xts = TimeSeries(_random_data(10240), t0=0,
-                     sample_rate=1024, name='X1:TEST-CHANNEL')
-    random.seed(1)  # use different seed to give coherence something to do
-    yts = TimeSeries(_random_data(10240), t0=0,
-                     sample_rate=1024, name='Y1:TEST-CHANNEL')
-    data = [xts, yts]
-    conn = mocks.nds2_connection(
-        buffers=list(map(mocks.nds2_buffer_from_timeseries, data)),
-    )
-    return conn, data
+# set data for nds2_connection test fixture
+random.seed(0)
+NDS2_CONNECTION_FIXTURE_DATA = [
+    TimeSeries(
+        _random_data(10240),
+        t0=0,
+        sample_rate=1024, name="X1:TEST-CHANNEL",
+    ),
+]
+random.seed(1)  # use different seed to give coherence something to do
+NDS2_CONNECTION_FIXTURE_DATA.append(
+    TimeSeries(
+        _random_data(10240),
+        t0=0,
+        sample_rate=1024,
+        name="Y1:TEST-CHANNEL",
+    ),
+)
 
+
+# -- utilities ----------------------------------------------------------------
 
 def update_namespace(args, **params):
     for key in params:
@@ -85,6 +90,7 @@ class _TestCliProduct(object):
         '--dpi', 100,
         '--geometry', '640x480',
     ]
+    NDS2_CONNECTION_FIXTURE_DATA = NDS2_CONNECTION_FIXTURE_DATA
 
     # -- fixtures -------------------------------
 
@@ -179,15 +185,12 @@ class _TestCliProduct(object):
             assert out == ''
 
     @pytest.mark.requires("nds2")
-    def test_get_data(self, prod):
-        conn, data = mock_nds2_connection()
-        with mock.patch('nds2.connection') as mocker:
-            mocker.return_value = conn
-            prod.get_data()
+    def test_get_data(self, prod, nds2_connection):
+        prod.get_data()
 
         utils.assert_quantity_sub_equal(
             prod.timeseries[0],
-            data[0],
+            NDS2_CONNECTION_FIXTURE_DATA[0],
             exclude=("channel",),
         )
 
@@ -262,16 +265,13 @@ class _TestCliProduct(object):
         assert ax.get_ylabel() == params.get('ylabel', plotprod.get_ylabel())
 
     @pytest.mark.requires("nds2")
-    def test_run(self, tmp_path, prod):
-        conn, _ = mock_nds2_connection()
+    def test_run(self, tmp_path, prod, nds2_connection):
         tmp = tmp_path / "plot.png"
-        with mock.patch('nds2.connection') as mocker:
-            mocker.return_value = conn
-            prod.args.out = str(tmp)
-            prod.run()
-            assert tmp.is_file()
-            assert prod.plot_num == 1
-            assert not prod.has_more_plots()
+        prod.args.out = str(tmp)
+        prod.run()
+        assert tmp.is_file()
+        assert prod.plot_num == 1
+        assert not prod.has_more_plots()
 
 
 class _TestImageProduct(_TestCliProduct):
