@@ -38,6 +38,7 @@ __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 TEST_RESULTS = {
     'sensemon_range': 19.332958991178117 * units.Mpc,
     'inspiral_range': 18.519899937121536 * units.Mpc,
+    'inspiral_range_snr_10': 14.82352747 * units.Mpc,
     'burst_range': 13.592140825568954 * units.Mpc,
 }
 
@@ -111,11 +112,15 @@ def test_inspiral_range_psd(psd):
 
 
 @pytest.mark.requires("inspiral_range")
-def test_inspiral_range(psd):
+@pytest.mark.parametrize(("snr", "expected"), (
+    (8, TEST_RESULTS["inspiral_range"]),
+    (10, TEST_RESULTS["inspiral_range_snr_10"]),
+))
+def test_inspiral_range(psd, snr, expected):
     """Test for :func:`gwpy.astro.inspiral_range`
     """
-    r = astro.inspiral_range(psd)
-    utils.assert_quantity_almost_equal(r, TEST_RESULTS['inspiral_range'])
+    result = astro.inspiral_range(psd, snr=snr)
+    utils.assert_quantity_almost_equal(result, expected)
 
 
 # -- burst range --------------------------------
