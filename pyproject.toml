@@ -216,6 +216,8 @@ filterwarnings = [
   # ignore warnings from distutils.version
   "ignore:distutils Version::matplotlib",
   "ignore:distutils Version::distutils",  # actually setuptools._distutils
+  # ignore trapz warnings
+  "ignore:`trapz` is deprecated::inspiral_range",
 ]
 xfail_strict = true
 
