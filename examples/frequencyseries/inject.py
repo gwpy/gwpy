@@ -22,7 +22,7 @@ It can often be useful to add some known signal to inherently random
 or noisy data. For example, one might want to investigate what
 would happen if a binary black hole merger signal occured at or near
 the time of a glitch. In LIGO data analysis, this procedure is referred
-to as an _injection_.
+to as an *injection*.
 
 In the example below we will create a stream of random, white Gaussian
 noise, then inject a loud, steady sinuosoid. We will do this in the
