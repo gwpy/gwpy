@@ -17,12 +17,17 @@
 
 """Read gravitational-wave frame (GWF) files using the FrameL API.
 
-The frame foramt is defined in LIGO-T970130 available from dcc.ligo.org
+The frame format is defined in LIGO-T970130 available from dcc.ligo.org
 """
 
+from __future__ import annotations
+
+import typing
 import warnings
+from collections import defaultdict
 
 import framel
+from igwn_segments import infinity
 
 from ....io.gwf.core import _series_name
 from ....io.utils import (
@@ -30,17 +35,52 @@ from ....io.utils import (
     file_path,
 )
 from ....segments import Segment
-from ... import TimeSeries
+from ... import (
+    TimeSeries,
+    TimeSeriesBaseList,
+)
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterator
+    from pathlib import Path
+    from typing import (
+        IO,
+        TypeVar,
+    )
+
+    import numpy
+
+    from ....time import LIGOTimeGPS
+    from ... import (
+        TimeSeriesBase,
+        TimeSeriesBaseDict,
+    )
+
+    _TimeSeriesType = TypeVar("_TimeSeriesType", bound=TimeSeriesBase)
+
+inf = infinity()
+
+FRAMEL_COMPRESSION_GZIP = {
+    "gzip",
+    1,
+    257,
+    None,
+}
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-FRAME_LIBRARY = "framel"
 
+# -- read ----------------------------
 
-# -- read ---------------------------------------------------------------------
-
-def read(source, channels, start=None, end=None, series_class=TimeSeries,
-         scaled=None):
+def read(
+    source: str | Path | IO,
+    channels: list[str],
+    start: LIGOTimeGPS | None = None,
+    end: LIGOTimeGPS | None = None,
+    scaled: bool | None = None,
+    type: str | dict[str, str] | None = None,
+    series_class: type[TimeSeriesBase] = TimeSeries,
+) -> TimeSeriesBaseDict:
     """Read data from one or more GWF files using the FrameL API."""
     # scaled must be provided to provide a consistent API with frameCPP
     if scaled is not None:
@@ -48,50 +88,74 @@ def read(source, channels, start=None, end=None, series_class=TimeSeries,
             "the `scaled` keyword argument is not supported by framel, "
             "if you require ADC scaling, please install "
             "python-ldas-tools-framecpp",
+            stacklevel=2,
         )
 
     # parse input source
-    source = file_list(source)
-
-    # get duration
-    crop = start is None and end is not None
-    duration = -1
-    span = Segment(start or 0, end or 0)
-    framelstart = start or -1
-    if start and end:
-        duration = end - start
+    files = file_list(source)
 
     # read each file and channel individually and append
+    tmp: dict[str, TimeSeriesBaseList] = defaultdict(TimeSeriesBaseList)
+    for file_ in files:
+        for series in _read_gwf(
+            file_,
+            channels,
+            start,
+            end,
+            series_class,
+        ):
+            tmp[series.name].append(series)
     out = series_class.DictClass()
-    for i, file_ in enumerate(source):
-        for name in channels:
-            new = _read_channel(
-                file_,
-                name,
-                framelstart,
-                duration,
-                series_class,
-            )
-            if crop and end < new.x0.value:
-                raise ValueError(
-                    "read() given end GPS earlier than start GPS for "
-                    "{} in {}".format(
-                        name,
-                        file_,
-                    ),
-                )
-            elif crop:
-                new = new.crop(end=end)
-            out.append({name: new})
-
-        # if we have all of the data we want, stop now
-        if all(span in out[channel].span for channel in out):
-            break
+    for channel, serieslist in tmp.items():
+        out[channel] = serieslist.join()
 
     return out
 
 
-def _read_channel(filename, channel, start, duration, series_class):
+def _read_gwf(
+    filename: str,
+    channels: list[str],
+    start: LIGOTimeGPS | None,
+    end: LIGOTimeGPS | None,
+    series_class: type[TimeSeriesBase],
+) -> Iterator[TimeSeriesBase]:
+    """Read data from a single file."""
+    if start is None:
+        start = -inf
+    if end is None:
+        end = inf
+    span = Segment(start, end)
+    record: set[str] = set()
+    _record = record.add
+    for name in channels:
+        # framel.frgetvect will silently pad available data to
+        # whatever span you gave it without error, so we have to
+        # read everything and crop
+        new = _read_channel(
+            filename,
+            name,
+            -1,  # read from start
+            -1,  # read all data
+            series_class,
+        )
+        if (keep := new.crop(*(new.span & span))).size:
+            yield keep
+            _record(keep.name)
+
+    # if any channels weren't read, something went wrong
+    for channel in channels:
+        if (name := str(channel)) not in record:
+            msg = f"failed to read '{name}' from '{filename}' in interval {span}"
+            raise ValueError(msg)
+
+
+def _read_channel(
+    filename: str | Path,
+    channel: str,
+    start: float,
+    duration: float,
+    series_class: type[_TimeSeriesType],
+) -> _TimeSeriesType:
     """Read one channel from one file."""
     try:
         data, gps, offset, dx, xunit, yunit = framel.frgetvect1d(
@@ -102,6 +166,11 @@ def _read_channel(filename, channel, start, duration, series_class):
         )
     except KeyError as exc:  # upstream errors
         raise ValueError(str(exc)) from exc
+    except ValueError as exc:
+        if str(exc) == "NULL pointer access":
+            msg = f"channel '{channel}' not found"
+            raise ValueError(msg) from exc
+        raise
     return series_class(
         data,
         name=channel,
@@ -112,42 +181,76 @@ def _read_channel(filename, channel, start, duration, series_class):
     )
 
 
-# -- write --------------------------------------------------------------------
+# -- write ---------------------------
 
 def write(
-        tsdict,
-        outfile,
-        start=None,
-        end=None,
-        type=None,
-        name=None,
-        run=None,
-):
+    tsdict: TimeSeriesBaseDict,
+    outfile: str | Path | IO,
+    start: LIGOTimeGPS,
+    end: LIGOTimeGPS,
+    type: str | None = None,
+    name: str | None = None,
+    run: int = 0,
+    compression: int | str | None = None,
+    compression_level: int | None = None,
+) -> None:
     """Write data to a GWF file using the FrameL API."""
     if name is not None:
         warnings.warn(
-            "specifying a FrHistory name via FrameL is not supported, "
+            "python-framel does not support setting FrHistory 'name', "
             "this value will be ignored",
+            stacklevel=2,
         )
-    if run is not None:
+    if run:
         warnings.warn(
-            "specifying a FrHistory run number via FrameL is not supported, "
+            "python-framel does not support setting FrHistory 'run', "
             "this value will be ignored",
+            stacklevel=2,
+        )
+
+    # FrameL Python bindings only support Gzip
+    if isinstance(compression, str):
+        compression = compression.lower()
+    if compression not in FRAMEL_COMPRESSION_GZIP:
+        msg = "python-framel only supports compression='GZIP'"
+        raise ValueError(msg)
+    if compression_level not in (None, 1):
+        warnings.warn(
+            "python-framel only supports GZIP level 1",
+            stacklevel=1,
         )
 
     # format and crop each series
-    channellist = []
-    for series in tsdict.values():
-        channellist.append(_channel_data_to_write(
+    channellist: list[FrameLVectDict] = [
+        _channel_data_to_write(
             series.crop(start=start, end=end),
             type,
-        ))
+        ) for series in tsdict.values()
+    ]
     return framel.frputvect(file_path(outfile), channellist)
 
 
-def _channel_data_to_write(timeseries, type_):
-    return {
-        "name": _series_name(timeseries),
+class FrameLVectDict(typing.TypedDict):
+    """Dict of channel vector information."""
+
+    name: str
+    data: numpy.ndarray
+    start: float
+    dx: float
+    x_unit: str
+    y_unit: str
+    kind: str
+    type: int
+    subType: int
+
+
+def _channel_data_to_write(
+    timeseries: TimeSeriesBase,
+    type_: str | None,
+) -> FrameLVectDict:
+    """Format a series into a dict suitable for `framel.frputvect`."""
+    return FrameLVectDict({
+        "name": _series_name(timeseries) or "",
         "data": timeseries.value,
         "start": timeseries.x0.to("s").value,
         "dx": timeseries.dx.to("s").value,
@@ -160,4 +263,4 @@ def _channel_data_to_write(timeseries, type_):
         ).upper(),
         "type": 1,
         "subType": 0,
-    }
+    })

@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -18,7 +19,6 @@
 """Unit test for timeseries module."""
 
 import os.path
-import warnings
 from contextlib import nullcontext
 from itertools import (chain, product)
 from pathlib import Path
@@ -51,16 +51,20 @@ from ...testing.errors import (
 from ...types import Index
 from ...time import LIGOTimeGPS
 from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
+from ..io import gwf as tsio_gwf
 from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
 
 try:
-    get_gwf_backend()
+    get_gwf_backend(
+        "gwpy.timeseries.io.gwf",
+        backends=tsio_gwf.BACKENDS,
+    )
 except ImportError:
-    HAVE_GWF_API = False
+    HAVE_GWF_BACKEND = False
 else:
-    HAVE_GWF_API = True
+    HAVE_GWF_BACKEND = True
 
 # remote URL for test .gwf file
 TEST_HDF5_URL = (
@@ -71,10 +75,10 @@ TEST_HDF5_URL = (
 )
 
 
-GWF_APIS = [
+GWF_BACKENDS = [
     pytest.param(
         None,
-        marks=pytest.mark.skipif(not HAVE_GWF_API, reason="no GWF API"),
+        marks=pytest.mark.skipif(not HAVE_GWF_BACKEND, reason="no GWF backend"),
     ),
     pytest.param("lalframe", marks=pytest.mark.requires("lalframe")),
     pytest.param("framecpp", marks=pytest.mark.requires("LDAStools.frameCPP")),
@@ -240,86 +244,100 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_array_equal(data.times, Index((0, 1, 2), unit="s"))
         utils.assert_array_equal(data.value, (1, 2, 3))
 
-    @pytest.mark.parametrize("api", GWF_APIS)
-    def test_read_write_gwf(self, tmp_path, api):
+    @pytest.mark.parametrize("backend", GWF_BACKENDS)
+    def test_read_write_gwf(self, tmp_path, backend):
         array = self.create(name="TEST")
-
-        # map API to format name
-        if api is None:
-            fmt = "gwf"
-        else:
-            fmt = "gwf.%s" % api
 
         # test basic write/read
         try:
             utils.test_read_write(
-                array, fmt, extension="gwf", read_args=[array.name],
+                array,
+                "gwf",
+                extension="gwf",
+                read_args=[array.name],
+                read_kw={"backend": backend},
+                write_kw={"backend": backend},
                 assert_equal=utils.assert_quantity_sub_equal,
-                assert_kw={"exclude": ["channel"]})
+                assert_kw={"exclude": ["channel"]},
+            )
         except ImportError as e:  # pragma: no-cover
             pytest.skip(str(e))
 
         # test read keyword arguments
         tmp = tmp_path / "test.gwf"
-        array.write(tmp, format=fmt)
+        array.write(tmp, format="gwf", backend=backend)
 
         def read_(**kwargs):
-            return type(array).read(tmp, array.name, format=fmt,
-                                    **kwargs)
+            return type(array).read(
+                tmp,
+                array.name,
+                format="gwf",
+                backend=backend,
+                **kwargs,
+            )
 
-        # test start, end
+        # test start and end
         start, end = array.span.contract(10)
         t = read_(start=start, end=end)
-        utils.assert_quantity_sub_equal(t, array.crop(start, end),
-                                        exclude=["channel"])
+        utils.assert_quantity_sub_equal(
+            t, array.crop(start, end),
+            exclude=["channel"],
+        )
         assert t.span == (start, end)
-        t = read_(start=start)
-        utils.assert_quantity_sub_equal(t, array.crop(start=start),
-                                        exclude=["channel"])
-        t = read_(end=end)
-        utils.assert_quantity_sub_equal(t, array.crop(end=end),
-                                        exclude=["channel"])
 
-    @pytest.mark.parametrize("api", GWF_APIS)
-    def test_read_gwf_end_error(self, api):
+        # test start only
+        t = read_(start=start)
+        utils.assert_quantity_sub_equal(t,
+            array.crop(start=start),
+            exclude=["channel"],
+        )
+
+        # test end only
+        t = read_(end=end)
+        utils.assert_quantity_sub_equal(
+            t,
+            array.crop(end=end),
+            exclude=["channel"],
+        )
+
+    @pytest.mark.parametrize("backend", GWF_BACKENDS)
+    def test_read_gwf_end_error(self, backend):
         """Test that reading past the end of available data fails."""
-        fmt = "gwf" if api is None else "gwf." + api
         with pytest.raises(ValueError):
             self.TEST_CLASS.read(
                 utils.TEST_GWF_FILE,
                 "L1:LDAS-STRAIN",
-                format=fmt,
+                format="gwf",
+                backend=backend,
                 start=utils.TEST_GWF_SPAN[1],
             )
 
-    @pytest.mark.parametrize("api", GWF_APIS)
-    def test_read_gwf_negative_duration_error(self, api):
+    @pytest.mark.parametrize("backend", GWF_BACKENDS)
+    def test_read_gwf_negative_duration_error(self, backend):
         """Test that reading a negative duration fails."""
-        fmt = "gwf" if api is None else "gwf." + api
         with pytest.raises(ValueError):
             self.TEST_CLASS.read(
                 utils.TEST_GWF_FILE,
                 "L1:LDAS-STRAIN",
-                format=fmt,
+                format="gwf",
+                backend=backend,
                 end=utils.TEST_GWF_SPAN[0]-1,
             )
 
-    @pytest.mark.parametrize("api", GWF_APIS)
-    @pytest.mark.parametrize("nproc", (1, 2))
-    def test_read_write_gwf_multiple(self, tmp_path, api, nproc):
-        """Check that each GWF API can read a series of files, either in
-        a single process, or in multiple processes.
+    @pytest.mark.parametrize("backend", GWF_BACKENDS)
+    @pytest.mark.parametrize("parallel", (1, 2))
+    def test_read_write_gwf_multiple(self, tmp_path, backend, parallel):
+        """Check that each GWF backend can read a series of files.
 
         Regression: https://gitlab.com/gwpy/gwpy/-/issues/1486
         """
-        fmt = "gwf" if api is None else "gwf." + api
         a1 = self.create(name="TEST")
         a2 = self.create(name="TEST", t0=a1.span[1], dt=a1.dx)
 
         tmp1 = tmp_path / "test1.gwf"
-        tmp2 = tmp_path / "test3.gwf"
-        a1.write(tmp1, format=fmt)
-        a2.write(tmp2, format=fmt)
+        tmp2 = tmp_path / "test2.gwf"
+        a1.write(tmp1, format="gwf", backend=backend)
+        a2.write(tmp2, format="gwf", backend=backend)
         cache = [tmp1, tmp2]
 
         comb = self.TEST_CLASS.read(
@@ -327,8 +345,9 @@ class TestTimeSeries(_TestTimeSeriesBase):
             "TEST",
             start=a1.span[0],
             end=a2.span[1],
-            format=fmt,
-            nproc=nproc,
+            format="gwf",
+            backend=backend,
+            parallel=parallel,
         )
         utils.assert_quantity_sub_equal(
             comb,
@@ -336,100 +355,66 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=["channel"],
         )
 
-    @pytest.mark.parametrize("api", [
-        pytest.param(
-            "framecpp",
-            marks=pytest.mark.requires("LDAStools.frameCPP"),
-        ),
-    ])
-    def test_read_write_gwf_error(self, tmp_path, api, gw150914):
-        fmt = f"gwf.{api}"
+    @pytest.mark.parametrize("backend", GWF_BACKENDS)
+    def test_read_write_gwf_name_error(self, tmp_path, backend, gw150914):
+        """Test that reading GWF handles missing/wrong channel names."""
         tmp = tmp_path / "test.gwf"
-        gw150914.write(tmp, format=fmt)
+        gw150914.write(tmp, format="gwf", backend=backend)
 
-        # wrong channel
+        # wrong channel (framel on windows gives a slightly different error)
         with pytest.raises(
             ValueError,
-            match=(
-                "^no Fr{Adc,Proc,Sim}Data structures with the "
-                "name another channel$"
-            ),
+            match="({})".format("|".join((
+                "^channel 'another channel' not found",
+                "vector not found: another channel",
+            ))),
         ):
             self.TEST_CLASS.read(
                 tmp,
                 "another channel",
-                format=fmt,
+                format="gwf",
+                backend=backend,
             )
 
-        # wrong times
-        with pytest.raises(
-            ValueError,
-            match=f"^Failed to read '{gw150914.name}' from '{tmp}'",
-        ):
+    @pytest.mark.parametrize("backend", GWF_BACKENDS)
+    def test_read_write_gwf_interval_error(self, tmp_path, backend, gw150914):
+        tmp = tmp_path / "test.gwf"
+        gw150914.write(tmp, format="gwf", backend=backend)
+
+        # wrong times (error message is different for each backend)
+        with pytest.raises(ValueError):
             self.TEST_CLASS.read(
                 tmp,
                 gw150914.name,
                 start=gw150914.span[0]-1,
                 end=gw150914.span[0],
-                format=fmt,
+                format="gwf",
+                backend=backend,
             )
 
-    @pytest.mark.requires("lalframe")
-    def test_read_gwf_scaled_lalframe(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            data = self.TEST_CLASS.read(
-                utils.TEST_GWF_FILE,
-                "L1:LDAS-STRAIN",
-                format="gwf.lalframe",
-            )
-
-        with pytest.warns(UserWarning):
-            data2 = self.TEST_CLASS.read(
-                utils.TEST_GWF_FILE,
-                "L1:LDAS-STRAIN",
-                format="gwf.lalframe",
-                scaled=True,
-            )
-        utils.assert_quantity_sub_equal(data, data2)
-
-    @pytest.mark.requires("LDAStools.frameCPP")
+    @pytest.mark.requires("lalframe")  # for get_channel_type
     @pytest.mark.parametrize("ctype", ("adc", "proc", "sim", None))
-    @pytest.mark.parametrize("api", GWF_APIS)
-    def test_write_gwf_type(self, gw150914, tmp_path, api, ctype):
+    @pytest.mark.parametrize("backend", GWF_BACKENDS)
+    def test_write_gwf_type(self, gw150914, tmp_path, backend, ctype):
+        """Test writing GWF for each FrData type."""
         from ...io.gwf import get_channel_type
 
-        # on debian, python=3, python-ldas-tools-framecpp < 2.6.9,
-        # the simdata test causes a segfault
-        import platform
-        import sys
-        if (
-            api == "framecpp"
-            and ctype == "sim"
-            and sys.version_info[0] >= 3
-            and "debian" in platform.platform()
-        ):
-            pytest.xfail(
-                "reading Sim data with "
-                "python-ldas-tools-framecpp < 2.6.9 is broken"
-            )
+        expected_ctype = ctype or "proc"
 
-        fmt = "gwf" if api is None else "gwf." + api
-        expected_ctype = ctype if ctype else "proc"
-
+        # write the file
         tmp = tmp_path / "test.gwf"
-        gw150914.write(tmp, type=ctype, format=fmt)
+        gw150914.write(tmp, type=ctype, format="gwf", backend=backend)
+
+        # assert that the type is correct
         assert get_channel_type(gw150914.name, tmp) == expected_ctype
-        try:
-            new = type(gw150914).read(tmp, gw150914.name, format=fmt)
-        except OverflowError:
-            # python-ldas-tools-framecpp < 2.6.9
-            if api == "framecpp" and ctype == "sim":
-                pytest.xfail(
-                    "reading Sim data with "
-                    "python-ldas-tools-framecpp < 2.6.9 is broken"
-                )
-            raise
+
+        # read the file and check that the data match
+        new = type(gw150914).read(
+            tmp,
+            gw150914.name,
+            format="gwf",
+            backend=backend,
+        )
 
         # epoch seems to mismatch at O(1e-12), which is unfortunate
         utils.assert_quantity_sub_equal(
@@ -438,16 +423,20 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=("channel", "x0"),
         )
 
-    @pytest.mark.parametrize("api", GWF_APIS)
-    def test_write_gwf_channel_name(self, tmp_path, api):
+    @pytest.mark.parametrize("backend", GWF_BACKENDS)
+    def test_write_gwf_channel_name(self, tmp_path, backend):
         """Test that writing GWF when `channel` is set but `name` is not
         uses the `channel` name.
         """
+        # create data
         array = self.create(channel="data")
         assert not array.name
+
+        # write data
         tmp = tmp_path / "test.gwf"
-        fmt = "gwf" if api is None else "gwf." + api
-        array.write(tmp, format=fmt)
+        array.write(tmp, format="gwf", backend=backend)
+
+        # read it back check
         array2 = type(array).read(tmp, str(array.channel), format="gwf")
         assert array2.name == str(array.channel)
         utils.assert_quantity_sub_equal(
