@@ -35,7 +35,6 @@ GWPY_CACHE = bool_env("GWPY_CACHE", False)
 
 
 @pytest.fixture(scope="module")
-@pytest_skip_flaky_network
 def gw150914_hdf5():
     url, = get_event_urls(
         "GW150914",
@@ -48,6 +47,7 @@ def gw150914_hdf5():
     return download_file(url, cache=GWPY_CACHE)
 
 
+@pytest_skip_flaky_network
 def test_read_hdf5_gwosc(gw150914_hdf5):
     data = TimeSeries.read(
         gw150914_hdf5,
@@ -58,6 +58,7 @@ def test_read_hdf5_gwosc(gw150914_hdf5):
     assert data.max().value == pytest.approx(-4.60035111e-20)
 
 
+@pytest_skip_flaky_network
 def test_read_hdf5_gwosc_state(gw150914_hdf5):
     state = StateVector.read(
         gw150914_hdf5,

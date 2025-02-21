@@ -155,7 +155,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     @pytest.fixture(scope='class')
-    @pytest_skip_flaky_network
     def gw150914_16384(self):
         return self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
@@ -164,7 +163,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     @pytest.fixture(scope="class")
-    @pytest_skip_flaky_network
     def gw150914_h1_32(self):
         return self.TEST_CLASS.fetch_open_data(
             "H1",
@@ -172,7 +170,6 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     @pytest.fixture(scope="class")
-    @pytest_skip_flaky_network
     def gw150914_l1_32(self):
         return self.TEST_CLASS.fetch_open_data(
             "L1",
@@ -712,6 +709,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 ):
             self.TEST_CLASS.fetch("X1:TEST", 0, 1)
 
+    @pytest_skip_flaky_network
     @_gwosc_cvmfs
     @mock.patch.dict(
         "os.environ",
@@ -778,6 +776,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 frametype="X1_TEST",
             )
 
+    @pytest_skip_flaky_network
     @_gwosc_cvmfs
     @mock.patch.dict(
         "os.environ",
@@ -794,6 +793,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=['name', 'channel', 'unit'],
         )
 
+    @pytest_skip_flaky_network
     @_gwosc_cvmfs
     @mock.patch.dict(
         # force 'import nds2' to fail so that we are actually testing
@@ -821,6 +821,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=['name', 'channel', 'unit'],
         )
 
+    @pytest_skip_flaky_network
     @pytest.mark.requires("nds2")
     @utils.skip_kerberos_credential
     def test_get_nds2(self, gw150914_16384):
@@ -1748,6 +1749,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert comp.name == '%s >= 2.0' % (array.name)
         assert (array == array).name == '{0} == {0}'.format(array.name)
 
+    @pytest_skip_flaky_network
     def test_transfer_function(self, gw150914_h1_32, gw150914_l1_32):
         tf = gw150914_h1_32.transfer_function(
             gw150914_l1_32,
@@ -1757,6 +1759,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert tf.df == 1 * units.Hz
         assert tf.frequencies[abs(tf).argmax()] == 516 * units.Hz
 
+    @pytest_skip_flaky_network
     def test_coherence(self, gw150914_h1_32, gw150914_l1_32):
         coh = gw150914_h1_32.coherence(
             gw150914_l1_32,
@@ -1765,6 +1768,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert coh.df == 1 * units.Hz
         assert coh.frequencies[coh.argmax()] == 60 * units.Hz
 
+    @pytest_skip_flaky_network
     def test_coherence_spectrogram(self, gw150914_h1_32, gw150914_l1_32):
         cohsg = gw150914_h1_32.coherence_spectrogram(
             gw150914_l1_32,
