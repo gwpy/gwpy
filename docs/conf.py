@@ -224,26 +224,25 @@ doxylink = {
 # -- intersphinx
 
 # Intersphinx
-intersphinx_mapping = {
-    "astropy": ("https://docs.astropy.org/en/stable/", None),
-    "dateparser": ("https://dateparser.readthedocs.io/en/stable/", None),
-    "dateutil": ("https://dateutil.readthedocs.io/en/stable/", None),
-    "dqsegdb2": ("https://dqsegdb2.readthedocs.io/en/stable/", None),
-    # 'glue': ('https://docs.ligo.org/lscsoft/glue/', None),
-    "gssapi": ("https://pythongssapi.github.io/python-gssapi/", None),
-    "gwdatafind": ("https://gwdatafind.readthedocs.io/en/stable/", None),
-    "gwosc": ("https://gwosc.readthedocs.io/en/stable/", None),
-    "h5py": ("https://docs.h5py.org/en/latest/", None),
-    "ligo.skymap": ("https://lscsoft.docs.ligo.org/ligo.skymap/", None),
-    "igwn-segments": ("https://igwn-segments.readthedocs.io/en/stable/", None),
-    "lscsoft-glue": ("https://lscsoft.docs.ligo.org/glue/", None),
-    "matplotlib": ("https://matplotlib.org/", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "pycbc": ("https://pycbc.org/pycbc/latest/html/", None),
-    "python": ("https://docs.python.org/3/", None),
-    "uproot": ("https://uproot.readthedocs.io/en/stable/", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
-}
+intersphinx_mapping = {key: (value, None) for key, value in {
+    "astropy": "https://docs.astropy.org/en/stable/",
+    "dateparser": "https://dateparser.readthedocs.io/en/stable/",
+    "dateutil": "https://dateutil.readthedocs.io/en/stable/",
+    "dqsegdb2": "https://dqsegdb2.readthedocs.io/en/stable/",
+    "gssapi": "https://pythongssapi.github.io/python-gssapi/",
+    "gwdatafind": "https://gwdatafind.readthedocs.io/en/stable/",
+    "gwosc": "https://gwosc.readthedocs.io/en/stable/",
+    "h5py": "https://docs.h5py.org/en/latest/",
+    "ligo.skymap": "https://lscsoft.docs.ligo.org/ligo.skymap/",
+    "igwn-segments": "https://igwn-segments.readthedocs.io/en/stable/",
+    "lscsoft-glue": "https://lscsoft.docs.ligo.org/glue/",
+    "matplotlib": "https://matplotlib.org/",
+    "numpy": "https://numpy.org/doc/stable/",
+    "pycbc": "https://pycbc.org/pycbc/latest/html/",
+    "python": "https://docs.python.org/3/",
+    "uproot": "https://uproot.readthedocs.io/en/stable/",
+    "scipy": "https://docs.scipy.org/doc/scipy/reference/",
+}.items()}
 
 
 # -- linkcode
