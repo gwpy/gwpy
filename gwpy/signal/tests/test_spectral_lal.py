@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for LAL signal processing interface.
-"""
+"""Tests for LAL signal processing interface."""
 
 import pytest
 
@@ -27,8 +26,7 @@ lal = pytest.importorskip("lal")
 
 
 def test_generate_window():
-    """Test :func:`gwpy.signal.spectral.lal.generate_window`.
-    """
+    """Test :func:`gwpy.signal.spectral.lal.generate_window`."""
     # test default arguments
     w = fft_lal.generate_window(128)
     assert isinstance(w, lal.REAL8Window)
@@ -40,8 +38,7 @@ def test_generate_window():
 
 
 def test_generate_window_dtype():
-    """Test :func:`gwpy.signal.spectral.lal.generate_window` dtype argument.
-    """
+    """Test :func:`gwpy.signal.spectral.lal.generate_window` dtype argument."""
     w = fft_lal.generate_window(128, dtype="float32")
     assert isinstance(w, lal.REAL4Window)
     assert w.sum == 32.31817089602309
@@ -54,15 +51,13 @@ def test_generate_window_dtype():
     ((128,), {"dtype": int}, AttributeError),
 ])
 def test_generate_window_error(args, kwargs, exc_type):
-    """Test :func:`gwpy.signal.spectral.lal.generate_window` error handling.
-    """
+    """Test :func:`gwpy.signal.spectral.lal.generate_window` error handling."""
     with pytest.raises(exc_type):
         fft_lal.generate_window(*args, **kwargs)
 
 
 def test_generate_fft_plan():
-    """Test :func:`gwpy.signal.spectral.lal.generate_fft_plan`.
-    """
+    """Test :func:`gwpy.signal.spectral.lal.generate_fft_plan`."""
     # test default arguments
     plan = fft_lal.generate_fft_plan(128)
     assert isinstance(plan, lal.REAL8FFTPlan)
@@ -71,16 +66,14 @@ def test_generate_fft_plan():
 
 
 def test_generate_fft_plan_dtype():
-    """Test :func:`gwpy.signal.spectral.lal.generate_fft_plan` dtype.
-    """
+    """Test :func:`gwpy.signal.spectral.lal.generate_fft_plan` dtype."""
     # test dtype works
     plan = fft_lal.generate_fft_plan(128, dtype="float32")
     assert isinstance(plan, lal.REAL4FFTPlan)
 
 
 def test_generate_fft_plan_forward_backward():
-    """Test :func:`gwpy.signal.spectral.lal.generate_fft_plan` forward.
-    """
+    """Test :func:`gwpy.signal.spectral.lal.generate_fft_plan` forward."""
     # test forward/backward works
     plan = fft_lal.generate_fft_plan(128)
     rvrs = fft_lal.generate_fft_plan(128, forward=False)
@@ -89,16 +82,14 @@ def test_generate_fft_plan_forward_backward():
 
 
 def test_generate_fft_plan_error():
-    """Test :func:`gwpy.signal.spectral.lal.generate_fft_plan` error handling.
-    """
+    """Test :func:`gwpy.signal.spectral.lal.generate_fft_plan` error handling."""
     # test errors
     with pytest.raises(AttributeError):
         fft_lal.generate_fft_plan(128, dtype=int)
 
 
 def test_welch(noisy_sinusoid):
-    """Test :func:`gwpy.signal.spectral.lal.welch`.
-    """
+    """Test :func:`gwpy.signal.spectral.lal.welch`."""
     psd = fft_lal.welch(noisy_sinusoid, 4096, noverlap=2048)
     # assert PSD peaks at 500 Hz (as designed)
     assert psd.max() == psd.value_at(500.)
@@ -108,16 +99,14 @@ def test_welch(noisy_sinusoid):
 
 
 def test_welch_warning(noisy_sinusoid):
-    """Test :func:`gwpy.signal.spectral.lal.welch` warnings.
-    """
+    """Test :func:`gwpy.signal.spectral.lal.welch` warnings."""
     # check warning with hanging data
     with pytest.warns(UserWarning):
         fft_lal.welch(noisy_sinusoid, 1000)
 
 
 def test_median(corrupt_noisy_sinusoid):
-    """Test :func:`gwpy.signal.spectral.lal.median`.
-    """
+    """Test :func:`gwpy.signal.spectral.lal.median`."""
     psd = fft_lal.median(corrupt_noisy_sinusoid, 4096, noverlap=2048)
     assert psd.max() == psd.value_at(500.)
     assert psd.median() < fft_lal.welch(
@@ -128,8 +117,7 @@ def test_median(corrupt_noisy_sinusoid):
 
 
 def test_median_mean(corrupt_noisy_sinusoid):
-    """Test :func:`gwpy.signal.spectral.lal.median_mean`.
-    """
+    """Test :func:`gwpy.signal.spectral.lal.median_mean`."""
     psd = fft_lal.median_mean(corrupt_noisy_sinusoid, 8192, noverlap=4096)
     assert psd.max() == psd.value_at(500.)
     assert psd.median() < fft_lal.welch(
@@ -140,8 +128,7 @@ def test_median_mean(corrupt_noisy_sinusoid):
 
 
 def test_median_mean_error(corrupt_noisy_sinusoid):
-    """Test :func:`gwpy.signal.spectral.lal.median_mean` error handling.
-    """
+    """Test :func:`gwpy.signal.spectral.lal.median_mean` error handling."""
     # check failure with single segment
     with pytest.raises(ValueError):
         fft_lal.median_mean(

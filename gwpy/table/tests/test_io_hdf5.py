@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Test of `Table.read` and `Table.write` with ``format='hdf5'``.
-"""
+"""Test of `Table.read` and `Table.write` with ``format='hdf5'``."""
 
 import pytest
 
@@ -32,8 +31,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 @pytest.mark.parametrize("table_class", TABLE_CLASSES[1:])
 def test_read_write_hdf5(table_class, tmp_path):
-    """Test `EventTable.read` and `EventTable.write` with ``format='hdf5'``.
-    """
+    """Test `EventTable.read` and `EventTable.write` with ``format='hdf5'``."""
     table = random_table(
         names=["time", "frequency", "snr"],
         table_class=table_class,

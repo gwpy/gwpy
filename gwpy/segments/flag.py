@@ -80,7 +80,7 @@ re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
 # -- utilities ----------------------------------------------------------------
 
 def _parse_query_segments(args, func):
-    """Parse *args for query_dqsegdb() or query_segdb()
+    """Parse *args for query_dqsegdb() or query_segdb().
 
     Returns a SegmentList in all cases
     """
@@ -140,8 +140,7 @@ class DataQualityFlag(object):
 
     def __init__(self, name=None, active=None, known=None, label=None,
                  category=None, description=None, isgood=True, padding=None):
-        """Define a new DataQualityFlag.
-        """
+        """Define a new DataQualityFlag."""
         self.name = name
         self.known = known
         self.active = active
@@ -308,8 +307,7 @@ class DataQualityFlag(object):
 
     @property
     def padding(self):
-        """[start, end) padding for this flag's active segments.
-        """
+        """[start, end) padding for this flag's active segments."""
         return self._padding
 
     @padding.setter
@@ -326,8 +324,7 @@ class DataQualityFlag(object):
 
     @property
     def texname(self):
-        """Name of this flag in LaTeX printable format.
-        """
+        """Name of this flag in LaTeX printable format."""
         try:
             return self.name.replace("_", r"\_")
         except AttributeError:
@@ -529,7 +526,7 @@ class DataQualityFlag(object):
 
     @classmethod
     def from_veto_def(cls, veto):
-        """Define a `DataQualityFlag` from a `VetoDef`
+        """Define a `DataQualityFlag` from a `VetoDef`.
 
         Parameters
         ----------
@@ -629,7 +626,7 @@ class DataQualityFlag(object):
         return self.active
 
     def pad(self, *args, **kwargs):
-        """Apply a padding to each segment in this `DataQualityFlag`
+        """Apply a padding to each segment in this `DataQualityFlag`.
 
         This method either takes no arguments, in which case the value of
         the :attr:`~DataQualityFlag.padding` attribute will be used,
@@ -862,38 +859,32 @@ class DataQualityFlag(object):
         return self.ifo, self.tag, self.version
 
     def __and__(self, other):
-        """Find the intersection of this one and ``other``.
-        """
+        """Find the intersection of this one and ``other``."""
         return self.copy().__iand__(other)
 
     def __iand__(self, other):
-        """Intersect this flag with ``other`` in-place.
-        """
+        """Intersect this flag with ``other`` in-place."""
         self.known &= other.known
         self.active &= other.active
         return self
 
     def __sub__(self, other):
-        """Find the difference between this flag and another.
-        """
+        """Find the difference between this flag and another."""
         return self.copy().__isub__(other)
 
     def __isub__(self, other):
-        """Subtract the ``other`` `DataQualityFlag` from this one in-place.
-        """
+        """Subtract the ``other`` `DataQualityFlag` from this one in-place."""
         self.known &= other.known
         self.active -= other.active
         self.active &= self.known
         return self
 
     def __or__(self, other):
-        """Find the union of this flag and ``other``.
-        """
+        """Find the union of this flag and ``other``."""
         return self.copy().__ior__(other)
 
     def __ior__(self, other):
-        """Add the ``other`` `DataQualityFlag` to this one in-place.
-        """
+        """Add the ``other`` `DataQualityFlag` to this one in-place."""
         self.known |= other.known
         self.active |= other.active
         return self
@@ -902,13 +893,11 @@ class DataQualityFlag(object):
     __iadd__ = __ior__
 
     def __xor__(self, other):
-        """Find the exclusive OR of this one and ``other``.
-        """
+        """Find the exclusive OR of this one and ``other``."""
         return self.copy().__ixor__(other)
 
     def __ixor__(self, other):
-        """Exclusive OR this flag with ``other`` in-place.
-        """
+        """Exclusive OR this flag with ``other`` in-place."""
         self.known &= other.known
         self.active ^= other.active
         return self
@@ -1114,7 +1103,7 @@ class DataQualityDict(OrderedDict):
     def from_ligolw_tables(cls, segmentdeftable, segmentsumtable,
                            segmenttable, names=None, gpstype=LIGOTimeGPS,
                            on_missing="error"):
-        """Build a `DataQualityDict` from a set of LIGO_LW segment tables
+        """Build a `DataQualityDict` from a set of LIGO_LW segment tables.
 
         Parameters
         ----------
@@ -1206,7 +1195,7 @@ class DataQualityDict(OrderedDict):
         return out
 
     def to_ligolw_tables(self, **attrs):
-        """Convert this `DataQualityDict` into a trio of LIGO_LW segment tables
+        """Convert this `DataQualityDict` into a trio of LIGO_LW segment tables.
 
         Parameters
         ----------
@@ -1473,7 +1462,7 @@ class DataQualityDict(OrderedDict):
         return new
 
     def union(self):
-        """Return the union of all flags in this dict
+        """Return the union of all flags in this dict.
 
         Returns
         -------
@@ -1486,7 +1475,7 @@ class DataQualityDict(OrderedDict):
         return usegs
 
     def intersection(self):
-        """Return the intersection of all flags in this dict
+        """Return the intersection of all flags in this dict.
 
         Returns
         -------

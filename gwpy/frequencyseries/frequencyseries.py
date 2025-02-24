@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Representation of a frequency series
-"""
+"""Representation of a frequency series."""
 
 import warnings
 
@@ -37,7 +36,7 @@ __all__ = ["FrequencySeries"]
 
 
 class FrequencySeries(Series):
-    """A data array holding some metadata to represent a frequency series
+    """A data array holding some metadata to represent a frequency series.
 
     Parameters
     ----------
@@ -93,8 +92,7 @@ class FrequencySeries(Series):
 
     def __new__(cls, data, unit=None, f0=None, df=None, frequencies=None,
                 name=None, epoch=None, channel=None, **kwargs):
-        """Generate a new FrequencySeries.
-        """
+        """Generate a new FrequencySeries."""
         if f0 is not None:
             kwargs["x0"] = f0
         if df is not None:
@@ -189,7 +187,7 @@ class FrequencySeries(Series):
         )
 
     def zpk(self, zeros, poles, gain, analog=True):
-        """Filter this `FrequencySeries` by applying a zero-pole-gain filter
+        """Filter this `FrequencySeries` by applying a zero-pole-gain filter.
 
         Parameters
         ----------
@@ -361,7 +359,7 @@ class FrequencySeries(Series):
     @classmethod
     def from_pycbc(cls, fs, copy=True):
         """Convert a `pycbc.types.frequencyseries.FrequencySeries` into
-        a `FrequencySeries`
+        a `FrequencySeries`.
 
         Parameters
         ----------
@@ -381,7 +379,7 @@ class FrequencySeries(Series):
 
     def to_pycbc(self, copy=True):
         """Convert this `FrequencySeries` into a
-        `~pycbc.types.frequencyseries.FrequencySeries`
+        `~pycbc.types.frequencyseries.FrequencySeries`.
 
         Parameters
         ----------

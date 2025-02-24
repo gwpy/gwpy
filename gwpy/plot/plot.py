@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Extension of the basic matplotlib Figure for GWpy
-"""
+"""Extension of the basic matplotlib Figure for GWpy."""
 
 import itertools
 import importlib
@@ -55,8 +54,7 @@ iterable_types = (list, tuple, KeysView, ValuesView,)
 
 
 def interactive_backend():
-    """Returns `True` if the current backend is interactive
-    """
+    """Returns `True` if the current backend is interactive."""
     try:
         interactive_bk = backends.backend_registry.list_builtin(
             backends.BackendFilter.INTERACTIVE,
@@ -67,7 +65,7 @@ def interactive_backend():
 
 
 def get_backend_mod(name=None):
-    """Returns the imported module for the given backend name
+    """Returns the imported module for the given backend name.
 
     Parameters
     ----------
@@ -95,7 +93,7 @@ def get_backend_mod(name=None):
 
 
 class Plot(figure.Figure):
-    """An extension of the core matplotlib `~matplotlib.figure.Figure`
+    """An extension of the core matplotlib `~matplotlib.figure.Figure`.
 
     The `Plot` provides a number of methods to simplify generating
     figures from GWpy data objects, and modifying them on-the-fly in
@@ -154,8 +152,7 @@ class Plot(figure.Figure):
     def _init_axes(self, data, method="plot",
                    xscale=None, sharex=False, sharey=False,
                    geometry=None, separate=None, **kwargs):
-        """Populate this figure with data, creating `Axes` as necessary
-        """
+        """Populate this figure with data, creating `Axes` as necessary."""
         if isinstance(sharex, bool):
             sharex = "all" if sharex else "none"
         if isinstance(sharey, bool):
@@ -249,8 +246,7 @@ class Plot(figure.Figure):
     # -- Plot methods ---------------------------
 
     def refresh(self):
-        """Refresh the current figure
-        """
+        """Refresh the current figure."""
         for cbar in self.colorbars:
             cbar.draw_all()
         self.canvas.draw()
@@ -312,8 +308,7 @@ class Plot(figure.Figure):
         self.savefig(*args, **kwargs)
 
     def close(self):
-        """Close the plot and release its memory.
-        """
+        """Close the plot and release its memory."""
         from matplotlib.pyplot import close
         for ax in self.axes[::-1]:
             # avoid matplotlib/matplotlib#9970
@@ -327,7 +322,7 @@ class Plot(figure.Figure):
     # -- axes manipulation ----------------------
 
     def get_axes(self, projection=None):
-        """Find all `Axes`, optionally matching the given projection
+        """Find all `Axes`, optionally matching the given projection.
 
         Parameters
         ----------
@@ -561,7 +556,7 @@ class Plot(figure.Figure):
 # -- utilities ----------------------------------------------------------------
 
 def _group_axes_data(inputs, separate=None, flat=False):
-    """Determine the number of axes from the input args to this `Plot`
+    """Determine the number of axes from the input args to this `Plot`.
 
     Parameters
     ----------

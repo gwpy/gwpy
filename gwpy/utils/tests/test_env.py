@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.utils.env`
-"""
+"""Tests for :mod:`gwpy.utils.env`."""
 
 from unittest import mock
 
@@ -55,8 +54,7 @@ BOOL_ENV.update(BOOL_FALSE)
     + [(k, False) for k in sorted(BOOL_FALSE)],
 )
 def test_bool_env(env, result):
-    """Test :meth:`gwpy.utils.env.bool_env` _without_ the `default` keyword
-    """
+    """Test :meth:`gwpy.utils.env.bool_env` _without_ the `default` keyword."""
     assert utils_env.bool_env(env) is result
 
 
@@ -66,6 +64,5 @@ def test_bool_env(env, result):
     ("TEST_MISSING", True, True),
 ])
 def test_bool_env_default(env, default, result):
-    """Test :meth:`gwpy.utils.env.bool_env` _with_ the `default` keyword
-    """
+    """Test :meth:`gwpy.utils.env.bool_env` _with_ the `default` keyword."""
     assert utils_env.bool_env(env, default=default) is result

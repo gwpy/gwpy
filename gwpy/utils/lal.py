@@ -141,7 +141,7 @@ def find_typed_function(
     suffix: str,
     module: ModuleType = lal,
 ) -> Callable:
-    """Returns the lal method for the correct type
+    """Returns the lal method for the correct type.
 
     Parameters
     ----------
@@ -337,7 +337,7 @@ def from_lal_unit(
 def to_lal_ligotimegps(
     gps: LIGOTimeGPS | float | str,
 ) -> lal.LIGOTimeGPS:
-    """Convert the given GPS time to a `lal.LIGOTimeGPS` object
+    """Convert the given GPS time to a `lal.LIGOTimeGPS` object.
 
     Parameters
     ----------

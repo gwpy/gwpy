@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilities for multi-processing.
-"""
+"""Utilities for multi-processing."""
 
 from collections.abc import Callable
 from multiprocessing import (
@@ -35,7 +34,7 @@ def _process_in_out_queues(
     q_in: Queue,
     q_out: Queue,
 ) -> None:
-    """Iterate through a Queue, call, ``func`, and Queue the result
+    """Iterate through a Queue, call, ``func`, and Queue the result.
 
     Parameters
     ----------
@@ -76,7 +75,7 @@ def multiprocess_with_queues(
     verbose: bool = False,
     **progress_kw,
 ) -> list[Any]:
-    """Map a function over a list of inputs using multiprocess
+    """Map a function over a list of inputs using multiprocess.
 
     This essentially duplicates `multiprocess.map` but allows for
     arbitrary functions (that aren't necessarily importable)

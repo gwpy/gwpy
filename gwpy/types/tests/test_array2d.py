@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.types.array2d`
-"""
+"""Unit tests for :mod:`gwpy.types.array2d`."""
 
 import numpy
 import pytest
@@ -215,8 +214,7 @@ class TestArray2D(_TestSeries):
         utils.assert_array_equal(b.yindex, a.yindex)
 
     def test_two_index_arrays(self):
-        """Test that subsetting with two index arrays works correctly.
-        """
+        """Test that subsetting with two index arrays works correctly."""
         # create an array with indices
         rawa = numpy.arange(12).reshape((4, 3))
         a = Array2D(rawa)
@@ -226,16 +224,14 @@ class TestArray2D(_TestSeries):
         assert_array_equal(a[ind1, ind2].value, exp)
 
     def test_is_compatible_yindex(self):
-        """Check that irregular arrays are compatible if their yindexes match
-        """
+        """Check that irregular arrays are compatible if their yindexes match."""
         y = numpy.logspace(0, 2, num=self.data.shape[1])
         a = self.create(yindex=y)
         b = self.create(yindex=y)
         assert a.is_compatible(b)
 
     def test_is_compatible_error_yindex(self, array):
-        """Check that `Array2D.is_compatible` errors with mismatching indexes
-        """
+        """Check that `Array2D.is_compatible` errors with mismatching indexes."""
         y = numpy.logspace(0, 2, num=self.data.shape[1])
         other = self.create(yindex=y)
         with pytest.raises(ValueError, match="indexes do not match"):

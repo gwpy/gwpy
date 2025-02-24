@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""User-interface to FFT routines for GWpy
+"""User-interface to FFT routines for GWpy.
 
 This module provides the methods that eventually get called by TimeSeries.xxx,
 so isn't really for direct user interaction.
@@ -230,7 +230,7 @@ def _normalize_window(
     library: str | None,
     dtype: type,
 ):
-    """Normalise a window specification for a PSD calculation
+    """Normalise a window specification for a PSD calculation.
 
     Parameters
     ----------
@@ -266,12 +266,10 @@ def _normalize_window(
 
 
 def set_fft_params(func: Callable) -> Callable:
-    """Decorate a method to automatically convert quantities to samples.
-    """
+    """Decorate a method to automatically convert quantities to samples."""
     @wraps(func)
     def wrapped_func(series, method_func, *args, **kwargs):
-        """Wrap function to normalize FFT params before execution
-        """
+        """Wrap function to normalize FFT params before execution."""
         if isinstance(series, tuple):
             data = series[0]
         else:
@@ -294,7 +292,7 @@ def psd(
     *args,
     **kwargs,
 ) -> FrequencySeries:
-    """Generate a PSD using a method function
+    """Generate a PSD using a method function.
 
     All arguments are presumed to be given in physical units
 
@@ -348,8 +346,7 @@ def _psdn(
 
 
 def _psd(bundle) -> FrequencySeries:
-    """Calculate a single PSD for a spectrogram.
-    """
+    """Calculate a single PSD for a spectrogram."""
     series, method_func, args, kwargs = bundle
     psd_ = _psdn(series, method_func, *args, **kwargs)
     del psd_.epoch  # fixes Segmentation fault (no idea why it faults)
@@ -419,8 +416,7 @@ def average_spectrogram(
 
 
 def _periodogram(bundle: tuple[NDArray, dict[str, Any]]) -> NDArray:
-    """Calculate a single periodogram for a spectrogram.
-    """
+    """Calculate a single periodogram for a spectrogram."""
     series, kwargs = bundle
     return scipy_periodogram(series, **kwargs)[1]
 
@@ -515,8 +511,7 @@ def _chunk_timeseries(
     nstride: int,
     noverlap: int,
 ):
-    """Split a `Series` into overlapping chunks.
-    """
+    """Split a `Series` into overlapping chunks."""
     # define chunks
     x = 0
     step = nstride - int(noverlap // 2.)  # the first step is smaller

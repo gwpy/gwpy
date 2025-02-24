@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read/write series in LIGO_LW XML.
-"""
+"""Read/write series in LIGO_LW XML."""
 
 from __future__ import annotations
 
@@ -42,8 +41,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def series_contenthandler() -> ligolw.LIGOLwContentHandler:
-    """Build a `~ligo.lw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``.
-    """
+    """Build a `~ligo.lw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``."""
     from ligo.lw import (
         ligolw,
         array as ligolw_array,
@@ -53,16 +51,14 @@ def series_contenthandler() -> ligolw.LIGOLwContentHandler:
     @ligolw_array.use_in
     @ligolw_param.use_in
     class ArrayContentHandler(ligolw.LIGOLWContentHandler):
-        """`~ligo.lw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``.
-        """
+        """`~ligo.lw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``."""
         pass
 
     return ArrayContentHandler
 
 
 def _match_name(elem: ligolw.Element, name: str) -> bool:
-    """Return `True` if the ``elem``'s Name matches ``name``.
-    """
+    """Return `True` if the ``elem``'s Name matches ``name``."""
     try:
         return elem.Name == name
     except AttributeError:  # no name
@@ -70,8 +66,7 @@ def _match_name(elem: ligolw.Element, name: str) -> bool:
 
 
 def _get_time(time: ligolw.Element) -> LIGOTimeGPS:
-    """Return the Time element of a ``<LIGO_LW>``.
-    """
+    """Return the Time element of a ``<LIGO_LW>``."""
     from ligo.lw.ligolw import Time
     if not isinstance(time, Time):
         t, = time.getElementsByTagName(Time.tagName)
@@ -111,8 +106,7 @@ def _match_array(
     )
 
     def _is_match(arr: ligolw.Array) -> bool:
-        """Work out whether this `<Array>` element matches the request
-        """
+        """Work out whether this `<Array>` element matches the request."""
         parent = arr.parentNode
         if (
             (name is not None and not _match_name(arr, name))
@@ -128,7 +122,7 @@ def _match_array(
         return True
 
     def _get_filter_keys(arrays, **given):
-        """Returns the set of keyword arguments that can be used to filter
+        """Returns the set of keyword arguments that can be used to filter.
 
         This is just to format a helpful error message for users to show them
         what params they could use to select the right array.

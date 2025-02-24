@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.signal.spectral._ui`.
-"""
+"""Tests for :mod:`gwpy.signal.spectral._ui`."""
 
 import numpy
 import pytest
@@ -41,14 +40,12 @@ from ..spectral import _ui as fft_ui
     (4 * units.second, 16.384 * units.kiloHertz, 65536),
 ])
 def test_seconds_to_samples(secs, rate, result):
-    """Test :func:`gwpy.signal.spectral.ui.seconds_to_samples`.
-    """
+    """Test :func:`gwpy.signal.spectral.ui.seconds_to_samples`."""
     assert fft_ui.seconds_to_samples(secs, rate) == result
 
 
 def test_normalize_fft_params():
-    """Test :func:`gwpy.signal.spectral.ui.normalize_fft_params`.
-    """
+    """Test :func:`gwpy.signal.spectral.ui.normalize_fft_params`."""
     assert fft_ui.normalize_fft_params(
         TimeSeries(numpy.zeros(1024), sample_rate=256),
     ) == {
@@ -97,8 +94,7 @@ def test_normalize_fft_params_window_lal(win):
 
 
 def test_chunk_timeseries():
-    """Test :func:`gwpy.signal.spectral.ui._chunk_timeseries`.
-    """
+    """Test :func:`gwpy.signal.spectral.ui._chunk_timeseries`."""
     a = TimeSeries(numpy.arange(400))
     chunks = list(fft_ui._chunk_timeseries(a, 100, 50))
     for i, (idxa, idxb) in enumerate([

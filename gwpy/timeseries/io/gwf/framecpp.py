@@ -51,8 +51,7 @@ FRERR_NO_CHANNEL_OF_TYPE = re.compile(
 
 
 class _Skip(ValueError):
-    """Error denoting that the contents of a given structure aren't required
-    """
+    """Error denoting that the contents of a given structure aren't required."""
     pass
 
 
@@ -61,7 +60,7 @@ class _Skip(ValueError):
 def read(source, channels, start=None, end=None, scaled=None, type=None,
          series_class=TimeSeries):
     # pylint: disable=redefined-builtin
-    """Read a dict of series from one or more GWF files
+    """Read a dict of series from one or more GWF files.
 
     Parameters
     ----------
@@ -119,7 +118,7 @@ def read(source, channels, start=None, end=None, scaled=None, type=None,
 
 def read_gwf(filename, channels, start=None, end=None, scaled=None,
              ctype=None, series_class=TimeSeries):
-    """Read a dict of series data from a single GWF file
+    """Read a dict of series data from a single GWF file.
 
     Parameters
     ----------
@@ -220,15 +219,14 @@ def read_gwf(filename, channels, start=None, end=None, scaled=None,
 
 def _read_channel(stream, num, name, ctype, epoch, start, end,
                   scaled=True, series_class=TimeSeries):
-    """Read a channel from a specific frame in a stream
-    """
+    """Read a channel from a specific frame in a stream."""
     data = _get_frdata(stream, num, name, ctype=ctype)
     return read_frdata(data, epoch, start, end,
                        scaled=scaled, series_class=series_class)
 
 
 def _get_frdata(stream, num, name, ctype=None):
-    """Brute force-ish method to return the FrData structure for a channel
+    """Brute force-ish method to return the FrData structure for a channel.
 
     This saves on pulling the channel type from the TOC
     """
@@ -259,7 +257,7 @@ def _need_frame(frame, start, end):
 
 def read_frdata(frdata, epoch, start, end, scaled=True,
                 series_class=TimeSeries):
-    """Read a series from an `FrData` structure
+    """Read a series from an `FrData` structure.
 
     Parameters
     ----------
@@ -352,7 +350,7 @@ def read_frdata(frdata, epoch, start, end, scaled=True,
 
 
 def read_frvect(vect, epoch, start, end, name=None, series_class=TimeSeries):
-    """Read an array from an `FrVect` structure
+    """Read an array from an `FrVect` structure.
 
     Parameters
     ----------
@@ -454,7 +452,7 @@ def write(tsdict, outfile,
           type=None,
           name="gwpy", run=0,
           compression="GZIP", compression_level=None):
-    """Write data to a GWF file using the frameCPP API
+    """Write data to a GWF file using the frameCPP API.
 
     Parameters
     ----------
@@ -543,7 +541,7 @@ def write(tsdict, outfile,
 
 def _append_to_frame(frame, timeseries, type="proc", **kwargs):
     # pylint: disable=redefined-builtin
-    """Append data from a `TimeSeries` to a `~frameCPP.FrameH`
+    """Append data from a `TimeSeries` to a `~frameCPP.FrameH`.
 
     Parameters
     ----------

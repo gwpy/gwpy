@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.table.io.hacr`
-"""
+"""Tests for :mod:`gwpy.table.io.hacr`."""
 
 from unittest import mock
 
@@ -41,8 +40,7 @@ requires_db_libraries = pytest.mark.requires(
 
 @pytest.fixture(scope="module")
 def hacr_table():
-    """Create a table of HACR-like data.
-    """
+    """Create a table of HACR-like data."""
     names, types = zip(*{  # correct as of Jan 2025 (DMM)
         "refId": "int64",
         "freq_central": "float64",
@@ -88,8 +86,7 @@ def hacr_table():
 
 @pytest.fixture(scope="module")
 def hacr_process_table():
-    """Create a HACR process table.
-    """
+    """Create a HACR process table."""
     return Table(
         rows=[
             (0, "X1:HACR-1", 0, 1, "chacr"),
@@ -117,8 +114,7 @@ def hacr_process_table():
 
 @pytest.fixture(scope="module")
 def hacr_sqlite(hacr_table, hacr_process_table, tmp_path_factory):
-    """Create a HACR database in SQLite.
-    """
+    """Create a HACR database in SQLite."""
     from sqlalchemy import create_engine
 
     db = tmp_path_factory.mktemp("hacr") / "hacr.sqlite"
@@ -133,8 +129,7 @@ def hacr_sqlite(hacr_table, hacr_process_table, tmp_path_factory):
 
 @pytest.fixture(scope="module")
 def hacr_engine(hacr_sqlite):
-    """Create an `sqlalchemy.Engine` connected to the HACR SQLite database.
-    """
+    """Create an `sqlalchemy.Engine` connected to the HACR SQLite database."""
     from sqlalchemy import create_engine
 
     return create_engine(hacr_sqlite)
@@ -145,15 +140,13 @@ def hacr_engine(hacr_sqlite):
     ("Jan 1 2024", "Mar 1 2024", ["geo202401", "geo202402"]),
 ))
 def test_get_database_names(start, end, result):
-    """Test `get_database_names`.
-    """
+    """Test `get_database_names`."""
     assert io_hacr.get_database_names(start, end) == result
 
 
 @requires_db_libraries
 def test_get_hacr_channels(hacr_engine):
-    """Test `get_hacr_channels`.
-    """
+    """Test `get_hacr_channels`."""
     with mock.patch(
         "gwpy.table.io.hacr.create_engine",
         lambda *args, **kwargs: hacr_engine,
@@ -166,8 +159,7 @@ def test_get_hacr_channels(hacr_engine):
 
 @requires_db_libraries
 def test_fetch_hacr(hacr_table, hacr_engine):
-    """Test `EventTable.fetch(source='hacr')` with basic options.
-    """
+    """Test `EventTable.fetch(source='hacr')` with basic options."""
     t2 = EventTable.fetch(
         source="hacr",
         engine=hacr_engine,
@@ -180,8 +172,7 @@ def test_fetch_hacr(hacr_table, hacr_engine):
 
 @requires_db_libraries
 def test_fetch_hacr_columns_where(hacr_table, hacr_engine):
-    """Test that `EventTable.fetch(source='hacr')` works with complex queries.
-    """
+    """Test that `EventTable.fetch(source='hacr')` works with complex queries."""
     with mock.patch(
         "gwpy.table.io.hacr.create_engine",
         lambda *args, **kwargs: hacr_engine,

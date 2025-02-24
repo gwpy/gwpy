@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.utils.enum`
-"""
+"""Tests for :mod:`gwpy.utils.enum`."""
 
 import numpy
 import pytest
@@ -33,13 +32,11 @@ class TestNumpyTypeEnum:
     TEST_CLASS = _MyEnum
 
     def test_dtype(self):
-        """Test `NumpyTypeEnum.dtype` property
-        """
+        """Test `NumpyTypeEnum.dtype` property."""
         assert self.TEST_CLASS.INT16.dtype is numpy.dtype("int16")
 
     def test_type(self):
-        """Test `NumpyTypeEnum.type` property
-        """
+        """Test `NumpyTypeEnum.type` property."""
         assert self.TEST_CLASS.INT16.type is numpy.int16
 
     @pytest.mark.parametrize("arg", [
@@ -49,12 +46,11 @@ class TestNumpyTypeEnum:
         numpy.dtype("int16"),
     ])
     def test_find(self, arg):
-        """Test :meth:`NumpyTypeEnum.find` method
-        """
+        """Test :meth:`NumpyTypeEnum.find` method."""
         assert self.TEST_CLASS.find(arg) is self.TEST_CLASS.INT16
 
     def test_find_value(self):
-        """Test :meth:`NumpyTypeEnum.find` method with value
+        """Test :meth:`NumpyTypeEnum.find` method with value.
 
         This is a round-about way of testing that .find() can take in an
         the enum value (integer) for TEST_CLASS, and return just the enum
@@ -64,8 +60,7 @@ class TestNumpyTypeEnum:
         ) is self.TEST_CLASS.INT16
 
     def test_find_errors(self):
-        """Test :meth:`NumpyTypeEnum.find` method error handling
-        """
+        """Test :meth:`NumpyTypeEnum.find` method error handling."""
         with pytest.raises(
             ValueError,
             match=f"^'blah' is not a valid {self.TEST_CLASS.__name__}$",

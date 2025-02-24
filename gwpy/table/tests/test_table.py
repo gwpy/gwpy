@@ -89,26 +89,23 @@ class TestEventTable(TestTable):
     TABLE = EventTable
 
     def test_get_time_column(self, table):
-        """Check that `_get_time_colum` works on name
-        """
+        """Check that `_get_time_colum` works on name."""
         assert table._get_time_column() == "time"
 
     def test_get_time_column_case(self, table):
-        """Check that `_get_time_colum` works on name case-insensitively
-        """
+        """Check that `_get_time_colum` works on name case-insensitively."""
         table.rename_column("time", "TiMe")
         assert table._get_time_column() == "TiMe"
 
     def test_get_time_column_gps_type(self):
-        """Check that `_get_time_column` works on dtype
-        """
+        """Check that `_get_time_column` works on dtype."""
         # check that single GPS column can be identified
         t = self.create(1, ("a", "b"), dtypes=(float, LIGOTimeGPS))
         assert t._get_time_column() == "b"
 
     def test_get_time_column_error_no_match(self, table):
         """Check that `_get_time_column` raises the right exception
-        when no matches are found
+        when no matches are found.
         """
         t = self.create(1, ("a",))
         with pytest.raises(
@@ -131,15 +128,13 @@ class TestEventTable(TestTable):
             t._get_time_column()
 
     def test_get_time_column_error_empty(self):
-        """Check that `_get_time_column` errors properly on an empty table
-        """
+        """Check that `_get_time_column` errors properly on an empty table."""
         t = self.create(0, ("a",))
         with pytest.raises(ValueError):
             t._get_time_column()
 
     def test_filter(self, table):
-        """Test that `EventTable.filter` works with a simple filter statement
-        """
+        """Test that `EventTable.filter` works with a simple filter statement."""
         # check simple filter
         lowf = table.filter("frequency < 100")
         assert isinstance(lowf, type(table))
@@ -147,13 +142,11 @@ class TestEventTable(TestTable):
         assert lowf["frequency"].max() == pytest.approx(96.5309156606)
 
     def test_filter_empty(self, table):
-        """Test that `EventTable.filter` works with an empty table
-        """
+        """Test that `EventTable.filter` works with an empty table."""
         assert len(table.filter("snr>5", "snr<=5")) == 0
 
     def test_filter_chaining(self, table):
-        """Test that chaining filters works with `EventTable.filter`
-        """
+        """Test that chaining filters works with `EventTable.filter`."""
         loud = table.filter("snr > 100")
         lowf = table.filter("frequency < 100")
         lowfloud = table.filter("frequency < 100", "snr > 100")
@@ -164,8 +157,7 @@ class TestEventTable(TestTable):
         utils.assert_table_equal(brute, lowfloud)
 
     def test_filter_range(self, table):
-        """Test that `EventTable.filter` works with a range statement
-        """
+        """Test that `EventTable.filter` works with a range statement."""
         # check double-ended filter
         midf = table.filter("100 < frequency < 1000")
         utils.assert_table_equal(
@@ -174,8 +166,7 @@ class TestEventTable(TestTable):
         )
 
     def test_filter_function(self, table):
-        """Test that `EventTable.filter` works with a filter function
-        """
+        """Test that `EventTable.filter` works with a filter function."""
         def my_filter(column, threshold):
             return column < threshold
 
@@ -184,7 +175,7 @@ class TestEventTable(TestTable):
 
     def test_filter_function_multiple(self, table):
         """Test that `EventTable.filter` works with a filter function
-        that requires multiple columns
+        that requires multiple columns.
         """
         def my_filter(table, threshold):
             return table["snr"] * table["frequency"] > threshold
@@ -193,8 +184,7 @@ class TestEventTable(TestTable):
         assert len(filtered) == 64
 
     def test_filter_in_segmentlist(self, table):
-        """Test `EventTable.filter` with `in_segmentlist`
-        """
+        """Test `EventTable.filter` with `in_segmentlist`."""
         # check filtering on segments works
         segs = SegmentList([Segment(100, 200), Segment(400, 500)])
         inseg = table.filter(("time", filters.in_segmentlist, segs))
@@ -205,8 +195,7 @@ class TestEventTable(TestTable):
         utils.assert_table_equal(inseg, brute)
 
     def test_filter_in_segmentlist_empty(self, table):
-        """Test `EventTable.filter` with `in_segmentlist` and an empty table
-        """
+        """Test `EventTable.filter` with `in_segmentlist` and an empty table."""
         # check empty segmentlist is handled well
         utils.assert_table_equal(
             table.filter(("time", filters.in_segmentlist, SegmentList())),
@@ -214,8 +203,7 @@ class TestEventTable(TestTable):
         )
 
     def test_filter_not_in_segmentlist(self, table):
-        """Test `EventTable.filter` with `not_in_segmentlist`
-        """
+        """Test `EventTable.filter` with `not_in_segmentlist`."""
         segs = SegmentList([Segment(100, 200), Segment(400, 500)])
         notsegs = SegmentList([Segment(0, 1000)]) - segs
         inseg = table.filter(("time", filters.in_segmentlist, segs))
@@ -228,16 +216,14 @@ class TestEventTable(TestTable):
         )
 
     def test_event_rates(self, table):
-        """Test :meth:`gwpy.table.EventTable.event_rate`
-        """
+        """Test :meth:`gwpy.table.EventTable.event_rate`."""
         rate = table.event_rate(1)
         assert isinstance(rate, TimeSeries)
         assert rate.sample_rate == 1 * units.Hz
 
     @pytest.mark.requires("lal")
     def test_event_rates_gpsobject(self, table):
-        """Test that `EventTable.event_rate` can handle object dtypes
-        """
+        """Test that `EventTable.event_rate` can handle object dtypes."""
         rate = table.event_rate(1)
 
         from lal import LIGOTimeGPS as LalGps

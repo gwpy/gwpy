@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""The `Series` is a one-dimensional array with metadata
-"""
+"""The `Series` is a one-dimensional array with metadata."""
 
 from warnings import warn
 from math import floor
@@ -38,7 +37,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class Series(Array):
-    """A one-dimensional data series
+    """A one-dimensional data series.
 
     A `Series` is defined as an array of data indexed upon an axis, meaning
     each sample maps to a position upon the axis. By convention the X axis
@@ -168,7 +167,7 @@ class Series(Array):
     # -- series properties ----------------------
 
     def _update_index(self, axis, key, value):
-        """Update the current axis index based on a given key or value
+        """Update the current axis index based on a given key or value.
 
         This is an internal method designed to set the origin or step for
         an index, whilst updating existing Index arrays as appropriate
@@ -214,8 +213,7 @@ class Series(Array):
         return value
 
     def _set_index(self, key, index):
-        """Set a new index array for this series
-        """
+        """Set a new index array for this series."""
         axis = key[0]
 
         # if given None, delete the current index
@@ -266,7 +264,7 @@ class Series(Array):
     # x0
     @property
     def x0(self):
-        """X-axis coordinate of the first data point
+        """X-axis coordinate of the first data point.
 
         :type: `~astropy.units.Quantity` scalar
         """
@@ -293,7 +291,7 @@ class Series(Array):
     # dx
     @property
     def dx(self):
-        """X-axis sample separation
+        """X-axis sample separation.
 
         :type: `~astropy.units.Quantity` scalar
         """
@@ -325,7 +323,7 @@ class Series(Array):
     # xindex
     @property
     def xindex(self):
-        """Positions of the data on the x-axis
+        """Positions of the data on the x-axis.
 
         :type: `~astropy.units.Quantity` array
         """
@@ -349,7 +347,7 @@ class Series(Array):
     # xunit
     @property
     def xunit(self):
-        """Unit of x-axis index
+        """Unit of x-axis index.
 
         :type: `~astropy.units.Unit`
         """
@@ -372,7 +370,7 @@ class Series(Array):
 
     @property
     def xspan(self):
-        """X-axis [low, high) segment encompassed by these data
+        """X-axis [low, high) segment encompassed by these data.
 
         :type: `~gwpy.segments.Segment`
         """
@@ -386,7 +384,7 @@ class Series(Array):
     # -- series plotting ------------------------
 
     def plot(self, method="plot", **kwargs):
-        """Plot the data for this series
+        """Plot the data for this series.
 
         Returns
         -------
@@ -420,8 +418,7 @@ class Series(Array):
         return plot
 
     def step(self, **kwargs):
-        """Create a step plot of this series
-        """
+        """Create a step plot of this series."""
         where = kwargs.pop("where", "post")
         kwargs.setdefault(
             "drawstyle",
@@ -433,7 +430,7 @@ class Series(Array):
     # -- series methods -------------------------
 
     def shift(self, delta):
-        """Shift this `Series` forward on the X-axis by ``delta``
+        """Shift this `Series` forward on the X-axis by ``delta``.
 
         This modifies the series in-place.
 
@@ -458,7 +455,7 @@ class Series(Array):
         self.x0 = self.x0 + Quantity(delta, self.xunit)
 
     def value_at(self, x):
-        """Return the value of this `Series` at the given `xindex` value
+        """Return the value of this `Series` at the given `xindex` value.
 
         Parameters
         ----------
@@ -488,7 +485,7 @@ class Series(Array):
     copy.__doc__ = Array.copy.__doc__
 
     def zip(self):
-        """Zip the `xindex` and `value` arrays of this `Series`
+        """Zip the `xindex` and `value` arrays of this `Series`.
 
         Returns
         -------
@@ -600,7 +597,7 @@ class Series(Array):
             return 1
 
     def is_compatible(self, other):
-        """Check whether this series and other have compatible metadata
+        """Check whether this series and other have compatible metadata.
 
         This method tests that the `sample size <Series.dx>`, and the
         `~Series.unit` match.
@@ -620,7 +617,7 @@ class Series(Array):
         )
 
     def _compare_index(self, other, axis="x"):
-        """Compare index attributes/arrays between self and other
+        """Compare index attributes/arrays between self and other.
 
         Raises
         ------
@@ -654,8 +651,7 @@ class Series(Array):
                 )
 
     def _is_compatible_gwpy(self, other):
-        """Check whether this series and another series are compatible
-        """
+        """Check whether this series and another series are compatible."""
         self._compare_index(other, axis="x")
 
         # check units
@@ -671,8 +667,7 @@ class Series(Array):
         return True
 
     def _is_compatible_numpy(self, other):
-        """Check whether this series and a numpy.ndarray are compatible
-        """
+        """Check whether this series and a numpy.ndarray are compatible."""
         arr = numpy.asarray(other)
         if arr.ndim != self.ndim:
             raise ValueError("Dimensionality does not match")
@@ -974,7 +969,7 @@ class Series(Array):
         return self[idx0:idx1]
 
     def pad(self, pad_width, **kwargs):
-        """Pad this series to a new size
+        """Pad this series to a new size.
 
         Parameters
         ----------

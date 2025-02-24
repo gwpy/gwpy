@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Plotting utilities for segments
-"""
+"""Plotting utilities for segments."""
 
 from matplotlib.artist import allow_rasterization
 from matplotlib.colors import is_color_like
@@ -93,7 +92,7 @@ class SegmentAxes(Axes):
         )
 
     def plot(self, *args, **kwargs):
-        """Plot data onto these axes
+        """Plot data onto these axes.
 
         Parameters
         ----------
@@ -135,7 +134,7 @@ class SegmentAxes(Axes):
         return out
 
     def plot_dict(self, flags, label="key", known="x", **kwargs):
-        """Plot a `~gwpy.segments.DataQualityDict` onto these axes
+        """Plot a `~gwpy.segments.DataQualityDict` onto these axes.
 
         Parameters
         ----------
@@ -252,7 +251,7 @@ class SegmentAxes(Axes):
 
     def plot_segmentlist(self, segmentlist, y=None, height=.8, label=None,
                          collection=True, rasterized=None, **kwargs):
-        """Plot a `~gwpy.segments.SegmentList` onto these axes
+        """Plot a `~gwpy.segments.SegmentList` onto these axes.
 
         Parameters
         ----------
@@ -318,7 +317,7 @@ class SegmentAxes(Axes):
 
     def plot_segmentlistdict(self, segmentlistdict, y=None, dy=1, **kwargs):
         """Plot a `~gwpy.segments.SegmentListDict` onto
-        these axes
+        these axes.
 
         Parameters
         ----------
@@ -348,7 +347,7 @@ class SegmentAxes(Axes):
         return collections
 
     def get_next_y(self):
-        """Find the next y-axis value at which a segment list can be placed
+        """Find the next y-axis value at which a segment list can be placed.
 
         This method simply counts the number of independent segmentlists or
         flags that have been plotted onto these axes.
@@ -356,7 +355,7 @@ class SegmentAxes(Axes):
         return len(self.get_collections(ignore=False))
 
     def get_collections(self, ignore=None):
-        """Return the collections matching the given `_ignore` value
+        """Return the collections matching the given `_ignore` value.
 
         Parameters
         ----------
@@ -375,7 +374,7 @@ class SegmentAxes(Axes):
                 getattr(c, "_ignore", None) == ignore]
 
     def set_insetlabels(self, inset=None):
-        """Set the labels to be inset or not
+        """Set the labels to be inset or not.
 
         Parameters
         ----------
@@ -387,8 +386,7 @@ class SegmentAxes(Axes):
         self._insetlabels = not self._insetlabels if inset is None else inset
 
     def get_insetlabels(self):
-        """Returns the inset labels state
-        """
+        """Returns the inset labels state."""
         return self._insetlabels
 
     insetlabels = property(fget=get_insetlabels, fset=set_insetlabels,
@@ -431,8 +429,7 @@ register_projection(SegmentAxes)
 
 
 class SegmentFormatter(Formatter):
-    """Custom tick formatter for y-axis flag names
-    """
+    """Custom tick formatter for y-axis flag names."""
     def __call__(self, t, pos=None):
         # if segments have been plotted at this y-axis value, continue
         for coll in self.axis.axes.get_collections(ignore=False):
@@ -450,7 +447,7 @@ class SegmentFormatter(Formatter):
 
 class SegmentRectangle(Rectangle):
     def __init__(self, segment, y, height=.8, valign="center", **kwargs):
-        """Build a `~matplotlib.patches.Rectangle` from a segment
+        """Build a `~matplotlib.patches.Rectangle` from a segment.
 
         Parameters
         ----------

@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""The `Series` is a one-dimensional array with metadata
-"""
+"""The `Series` is a one-dimensional array with metadata."""
 
 from warnings import warn
 
@@ -36,7 +35,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class Array2D(Series):
-    """A two-dimensional array with metadata
+    """A two-dimensional array with metadata.
 
     Parameters
     ----------
@@ -110,8 +109,7 @@ class Array2D(Series):
     def __new__(cls, data, unit=None,
                 x0=None, dx=None, xindex=None, xunit=None,
                 y0=None, dy=None, yindex=None, yunit=None, **kwargs):
-        """Define a new `Array2D`
-        """
+        """Define a new `Array2D`."""
 
         # create new object
         new = super().__new__(cls, data, unit=unit, xindex=xindex,
@@ -188,7 +186,7 @@ class Array2D(Series):
     # y0
     @property
     def y0(self):
-        """Y-axis coordinate of the first data point
+        """Y-axis coordinate of the first data point.
 
         :type: `~astropy.units.Quantity` scalar
         """
@@ -215,7 +213,7 @@ class Array2D(Series):
     # dy
     @property
     def dy(self):
-        """Y-axis sample separation
+        """Y-axis sample separation.
 
         :type: `~astropy.units.Quantity` scalar
         """
@@ -247,7 +245,7 @@ class Array2D(Series):
 
     @property
     def yunit(self):
-        """Unit of Y-axis index
+        """Unit of Y-axis index.
 
         :type: `~astropy.units.Unit`
         """
@@ -262,7 +260,7 @@ class Array2D(Series):
     # yindex
     @property
     def yindex(self):
-        """Positions of the data on the y-axis
+        """Positions of the data on the y-axis.
 
         :type: `~astropy.units.Quantity` array
         """
@@ -285,7 +283,7 @@ class Array2D(Series):
 
     @property
     def yspan(self):
-        """Y-axis [low, high) segment encompassed by these data
+        """Y-axis [low, high) segment encompassed by these data.
 
         :type: `~gwpy.segments.Segment`
         """
@@ -320,7 +318,7 @@ class Array2D(Series):
         return super()._is_compatible_gwpy(other)
 
     def value_at(self, x, y):
-        """Return the value of this `Series` at the given `(x, y)` coordinates
+        """Return the value of this `Series` at the given `(x, y)` coordinates.
 
         Parameters
         ----------

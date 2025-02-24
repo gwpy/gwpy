@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Interface to the LIGO Channel Information System
-"""
+"""Interface to the LIGO Channel Information System."""
 
 import numpy
 
@@ -38,7 +37,7 @@ CIS_DATA_TYPE = {
 
 def query(name, kerberos=None, **kwargs):
     """Query the Channel Information System for details on the given
-    channel name
+    channel name.
 
     Parameters
     ----------
@@ -81,8 +80,7 @@ def query(name, kerberos=None, **kwargs):
 
 
 def _get(url, kerberos=None, idp="login.ligo.org", **kwargs):
-    """Perform a GET query against the CIS
-    """
+    """Perform a GET query against the CIS."""
     from ciecplib import get as get_cis
     response = get_cis(url, endpoint=idp, kerberos=kerberos, **kwargs)
     response.raise_for_status()

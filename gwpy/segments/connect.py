@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unified I/O read/write for Segment objects.
-"""
+"""Unified I/O read/write for Segment objects."""
 
 from __future__ import annotations
 
@@ -76,8 +75,7 @@ class SegmentListRead(UnifiedRead):
         **kwargs,
     ):
         def combiner(listofseglists: list[SegmentList]) -> SegmentList:
-            """Combine `SegmentList` from each file into a single object
-            """
+            """Combine `SegmentList` from each file into a single object."""
             out = self._cls(seg for seglist in listofseglists for seg in seglist)
             if coalesce:
                 return out.coalesce()
@@ -167,8 +165,7 @@ class DataQualityFlagRead(UnifiedRead):
             kwargs.setdefault("name", kwargs.pop("flag"))
 
         def combiner(flags: list[DataQualityFlag]) -> DataQualityFlag:
-            """Combine `DataQualityFlag` from each file into a single object.
-            """
+            """Combine `DataQualityFlag` from each file into a single object."""
             out = flags[0]
             for flag in flags[1:]:
                 out.known += flag.known

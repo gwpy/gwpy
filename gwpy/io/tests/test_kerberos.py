@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.io.kerberos`
-"""
+"""Unit tests for :mod:`gwpy.io.kerberos`."""
 
 import os
 import subprocess
@@ -64,8 +63,7 @@ def kerberos_name(name):
 
 @mock.patch.dict("sys.modules", {"gssapi": None})
 def test_kinit_no_gssapi():
-    """Test that we get an augmented error message if ``gssapi`` is missing.
-    """
+    """Test that we get an augmented error message if ``gssapi`` is missing."""
     with pytest.raises(
         ImportError,
         match="cannot generate Kerberos credentials without python-gssapi",
@@ -132,8 +130,7 @@ def test_kinit_up_kwargs(creds, acquire, getpass, input_):
 
 @requires_gssapi()
 def test_kinit_keytab_dne(tmp_path):
-    """Test `gwpy.io.kerberos.kinit` with a non-existent keytab.
-    """
+    """Test `gwpy.io.kerberos.kinit` with a non-existent keytab."""
     keytab = tmp_path / "keytab"  # does not exist
 
     # check that missing keytab goes to password auth
@@ -153,8 +150,7 @@ def test_kinit_keytab_dne(tmp_path):
 @mock.patch("gssapi.Credentials")
 @mock.patch("gwpy.io.kerberos._keytab_principal", lambda x: "rainer.weiss@LIGO.ORG")
 def test_kinit_keytab(creds, tmp_path):
-    """Test `gwpy.io.kerberos.kinit` can handle keytabs properly.
-    """
+    """Test `gwpy.io.kerberos.kinit` can handle keytabs properly."""
     keytab = tmp_path / "keytab"
     keytab.touch()
     ccache = tmp_path / "ccache"
@@ -204,8 +200,7 @@ def test_kinit_notty():
 @requires_gssapi()
 @mock.patch("gwpy.io.kerberos._acquire_password")
 def test_kinit_error(_acquire_password):
-    """Test that `gwpy.io.kerberos.kinit` propagates `GSSError`s appropriately.
-    """
+    """Test that `gwpy.io.kerberos.kinit` propagates `GSSError`s appropriately."""
     import gssapi
     _acquire_password.side_effect = gssapi.exceptions.GSSError(0, 0)
 
@@ -226,8 +221,7 @@ def test_kinit_error(_acquire_password):
 @requires_gssapi()
 @mock.patch("gwpy.io.kerberos._acquire_password")
 def test_kinit_krb5ccname(_):
-    """Test that the ``krb5ccname`` keyword emits a deprecation warning.
-    """
+    """Test that the ``krb5ccname`` keyword emits a deprecation warning."""
     with pytest.warns(
         DeprecationWarning,
         match=(
@@ -252,8 +246,7 @@ KVNO Principal
 
 @mock.patch("subprocess.check_output", return_value=KLIST)
 def test_parse_keytab(check_output):
-    """Test `gwpy.io.kerberos.parse_keytab.
-    """
+    """Test `gwpy.io.kerberos.parse_keytab."""
     # assert principals get extracted correctly
     with pytest.deprecated_call():
         principals = io_kerberos.parse_keytab("test.keytab")
@@ -270,8 +263,7 @@ def test_parse_keytab(check_output):
     ),
 ])
 def test_parse_keytab_oserror(mock_check_output, se, match):
-    """Test `gwpy.io.kerberos.parse_keytab` fails appropriately.
-    """
+    """Test `gwpy.io.kerberos.parse_keytab` fails appropriately."""
     mock_check_output.side_effect = se
     with pytest.deprecated_call(), pytest.raises(
         io_kerberos.KerberosError,

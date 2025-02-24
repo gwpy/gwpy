@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.table.io.omega`
-"""
+"""Tests for :mod:`gwpy.table.io.omega`."""
 
 import h5py
 import pytest
@@ -56,8 +55,7 @@ def snaxfile(snaxtable, tmp_path):
 
 
 def test_read_snax(snaxtable, snaxfile):
-    """Check that we can read a SNAX-format HDF5 file.
-    """
+    """Check that we can read a SNAX-format HDF5 file."""
     table = EventTable.read(snaxfile, format="hdf5.snax")
     assert_table_equal(snaxtable, table)
 
@@ -116,8 +114,7 @@ def test_read_snax_compact(snaxtable, snaxfile):
 
 
 def test_read_snax_errors(snaxtable, snaxfile):
-    """Check error handling when reading from a SNAX-format file
-    """
+    """Check error handling when reading from a SNAX-format file."""
     missing = ["X1:SNAX", "X1:MISSING"]
     with pytest.raises(ValueError):
         EventTable.read(snaxfile, channels=missing, format="hdf5.snax")

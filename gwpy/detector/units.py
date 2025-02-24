@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module registers a number of custom units used in GW astronomy.
-"""
+"""This module registers a number of custom units used in GW astronomy."""
 
 import re
 import warnings
@@ -34,7 +33,7 @@ UNRECOGNIZED_UNITS = {}
 # -- parser to handle any unit ------------------------------------------------
 
 class GWpyFormat(Generic):
-    """Sub-class of the `Generic` unit parser that is more forgiving
+    """Sub-class of the `Generic` unit parser that is more forgiving.
 
     This format tries to work around 'human' errors in unit naming,
     including plurals, and capitalisation, and if nothing else works
@@ -95,7 +94,7 @@ class GWpyFormat(Generic):
 
 # pylint: disable=redefined-builtin
 def parse_unit(name, parse_strict="warn", format="gwpy"):
-    """Attempt to intelligently parse a `str` as a `~astropy.units.Unit`
+    """Attempt to intelligently parse a `str` as a `~astropy.units.Unit`.
 
     Parameters
     ----------

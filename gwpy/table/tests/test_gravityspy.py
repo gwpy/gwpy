@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for `gwpy.table.gravityspy`
-"""
+"""Unit tests for `gwpy.table.gravityspy`."""
 
 import pytest
 
@@ -50,8 +49,7 @@ class TestGravitySpyTable(_TestEventTable):
 
     @pytest_skip_flaky_network
     def test_search(self):
-        """Test `GravitySpyTable.search`
-        """
+        """Test `GravitySpyTable.search`."""
         # run the search
         table = self.search()
 
@@ -63,7 +61,7 @@ class TestGravitySpyTable(_TestEventTable):
         assert t["ml_label"] == "Scratchy"
 
     def test_search_error(self):
-        """Test `GravitySpyTable.search` error handling
+        """Test `GravitySpyTable.search` error handling.
 
         Mainly to make sure that an HTTP Error is raised instead
         of a JSONDecodeError.
@@ -98,8 +96,7 @@ class TestGravitySpyTable(_TestEventTable):
 
     @pytest_skip_flaky_network
     def test_download(self, tmp_path):
-        """Test `GravitySpyTable.download`
-        """
+        """Test `GravitySpyTable.download`."""
         table = self.search()
         table.download(download_path=tmp_path)
         assert (

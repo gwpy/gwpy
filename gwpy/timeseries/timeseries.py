@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""The `TimeSeries`.
-"""
+"""The `TimeSeries`."""
 
 import math
 import warnings
@@ -64,7 +63,7 @@ DEFAULT_FFT_METHOD = "median"
 # -- utilities ----------------------------------------------------------------
 
 def _fft_length_default(dt):
-    """Choose an appropriate FFT length (in seconds) based on a sample rate
+    """Choose an appropriate FFT length (in seconds) based on a sample rate.
 
     Parameters
     ----------
@@ -275,7 +274,7 @@ class TimeSeries(TimeSeriesBase):
 
     def psd(self, fftlength=None, overlap=None, window="hann",
             method=DEFAULT_FFT_METHOD, **kwargs):
-        """Calculate the PSD `FrequencySeries` for this `TimeSeries`
+        """Calculate the PSD `FrequencySeries` for this `TimeSeries`.
 
         Parameters
         ----------
@@ -322,7 +321,7 @@ class TimeSeries(TimeSeriesBase):
 
     def asd(self, fftlength=None, overlap=None, window="hann",
             method=DEFAULT_FFT_METHOD, **kwargs):
-        """Calculate the ASD `FrequencySeries` of this `TimeSeries`
+        """Calculate the ASD `FrequencySeries` of this `TimeSeries`.
 
         Parameters
         ----------
@@ -365,7 +364,7 @@ class TimeSeries(TimeSeriesBase):
 
     def csd(self, other, fftlength=None, overlap=None, window="hann",
             **kwargs):
-        """Calculate the CSD `FrequencySeries` for two `TimeSeries`
+        """Calculate the CSD `FrequencySeries` for two `TimeSeries`.
 
         Parameters
         ----------
@@ -465,7 +464,7 @@ class TimeSeries(TimeSeriesBase):
         )
 
     def spectrogram2(self, fftlength, overlap=None, window="hann", **kwargs):
-        """Calculate the non-averaged power `Spectrogram` of this `TimeSeries`
+        """Calculate the non-averaged power `Spectrogram` of this `TimeSeries`.
 
         Parameters
         ----------
@@ -691,7 +690,7 @@ class TimeSeries(TimeSeriesBase):
 
     def rayleigh_spectrogram(self, stride, fftlength=None, overlap=0,
                              window="hann", nproc=1, **kwargs):
-        """Calculate the Rayleigh statistic spectrogram of this `TimeSeries`
+        """Calculate the Rayleigh statistic spectrogram of this `TimeSeries`.
 
         Parameters
         ----------
@@ -922,7 +921,7 @@ class TimeSeries(TimeSeriesBase):
         return self.filter(*filt, unit="rad/sample", filtfilt=filtfilt)
 
     def resample(self, rate, window="hamming", ftype="fir", n=None):
-        """Resample this Series to a new rate
+        """Resample this Series to a new rate.
 
         Parameters
         ----------
@@ -981,7 +980,7 @@ class TimeSeries(TimeSeriesBase):
             return new
 
     def zpk(self, zeros, poles, gain, analog=True, unit="Hz", **kwargs):
-        """Filter this `TimeSeries` by applying a zero-pole-gain filter
+        """Filter this `TimeSeries` by applying a zero-pole-gain filter.
 
         Parameters
         ----------
@@ -1029,7 +1028,7 @@ class TimeSeries(TimeSeriesBase):
         )
 
     def filter(self, *filt, **kwargs):
-        """Filter this `TimeSeries` with an IIR or FIR filter
+        """Filter this `TimeSeries` with an IIR or FIR filter.
 
         Parameters
         ----------
@@ -1407,7 +1406,7 @@ class TimeSeries(TimeSeriesBase):
     def mask(self, deadtime=None, flag=None, query_open_data=False,
              const=numpy.nan, tpad=0.5, **kwargs):
         """Mask away portions of this `TimeSeries` that fall within a given
-        list of time segments
+        list of time segments.
 
         Parameters
         ----------
@@ -1504,7 +1503,7 @@ class TimeSeries(TimeSeriesBase):
 
     def demodulate(self, f, stride=1, exp=False, deg=True):
         """Compute the average magnitude and phase of this `TimeSeries`
-        once per stride at a given frequency
+        once per stride at a given frequency.
 
         Parameters
         ----------
@@ -1577,7 +1576,7 @@ class TimeSeries(TimeSeriesBase):
 
     def heterodyne(self, phase, stride=1, singlesided=False):
         """Compute the average magnitude and phase of this `TimeSeries`
-        once per stride after heterodyning with a given phase series
+        once per stride after heterodyning with a given phase series.
 
         Parameters
         ----------
@@ -1765,7 +1764,7 @@ class TimeSeries(TimeSeriesBase):
     def whiten(self, fftlength=None, overlap=0, method=DEFAULT_FFT_METHOD,
                window="hann", detrend="constant", asd=None,
                fduration=2, highpass=None, **kwargs):
-        """Whiten this `TimeSeries` using inverse spectrum truncation
+        """Whiten this `TimeSeries` using inverse spectrum truncation.
 
         Parameters
         ----------
@@ -1994,7 +1993,7 @@ class TimeSeries(TimeSeriesBase):
 
     def convolve(self, fir, window="hann"):
         """Convolve this `TimeSeries` with an FIR filter using the
-           overlap-save method
+           overlap-save method.
 
         Parameters
         ----------
@@ -2060,7 +2059,7 @@ class TimeSeries(TimeSeriesBase):
 
     def correlate(self, mfilter, window="hann", detrend="linear",
                   whiten=False, wduration=2, highpass=None, **asd_kw):
-        """Cross-correlate this `TimeSeries` with another signal
+        """Cross-correlate this `TimeSeries` with another signal.
 
         Parameters
         ----------
@@ -2149,7 +2148,7 @@ class TimeSeries(TimeSeriesBase):
         return snr
 
     def detrend(self, detrend="constant"):
-        """Remove the trend from this `TimeSeries`
+        """Remove the trend from this `TimeSeries`.
 
         This method just wraps :func:`scipy.signal.detrend` to return
         an object of the same type as the input.
@@ -2212,7 +2211,7 @@ class TimeSeries(TimeSeriesBase):
                snrthresh=5.5,
                **kwargs):
         """Scan a `TimeSeries` using the multi-Q transform and return an
-        `EventTable` of the most significant tiles
+        `EventTable` of the most significant tiles.
 
         Parameters
         ----------
@@ -2276,7 +2275,7 @@ class TimeSeries(TimeSeriesBase):
                     highpass=None,
                     **asd_kw):
         """Scan a `TimeSeries` using the multi-Q transform and return an
-        interpolated high-resolution spectrogram
+        interpolated high-resolution spectrogram.
 
         By default, this method returns a high-resolution spectrogram in
         both time and frequency, which can result in a large memory

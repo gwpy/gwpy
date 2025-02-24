@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Transfer function plots
-"""
+"""Transfer function plots."""
 
 from astropy.time import Time
 from collections import OrderedDict
@@ -32,7 +31,7 @@ __author__ = "Evan Goetz <evan.goetz@ligo.org>"
 
 class TransferFunction(FFTMixin, TransferFunctionProduct):
     """Plot transfer function between a reference time series and one
-    or more other time series
+    or more other time series.
     """
     action = "transferfunction"
 
@@ -49,8 +48,7 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
 
     @property
     def ax(self):  # pylint: disable=invalid-name
-        """The current `~matplotlib.axes.Axes` of this product's plot
-        """
+        """The current `~matplotlib.axes.Axes` of this product's plot."""
         return self.plot.axes[self.subplot]
 
     @classmethod
@@ -87,8 +85,7 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
         return super()._finalize_arguments(args)
 
     def get_ylabel(self):
-        """Text for y-axis label
-        """
+        """Text for y-axis label."""
         ylabelstr = ""
         if self.subplot == 0:
             ylabelstr = "Magnitude"
@@ -100,8 +97,7 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
         return ylabelstr
 
     def get_suptitle(self):
-        """Start of default super title, first channel is appended to it
-        """
+        """Start of default super title, first channel is appended to it."""
         return f"Transfer function: {self.test_chan}/{self.ref_chan}"
 
     def set_axes_properties(self):
@@ -114,7 +110,7 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
 
     def _set_axis_properties(self, axis):
         """Generic method to set properties for X/Y axis
-        on a specific subplot
+        on a specific subplot.
         """
         def _get(param):
             ret = getattr(self.plot.axes[self.subplot],
@@ -184,16 +180,14 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
         self.log(3, (f"{axis.upper()}-axis label: {label}"))
 
     def set_yaxis_properties(self):
-        """Set properties for Y-axis
-        """
+        """Set properties for Y-axis."""
         if self.subplot == 0:
             self._set_axis_properties("ymag")
         else:
             self._set_axis_properties("yphase")
 
     def scale_axes_from_data(self):
-        """Restrict data limits for Y-axis based on what you can see
-        """
+        """Restrict data limits for Y-axis based on what you can see."""
         # get tight limits for X-axis
         if self.args.xmin is None:
             self.args.xmin = min(tf.xspan[0] for tf in self.tfs)
@@ -229,8 +223,7 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
         self.ax.autoscale_view(scalex=False)
 
     def set_plot_properties(self):
-        """Finalize figure object and show() or save()
-        """
+        """Finalize figure object and show() or save()."""
         self.set_axes_properties()
         self.subplot = 0
         self.set_title(self.args.title)
@@ -240,8 +233,7 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
         self.set_grid(not self.args.nogrid)
 
     def make_plot(self):
-        """Generate the transfer function plot from the time series
-        """
+        """Generate the transfer function plot from the time series."""
         args = self.args
 
         fftlength = float(args.secpfft)

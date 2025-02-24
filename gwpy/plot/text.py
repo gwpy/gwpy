@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Text formatting for GWpy plots
-"""
+"""Text formatting for GWpy plots."""
 
 from matplotlib import rcParams
 
@@ -28,7 +27,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def to_string(input_):
-    """Format an input for representation as text
+    """Format an input for representation as text.
 
     This method is just a convenience that handles default LaTeX formatting
     """
@@ -43,7 +42,7 @@ def to_string(input_):
 
 
 def default_unit_label(axis, unit):
-    """Set default label for an axis from a `~astropy.units.Unit`
+    """Set default label for an axis from a `~astropy.units.Unit`.
 
     If the axis already has a label, this function does nothing.
 

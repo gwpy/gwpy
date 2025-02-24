@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilities for FFT routines.
-"""
+"""Utilities for FFT routines."""
 
 from astropy import units
 

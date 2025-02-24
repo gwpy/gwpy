@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Custom default figure configuration
-"""
+"""Custom default figure configuration."""
 
 from matplotlib import (rcParams, rc_params, RcParams)
 
@@ -80,7 +79,7 @@ GWPY_TEX_RCPARAMS = RcParams(**{
 
 
 def rc_params(usetex=None):
-    """Returns a new `matplotlib.RcParams` with updated GWpy parameters
+    """Returns a new `matplotlib.RcParams` with updated GWpy parameters.
 
     The updated parameters are globally stored as
     `gwpy.plot.rc.GWPY_RCPARAMS`, with the updated TeX parameters as
@@ -138,7 +137,7 @@ SUBPLOT_HEIGHT = {
 
 
 def get_subplot_params(figsize):
-    """Return sensible default `SubplotParams` for a figure of the given size
+    """Return sensible default `SubplotParams` for a figure of the given size.
 
     Parameters
     ----------

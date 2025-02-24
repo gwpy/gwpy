@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""The timeseries CLI product
-"""
+"""The timeseries CLI product."""
 
 from .cliproduct import TimeDomainProduct
 from ..plot import Plot
@@ -27,13 +26,11 @@ __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 
 class TimeSeries(TimeDomainProduct):
-    """Plot one or more time series
-    """
+    """Plot one or more time series."""
     action = "timeseries"
 
     def get_ylabel(self):
-        """Text for y-axis label,  check if channel defines it
-        """
+        """Text for y-axis label,  check if channel defines it."""
         units = self.units
         if len(units) == 1 and str(units[0]) == "":  # dimensionless
             return ""
@@ -46,8 +43,7 @@ class TimeSeries(TimeDomainProduct):
         return super().get_ylabel()
 
     def get_suptitle(self):
-        """Start of default super title, first channel is appended to it
-        """
+        """Start of default super title, first channel is appended to it."""
         return f"Time series: {self.chan_list[0]}"
 
     def get_title(self):
@@ -62,8 +58,7 @@ class TimeSeries(TimeDomainProduct):
         ])
 
     def make_plot(self):
-        """Generate the plot from time series and arguments
-        """
+        """Generate the plot from time series and arguments."""
         plot = Plot(figsize=self.figsize, dpi=self.dpi)
         ax = plot.add_subplot(xscale="auto-gps")
 
@@ -96,8 +91,7 @@ class TimeSeries(TimeDomainProduct):
         return plot
 
     def scale_axes_from_data(self):
-        """Restrict data limits for Y-axis based on what you can see
-        """
+        """Restrict data limits for Y-axis based on what you can see."""
         # get tight limits for X-axis
         if self.args.xmin is None:
             self.args.xmin = min(ts.xspan[0] for ts in self.timeseries)

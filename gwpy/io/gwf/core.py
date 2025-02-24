@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Core I/O utilities for GWF files.
-"""
+"""Core I/O utilities for GWF files."""
 
 from __future__ import annotations
 
@@ -87,8 +86,7 @@ def identify_gwf(
 # -- utilities -----------------------
 
 def _from_backend(func, backend, *args, **kwargs):
-    """Import a function for the given backend and execute it.
-    """
+    """Import a function for the given backend and execute it."""
     impl = get_backend_function(func, backend=backend)
     return impl(*args, **kwargs)
 
@@ -98,8 +96,7 @@ def _iter_toc(
     type: str | None = None,
     backend: str | None = None,
 ):
-    """Import the ``_iter_toc`` implementation from the backend and run.
-    """
+    """Import the ``_iter_toc`` implementation from the backend and run."""
     return _from_backend("_iter_toc", backend, gwf, type=type)
 
 
@@ -108,8 +105,7 @@ def _count_toc(
     type: str | None = None,
     backend: str | None = None,
 ):
-    """Import the ``_count_toc`` implementation from the backend and run.
-    """
+    """Import the ``_count_toc`` implementation from the backend and run."""
     return _from_backend("_count_toc", backend, gwf, type=type)
 
 
@@ -219,7 +215,7 @@ def iter_channel_names(
     type: str | None = None,
     backend: str | None = None,
 ):
-    """Iterate over the names of channels found in a GWF file
+    """Iterate over the names of channels found in a GWF file.
 
     Requires a GWF backend library.
 
@@ -250,7 +246,7 @@ def get_channel_names(
     type: str | None = None,
     backend: str | None = None,
 ):
-    """Return a list of all channel names found in a GWF file
+    """Return a list of all channel names found in a GWF file.
 
     This method just returns
 

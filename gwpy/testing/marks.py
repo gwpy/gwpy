@@ -33,7 +33,7 @@ MARKS: dict[str, str] = {
 
 
 def _register_marks(config):
-    """Register all marks for GWpy
+    """Register all marks for GWpy.
 
     This function is designed to be called from :mod:`gwpy.conftest`.
     """

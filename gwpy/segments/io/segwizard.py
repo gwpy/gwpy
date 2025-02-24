@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read SegmentLists from seg-wizard format ASCII files
-"""
+"""Read SegmentLists from seg-wizard format ASCII files."""
 
 from __future__ import annotations
 
@@ -133,8 +132,7 @@ def from_segwizard(
 def _line_format(
     line: str,
 ) -> re.Pattern:
-    """Determine the column format pattern for a line in an ASCII segment file.
-    """
+    """Determine the column format pattern for a line in an ASCII segment file."""
     for pat in (
         FOUR_COL_REGEX,
         THREE_COL_REGEX,
@@ -150,8 +148,7 @@ def _format_segment(
     strict: bool = True,
     gpstype: type = LIGOTimeGPS,
 ) -> Segment:
-    """Format a list of tokens parsed from an ASCII file into a segment.
-    """
+    """Format a list of tokens parsed from an ASCII file into a segment."""
     try:
         start, end, dur = tokens
     except ValueError:  # two-columns

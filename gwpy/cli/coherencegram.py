@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Coherence spectrogram
-"""
+"""Coherence spectrogram."""
 
 from .spectrogram import Spectrogram
 
@@ -24,8 +23,7 @@ __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 
 class Coherencegram(Spectrogram):
-    """Plot the coherence-spectrogram comparing two time series
-    """
+    """Plot the coherence-spectrogram comparing two time series."""
     DEFAULT_CMAP = "plasma"
     MIN_DATASETS = 2
     MAX_DATASETS = 2
@@ -56,13 +54,11 @@ class Coherencegram(Spectrogram):
         return super()._finalize_arguments(args)
 
     def get_ylabel(self):
-        """Text for y-axis label
-        """
+        """Text for y-axis label."""
         return "Frequency (Hz)"
 
     def get_suptitle(self):
-        """Start of default super title, first channel is appended to it
-        """
+        """Start of default super title, first channel is appended to it."""
         a, b = self.chan_list
         return f"Coherence spectrogram: {a} vs {b}"
 

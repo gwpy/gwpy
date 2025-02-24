@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.timeseries.io.gwf.framecpp`
-"""
+"""Tests for :mod:`gwpy.timeseries.io.gwf.framecpp`."""
 
 import pytest
 
@@ -62,8 +61,7 @@ def test_read_scaled_type_change(int32ts, tmp_path):
 
 
 def test_read_write_frvect_name(tmp_path):
-    """Test against regression of https://gitlab.com/gwpy/gwpy/-/issues/1206
-    """
+    """Test against regression of https://gitlab.com/gwpy/gwpy/-/issues/1206."""
     data = TimeSeries(
         numpy.random.random(10),
         channel="X1:TEST",

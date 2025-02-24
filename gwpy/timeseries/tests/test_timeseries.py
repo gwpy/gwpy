@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for timeseries module
-"""
+"""Unit test for timeseries module."""
 
 import os.path
 import warnings
@@ -126,8 +125,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def _gwosc_cvmfs(func):
-    """Decorate ``func`` with all necessary CVMFS-related decorators
-    """
+    """Decorate ``func`` with all necessary CVMFS-related decorators."""
     for dec in (
         pytest.mark.cvmfs,
         pytest.mark.requires("lalframe"),
@@ -198,8 +196,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     # -- test I/O -------------------------------
 
     def test_read_cache(self, tmp_path):
-        """Test that `TimeSeries.read` handles caches well.
-        """
+        """Test that `TimeSeries.read` handles caches well."""
         # create an array and write it to a file
         array = self.create(t0=0, dt=10/self.data.size, name="TEST1")
         file1 = tmp_path / "X-data-0-10.h5"
@@ -230,7 +227,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             assert_kw={"exclude": ["name", "channel", "unit"]})
 
     def test_read_ascii_header(self, tmpdir):
-        """Check that ASCII files with headers are read without extra options
+        """Check that ASCII files with headers are read without extra options.
 
         [regression: https://gitlab.com/gwpy/gwpy/-/issues/1473]
         """
@@ -285,8 +282,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.mark.parametrize("api", GWF_APIS)
     def test_read_gwf_end_error(self, api):
-        """Test that reading past the end of available data fails.
-        """
+        """Test that reading past the end of available data fails."""
         fmt = "gwf" if api is None else "gwf." + api
         with pytest.raises(ValueError):
             self.TEST_CLASS.read(
@@ -298,8 +294,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.mark.parametrize("api", GWF_APIS)
     def test_read_gwf_negative_duration_error(self, api):
-        """Test that reading a negative duration fails.
-        """
+        """Test that reading a negative duration fails."""
         fmt = "gwf" if api is None else "gwf." + api
         with pytest.raises(ValueError):
             self.TEST_CLASS.read(
@@ -313,7 +308,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @pytest.mark.parametrize("nproc", (1, 2))
     def test_read_write_gwf_multiple(self, tmp_path, api, nproc):
         """Check that each GWF API can read a series of files, either in
-        a single process, or in multiple processes
+        a single process, or in multiple processes.
 
         Regression: https://gitlab.com/gwpy/gwpy/-/issues/1486
         """
@@ -446,7 +441,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @pytest.mark.parametrize("api", GWF_APIS)
     def test_write_gwf_channel_name(self, tmp_path, api):
         """Test that writing GWF when `channel` is set but `name` is not
-        uses the `channel` name
+        uses the `channel` name.
         """
         array = self.create(channel="data")
         assert not array.name
@@ -559,8 +554,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest_skip_flaky_network
     def test_read_remote(self):
-        """Test that reading directly from a remote URI works.
-        """
+        """Test that reading directly from a remote URI works."""
         local = self.TEST_CLASS.read(
             utils.TEST_HDF5_FILE,
             "H1:LDAS-STRAIN",
@@ -696,8 +690,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         return_value=(["nds.example.com", 31200],),
     )
     def test_fetch_warning_message(self, _):
-        """Test that TimeSeries.fetch emits a useful warning on NDS2 issues.
-        """
+        """Test that TimeSeries.fetch emits a useful warning on NDS2 issues."""
         with \
                 pytest.raises(
                     RuntimeError,
@@ -720,8 +713,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         pytest.param({"observatory": GWOSC_GW150914_IFO[0]}, id="observatory"),
     ])
     def test_find(self, gw150914_16384, kwargs):
-        """Test that `TimeSeries.find()` can actually find data.
-        """
+        """Test that `TimeSeries.find()` can actually find data."""
         ts = self.TEST_CLASS.find(
             GWOSC_GW150914_CHANNEL,
             *GWOSC_GW150914_SEGMENT,
@@ -740,8 +732,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_find_datafind_httperror(self):
-        """Test that HTTPErrors are presented in `find()`.
-        """
+        """Test that HTTPErrors are presented in `find()`."""
         with pytest.raises(HTTPError):
             self.TEST_CLASS.find(
                 GWOSC_GW150914_CHANNEL,
@@ -755,8 +746,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_find_datafind_runtimeerror(self):
-        """Test that empty datafind caches result in RuntimeErrors in `find()`.
-        """
+        """Test that empty datafind caches result in RuntimeErrors in `find()`."""
         with pytest.raises(RuntimeError):
             self.TEST_CLASS.find(
                 GWOSC_GW150914_CHANNEL,
@@ -925,8 +915,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         product(["lal"], ["welch", "bartlett", "median", "median_mean"]),
     ))
     def test_psd_deprecated(self, noisy_sinusoid, library, method):
-        """Test deprecated average methods for TimeSeries.psd
-        """
+        """Test deprecated average methods for TimeSeries.psd."""
         pytest.importorskip(library)
 
         fftlength = .5
@@ -959,8 +948,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     def test_csd(self, noisy_sinusoid):
-        """Test that `TimeSeries.csd(self)` is the same as `psd()`.
-        """
+        """Test that `TimeSeries.csd(self)` is the same as `psd()`."""
         fs = noisy_sinusoid.csd(noisy_sinusoid, average="mean")
         utils.assert_quantity_sub_equal(
             fs.abs(),
@@ -969,8 +957,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     def test_csd_fftlength(self, noisy_sinusoid, corrupt_noisy_sinusoid):
-        """Test that `TimeSeries.csd` uses the ``fftlength`` keyword properly.
-        """
+        """Test that `TimeSeries.csd` uses the ``fftlength`` keyword properly."""
         # test fftlength is used
         fs = noisy_sinusoid.csd(corrupt_noisy_sinusoid, fftlength=0.5)
         assert fs.size == 0.5 * noisy_sinusoid.sample_rate.value // 2 + 1
@@ -1223,22 +1210,19 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_quantity_sub_equal(sg, sg2)
 
     def test_resample(self, gw150914):
-        """Test :meth:`gwpy.timeseries.TimeSeries.resample`
-        """
+        """Test :meth:`gwpy.timeseries.TimeSeries.resample`."""
         # test IIR decimation
         l2 = gw150914.resample(1024, ftype="iir")
         # FIXME: this test needs to be more robust
         assert l2.sample_rate == 1024 * units.Hz
 
     def test_resample_simple_upsample(self, gw150914):
-        """Test consistency when upsampling by 2x`
-        """
+        """Test consistency when upsampling by 2x`."""
         upsamp = gw150914.resample(gw150914.sample_rate.value * 2)
         assert numpy.allclose(gw150914.value, upsamp.value[::2])
 
     def test_resample_simple_downsample(self, gw150914):
-        """Test consistency when downsampling by 2x`
-        """
+        """Test consistency when downsampling by 2x`."""
         downsamp = gw150914.resample(gw150914.sample_rate.value // 2)
         assert numpy.allclose(gw150914.value[::2], downsamp.value)
 
@@ -1511,8 +1495,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             gw150914.zpk(*zpk), gw150914.filter(*zpk, analog=True))
 
     def test_highpass_happy_path(self, gw150914):
-        """Check that passband val are approx equal, stopband are not.
-        """
+        """Check that passband val are approx equal, stopband are not."""
         asd = gw150914.asd()
         hp_asd = gw150914.highpass(100).asd()
 
@@ -1539,8 +1522,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     def test_lowpass_happy_path(self, gw150914):
-        """Check that passband val are approx equal, stopband are not.
-        """
+        """Check that passband val are approx equal, stopband are not."""
         asd = gw150914.asd()
         lp_asd = gw150914.lowpass(500).asd()
 
@@ -1567,8 +1549,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     def test_notch_happy_path(self, gw150914):
-        """Check passband vals are approx equal, stopband are not.
-        """
+        """Check passband vals are approx equal, stopband are not."""
         nf = 10
         notched = gw150914.notch(nf, filtfilt=True)
         notched_asd = notched.asd()
@@ -1616,8 +1597,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert numpy.isclose(absd[nf_ind], numpy.max(absd))
 
     def test_bandpass_happy_path(self, gw150914):
-        """Check that passband val are approx equal, stopband are not.
-        """
+        """Check that passband val are approx equal, stopband are not."""
 
         asd = gw150914.asd()
         bp_asd = gw150914.bandpass(100, 1000).asd()

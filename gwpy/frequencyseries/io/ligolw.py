@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""LIGO_LW I/O registrations for gwpy.frequencyseries objects
-"""
+"""LIGO_LW I/O registrations for gwpy.frequencyseries objects."""
 
 from ...io.ligolw import is_ligolw
 from ...types.io.ligolw import read_series

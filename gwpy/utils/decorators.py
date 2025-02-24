@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Decorators for GWpy.
-"""
+"""Decorators for GWpy."""
 
 from __future__ import annotations
 
@@ -34,8 +33,7 @@ DEPRECATED_FUNCTION_WARNING: str = (
 
 
 class deprecated_property(property):  # noqa: N801
-    """Sub-class of `property` that invokes DeprecationWarning on every call.
-    """
+    """Sub-class of `property` that invokes DeprecationWarning on every call."""
     def __init__(
         self,
         fget: Callable,

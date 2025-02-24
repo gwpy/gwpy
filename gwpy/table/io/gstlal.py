@@ -17,8 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from the GstLAL online GW search.
-"""
+"""Read events from the GstLAL online GW search."""
 
 from __future__ import annotations
 
@@ -67,8 +66,7 @@ def identify_gstlal(
     *args,
     **kwargs,
 ) -> bool:
-    """Identify a GstLAL file as a ligolw file with the correct name.
-    """
+    """Identify a GstLAL file as a ligolw file with the correct name."""
     return (
         is_ligolw(origin, filepath, fileobj, *args, **kwargs)
         and (
@@ -279,8 +277,7 @@ def get_snr_chi(
     snr_pow: float = 2.,
     chi_pow: float = 2.,
 ) -> Column:
-    """Calculate the 'SNR chi' column for this GstLAL ligolw table group.
-    """
+    """Calculate the 'SNR chi' column for this GstLAL ligolw table group."""
     snr = events["snr"][:]
     chisq = events["chisq"][:]
     snr_chi = snr**snr_pow / chisq**(chi_pow/2.)
@@ -297,7 +294,7 @@ def get_chi_snr(
     chi_pow: float = 2.,
 ) -> Column:
     """Calculate the 'chi SNR' column for this GstLAL ligolw table group,
-    reciprocal of the 'SNR chi' column
+    reciprocal of the 'SNR chi' column.
     """
     return 1. / get_snr_chi(events, snr_pow, chi_pow)
 

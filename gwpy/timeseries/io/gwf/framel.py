@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read gravitational-wave frame (GWF) files using the FrameL API
+"""Read gravitational-wave frame (GWF) files using the FrameL API.
 
 The frame foramt is defined in LIGO-T970130 available from dcc.ligo.org
 """
@@ -41,8 +41,7 @@ FRAME_LIBRARY = "framel"
 
 def read(source, channels, start=None, end=None, series_class=TimeSeries,
          scaled=None):
-    """Read data from one or more GWF files using the FrameL API
-    """
+    """Read data from one or more GWF files using the FrameL API."""
     # scaled must be provided to provide a consistent API with frameCPP
     if scaled is not None:
         warnings.warn(
@@ -93,8 +92,7 @@ def read(source, channels, start=None, end=None, series_class=TimeSeries,
 
 
 def _read_channel(filename, channel, start, duration, series_class):
-    """Read one channel from one file
-    """
+    """Read one channel from one file."""
     try:
         data, gps, offset, dx, xunit, yunit = framel.frgetvect1d(
             str(filename),
@@ -125,8 +123,7 @@ def write(
         name=None,
         run=None,
 ):
-    """Write data to a GWF file using the FrameL API
-    """
+    """Write data to a GWF file using the FrameL API."""
     if name is not None:
         warnings.warn(
             "specifying a FrHistory name via FrameL is not supported, "

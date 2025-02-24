@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Colour customisations for visualisation in GWpy
-"""
+"""Colour customisations for visualisation in GWpy."""
 
 import numpy
 
@@ -58,8 +57,7 @@ color_map.update({f"gwpy:{name}": col for name, col in GWPY_COLORS.items()})
 # -- colour utilities ---------------------------------------------------------
 
 def tint(col, factor=1.0):
-    """Tint a color (make it darker), returning a new RGB array
-    """
+    """Tint a color (make it darker), returning a new RGB array."""
     # this method is more complicated than it need be to
     # support matplotlib-1.x.
     # for matplotlib-2.x this would just be
@@ -73,7 +71,7 @@ def tint(col, factor=1.0):
 
 
 def format_norm(kwargs, current=None):
-    """Format a `~matplotlib.colors.Normalize` from a set of kwargs
+    """Format a `~matplotlib.colors.Normalize` from a set of kwargs.
 
     Returns
     -------

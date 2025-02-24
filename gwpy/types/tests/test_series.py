@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for gwpy.types.series
-"""
+"""Unit tests for gwpy.types.series."""
 
 import warnings
 
@@ -195,8 +194,7 @@ class TestSeries(_TestArray):
         assert len(newarray.value) == len(newarray.xindex)
 
     def test_getitem_list_index(self, array):
-        """Test that __getitem__ works with list and numpy.array.
-        """
+        """Test that __getitem__ works with list and numpy.array."""
         indices = numpy.array([0, 1, len(array) - 1])
         lindices = [0, 1, len(array) - 1]
         utils.assert_quantity_sub_equal(array[indices], array[lindices])
@@ -212,7 +210,7 @@ class TestSeries(_TestArray):
             array[0]._xindex
 
     def test_empty_slice(self, array):
-        """Check that we can slice a `Series` into nothing
+        """Check that we can slice a `Series` into nothing.
 
         This tests against a bug in sliceutils.py.
         """
@@ -233,8 +231,7 @@ class TestSeries(_TestArray):
             z, numpy.column_stack((array.xindex.value, array.value)))
 
     def test_crop(self, array):
-        """Test basic functionality of `Series.crop`.
-        """
+        """Test basic functionality of `Series.crop`."""
         # all defaults
         utils.assert_quantity_equal(array, array.crop())
 
@@ -243,16 +240,14 @@ class TestSeries(_TestArray):
         utils.assert_quantity_equal(array[10:20], a2)
 
     def test_crop_warnings(self, array):
-        """Test that `Series.crop` emits warnings when it is supposed to.
-        """
+        """Test that `Series.crop` emits warnings when it is supposed to."""
         with pytest.warns(UserWarning):
             array.crop(array.xspan[0]-1, array.xspan[1])
         with pytest.warns(UserWarning):
             array.crop(array.xspan[0], array.xspan[1]+1)
 
     def test_crop_irregular(self):
-        """Test `Series.crop` with an irregular index.
-        """
+        """Test `Series.crop` with an irregular index."""
         x = numpy.linspace(0, 100, num=self.data.shape[0])
 
         # add shift to second half of times to create irregular space
@@ -340,36 +335,31 @@ class TestSeries(_TestArray):
         assert series.crop(start=xmin).xindex[0] == expected
 
     def test_is_compatible(self, array):
-        """Test the `Series.is_compatible` method
-        """
+        """Test the `Series.is_compatible` method."""
         other = self.create(name="TEST CASE 2")
         assert array.is_compatible(other)
 
     def test_is_compatible_error_dx(self, array):
-        """Check that `Series.is_compatible` errors with mismatching ``dx``
-        """
+        """Check that `Series.is_compatible` errors with mismatching ``dx``."""
         other = self.create(dx=2)
         with pytest.raises(ValueError, match="sample sizes do not match"):
             array.is_compatible(other)
 
     def test_is_compatible_error_unit(self, array):
-        """Check that `Series.is_compatible` errors with mismatching ``unit``
-        """
+        """Check that `Series.is_compatible` errors with mismatching ``unit``."""
         other = self.create(unit="m")
         with pytest.raises(ValueError, match="units do not match"):
             array.is_compatible(other)
 
     def test_is_compatible_xindex(self):
-        """Check that irregular arrays are compatible if their xindexes match
-        """
+        """Check that irregular arrays are compatible if their xindexes match."""
         x = numpy.logspace(0, 2, num=self.data.shape[0])
         a = self.create(xindex=x)
         b = self.create(xindex=x)
         assert a.is_compatible(b)
 
     def test_is_compatible_error_xindex(self, array):
-        """Check that `Series.is_compatible` errors with mismatching indexes
-        """
+        """Check that `Series.is_compatible` errors with mismatching indexes."""
         x = numpy.logspace(0, 2, num=self.data.shape[0])
         other = self.create(xindex=x)
         with pytest.raises(ValueError, match="indexes do not match"):
@@ -442,8 +432,7 @@ class TestSeries(_TestArray):
             ts4.value, numpy.concatenate((array.value, z, a3.value)))
 
     def test_prepend(self, array):
-        """Test the `Series.prepend` method
-        """
+        """Test the `Series.prepend` method."""
         a2 = self.create(x0=array.xspan[1]) * 2
         a3 = a2.prepend(array, inplace=False)
         assert a3.x0 == array.x0
@@ -455,8 +444,7 @@ class TestSeries(_TestArray):
         utils.assert_array_equal(a3.value[-a2.shape[0]:], a2.value)
 
     def test_update(self):
-        """Test the `Series.update` method
-        """
+        """Test the `Series.update` method."""
         ts1 = self.create()
         ts2 = self.create(x0=ts1.xspan[1])[:ts1.size//2]
         ts3 = ts1.update(ts2, inplace=False)
@@ -466,8 +454,7 @@ class TestSeries(_TestArray):
             ts3.update(ts1)
 
     def test_pad(self):
-        """Test the `Series.pad` method
-        """
+        """Test the `Series.pad` method."""
         ts1 = self.create()
         ts2 = ts1.pad(10)
         assert ts2.shape[0] == ts1.shape[0] + 20
@@ -477,8 +464,7 @@ class TestSeries(_TestArray):
         assert ts2.x0 == ts1.x0 - 10*ts1.x0.unit
 
     def test_pad_index(self):
-        """Check that `Series.pad` correctly returns a padded index array
-        """
+        """Check that `Series.pad` correctly returns a padded index array."""
         ts1 = self.create()
         ts1.xindex  # <- create the index for ts1
         ts2 = ts1.pad(10)
@@ -500,7 +486,7 @@ class TestSeries(_TestArray):
         assert ts2.x0 == ts1.x0 - 20*ts1.x0.unit
 
     def test_diff(self, array):
-        """Test the `Series.diff` method
+        """Test the `Series.diff` method.
 
         This just ensures that the returned `Series` has the right length
         and the right x0

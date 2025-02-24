@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.utils.misc`
-"""
+"""Tests for :mod:`gwpy.utils.misc`."""
 
 import sys
 
@@ -27,8 +26,7 @@ from .. import misc as utils_misc
 
 
 def test_gprint(capsys):
-    """Test for :func:`gwpy.utils.misc.gprint`
-    """
+    """Test for :func:`gwpy.utils.misc.gprint`."""
     utils_misc.gprint("test")
     assert capsys.readouterr().out == "test\n"
     utils_misc.gprint("test", end=" ")
@@ -40,8 +38,7 @@ def test_gprint(capsys):
 
 
 def test_round_to_power():
-    """Test for :func:`gwpy.utils.misc.round_to_power`
-    """
+    """Test for :func:`gwpy.utils.misc.round_to_power`."""
     # test basic features
     assert utils_misc.round_to_power(2) == 2
     assert utils_misc.round_to_power(9, base=10) == 10
@@ -55,8 +52,7 @@ def test_round_to_power():
 
 
 def test_round_to_power_error():
-    """Test for an errored use case of :func:`gwpy.utils.misc.round_to_power`
-    """
+    """Test for an errored use case of :func:`gwpy.utils.misc.round_to_power`."""
     with pytest.raises(
         ValueError,
         match="^'which' argument must be one of 'lower', 'upper', or None$",
@@ -65,8 +61,7 @@ def test_round_to_power_error():
 
 
 def test_unique():
-    """Test for :func:`gwpy.utils.misc.unique`
-    """
+    """Test for :func:`gwpy.utils.misc.unique`."""
     a = [1, 2, 4, 3, 5, 4, 5, 3]
     assert utils_misc.unique(a) == [1, 2, 4, 3, 5]
 
@@ -76,6 +71,5 @@ def test_unique():
     (str, 1, "1"),
 ])
 def test_if_not_none(func, value, out):
-    """Test for :func:`gwpy.utils.misc.if_not_none`
-    """
+    """Test for :func:`gwpy.utils.misc.if_not_none`."""
     assert utils_misc.if_not_none(func, value) == out

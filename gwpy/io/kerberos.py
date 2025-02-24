@@ -60,8 +60,7 @@ except NameError:
 # -- exceptions ---------------------------------
 
 class KerberosError(RuntimeError):
-    """Kerberos (krb5) operation failed.
-    """
+    """Kerberos (krb5) operation failed."""
     pass
 
 
@@ -170,8 +169,7 @@ def _check_interactive(
     password: str | None,
     keytab: str | Path | None,
 ):
-    """Check that we can prompt for necessary information.
-    """
+    """Check that we can prompt for necessary information."""
     _prompt_username = username is None
     _prompt_password = not keytab and password is None
     if (
@@ -189,8 +187,7 @@ def _get_principal(
     username: str | None,
     realm: str | None,
 ) -> Name:
-    """Prompt for and canonicalise the principal name.
-    """
+    """Prompt for and canonicalise the principal name."""
     import gssapi
 
     if username is None:
@@ -221,8 +218,7 @@ def _acquire_keytab(
     ccache: str | None = None,
     lifetime: int | None = None,
 ) -> Credentials:
-    """Acquire a Kerberos TGT using a keytab.
-    """
+    """Acquire a Kerberos TGT using a keytab."""
     import gssapi
     store = {
         "client_keytab": str(keytab),
@@ -246,8 +242,7 @@ def _acquire_password(
     ccache: str | None = None,
     lifetime: int | None = None,
 ) -> Credentials:
-    """Acquire a Kerberos TGT using principal/password.
-    """
+    """Acquire a Kerberos TGT using principal/password."""
     import gssapi
     raw_creds = gssapi.raw.acquire_cred_with_password(
         name=principal,
@@ -267,8 +262,7 @@ def _acquire_password(
 def _keytab_principal(
     keytab: str | Path,
 ) -> str:
-    """Return the principal assocated with a Kerberos keytab file.
-    """
+    """Return the principal assocated with a Kerberos keytab file."""
     import gssapi
     with mock.patch.dict("os.environ", {"KRB5_KTNAME": str(keytab)}):
         return str(gssapi.Credentials(usage="accept").name)
@@ -425,7 +419,7 @@ def kinit(
 @deprecated_function
 def parse_keytab(keytab):  # pragma: no cover
     """Read the contents of a KRB5 keytab file, returning a list of
-    credentials listed within
+    credentials listed within.
 
     Parameters
     ----------

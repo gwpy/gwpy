@@ -100,8 +100,7 @@ def format_citations(
 # -- command-line usage ---------------
 
 def create_parser() -> argparse.ArgumentParser:
-    """Create an `argparse.ArgumentParser` for this tool.
-    """
+    """Create an `argparse.ArgumentParser` for this tool."""
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -140,8 +139,7 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def main(args: list[str] | None = None) -> None:
-    """Run this tool as a command-line script.
-    """
+    """Run this tool as a command-line script."""
     # parse arguments
     parser = create_parser()
     opts = parser.parse_args(args=args)

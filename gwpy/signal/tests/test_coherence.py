@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Custom filtering utilities for the `TimeSeries`.
-"""
+"""Custom filtering utilities for the `TimeSeries`."""
 
 __author__ = "Alex Southgate <alex.southgate@ligo.org>"
 
@@ -109,8 +108,7 @@ def test_coherence_happy(series_data):
 
 
 def test_coherence_resample(unequal_fs_series_data):
-    """Ensure warning is raised by unequal sampling frequencies.
-    """
+    """Ensure warning is raised by unequal sampling frequencies."""
     _, _, firstarr, secondarr, seglen, fs_1, fs_2 = unequal_fs_series_data
 
     # first and second arrays are different, secondarr should have
@@ -142,8 +140,7 @@ def test_coherence_resample(unequal_fs_series_data):
 
 
 def test_coherence_resample_downsample(series_data):
-    """Ensure warning is raised by unequal sampling frequencies.
-    """
+    """Ensure warning is raised by unequal sampling frequencies."""
     firstarr, secondarr, seglen = series_data
     f_s = 0.001
 

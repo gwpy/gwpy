@@ -57,7 +57,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 @deprecated_function
 def get_default_fft_api() -> str:
-    """Return the preferred FFT-API library
+    """Return the preferred FFT-API library.
 
     As of gwpy > 0.14.0|1.0.0 this always returns 'scipy'
     This is referenced to set the default methods for

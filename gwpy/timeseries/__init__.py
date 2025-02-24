@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Create, manipulate, read, and write time-series data
-"""
+"""Create, manipulate, read, and write time-series data."""
 
 from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList)
 from .timeseries import (TimeSeries, TimeSeriesDict, TimeSeriesList)

@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Error handling for the GWpy test suite.
-"""
+"""Error handling for the GWpy test suite."""
 
 import socket
 from collections.abc import Callable
@@ -73,8 +72,7 @@ pytest_rerun_flaky_httperror = pytest.mark.flaky(
 def pytest_skip_network_error(
     func: Callable,
 ) -> Callable:
-    """Execute `func` but skip if it raises one of the network exceptions.
-    """
+    """Execute `func` but skip if it raises one of the network exceptions."""
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:

@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.table.io.sql`
-"""
+"""Tests for :mod:`gwpy.table.io.sql`."""
 
 from ...testing.errors import pytest_skip_flaky_network
 from .. import EventTable

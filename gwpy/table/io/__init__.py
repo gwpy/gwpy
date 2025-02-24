@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Input/output methods for tabular data.
-"""
+"""Input/output methods for tabular data."""
 
 # apply useful decorators to the I/O formats provided by Astropy
 # _before_ we add any of our own

@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilities for the core types
+"""Utilities for the core types.
 
 These methods are designed for internal use only.
 """
@@ -28,15 +28,14 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def format_nd_slice(item, ndim):
-    """Preformat a getitem argument as an N-tuple
-    """
+    """Preformat a getitem argument as an N-tuple."""
     if not isinstance(item, tuple):
         item = (item,)
     return item[:ndim] + (None,) * (ndim - len(item))
 
 
 def slice_axis_attributes(old, oldaxis, new, newaxis, slice_):
-    """Set axis metadata for ``new`` by slicing an axis of ``old``
+    """Set axis metadata for ``new`` by slicing an axis of ``old``.
 
     This is primarily for internal use in slice functions (__getitem__)
 
@@ -99,8 +98,7 @@ def slice_axis_attributes(old, oldaxis, new, newaxis, slice_):
 
 
 def null_slice(slice_):
-    """Returns True if a slice will have no affect
-    """
+    """Returns True if a slice will have no affect."""
     try:
         slice_ = as_slice(slice_)
     except TypeError:
@@ -119,8 +117,7 @@ def null_slice(slice_):
 
 
 def as_slice(slice_):
-    """Convert an object to a slice, if possible
-    """
+    """Convert an object to a slice, if possible."""
     if isinstance(slice_, (Integral, numpy.integer, type(None))):
         return slice(0, None, 1)
 

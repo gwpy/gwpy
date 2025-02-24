@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unified I/O read/write for Table objects.
-"""
+"""Unified I/O read/write for Table objects."""
 
 from __future__ import annotations
 
@@ -119,8 +118,7 @@ class EventTableRead(UnifiedRead):
         *args,
         **kwargs,
     ) -> EventTable:
-        """Read a table.
-        """
+        """Read a table."""
         # allow specifying 'where' filter via 'selection' keyword
         if "selection" in kwargs:
             warnings.warn(
@@ -206,7 +204,7 @@ fetch_registry = UnifiedFetchRegistry()
 
 
 class EventTableFetch(EventTableRead):
-    """Fetch a table of events from a database
+    """Fetch a table of events from a database.
 
     Parameters
     ----------

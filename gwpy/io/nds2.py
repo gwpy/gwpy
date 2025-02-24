@@ -80,8 +80,7 @@ MAX_SAMPLE_RATE = 1e12
 # -- NDS2 types ----------------------
 
 def _nds2_attr_dict(prefix, to_string):
-    """Regenerate the relevant nds2 type dict from `nds2.channel` itself.
-    """
+    """Regenerate the relevant nds2 type dict from `nds2.channel` itself."""
     chan = nds2.channel
     for name in filter(
         operator.methodcaller("startswith", prefix),
@@ -139,8 +138,7 @@ else:
 # -- enums ---------------------------
 
 class _Nds2Enum(enum.IntFlag):
-    """Base class for NDS2 enums.
-    """
+    """Base class for NDS2 enums."""
     def __new__(
         cls,
         value: int,
@@ -153,20 +151,17 @@ class _Nds2Enum(enum.IntFlag):
 
     @classmethod
     def any(cls) -> Self:
-        """The logical OR of all members in this enum.
-        """
+        """The logical OR of all members in this enum."""
         return reduce(operator.or_, cls)
 
     @classmethod
     def nds2names(cls) -> list[str]:
-        """The list of all recognised NDS2 names for this type.
-        """
+        """The list of all recognised NDS2 names for this type."""
         return [x.nds2name for x in cls]
 
     @classmethod
     def find(cls, name: str | int) -> Self:
-        """Returns the NDS2 type corresponding to the given name
-        """
+        """Returns the NDS2 type corresponding to the given name."""
         name = str(name)
         # if given a number, use it
         if name.isdigit():
@@ -191,8 +186,7 @@ Nds2ChannelType.__doc__ = "NDS2 channel type with descriptive name."
 
 
 class _Nds2DataType(NumpyTypeEnum, _Nds2Enum):
-    """NDS2 data type with descriptive name.
-    """
+    """NDS2 data type with descriptive name."""
     @classmethod
     def find(cls, name):
         try:
@@ -211,8 +205,7 @@ Nds2DataType = _Nds2DataType(
 # -- warning suppression -------------
 
 class NDSWarning(UserWarning):
-    """Warning about communicating with the Network Data Server
-    """
+    """Warning about communicating with the Network Data Server."""
     pass
 
 
@@ -248,8 +241,7 @@ def _get_nds2_name(
 def _get_nds2_names(
     channels: Iterable[str | Channel | nds2.channel],
 ) -> Iterator[str]:
-    """Maps `_get_nds2_name` for a list of input channels.
-    """
+    """Maps `_get_nds2_name` for a list of input channels."""
     return map(_get_nds2_name, channels)
 
 
@@ -447,8 +439,7 @@ def auth_connect(
 
 
 def open_connection(func: Callable) -> Callable:
-    """Decorate a function to create a `nds2.connection` if required
-    """
+    """Decorate a function to create a `nds2.connection` if required."""
     @wraps(func)
     def wrapped_func(*args, **kwargs):
         if kwargs.get("connection", None) is None:
@@ -468,8 +459,7 @@ def open_connection(func: Callable) -> Callable:
 
 
 def parse_nds2_enums(func: Callable) -> Callable:
-    """Decorate a function to translate a type string into an integer.
-    """
+    """Decorate a function to translate a type string into an integer."""
     @wraps(func)
     def wrapped_func(*args, **kwargs):
         for kwd, enum_ in (

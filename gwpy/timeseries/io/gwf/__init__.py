@@ -71,7 +71,7 @@ BACKENDS = [
 # -- utilities ----------------------------------------------------------------
 
 def channel_dict_kwarg(value, channels, types=None, astype=None):
-    """Format the given kwarg value in a dict with one value per channel
+    """Format the given kwarg value in a dict with one value per channel.
 
     Parameters
     ----------
@@ -157,7 +157,7 @@ def register_gwf_backend(backend):
     def read_timeseriesdict(source, channels, start=None, end=None,
                             gap=None, pad=None, nproc=1,
                             series_class=TimeSeries, **kwargs):
-        """Read the data for a list of channels from a GWF data source
+        """Read the data for a list of channels from a GWF data source.
 
         Parameters
         ----------
@@ -241,13 +241,11 @@ def register_gwf_backend(backend):
         return out
 
     def read_timeseries(source, channel, *args, **kwargs):
-        """Read `TimeSeries` from GWF source
-        """
+        """Read `TimeSeries` from GWF source."""
         return read_timeseriesdict(source, [channel], *args, **kwargs)[channel]
 
     def read_statevector(source, channel, *args, **kwargs):
-        """Read `StateVector` from GWF source
-        """
+        """Read `StateVector` from GWF source."""
         bits = kwargs.pop("bits", None)
         kwargs.setdefault("series_class", StateVector)
         statevector = read_timeseries(source, channel, *args, **kwargs)
@@ -255,8 +253,7 @@ def register_gwf_backend(backend):
         return statevector
 
     def read_statevectordict(source, channels, *args, **kwargs):
-        """Read `StateVectorDict` from GWF source
-        """
+        """Read `StateVectorDict` from GWF source."""
         bitss = channel_dict_kwarg(kwargs.pop("bits", {}), channels)
         # read data as timeseriesdict and repackage with bits
         kwargs.setdefault("series_class", StateVector)
@@ -271,7 +268,7 @@ def register_gwf_backend(backend):
     write_timeseriesdict = _import_backend(libwrite_)
 
     def write_timeseries(series, *args, **kwargs):
-        """Write a `TimeSeries` to disk in GWF format
+        """Write a `TimeSeries` to disk in GWF format.
 
         See also
         --------
@@ -296,7 +293,7 @@ def register_gwf_backend(backend):
 # -- generic API for 'gwf' format ---------------------------------------------
 
 def register_gwf_format(klass: type[TimeSeriesBase | TimeSeriesBaseDict]):
-    """Register I/O methods for `format='gwf'`
+    """Register I/O methods for `format='gwf'`.
 
     The created methods loop through the registered sub-formats.
 

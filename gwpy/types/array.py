@@ -52,7 +52,7 @@ numpy.set_printoptions(threshold=200, linewidth=65)
 # -- core Array ---------------------------------------------------------------
 
 class Array(Quantity):
-    """Array holding data with a unit, and other metadata
+    """Array holding data with a unit, and other metadata.
 
     This `Array` holds the input data and a standard set of metadata
     properties associated with GW data.
@@ -112,8 +112,7 @@ class Array(Quantity):
                 name=None, epoch=None, channel=None,  # new attrs
                 dtype=None, copy=True, subok=True,  # ndarray attrs
                 order=None, ndmin=0):
-        """Create a new `Array`
-        """
+        """Create a new `Array`."""
         # pick dtype from input array
         if dtype is None and isinstance(value, numpy.ndarray):
             dtype = value.dtype
@@ -260,7 +259,7 @@ class Array(Quantity):
             prefix, arrstr, indent, metadata, suffix)
 
     def __repr__(self):
-        """Return a representation of this object
+        """Return a representation of this object.
 
         This just represents each of the metadata objects appropriately
         after the core data array
@@ -268,7 +267,7 @@ class Array(Quantity):
         return self._repr_helper(repr)
 
     def __str__(self):
-        """Return a printable string format representation of this object
+        """Return a printable string format representation of this object.
 
         This just prints each of the metadata objects appropriately
         after the core data array
@@ -290,7 +289,7 @@ class Array(Quantity):
     # name
     @property
     def name(self):
-        """Name for this data set
+        """Name for this data set.
 
         :type: `str`
         """
@@ -314,7 +313,7 @@ class Array(Quantity):
     # epoch
     @property
     def epoch(self):
-        """GPS epoch associated with these data
+        """GPS epoch associated with these data.
 
         :type: `~astropy.time.Time`
         """
@@ -343,7 +342,7 @@ class Array(Quantity):
     # channel
     @property
     def channel(self):
-        """Instrumental channel associated with these data
+        """Instrumental channel associated with these data.
 
         :type: `~gwpy.detector.Channel`
         """
@@ -374,7 +373,7 @@ class Array(Quantity):
     #        recognise
     @property
     def unit(self):
-        """The physical unit of these data
+        """The physical unit of these data.
 
         :type: `~astropy.units.UnitBase`
         """
@@ -433,7 +432,7 @@ class Array(Quantity):
     _to_own_unit.__doc__ = Quantity._to_own_unit.__doc__
 
     def override_unit(self, unit, parse_strict="raise"):
-        """Forcefully reset the unit of these data
+        """Forcefully reset the unit of these data.
 
         Use of this method is discouraged in favour of `to()`,
         which performs accurate conversions from one unit to another.

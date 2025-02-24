@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""I/O registry extensions on top of `astropy.io.registry`
+"""I/O registry extensions on top of `astropy.io.registry`.
 
 This module imports a subset of the useful functions from
 :mod:`astropy.io.registry` for convenience.
@@ -98,8 +98,7 @@ compat.register_identifier = legacy_register_identifier
 
 
 def get_read_format(cls, source, args, kwargs):
-    """Determine the read format for a given input source
-    """
+    """Determine the read format for a given input source."""
     ctx = None
     if isinstance(source, FILE_LIKE):
         fileobj = source
@@ -130,8 +129,7 @@ def get_read_format(cls, source, args, kwargs):
 # -- Unified I/O format --------------
 
 class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
-    """UnifiedIORegistry that can handle reading files in parallel.
-    """
+    """UnifiedIORegistry that can handle reading files in parallel."""
     def identify_format(
         self,
         origin,
@@ -181,8 +179,7 @@ default_registry = UnifiedIORegistry()
 
 
 class UnifiedRead(astropy_registry.UnifiedReadWrite):
-    """Base ``Class.read()`` implementation that handles parallel reads.
-    """
+    """Base ``Class.read()`` implementation that handles parallel reads."""
     def __init__(
         self,
         instance,
@@ -205,8 +202,7 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
 
     @staticmethod
     def _format_input_list(source):
-        """Format the input arguments to include a list of files.
-        """
+        """Format the input arguments to include a list of files."""
         # parse input as a list of files
         try:  # try and map to a list of file-like objects
             return file_list(source)
@@ -321,8 +317,7 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
 
 
 class UnifiedWrite(astropy_registry.UnifiedReadWrite):
-    """Base ``Class.write()`` implementation.
-    """
+    """Base ``Class.write()`` implementation."""
     def __init__(
         self,
         instance,
@@ -341,8 +336,7 @@ class UnifiedWrite(astropy_registry.UnifiedReadWrite):
         *args,
         **kwargs,
     ):
-        """Execute ``instance.write()``.
-        """
+        """Execute ``instance.write()``."""
         instance = self._instance
         return self.registry.write(instance, *args, **kwargs)
 

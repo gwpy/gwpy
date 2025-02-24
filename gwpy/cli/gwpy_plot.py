@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Generate plots of GW observatory data using GWpy
-"""
+"""Generate plots of GW observatory data using GWpy."""
 
 import time
 
@@ -121,7 +120,7 @@ def parse_command_line(args=None):
 # -- run ----------------------------------------------------------------------
 
 def main(args=None):
-    """Run gwpy-plot
+    """Run gwpy-plot.
 
     Returns the relevant exit code, that can be passed to :func:`sys.exit`.
     """

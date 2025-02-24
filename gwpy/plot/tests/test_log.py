@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for `gwpy.plot.log`
-"""
+"""Tests for `gwpy.plot.log`."""
 
 from unittest import mock
 

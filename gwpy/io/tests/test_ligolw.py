@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for `gwpy.io.ligolw` module
-"""
+"""Unit test for `gwpy.io.ligolw` module."""
 
 import tempfile
 from pathlib import Path
@@ -65,8 +64,7 @@ OLD_FORMAT_LIGO_LW_XML = """
 
 @pytest.fixture(scope="function")
 def llwdoc():
-    """Build an empty LIGO_LW Document
-    """
+    """Build an empty LIGO_LW Document."""
     try:
         from ligo.lw.ligolw import (Document, LIGO_LW)
     except ImportError as exc:
@@ -77,8 +75,7 @@ def llwdoc():
 
 
 def new_table(tablename, data=None, **new_kw):
-    """Create a new LIGO_LW Table with data
-    """
+    """Create a new LIGO_LW Table with data."""
     try:
         from ligo.lw import lsctables
     except ImportError as exc:
@@ -99,8 +96,7 @@ def new_table(tablename, data=None, **new_kw):
 
 @pytest.fixture(scope="function")
 def llwdoc_with_tables(llwdoc):
-    """Build a LIGO_LW Document with some tables
-    """
+    """Build a LIGO_LW Document with some tables."""
     llw = llwdoc.childNodes[-1]  # get ligolw element
     for t in [
         new_table("process"),
@@ -135,8 +131,7 @@ def test_read_table_ilwd(tmp_path):
 
 
 def test_read_table_multiple(llwdoc_with_tables):
-    """Check that `gwpy.io.ligolw.read_table` correctly errors on ambiguity.
-    """
+    """Check that `gwpy.io.ligolw.read_table` correctly errors on ambiguity."""
     with pytest.raises(
         ValueError,
         match="^Multiple tables .* 'process', 'sngl_ringdown'",

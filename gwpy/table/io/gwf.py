@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from GWF FrEvent structures into a Table.
-"""
+"""Read events from GWF FrEvent structures into a Table."""
 
 from __future__ import annotations
 
@@ -46,8 +45,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 # -- read ----------------------------
 
 def _columns_from_frevent(frevent: FrEvent) -> list[str]:
-    """Get list of column names from frevent.
-    """
+    """Get list of column names from frevent."""
     params = dict(frevent.GetParam())
     return [
         "time",
@@ -157,7 +155,7 @@ def table_to_gwf(
     name: str,
     **kwargs,
 ):
-    """Create a new `~frameCPP.FrameH` and fill it with data
+    """Create a new `~frameCPP.FrameH` and fill it with data.
 
     Parameters
     ----------

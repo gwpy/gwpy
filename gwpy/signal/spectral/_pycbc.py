@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""GWpy API to the pycbc.psd FFT routines
+"""GWpy API to the pycbc.psd FFT routines.
 
 This module is deprecated and will be removed in a future release.
 """
@@ -30,7 +30,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def welch(timeseries, segmentlength, noverlap=None, scheme=None, **kwargs):
-    """Calculate a PSD using Welch's method with a mean average
+    """Calculate a PSD using Welch's method with a mean average.
 
     Parameters
     ----------

@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.io.datafind`
-"""
+"""Unit tests for :mod:`gwpy.io.datafind`."""
 
 import os
 from unittest import mock
@@ -43,8 +42,7 @@ MOCK_ENV = {
 
 
 def _mock_gwdatafind(func):
-    """Decorate a function to use a mocked GWDataFind API.
-    """
+    """Decorate a function to use a mocked GWDataFind API."""
     @mock.patch.dict("os.environ", MOCK_ENV)
     @mock.patch(
         f"{GWDATAFIND_PATH}.find_types",
@@ -92,8 +90,7 @@ def test_gwdatafind_module_error():
 
 @_mock_gwdatafind
 def test_find_frametype():
-    """Test that `find_frametype` works with basic input.
-    """
+    """Test that `find_frametype` works with basic input."""
     assert io_datafind.find_frametype(
         "L1:LDAS-STRAIN",
         allow_tape=True,
@@ -102,8 +99,7 @@ def test_find_frametype():
 
 @_mock_gwdatafind
 def test_find_frametype_return_all():
-    """Test that the ``return_all` keyword for `find_frametype` returns a list.
-    """
+    """Test that the ``return_all` keyword for `find_frametype` returns a list."""
     assert io_datafind.find_frametype(
         "L1:LDAS-STRAIN",
         return_all=True,
@@ -112,8 +108,7 @@ def test_find_frametype_return_all():
 
 @_mock_gwdatafind
 def test_find_frametype_multiple():
-    """Test that `find_frametype` can handle channels as MIMO.
-    """
+    """Test that `find_frametype` can handle channels as MIMO."""
     assert io_datafind.find_frametype(
         ["H1:LDAS-STRAIN", "L1:LDAS-STRAIN"],
         allow_tape=True,
@@ -125,8 +120,7 @@ def test_find_frametype_multiple():
 
 @_mock_gwdatafind
 def test_find_frametype_error_not_found():
-    """Test that `find_frametype` raises the right error for a missing channel.
-    """
+    """Test that `find_frametype` raises the right error for a missing channel."""
     # test missing channel raises sensible error
     with pytest.raises(
         ValueError,
@@ -172,8 +166,7 @@ def test_find_frametype_error_files_on_tape():
 
 @_mock_gwdatafind
 def test_find_best_frametype():
-    """Test that `find_best_frametype` works in general.
-    """
+    """Test that `find_best_frametype` works in general."""
     assert io_datafind.find_best_frametype(
         "L1:LDAS-STRAIN",
         968654552,
@@ -239,8 +232,7 @@ def test_find_latest_error():
 
 @mock.patch.dict("os.environ", MOCK_ENV)
 def test_find_types():
-    """Check that `find_types` works with default arguments.
-    """
+    """Check that `find_types` works with default arguments."""
     types = ["a", "b", "c"]
     with mock.patch(f"{GWDATAFIND_PATH}.find_types", return_value=types):
         assert io_datafind.find_types(
@@ -250,8 +242,7 @@ def test_find_types():
 
 @mock.patch.dict("os.environ", MOCK_ENV)
 def test_find_types_priority():
-    """Check that `find_types` prioritises trends properly.
-    """
+    """Check that `find_types` prioritises trends properly."""
     types = ["L1_R", "L1_T", "L1_M"]
     with mock.patch(f"{GWDATAFIND_PATH}.find_types", return_value=types):
         assert io_datafind.find_types(
@@ -263,22 +254,19 @@ def test_find_types_priority():
 # -- utilities --------------
 
 def test_on_tape_false():
-    """Check `on_tape` works with a normal file.
-    """
+    """Check `on_tape` works with a normal file."""
     assert io_datafind.on_tape(TEST_GWF_FILE) is False
 
 
 def test_on_tape_true():
-    """Test that `on_tape` returns `True` for a file with zero blocks.
-    """
+    """Test that `on_tape` returns `True` for a file with zero blocks."""
     with mock.patch("os.stat") as os_stat:
         os_stat.return_value.st_blocks = 0
         assert io_datafind.on_tape(TEST_GWF_FILE) is True
 
 
 def test_on_tape_windows():
-    """Test that `on_tape` always returns `False` on Windows.
-    """
+    """Test that `on_tape` always returns `False` on Windows."""
     class _Stat():
         def __init__(self, path):
             pass
@@ -303,6 +291,5 @@ def test_on_tape_windows():
     ("X1", "something else", None, 5),  # other
 ])
 def test_type_priority(ifo, ftype, trend, priority):
-    """Test that `_type_priority` works for various cases.
-    """
+    """Test that `_type_priority` works for various cases."""
     assert io_datafind._type_priority(ifo, ftype, trend=trend)[0] == priority

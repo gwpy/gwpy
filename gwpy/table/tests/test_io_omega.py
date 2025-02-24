@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.table.io.omega`
-"""
+"""Tests for :mod:`gwpy.table.io.omega`."""
 
 import pytest
 
@@ -47,8 +46,7 @@ def omega_ascii(tmp_path):
 
 
 def test_read_omega_ascii(omega_ascii):
-    """Check that the ``"ascii.omega"`` file reader works.
-    """
+    """Check that the ``"ascii.omega"`` file reader works."""
     tab = EventTable.read(omega_ascii, format="ascii.omega")
     assert len(tab) == 4
     assert tab[0]["time"] == pytest.approx(1023927596.84375)
@@ -56,8 +54,7 @@ def test_read_omega_ascii(omega_ascii):
 
 
 def test_read_omega_ascii_noheader(tmp_path):
-    """Check that reading an Omega file without headers results in an error.
-    """
+    """Check that reading an Omega file without headers results in an error."""
     # create empty file
     empty = tmp_path / "empty.txt"
     empty.write_text("")
@@ -71,8 +68,7 @@ def test_read_omega_ascii_noheader(tmp_path):
 
 
 def test_write_omega_ascii(omega_ascii):
-    """Check that the ``"ascii.omega"`` file writer works.
-    """
+    """Check that the ``"ascii.omega"`` file writer works."""
     # read the example data
     tab = EventTable.read(omega_ascii, format="ascii.omega")
 

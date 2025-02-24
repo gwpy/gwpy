@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Write GWpy objects to HDF5 files
-"""
+"""Write GWpy objects to HDF5 files."""
 
 import os.path
 from functools import wraps
@@ -33,7 +32,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 def open_hdf5(filename, mode="r"):
     """Wrapper to open a :class:`h5py.File` from disk, gracefully
-    handling a few corner cases
+    handling a few corner cases.
     """
     if isinstance(filename, (h5py.Group, h5py.Dataset)):
         return filename
@@ -43,7 +42,7 @@ def open_hdf5(filename, mode="r"):
 
 
 def with_read_hdf5(func):
-    """Decorate an HDF5-reading function to open a filepath if needed
+    """Decorate an HDF5-reading function to open a filepath if needed.
 
     ``func`` should be written to presume an `h5py.Group` as the first
     positional argument.
@@ -62,7 +61,7 @@ def with_read_hdf5(func):
 
 
 def find_dataset(h5o, path=None):
-    """Find and return the relevant dataset inside the given H5 object
+    """Find and return the relevant dataset inside the given H5 object.
 
     If ``path=None`` is given, and ``h5o`` contains a single dataset, that
     will be returned
@@ -101,7 +100,7 @@ def find_dataset(h5o, path=None):
 # -- writing utilities --------------------------------------------------------
 
 def with_write_hdf5(func):
-    """Decorate an HDF5-writing function to open a filepath if needed
+    """Decorate an HDF5-writing function to open a filepath if needed.
 
     ``func`` should be written to take the object to be written as the
     first argument, and then presume an `h5py.Group` as the second.
@@ -129,7 +128,7 @@ def with_write_hdf5(func):
 
 
 def create_dataset(parent, path, overwrite=False, **kwargs):
-    """Create a new dataset inside the parent HDF5 object
+    """Create a new dataset inside the parent HDF5 object.
 
     Parameters
     ----------

@@ -290,8 +290,7 @@ DATE_STRINGS: dict[str, Callable] = {
 def _str_to_datetime(
     datestr: str,
 ) -> datetime.datetime:
-    """Convert `str` to `datetime.datetime`.
-    """
+    """Convert `str` to `datetime.datetime`."""
     # try known string
     try:
         return DATE_STRINGS[str(datestr).lower()]()
@@ -315,8 +314,7 @@ def _str_to_datetime(
 def _datetime_to_time(
     dtm: datetime.date,
 ) -> Time:
-    """Convert `datetime.date` to `astropy.time.Time`.
-    """
+    """Convert `datetime.date` to `astropy.time.Time`."""
     # astropy.time.Time requires datetime.datetime
     if not isinstance(dtm, datetime.datetime):
         dtm = datetime.datetime.combine(dtm, datetime.time.min)

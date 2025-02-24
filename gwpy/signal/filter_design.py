@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Custom filtering utilities for the `TimeSeries`.
-"""
+"""Custom filtering utilities for the `TimeSeries`."""
 
 from __future__ import annotations
 
@@ -98,8 +97,7 @@ def _design_iir(
     ftype: str = "cheby1",
     output: str = "zpk",
 ) -> IirFilterType:
-    """Design an IIR filter using `scipy.signal.iirdesign`.
-    """
+    """Design an IIR filter using `scipy.signal.iirdesign`."""
     nyq = sample_rate / 2.
     wp = numpy.atleast_1d(wp)
     ws = numpy.atleast_1d(ws)
@@ -173,8 +171,7 @@ def _design(
     *args,
     **kwargs,
 ) -> FilterType:
-    """Convenience function to select between `_design_iir` and `_design_fir`.
-    """
+    """Convenience function to select between `_design_iir` and `_design_fir`."""
     design_func: Callable
     if type == "iir":
         design_func = _design_iir
@@ -251,7 +248,7 @@ def truncate_transfer(
     transfer: numpy.ndarray,
     ncorner: int | None = None,
 ) -> numpy.ndarray:
-    """Smoothly zero the edges of a frequency domain transfer function
+    """Smoothly zero the edges of a frequency domain transfer function.
 
     Parameters
     ----------
@@ -508,7 +505,7 @@ def lowpass(
     type: str = "iir",
     **kwargs,
 ) -> FilterType:
-    """Design a low-pass filter for the given cutoff frequency
+    """Design a low-pass filter for the given cutoff frequency.
 
     Parameters
     ----------

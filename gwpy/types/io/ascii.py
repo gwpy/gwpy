@@ -116,8 +116,7 @@ def register_ascii_io(
     writer: Callable = write_ascii_series,
     **defaults,
 ):
-    """Register ASCII read/write/identify methods for the given type.
-    """
+    """Register ASCII read/write/identify methods for the given type."""
     def _read(source, **kwargs):
         kwgs = defaults.copy()
         kwgs.update(kwargs)

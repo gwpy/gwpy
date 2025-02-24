@@ -17,7 +17,7 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-The TimeSeriesBase
+The TimeSeriesBase.
 ==================
 
 This module defines the following classes
@@ -112,7 +112,7 @@ def _format_time(gps):
 
 
 def _dynamic_scaled(scaled, channel):
-    """Determine default for scaled based on channel name
+    """Determine default for scaled based on channel name.
 
     This is mainly to work around LIGO not correctly recording ADC
     scaling parameters for most of Advanced LIGO (through 2023).
@@ -195,8 +195,7 @@ class TimeSeriesBase(Series):
 
     def __new__(cls, data, unit=None, t0=None, dt=None, sample_rate=None,
                 times=None, channel=None, name=None, **kwargs):
-        """Generate a new `TimeSeriesBase`.
-        """
+        """Generate a new `TimeSeriesBase`."""
         # parse t0 or epoch
         epoch = kwargs.pop("epoch", None)
         if epoch is not None and t0 is not None:
@@ -280,7 +279,7 @@ class TimeSeriesBase(Series):
     # -- duration
     @property
     def duration(self):
-        """Duration of this series in seconds
+        """Duration of this series in seconds.
 
         :type: `~astropy.units.Quantity` scalar
         """
@@ -298,7 +297,7 @@ class TimeSeriesBase(Series):
     def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
               connection=None, verify=False, pad=None, allow_tape=None,
               scaled=None, type=None, dtype=None):
-        """Fetch data from NDS
+        """Fetch data from NDS.
 
         Parameters
         ----------
@@ -457,7 +456,7 @@ class TimeSeriesBase(Series):
     @classmethod
     def find(cls, channel, start, end, frametype=None, pad=None,
              scaled=None, nproc=1, verbose=False, **readargs):
-        """Find and read data from frames for a channel
+        """Find and read data from frames for a channel.
 
         Parameters
         ----------
@@ -600,7 +599,7 @@ class TimeSeriesBase(Series):
 
     def plot(self, method="plot", figsize=(12, 4), xscale="auto-gps",
              **kwargs):
-        """Plot the data for this timeseries
+        """Plot the data for this timeseries.
 
         Returns
         -------
@@ -663,7 +662,7 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def from_nds2_buffer(cls, buffer_, scaled=None, copy=True, **metadata):
-        """Construct a new series from an `nds2.buffer` object
+        """Construct a new series from an `nds2.buffer` object.
 
         **Requires:** |nds2|_
 
@@ -716,8 +715,7 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def from_lal(cls, lalts, copy=True):
-        """Generate a new TimeSeries from a LAL TimeSeries of any type.
-        """
+        """Generate a new TimeSeries from a LAL TimeSeries of any type."""
         # convert the units
         from ..utils.lal import (from_lal_unit, from_lal_type)
         unit = from_lal_unit(lalts.sampleUnits)
@@ -784,7 +782,7 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def from_pycbc(cls, pycbcseries, copy=True):
-        """Convert a `pycbc.types.timeseries.TimeSeries` into a `TimeSeries`
+        """Convert a `pycbc.types.timeseries.TimeSeries` into a `TimeSeries`.
 
         Parameters
         ----------
@@ -804,7 +802,7 @@ class TimeSeriesBase(Series):
 
     def to_pycbc(self, copy=True):
         """Convert this `TimeSeries` into a PyCBC
-        `~pycbc.types.timeseries.TimeSeries`
+        `~pycbc.types.timeseries.TimeSeries`.
 
         Parameters
         ----------
@@ -852,15 +850,14 @@ class TimeSeriesBase(Series):
 
 def as_series_dict_class(seriesclass):
     """Decorate a `dict` class to declare itself as the `DictClass` for
-    its `EntryClass`
+    its `EntryClass`.
 
     This method should be used to decorate sub-classes of the
     `TimeSeriesBaseDict` to provide a reference to that class from the
     relevant subclass of `TimeSeriesBase`.
     """
     def decorate_class(cls):
-        """Set ``cls`` as the `DictClass` attribute for this series type
-        """
+        """Set ``cls`` as the `DictClass` attribute for this series type."""
         seriesclass.DictClass = cls
         return cls
     return decorate_class
@@ -868,7 +865,7 @@ def as_series_dict_class(seriesclass):
 
 @as_series_dict_class(TimeSeriesBase)
 class TimeSeriesBaseDict(OrderedDict):
-    """Ordered key-value mapping of named `TimeSeriesBase` objects
+    """Ordered key-value mapping of named `TimeSeriesBase` objects.
 
     This object is designed to hold data for many different sources (channels)
     for a single time span.
@@ -881,7 +878,7 @@ class TimeSeriesBaseDict(OrderedDict):
 
     @property
     def span(self):
-        """The GPS ``[start, stop)`` extent of data in this `dict`
+        """The GPS ``[start, stop)`` extent of data in this `dict`.
 
         :type: `~gwpy.segments.Segment`
         """
@@ -904,15 +901,14 @@ class TimeSeriesBaseDict(OrderedDict):
         return self.append(other)
 
     def copy(self):
-        """Return a copy of this dict with each value copied to new memory
-        """
+        """Return a copy of this dict with each value copied to new memory."""
         new = self.__class__()
         for key, val in self.items():
             new[key] = val.copy()
         return new
 
     def append(self, other, copy=True, **kwargs):
-        """Append the dict ``other`` to this one
+        """Append the dict ``other`` to this one.
 
         Parameters
         ----------
@@ -941,7 +937,7 @@ class TimeSeriesBaseDict(OrderedDict):
         return self
 
     def prepend(self, other, **kwargs):
-        """Prepend the dict ``other`` to this one
+        """Prepend the dict ``other`` to this one.
 
         Parameters
         ----------
@@ -1503,7 +1499,7 @@ class TimeSeriesBaseDict(OrderedDict):
 
     @classmethod
     def from_nds2_buffers(cls, buffers, scaled=None, copy=True, **metadata):
-        """Construct a new dict from a list of `nds2.buffer` objects
+        """Construct a new dict from a list of `nds2.buffer` objects.
 
         **Requires:** |nds2|_
 
@@ -1615,7 +1611,7 @@ class TimeSeriesBaseDict(OrderedDict):
 # -- TimeSeriesBaseList -------------------------------------------------------
 
 class TimeSeriesBaseList(list):
-    """Fancy list representing a list of `TimeSeriesBase`
+    """Fancy list representing a list of `TimeSeriesBase`.
 
     The `TimeSeriesBaseList` provides an easy way to collect and organise
     `TimeSeriesBase` for a single `Channel` over multiple segments.
@@ -1638,16 +1634,14 @@ class TimeSeriesBaseList(list):
     EntryClass = TimeSeriesBase
 
     def __init__(self, *items):
-        """Initialise a new list
-        """
+        """Initialise a new list."""
         super().__init__()
         for item in items:
             self.append(item)
 
     @property
     def segments(self):
-        """The `span` of each series in this list
-        """
+        """The `span` of each series in this list."""
         from ..segments import SegmentList
         return SegmentList([item.span for item in self])
 
@@ -1665,7 +1659,7 @@ class TimeSeriesBaseList(list):
     extend.__doc__ = list.extend.__doc__
 
     def coalesce(self):
-        """Merge contiguous elements of this list into single objects
+        """Merge contiguous elements of this list into single objects.
 
         This method implicitly sorts and potentially shortens this list.
         """
@@ -1693,7 +1687,7 @@ class TimeSeriesBaseList(list):
         return self
 
     def join(self, pad=None, gap=None):
-        """Concatenate all of the elements of this list into a single object
+        """Concatenate all of the elements of this list into a single object.
 
         Parameters
         ----------
@@ -1739,8 +1733,7 @@ class TimeSeriesBaseList(list):
         return super().__getitem__(key)
 
     def copy(self):
-        """Return a copy of this list with each element copied to new memory
-        """
+        """Return a copy of this list with each element copied to new memory."""
         out = type(self)()
         for series in self:
             out.append(series.copy())

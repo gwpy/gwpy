@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module attaches the HDF5 input output methods to the TimeSeries.
-"""
+"""This module attaches the HDF5 input output methods to the TimeSeries."""
 
 from astropy import units
 
@@ -45,8 +44,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 # -- read ---------------------------------------------------------------------
 
 def read_hdf5_timeseries(h5f, path=None, start=None, end=None, **kwargs):
-    """Read a `TimeSeries` from HDF5
-    """
+    """Read a `TimeSeries` from HDF5."""
     # read data
     kwargs.setdefault("array_type", TimeSeries)
     series = read_hdf5_array(h5f, path=path, **kwargs)
@@ -61,15 +59,13 @@ def read_hdf5_timeseries(h5f, path=None, start=None, end=None, **kwargs):
 
 
 def _is_timeseries_dataset(dataset):
-    """Returns `True` if a dataset contains `TimeSeries` data
-    """
+    """Returns `True` if a dataset contains `TimeSeries` data."""
     return SEC_UNIT.is_equivalent(dataset.attrs.get("xunit", "undef"))
 
 
 @with_read_hdf5
 def read_hdf5_dict(h5f, names=None, group=None, **kwargs):
-    """Read a `TimeSeriesDict` from HDF5
-    """
+    """Read a `TimeSeriesDict` from HDF5."""
     # find group from which to read
     if group:
         h5g = h5f[group]
@@ -106,7 +102,7 @@ def read_hdf5_factory(data_class):
 
 @with_write_hdf5
 def write_hdf5_dict(tsdict, h5f, group=None, **kwargs):
-    """Write a `TimeSeriesBaseDict` to HDF5
+    """Write a `TimeSeriesBaseDict` to HDF5.
 
     Each series in the dict is written as a dataset in the group
     """

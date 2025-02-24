@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""ASCII I/O registrations for gwpy.frequencyseries objects
-"""
+"""ASCII I/O registrations for gwpy.frequencyseries objects."""
 
 from ...types.io.ascii import register_ascii_io
 from .. import FrequencySeries

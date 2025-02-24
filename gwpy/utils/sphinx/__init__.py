@@ -16,5 +16,4 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Extension for sphinx documentation specific to GWpy
-"""
+"""Extension for sphinx documentation specific to GWpy."""

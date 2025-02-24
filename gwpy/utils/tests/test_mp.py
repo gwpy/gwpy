@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for utils module
-"""
+"""Unit test for utils module."""
 
 import sys
 from math import sqrt
@@ -54,8 +53,7 @@ def test_multiprocess_with_queues(capsys, nproc, verbose):
 
 @pytest.mark.parametrize("nproc", [1, 2])
 def test_multiprocess_with_queues_errors(nproc):
-    """Check that errors from child processes propagate to the parent
-    """
+    """Check that errors from child processes propagate to the parent."""
     with pytest.raises(ValueError, match="^math domain error$"):
         utils_mp.multiprocess_with_queues(
             nproc,

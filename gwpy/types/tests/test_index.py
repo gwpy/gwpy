@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.types.index`
-"""
+"""Unit tests for :mod:`gwpy.types.index`."""
 
 from astropy import units
 
@@ -27,8 +26,7 @@ class TestIndex(object):
     TEST_CLASS = Index
 
     def test_define_regular(self):
-        """Check for regression against gwpy/gwpy#1596.
-        """
+        """Check for regression against gwpy/gwpy#1596."""
         ind_len = 1000
         a = self.TEST_CLASS.define(
             1262936373.4853957,
@@ -38,8 +36,7 @@ class TestIndex(object):
         assert len(a) == ind_len
 
     def test_define_index_length(self):
-        """Check for regression against gwpy/gwpy#1506.
-        """
+        """Check for regression against gwpy/gwpy#1506."""
         a = self.TEST_CLASS.define(
             units.Quantity(1000000000),
             units.Quantity(0.01),

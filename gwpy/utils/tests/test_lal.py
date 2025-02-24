@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for utils module
-"""
+"""Unit test for utils module."""
 
 import numpy
 import pytest
@@ -36,8 +35,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
     (11, "REAL8"),
 ])
 def test_to_lal_type_str(arg, result):
-    """Test :func:`gwpy.utils.lal.to_lal_type_str`.
-    """
+    """Test :func:`gwpy.utils.lal.to_lal_type_str`."""
     assert utils_lal.to_lal_type_str(arg) == result
 
 
@@ -47,15 +45,13 @@ def test_to_lal_type_str(arg, result):
     20,
 ])
 def test_to_lal_type_str_error(arg):
-    """Test :func:`gwpy.utils.lal.to_lal_type_str` error handling.
-    """
+    """Test :func:`gwpy.utils.lal.to_lal_type_str` error handling."""
     with pytest.raises(ValueError):
         utils_lal.to_lal_type_str(arg)
 
 
 def test_find_typed_function():
-    """Test :func:`gwpy.utils.lal.find_typed_function`.
-    """
+    """Test :func:`gwpy.utils.lal.find_typed_function`."""
     assert utils_lal.find_typed_function(
         "REAL8",
         "Create",
@@ -65,8 +61,7 @@ def test_find_typed_function():
 
 @pytest.mark.requires("lalframe")
 def test_find_typed_function_module():
-    """Test :func:`gwpy.utils.lal.find_typed_function` with lalframe.
-    """
+    """Test :func:`gwpy.utils.lal.find_typed_function` with lalframe."""
     import lalframe
     utils_lal.find_typed_function(
         "REAL4",
@@ -89,8 +84,7 @@ def test_find_typed_function_module():
     numpy.complex128,
 ])
 def test_from_lal_type(dtype):
-    """Test :func:`gwpy.utils.lal.from_lal_type`.
-    """
+    """Test :func:`gwpy.utils.lal.from_lal_type`."""
     func = utils_lal.find_typed_function(
         dtype,
         "Create",
@@ -116,8 +110,7 @@ def test_from_lal_type(dtype):
     "REAL42",
 ])
 def test_from_lal_type_errors(name):
-    """Test :func:`gwpy.utils.lal.from_lal_type` error handling.
-    """
+    """Test :func:`gwpy.utils.lal.from_lal_type` error handling."""
     lal_type = type(name, (), {})
     with pytest.raises(
         ValueError,
@@ -152,16 +145,14 @@ def test_to_lal_unit_error():
     ("10^3 m", "km"),
 ))
 def test_from_lal_unit(in_, out):
-    """Test :func:`gwpy.utils.lal.from_lal_unit`.
-    """
+    """Test :func:`gwpy.utils.lal.from_lal_unit`."""
     assert utils_lal.from_lal_unit(
         lal.Unit(in_),
     ) == units.Unit(out)
 
 
 def test_to_lal_ligotimegps():
-    """Test :func:`gwpy.utils.lal.to_lal_ligotimegps`.
-    """
+    """Test :func:`gwpy.utils.lal.to_lal_ligotimegps`."""
     assert utils_lal.to_lal_ligotimegps(
         123.456,
     ) == lal.LIGOTimeGPS(123, 456000000)

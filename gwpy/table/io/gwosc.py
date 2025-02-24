@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Fetch and parse an event catalog from GWOSC.
-"""
+"""Fetch and parse an event catalog from GWOSC."""
 
 from __future__ import annotations
 
@@ -108,7 +107,7 @@ def _mask_replace(
 
 
 def _mask_column(col: Iterable) -> tuple[Iterable, list]:
-    """Find and replace missing data in a column
+    """Find and replace missing data in a column.
 
     Returns the new data, and the mask as `list`.
     """
@@ -132,8 +131,7 @@ def fetch_catalog(
     host=DEFAULT_GWOSC_URL,
     **kwargs,
 ):
-    """Download a `Table` of events from the GWOSC EventApi.
-    """
+    """Download a `Table` of events from the GWOSC EventApi."""
     # fetch and parse data
     table = parse_eventapi_catalog(
         fetch_catalog_json(catalog, host=host),

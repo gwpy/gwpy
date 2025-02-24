@@ -81,8 +81,7 @@ HACR_DATABASE_QUERY = {
 # -- dynamic columns -----------------
 
 def gpstime(table, name="gpstime"):
-    """Combine the ``gps_start`` and ``gps_offset`` columns.
-    """
+    """Combine the ``gps_start`` and ``gps_offset`` columns."""
     return Column(
         table["gps_start"][:] + table["gps_offset"][:],
         name=name,
@@ -376,8 +375,7 @@ def _process_id_query(
     start=None,
     end=None,
 ):
-    """Construct the ``SELECT`` query to get valid HACR ``process_id``s.
-    """
+    """Construct the ``SELECT`` query to get valid HACR ``process_id``s."""
     where = [
         f"monitorName == '{monitor}'",
     ]

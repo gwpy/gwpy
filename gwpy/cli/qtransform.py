@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Q-transform plots
-"""
+"""Q-transform plots."""
 
 import os.path
 import re
@@ -30,7 +29,7 @@ from .spectrogram import Spectrogram
 
 
 class Qtransform(Spectrogram):
-    """Plot the Q-transform (Omega)"""
+    """Plot the Q-transform (Omega)."""
     DEFAULT_FFTLENGTH = None
     MAX_DATASETS = 1
     action = "qtransform"
@@ -89,8 +88,7 @@ class Qtransform(Spectrogram):
 
     @classmethod
     def arg_qxform(cls, parser):
-        """Add an `~argparse.ArgumentGroup` for Q-transform options
-        """
+        """Add an `~argparse.ArgumentGroup` for Q-transform options."""
         group = parser.add_argument_group("Q-transform options")
         group.add_argument("--plot", nargs="+", type=float, default=[.5],
                            help="One or more times to plot")
@@ -104,7 +102,7 @@ class Qtransform(Spectrogram):
 
     def _finalize_arguments(self, args):
         """Derive standard args from our weird ones
-        :type args: Namespace with command line arguments
+        :type args: Namespace with command line arguments.
         """
         gps = args.gps
         search = args.search
@@ -152,7 +150,7 @@ class Qtransform(Spectrogram):
         args.xmax = xmax
 
     def get_ylabel(self):
-        """Default text for y-axis label"""
+        """Default text for y-axis label."""
         return "Frequency (Hz)"
 
     def get_color_label(self):
@@ -162,8 +160,7 @@ class Qtransform(Spectrogram):
         return f"Q-transform: {self.chan_list[0]}"
 
     def get_title(self):
-        """Default title for plot
-        """
+        """Default title for plot."""
         def fformat(x):  # float format
             if isinstance(x, (list, tuple)):
                 return f"[{', '.join(map(fformat, x))}]"
@@ -192,7 +189,7 @@ class Qtransform(Spectrogram):
 
     def get_spectrogram(self):
         """Worked on a single timesharing and generates a single Q-transform
-        spectrogram"""
+        spectrogram."""
         args = self.args
 
         fftlength = args.secpfft
@@ -247,8 +244,7 @@ class Qtransform(Spectrogram):
         return super().scale_axes_from_data()
 
     def has_more_plots(self):
-        """any ranges left to plot?
-        """
+        """Return `True` if there are more plots to make."""
         return self.plot_num < len(self.args.plot)
 
     def save(self, outdir):  # pylint: disable=arguments-differ

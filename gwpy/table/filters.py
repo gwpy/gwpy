@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Filter functions for use with :meth:`EventTable.filter`
+"""Filter functions for use with :meth:`EventTable.filter`.
 
 Each of these functions has the same input and output format.
 The inputs must be
@@ -34,7 +34,7 @@ import numpy
 
 
 def in_segmentlist(column, segmentlist):
-    """Return the index of values lying inside the given segmentlist
+    """Return the index of values lying inside the given segmentlist.
 
     A `~gwpy.segments.Segment` represents a semi-open interval,
     so for any segment `[a, b)`, a value `x` is 'in' the segment if
@@ -73,7 +73,7 @@ def in_segmentlist(column, segmentlist):
 
 
 def not_in_segmentlist(column, segmentlist):
-    """Return the index of values not lying inside the given segmentlist
+    """Return the index of values not lying inside the given segmentlist.
 
     See :func:`~gwpy.table.filters.in_segmentlist` for more details
     """

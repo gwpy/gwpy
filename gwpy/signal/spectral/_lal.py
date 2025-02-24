@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""GWpy API to the LAL FFT routines
+"""GWpy API to the LAL FFT routines.
 
 See the `LAL TimeFreqFFT.h documentation
 <https://lscsoft.docs.ligo.org/lalsuite/lal/group___time_freq_f_f_t__h.html>`_
@@ -87,7 +87,7 @@ def generate_fft_plan(length, level=None, dtype="float64", forward=True):
 
 
 def generate_window(length, window=None, dtype="float64"):
-    """Generate a time-domain window for use in a LAL FFT
+    """Generate a time-domain window for use in a LAL FFT.
 
     Parameters
     ----------
@@ -134,8 +134,7 @@ def generate_window(length, window=None, dtype="float64"):
 
 
 def window_from_array(array, dtype=None):
-    """Convert a `numpy.ndarray` into a LAL `Window` object
-    """
+    """Convert a `numpy.ndarray` into a LAL `Window` object."""
     from ...utils.lal import (find_typed_function)
 
     if dtype is None:
@@ -153,7 +152,7 @@ def window_from_array(array, dtype=None):
 
 def _lal_spectrum(timeseries, segmentlength, noverlap=None, method="welch",
                   window=None, plan=None):
-    """Generate a PSD `FrequencySeries` using |lal|_
+    """Generate a PSD `FrequencySeries` using |lal|_.
 
     Parameters
     ----------
@@ -244,7 +243,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method="welch",
 
 
 def welch(timeseries, segmentlength, noverlap=None, window=None, plan=None):
-    """Calculate an PSD of this `TimeSeries` using Welch's method
+    """Calculate an PSD of this `TimeSeries` using Welch's method.
 
     Parameters
     ----------
@@ -278,7 +277,7 @@ def welch(timeseries, segmentlength, noverlap=None, window=None, plan=None):
 
 def bartlett(timeseries, segmentlength, noverlap=None, window=None, plan=None):
     # pylint: disable=unused-argument
-    """Calculate an PSD of this `TimeSeries` using Bartlett's method
+    """Calculate an PSD of this `TimeSeries` using Bartlett's method.
 
     Parameters
     ----------
@@ -311,7 +310,7 @@ def bartlett(timeseries, segmentlength, noverlap=None, window=None, plan=None):
 
 
 def median(timeseries, segmentlength, noverlap=None, window=None, plan=None):
-    """Calculate a PSD of this `TimeSeries` using a median average method
+    """Calculate a PSD of this `TimeSeries` using a median average method.
 
     The median average is similar to Welch's method, using a median average
     rather than mean.
@@ -348,7 +347,7 @@ def median(timeseries, segmentlength, noverlap=None, window=None, plan=None):
 
 def median_mean(timeseries, segmentlength, noverlap=None,
                 window=None, plan=None):
-    """Calculate a PSD of this `TimeSeries` using a median-mean average method
+    """Calculate a PSD of this `TimeSeries` using a median-mean average method.
 
     The median-mean average method divides overlapping segments into "even"
     and "odd" segments, and computes the bin-by-bin median of the "even"

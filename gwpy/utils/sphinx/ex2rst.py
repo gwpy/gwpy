@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Convert GWpy example python files into rst files for sphinx documentation.
-"""
+"""Convert GWpy example python files into rst files for sphinx documentation."""
 
 from __future__ import annotations
 
@@ -148,8 +147,7 @@ def ex2rst(infile: str | Path) -> str:
 
 
 def create_parser() -> argparse.ArgumentParser:
-    """Create an `~argparse.ArgumentParser` for this tool.
-    """
+    """Create an `~argparse.ArgumentParser` for this tool."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "infile",
@@ -168,8 +166,7 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def main(args: list[str] | None = None) -> None:
-    """Run this tool.
-    """
+    """Run this tool."""
     # parse command line
     parser = create_parser()
     opts = parser.parse_args(args)

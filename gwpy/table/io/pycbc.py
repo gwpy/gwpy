@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from the PyCBC live online GW search.
-"""
+"""Read events from the PyCBC live online GW search."""
 
 from __future__ import annotations
 
@@ -72,8 +71,7 @@ def _get_column(
     name: str,
     loudest: numpy.ndarray | None = None,
 ):
-    """Read a `~astropy.table.Column` from a PyCBC `h5py.Group`.
-    """
+    """Read a `~astropy.table.Column` from a PyCBC `h5py.Group`."""
     try:  # normal column
         arr = source[name][:]
     except KeyError:
@@ -171,8 +169,7 @@ def _find_table_group(
     h5file: h5py.Group,
     ifo: str | None = None,
 ) -> tuple[h5py.Group, str]:
-    """Find the right `h5py.Group` within the given `h5py.File`.
-    """
+    """Find the right `h5py.Group` within the given `h5py.File`."""
     exclude = ("background",)
     if ifo is None:
         try:
@@ -341,8 +338,7 @@ def identify_pycbc_live(
     *args,
     **kwargs,
 ) -> bool:
-    """Identify a PyCBC Live file as an HDF5 with the correct name.
-    """
+    """Identify a PyCBC Live file as an HDF5 with the correct name."""
     # first, check that this is a valid HDF5 file
     if not identify_hdf5(origin, filepath, fileobj, *args, **kwargs):
         return False
@@ -394,8 +390,7 @@ def get_new_snr(
     q: float = 6.,
     n: float = 2.,
 ) -> numpy.ndarray:
-    """Calculate the 'new SNR' column for this PyCBC HDF5 table group.
-    """
+    """Calculate the 'new SNR' column for this PyCBC HDF5 table group."""
     newsnr = h5group["snr"][:].copy()
     rchisq = h5group["chisq"][:]
     idx = numpy.where(rchisq > 1.)[0]

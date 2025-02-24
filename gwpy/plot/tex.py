@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Handle TeX formatting for matplotlib output
-"""
+"""Handle TeX formatting for matplotlib output."""
 
 import functools
 import re
@@ -33,8 +32,7 @@ MACROS = [
 
 
 def _test_usetex():
-    """Draw (but don't show) a test image using matplotlib and LaTeX.
-    """
+    """Draw (but don't show) a test image using matplotlib and LaTeX."""
     from matplotlib import (pyplot, rc_context)
     with rc_context({"text.usetex": True}):
         fig = pyplot.figure()
@@ -48,7 +46,7 @@ def _test_usetex():
 
 @functools.cache
 def has_tex():
-    """Returns whether tex is installed on this system
+    """Returns whether tex is installed on this system.
 
     Checks for ``latex``, ``pdflatex``, and ``dvipng`` on the path, and
     then attemps to draw an image using LaTeX syntax.

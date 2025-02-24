@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read LIGO_LW documents into :class:`~ligo.lw.table.Table` objects.
-"""
+"""Read LIGO_LW documents into :class:`~ligo.lw.table.Table` objects."""
 
 from __future__ import annotations
 
@@ -101,8 +100,7 @@ else:
 
 @cache
 def _property_columns(prop: property) -> tuple[str, ...]:
-    """Return the columns associated with a property descriptor.
-    """
+    """Return the columns associated with a property descriptor."""
     from ligo.lw import lsctables
     if isinstance(prop, lsctables.gpsproperty_with_gmst):
         return (prop.s_name, prop.ns_name, prop.gmst_name)
@@ -178,8 +176,7 @@ def _get_property_type(
 
 @cache
 def table_columns(ligolw_table_class: type[ligolw.Table]) -> list[str]:
-    """Return the list of column names for this table.
-    """
+    """Return the list of column names for this table."""
     from ligo.lw import table
     return list(map(table.Column.ColumnName, ligolw_table_class.validcolumns))
 
@@ -261,8 +258,7 @@ def _get_column(
     llwtable: ligolw.Table,
     name: str,
 ) -> ligolw.Column:
-    """Get a column from a ``LIGO_LW`` table.
-    """
+    """Get a column from a ``LIGO_LW`` table."""
     # handle empty tables as special (since we can't introspect the types)
     if not len(llwtable):
         dtype: type | None
@@ -304,7 +300,7 @@ def to_astropy_column(
     use_numpy_dtype: bool = False,
     **kwargs,
 ) -> Column:
-    """Convert a :class:`~ligo.lw.table.Column` to `astropy.table.Column`
+    """Convert a :class:`~ligo.lw.table.Column` to `astropy.table.Column`.
 
     Parameters
     -----------
@@ -401,8 +397,7 @@ def _get_column_dtype(
 
 
 def _get_pytype(llwtype: type) -> type:
-    """Return a dtype-compatible type for the given LIGO_LW type string.
-    """
+    """Return a dtype-compatible type for the given LIGO_LW type string."""
     from ligo.lw.types import (
         ToNumPyType,
         ToPyType,
@@ -417,8 +412,7 @@ def table_to_ligolw(
     table: Table,
     tablename: str,
 ) -> ligolw.Table:
-    """Convert a `astropy.table.Table` to a `ligo.lw.table.Table`.
-    """
+    """Convert a `astropy.table.Table` to a `ligo.lw.table.Table`."""
     from ligo.lw import lsctables
 
     # -- work out columns for LIGO_LW table

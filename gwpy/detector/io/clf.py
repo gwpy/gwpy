@@ -16,7 +16,7 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Channel List Files
+Channel List Files.
 ==================
 
 The Channel List File (CLF) is a schema of the INI configuration file format
@@ -89,8 +89,7 @@ CHANNEL_DEFINITION = re.compile(
 
 
 def read_channel_list_file(*source):
-    """Read a `~gwpy.detector.ChannelList` from a Channel List File
-    """
+    """Read a `~gwpy.detector.ChannelList` from a Channel List File."""
     # read file(s)
     config = configparser.ConfigParser(dict_type=OrderedDict)
     source = file_list(source)
@@ -139,8 +138,7 @@ def read_channel_list_file(*source):
 
 @with_open(mode="w", pos=1)
 def write_channel_list_file(channels, fobj):
-    """Write a `~gwpy.detector.ChannelList` to a INI-format channel list file
-    """
+    """Write a `~gwpy.detector.ChannelList` to a INI-format channel list file."""
     out = configparser.ConfigParser(dict_type=OrderedDict)
     for channel in channels:
         group = channel.group

@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Common utilities for frequency-domain operations
+"""Common utilities for frequency-domain operations.
 
 This module holds code used by both the `FrequencySeries` and `Spectrogram`.
 """
@@ -30,7 +30,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def fdfilter(data, *filt, **kwargs):
-    """Filter a frequency-domain data object
+    """Filter a frequency-domain data object.
 
     See also
     --------

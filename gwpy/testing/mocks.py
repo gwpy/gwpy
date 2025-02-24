@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Mock objects for GWpy tests.
-"""
+"""Mock objects for GWpy tests."""
 
 from __future__ import annotations
 
@@ -60,8 +59,7 @@ def nds2_buffer(
     channel_type: int = 2,
     data_type: int = 8,
 ) -> mock.MagicMock:
-    """Create a mocked `nds2.buffer`.
-    """
+    """Create a mocked `nds2.buffer`."""
     import nds2
     epoch = LIGOTimeGPS(epoch)
     ndsbuffer = mock.create_autospec(nds2.buffer)
@@ -86,8 +84,7 @@ def nds2_buffer(
 def nds2_buffer_from_timeseries(
     ts: TimeSeries,
 ) -> mock.MagicMock:
-    """Create a mocked `nds2.buffer` from a :class:`TimeSeries`.
-    """
+    """Create a mocked `nds2.buffer` from a :class:`TimeSeries`."""
     return nds2_buffer(
         ts.name,
         ts.value,
@@ -104,8 +101,7 @@ def nds2_channel(
     channel_type: int = 2,
     data_type: int = 8,
 ) -> mock.MagicMock:
-    """Create a mocked `nds2.channel`.
-    """
+    """Create a mocked `nds2.channel`."""
     import nds2
     channel = mock.create_autospec(nds2.channel)
     channel.name = name
@@ -128,8 +124,7 @@ def nds2_connection(
     buffers: Iterable[Any] = [],
     protocol: int = 2,
 ) -> mock.MagicMock:
-    """Create a mock an `nds2.connection` that returns the given buffers.
-    """
+    """Create a mock an `nds2.connection` that returns the given buffers."""
     import nds2
     NdsConnection = mock.create_autospec(nds2.connection)  # noqa: N806
     NdsConnection.get_parameter.return_value = False
@@ -198,8 +193,7 @@ def nds2_availability(
     name: str,
     segments: SegmentListLike,
 ) -> mock.MagicMock:
-    """Create a mock `nds2.availability` object.
-    """
+    """Create a mock `nds2.availability` object."""
     import nds2
     availability = mock.create_autospec(nds2.availability)
     availability.name = name
@@ -210,8 +204,7 @@ def nds2_availability(
 def nds2_segment(
     segment: SegmentLike,
 ) -> mock.MagicMock:
-    """Create a mock `nds2.simple_segment`.
-    """
+    """Create a mock `nds2.simple_segment`."""
     import nds2
     nds2seg = mock.create_autospec(nds2.simple_segment)
     nds2seg.gps_start = segment[0]

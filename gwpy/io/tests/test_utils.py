@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.io.utils`
-"""
+"""Unit tests for :mod:`gwpy.io.utils`."""
 
 import gzip
 import tempfile
@@ -109,8 +108,7 @@ def test_file_path(input_, expected):
 
 
 def test_file_path_file():
-    """Check that :func:`gwpy.io.utils.file_path` can handle open files
-    """
+    """Check that :func:`gwpy.io.utils.file_path` can handle open files."""
     with tempfile.NamedTemporaryFile() as f:
         assert io_utils.file_path(f) == f.name
 
@@ -120,8 +118,7 @@ def test_file_path_file():
     ["test.txt"],
 ))
 def test_file_path_errors(badthing):
-    """Check that :func:`gwpy.io.utils.file_path` fails when expected
-    """
+    """Check that :func:`gwpy.io.utils.file_path` fails when expected."""
     with pytest.raises(
         ValueError,
         match="^Cannot parse file name for ",
