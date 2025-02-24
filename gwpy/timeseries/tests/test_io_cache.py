@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.timeseries.io.cache`
-"""
+"""Tests for :mod:`gwpy.timeseries.io.cache`."""
 
 import pytest
 
@@ -26,8 +25,7 @@ from ..io import cache as ts_io_cache
 
 @pytest.fixture
 def cache():
-    """List of files over which to test sorting/sieving.
-    """
+    """List of files over which to test sorting/sieving."""
     return [
         "/tmp/A-TEST-0-10.tmp",
         "/tmp/A-TEST-10-10.tmp",
@@ -39,8 +37,7 @@ def cache():
 
 @pytest.fixture
 def cache_file(tmp_path, cache):
-    """File version of `cache()`.
-    """
+    """File version of `cache()`."""
     path = tmp_path / "cache.txt"
     write_cache(cache, path)
     return path

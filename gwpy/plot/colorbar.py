@@ -120,7 +120,7 @@ def process_colorbar_kwargs(
 # -- utilities ----------------------------------------------------------------
 
 def find_mappable(*axes):
-    """Find the most recently added mappable layer in the given axes
+    """Find the most recently added mappable layer in the given axes.
 
     Parameters
     ----------
@@ -229,8 +229,7 @@ def _make_inset_axes(
     pad=None,
     **kwargs,
 ):
-    """Create a new `Axes` to support a colorbar using `Axes.inset_axes`.
-    """
+    """Create a new `Axes` to support a colorbar using `Axes.inset_axes`."""
     # set default orientation
     if location in ("left", "right"):
         orientation = kwargs.setdefault("orientation", "vertical")

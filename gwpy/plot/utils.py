@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Helper functions for plotting data with matplotlib and LAL
-"""
+"""Helper functions for plotting data with matplotlib and LAL."""
 
 import itertools
 
@@ -37,16 +36,14 @@ AXES_PARAMS = [
 
 
 def color_cycle(colors=None):
-    """An infinite iterator of the given (or default) colors
-    """
+    """An infinite iterator of the given (or default) colors."""
     if colors:
         return itertools.cycle(colors)
     return itertools.cycle(p["color"] for p in rcParams["axes.prop_cycle"])
 
 
 def marker_cycle(markers=None):
-    """An infinite iterator of the given (or default) markers
-    """
+    """An infinite iterator of the given (or default) markers."""
     if markers:
         return itertools.cycle(markers)
     return itertools.cycle(("o", "x", "+", "^", "D", "H", "1"))

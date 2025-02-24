@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Environment utilities for GWpy.
-"""
+"""Environment utilities for GWpy."""
 
 from __future__ import annotations
 

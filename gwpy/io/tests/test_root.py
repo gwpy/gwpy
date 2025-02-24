@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for `gwpy.io.root`.
-"""
+"""Tests for `gwpy.io.root`."""
 
 import pytest
 
@@ -27,8 +26,7 @@ uproot = pytest.importorskip("uproot")
 
 @pytest.fixture
 def rootfile(tmp_path):
-    """Create an empty ROOT file using `uproot.create`.
-    """
+    """Create an empty ROOT file using `uproot.create`."""
     import uproot
     path = tmp_path / "test.root"
     with uproot.create(path):
@@ -37,8 +35,7 @@ def rootfile(tmp_path):
 
 
 def test_identify_root_fileobj(rootfile):
-    """Test that `gwpy.io.root.identify_root` works with file objects.
-    """
+    """Test that `gwpy.io.root.identify_root` works with file objects."""
     with open(rootfile, "rb") as file:
         assert io_root.identify_root(
             "read",
@@ -48,8 +45,7 @@ def test_identify_root_fileobj(rootfile):
 
 
 def test_identify_root_filepath(rootfile):
-    """Test that `gwpy.io.root.identify_root` works with file paths.
-    """
+    """Test that `gwpy.io.root.identify_root` works with file paths."""
     assert io_root.identify_root(
         "read",
         str(rootfile),
@@ -58,8 +54,7 @@ def test_identify_root_filepath(rootfile):
 
 
 def test_identify_root_uproot(rootfile):
-    """Test that `gwpy.io.root.identify_root` works with `uproot` objects.
-    """
+    """Test that `gwpy.io.root.identify_root` works with `uproot` objects."""
     import uproot
     with uproot.open(rootfile) as rootf:
         assert io_root.identify_root(

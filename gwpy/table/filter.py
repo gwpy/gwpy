@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilies for filtering a `Table` using column slice definitions.
-"""
+"""Utilies for filtering a `Table` using column slice definitions."""
 
 from __future__ import annotations
 
@@ -65,16 +64,14 @@ DELIM_REGEX = re.compile(r"(and|&+)", re.I)
 # -- filter parsing ------------------
 
 class FilterSpec(typing.NamedTuple):
-    """A table column filter definition.
-    """
+    """A table column filter definition."""
     column: str
     operator: Callable
     operand: Any
 
 
 def _float_or_str(value: str) -> float | str:
-    """Internal method to attempt `float(value)` handling a `ValueError`.
-    """
+    """Internal method to attempt `float(value)` handling a `ValueError`."""
     # remove any surrounding quotes
     value = QUOTE_REGEX.sub("", value)
     try:  # attempt `float()` conversion
@@ -230,8 +227,7 @@ def parse_column_filters(
 def _flatten(
     container: Iterable,
 ) -> Iterator[str | tuple]:
-    """Flatten arbitrary nested list of filters into a 1-D list.
-    """
+    """Flatten arbitrary nested list of filters into a 1-D list."""
     for elem in container:
         if isinstance(elem, str) or is_filter_tuple(elem):
             yield elem
@@ -240,8 +236,7 @@ def _flatten(
 
 
 def is_filter_tuple(tup):
-    """Return whether a `tuple` matches the format for a column filter.
-    """
+    """Return whether a `tuple` matches the format for a column filter."""
     if isinstance(tup, FilterSpec):
         return True
     try:

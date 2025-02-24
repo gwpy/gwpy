@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""GWF I/O utilities using LALFrame.
-"""
+"""GWF I/O utilities using LALFrame."""
 
 from __future__ import annotations
 
@@ -153,8 +152,7 @@ def _channel_exists(
     gwf: str | Path | IO | lalframe.FrameUFrFile,
     name: str,
 ) -> bool:
-    """Return `True` if a channel (name) exists in a file.
-    """
+    """Return `True` if a channel (name) exists in a file."""
     frfile = open_gwf(gwf)
     frtoc = lalframe.FrameUFrTOCRead(frfile)
     nframes = lalframe.FrameUFrTOCQueryNFrame(frtoc)

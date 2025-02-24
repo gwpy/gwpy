@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.cli`
-"""
+"""Unit tests for :mod:`gwpy.cli`."""
 
 import warnings
 from argparse import ArgumentParser
@@ -97,7 +96,7 @@ class _TestCliProduct(object):
     @classmethod
     @pytest.fixture
     def args(cls):
-        """Creates and parser arguments for a given `CliProduct`
+        """Creates and parser arguments for a given `CliProduct`.
 
         Returns the `argparse.Namespace`
         """
@@ -110,8 +109,7 @@ class _TestCliProduct(object):
     @classmethod
     @pytest.fixture
     def prod(cls, args):
-        """Returns a `CliProduct`
-        """
+        """Returns a `CliProduct`."""
         prod = cls.TEST_CLASS(args)
         yield prod
         if prod.plot:
@@ -138,8 +136,7 @@ class _TestCliProduct(object):
     @classmethod
     @pytest.fixture
     def dataprod(cls, prod):
-        """Returns a `CliProduct` with data
-        """
+        """Returns a `CliProduct` with data."""
         return cls._prod_add_data(prod)
 
     @staticmethod

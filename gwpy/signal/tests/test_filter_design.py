@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.signal.filter_design`.
-"""
+"""Tests for :mod:`gwpy.signal.filter_design`."""
 
 from unittest import mock
 
@@ -134,8 +133,7 @@ def bandpass_100_200_fir():
 # -- tests ----------------------------
 
 def test_truncate_transfer():
-    """Test :func:`gwpy.signal.filter_design.truncate_transfer`.
-    """
+    """Test :func:`gwpy.signal.filter_design.truncate_transfer`."""
     series = numpy.ones(64)
     trunc = filter_design.truncate_transfer(series)
     assert trunc[0] == 0
@@ -144,8 +142,7 @@ def test_truncate_transfer():
 
 
 def test_truncate_impulse():
-    """Test :func:`gwpy.signal.filter_design.truncate_impulse`.
-    """
+    """Test :func:`gwpy.signal.filter_design.truncate_impulse`."""
     series = numpy.ones(64)
     trunc = filter_design.truncate_impulse(series, ntaps=10)
     assert trunc[0] != 0
@@ -154,8 +151,7 @@ def test_truncate_impulse():
 
 
 def test_fir_from_transfer():
-    """Test :func:`gwpy.signal.filter_design.fir_from_transfer`.
-    """
+    """Test :func:`gwpy.signal.filter_design.fir_from_transfer`."""
     frequencies = numpy.arange(0, 64)
     fseries = numpy.cos(2 * numpy.pi * frequencies)
 
@@ -169,73 +165,63 @@ def test_fir_from_transfer():
 
 
 def test_notch_iir(notch_60):
-    """Test :func:`gwpy.signal.filter_design.notch` with an IIR filter.
-    """
+    """Test :func:`gwpy.signal.filter_design.notch` with an IIR filter."""
     # test simple notch
     zpk = filter_design.notch(NOTCH_F, FILTER_FS)
     utils.assert_zpk_equal(zpk, notch_60)
 
 
 def test_notch_iir_quantities(notch_60):
-    """Test :func:`gwpy.signal.filter_design.notch` with an IIR filter.
-    """
+    """Test :func:`gwpy.signal.filter_design.notch` with an IIR filter."""
     # test Quantities
     zpk = filter_design.notch(NOTCH_F * ONE_HZ, FILTER_FS * ONE_HZ)
     utils.assert_zpk_equal(zpk, notch_60)
 
 
 def test_notch_fir_notimplemented():
-    """Test :func:`gwpy.signal.filter_design.notch` with an FIR filter.
-    """
+    """Test :func:`gwpy.signal.filter_design.notch` with an FIR filter."""
     with pytest.raises(NotImplementedError):
         filter_design.notch(60, 16384, type="fir")
 
 
 def test_lowpass_iir(lowpass_100_iir):
-    """Test :func:`gwpy.signal.filter_design.lowpass` with an IIR filter.
-    """
+    """Test :func:`gwpy.signal.filter_design.lowpass` with an IIR filter."""
     iir = filter_design.lowpass(LOWPASS_F, FILTER_FS)
     utils.assert_zpk_equal(iir, lowpass_100_iir)
 
 
 def test_lowpass_fir(lowpass_100_fir):
-    """Test :func:`gwpy.signal.filter_design.lowpass` with an FIR filter.
-    """
+    """Test :func:`gwpy.signal.filter_design.lowpass` with an FIR filter."""
     fir = filter_design.lowpass(LOWPASS_F, FILTER_FS, type="fir")
     utils.assert_allclose(fir, lowpass_100_fir)
 
 
 def test_highpass_iir(highpass_100_iir):
-    """Test :func:`gwpy.signal.filter_design.highpass` with an IIR filter.
-    """
+    """Test :func:`gwpy.signal.filter_design.highpass` with an IIR filter."""
     iir = filter_design.highpass(HIGHPASS_F, FILTER_FS)
     utils.assert_zpk_equal(iir, highpass_100_iir)
 
 
 def test_highpass_fir(highpass_100_fir):
-    """Test :func:`gwpy.signal.filter_design.highpass` with an FIR filter.
-    """
+    """Test :func:`gwpy.signal.filter_design.highpass` with an FIR filter."""
     fir = filter_design.highpass(HIGHPASS_F, FILTER_FS, type="fir")
     utils.assert_allclose(fir, highpass_100_fir)
 
 
 def test_bandpass_iir(bandpass_100_200_iir):
-    """Test :func:`gwpy.signal.filter_design.bandwith with an IIR filter`.
-    """
+    """Test :func:`gwpy.signal.filter_design.bandwith with an IIR filter`."""
     iir = filter_design.bandpass(LOWPASS_F, HIGHPASS_F, FILTER_FS)
     utils.assert_zpk_equal(iir, bandpass_100_200_iir)
 
 
 def test_bandpass_fir(bandpass_100_200_fir):
-    """Test :func:`gwpy.signal.filter_design.bandpass` with an FIR filter.
-    """
+    """Test :func:`gwpy.signal.filter_design.bandpass` with an FIR filter."""
     fir = filter_design.bandpass(LOWPASS_F, HIGHPASS_F, FILTER_FS, type="fir")
     utils.assert_allclose(fir, bandpass_100_200_fir)
 
 
 def test_concatenate_zpks():
-    """Test :func:`gwpy.signal.filter_design.notch`.
-    """
+    """Test :func:`gwpy.signal.filter_design.notch`."""
     z1, p1, k1 = [1, 2, 3], [4, 5, 6], 1.
     z2, p2, k2 = [1, 2, 3, 4], [5, 6, 7, 8], 100
     utils.assert_zpk_equal(
@@ -245,8 +231,7 @@ def test_concatenate_zpks():
 
 
 def test_parse_filter_fir():
-    """Test :func:`gwpy.signal.filter_design.parse_filter` with an FIR filter.
-    """
+    """Test :func:`gwpy.signal.filter_design.parse_filter` with an FIR filter."""
     taps = numpy.arange(10)
     assert filter_design.parse_filter(taps) == (
         "ba",
@@ -255,8 +240,7 @@ def test_parse_filter_fir():
 
 
 def test_parse_filter_iir():
-    """Test :func:`gwpy.signal.filter_design.parse_filter` with an FIR filter.
-    """
+    """Test :func:`gwpy.signal.filter_design.parse_filter` with an FIR filter."""
     zpk = [1, 2, 3], [4, 5, 6], 1.
     typ, filt = filter_design.parse_filter(zpk)
     assert typ == "zpk"
@@ -323,8 +307,7 @@ def test_convert_to_digital_invalid_form():
 
 
 def test_convert_to_digital_fir_still_zpk():
-    """Test that a filter with poles at zero after bilinear is ZPK.
-    """
+    """Test that a filter with poles at zero after bilinear is ZPK."""
     # Why do we always return zpk? We do so for all IIR filters.
     # Only a filter with all poles equal to -2*fs would be a
     # FIR after bilinear transform. However, here, such a filter

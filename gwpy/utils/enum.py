@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilties for enumerations.
-"""
+"""Utilties for enumerations."""
 
 from __future__ import annotations
 
@@ -29,8 +28,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class NumpyTypeEnum(Enum):
-    """`~enum.Enum` of numpy types
-    """
+    """`~enum.Enum` of numpy types."""
     @property
     def dtype(self) -> numpy.dtype:
         return numpy.dtype(self.name.lower())
@@ -44,8 +42,7 @@ class NumpyTypeEnum(Enum):
         cls,
         type_: builtins.type | str,
     ) -> Enum:
-        """Returns the enumerated type corresponding to the given python type
-        """
+        """Returns the enumerated type corresponding to the given python type."""
         try:
             return cls(type_)
         except ValueError as exc:

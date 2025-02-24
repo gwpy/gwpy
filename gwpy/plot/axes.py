@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Extension of `~matplotlib.axes.Axes` for gwpy
-"""
+"""Extension of `~matplotlib.axes.Axes` for gwpy."""
 
 import warnings
 from functools import wraps
@@ -51,8 +50,7 @@ matplotlib_version = Version(matplotlib_version)
 
 
 def log_norm(func):
-    """Wrap ``func`` to handle custom gwpy keywords for a LogNorm colouring
-    """
+    """Wrap ``func`` to handle custom gwpy keywords for a LogNorm colouring."""
     @wraps(func)
     def decorated_func(*args, **kwargs):
         norm, kwargs = format_norm(kwargs)
@@ -62,8 +60,7 @@ def log_norm(func):
 
 
 def xlim_as_gps(func):
-    """Wrap ``func`` to handle pass limit inputs through `gwpy.time.to_gps`
-    """
+    """Wrap ``func`` to handle pass limit inputs through `gwpy.time.to_gps`."""
     @wraps(func)
     def wrapped_func(self, left=None, right=None, **kw):
         if right is None and numpy.iterable(left):
@@ -142,8 +139,7 @@ def deprecate_c_sort(func):
 
 
 def _sortby(sortby, *arrays):
-    """Sort a set of arrays by the first one (including the first one)
-    """
+    """Sort a set of arrays by the first one (including the first one)."""
     # try and sort the colour array by value
     sortidx = numpy.asanyarray(sortby, dtype=float).argsort()
 
@@ -224,7 +220,7 @@ class Axes(_Axes):
         return self.set_xscale(scale, epoch=epoch)
 
     def get_epoch(self):
-        """Return the epoch for the current GPS scale/
+        """Return the epoch for the current GPS scale/.
 
         This method will fail if the current X-axis scale isn't one of
         the GPS scales. See :ref:`gwpy-plot-gps` for more details.
@@ -298,8 +294,7 @@ class Axes(_Axes):
 
     def _imshow_array2d(self, array, origin="lower", interpolation="none",
                         aspect="auto", **kwargs):
-        """Render an `~gwpy.types.Array2D` using `Axes.imshow`
-        """
+        """Render an `~gwpy.types.Array2D` using `Axes.imshow`."""
         # NOTE: If you change the defaults for this method, please update
         #       the docstring for `imshow` above.
 
@@ -340,8 +335,7 @@ class Axes(_Axes):
         return super().pcolormesh(*args, **kwargs)
 
     def _pcolormesh_array2d(self, array, *args, **kwargs):
-        """Render an `~gwpy.types.Array2D` using `Axes.pcolormesh`
-        """
+        """Render an `~gwpy.types.Array2D` using `Axes.pcolormesh`."""
         x = numpy.concatenate((array.xindex.value, array.xspan[-1:]))
         y = numpy.concatenate((array.yindex.value, array.yspan[-1:]))
         xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
@@ -587,7 +581,7 @@ Call signatures""",
         fraction=0.,
         **kwargs,
     ):
-        """Add a `~matplotlib.colorbar.Colorbar` to these `Axes`
+        """Add a `~matplotlib.colorbar.Colorbar` to these `Axes`.
 
         Parameters
         ----------
@@ -630,11 +624,9 @@ register_projection(Axes)
 # -- overload Axes.plot() to handle Series ------------------------------------
 
 class PlotArgsProcessor(_process_plot_var_args):
-    """This class controls how ax.plot() works
-    """
+    """This class controls how ax.plot() works."""
     def __call__(self, *args, **kwargs):
-        """Find `Series` data in `plot()` args and unwrap
-        """
+        """Find `Series` data in `plot()` args and unwrap."""
         newargs = []
         # matplotlib 3.8.0 includes the Axes object up-front
         if args and isinstance(args[0], Axes):

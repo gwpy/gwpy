@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.table.io.ligolw`.
-"""
+"""Tests for :mod:`gwpy.table.io.ligolw`."""
 
 import numpy
 import pytest
@@ -43,8 +42,7 @@ REMOTE_XML_FILE = (
 
 @pytest.fixture
 def table():
-    """Create a table to use in testing.
-    """
+    """Create a table to use in testing."""
     return random_table(
         names=["peak_time", "peak_time_ns", "snr", "central_freq"],
         dtypes=["i4", "i4", "f4", "f4"],
@@ -142,8 +140,7 @@ def test_read_write_ligolw_types(use_numpy_dtypes):
 
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_read_ligolw_multiple():
-    """Test `Table.read(format='ligolw')` with multiple files.
-    """
+    """Test `Table.read(format='ligolw')` with multiple files."""
     t = EventTable.read(
         TEST_XML_PATH,
         tablename="sngl_burst",
@@ -186,8 +183,7 @@ def test_write_ligolw_overwrite(table, tmp_path):
 
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_write_ligolw_append(table, tmp_path):
-    """Test `Table.write(format='ligolw', append=True)` extends a table.
-    """
+    """Test `Table.write(format='ligolw', append=True)` extends a table."""
     # write the table once
     xml = tmp_path / "test.xml"
     table.write(xml, format="ligolw", tablename="sngl_burst")
@@ -203,8 +199,7 @@ def test_write_ligolw_append(table, tmp_path):
 
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_write_ligolw_append_multiple_tables(table, tmp_path):
-    """Test `Table.write(format='ligolw', append=True)` with different tables.
-    """
+    """Test `Table.write(format='ligolw', append=True)` with different tables."""
     # write the first table
     xml = tmp_path / "test.xml"
     table.write(xml, format="ligolw", tablename="sngl_burst")
@@ -327,8 +322,7 @@ def test_read_ligolw_get_as_exclude(tmp_path):
 
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_read_process_table():
-    """Regression test against gwpy/gwpy#1367
-    """
+    """Regression test against gwpy/gwpy#1367."""
     from ligo.lw.lsctables import (
         New,
         ProcessTable,
@@ -347,8 +341,7 @@ def test_read_process_table():
 @pytest_skip_network_error
 @pytest.mark.requires("ligo.lw.lsctables")
 def test_read_remote_file():
-    """Test that we can read remote files over HTTP.
-    """
+    """Test that we can read remote files over HTTP."""
     tab = EventTable.read(
         REMOTE_XML_FILE,
         cache=False,

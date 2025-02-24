@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides plotting utilities for visualising GW data
+"""This module provides plotting utilities for visualising GW data.
 
 The standard data types (`TimeSeries`, `Table`, `DataQualityFlag`, ...) can
 all be easily visualised using the relevant plotting objects, with

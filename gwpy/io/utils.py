@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilities for unified input/output
-"""
+"""Utilities for unified input/output."""
 
 import gzip
 import os
@@ -37,7 +36,7 @@ GZIP_SIGNATURE = b"\x1f\x8b\x08"
 
 
 def identify_factory(*extensions):
-    """Factory function to create I/O identifiers for a set of extensions
+    """Factory function to create I/O identifiers for a set of extensions.
 
     The returned function is designed for use in the unified I/O registry
     via the `astropy.io.registry.register_identifier` hool.
@@ -54,8 +53,7 @@ def identify_factory(*extensions):
         carries any of the given file extensions (using `str.endswith`)
     """
     def identify(origin, filepath, fileobj, *args, **kwargs):
-        """Identify the given extensions in a file object/path
-        """
+        """Identify the given extensions in a file object/path."""
         # pylint: disable=unused-argument
         return (
             isinstance(filepath, str)
@@ -65,7 +63,7 @@ def identify_factory(*extensions):
 
 
 def gopen(name, *args, **kwargs):
-    """Open a file handling optional gzipping
+    """Open a file handling optional gzipping.
 
     If ``name`` ends with ``'.gz'``, or if the GZIP file signature is
     found at the beginning of the file, the file will be opened with
@@ -100,7 +98,7 @@ def gopen(name, *args, **kwargs):
 
 
 def with_open(func=None, mode="r", pos=0):
-    """Decorate a function to ensure the chosen argument is an open file
+    """Decorate a function to ensure the chosen argument is an open file.
 
     Parameters
     ----------

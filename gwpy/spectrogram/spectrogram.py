@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Spectrogram object
-"""
+"""Spectrogram object."""
 
 import warnings
 
@@ -47,7 +46,7 @@ __all__ = ["Spectrogram", "SpectrogramList"]
 
 
 def _ordinal(n):
-    """Returns the ordinal string for a given integer
+    """Returns the ordinal string for a given integer.
 
     See https://stackoverflow.com/a/20007730/1307974
 
@@ -68,7 +67,7 @@ def _ordinal(n):
 
 
 class Spectrogram(Array2D):
-    """A 2D array holding a spectrogram of time-frequency data
+    """A 2D array holding a spectrogram of time-frequency data.
 
     Parameters
     ----------
@@ -140,8 +139,7 @@ class Spectrogram(Array2D):
     def __new__(cls, data, unit=None, t0=None, dt=None, f0=None, df=None,
                 times=None, frequencies=None,
                 name=None, channel=None, **kwargs):
-        """Generate a new Spectrogram.
-        """
+        """Generate a new Spectrogram."""
         # parse t0 or epoch
         epoch = kwargs.pop("epoch", None)
         if epoch is not None and t0 is not None:
@@ -236,7 +234,7 @@ class Spectrogram(Array2D):
     # -- Spectrogram methods --------------------
 
     def ratio(self, operand):
-        """Calculate the ratio of this `Spectrogram` against a reference
+        """Calculate the ratio of this `Spectrogram` against a reference.
 
         Parameters
         ----------
@@ -278,7 +276,7 @@ class Spectrogram(Array2D):
         xscale="auto-gps",
         **kwargs,
     ):
-        """Plot the data for this `Spectrogram`
+        """Plot the data for this `Spectrogram`.
 
         Parameters
         ----------
@@ -389,7 +387,7 @@ class Spectrogram(Array2D):
                 hasattr(self, "_frequencies") and self.frequencies or None))
 
     def zpk(self, zeros, poles, gain, analog=True):
-        """Filter this `Spectrogram` by applying a zero-pole-gain filter
+        """Filter this `Spectrogram` by applying a zero-pole-gain filter.
 
         Parameters
         ----------
@@ -504,7 +502,7 @@ class Spectrogram(Array2D):
     # -- Spectrogram connectors -----------------
 
     def crop_frequencies(self, low=None, high=None, copy=False):
-        """Crop this `Spectrogram` to the specified frequencies
+        """Crop this `Spectrogram` to the specified frequencies.
 
         Parameters
         ----------
@@ -585,7 +583,7 @@ class Spectrogram(Array2D):
 
 
 class SpectrogramList(TimeSeriesList):
-    """Fancy list representing a list of `Spectrogram`
+    """Fancy list representing a list of `Spectrogram`.
 
     The `SpectrogramList` provides an easy way to collect and organise
     `Spectrogram` for a single `Channel` over multiple segments.

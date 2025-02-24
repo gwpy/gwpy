@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""I/O routines for parsing Omega pipeline scan channel lists
-"""
+"""I/O routines for parsing Omega pipeline scan channel lists."""
 
 import sys
 import os
@@ -37,7 +36,7 @@ WPIPELINE = OMEGA_LOCATION and os.path.join(OMEGA_LOCATION, "bin", "wpipeline")
 
 @with_open
 def read_omega_scan_config(source):
-    """Parse an Omega-scan configuration file into a `ChannelList`
+    """Parse an Omega-scan configuration file into a `ChannelList`.
 
     Parameters
     ----------
@@ -72,7 +71,7 @@ def read_omega_scan_config(source):
 
 
 def parse_omega_channel(fobj, section=None):
-    """Parse a `Channel` from an Omega-scan configuration file
+    """Parse a `Channel` from an Omega-scan configuration file.
 
     Parameters
     ----------
@@ -103,7 +102,7 @@ def parse_omega_channel(fobj, section=None):
 
 
 def omega_param(val):
-    """Parse a value from an Omega-scan configuration file
+    """Parse a value from an Omega-scan configuration file.
 
     This method tries to parse matlab-syntax parameters into a `str`,
     `float`, or `tuple`
@@ -120,7 +119,7 @@ def omega_param(val):
 
 @with_open(mode="w", pos=1)
 def write_omega_scan_config(channellist, fobj, header=True):
-    """Write a `ChannelList` to an Omega-pipeline scan configuration file
+    """Write a `ChannelList` to an Omega-pipeline scan configuration file.
 
     This method is dumb and assumes the channels are sorted in the right
     order already
@@ -141,8 +140,7 @@ def write_omega_scan_config(channellist, fobj, header=True):
 
 # pylint: disable=redefined-builtin
 def print_omega_channel(channel, file=sys.stdout):
-    """Print a `Channel` in Omega-pipeline scan format
-    """
+    """Print a `Channel` in Omega-pipeline scan format."""
     print("{", file=file)
     try:
         params = channel.params.copy()

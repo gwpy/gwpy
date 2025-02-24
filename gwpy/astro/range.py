@@ -110,8 +110,7 @@ def _get_spectrogram(
 def _preformat_psd(
     func: Callable,
 ) -> Callable:
-    """Wrap a function to ensure that the incoming PSD has the right units.
-    """
+    """Wrap a function to ensure that the incoming PSD has the right units."""
     psdunit = 1 / units.Hz
 
     @wraps(func)
@@ -756,7 +755,7 @@ def range_spectrogram(
     **rangekwargs,
 ) -> Spectrogram:
     """Calculate the average range or range power spectrogram (Mpc or
-    Mpc^2 / Hz) directly from strain
+    Mpc^2 / Hz) directly from strain.
 
     Parameters
     ----------

@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module defines the `Channel` and `ChannelList` classes.
-"""
+"""This module defines the `Channel` and `ChannelList` classes."""
 
 from __future__ import annotations
 
@@ -92,7 +91,7 @@ class Channel(object):
     )
 
     def __init__(self, name, **params):
-        """Create a new `Channel`
+        """Create a new `Channel`.
 
         Parameters
         ----------
@@ -200,7 +199,7 @@ class Channel(object):
 
     @property
     def frequency_range(self):
-        """Frequency range of interest (Hertz) for this channel
+        """Frequency range of interest (Hertz) for this channel.
 
         :type: `~astropy.units.Quantity` array
         """
@@ -220,7 +219,7 @@ class Channel(object):
 
     @property
     def safe(self):
-        """Whether this channel is 'safe' to use as a noise witness
+        """Whether this channel is 'safe' to use as a noise witness.
 
         Any channel that records part or all of a GW signal as it
         interacts with the interferometer is not safe to use as a noise
@@ -328,8 +327,7 @@ class Channel(object):
 
     @property
     def frametype(self):
-        """LDAS type description for frame files containing this channel.
-        """
+        """LDAS type description for frame files containing this channel."""
         return self._frametype
 
     @frametype.setter
@@ -395,14 +393,12 @@ class Channel(object):
 
     @property
     def texname(self):
-        """Name of this channel in LaTeX printable format.
-        """
+        """Name of this channel in LaTeX printable format."""
         return str(self).replace("_", r"\_")
 
     @property
     def ndsname(self):
-        """Name of this channel as stored in the NDS database
-        """
+        """Name of this channel as stored in the NDS database."""
         if self.type not in [None, "raw", "reduced", "online"]:
             return f"{self.name},{self.type}"
         return self.name
@@ -412,7 +408,7 @@ class Channel(object):
     @classmethod
     def query(cls, name, kerberos=None, **kwargs):
         """Query the LIGO Channel Information System for the `Channel`
-        matching the given name
+        matching the given name.
 
         Parameters
         ----------
@@ -448,7 +444,7 @@ class Channel(object):
     @classmethod
     def query_nds2(cls, name, host=None, port=None, connection=None,
                    type=None):
-        """Query an NDS server for channel information
+        """Query an NDS server for channel information.
 
         Parameters
         ----------
@@ -485,8 +481,7 @@ class Channel(object):
 
     @classmethod
     def from_nds2(cls, nds2channel):
-        """Generate a new channel using an existing nds2.channel object
-        """
+        """Generate a new channel using an existing nds2.channel object."""
         return cls(
             nds2channel.name,
             sample_rate=nds2channel.sample_rate,
@@ -522,7 +517,7 @@ class Channel(object):
 
     @classmethod
     def parse_channel_name(cls, name, strict=True):
-        """Decompose a channel name string into its components
+        """Decompose a channel name string into its components.
 
         Parameters
         ----------
@@ -580,7 +575,7 @@ class Channel(object):
     def find_frametype(self, gpstime=None, frametype_match=None,
                        host=None, port=None, return_all=False,
                        allow_tape=True):
-        """Find the containing frametype(s) for this `Channel`
+        """Find the containing frametype(s) for this `Channel`.
 
         Parameters
         ----------
@@ -612,8 +607,7 @@ class Channel(object):
             allow_tape=allow_tape)
 
     def copy(self):
-        """Returns a copy of this channel
-        """
+        """Returns a copy of this channel."""
         new = type(self)(str(self))
         new._init_from_channel(self)
         return new
@@ -645,8 +639,7 @@ class Channel(object):
 
 
 class ChannelList(list):
-    """A `list` of `channels <Channel>`, with parsing utilities.
-    """
+    """A `list` of `channels <Channel>`, with parsing utilities."""
 
     @property
     def ifos(self):
@@ -657,7 +650,7 @@ class ChannelList(list):
 
     @classmethod
     def read(cls, source, *args, **kwargs):
-        """Read a `ChannelList` from a file
+        """Read a `ChannelList` from a file.
 
         Parameters
         ----------
@@ -669,7 +662,7 @@ class ChannelList(list):
         return compat_registry.read(cls, source, *args, **kwargs)
 
     def write(self, target, *args, **kwargs):
-        """Write a `ChannelList` to a file
+        """Write a `ChannelList` to a file.
 
         Notes
         -----"""
@@ -677,7 +670,7 @@ class ChannelList(list):
 
     @classmethod
     def from_names(cls, *names):
-        """Create a new `ChannelList` from a list of names
+        """Create a new `ChannelList` from a list of names.
 
         The list of names can include comma-separated sets of names,
         in which case the return will be a flattened list of all parsed
@@ -691,8 +684,7 @@ class ChannelList(list):
 
     @staticmethod
     def _split_names(namestr):
-        """Split a comma-separated list of channel names.
-        """
+        """Split a comma-separated list of channel names."""
         out = []
         namestr = QUOTE_REGEX.sub("", namestr)
         while True:
@@ -830,7 +822,7 @@ class ChannelList(list):
     @classmethod
     def query_nds2(cls, names, host=None, port=None, connection=None,
                    type=io_nds2.Nds2ChannelType.any(), unique=False):
-        """Query an NDS server for channel information
+        """Query an NDS server for channel information.
 
         Parameters
         ----------
@@ -874,7 +866,7 @@ class ChannelList(list):
     @io_nds2.open_connection
     def query_nds2_availability(cls, channels, start, end, ctype=126,
                                 connection=None, host=None, port=None):
-        """Query for when data are available for these channels in NDS2
+        """Query for when data are available for these channels in NDS2.
 
         Parameters
         ----------

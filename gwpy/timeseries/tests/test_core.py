@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for timeseries module
-"""
+"""Unit test for timeseries module."""
 
 import operator
 from functools import reduce
@@ -50,8 +49,7 @@ class TestTimeSeriesBase(_TestSeries):
     TEST_CLASS = TimeSeriesBase
 
     def test_new(self):
-        """Test `gwpy.timeseries.TimeSeriesBase` constructor
-        """
+        """Test `gwpy.timeseries.TimeSeriesBase` constructor."""
         array = self.create()
         super().test_new()
 
@@ -61,8 +59,7 @@ class TestTimeSeriesBase(_TestSeries):
         assert array.dt == units.Quantity(1, "second")
 
     def test_new_epoch_t0(self):
-        """Test `gwpy.timeseries.TimeSeriesBase` handling of epoch vs t0.
-        """
+        """Test `gwpy.timeseries.TimeSeriesBase` handling of epoch vs t0."""
         a = self.create(epoch=10)
         b = self.create(t0=10)
         utils.assert_quantity_sub_equal(a, b)
@@ -73,8 +70,7 @@ class TestTimeSeriesBase(_TestSeries):
             self.TEST_CLASS(self.data, epoch=1, t0=1)
 
     def test_new_sample_rate_dt(self):
-        """Test `gwpy.timeseries.TimeSeriesBase` handling of sample_rate vs dt.
-        """
+        """Test `gwpy.timeseries.TimeSeriesBase` handling of sample_rate vs dt."""
         # check handling of sample_rate vs dt
         a = self.create(sample_rate=100)
         b = self.create(dt=0.01)
@@ -86,8 +82,7 @@ class TestTimeSeriesBase(_TestSeries):
             self.TEST_CLASS(self.data, sample_rate=1, dt=1)
 
     def test_epoch(self):
-        """Test `gwpy.timeseries.TimeSeriesBase.epoch`
-        """
+        """Test `gwpy.timeseries.TimeSeriesBase.epoch`."""
         # check basic conversion from t0 -> epoch
         a = self.create(t0=1126259462)
         assert a.epoch == Time("2015-09-14 09:50:45", format="iso")
@@ -107,15 +102,13 @@ class TestTimeSeriesBase(_TestSeries):
             a.t0, units.Quantity(1126259462, "s"))
 
     def test_sample_rate(self):
-        """Test `gwpy.timeseries.TimeSeriesBase.sample_rate`.
-        """
+        """Test `gwpy.timeseries.TimeSeriesBase.sample_rate`."""
         # check basic conversion from dt -> sample_rate
         a = self.create(dt=0.5)
         assert a.sample_rate == 2 * units.Hz
 
     def test_sample_rate_del(self, array):
-        """Test that `sample_rate` cannot be deleted.
-        """
+        """Test that `sample_rate` cannot be deleted."""
         # test that we can't delete sample_rate
         with pytest.raises(
             AttributeError,
@@ -124,8 +117,7 @@ class TestTimeSeriesBase(_TestSeries):
             del array.sample_rate
 
     def test_sample_rate_none(self, array):
-        """Test that `sample_rate = None` is effectively a deletion.
-        """
+        """Test that `sample_rate = None` is effectively a deletion."""
         # check None gets preserved
         array.sample_rate = None
         with pytest.raises(AttributeError, match="_t0"):
@@ -137,8 +129,7 @@ class TestTimeSeriesBase(_TestSeries):
         (10 / units.s, units.s / 10),
     ])
     def test_sample_rate_type(self, array, samp, dt):
-        """Test that units and types are handled when setting `sample_rate`.
-        """
+        """Test that units and types are handled when setting `sample_rate`."""
         array.sample_rate = samp
         utils.assert_quantity_equal(array.dt, dt)
 
@@ -172,8 +163,7 @@ class TestTimeSeriesBase(_TestSeries):
     @pytest.mark.requires("arrakis")
     @pytest.mark.parametrize("copy", (False, True))
     def test_from_arrakis(self, copy):
-        """Test :meth:`TimeSeriesBase.from_arrakis`.
-        """
+        """Test :meth:`TimeSeriesBase.from_arrakis`."""
         from arrakis import Channel as ArrakisChannel
         from arrakis.block import Series as ArrakisSeries
 
@@ -254,16 +244,14 @@ class TestTimeSeriesBase(_TestSeries):
     @pytest.mark.requires("lal")
     @pytest.mark.parametrize("copy", (False, True))
     def test_to_from_lal_no_copy(self, array, copy):
-        """Check that copy=False shares data
-        """
+        """Check that copy=False shares data."""
         lalts = array.to_lal()
         a2 = type(array).from_lal(lalts, copy=copy)
         assert shares_memory(a2.value, lalts.data.data) is not copy
 
     @pytest.mark.requires("lal")
     def test_to_from_lal_unrecognised_units(self, array):
-        """Test that unrecognised units get warned, but the operation continues
-        """
+        """Test that unrecognised units get warned, but the operation continues."""
         import lal
         array.override_unit("undef")
         with pytest.warns(UserWarning):
@@ -274,8 +262,7 @@ class TestTimeSeriesBase(_TestSeries):
 
     @pytest.mark.requires("lal")
     def test_to_from_lal_pow10_units(self, array):
-        """Test that normal scaled units scale the data properly
-        """
+        """Test that normal scaled units scale the data properly."""
         import lal
         array.override_unit("km")
         lalts = array.to_lal()
@@ -284,8 +271,7 @@ class TestTimeSeriesBase(_TestSeries):
 
     @pytest.mark.requires("lal")
     def test_to_from_lal_scaled_units(self, array):
-        """Test that weird scaled units scale the data properly
-        """
+        """Test that weird scaled units scale the data properly."""
         import lal
         array.override_unit("123 m")
         lalts = array.to_lal()
@@ -434,8 +420,7 @@ class TestTimeSeriesBaseDict(object):
         b.prepend(instance, pad=0)
 
     def test_crop(self, instance):
-        """Test :meth:`TimeSeriesBaseDict.crop`
-        """
+        """Test :meth:`TimeSeriesBaseDict.crop`."""
         a = instance.copy().crop(10, 20)  # crop() modifies in-place
         for key in a:
             utils.assert_quantity_sub_equal(a[key], instance[key].crop(10, 20))
@@ -452,8 +437,7 @@ class TestTimeSeriesBaseDict(object):
     @pytest.mark.requires("arrakis")
     @pytest.mark.parametrize("copy", (False, True))
     def test_from_arrakis(self, copy):
-        """Test :meth:`TimeSeriesBaseDict.from_arrakis`.
-        """
+        """Test :meth:`TimeSeriesBaseDict.from_arrakis`."""
         from arrakis import (
             Channel as ArrakisChannel,
             SeriesBlock as ArrakisBlock,
@@ -574,24 +558,21 @@ class TestTimeSeriesBaseList(object):
         assert self.TEST_CLASS.EntryClass is self.ENTRY_CLASS
 
     def test_segments(self, instance):
-        """Test :attr:`gwpy.timeseries.TimeSeriesBaseList.segments`
-        """
+        """Test :attr:`gwpy.timeseries.TimeSeriesBaseList.segments`."""
         sl = instance.segments
         assert isinstance(sl, SegmentList)
         assert all(isinstance(s, Segment) for s in sl)
         assert sl == [(0, 100), (101, 1101)]
 
     def test_append(self, instance):
-        """Test `TimeSeriesList.append`.
-        """
+        """Test `TimeSeriesList.append`."""
         new = self.ENTRY_CLASS([1, 2, 3, 4, 5], x0=1102, dx=1)
         instance.append(new)
         assert len(instance) == 3
         assert instance[-1] is new
 
     def test_append_typeerror(self, instance):
-        """Test `TimeSeriesList.append` errors on type differences.
-        """
+        """Test `TimeSeriesList.append` errors on type differences."""
         with pytest.raises(
             TypeError,
             match=f"^Cannot append type 'list' to {self.TEST_CLASS.__name__}$",

@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""GWF I/O utilities for frameCPP.
-"""
+"""GWF I/O utilities for frameCPP."""
 
 from __future__ import annotations
 
@@ -200,7 +199,7 @@ def write_frames(
     compression: int | str = "GZIP",
     compression_level: int | None = None,
 ):
-    """Write a list of frame objects to a file
+    """Write a list of frame objects to a file.
 
     **Requires:** |LDAStools.frameCPP|_
 
@@ -626,8 +625,7 @@ def _channel_segments(
     channel: str,
     warn: bool = True,
 ) -> Iterator[Segment]:
-    """Yields the segments containing data for ``channel`` in this GWF path
-    """
+    """Yields the segments containing data for ``channel`` in this GWF path."""
     stream = open_gwf(gwf, mode="r")
 
     # get segments for frames
@@ -663,7 +661,7 @@ def _get_type(
     type_: int | str,
     enum: type[IntEnum],
 ) -> int:
-    """Handle a type string, or just return an `int`
+    """Handle a type string, or just return an `int`.
 
     Only to be called in relation to FrProcDataType and FrProcDataSubType
     """
@@ -707,7 +705,7 @@ def _get_frprocdata_subtype(
     series: Series,
     subtype: int | str | None,
 ) -> int:
-    """Determine the appropriate `FrProcDataSubType` for this series
+    """Determine the appropriate `FrProcDataSubType` for this series.
 
     Notes
     -----

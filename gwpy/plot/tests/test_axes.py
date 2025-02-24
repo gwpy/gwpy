@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.plot`
-"""
+"""Unit tests for :mod:`gwpy.plot`."""
 
 import pytest
 
@@ -206,8 +205,7 @@ class TestAxes(AxesTestBase):
         )
 
     def test_hist_error(self, ax):
-        """Test that `ax.hist` presents the right error message for empty data
-        """
+        """Test that `ax.hist` presents the right error message for empty data."""
         with pytest.raises(
             ValueError,
             match="^cannot generate log-spaced histogram bins",

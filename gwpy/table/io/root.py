@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from ROOT trees into Tables.
-"""
+"""Read events from ROOT trees into Tables."""
 
 from __future__ import annotations
 

@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""LIGOTimeGPS object discovery.
-"""
+"""LIGOTimeGPS object discovery."""
 
 from __future__ import annotations
 
@@ -37,8 +36,7 @@ except ImportError:
 def _gps_type_importable(
     modname: str,
 ) -> type | None:
-    """Return `True` if ``modname`` provides a usable ``LIGOTimeGPS``.
-    """
+    """Return `True` if ``modname`` provides a usable ``LIGOTimeGPS``."""
     try:
         mod = import_module(modname)
     except ImportError:  # library not installed

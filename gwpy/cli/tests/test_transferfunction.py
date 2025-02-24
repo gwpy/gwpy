@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.cli.transferfunction`
-"""
+"""Unit tests for :mod:`gwpy.cli.transferfunction`."""
 
 from astropy.time import Time
 

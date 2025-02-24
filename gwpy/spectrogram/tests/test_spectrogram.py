@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.spectrogram.spectrogram`
-"""
+"""Unit tests for :mod:`gwpy.spectrogram.spectrogram`."""
 
 from io import BytesIO
 
@@ -38,8 +37,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class TestSpectrogram(_TestArray2D):
-    """Tests of `gwpy.spectrogram.Spectrogram`
-    """
+    """Tests of `gwpy.spectrogram.Spectrogram`."""
     TEST_CLASS = Spectrogram
 
     def test_new(self):

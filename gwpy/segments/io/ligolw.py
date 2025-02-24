@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read/write segment XML in LIGO_LW format into DataQualityFlags.
-"""
+"""Read/write segment XML in LIGO_LW format into DataQualityFlags."""
 
 from __future__ import annotations
 
@@ -56,8 +55,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def segment_content_handler() -> PartialContentHandler:
-    """Build a `~xml.sax.handlers.ContentHandler` to read segment XML tables
-    """
+    """Build a `~xml.sax.handlers.ContentHandler` to read segment XML tables."""
     from ligo.lw.ligolw import PartialLIGOLWContentHandler
     from ligo.lw.lsctables import (
         SegmentDefTable,
@@ -135,8 +133,7 @@ def read_ligolw_flag(
     name: str | None = None,
     **kwargs,
 ) -> DataQualityFlag:
-    """Read a single `DataQualityFlag` from a LIGO_LW XML file
-    """
+    """Read a single `DataQualityFlag` from a LIGO_LW XML file."""
     return list(read_ligolw_dict(
         source,
         names=[name] if name is not None else None,
@@ -147,7 +144,7 @@ def read_ligolw_flag(
 # -- write --------------------------------------------------------------------
 
 def write_ligolw(flags, target, attrs=None, **kwargs):
-    """Write this `DataQualityFlag` to the given LIGO_LW Document
+    """Write this `DataQualityFlag` to the given LIGO_LW Document.
 
     Parameters
     ----------

@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.io.nds2`
-"""
+"""Unit tests for :mod:`gwpy.io.nds2`."""
 
 import os
 from unittest import mock
@@ -46,14 +45,12 @@ class _TestNds2Enum:
         assert self.TEST_CLASS.any() == 2 * max(self.TEST_CLASS).value - 1
 
     def test_find_unknown(self):
-        """Test 'UNKNOWN' for :meth:`gwpy.io.nds2.Nds2ChannelType.find`.
-        """
+        """Test 'UNKNOWN' for :meth:`gwpy.io.nds2.Nds2ChannelType.find`."""
         self.TEST_CLASS.find("blah") == "UNKNOWN"
 
 
 class TestNds2ChannelType(_TestNds2Enum):
-    """Tests of :class:`gwpy.io.nds2.Nds2DataType`
-    """
+    """Tests of :class:`gwpy.io.nds2.Nds2DataType`."""
     TEST_CLASS = io_nds2.Nds2ChannelType
 
     def test_nds2name(self):
@@ -77,14 +74,12 @@ class TestNds2ChannelType(_TestNds2Enum):
         ("REDUCED", TEST_CLASS.RDS),
     ))
     def test_find(self, input_, expected):
-        """Test :meth:`gwpy.io.nds2.Nds2ChannelType.find`
-        """
+        """Test :meth:`gwpy.io.nds2.Nds2ChannelType.find`."""
         assert self.TEST_CLASS.find(input_) == expected
 
 
 class TestNds2DataType(_TestNds2Enum, _TestNumpyTypeEnum):
-    """Tests of :class:`gwpy.io.nds2.Nds2DataType`
-    """
+    """Tests of :class:`gwpy.io.nds2.Nds2DataType`."""
     TEST_CLASS = io_nds2.Nds2DataType
 
     def test_find_errors(self):
@@ -112,8 +107,7 @@ class TestNds2DataType(_TestNds2Enum, _TestNumpyTypeEnum):
     ),
 ))
 def test_parse_nds_env(key, value, result):
-    """Test `gwpy.io.nds2.parse_nds_env`
-    """
+    """Test `gwpy.io.nds2.parse_nds_env`."""
     with mock.patch.dict(os.environ, {key: value}):
         if key == "NDSSERVER":
             hosts = io_nds2.parse_nds_env()
@@ -137,8 +131,7 @@ def test_parse_nds_env(key, value, result):
     ),
 ))
 def test_host_resolution_order(ifo, include_gwosc, result):
-    """Test `gwpy.io.nds2.host_resolution_order` basic usage.
-    """
+    """Test `gwpy.io.nds2.host_resolution_order` basic usage."""
     assert io_nds2.host_resolution_order(
         ifo,
         include_gwosc=include_gwosc,
@@ -174,8 +167,7 @@ def test_host_resolution_order(ifo, include_gwosc, result):
     ),
 ))
 def test_host_resolution_order_env(ifo, include_gwosc, result):
-    """Test `gwpy.io.nds2.host_resolution_order` environment parsing.
-    """
+    """Test `gwpy.io.nds2.host_resolution_order` environment parsing."""
     assert io_nds2.host_resolution_order(
         ifo,
         include_gwosc=include_gwosc,
@@ -231,8 +223,7 @@ def test_host_resolution_order_named_env():
     ),
 ))
 def test_host_resolution_order_epoch(ifo, epoch, env, result):
-    """Test `gwpy.io.nds2.host_resolution_order` epoch parsing
-    """
+    """Test `gwpy.io.nds2.host_resolution_order` epoch parsing."""
     assert io_nds2.host_resolution_order(
         ifo,
         epoch=epoch,
@@ -246,8 +237,7 @@ def test_host_resolution_order_epoch(ifo, epoch, env, result):
     {"TESTENV": "test1.ligo.org:80,test2.ligo.org:43"},
 )
 def test_host_resolution_order_warning():
-    """Test `gwpy.io.nds2.host_resolution_order` warnings.
-    """
+    """Test `gwpy.io.nds2.host_resolution_order` warnings."""
     # test warnings for unknown IFO
     with pytest.warns(UserWarning) as record:
         # should produce warning
@@ -273,8 +263,7 @@ def test_host_resolution_order_warning():
 ))
 @mock.patch("nds2.connection")
 def test_connect(connector, host, port, callport):
-    """Test `gwpy.io.nds2.connect`.
-    """
+    """Test `gwpy.io.nds2.connect`."""
     io_nds2.connect(host, port=port)
     if callport is None:
         connector.assert_called_once_with(host)
@@ -285,8 +274,7 @@ def test_connect(connector, host, port, callport):
 @pytest.mark.requires("nds2")
 @mock.patch("gwpy.io.nds2.connect")
 def test_auth_connect(connect):
-    """Test `gwpy.io.nds2.auth_connect`
-    """
+    """Test `gwpy.io.nds2.auth_connect`."""
     io_nds2.auth_connect("host", 0)
     connect.assert_called_once_with("host", 0)
 
@@ -302,7 +290,7 @@ def test_auth_connect(connect):
 )
 def test_auth_connect_kinit(connect, kinit):
     """Test `gwpy.io.nds2.auth_connect` with a callout to
-    `gwpy.io.kerberos.kinit`
+    `gwpy.io.kerberos.kinit`.
     """
     with pytest.warns(io_nds2.NDSWarning):
         assert io_nds2.auth_connect("host", 0)
@@ -317,8 +305,7 @@ def test_auth_connect_kinit(connect, kinit):
     side_effect=RuntimeError("Anything else"),
 )
 def test_auth_connect_error(connect):
-    """Test errors from `gwpy.io.nds2.auth_connect`
-    """
+    """Test errors from `gwpy.io.nds2.auth_connect`."""
     with pytest.raises(
         RuntimeError,
         match="Anything else",
@@ -329,8 +316,7 @@ def test_auth_connect_error(connect):
 
 @mock.patch("gwpy.io.nds2.auth_connect", return_value=1)
 def test_open_connection(auth_connect):
-    """Test the `gwpy.io.nds2.open_connection` decorator
-    """
+    """Test the `gwpy.io.nds2.open_connection` decorator."""
     @io_nds2.open_connection
     def new_func(arg1, connection=None):
         return arg1, connection
@@ -347,8 +333,7 @@ def test_open_connection(auth_connect):
 
 @pytest.mark.requires("nds2")
 def test_find_channels(nds2_connection):
-    """Test `gwpy.io.nds2.find_channels`
-    """
+    """Test `gwpy.io.nds2.find_channels`."""
     # call function and check result
     chans = io_nds2.find_channels(
         ["X1:test"],
@@ -373,8 +358,7 @@ def test_find_channels(nds2_connection):
 
 @pytest.mark.requires("nds2")
 def test_find_channels_nds1(nds2_connection):
-    """Test NDS1 name handling in `find_channels`.
-    """
+    """Test NDS1 name handling in `find_channels`."""
     nds2_connection.get_protocol.return_value = 1
     io_nds2.find_channels(
         ["X1:test,m-trend"],
@@ -393,8 +377,7 @@ def test_find_channels_nds1(nds2_connection):
 
 @pytest.mark.requires("nds2")
 def test_find_channels_online(nds2_connection):
-    """Test handling of 'online' channels in `find_channels`.
-    """
+    """Test handling of 'online' channels in `find_channels`."""
     # add an 'online' version of thee same channel
     buff = nds2_connection._buffers[0]
     nds2_connection._buffers.append(
@@ -416,8 +399,7 @@ def test_find_channels_online(nds2_connection):
 
 @pytest.mark.requires("nds2")
 def test_find_channels_unique(nds2_connection):
-    """Test handling of 'online' channels in `find_channels`.
-    """
+    """Test handling of 'online' channels in `find_channels`."""
     # add a second copy of the same channel
     # so that find_channels returns two things
     nds2_connection._buffers.append(nds2_connection._buffers[0])
@@ -431,8 +413,7 @@ def test_find_channels_unique(nds2_connection):
 
 @pytest.mark.requires("nds2")
 def test_get_availability(nds2_connection):
-    """Test `gwpy.io.nds2.get_availability`.
-    """
+    """Test `gwpy.io.nds2.get_availability`."""
     # validate call and parsing of results
     segs = io_nds2.get_availability(
         ["X1:test"],
@@ -511,15 +492,13 @@ def test_get_availability_real():
     ),
 ))
 def test_minute_trend_times(start, end, out):
-    """Test `gwpy.io.nds2.minute_trend_times`
-    """
+    """Test `gwpy.io.nds2.minute_trend_times`."""
     assert io_nds2.minute_trend_times(start, end) == out
 
 
 @pytest.mark.requires("nds2")
 def test_get_nds2_name():
-    """Test `gwpy.io.nds2._get_nds2_name`.
-    """
+    """Test `gwpy.io.nds2._get_nds2_name`."""
     # we can't use parametrize because mocks.nds2_channel requires
     # the nds2-client and is executed _before_ the skip decorator is
     # applied
@@ -533,8 +512,7 @@ def test_get_nds2_name():
 
 @pytest.mark.requires("nds2")
 def test_get_nds2_names():
-    """Test `gwpy.io.nds2._get_nds2_names`.
-    """
+    """Test `gwpy.io.nds2._get_nds2_names`."""
     channels, names = zip(*(
         ("test", "test"),
         (Channel("X1:TEST", type="m-trend"), "X1:TEST,m-trend"),

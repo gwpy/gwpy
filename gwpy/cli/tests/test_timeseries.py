@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.cli.timeseries`
-"""
+"""Unit tests for :mod:`gwpy.cli.timeseries`."""
 
 from ... import cli
 from .base import (_TestTimeDomainProduct, update_namespace)

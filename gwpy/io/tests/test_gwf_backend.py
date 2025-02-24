@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.io.gwf.backend`.
-"""
+"""Tests for :mod:`gwpy.io.gwf.backend`."""
 
 import os
 from unittest import mock
@@ -35,8 +34,7 @@ BACKEND_LIBRARY = {
 @mock.patch.dict("os.environ")
 @pytest.mark.requires(BACKEND_LIBRARY["LALFrame"])  # need at least one backend
 def test_get_backend():
-    """Test that :func:`get_backend` returns a sensible value.
-    """
+    """Test that :func:`get_backend` returns a sensible value."""
     os.environ.pop("GWPY_FRAME_LIBRARY", None)
     assert io_gwf.get_backend() in io_gwf.BACKENDS
 
@@ -47,8 +45,7 @@ def test_get_backend():
     for backend in io_gwf.BACKENDS
 ])
 def test_get_backend_environ(backend):
-    """Test that :func:`get_backend` reads the environment poroperly.
-    """
+    """Test that :func:`get_backend` reads the environment poroperly."""
     os.environ["GWPY_FRAME_LIBRARY"] = backend
     assert io_gwf.get_backend() == backend
 
@@ -65,16 +62,14 @@ def test_get_backend_environ_bad():
 
 @pytest.mark.requires(BACKEND_LIBRARY["frameCPP"])
 def test_get_backend_function():
-    """Test that `get_backend_function` works.
-    """
+    """Test that `get_backend_function` works."""
     from gwpy.io.gwf import framecpp as io_framecpp
     func = io_gwf.get_backend_function("create_frame", backend="frameCPP")
     assert func is io_framecpp.create_frame
 
 
 def test_get_backend_function_badbackend():
-    """Test that `get_backend_function` formats errors correctly.
-    """
+    """Test that `get_backend_function` formats errors correctly."""
     with pytest.raises(
         ImportError,
         match="No module named 'gwpy.io.gwf.notimplemented'",
@@ -83,8 +78,7 @@ def test_get_backend_function_badbackend():
 
 
 def test_get_backend_function_notimplemented():
-    """Test that `get_backend_function` formats errors correctly.
-    """
+    """Test that `get_backend_function` formats errors correctly."""
     with pytest.raises(
         NotImplementedError,
         match="'notimplemented'",

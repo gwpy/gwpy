@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for gwpy.types classes
-"""
+"""Unit test for gwpy.types classes."""
 
 import pickle
 import warnings
@@ -47,8 +46,7 @@ CHANNEL = Channel(CHANNEL_NAME)
 
 
 class TestArray(object):
-    """Test `gwpy.types.Array`
-    """
+    """Test `gwpy.types.Array`."""
     TEST_CLASS = Array
     DTYPE = None
 
@@ -88,8 +86,7 @@ class TestArray(object):
     # -- test basic construction ----------------
 
     def assert_new(self, array):
-        """Run basic assertions for a new instance of the type under test.
-        """
+        """Run basic assertions for a new instance of the type under test."""
         utils.assert_array_equal(array.value, self.data)
 
         # test that copy=True ensures owndata
@@ -97,14 +94,12 @@ class TestArray(object):
         assert self.create(copy=True).flags.owndata is True
 
     def test_new_empty(self):
-        """Test that `Array()` raises an exception.
-        """
+        """Test that `Array()` raises an exception."""
         with pytest.raises(TypeError):
             self.TEST_CLASS()
 
     def test_new(self):
-        """Test Array creation.
-        """
+        """Test Array creation."""
         self.assert_new(self.create())
 
     def test_unit(self, array):

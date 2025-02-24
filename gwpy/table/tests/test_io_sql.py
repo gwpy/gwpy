@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.table.io.sql`
-"""
+"""Tests for :mod:`gwpy.table.io.sql`."""
 
 import pytest
 
@@ -24,8 +23,7 @@ from ..io import sql as io_sql
 
 
 def _sql_str(expr) -> str:
-    """Format a SQL expression or string for easy comparison.
-    """
+    """Format a SQL expression or string for easy comparison."""
     out = str(expr).lower()
     return out.replace("\n", "")
 
@@ -75,8 +73,7 @@ def _sql_str(expr) -> str:
 ))
 @pytest.mark.requires("sqlalchemy")
 def test_format_query(kwargs, result):
-    """Test that `gwpy.table.io.sql.format_query` works.
-    """
+    """Test that `gwpy.table.io.sql.format_query` works."""
     assert _sql_str(io_sql.format_query(
         "table",
         **(kwargs or {}),

@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.io.ffldatafind`
-"""
+"""Unit tests for :mod:`gwpy.io.ffldatafind`."""
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -40,8 +39,7 @@ from .. import (
     "line 1\nline2",
 ])
 def test_read_last_line(tmp_path, content):
-    """Check that the `_read_last_line` utility works
-    """
+    """Check that the `_read_last_line` utility works."""
     # write content to a file
     path = tmp_path / "tmp.txt"
     path.write_text(content)
@@ -50,8 +48,7 @@ def test_read_last_line(tmp_path, content):
 
 
 def test_read_last_line_oserror(tmp_path):
-    """Check that `_read_last_line` raises `OSError` for empty files.
-    """
+    """Check that `_read_last_line` raises `OSError` for empty files."""
     path = tmp_path / "tmp.txt"
     path.touch(exist_ok=False)
     with pytest.raises(OSError):
@@ -66,8 +63,7 @@ def test_read_last_line_oserror(tmp_path):
 ))
 @mock.patch.dict("os.environ", clear=True)
 def test_get_ffl_basedir(var, value, result):
-    """Test that `_get_ffl_basedir` does what it is supposed to.
-    """
+    """Test that `_get_ffl_basedir` does what it is supposed to."""
     # note: use str(Path(x)) to convert to Posix->Windows
     os.environ[var] = str(Path(value))
     assert ffldatafind._get_ffl_basedir() == str(Path(result))
@@ -75,8 +71,7 @@ def test_get_ffl_basedir(var, value, result):
 
 @mock.patch.dict("os.environ", clear=True)
 def test_get_ffl_basedir_error():
-    """Test that `_get_ffl_basedir` errors when the environment isn't right.
-    """
+    """Test that `_get_ffl_basedir` errors when the environment isn't right."""
     with pytest.raises(KeyError):
         ffldatafind._get_ffl_basedir()
 
@@ -87,8 +82,7 @@ def test_get_ffl_basedir_error():
     ("test.txt", False),
 ))
 def test_is_ffl_file(path, result):
-    """Test that `_is_ffl_file` does what it is supposed to.
-    """
+    """Test that `_is_ffl_file` does what it is supposed to."""
     assert ffldatafind._is_ffl_file(path) is result
 
 
@@ -146,8 +140,7 @@ def mock_ffl(tmp_path):
     ("Y", "test", ["test3"]),
 ])
 def test_find_types(site, match, result):
-    """Check that `ffldatafind.find_types` works.
-    """
+    """Check that `ffldatafind.find_types` works."""
     assert sorted(ffldatafind.find_types(
         site=site,
         match=match,
@@ -159,8 +152,7 @@ def test_find_types(site, match, result):
     (r"\-0\-", pytest.warns(UserWarning), TEST_URLS[:1]),
 ))
 def test_find_urls(match, ctx, result):
-    """Check that `ffldatafind.find_urls` works.
-    """
+    """Check that `ffldatafind.find_urls` works."""
     with ctx:
         assert sorted(ffldatafind.find_urls(
             "X",
@@ -191,8 +183,7 @@ def test_find_urls_on_gaps(on_gaps, ctx):
 
 
 def test_find_latest():
-    """Check that `ffldatafind.find_latest` works.
-    """
+    """Check that `ffldatafind.find_latest` works."""
     assert ffldatafind.find_latest(
         "X",
         "test",

@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unified I/O for :mod:`gwpy.timeseries` objects.
-"""
+"""Unified I/O for :mod:`gwpy.timeseries` objects."""
 
 from __future__ import annotations
 
@@ -42,8 +41,7 @@ def _join_factory(
     start: GpsConvertible | None = None,
     end: GpsConvertible | None = None,
 ):
-    """Build a joiner for the given cls, and the given padding options
-    """
+    """Build a joiner for the given cls, and the given padding options."""
     from . import TimeSeriesBaseDict
 
     if issubclass(cls, TimeSeriesBaseDict):

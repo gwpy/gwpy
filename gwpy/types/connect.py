@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unified I/O read/write for Array objects.
-"""
+"""Unified I/O read/write for Array objects."""
 
 from __future__ import annotations
 
@@ -50,7 +49,7 @@ def _combine_series(
 # -- Series --------------------------
 
 class SeriesRead(UnifiedRead):
-    """Read data into a `Series`
+    """Read data into a `Series`.
 
     Arguments and keywords depend on the output format, see the
     online documentation for full details for each format, the
@@ -101,7 +100,7 @@ class SeriesRead(UnifiedRead):
 
 
 class SeriesWrite(UnifiedWrite):
-    """Write this `Series` to a file
+    """Write this `Series` to a file.
 
     Arguments and keywords depend on the output format, see the
     online documentation for full details for each format, the
@@ -123,7 +122,7 @@ class SeriesWrite(UnifiedWrite):
 # -- Array2D -------------------------
 
 class Array2DRead(UnifiedRead):
-    """Read data into a `Array2D`
+    """Read data into a `Array2D`.
 
     Arguments and keywords depend on the output format, see the
     online documentation for full details for each format, the
@@ -174,7 +173,7 @@ class Array2DRead(UnifiedRead):
 
 
 class Array2DWrite(UnifiedWrite):
-    """Write this `Array2D` to a file
+    """Write this `Array2D` to a file.
 
     Arguments and keywords depend on the output format, see the
     online documentation for full details for each format, the

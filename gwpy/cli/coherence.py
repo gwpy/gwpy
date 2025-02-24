@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Coherence plots
-"""
+"""Coherence plots."""
 
 from collections import OrderedDict
 
@@ -29,7 +28,7 @@ __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 class Coherence(Spectrum):
     """Plot coherence between a reference time series and one
-    or more other time series
+    or more other time series.
     """
     action = "coherence"
 
@@ -60,18 +59,15 @@ class Coherence(Spectrum):
         return super()._finalize_arguments(args)
 
     def get_ylabel(self):
-        """Text for y-axis label
-        """
+        """Text for y-axis label."""
         return "Coherence"
 
     def get_suptitle(self):
-        """Start of default super title, first channel is appended to it
-        """
+        """Start of default super title, first channel is appended to it."""
         return f"Coherence: {self.ref_chan}"
 
     def make_plot(self):
-        """Generate the coherence plot from all time series
-        """
+        """Generate the coherence plot from all time series."""
         args = self.args
 
         fftlength = float(args.secpfft)
@@ -122,8 +118,7 @@ class Coherence(Spectrum):
         return plot
 
     def set_legend(self):
-        """Create a legend for this product
-        """
+        """Create a legend for this product."""
         leg = super().set_legend()
         if leg is not None:
             leg.set_title("Coherence with:")

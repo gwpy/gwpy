@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Create, manipulate, read, and write spectrogram data
-"""
+"""Create, manipulate, read, and write spectrogram data."""
 
 from .spectrogram import (Spectrogram, SpectrogramList)
 

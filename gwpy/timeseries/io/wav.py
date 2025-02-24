@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read/write WAV files using `scipy.signal.wavfile`.
-"""
+"""Read/write WAV files using `scipy.signal.wavfile`."""
 
 from __future__ import annotations
 

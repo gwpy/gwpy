@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Extensions of `~matplotlib.legend` for gwpy
-"""
+"""Extensions of `~matplotlib.legend` for gwpy."""
 
 from matplotlib import legend_handler
 
@@ -24,7 +23,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class HandlerLine2D(legend_handler.HandlerLine2D):
-    """Custom Line2D legend handler that draws lines with custom linewidth
+    """Custom Line2D legend handler that draws lines with custom linewidth.
 
     Parameters
     ----------

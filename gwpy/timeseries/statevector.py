@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module defines the Boolean array representing the state of some data
+"""This module defines the Boolean array representing the state of some data.
 
 Such states are typically the comparison of a `TimeSeries` against some
 threshold, where sub-threshold is good and sup-threshold is bad,
@@ -63,7 +63,7 @@ __all__ = ["StateTimeSeries", "StateTimeSeriesDict",
 # -- utilities ----------------------------------------------------------------
 
 def _bool_segments(array, start=0, delta=1, minlen=1):
-    """Yield segments of consecutive `True` values in a boolean array
+    """Yield segments of consecutive `True` values in a boolean array.
 
     Parameters
     ----------
@@ -127,7 +127,7 @@ def _bool_segments(array, start=0, delta=1, minlen=1):
 # -- StateTimeSeries ----------------------------------------------------------
 
 class StateTimeSeries(TimeSeriesBase):
-    """Boolean array representing a good/bad state determination
+    """Boolean array representing a good/bad state determination.
 
     Parameters
     ----------
@@ -177,8 +177,7 @@ class StateTimeSeries(TimeSeriesBase):
 
     def __new__(cls, data, t0=None, dt=None, sample_rate=None, times=None,
                 channel=None, name=None, **kwargs):
-        """Generate a new StateTimeSeries
-        """
+        """Generate a new StateTimeSeries."""
         if kwargs.pop("unit", None) is not None:
             raise TypeError("%s does not accept keyword argument 'unit'"
                             % cls.__name__)
@@ -300,8 +299,7 @@ class StateTimeSeries(TimeSeriesBase):
         return out
 
     def to_lal(self, *args, **kwargs):
-        """Bogus function inherited from superclass, do not use.
-        """
+        """Bogus function inherited from superclass, do not use."""
         raise NotImplementedError("The to_lal method, inherited from the "
                                   "TimeSeries, cannot be used with the "
                                   "StateTimeSeries because LAL has no "
@@ -396,8 +394,7 @@ class Bits(list):
 
     @property
     def channel(self):
-        """Data channel associated with these `Bits`.
-        """
+        """Data channel associated with these `Bits`."""
         try:
             return self._channel
         except AttributeError:
@@ -412,8 +409,7 @@ class Bits(list):
 
     @property
     def description(self):
-        """(key, value) dictionary of long bit descriptions.
-        """
+        """(key, value) dictionary of long bit descriptions."""
         return self._description
 
     @description.setter
@@ -512,8 +508,7 @@ class StateVector(TimeSeriesBase):
 
     def __new__(cls, data, bits=None, t0=None, dt=None, sample_rate=None,
                 times=None, channel=None, name=None, **kwargs):
-        """Generate a new `StateVector`.
-        """
+        """Generate a new `StateVector`."""
         new = super().__new__(cls, data, t0=t0, dt=dt,
                               sample_rate=sample_rate,
                               times=times, channel=channel,
@@ -526,7 +521,7 @@ class StateVector(TimeSeriesBase):
     # -- bits
     @property
     def bits(self):
-        """list of `Bits` for this `StateVector`
+        """list of `Bits` for this `StateVector`.
 
         :type: `Bits`
         """
@@ -624,7 +619,7 @@ class StateVector(TimeSeriesBase):
         return self._bitseries
 
     def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
-        """Convert this `StateVector` into a `~gwpy.segments.DataQualityDict`
+        """Convert this `StateVector` into a `~gwpy.segments.DataQualityDict`.
 
         The `StateTimeSeries` for each bit is converted into a
         `~gwpy.segments.DataQualityFlag` with the bits combined into a dict.
@@ -768,7 +763,7 @@ class StateVector(TimeSeriesBase):
         return new
 
     def plot(self, format="segments", bits=None, **kwargs):
-        """Plot the data for this `StateVector`
+        """Plot the data for this `StateVector`.
 
         Parameters
         ----------
@@ -816,7 +811,7 @@ class StateVector(TimeSeriesBase):
                          "'segments'")
 
     def resample(self, rate):
-        """Resample this `StateVector` to a new rate
+        """Resample this `StateVector` to a new rate.
 
         Because of the nature of a state-vector, downsampling is done
         by taking the logical 'and' of all original samples in each new

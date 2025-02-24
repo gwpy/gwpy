@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.astro.range`.
-"""
+"""Unit tests for :mod:`gwpy.astro.range`."""
 
 from unittest import mock
 
@@ -44,8 +43,7 @@ TEST_RESULTS = {
 
 @pytest.fixture(scope="module")
 def hoft():
-    """Read the LIGO-Livingston strain data from the test HDF5 file.
-    """
+    """Read the LIGO-Livingston strain data from the test HDF5 file."""
     return TimeSeries.read(
         utils.TEST_HDF5_FILE,
         "L1:LDAS-STRAIN",
@@ -55,8 +53,7 @@ def hoft():
 
 @pytest.fixture(scope="module")
 def psd(hoft):
-    """Return the PSD for ``hoft``.
-    """
+    """Return the PSD for ``hoft``."""
     return hoft.psd(
         .4,
         overlap=.2,
@@ -68,8 +65,7 @@ def psd(hoft):
 # -- sensemon ------------------------
 
 def test_sensemon_range_psd(psd):
-    """Test :func:`gwpy.astro.sensemon_range_psd`.
-    """
+    """Test :func:`gwpy.astro.sensemon_range_psd`."""
     fisco = astro.range._get_isco_frequency(1.4, 1.4).value
     frange = (psd.frequencies.value < fisco)
     r = astro.sensemon_range_psd(psd[frange])
@@ -82,8 +78,7 @@ def test_sensemon_range_psd(psd):
 
 
 def test_sensemon_range(psd):
-    """Test :func:`gwpy.astro.sensemon_range`.
-    """
+    """Test :func:`gwpy.astro.sensemon_range`."""
     r = astro.sensemon_range(psd)
     utils.assert_quantity_almost_equal(r, TEST_RESULTS["sensemon_range"])
 
@@ -92,8 +87,7 @@ def test_sensemon_range(psd):
 
 @mock.patch.dict("sys.modules", {"inspiral_range": None})
 def test_inspiral_range_missing_dep(psd):
-    """Test that :func:`gwpy.astro.inspiral_range` handles a failed import.
-    """
+    """Test that :func:`gwpy.astro.inspiral_range` handles a failed import."""
     with pytest.raises(
         ModuleNotFoundError,
         match="extra package 'inspiral-range'",
@@ -103,8 +97,7 @@ def test_inspiral_range_missing_dep(psd):
 
 @pytest.mark.requires("inspiral_range")
 def test_inspiral_range_psd(psd):
-    """Test :func:`gwpy.astro.inspiral_range_psd`.
-    """
+    """Test :func:`gwpy.astro.inspiral_range_psd`."""
     frange = (psd.frequencies.value < 4096)
     r = astro.inspiral_range_psd(psd[frange])
     assert isinstance(r, FrequencySeries)
@@ -121,8 +114,7 @@ def test_inspiral_range_psd(psd):
     (10, TEST_RESULTS["inspiral_range_snr_10"]),
 ))
 def test_inspiral_range(psd, snr, expected):
-    """Test :func:`gwpy.astro.inspiral_range`.
-    """
+    """Test :func:`gwpy.astro.inspiral_range`."""
     result = astro.inspiral_range(psd, snr=snr)
     utils.assert_quantity_almost_equal(result, expected)
 
@@ -130,8 +122,7 @@ def test_inspiral_range(psd, snr, expected):
 # -- burst range ---------------------
 
 def test_burst_range_spectrum(psd):
-    """Test :func:`gwpy.astro.burst_range_spectrum`.
-    """
+    """Test :func:`gwpy.astro.burst_range_spectrum`."""
     f = psd.frequencies
     frange = (f.value >= 100) & (f.value < 500)
     r = astro.burst_range_spectrum(psd[frange])
@@ -144,8 +135,7 @@ def test_burst_range_spectrum(psd):
 
 
 def test_burst_range(psd):
-    """Test :func:`gwpy.astro.burst_range`.
-    """
+    """Test :func:`gwpy.astro.burst_range`."""
     r = astro.burst_range(psd)
     utils.assert_quantity_almost_equal(r, TEST_RESULTS["burst_range"])
 
@@ -165,8 +155,7 @@ def test_burst_range(psd):
     pytest.param({"energy": 1e-2}, id="burst_range"),
 ])
 def test_range_timeseries(hoft, rangekwargs):
-    """Test :func:`gwpy.astro.range_timeseries` works in simple conditions.
-    """
+    """Test :func:`gwpy.astro.range_timeseries` works in simple conditions."""
     trends = astro.range_timeseries(
         hoft,
         0.5,
@@ -197,8 +186,7 @@ def test_range_timeseries(hoft, rangekwargs):
     pytest.param({"energy": 1e-2}, units.Mpc, id="burst_range"),
 ])
 def test_range_spectrogram(hoft, rangekwargs, outunit):
-    """Test :func:`gwpy.astro.range_spectrogram` works in simple conditions.
-    """
+    """Test :func:`gwpy.astro.range_spectrogram` works in simple conditions."""
     spec = astro.range_spectrogram(
         hoft,
         0.5,
@@ -221,8 +209,7 @@ def test_range_spectrogram(hoft, rangekwargs, outunit):
     astro.range_spectrogram,
 ])
 def test_range_incompatible_input(range_func):
-    """Test that ``range_func`` handles incompatible inputs appropriately.
-    """
+    """Test that ``range_func`` handles incompatible inputs appropriately."""
     with pytest.raises(
         TypeError,
         match="Could not produce a spectrogram from the input",

@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.signal.spectral._utils`.
-"""
+"""Tests for :mod:`gwpy.signal.spectral._utils`."""
 
 import pytest
 from astropy.units import Unit
@@ -32,8 +31,7 @@ from ..spectral import _utils as fft_utils
     (None, {}, Unit("Hz^-1")),
 ])
 def test_scale_timeseries_unit(unit, kwargs, result):
-    """Test :func:`gwpy.signal.spectral._utils.scale_timeseries_units`.
-    """
+    """Test :func:`gwpy.signal.spectral._utils.scale_timeseries_units`."""
     assert fft_utils.scale_timeseries_unit(unit, **kwargs) == result
 
 

@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilities for data input/output in standard GW formats.
-"""
+"""Utilities for data input/output in standard GW formats."""
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

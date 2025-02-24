@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Quantity array for indexing a Series
-"""
+"""Quantity array for indexing a Series."""
 
 import numpy
 
@@ -26,8 +25,7 @@ from .array import COPY_IF_NEEDED
 
 
 class Index(Quantity):
-    """1-D `~astropy.units.Quantity` array for indexing a `Series`
-    """
+    """1-D `~astropy.units.Quantity` array for indexing a `Series`."""
     @classmethod
     def define(cls, start, step, num, dtype=None):
         """Define a new `Index`.
@@ -77,8 +75,7 @@ class Index(Quantity):
 
     @property
     def regular(self):
-        """`True` if this index is linearly increasing
-        """
+        """`True` if this index is linearly increasing."""
         try:
             return self.info.meta["regular"]
         except (TypeError, KeyError):
@@ -88,7 +85,7 @@ class Index(Quantity):
             return self.info.meta["regular"]
 
     def is_regular(self):
-        """Determine whether this `Index` contains linearly increasing samples
+        """Determine whether this `Index` contains linearly increasing samples.
 
         This also works for linear decrease
         """

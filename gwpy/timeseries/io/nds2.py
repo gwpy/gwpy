@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""NDS2 data query routines for the TimeSeries
-"""
+"""NDS2 data query routines for the TimeSeries."""
 
 import operator
 import warnings
@@ -37,8 +36,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def print_verbose(*args, **kwargs):
-    """Utility to print something only if verbose=True is given
-    """
+    """Utility to print something only if verbose=True is given."""
     if kwargs.pop("verbose", False) is True:
         gprint(*args, **kwargs)
 
@@ -67,8 +65,7 @@ def _parse_nds_enum_dict_param(channels, key, value):
 
 
 def set_parameter(connection, parameter, value, verbose=False):
-    """Set a parameter for the connection, handling errors as warnings
-    """
+    """Set a parameter for the connection, handling errors as warnings."""
     value = str(value)
     try:
         if not connection.set_parameter(parameter, value):
@@ -91,7 +88,7 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
           verbose=False, series_class=TimeSeries):
     # host and port keywords are used by the decorator only
     # pylint: disable=unused-argument
-    """Fetch a dict of data series from NDS2
+    """Fetch a dict of data series from NDS2.
 
     This method sits underneath `TimeSeries.fetch` and related methods,
     and isn't really designed to be called directly.
@@ -186,7 +183,7 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
 
 
 def _create_series(ndschan, value, start, end, series_class=TimeSeries):
-    """Create a timeseries to cover the specified [start, end) limits
+    """Create a timeseries to cover the specified [start, end) limits.
 
     To cover a gap in data returned from NDS
     """
@@ -198,8 +195,7 @@ def _create_series(ndschan, value, start, end, series_class=TimeSeries):
 
 
 def _get_data_segments(channels, start, end, connection):
-    """Get available data segments for the given channels
-    """
+    """Get available data segments for the given channels."""
     allsegs = io_nds2.get_availability(channels, start, end,
                                        connection=connection)
     return allsegs.intersection(allsegs.keys())

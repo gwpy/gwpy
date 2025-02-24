@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.timeseries.io.gwf.lalframe`
-"""
+"""Tests for :mod:`gwpy.timeseries.io.gwf.lalframe`."""
 
 from pathlib import Path
 from urllib.parse import urlparse
@@ -58,8 +57,7 @@ def stream():
 
 
 def _test_open_data_source(source):
-    """This function actually performs the test
-    """
+    """This function actually performs the test."""
     stream = gwpy_lalframe.open_data_source(source)
     assert stream.epoch == TEST_GWF_SEGMENT[0]
     assert Path(urlparse(stream.cache.list.url).path).samefile(TEST_GWF_PATH)

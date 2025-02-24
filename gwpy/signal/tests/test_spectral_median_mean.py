@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.signal.spectral._median_mean`.
-"""
+"""Tests for :mod:`gwpy.signal.spectral._median_mean`."""
 
 from unittest import mock
 

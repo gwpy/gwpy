@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.table.io.root`.
-"""
+"""Tests for :mod:`gwpy.table.io.root`."""
 
 import pytest
 
@@ -35,16 +34,14 @@ from .utils import (
 # -- test config ---------------------
 
 def pytest_generate_tests(metafunc):
-    """Parametrize the ``table`` fixture for each valid table type.
-    """
+    """Parametrize the ``table`` fixture for each valid table type."""
     if "table" in metafunc.fixturenames:
         metafunc.parametrize("table", TABLE_CLASSES, indirect=True)
 
 
 @pytest.fixture
 def table(request):
-    """Create a random table with the right columns.
-    """
+    """Create a random table with the right columns."""
     return random_table(
         length=100,
         names=["time", "frequency", "snr"],
@@ -83,8 +80,7 @@ def test_read_write_root(table, tmp_path):
 
 @pytest.mark.requires("uproot")
 def test_read_root_where(table, root_file):
-    """Test `Table.read(format='root')` with ``where``.
-    """
+    """Test `Table.read(format='root')` with ``where``."""
     # test where works
     segs = SegmentList([Segment(100, 200), Segment(400, 500)])
     t2 = type(table).read(
@@ -107,8 +103,7 @@ def test_read_root_where(table, root_file):
 
 @pytest.mark.requires("uproot")
 def test_write_root_overwrite(table, tmp_path):
-    """Test `Table.write(format='root')` with ``overwrite=True``.
-    """
+    """Test `Table.write(format='root')` with ``overwrite=True``."""
     tmp = tmp_path / "table.root"
     table.write(tmp)
 
@@ -122,8 +117,7 @@ def test_write_root_overwrite(table, tmp_path):
 
 @pytest.mark.requires("uproot")
 def test_write_root_append(table, tmp_path):
-    """Test `Table.write(format='root')` with ``append=True``.
-    """
+    """Test `Table.write(format='root')` with ``append=True``."""
     # write once
     tmp = tmp_path / "table.root"
     table.write(tmp, treename="a")
@@ -156,8 +150,7 @@ def test_write_root_append_not_found(table, tmp_path):
 
 @pytest.mark.requires("uproot")
 def test_write_root_append_overwrite(table, tmp_path):
-    """Test `Table.write(format='root', append=True, overwrite=True)`.
-    """
+    """Test `Table.write(format='root', append=True, overwrite=True)`."""
     # write once
     tmp = tmp_path / "table.root"
     table.write(tmp, treename="a")

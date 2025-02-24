@@ -37,7 +37,7 @@ __all__ = ["Segment", "SegmentList", "SegmentListDict"]
 
 
 class Segment(segment):
-    """A tuple defining a semi-open interval ``[start, end)``
+    """A tuple defining a semi-open interval ``[start, end)``.
 
     Each `Segment` represents the range of values in a given interval, with
     general arithmetic supported for combining/comparing overlapping segments.
@@ -73,14 +73,12 @@ class Segment(segment):
     """
     @property
     def start(self):
-        """The GPS start time of this segment
-        """
+        """The GPS start time of this segment."""
         return self[0]
 
     @property
     def end(self):
-        """The GPS end time of this segment
-        """
+        """The GPS end time of this segment."""
         return self[1]
 
     def __repr__(self):
@@ -91,7 +89,7 @@ class Segment(segment):
 
 
 class SegmentList(segmentlist):
-    """A `list` of `Segments <Segment>`
+    """A `list` of `Segments <Segment>`.
 
     The `SegmentList` provides additional methods that assist in the
     manipulation of lists of `Segments <Segment>`. In particular,
@@ -147,7 +145,7 @@ class SegmentList(segmentlist):
     coalesce.__doc__ = segmentlist.coalesce.__doc__
 
     def to_table(self):
-        """Convert this `SegmentList` to a `~astropy.table.Table`
+        """Convert this `SegmentList` to a `~astropy.table.Table`.
 
         The resulting `Table` has four columns: `index`, `start`, `end`, and
         `duration`, corresponding to the zero-counted list index, GPS start
@@ -170,7 +168,7 @@ class SegmentList(segmentlist):
 
 
 class SegmentListDict(segmentlistdict):
-    """A `dict` of `SegmentLists <SegmentList>`
+    """A `dict` of `SegmentLists <SegmentList>`.
 
     This class implements a standard mapping interface, with additional
     features added to assist with the manipulation of a collection of

@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilities for Table I/O.
-"""
+"""Utilities for Table I/O."""
 
 from __future__ import annotations
 
@@ -100,8 +99,7 @@ def dynamic_columns(
 def mtotal(
     table: h5py.Group | Table,
 ) -> numpy.ndarray:
-    """Calculate the total mass column for this table.
-    """
+    """Calculate the total mass column for this table."""
     mass1 = table["mass1"][:]
     mass2 = table["mass2"][:]
     return mass1 + mass2
@@ -110,8 +108,7 @@ def mtotal(
 def mchirp(
     table: h5py.Group | Table,
 ) -> numpy.ndarray:
-    """Calculate the chirp mass column for this table.
-    """
+    """Calculate the chirp mass column for this table."""
     mass1 = table["mass1"][:]
     mass2 = table["mass2"][:]
     return (mass1 * mass2) ** (3/5.) / (mass1 + mass2) ** (1/5.)
@@ -130,8 +127,7 @@ DYNAMIC_COLUMN_INPUT: dict[str, set[str]] = {
 # -- table i/o utilities -------------
 
 def read_with_columns(func):
-    """Decorate a Table read method to use the ``columns`` keyword.
-    """
+    """Decorate a Table read method to use the ``columns`` keyword."""
     @wraps(func)
     def wrapper(*args, **kwargs):
         # parse columns argument
@@ -155,8 +151,7 @@ def read_with_where(func):
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
-        """Execute a function, then apply a where filter
-        """
+        """Execute a function, then apply a where filter."""
         # parse where
         where = kwargs.pop("where", None) or []
 

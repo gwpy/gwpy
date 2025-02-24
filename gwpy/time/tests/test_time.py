@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.time`.
-"""
+"""Tests for :mod:`gwpy.time`."""
 
 from datetime import datetime
 from decimal import Decimal
@@ -80,8 +79,7 @@ YESTERDAY = 1126137617
     ("yesterday", YESTERDAY),
 ])
 def test_to_gps(in_, out):
-    """Test that :func:`to_gps` works.
-    """
+    """Test that :func:`to_gps` works."""
     assert time.to_gps(in_) == out
 
 
@@ -90,8 +88,7 @@ def test_to_gps(in_, out):
     ("random string", ValueError),
 ])
 def test_to_gps_error(in_, err):
-    """Test that :func:`gwpy.time.to_gps` errors when it should.
-    """
+    """Test that :func:`gwpy.time.to_gps` errors when it should."""
     with pytest.raises(err):
         time.to_gps(in_)
 
@@ -108,8 +105,7 @@ def test_to_gps_error(in_, err):
     ),
 ])
 def test_from_gps(in_, out):
-    """Test that :func:`gwpy.time.from_gps` works.
-    """
+    """Test that :func:`gwpy.time.from_gps` works."""
     assert time.from_gps(in_) == out
 
 
@@ -118,8 +114,7 @@ def test_from_gps(in_, out):
     (1167264017, ValueError),  # gwpy/gwpy#1021
 ])
 def test_from_gps_error(in_, err):
-    """Test that :func:`gwpy.time.from_gps` errors when it should.
-    """
+    """Test that :func:`gwpy.time.from_gps` errors when it should."""
     with pytest.raises(err):
         time.from_gps(in_)
 
@@ -140,8 +135,7 @@ def test_from_gps_error(in_, err):
     ("yesterday", YESTERDAY),
 ])
 def test_tconvert(in_, out):
-    """Test :func:`gwpy.time.tconvert`
-    """
+    """Test :func:`gwpy.time.tconvert`."""
     assert time.tconvert(in_) == out
 
 

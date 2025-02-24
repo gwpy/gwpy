@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for `Table.read` and `Table.write` with ``format='gwf'``.
-"""
+"""Tests for `Table.read` and `Table.write` with ``format='gwf'``."""
 
 import pytest
 
@@ -30,16 +29,14 @@ from .utils import (
 # -- test config ---------------------
 
 def pytest_generate_tests(metafunc):
-    """Parametrize the ``table`` fixture for each valid table type.
-    """
+    """Parametrize the ``table`` fixture for each valid table type."""
     if "table" in metafunc.fixturenames:
         metafunc.parametrize("table", TABLE_CLASSES, indirect=True)
 
 
 @pytest.fixture
 def table(request):
-    """Create a random table with the right columns.
-    """
+    """Create a random table with the right columns."""
     return random_table(
         length=100,
         names=["time", "frequency", "snr"],
@@ -62,8 +59,7 @@ def gwf_file(table, tmp_path):
 
 @pytest.mark.requires("LDAStools.frameCPP")
 def test_read_write_gwf(table, tmp_path):
-    """Test `Table.read` and `Table.write` with ``format='gwf'``.
-    """
+    """Test `Table.read` and `Table.write` with ``format='gwf'``."""
     utils.test_read_write(
         table,
         "gwf",
@@ -82,8 +78,7 @@ def test_read_write_gwf(table, tmp_path):
 
 @pytest.mark.requires("LDAStools.frameCPP")
 def test_read_gwf_columns_where(table, gwf_file):
-    """Test `Table.read(format='gwf')` with ``columns`` and ``where``.
-    """
+    """Test `Table.read(format='gwf')` with ``columns`` and ``where``."""
     # check where works
     t2 = type(table).read(
         gwf_file,

@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.signal.spectral.registry`.
-"""
+"""Tests for :mod:`gwpy.signal.spectral.registry`."""
 
 import pytest
 
@@ -31,8 +30,7 @@ def teardown_module():
 
 
 def test_register_get():
-    """Test :mod:`gwpy.signal.spectral.registry`
-    """
+    """Test :mod:`gwpy.signal.spectral.registry`."""
     def fake_method():
         pass
 

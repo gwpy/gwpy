@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Extend :mod:`astropy.table` with the `GravitySpyTable`
-"""
+"""Extend :mod:`astropy.table` with the `GravitySpyTable`."""
 
 import re
 from json import JSONDecodeError
@@ -75,7 +74,7 @@ def _image_download_target(
     training_set=False,
     labelled_samples=False,
 ):
-    """Construct where to download a GravitySpy image
+    """Construct where to download a GravitySpy image.
 
     This returns a `str.format`-style template that just needs
     the duration to form a complete target path.
@@ -99,7 +98,7 @@ def _download_image(bundle):
 
 class GravitySpyTable(EventTable):
     """A container for a table of Gravity Spy Events (as well as
-    Events from the O1 Glitch Classification Paper whcih includes
+    Events from the O1 Glitch Classification Paper whcih includes.
 
     - PCAT
     - PC-LIB

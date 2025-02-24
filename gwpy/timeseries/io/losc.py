@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read and write HDF5 files in GWOSC format
+"""Read and write HDF5 files in GWOSC format.
 
 For more details, see :ref:`gwpy-table-io`.
 """
@@ -70,8 +70,7 @@ def _download_file(url, cache=None, verbose=False, timeout=None, **kwargs):
 
 
 def _fetch_gwosc_data_file(url, *args, **kwargs):
-    """Fetch a single GWOSC file and return a `Series`.
-    """
+    """Fetch a single GWOSC file and return a `Series`."""
     cls = kwargs.pop("cls", TimeSeries)
     cache = kwargs.pop("cache", None)
     verbose = kwargs.pop("verbose", False)
@@ -122,8 +121,7 @@ def _fetch_gwosc_data_file(url, *args, **kwargs):
 
 
 def _overlapping(files):
-    """Quick method to see if a file list contains overlapping files
-    """
+    """Quick method to see if a file list contains overlapping files."""
     segments = set()
     for path in files:
         seg = file_segment(path)
@@ -137,7 +135,7 @@ def _overlapping(files):
 # -- remote data access (the main event) --------------------------------------
 
 def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
-    """Fetch GWOSC data for a given detector
+    """Fetch GWOSC data for a given detector.
 
     This function is for internal purposes only, all users should instead
     use the interface provided by `TimeSeries.fetch_open_data` (and similar
@@ -290,8 +288,7 @@ def read_gwosc_hdf5_state(
 
 
 def _gwf_channel(path, series_class=TimeSeries, verbose=False):
-    """Find the right channel name for a GWOSC GWF file
-    """
+    """Find the right channel name for a GWOSC GWF file."""
     channels = list(io_gwf.iter_channel_names(file_path(path)))
     if issubclass(series_class, StateVector):
         regex = DQMASK_CHANNEL_REGEX

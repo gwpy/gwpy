@@ -51,8 +51,7 @@ _DEFAULT_TYPE_MATCH = re.compile(r"^(?!lastfile|spectro|\.).*")
 # -- generic utilities ------
 
 def _read_last_line(path, bufsize=2, encoding="utf-8"):
-    """Read the last line of a file.
-    """
+    """Read the last line of a file."""
     with open(path, "rb") as fobj:
         # go to end of file
         fobj.seek(-bufsize, os.SEEK_END)
@@ -76,7 +75,7 @@ def _read_last_line(path, bufsize=2, encoding="utf-8"):
 # -- ffl utilities ----------
 
 def _get_ffl_basedir():
-    """Return the base directory in which to find FFL files
+    """Return the base directory in which to find FFL files.
 
     Raises
     ------
@@ -95,14 +94,12 @@ def _get_ffl_basedir():
 
 
 def _is_ffl_file(path):
-    """Return `True` if this file looks (naively) like an FFL file.
-    """
+    """Return `True` if this file looks (naively) like an FFL file."""
     return str(path).endswith(".ffl")
 
 
 def _get_site_tag(path):
-    """Return the ``(site, tag)`` for a given FFL file.
-    """
+    """Return the ``(site, tag)`` for a given FFL file."""
     # tag is just name of file minus extension
     tag = os.path.splitext(os.path.basename(path))[0]
 
@@ -114,8 +111,7 @@ def _get_site_tag(path):
 
 
 def _find_ffl_files(basedir=None):
-    """Find all FFL files under a given base directory.
-    """
+    """Find all FFL files under a given base directory."""
     for root, _, files in os.walk(basedir or _get_ffl_basedir()):
         for name in filter(_is_ffl_file, files):
             yield os.path.join(root, name)
@@ -123,8 +119,7 @@ def _find_ffl_files(basedir=None):
 
 @lru_cache()
 def _find_ffls(basedir=None):
-    """Find all readable FFL files.
-    """
+    """Find all readable FFL files."""
     ffls = defaultdict(list)
     for path in _find_ffl_files(basedir=basedir):
         try:
@@ -138,8 +133,7 @@ def _find_ffls(basedir=None):
 
 
 def _ffl_paths(site, tag, basedir=None):
-    """Return the paths of all FFL files for a given site and tag.
-    """
+    """Return the paths of all FFL files for a given site and tag."""
     try:
         return _find_ffls(basedir=basedir)[(site, tag)]
     except KeyError:

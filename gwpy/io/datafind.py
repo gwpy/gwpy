@@ -107,7 +107,7 @@ def _type_priority(ifo, ftype, trend=None):
 
 
 def on_tape(*files):
-    """Determine whether any of the given files are on tape
+    """Determine whether any of the given files are on tape.
 
     Parameters
     ----------
@@ -131,7 +131,7 @@ def on_tape(*files):
 
 
 def _gwdatafind_module(**datafind_kw):
-    """Return the appropriate GWDataFind-like API based on the environment
+    """Return the appropriate GWDataFind-like API based on the environment.
 
     This allows switching to the hacky `gwpy.io.ffldatafind` replacement
     module to enable a GWDataFind-like interface for direct FFL data
@@ -174,8 +174,7 @@ def _select_gwdatafind_mod(func):
 
 
 def _parse_ifos_and_trends(chans):
-    """Parse ``(ifo, trend)`` pairs from this list of channels
-    """
+    """Parse ``(ifo, trend)`` pairs from this list of channels."""
     from ..detector import Channel
     found = set()
     for name in chans:
@@ -191,7 +190,7 @@ def _parse_ifos_and_trends(chans):
 
 
 def _find_gaps(ifo, frametype, segment, on_gaps):
-    """Discover gaps in a datafind/ffl archive for the given ifo/type
+    """Discover gaps in a datafind/ffl archive for the given ifo/type.
 
     Returns
     -------
@@ -211,8 +210,7 @@ def _find_gaps(ifo, frametype, segment, on_gaps):
 
 
 def _error_missing_channels(required, found, gpstime, allow_tape):
-    """Raise an exception if required channels are not found
-    """
+    """Raise an exception if required channels are not found."""
     missing = set(required) - set(found)
 
     if not missing:  # success
@@ -230,7 +228,7 @@ def _error_missing_channels(required, found, gpstime, allow_tape):
 
 
 def _rank_types(match):
-    """Rank and sort the matched frametypes according to some criteria
+    """Rank and sort the matched frametypes according to some criteria.
 
     ``matches`` is a dict of (channel, [(type, gwf, gapsize), ...])
     entries.
@@ -248,7 +246,7 @@ def _rank_types(match):
 def find_frametype(channel, gpstime=None, frametype_match=None,
                    host=None, port=None, return_all=False, allow_tape=False,
                    on_gaps="error"):
-    """Find the frametype(s) that hold data for a given channel
+    """Find the frametype(s) that hold data for a given channel.
 
     Parameters
     ----------
@@ -431,7 +429,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
 def find_best_frametype(channel, start, end,
                         frametype_match=None, allow_tape=True,
                         host=None, port=None):
-    """Intelligently select the best frametype from which to read this channel
+    """Intelligently select the best frametype from which to read this channel.
 
     Parameters
     ----------

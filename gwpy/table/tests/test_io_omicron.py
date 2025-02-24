@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.table.io.omicron`.
-"""
+"""Tests for :mod:`gwpy.table.io.omicron`."""
 
 import pytest
 
@@ -29,16 +28,14 @@ from .utils import (
 # -- test config ---------------------
 
 def pytest_generate_tests(metafunc):
-    """Parametrize the ``table`` fixture for each valid table type.
-    """
+    """Parametrize the ``table`` fixture for each valid table type."""
     if "table" in metafunc.fixturenames:
         metafunc.parametrize("table", TABLE_CLASSES, indirect=True)
 
 
 @pytest.fixture
 def table(request):
-    """Create a random table with the right columns.
-    """
+    """Create a random table with the right columns."""
     return random_table(
         length=100,
         names=["time", "frequency", "snr"],
@@ -61,8 +58,7 @@ def root_file(table, tmp_path):
 
 @pytest.mark.requires("uproot")
 def test_read_write_root_omicron(table, root_file):
-    """Test `Table.read(format='root.omicron')`.
-    """
+    """Test `Table.read(format='root.omicron')`."""
     # check read gives back same table
     t2 = type(table).read(root_file, format="root.omicron")
     assert_table_equal(t2, table)

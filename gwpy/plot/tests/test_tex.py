@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for `gwpy.plot.tex`
-"""
+"""Tests for `gwpy.plot.tex`."""
 
 from unittest import mock
 
@@ -26,8 +25,7 @@ from .. import tex as plot_tex
 
 
 def _which(arg):
-    """Fake which to force pdflatex to being not found
-    """
+    """Fake which to force pdflatex to being not found."""
     if arg == "pdflatex":
         return None
     return arg

@@ -53,8 +53,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 @contextlib.contextmanager
 def _silence_lal_debug_warnings():
-    """Temporarily silence debug warnings from LAL.
-    """
+    """Temporarily silence debug warnings from LAL."""
     try:
         import lal
     except ImportError:
@@ -116,7 +115,7 @@ def _parse_entry_ffl(line, gpstype=LIGOTimeGPS):
 
 class _CacheEntry(namedtuple(
         "_CacheEntry", ["observatory", "description", "segment", "path"])):
-    """Quick version of lal.utils.CacheEntry for internal purposes only
+    """Quick version of lal.utils.CacheEntry for internal purposes only.
 
     Just to allow metadata handling for files that don't follow LIGO-T050017.
     """
@@ -152,7 +151,7 @@ class _CacheEntry(namedtuple(
 # -- cache I/O ----------------------------------------------------------------
 
 def _iter_cache(cachefile, gpstype=LIGOTimeGPS):
-    """Internal method that yields a `_CacheEntry` for each line in the file
+    """Internal method that yields a `_CacheEntry` for each line in the file.
 
     This method supports reading LAL- and (nested) FFL-format cache files.
     """
@@ -182,7 +181,7 @@ def read_cache(
     segment=None,
     strict=False,
 ):
-    """Read a LAL- or FFL-format cache file as a list of file paths
+    """Read a LAL- or FFL-format cache file as a list of file paths.
 
     Parameters
     ----------
@@ -255,7 +254,7 @@ def open_cache(*args, **kwargs):  # pragma: no cover
 
 @with_open(mode="w", pos=1)
 def write_cache(cache, fobj, format=None):
-    """Write a `list` of cache entries to a file
+    """Write a `list` of cache entries to a file.
 
     Parameters
     ----------
@@ -290,7 +289,7 @@ def write_cache(cache, fobj, format=None):
 
 
 def is_cache(cache):
-    """Returns `True` if ``cache`` is a readable cache file or object
+    """Returns `True` if ``cache`` is a readable cache file or object.
 
     Parameters
     ----------
@@ -320,7 +319,7 @@ def is_cache(cache):
 
 
 def is_cache_entry(path):
-    """Returns `True` if ``path`` can be represented as a cache entry
+    """Returns `True` if ``path`` can be represented as a cache entry.
 
     In practice this just tests whether the input is |LIGO-T050017|_ compliant.
 
@@ -347,7 +346,7 @@ def is_cache_entry(path):
 # -- cache manipulation -------------------------------------------------------
 
 def filename_metadata(filename):
-    """Return metadata parsed from a filename following LIGO-T050017
+    """Return metadata parsed from a filename following LIGO-T050017.
 
     This method is lenient with regards to integers in the GPS start time of
     the file, as opposed to `gwdatafind.utils.filename_metadata`, which is
@@ -407,7 +406,7 @@ def filename_metadata(filename):
 
 
 def file_segment(filename):
-    """Return the data segment for a filename following T050017
+    """Return the data segment for a filename following T050017.
 
     Parameters
     ---------
@@ -454,7 +453,7 @@ def cache_segments(*caches):
 
 
 def flatten(*caches):
-    """Flatten a nested list of cache entries
+    """Flatten a nested list of cache entries.
 
     Parameters
     ----------
@@ -472,7 +471,7 @@ def flatten(*caches):
 
 
 def find_contiguous(*caches):
-    """Separate one or more cache entry lists into time-contiguous sub-lists
+    """Separate one or more cache entry lists into time-contiguous sub-lists.
 
     Parameters
     ----------
@@ -491,7 +490,7 @@ def find_contiguous(*caches):
 
 
 def sieve(cache, segment=None, strict=True):
-    """Filter the cache to find those entries that overlap ``segment``
+    """Filter the cache to find those entries that overlap ``segment``.
 
     Parameters
     ----------

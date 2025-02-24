@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.utils.sphinx.ex2rst`
-"""
+"""Tests for :mod:`gwpy.utils.sphinx.ex2rst`."""
 
 import pytest
 
@@ -94,16 +93,14 @@ tada!
 
 @pytest.fixture
 def example(tmp_path):
-    """Write the EXAMPLE to a python file and return that
-    """
+    """Write the EXAMPLE to a python file and return that."""
     source = tmp_path / "example.py"
     source.write_text(EXAMPLE)
     return source
 
 
 def test_ex2rst(example):
-    """Test that `ex2rst` does what we think it should
-    """
+    """Test that `ex2rst` does what we think it should."""
     # render the example to RST with ex2rst
     rst = example.with_suffix(".rst")
     ex2rst.main([str(example), str(rst)])

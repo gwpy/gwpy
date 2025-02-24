@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Multi-processing utilities for input/output
+"""Multi-processing utilities for input/output.
 
 This module provides the `read_multi` method, which enables spreading
 reading multiple files across multiple cores, returning a flattened result.
@@ -31,7 +31,7 @@ from ..utils import mp as mp_utils
 
 
 def read_multi(flatten, cls, source, *args, **kwargs):
-    """Read sources into a `cls` with multiprocessing
+    """Read sources into a `cls` with multiprocessing.
 
     This method should be called by `cls.read` and uses the `nproc`
     keyword to enable and handle pool-based multiprocessing of
@@ -101,7 +101,7 @@ def read_multi(flatten, cls, source, *args, **kwargs):
 
 
 def _read_single_file(bundle):
-    """Reads a single file and returns the output
+    """Reads a single file and returns the output.
 
     This is designed only to be passed to
     :func:`gwpy.utils.mp.multiprocess_with_queues`

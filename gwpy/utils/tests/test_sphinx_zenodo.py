@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.utils.sphinx.zenodo`.
-"""
+"""Tests for :mod:`gwpy.utils.sphinx.zenodo`."""
 
 from functools import wraps
 
@@ -84,8 +83,7 @@ MOCK_ZENODO_API_RST = """
 
 
 def pytest_skip_zenodo_http_errors(func):
-    """Execute `func` but skip if it raises a known server-side error.
-    """
+    """Execute `func` but skip if it raises a known server-side error."""
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -104,8 +102,7 @@ def pytest_skip_zenodo_http_errors(func):
 
 @pytest.fixture
 def latest():
-    """Get the latest release of GWpy from the GitHub API.
-    """
+    """Get the latest release of GWpy from the GitHub API."""
     resp = requests.get(
         GITHUB_RELEASE_API_URL,
         params={"per_page": 1},

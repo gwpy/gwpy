@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.io.gwf`.
-"""
+"""Tests for :mod:`gwpy.io.gwf`."""
 
 import pytest
 
@@ -67,8 +66,7 @@ parametrize_gwf_backends = pytest.mark.parametrize(
 
 
 def test_identify_gwf():
-    """Test :func:`gwpy.io.gwf.identify_gwf`.
-    """
+    """Test :func:`gwpy.io.gwf.identify_gwf`."""
     assert io_gwf.identify_gwf("read", TEST_GWF_FILE, None) is True
     with open(TEST_GWF_FILE, "rb") as gwff:
         assert io_gwf.identify_gwf("read", None, gwff) is True
@@ -77,8 +75,7 @@ def test_identify_gwf():
 
 @parametrize_gwf_backends
 def test_iter_channel_names(backend):
-    """Test :func:`gwpy.io.gwf.iter_channel_names`.
-    """
+    """Test :func:`gwpy.io.gwf.iter_channel_names`."""
     # maybe need something better?
     from types import GeneratorType
     names = io_gwf.iter_channel_names(
@@ -91,8 +88,7 @@ def test_iter_channel_names(backend):
 
 @parametrize_gwf_backends
 def test_get_channel_names(backend):
-    """Test :func:`gwpy.io.gwf.get_channel_names`.
-    """
+    """Test :func:`gwpy.io.gwf.get_channel_names`."""
     assert io_gwf.get_channel_names(
         TEST_GWF_FILE,
         backend=backend,
@@ -101,8 +97,7 @@ def test_get_channel_names(backend):
 
 @parametrize_gwf_backends
 def test_num_channels(backend):
-    """Test :func:`gwpy.io.gwf.num_channels`.
-    """
+    """Test :func:`gwpy.io.gwf.num_channels`."""
     assert io_gwf.num_channels(
         TEST_GWF_FILE,
         backend=backend,
@@ -111,8 +106,7 @@ def test_num_channels(backend):
 
 @parametrize_gwf_backends
 def test_get_channel_type(backend):
-    """Test :func:`gwpy.io.gwf.get_channel_type`.
-    """
+    """Test :func:`gwpy.io.gwf.get_channel_type`."""
     assert io_gwf.get_channel_type(
         TEST_CHANNELS[0],
         TEST_GWF_FILE,
@@ -138,8 +132,7 @@ def test_get_channel_type(backend):
     ("X1:NOT-IN_FRAME", False),
 ])
 def test_channel_exists(channel, result, backend):
-    """Test :func:`gwpy.io.gwf.channel_exists`.
-    """
+    """Test :func:`gwpy.io.gwf.channel_exists`."""
     assert io_gwf.channel_exists(
         TEST_GWF_FILE,
         channel,
@@ -149,8 +142,7 @@ def test_channel_exists(channel, result, backend):
 
 @parametrize_gwf_backends
 def test_data_segments(backend):
-    """Test :func:`gwpy.io.gwf.data_segments`.
-    """
+    """Test :func:`gwpy.io.gwf.data_segments`."""
     assert_segmentlist_equal(
         io_gwf.data_segments(
             [TEST_GWF_FILE],
@@ -163,8 +155,7 @@ def test_data_segments(backend):
 
 @parametrize_gwf_backends
 def test_data_segments_missing(backend):
-    """Test :func:`gwpy.io.gwf.data_segments` with a bad channel name.
-    """
+    """Test :func:`gwpy.io.gwf.data_segments` with a bad channel name."""
     with pytest.warns(UserWarning):
         assert_segmentlist_equal(
             io_gwf.data_segments(

@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Basic HDF5 I/O methods for Array and sub-classes.
-"""
+"""Basic HDF5 I/O methods for Array and sub-classes."""
 
 from __future__ import annotations
 
@@ -103,8 +102,7 @@ def read_hdf5_array(
 
 
 def _unpickle_channel(raw, **kwargs) -> str:
-    """Try and unpickle a channel with sensible error handling.
-    """
+    """Try and unpickle a channel with sensible error handling."""
     try:
         return pickle.loads(raw, **kwargs)
     except (
@@ -127,14 +125,12 @@ def _unpickle_channel(raw, **kwargs) -> str:
 # -- write ---------------------------
 
 class IgnoredAttributeError(ValueError):
-    """Internal exception to indicate an attribute to be ignored.
-    """
+    """Internal exception to indicate an attribute to be ignored."""
     pass
 
 
 def _format_metadata_attribute(value: Any) -> Any:
-    """Format a value for writing to HDF5 as a `h5py.Dataset` attribute.
-    """
+    """Format a value for writing to HDF5 as a `h5py.Dataset` attribute."""
     if value is None or (isinstance(value, Index) and value.regular):
         raise IgnoredAttributeError
 
@@ -149,8 +145,7 @@ def write_array_metadata(
     dataset: h5py.Dataset,
     array: Array,
 ):
-    """Write metadata for ``array`` into the `h5py.Dataset`.
-    """
+    """Write metadata for ``array`` into the `h5py.Dataset`."""
     for attr in ("unit",) + array._metadata_slots:
         # format attribute
         try:
@@ -313,8 +308,7 @@ def register_hdf5_array_io(
     write: bool = True,
     identify: bool = True,
 ):
-    """Registry read() and write() methods for the HDF5 format.
-    """
+    """Registry read() and write() methods for the HDF5 format."""
     if read:
         array_type.read.registry.register_reader(
             format,

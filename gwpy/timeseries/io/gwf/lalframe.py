@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read gravitational-wave frame (GWF) files using the LALFrame API
+"""Read gravitational-wave frame (GWF) files using the LALFrame API.
 
 The frame format is defined in LIGO-T970130 available from dcc.ligo.org.
 """
@@ -43,7 +43,7 @@ FRAME_LIBRARY = "lalframe"
 # -- utilities ----------------------------------------------------------------
 
 def open_data_source(source):
-    """Open a GWF file source into a `lalframe.XLALFrStream` object
+    """Open a GWF file source into a `lalframe.XLALFrStream` object.
 
     Parameters
     ----------
@@ -96,7 +96,7 @@ def open_data_source(source):
 
 
 def get_stream_duration(stream):
-    """Find the duration of time stored in a frame stream
+    """Find the duration of time stored in a frame stream.
 
     Parameters
     ----------
@@ -126,8 +126,7 @@ def get_stream_duration(stream):
 
 def read(source, channels, start=None, end=None, series_class=TimeSeries,
          scaled=None):
-    """Read data from one or more GWF files using the LALFrame API
-    """
+    """Read data from one or more GWF files using the LALFrame API."""
     # scaled must be provided to provide a consistent API with frameCPP
     if scaled is not None:
         warnings.warn(
@@ -200,8 +199,7 @@ def write(
         type=None,
         name="gwpy", run=0,
 ):
-    """Write data to a GWF file using the LALFrame API
-    """
+    """Write data to a GWF file using the LALFrame API."""
     if not start:
         start = list(tsdict.values())[0].xspan[0]
     if not end:

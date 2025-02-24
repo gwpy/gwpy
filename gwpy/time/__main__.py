@@ -36,8 +36,7 @@ from . import tconvert
 def main(
     args: list[str] | None = None,
 ):
-    """Parse command-line arguments, tconvert inputs, and print.
-    """
+    """Parse command-line arguments, tconvert inputs, and print."""
     # define command line arguments
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(

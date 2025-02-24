@@ -90,8 +90,7 @@ class QObject:
 
     @property
     def deltam(self) -> float:
-        """Fractional mismatch between neighbouring tiles.
-        """
+        """Fractional mismatch between neighbouring tiles."""
         return 2 * (self.mismatch / 3.) ** (1 / 2.)
 
 
@@ -116,8 +115,7 @@ class QBase(QObject):
 
     @property
     def qprime(self) -> float:
-        """Normalized Q `(q/sqrt(11))`
-        """
+        """Normalized Q `(q/sqrt(11))`."""
         return self.q / 11 ** (1 / 2.)
 
 
@@ -181,19 +179,16 @@ class QTiling(QObject):
 
     @property
     def qs(self) -> numpy.ndarray:
-        """Array of Q values for this `QTiling`.
-        """
+        """Array of Q values for this `QTiling`."""
         return numpy.array(list(self._iter_qs()))
 
     @property
     def whitening_duration(self) -> float:
-        """The recommended data duration required for whitening
-        """
+        """The recommended data duration required for whitening."""
         return max(t.whitening_duration for t in self)
 
     def _iter_qs(self) -> Iterator[float]:
-        """Iterate over the Q values
-        """
+        """Iterate over the Q values."""
         # work out how many Qs we need
         cumum = log(self.qrange[1] / self.qrange[0]) / 2 ** (1 / 2.)
         nplanes = int(max(ceil(cumum / self.deltam), 1))
@@ -326,8 +321,7 @@ class QPlane(QBase):
             )
 
     def _iter_frequencies(self) -> Iterator[float]:
-        """Iterate over the frequencies of this `QPlane`.
-        """
+        """Iterate over the frequencies of this `QPlane`."""
         # work out how many frequencies we need
         minf, maxf = self.frange
         fcum_mismatch = log(maxf / minf) * (2 + self.q ** 2) ** (1 / 2.) / 2.
@@ -348,21 +342,18 @@ class QPlane(QBase):
 
     @property
     def frequencies(self) -> NDArray[numpy.float64]:
-        """Array of central frequencies for this `QPlane`.
-        """
+        """Array of central frequencies for this `QPlane`."""
         return numpy.array(list(self._iter_frequencies()))
 
     @property
     def farray(self) -> NDArray[numpy.float64]:
-        """Array of frequencies for the lower-edge of each frequency bin.
-        """
+        """Array of frequencies for the lower-edge of each frequency bin."""
         bandwidths = 2 * pi ** (1 / 2.) * self.frequencies / self.q
         return self.frequencies - bandwidths / 2.
 
     @property
     def whitening_duration(self) -> float:
-        """The recommended data duration required for whitening
-        """
+        """The recommended data duration required for whitening."""
         return round_to_power(
             self.q / (2 * self.frange[0]),
             base=2,
@@ -417,8 +408,7 @@ class QPlane(QBase):
 
 
 class QTile(QBase):
-    """Representation of a tile with fixed Q and frequency.
-    """
+    """Representation of a tile with fixed Q and frequency."""
     def __init__(
         self,
         q: float,
@@ -437,14 +427,12 @@ class QTile(QBase):
 
     @property
     def bandwidth(self) -> float:
-        """The bandwidth for tiles in this row
-        """
+        """The bandwidth for tiles in this row."""
         return 2 * pi ** (1 / 2.) * self.frequency / self.q
 
     @property
     def ntiles(self) -> int:
-        """The number of tiles in this row
-        """
+        """The number of tiles in this row."""
         tcum_mismatch = self.duration * 2 * pi * self.frequency / self.q
         return int(round_to_power(
             tcum_mismatch / self.deltam,
@@ -454,8 +442,7 @@ class QTile(QBase):
 
     @property
     def windowsize(self) -> int:
-        """The size of the frequency-domain window for this row.
-        """
+        """The size of the frequency-domain window for this row."""
         return 2 * int(
             self.frequency
             / self.qprime
@@ -486,16 +473,14 @@ class QTile(QBase):
         return (1 - xfrequencies ** 2) ** 2 * norm
 
     def get_data_indices(self) -> NDArray[numpy.in64]:
-        """Returns the index array of interesting frequencies for this row
-        """
+        """Returns the index array of interesting frequencies for this row."""
         return numpy.round(
             self._get_indices() + 1 + self.frequency * self.duration,
         ).astype(int)
 
     @property
     def padding(self) -> tuple[int, int]:
-        """The `(left, right)` padding required for the IFFT
-        """
+        """The `(left, right)` padding required for the IFFT."""
         pad = self.ntiles - self.windowsize
         return (int((pad - 1) / 2.), int((pad + 1) / 2.))
 
@@ -747,7 +732,7 @@ class QGram:
         return new
 
     def table(self, snrthresh: float = 5.5) -> EventTable:
-        """Represent this `QPlane` as an `EventTable`
+        """Represent this `QPlane` as an `EventTable`.
 
         Parameters
         ----------

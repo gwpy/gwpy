@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Command-line utilities for GWpy
+"""Command-line utilities for GWpy.
 
 The `gwpy.cli` module provides methods and functionality to power the
 `gwpy-plot` command-line executable (distributed with GWpy).

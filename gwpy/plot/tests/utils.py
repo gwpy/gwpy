@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilities for testing `gwpy.plot`
-"""
+"""Utilities for testing `gwpy.plot`."""
 
 from io import BytesIO
 
@@ -52,7 +51,7 @@ class FigureTestBase(_Base):
     @pytest.fixture(scope="function")
     def fig(cls):
         """Yield a new figure of type ``FIGURE_CLASS`` and check that
-        it saves as png after the test function finishes
+        it saves as png after the test function finishes.
         """
         fig = pyplot.figure(FigureClass=cls.FIGURE_CLASS)
         yield fig

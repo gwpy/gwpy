@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Registry for FFT averaging methods.
-"""
+"""Registry for FFT averaging methods."""
 
 from __future__ import annotations
 
@@ -79,8 +78,7 @@ def register_method(
 
 
 def get_method(name: str) -> Callable:
-    """Return the PSD method registered with the given name.
-    """
+    """Return the PSD method registered with the given name."""
     # find method
     name = _format_name(name)
     try:

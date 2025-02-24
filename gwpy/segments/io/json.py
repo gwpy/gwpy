@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read/write segments and flags from DQSEGDB-format JSON.
-"""
+"""Read/write segments and flags from DQSEGDB-format JSON."""
 
 import json
 from typing import IO
@@ -36,8 +35,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 @with_open
 def read_json_flag(fobj: IO) -> DataQualityFlag:
-    """Read a `DataQualityFlag` from a segments-web.ligo.org JSON file.
-    """
+    """Read a `DataQualityFlag` from a segments-web.ligo.org JSON file."""
     data = json.load(fobj)
 
     # format flag

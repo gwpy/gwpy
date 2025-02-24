@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from Coherent Wave-Burst (cWB)-format ROOT and ASCII files.
-"""
+"""Read events from Coherent Wave-Burst (cWB)-format ROOT and ASCII files."""
 
 from __future__ import annotations
 
@@ -48,7 +47,7 @@ def table_from_cwb_root(
     treename: str = "waveburst",
     **kwargs,
 ) -> Table:
-    """Read an `EventTable` from a Coherent WaveBurst ROOT file
+    """Read an `EventTable` from a Coherent WaveBurst ROOT file.
 
     This function just redirects to the format='root' reader with appropriate
     defaults.
@@ -69,7 +68,7 @@ def table_to_cwb_root(
     treename: str = "waveburst",
     **kwargs,
 ):
-    """Read an `EventTable` from a Coherent WaveBurst ROOT file
+    """Read an `EventTable` from a Coherent WaveBurst ROOT file.
 
     This function just redirects to the format='root' reader with appropriate
     defaults.
@@ -98,10 +97,9 @@ EventTable.write.registry.register_writer(
 # -- ASCII ---------------------------
 
 class CwbHeader(core.BaseHeader):
-    """Parser for cWB ASCII header.
-    """
+    """Parser for cWB ASCII header."""
     def get_cols(self, lines: list[str]):
-        """Initialize Column objects from a multi-line ASCII header
+        """Initialize Column objects from a multi-line ASCII header.
 
         Parameters
         ----------
@@ -150,8 +148,7 @@ class CwbHeader(core.BaseHeader):
 
 
 class CwbData(core.BaseData):
-    """Parser for cWB ASCII data.
-    """
+    """Parser for cWB ASCII data."""
     comment = "#"
 
 

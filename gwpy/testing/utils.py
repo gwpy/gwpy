@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilties for the GWpy test suite.
-"""
+"""Utilties for the GWpy test suite."""
 
 from __future__ import annotations
 
@@ -97,8 +96,7 @@ def assert_quantity_equal(
     q1: Quantity,
     q2: Quantity,
 ):
-    """Assert that two `~astropy.units.Quantity` objects are the same.
-    """
+    """Assert that two `~astropy.units.Quantity` objects are the same."""
     _assert_quantity(
         q1,
         q2,
@@ -224,8 +222,7 @@ def assert_table_equal(
     check_types: bool = True,
     almost_equal: bool = False,
 ):
-    """Assert that two tables store the same information.
-    """
+    """Assert that two tables store the same information."""
     # check column names are the same
     assert sorted(a.colnames) == sorted(b.colnames)
 
@@ -258,8 +255,7 @@ def assert_segmentlist_equal(
     a: SegmentList,
     b: SegmentList,
 ):
-    """Assert that two `SegmentList`s contain the same data
-    """
+    """Assert that two `SegmentList`s contain the same data."""
     for aseg, bseg in zip_longest(a, b):
         assert aseg == bseg
 
@@ -269,8 +265,7 @@ def assert_flag_equal(
     b: DataQualityFlag,
     attrs: list[str] = ["name", "ifo", "tag", "version"],
 ):
-    """Assert that two `DataQualityFlag`s contain the same data.
-    """
+    """Assert that two `DataQualityFlag`s contain the same data."""
     assert_segmentlist_equal(a.active, b.active)
     assert_segmentlist_equal(a.known, b.known)
     for attr in attrs:
@@ -330,7 +325,7 @@ def test_read_write(
     assert_equal: Callable = assert_quantity_sub_equal,
     assert_kw: dict[str, Any] = {},
 ):
-    """Test that data can be written to and read from a file in some format
+    """Test that data can be written to and read from a file in some format.
 
     Parameters
     ----------

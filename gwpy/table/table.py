@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Extend :mod:`astropy.table` with the `EventTable`
-"""
+"""Extend :mod:`astropy.table` with the `EventTable`."""
 
 import warnings
 from functools import wraps
@@ -103,7 +102,7 @@ class EventTable(Table):
     # -- utilities ------------------------------
 
     def _is_time_column(self, name):
-        """Return `True` if a column in this table represents 'time'
+        """Return `True` if a column in this table represents 'time'.
 
         This method checks the name of the column against a hardcoded list
         of time-like names, then checks the `dtype` of the column (or the
@@ -200,7 +199,7 @@ class EventTable(Table):
     # -- ligolw compatibility -------------------
 
     def get_column(self, name):
-        """Return the `Column` with the given name
+        """Return the `Column` with the given name.
 
         This method is provided only for compatibility with the
         :class:`ligo.lw.table.Table`.
@@ -344,8 +343,7 @@ class EventTable(Table):
         return out
 
     def plot(self, *args, **kwargs):
-        """DEPRECATED, use `EventTable.scatter`
-        """
+        """DEPRECATED, use `EventTable.scatter`."""
         warnings.warn("{0}.plot was renamed {0}.scatter and will be removed "
                       "in an upcoming release".format(type(self).__name__),
                       DeprecationWarning)
@@ -499,7 +497,7 @@ class EventTable(Table):
         return Plot(self[column], method="hist", **kwargs)
 
     def filter(self, *column_filters):
-        """Apply one or more column slice filters to this `EventTable`
+        """Apply one or more column slice filters to this `EventTable`.
 
         Multiple column filters can be given, and will be applied
         concurrently

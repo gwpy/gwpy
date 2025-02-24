@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for frequencyseries module
-"""
+"""Unit test for frequencyseries module."""
 
 from io import BytesIO
 
@@ -270,8 +269,7 @@ class TestFrequencySeries(_TestSeries):
 
     @pytest.mark.requires("pycbc")
     def test_to_from_pycbc_nonzero_f0(self, array):
-        """Test `FrequencySeries.to_pycbc` conversion when ``f0 != 0``.
-        """
+        """Test `FrequencySeries.to_pycbc` conversion when ``f0 != 0``."""
         array.f0 = 1.
         with pytest.raises(
             ValueError,

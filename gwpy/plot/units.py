@@ -16,14 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Support for plotting with units
-"""
+"""Support for plotting with units."""
 
 from astropy.units.format import LatexInline
 
 
 class LatexInlineDimensional(LatexInline):
-    r"""Custom LaTeX formatter that includes physical type (if available)
+    r"""Custom LaTeX formatter that includes physical type (if available).
 
     Mainly for auto-labelling `Axes` in matplotlib figures.
 

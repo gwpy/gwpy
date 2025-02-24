@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides a spectral-variation histogram class
-"""
+"""This module provides a spectral-variation histogram class."""
 
 import numpy
 from astropy.units import Quantity
@@ -37,7 +36,7 @@ __all__ = ["SpectralVariance"]
 
 class SpectralVariance(Array2D):
     """A 2-dimensional array containing the variance histogram of a
-    frequency-series `FrequencySeries`
+    frequency-series `FrequencySeries`.
     """
     _metadata_slots = FrequencySeries._metadata_slots + ("bins",)
     _default_xunit = FrequencySeries._default_xunit
@@ -46,8 +45,7 @@ class SpectralVariance(Array2D):
     def __new__(cls, data, bins, unit=None,
                 f0=None, df=None, frequencies=None,
                 name=None, channel=None, epoch=None, **kwargs):
-        """Generate a new SpectralVariance histogram
-        """
+        """Generate a new SpectralVariance histogram."""
         # parse x-axis params
         if f0 is not None:
             kwargs["x0"] = f0
@@ -70,7 +68,7 @@ class SpectralVariance(Array2D):
 
     @property
     def bins(self):
-        """Array of bin edges, including the rightmost edge
+        """Array of bin edges, including the rightmost edge.
 
         :type: `astropy.units.Quantity`
         """
@@ -99,26 +97,22 @@ class SpectralVariance(Array2D):
     # over-write yindex and yspan to communicate with bins
     @property
     def yindex(self):
-        """List of left-hand amplitude bin edges
-        """
+        """List of left-hand amplitude bin edges."""
         return self.bins[:-1]
 
     @property
     def yspan(self):
-        """Amplitude range (low, high) spanned by this array
-        """
+        """Amplitude range (low, high) spanned by this array."""
         return Segment(self.bins.value[0], self.bins.value[-1])
 
     @property
     def dy(self):
-        """Size of the first (lowest value) amplitude bin
-        """
+        """Size of the first (lowest value) amplitude bin."""
         return self.bins[1] - self.bins[0]
 
     @property
     def y0(self):
-        """Starting value of the first (lowert value) amplitude bin
-        """
+        """Starting value of the first (lowert value) amplitude bin."""
         return self.bins[0]
 
     f0 = property(Array2D.x0.__get__, Array2D.x0.__set__,
@@ -167,7 +161,7 @@ class SpectralVariance(Array2D):
     @classmethod
     def from_spectrogram(cls, *spectrograms, **kwargs):
         """Calculate a new `SpectralVariance` from a
-        :class:`~gwpy.spectrogram.Spectrogram`
+        :class:`~gwpy.spectrogram.Spectrogram`.
 
         Parameters
         ----------
@@ -262,7 +256,7 @@ class SpectralVariance(Array2D):
         return new
 
     def percentile(self, percentile):
-        """Calculate a given spectral percentile for this `SpectralVariance`
+        """Calculate a given spectral percentile for this `SpectralVariance`.
 
         Parameters
         ----------

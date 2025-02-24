@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.table.io.cwb`
-"""
+"""Tests for :mod:`gwpy.table.io.cwb`."""
 
 import pytest
 
@@ -87,15 +86,13 @@ def _check_cwb_table(table):
 
 
 def test_read_cwb_ascii(cwb_ascii):
-    """Check that the ``"ascii.cwb"`` file reader works.
-    """
+    """Check that the ``"ascii.cwb"`` file reader works."""
     tab = EventTable.read(cwb_ascii, format="ascii.cwb")
     _check_cwb_table(tab)
 
 
 def test_read_cwb_ascii_columns_where(cwb_ascii):
-    """Check that the ``"ascii.cwb"`` file reader works.
-    """
+    """Check that the ``"ascii.cwb"`` file reader works."""
     columns = ["central frequency", "bandwidth", "duration"]
     tab = EventTable.read(
         cwb_ascii,
@@ -109,7 +106,6 @@ def test_read_cwb_ascii_columns_where(cwb_ascii):
 
 @pytest.mark.requires("uproot")
 def test_read_cwb_root(cwb_root):
-    """Check that the ``"ascii.root"`` file reader works.
-    """
+    """Check that the ``"ascii.root"`` file reader works."""
     tab = EventTable.read(cwb_root, format="root.cwb")
     _check_cwb_table(tab)

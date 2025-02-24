@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""GWpy API to the scipy.signal FFT routines.
-"""
+"""GWpy API to the scipy.signal FFT routines."""
 
 from __future__ import annotations
 
@@ -53,8 +52,7 @@ def _spectral_density(
     sdfunc: Callable = scipy.signal.welch,
     **kwargs,
 ) -> FrequencySeries:
-    """Calculate a generic spectral density of this `TimeSeries`
-    """
+    """Calculate a generic spectral density of this `TimeSeries`."""
     # compute spectral density
     freqs, psd_ = sdfunc(
         timeseries.value,
@@ -84,8 +82,7 @@ def welch(
     average: str = "mean",
     **kwargs,
 ) -> FrequencySeries:
-    """Calculate a PSD using Welch's method.
-    """
+    """Calculate a PSD using Welch's method."""
     return _spectral_density(
         timeseries,
         segmentlength,
@@ -100,8 +97,7 @@ def bartlett(
     noverlap: int = 0,
     **kwargs,
 ) -> FrequencySeries:
-    """Calculate a PSD using Bartlett's method
-    """
+    """Calculate a PSD using Bartlett's method."""
     return _spectral_density(
         timeseries,
         segmentlength,
@@ -116,8 +112,7 @@ def median(
     average: str = "median",
     **kwargs,
 ) -> TimeSeries:
-    """Calculate a PSD using Welch's method with a median average.
-    """
+    """Calculate a PSD using Welch's method with a median average."""
     return _spectral_density(
         timeseries,
         segmentlength,
@@ -145,7 +140,7 @@ def rayleigh(
     noverlap: int = 0,
     window: WindowLike = "hann",
 ):
-    """Calculate a Rayleigh statistic spectrum
+    """Calculate a Rayleigh statistic spectrum.
 
     Parameters
     ----------

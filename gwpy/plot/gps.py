@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module defines locators/formatters and a scale for GPS data.
-"""
+"""This module defines locators/formatters and a scale for GPS data."""
 
 from decimal import Decimal
 from numbers import Number
@@ -72,7 +71,7 @@ def register_gps_scale(scale_class):
 
 
 def _truncate(f, n):
-    """Truncates/pads a float `f` to `n` decimal places without rounding
+    """Truncates/pads a float `f` to `n` decimal places without rounding.
 
     From https://stackoverflow.com/a/783927/1307974 (CC-BY-SA)
     """
@@ -86,8 +85,7 @@ def _truncate(f, n):
 # -- base mixin for all GPS manipulations -------------------------------------
 
 class GPSMixin(object):
-    """Mixin adding GPS-related attributes to any class.
-    """
+    """Mixin adding GPS-related attributes to any class."""
     def __init__(self, *args, **kwargs):
         self.set_unit(kwargs.pop("unit", None))
         self.set_epoch(kwargs.pop("epoch", None))
@@ -97,13 +95,11 @@ class GPSMixin(object):
             pass
 
     def get_epoch(self):
-        """The GPS epoch
-        """
+        """The GPS epoch."""
         return self._epoch
 
     def set_epoch(self, epoch):
-        """Set the GPS epoch
-        """
+        """Set the GPS epoch."""
         if epoch is None:
             self._epoch = None
             return
@@ -116,13 +112,11 @@ class GPSMixin(object):
                      doc=get_epoch.__doc__)
 
     def get_unit(self):
-        """GPS step scale
-        """
+        """GPS step scale."""
         return self._unit
 
     def set_unit(self, unit):
-        """Set the GPS step scale
-        """
+        """Set the GPS step scale."""
         # accept all core time units
         if unit is None or (
             isinstance(unit, units.NamedUnit)
@@ -157,7 +151,7 @@ class GPSMixin(object):
                     doc=get_unit.__doc__)
 
     def get_unit_name(self):
-        """Returns the name of the unit for this GPS scale
+        """Returns the name of the unit for this GPS scale.
 
         Note that this returns a simply-pluralised version of the name.
         """
@@ -172,8 +166,7 @@ class GPSMixin(object):
         return name
 
     def get_scale(self):
-        """The scale (in seconds) of the current GPS unit.
-        """
+        """The scale (in seconds) of the current GPS unit."""
         if self.unit is None:
             return 1
         return self.unit.decompose().scale
@@ -184,7 +177,7 @@ class GPSMixin(object):
 # -- GPS transforms ---------------------------------------------------------
 
 class GPSTransformBase(GPSMixin, Transform):
-    """`Transform` to convert GPS times to time since epoch (and vice-verse)
+    """`Transform` to convert GPS times to time since epoch (and vice-verse).
 
     This class uses the `decimal.Decimal` object to protect against precision
     errors when converting to and from GPS times that may have 19 significant
@@ -241,8 +234,7 @@ class GPSTransformBase(GPSMixin, Transform):
 
     @classmethod
     def _transform_decimal(cls, value, epoch, scale):
-        """Transform to/from GPS using `decimal.Decimal` for precision
-        """
+        """Transform to/from GPS using `decimal.Decimal` for precision."""
         vdec = Decimal(_truncate(value, 12))
         edec = Decimal(_truncate(epoch, 12))
         sdec = Decimal(_truncate(scale, 12))
@@ -250,8 +242,7 @@ class GPSTransformBase(GPSMixin, Transform):
 
 
 class GPSTransform(GPSTransformBase):
-    """Transform GPS time into N * scale from epoch.
-    """
+    """Transform GPS time into N * scale from epoch."""
     @staticmethod
     def _transform(value, epoch, scale):
         # convert GPS into scaled time from epoch
@@ -262,8 +253,7 @@ class GPSTransform(GPSTransformBase):
 
 
 class InvertedGPSTransform(GPSTransform):
-    """Transform time (scaled units) from epoch into GPS time.
-    """
+    """Transform time (scaled units) from epoch into GPS time."""
     @staticmethod
     def _transform(value, epoch, scale):
         # convert scaled time from epoch back into GPS
@@ -277,8 +267,7 @@ class InvertedGPSTransform(GPSTransform):
 
 
 class GPSLocatorMixin(object):
-    """Metaclass for GPS-axis locator
-    """
+    """Metaclass for GPS-axis locator."""
     def __call__(self):
         vmin, vmax = self.axis.get_view_interval()
         trans = self.axis.get_transform()
@@ -287,8 +276,7 @@ class GPSLocatorMixin(object):
         return trans.inverted().transform(self.tick_values(vmin, vmax))
 
     def refresh(self):
-        """refresh internal information based on current lim
-        """
+        """refresh internal information based on current lim."""
         return self()
 
 
@@ -329,11 +317,9 @@ class GPSAutoLocator(ticker.MaxNLocator):
 
 
 class GPSAutoMinorLocator(GPSLocatorMixin, ticker.AutoMinorLocator):
-    """Find the best position for minor ticks on a given GPS-scaled axis.
-    """
+    """Find the best position for minor ticks on a given GPS-scaled axis."""
     def __call__(self):
-        """Return the locations of the ticks
-        """
+        """Return the locations of the ticks."""
         majorlocs = self.axis.get_majorticklocs()
         trans = self.axis.get_transform()
         try:
@@ -384,8 +370,7 @@ class GPSAutoMinorLocator(GPSLocatorMixin, ticker.AutoMinorLocator):
 
 
 class GPSFormatter(ticker.Formatter):
-    """Locator for astropy Time objects
-    """
+    """Locator for astropy Time objects."""
     def __call__(self, t, pos=None):
         # transform using float() to get nicer
         trans = self.axis.get_transform()
@@ -398,8 +383,7 @@ class GPSFormatter(ticker.Formatter):
 # -- scales -------------------------------------------------------------------
 
 class GPSScale(GPSMixin, LinearScale):
-    """A GPS scale, displaying time (scaled units) from an epoch.
-    """
+    """A GPS scale, displaying time (scaled units) from an epoch."""
     name = "auto-gps"
     GPSTransform = GPSTransform
     InvertedGPSTransform = InvertedGPSTransform
@@ -407,7 +391,7 @@ class GPSScale(GPSMixin, LinearScale):
     def __init__(self, axis, unit=None, epoch=None):
         """
         unit:
-            either name (`str`) or scale (float in seconds)
+            either name (`str`) or scale (float in seconds).
         """
         super().__init__(unit=unit, epoch=epoch)
         self.axis = axis
@@ -489,11 +473,9 @@ register_gps_scale(GPSScale)
 
 # register all the astropy time units that have sensible long names
 def _gps_scale_factory(unit):
-    """Construct a GPSScale for this unit
-    """
+    """Construct a GPSScale for this unit."""
     class FixedGPSScale(GPSScale):
-        """`GPSScale` for a specific GPS time unit
-        """
+        """`GPSScale` for a specific GPS time unit."""
         name = (unit.long_names or unit.names)[0] + "s"
 
         def __init__(self, axis, epoch=None):

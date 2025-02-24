@@ -88,8 +88,7 @@ def find_flag_groups(
 # -- read ----------------------------
 
 def _is_flag_group(obj: Any) -> bool:
-    """Return `True` if `obj` is an `h5py.Group` that looks like a DQ flag.
-    """
+    """Return `True` if `obj` is an `h5py.Group` that looks like a DQ flag."""
     return (
         isinstance(obj, h5py.Group)
         and isinstance(obj.get("active"), h5py.Dataset)
@@ -98,8 +97,7 @@ def _is_flag_group(obj: Any) -> bool:
 
 
 def _find_flag_groups(h5f: h5py.Group) -> list[str]:
-    """Return all groups in `h5f` that look like flags.
-    """
+    """Return all groups in `h5f` that look like flags."""
     flag_groups: list[str] = []
 
     def _find(name, obj):
@@ -114,8 +112,7 @@ def _get_flag_group(
     h5f: h5py.Group,
     path: str | None,
 ) -> h5py.Group:
-    """Determine the group to use in order to read a flag.
-    """
+    """Determine the group to use in order to read a flag."""
     # if user chose the path, just use it
     if path:
         return h5f[path]
@@ -145,8 +142,7 @@ def read_hdf5_flag(
     path: str | None = None,
     gpstype: type = LIGOTimeGPS,
 ) -> DataQualityFlag:
-    """Read a `DataQualityFlag` object from an HDF5 file or group.
-    """
+    """Read a `DataQualityFlag` object from an HDF5 file or group."""
     # extract correct group
     dataset = _get_flag_group(h5f, path)
 
@@ -173,8 +169,7 @@ def read_hdf5_segmentlist(
     gpstype: type = LIGOTimeGPS,
     **kwargs,
 ) -> SegmentList:
-    """Read a `SegmentList` object from an HDF5 file or group.
-    """
+    """Read a `SegmentList` object from an HDF5 file or group."""
     from astropy.table import Table
 
     # find dataset
@@ -200,8 +195,7 @@ def read_hdf5_dict(
     on_missing: str = "error",
     **kwargs,
 ) -> DataQualityDict:
-    """Read a `DataQualityDict` from an HDF5 file.
-    """
+    """Read a `DataQualityDict` from an HDF5 file."""
     if path:
         h5f = h5f[path]
 
@@ -243,8 +237,7 @@ def write_hdf5_flag_group(
     h5group: h5py.Group,
     **kwargs,
 ) -> h5py.Group:
-    """Write a `DataQualityFlag` into the given HDF5 group.
-    """
+    """Write a `DataQualityFlag` into the given HDF5 group."""
     # write segmentlists
     flag.active.write(h5group, "active", **kwargs)
     kwargs["append"] = True
@@ -332,8 +325,7 @@ def write_hdf5_flag(
     path: str | None = None,
     **kwargs,
 ):
-    """Write a `DataQualityFlag` to an HDF5 file/group.
-    """
+    """Write a `DataQualityFlag` to an HDF5 file/group."""
     # verify path (default to flag name)
     if path is None:
         path = flag.name

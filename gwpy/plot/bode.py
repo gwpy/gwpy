@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Definition of a BodePlot
-"""
+"""Definition of a BodePlot."""
 
 from math import pi
 
@@ -33,7 +32,7 @@ __all__ = ["BodePlot"]
 
 
 def to_db(a):  # pylint: disable=invalid-name
-    """Convert the input array into decibels
+    """Convert the input array into decibels.
 
     Parameters
     ----------
@@ -53,7 +52,7 @@ def to_db(a):  # pylint: disable=invalid-name
 
 
 class BodePlot(Plot):
-    """A `Plot` class for visualising transfer functions
+    """A `Plot` class for visualising transfer functions.
 
     Parameters
     ----------
@@ -88,8 +87,7 @@ class BodePlot(Plot):
         phase of the input transfer function(s) respectively.
     """
     def __init__(self, *filters, **kwargs):
-        """Initialise a new `BodePlot`
-        """
+        """Initialise a new `BodePlot`."""
         from ..frequencyseries import FrequencySeries
 
         dB = kwargs.pop("dB", True)
@@ -153,19 +151,17 @@ class BodePlot(Plot):
 
     @property
     def maxes(self):
-        """`FrequencySeriesAxes` for the Bode magnitude
-        """
+        """`FrequencySeriesAxes` for the Bode magnitude."""
         return self.axes[0]
 
     @property
     def paxes(self):
-        """`FrequencySeriesAxes` for the Bode phase
-        """
+        """`FrequencySeriesAxes` for the Bode phase."""
         return self.axes[1]
 
     def add_filter(self, filter_, frequencies=None, dB=True,
                    analog=False, sample_rate=None, **kwargs):
-        """Add a linear time-invariant filter to this BodePlot
+        """Add a linear time-invariant filter to this BodePlot.
 
         Parameters
         ----------
@@ -226,7 +222,7 @@ class BodePlot(Plot):
         return mline, pline
 
     def add_frequencyseries(self, spectrum, dB=True, power=False, **kwargs):
-        """Plot the magnitude and phase of a complex-valued `FrequencySeries`
+        """Plot the magnitude and phase of a complex-valued `FrequencySeries`.
 
         Parameters
         ----------

@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Spectrogram plots
-"""
+"""Spectrogram plots."""
 
 from numpy import percentile
 
@@ -27,8 +26,7 @@ __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 
 class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
-    """Plot the spectrogram of a time series
-    """
+    """Plot the spectrogram of a time series."""
     action = "spectrogram"
 
     def __init__(self, *args, **kwargs):
@@ -51,8 +49,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         return unique([self.result.unit])
 
     def get_ylabel(self):
-        """Default text for y-axis label
-        """
+        """Default text for y-axis label."""
         return "Frequency (Hz)"
 
     def get_title(self):
@@ -62,8 +59,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         return f"Spectrogram: {self.chan_list[0]}"
 
     def get_color_label(self):
-        """Text for colorbar label
-        """
+        """Text for colorbar label."""
         if self.args.norm:
             return f"Normalized to {self.args.norm}"
         if len(self.units) == 1 and self.usetex:
@@ -75,7 +71,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         return super().get_color_label()
 
     def get_stride(self):
-        """Calculate the stride for the spectrogram
+        """Calculate the stride for the spectrogram.
 
         This method returns the stride as a `float`, or `None` to indicate
         selected usage of `TimeSeries.spectrogram2`.
@@ -90,7 +86,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         return None  # do not use strided spectrogram
 
     def get_spectrogram(self):
-        """Calculate the spectrogram to be plotted
+        """Calculate the spectrogram to be plotted.
 
         This exists as a separate method to allow subclasses to override
         this and not the entire `get_plot` method, e.g. `Coherencegram`.
@@ -133,8 +129,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         return specgram ** (1/2.)   # ASD
 
     def make_plot(self):
-        """Generate the plot from time series and arguments
-        """
+        """Generate the plot from time series and arguments."""
         args = self.args
 
         # constant input causes unhelpful (weird) error messages

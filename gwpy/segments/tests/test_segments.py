@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.segments.segments`
-"""
+"""Tests for :mod:`gwpy.segments.segments`."""
 
 import h5py
 import pytest
@@ -80,8 +79,7 @@ class TestSegmentList(object):
     # -- test methods ---------------------------
 
     def test_extent(self, segmentlist):
-        """Test `gwpy.segments.SegmentList.extent returns the right type
-        """
+        """Test `gwpy.segments.SegmentList.extent returns the right type."""
         extent = segmentlist.extent()
         assert isinstance(extent, self.ENTRY_CLASS)
         assert extent == Segment(1, 10)
@@ -171,8 +169,7 @@ class TestSegmentList(object):
 
     @pytest_skip_flaky_network
     def test_read_remote(self):
-        """Test that reading directly from a remote URI works.
-        """
+        """Test that reading directly from a remote URI works."""
         local = self.TEST_CLASS.read(TEST_SEGWIZARD_FILE)
         remote = self.TEST_CLASS.read(TEST_SEGWIZARD_URI, cache=False)
         assert_segmentlist_equal(local, remote)

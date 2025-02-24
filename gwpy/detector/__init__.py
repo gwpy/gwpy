@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module defines the :class:`~gwpy.detector.Channel`.
-"""
+"""This module defines the :class:`~gwpy.detector.Channel`."""
 
 # This module used to define the `LaserInterferometer` class, but it was
 # removed # pre-release because it never got used, or implemented properly.
@@ -39,7 +38,7 @@ TIMEZONE = {
 
 
 def get_timezone(ifo):
-    """Return the timezone for the given interferometer prefix
+    """Return the timezone for the given interferometer prefix.
 
     Parameters
     ----------
@@ -55,7 +54,7 @@ def get_timezone(ifo):
 
 
 def get_timezone_offset(ifo, dt=None):
-    """Return the offset in seconds between UTC and the given interferometer
+    """Return the offset in seconds between UTC and the given interferometer.
 
     Parameters
     ----------

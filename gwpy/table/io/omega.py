@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read events from an Omega-format ASCII file.
-"""
+"""Read events from an Omega-format ASCII file."""
 
 import re
 
@@ -35,8 +34,7 @@ from .utils import read_with_columns_and_where
 
 
 class OmegaHeader(core.BaseHeader):
-    """Parser for Omega ASCII header
-    """
+    """Parser for Omega ASCII header."""
     def get_cols(self, lines: list[str]):
         """Initialize Column objects from a multi-line ASCII header.
 
@@ -72,14 +70,12 @@ class OmegaHeader(core.BaseHeader):
 
 
 class OmegaData(core.BaseData):
-    """Parser for Omega ASCII data
-    """
+    """Parser for Omega ASCII data."""
     comment = "%"
 
 
 class Omega(core.BaseReader):
-    """Read an Omega file.
-    """
+    """Read an Omega file."""
     _format_name = "omega"
     _io_registry_can_write = True
     _description = "Omega format table"
