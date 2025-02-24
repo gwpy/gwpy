@@ -58,11 +58,11 @@ _setuptools_scm_version_regex = re.compile(
 if match := _setuptools_scm_version_regex.search(GWPY_VERSION):
     GWPY_GIT_REF, = match.groups()
 else:
-    GWPY_GIT_REF = 'v{}'.format(GWPY_VERSION)
+    GWPY_GIT_REF = "v{}".format(GWPY_VERSION)
 
 # -- matplotlib -------------
 
-matplotlib.use('agg')
+matplotlib.use("agg")
 
 # ignore warnings that aren't useful for documentation
 if "CI" not in os.environ:
@@ -76,10 +76,10 @@ if "CI" not in os.environ:
 # -- general ----------------
 
 needs_sphinx = "4.0"
-project = 'GWpy'
-copyright = ' and '.join((
-    '2013, 2017-2021 Cardiff University',
-    '2013-2017 Lousiana State University',
+project = "GWpy"
+copyright = " and ".join((
+    "2013, 2017-2021 Cardiff University",
+    "2013-2017 Lousiana State University",
 ))
 version = "dev" if ".dev" in GWPY_VERSION else GWPY_VERSION
 release = GWPY_VERSION
@@ -88,20 +88,20 @@ release = GWPY_VERSION
 # DEVNOTE: please make sure and add 3rd-party dependencies to
 #          pyproject.toml's [project.optional-dependencies]/docs
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.coverage',
-    'sphinx.ext.imgmath',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.inheritance_diagram',
-    'sphinx.ext.linkcode',
-    'sphinx.ext.ifconfig',
-    'sphinx_automodapi.automodapi',
-    'sphinxcontrib.programoutput',
-    'numpydoc',
-    'matplotlib.sphinxext.plot_directive',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.todo",
+    "sphinx.ext.coverage",
+    "sphinx.ext.imgmath",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.inheritance_diagram",
+    "sphinx.ext.linkcode",
+    "sphinx.ext.ifconfig",
+    "sphinx_automodapi.automodapi",
+    "sphinxcontrib.programoutput",
+    "numpydoc",
+    "matplotlib.sphinxext.plot_directive",
     #'sphinxcontrib.doxylink',  # noqa: E265
 ]
 
@@ -173,8 +173,8 @@ html_css_files = ["css/gwpy-sphinx.css"]
 
 # -- autodoc
 
-autoclass_content = 'class'
-autodoc_default_flags = ['show-inheritance', 'members', 'inherited-members']
+autoclass_content = "class"
+autodoc_default_flags = ["show-inheritance", "members", "inherited-members"]
 
 # -- autosummary
 
@@ -184,10 +184,10 @@ autosummary_generate = True
 
 plot_rcparams = dict(matplotlib.rcParams)
 plot_rcparams.update({
-    'backend': 'agg',
+    "backend": "agg",
 })
 plot_apply_rcparams = True
-plot_formats = ['png']
+plot_formats = ["png"]
 plot_include_source = True
 plot_html_show_source_link = False
 
@@ -203,46 +203,46 @@ numpydoc_use_blockquotes = True
 numpydoc_use_plots = True
 
 # update the plot detection to include .show() calls
-parts = re.split(r'[\(\)|]', docscrape_sphinx.IMPORT_MATPLOTLIB_RE)[1:-1]
-parts.extend(('fig.show()', 'plot.show()'))
-docscrape_sphinx.IMPORT_MATPLOTLIB_RE = r'\b({})\b'.format('|'.join(parts))
+parts = re.split(r"[\(\)|]", docscrape_sphinx.IMPORT_MATPLOTLIB_RE)[1:-1]
+parts.extend(("fig.show()", "plot.show()"))
+docscrape_sphinx.IMPORT_MATPLOTLIB_RE = r"\b({})\b".format("|".join(parts))
 
 # -- inhertiance_diagram
 
 # configure inheritance diagram
-inheritance_graph_attrs = dict(rankdir='TB')
+inheritance_graph_attrs = dict(rankdir="TB")
 
 # -- doxylink
 
-LALSUITE_DOCS = 'https://lscsoft.docs.ligo.org/lalsuite'
+LALSUITE_DOCS = "https://lscsoft.docs.ligo.org/lalsuite"
 
 doxylink = {
-    'lal': ('lal.tag', '%s/lal/' % LALSUITE_DOCS),
-    'lalframe': ('lalframe.tag', '%s/lalframe/' % LALSUITE_DOCS),
+    "lal": ("lal.tag", "%s/lal/" % LALSUITE_DOCS),
+    "lalframe": ("lalframe.tag", "%s/lalframe/" % LALSUITE_DOCS),
 }
 
 # -- intersphinx
 
 # Intersphinx
 intersphinx_mapping = {
-    'astropy': ('https://docs.astropy.org/en/stable/', None),
-    'dateparser': ('https://dateparser.readthedocs.io/en/stable/', None),
-    'dateutil': ('https://dateutil.readthedocs.io/en/stable/', None),
-    'dqsegdb2': ('https://dqsegdb2.readthedocs.io/en/stable/', None),
+    "astropy": ("https://docs.astropy.org/en/stable/", None),
+    "dateparser": ("https://dateparser.readthedocs.io/en/stable/", None),
+    "dateutil": ("https://dateutil.readthedocs.io/en/stable/", None),
+    "dqsegdb2": ("https://dqsegdb2.readthedocs.io/en/stable/", None),
     # 'glue': ('https://docs.ligo.org/lscsoft/glue/', None),
-    'gssapi': ('https://pythongssapi.github.io/python-gssapi/', None),
-    'gwdatafind': ('https://gwdatafind.readthedocs.io/en/stable/', None),
-    'gwosc': ('https://gwosc.readthedocs.io/en/stable/', None),
-    'h5py': ('https://docs.h5py.org/en/latest/', None),
-    'ligo.skymap': ('https://lscsoft.docs.ligo.org/ligo.skymap/', None),
-    'igwn-segments': ('https://igwn-segments.readthedocs.io/en/stable/', None),
-    'lscsoft-glue': ('https://lscsoft.docs.ligo.org/glue/', None),
-    'matplotlib': ('https://matplotlib.org/', None),
-    'numpy': ('https://numpy.org/doc/stable/', None),
-    'pycbc': ('https://pycbc.org/pycbc/latest/html/', None),
-    'python': ('https://docs.python.org/3/', None),
-    'uproot': ('https://uproot.readthedocs.io/en/stable/', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
+    "gssapi": ("https://pythongssapi.github.io/python-gssapi/", None),
+    "gwdatafind": ("https://gwdatafind.readthedocs.io/en/stable/", None),
+    "gwosc": ("https://gwosc.readthedocs.io/en/stable/", None),
+    "h5py": ("https://docs.h5py.org/en/latest/", None),
+    "ligo.skymap": ("https://lscsoft.docs.ligo.org/ligo.skymap/", None),
+    "igwn-segments": ("https://igwn-segments.readthedocs.io/en/stable/", None),
+    "lscsoft-glue": ("https://lscsoft.docs.ligo.org/glue/", None),
+    "matplotlib": ("https://matplotlib.org/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pycbc": ("https://pycbc.org/pycbc/latest/html/", None),
+    "python": ("https://docs.python.org/3/", None),
+    "uproot": ("https://uproot.readthedocs.io/en/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
 }
 
 
@@ -345,19 +345,19 @@ def _render_cli_example(config, section, outdir, logger):
     # read config values (allow for multi-line definition)
     raw = config.get(
         section,
-        'command',
+        "command",
     ).strip().replace("\n", " ") + " --interactive"
     title = config.get(
         section,
-        'title',
-        fallback=' '.join(map(str.title, section.split('-'))),
+        "title",
+        fallback=" ".join(map(str.title, section.split("-"))),
     )
-    desc = config.get(section, 'description', fallback='')
+    desc = config.get(section, "description", fallback="")
 
     # build command-line string for display
     cmdstr = f"gwpy-plot {raw}".replace(  # split onto multiple lines
-        ' --',
-        ' \\\n       --',
+        " --",
+        " \\\n       --",
     )
 
     # build code to generate the plot when sphinx runs
@@ -369,7 +369,7 @@ def _render_cli_example(config, section, outdir, logger):
 
     rst = CLI_TEMPLATE.substitute(
         title=title,
-        titleunderline='#' * len(title),
+        titleunderline="#" * len(title),
         description=desc,
         tag=section,
         command=cmdstr,
@@ -387,7 +387,7 @@ def _render_cli_example(config, section, outdir, logger):
 def render_cli_examples(_):
     """Render all :mod:`gwpy.cli` examples as RST to be processed by Sphinx.
     """
-    logger = logging.getLogger('cli-examples')
+    logger = logging.getLogger("cli-examples")
 
     # directories
     clidir = SPHINX_DIR / "cli"
@@ -424,7 +424,7 @@ def _render_example(example, outdir, logger):
     target = outdir / example.with_suffix(".rst").name
     if _new_or_different(rst, target):
         target.write_text(rst)
-        logger.debug('[examples] wrote {0}'.format(target))
+        logger.debug("[examples] wrote {0}".format(target))
 
 
 def render_examples(_):
@@ -446,11 +446,11 @@ def render_examples(_):
         # copy index
         index = subdir / "index.rst"
         shutil.copyfile(srcdir / exdir / index.name, index)
-        logger.debug('[examples] copied {0}'.format(index))
+        logger.debug("[examples] copied {0}".format(index))
         # render python script as RST
         for expy in (srcdir / exdir).glob("*.py"):
             _render_example(expy, subdir, logger)
-        logger.info('[examples] converted all in examples/{0}'.format(exdir))
+        logger.info("[examples] converted all in examples/{0}".format(exdir))
 
 
 # -- create citation file
@@ -458,17 +458,17 @@ def render_examples(_):
 def write_citing_rst(app):
     """Render the ``citing.rst`` file using the Zenodo API
     """
-    logger = logging.getLogger('zenodo')
+    logger = logging.getLogger("zenodo")
     citing = SPHINX_DIR / "citing.rst"
     content = citing.with_suffix(".rst.in").read_text()
-    content += '\n' + zenodo.format_citations(597016)
+    content += "\n" + zenodo.format_citations(597016)
     citing.write_text(content)
-    logger.info('[zenodo] wrote {0}'.format(citing))
+    logger.info("[zenodo] wrote {0}".format(citing))
 
 
 # -- setup sphinx -----------
 
 def setup(app):
-    app.connect('builder-inited', write_citing_rst)
-    app.connect('builder-inited', render_examples)
-    app.connect('builder-inited', render_cli_examples)
+    app.connect("builder-inited", write_citing_rst)
+    app.connect("builder-inited", render_examples)
+    app.connect("builder-inited", render_cli_examples)

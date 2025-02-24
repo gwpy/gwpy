@@ -32,7 +32,7 @@ These data are available as part of the |GWOSC_AUX_RELEASE|_.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First, we import the `TimeSeriesDict`
 from gwpy.timeseries import TimeSeriesDict
@@ -57,8 +57,8 @@ coh = darm.coherence(acc, fftlength=2, overlap=1)
 # Finally, we can :meth:`~gwpy.frequencyseries.FrequencySeries.plot` the
 # resulting data:
 plot = coh.plot(
-    xlabel='Frequency [Hz]', xscale='log',
-    ylabel='Coherence', yscale='linear', ylim=(0, 1),
+    xlabel="Frequency [Hz]", xscale="log",
+    ylabel="Coherence", yscale="linear", ylim=(0, 1),
 )
 plot.show()
 

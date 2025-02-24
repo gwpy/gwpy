@@ -32,9 +32,9 @@ def to_string(input_):
 
     This method is just a convenience that handles default LaTeX formatting
     """
-    usetex = rcParams['text.usetex']
+    usetex = rcParams["text.usetex"]
     if isinstance(input_, units.UnitBase):
-        return input_.to_string('latex_inline')
+        return input_.to_string("latex_inline")
     if isinstance(input_, (float, int)) and usetex:
         return tex.float_to_latex(input_)
     if usetex:
@@ -62,6 +62,6 @@ def default_unit_label(axis, unit):
     """
     if not axis.isDefault_label:
         return
-    label = axis.set_label_text(unit.to_string('latex_inline_dimensional'))
+    label = axis.set_label_text(unit.to_string("latex_inline_dimensional"))
     axis.isDefault_label = True
     return label.get_text()

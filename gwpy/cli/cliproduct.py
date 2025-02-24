@@ -44,9 +44,9 @@ from ..plot.tex import label_to_latex
 from ..segments import DataQualityFlag
 
 
-__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
+__author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
-BAD_UNITS = {'*', 'Counts.', }
+BAD_UNITS = {"*", "Counts.", }
 
 
 # -- utilities ----------------------------------------------------------------
@@ -60,7 +60,7 @@ def timer(func):
     def timed_func(self, *args, **kwargs):  # pylint: disable=missing-docstring
         _start = time.time()
         out = func(self, *args, **kwargs)
-        self.log(2, f'{name} took {time.time() - _start:.1f} sec')
+        self.log(2, f"{name} took {time.time() - _start:.1f} sec")
         return out
 
     return timed_func
@@ -84,8 +84,8 @@ def to_float(unit):
     return converter
 
 
-to_hz = to_float('Hz')  # pylint: disable=invalid-name
-to_s = to_float('s')  # pylint: disable=invalid-name
+to_hz = to_float("Hz")  # pylint: disable=invalid-name
+to_s = to_float("s")  # pylint: disable=invalid-name
 
 
 # -- base product class -------------------------------------------------------
@@ -164,7 +164,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
 
         # use reduced as an alias for rds in channel name
         for idx in range(len(self.chan_list)):
-            self.chan_list[idx] = self.chan_list[idx].replace('reduced', 'rds')
+            self.chan_list[idx] = self.chan_list[idx].replace("reduced", "rds")
 
         # total number of datasets that _should_ be acquired
         self.n_datasets = len(self.chan_list) * len(self.start_list)
@@ -175,7 +175,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         #: dots-per-inch for figure
         self.dpi = args.dpi
         #: width and height in pixels
-        self.width, self.height = map(float, self.args.geometry.split('x', 1))
+        self.width, self.height = map(float, self.args.geometry.split("x", 1))
         #: figure size in inches
         self.figsize = (self.width / self.dpi, self.height / self.dpi)
         #: Flag for data validation (like all zeroes)
@@ -210,7 +210,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
     def usetex(self):
         """Switch denoting whether LaTeX will be used or not
         """
-        return rcParams['text.usetex']
+        return rcParams["text.usetex"]
 
     # -- utilities ------------------------------
 
@@ -262,34 +262,34 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """Add an `~argparse.ArgumentGroup` for channel options
         """
         group = parser.add_argument_group(
-            'Data options',
-            'What data to load',
+            "Data options",
+            "What data to load",
         )
         group.add_argument(
-            '--chan',
-            '--channel',
-            '--ifo',
+            "--chan",
+            "--channel",
+            "--ifo",
             type=str,
-            nargs='+',
-            action='append',
+            nargs="+",
+            action="append",
             required=True,
-            help='channels to load (or IFO prefix for GWOSC data)',
+            help="channels to load (or IFO prefix for GWOSC data)",
         )
         group.add_argument(
-            '--start',
+            "--start",
             type=to_gps,
-            nargs='+',
-            action='append',
+            nargs="+",
+            action="append",
             required=True,
             help=(
-                'one or more starting times (integer GPS or date/time string)'
+                "one or more starting times (integer GPS or date/time string)"
             ),
         )
         group.add_argument(
-            '--duration',
+            "--duration",
             type=to_s,
             default=10,
-            help='Duration (seconds) [10]',
+            help="Duration (seconds) [10]",
         )
         return group
 
@@ -298,34 +298,34 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """Add an `~argparse.ArgumentGroup` for data options
         """
         group = parser.add_argument_group(
-            'Data source options',
-            'Where to get the data',
+            "Data source options",
+            "Where to get the data",
         )
         meg = group.add_mutually_exclusive_group()
         meg.add_argument(
-            '-c',
-            '--framecache',
+            "-c",
+            "--framecache",
             type=os.path.abspath,
             help=(
-                'path to a file containing a list of paths '
-                'from which to read data'
+                "path to a file containing a list of paths "
+                "from which to read data"
             ),
         )
         meg.add_argument(
-            '-n',
-            '--nds2-server',
-            metavar='HOSTNAME',
-            help='name of nds2 server to use, default is to try all of them',
+            "-n",
+            "--nds2-server",
+            metavar="HOSTNAME",
+            help="name of nds2 server to use, default is to try all of them",
         )
         meg.add_argument(
-            '--frametype',
-            help='GWF frametype to read from',
+            "--frametype",
+            help="GWF frametype to read from",
         )
         meg.add_argument(
-            '--gwosc',
-            action='store_true',
+            "--gwosc",
+            action="store_true",
             default=False,
-            help='get data from GWOSC',
+            help="get data from GWOSC",
         )
         return group
 
@@ -334,24 +334,24 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """Add an `~argparse.ArgumentGroup` for signal-processing options
         """
         group = parser.add_argument_group(
-            'Signal processing options',
-            'What to do with the data before plotting'
+            "Signal processing options",
+            "What to do with the data before plotting"
         )
         group.add_argument(
-            '--highpass',
+            "--highpass",
             type=to_hz,
-            help='Frequency for highpass filter',
+            help="Frequency for highpass filter",
         )
         group.add_argument(
-            '--lowpass',
+            "--lowpass",
             type=to_hz,
-            help='Frequency for lowpass filter',
+            help="Frequency for lowpass filter",
         )
         group.add_argument(
-            '--notch',
+            "--notch",
             type=to_hz,
-            nargs='*',
-            help='Frequency for notch (can give multiple)',
+            nargs="*",
+            help="Frequency for notch (can give multiple)",
         )
         return group
 
@@ -361,74 +361,74 @@ class CliProduct(object, metaclass=abc.ABCMeta):
     def arg_plot(cls, parser):
         """Add an `~argparse.ArgumentGroup` for basic plot options
         """
-        group = parser.add_argument_group('Plot options')
+        group = parser.add_argument_group("Plot options")
         group.add_argument(
-            '-g',
-            '--geometry',
-            default='1200x600',
-            metavar='WxH',
-            help='size of resulting image',
+            "-g",
+            "--geometry",
+            default="1200x600",
+            metavar="WxH",
+            help="size of resulting image",
         )
         group.add_argument(
-            '--dpi',
+            "--dpi",
             type=int,
-            default=rcParams['figure.dpi'],
-            help='dots-per-inch for figure',
+            default=rcParams["figure.dpi"],
+            help="dots-per-inch for figure",
         )
         group.add_argument(
-            '--interactive',
-            action='store_true',
+            "--interactive",
+            action="store_true",
             help=(
-                'presents display in an interactive window, see '
-                'https://matplotlib.org/stable/users/explain/'
-                'interactive.html#default-ui for details'
+                "presents display in an interactive window, see "
+                "https://matplotlib.org/stable/users/explain/"
+                "interactive.html#default-ui for details"
             ),
         )
         group.add_argument(
-            '--title',
-            action='store',
-            help='Set title (below suptitle, defaults to parameter summary',
+            "--title",
+            action="store",
+            help="Set title (below suptitle, defaults to parameter summary",
         )
         group.add_argument(
-            '--suptitle',
-            help='topmost title line (larger than the others)',
+            "--suptitle",
+            help="topmost title line (larger than the others)",
         )
         group.add_argument(
-            '--out',
-            default='gwpy.png',
+            "--out",
+            default="gwpy.png",
             help=(
-                'output filename (extension determines format: '
-                'png, pdf, svg are available)'
+                "output filename (extension determines format: "
+                "png, pdf, svg are available)"
             ),
         )
 
         # legends match input files in position are displayed if specified.
         group.add_argument(
-            '--legend',
-            nargs='+',
-            action='append',
+            "--legend",
+            nargs="+",
+            action="append",
             default=[],
-            help='strings to match data files',
+            help="strings to match data files",
         )
         group.add_argument(
-            '--nolegend',
-            action='store_true',
-            help='do not display legend',
+            "--nolegend",
+            action="store_true",
+            help="do not display legend",
         )
         group.add_argument(
-            '--nogrid',
-            action='store_true',
-            help='do not display grid lines',
+            "--nogrid",
+            action="store_true",
+            help="do not display grid lines",
         )
 
         # allow custom styling with a style file
         group.add_argument(
-            '--style',
-            metavar='FILE',
+            "--style",
+            metavar="FILE",
             help=(
-                'path to custom matplotlib style sheet, see '
-                'http://matplotlib.org/users/style_sheets.html#style-sheets '
-                'for details of how to write one'
+                "path to custom matplotlib style sheet, see "
+                "http://matplotlib.org/users/style_sheets.html#style-sheets "
+                "for details of how to write one"
             ),
         )
         return group
@@ -437,64 +437,64 @@ class CliProduct(object, metaclass=abc.ABCMeta):
     def arg_xaxis(cls, parser):
         """Add an `~argparse.ArgumentGroup` for X-axis options.
         """
-        return cls._arg_axis('x', parser)
+        return cls._arg_axis("x", parser)
 
     @classmethod
     def arg_yaxis(cls, parser):
         """Add an `~argparse.ArgumentGroup` for Y-axis options.
         """
-        return cls._arg_axis('y', parser)
+        return cls._arg_axis("y", parser)
 
     @classmethod
     def _arg_axis(cls, axis, parser, **defaults):
-        name = f'{axis.title()} axis'
-        group = parser.add_argument_group(f'{name} options')
+        name = f"{axis.title()} axis"
+        group = parser.add_argument_group(f"{name} options")
 
         # label
         group.add_argument(
-            f'--{axis}label',
-            default=defaults.get('label'),
-            dest=f'{axis}label',
-            help=f'{name} label',
+            f"--{axis}label",
+            default=defaults.get("label"),
+            dest=f"{axis}label",
+            help=f"{name} label",
         )
 
         # min and max
-        for extrema in ('min', 'max'):
+        for extrema in ("min", "max"):
             opt = axis + extrema
             group.add_argument(
-                f'--{opt}',
+                f"--{opt}",
                 type=float,
                 default=defaults.get(extrema),
                 dest=opt,
-                help=f'{extrema} value for {name}',
+                help=f"{extrema} value for {name}",
             )
 
         # scale
         scaleg = group.add_mutually_exclusive_group()
         scaleg.add_argument(
-            f'--{axis}scale',
+            f"--{axis}scale",
             type=str,
-            default=defaults.get('scale'),
-            dest=f'{axis}scale',
-            help=f'scale for {name}',
+            default=defaults.get("scale"),
+            dest=f"{axis}scale",
+            help=f"scale for {name}",
         )
-        if defaults.get('scale') == 'log':
+        if defaults.get("scale") == "log":
             scaleg.add_argument(
-                f'--nolog{axis}',
-                action='store_const',
-                dest=f'{axis}scale',
+                f"--nolog{axis}",
+                action="store_const",
+                dest=f"{axis}scale",
                 const=None,
-                default='log',
-                help=f'use linear {name}',
+                default="log",
+                help=f"use linear {name}",
             )
         else:
             scaleg.add_argument(
-                f'--log{axis}',
-                action='store_const',
-                dest=f'{axis}scale',
-                const='log',
+                f"--log{axis}",
+                action="store_const",
+                dest=f"{axis}scale",
+                const="log",
                 default=None,
-                help=f'use logarithmic {name}',
+                help=f"use logarithmic {name}",
             )
         return group
 
@@ -514,17 +514,17 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         # validate number of data sets requested
         if len(self.chan_list) < self.MIN_CHANNELS:
             raise ValueError(
-                f'this product requires at least {self.MIN_CHANNELS} channels'
+                f"this product requires at least {self.MIN_CHANNELS} channels"
             )
         if self.n_datasets < self.MIN_DATASETS:
             raise ValueError(
-                f'{self.MIN_DATASETS} are required for this plot but only '
-                f'{self.n_datasets} are supplied'
+                f"{self.MIN_DATASETS} are required for this plot but only "
+                f"{self.n_datasets} are supplied"
             )
         if self.n_datasets > self.MAX_DATASETS:
             raise ValueError(
-                f'A maximum of {self.MAX_DATASETS} datasets allowed for this '
-                f'plot but {self.n_datasets} specified'
+                f"A maximum of {self.MAX_DATASETS} datasets allowed for this "
+                f"plot but {self.n_datasets} specified"
             )
 
     # -- data transfer --------------------------
@@ -535,7 +535,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
 
         This method populates the `timeseries` list attribute
         """
-        self.log(2, '---- Loading data -----')
+        self.log(2, "---- Loading data -----")
 
         verb = self.verbose > 1
         args = self.args
@@ -563,7 +563,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
                     )
                     data.name = f"{ifo}:{data.name}"
                     tsd.append({data.name: data})
-            elif source.lower() == 'nds2':
+            elif source.lower() == "nds2":
                 tsd = TimeSeriesDict.get(self.chan_list, start, end,
                                          verbose=verb, host=args.nds2_server,
                                          frametype=args.frametype)
@@ -573,24 +573,24 @@ class CliProduct(object, metaclass=abc.ABCMeta):
 
             for data in tsd.values():
                 if str(data.unit) in BAD_UNITS:
-                    data.override_unit('undef')
+                    data.override_unit("undef")
 
                 data = self._filter_timeseries(
                     data, highpass=args.highpass, lowpass=args.lowpass,
                     notch=args.notch)
 
-                if data.dtype.kind == 'f':  # cast single to double
-                    data = data.astype('float64', order='A', copy=False)
+                if data.dtype.kind == "f":  # cast single to double
+                    data = data.astype("float64", order="A", copy=False)
 
                 self.timeseries.append(data)
 
         # report what we have if they asked for it
-        self.log(3, f'Channels: {self.chan_list}')
+        self.log(3, f"Channels: {self.chan_list}")
         self.log(
             3,
-            f'Start times: {self.start_list}, duration {self.duration}',
+            f"Start times: {self.start_list}, duration {self.duration}",
         )
-        self.log(3, f'Number of time series: {len(self.timeseries)}')
+        self.log(3, f"Number of time series: {len(self.timeseries)}")
 
     @staticmethod
     def _filter_timeseries(data, highpass=None, lowpass=None, notch=None):
@@ -636,7 +636,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         highpass = self.args.highpass
         lowpass = self.args.lowpass
         notch = self.args.notch
-        filt = ''
+        filt = ""
         if highpass and lowpass:
             filt += f"band pass ({highpass:.1f}-{lowpass:.1f})"
         elif highpass:
@@ -677,20 +677,20 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """Generic method to set properties for X/Y axis
         """
         def _get(param):
-            return getattr(self.ax, f'get_{axis}{param}')()
+            return getattr(self.ax, f"get_{axis}{param}")()
 
         def _set(param, *args, **kwargs):
-            return getattr(self.ax, f'set_{axis}{param}')(
+            return getattr(self.ax, f"set_{axis}{param}")(
                 *args, **kwargs)
 
-        scale = getattr(self.args, f'{axis}scale')
-        label = getattr(self.args, f'{axis}label')
-        min_ = getattr(self.args, f'{axis}min')
-        max_ = getattr(self.args, f'{axis}max')
+        scale = getattr(self.args, f"{axis}scale")
+        label = getattr(self.args, f"{axis}label")
+        min_ = getattr(self.args, f"{axis}min")
+        max_ = getattr(self.args, f"{axis}max")
 
         # parse limits
         if (
-            scale == 'auto-gps'
+            scale == "auto-gps"
             and min_ is not None
             and max_ is not None
             and max_ < 1e8
@@ -701,50 +701,50 @@ class CliProduct(object, metaclass=abc.ABCMeta):
 
         # set limits
         if limits[0] is not None or limits[1] is not None:
-            _set('lim', *limits)
+            _set("lim", *limits)
 
         # set scale
         if scale:
-            _set('scale', scale)
+            _set("scale", scale)
 
         # reset scale with epoch if using GPS scale
-        if _get('scale') in GPS_SCALES:
-            _set('scale', scale, epoch=self.args.epoch)
+        if _get("scale") in GPS_SCALES:
+            _set("scale", scale, epoch=self.args.epoch)
 
         # set label
         if label is None:
-            label = getattr(self, f'get_{axis}label')()
+            label = getattr(self, f"get_{axis}label")()
         if label:
             if self.usetex:
                 label = label_to_latex(label)
-            _set('label', label)
+            _set("label", label)
 
         # log
-        limits = _get('lim')
-        scale = _get('scale')
-        label = _get('label')
+        limits = _get("lim")
+        scale = _get("scale")
+        label = _get("label")
         self.log(
             2,
-            f'{axis.upper()}-axis parameters | '
-            f'scale: {scale} | '
-            f'limits: {limits[0]!s} - {limits[1]!s}'
+            f"{axis.upper()}-axis parameters | "
+            f"scale: {scale} | "
+            f"limits: {limits[0]!s} - {limits[1]!s}"
         )
-        self.log(3, (f'{axis.upper()}-axis label: {label}'))
+        self.log(3, (f"{axis.upper()}-axis label: {label}"))
 
     def set_xaxis_properties(self):
         """Set properties for X-axis
         """
-        self._set_axis_properties('x')
+        self._set_axis_properties("x")
 
     def set_yaxis_properties(self):
         """Set properties for Y-axis
         """
-        self._set_axis_properties('y')
+        self._set_axis_properties("y")
 
     def set_legend(self):
         """Create a legend for this product (if applicable)
         """
-        leg = self.ax.legend(prop={'size': 10})
+        leg = self.ax.legend(prop={"size": 10})
         if leg and self.n_datasets == 1:
             try:
                 leg.remove()
@@ -760,7 +760,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """
 
         if title is None:
-            title_line = self.get_title().rstrip(', ')
+            title_line = self.get_title().rstrip(", ")
         else:
             title_line = title
 
@@ -768,7 +768,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
             title_line = label_to_latex(title_line)
         if title_line:
             self.ax.set_title(title_line, fontsize=12)
-            self.log(3, f'Title is: {title_line}')
+            self.log(3, f"Title is: {title_line}")
 
     def set_suptitle(self, suptitle):
         """Set the super title for this plot.
@@ -778,24 +778,24 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         if self.usetex:
             suptitle = label_to_latex(suptitle)
         self.plot.suptitle(suptitle, fontsize=18)
-        self.log(3, f'Super title is: {suptitle}')
+        self.log(3, f"Super title is: {suptitle}")
 
     def set_grid(self, enable):
         """Set the grid parameters for this plot.
         """
         if enable:
-            self.ax.grid(True, which='major',
-                         color='k', linestyle='solid')
-            self.ax.grid(True, which='minor',
-                         color='0.06', linestyle='dotted')
+            self.ax.grid(True, which="major",
+                         color="k", linestyle="solid")
+            self.ax.grid(True, which="minor",
+                         color="0.06", linestyle="dotted")
         else:
             self.ax.grid(False)
 
     def save(self, outfile):
         """Save this product to the target `outfile`.
         """
-        self.plot.savefig(outfile, edgecolor='white', bbox_inches='tight')
-        self.log(3, f'wrote {outfile}')
+        self.plot.savefig(outfile, edgecolor="white", bbox_inches="tight")
+        self.log(3, f"wrote {outfile}")
 
     def has_more_plots(self):
         """Determine whether this product has more plots to be created.
@@ -815,12 +815,12 @@ class CliProduct(object, metaclass=abc.ABCMeta):
     def run(self):
         """Make the plot.
         """
-        self.log(3, f'Verbosity level: {self.verbose}')
+        self.log(3, f"Verbosity level: {self.verbose}")
 
-        self.log(3, 'Arguments:')
+        self.log(3, "Arguments:")
         argsd = vars(self.args)
         for key in sorted(argsd):
-            self.log(3, f'{key:>15s} = {argsd[key]}')
+            self.log(3, f"{key:>15s} = {argsd[key]}")
 
         # grab the data
         self.get_data()
@@ -833,15 +833,15 @@ class CliProduct(object, metaclass=abc.ABCMeta):
                 self.set_plot_properties()
                 self.add_segs(self.args)
                 if self.args.interactive:
-                    self.log(3, 'Interactive manipulation of '
-                                'image should be available.')
+                    self.log(3, "Interactive manipulation of "
+                                "image should be available.")
                     self.plot.show()
                 else:
                     self.save(self.args.out)
             elif show_error:
                 # Some plots reject inpput data for reasons like all zeroes
-                self.log(0, 'No plot produced because of data '
-                            'validation error.')
+                self.log(0, "No plot produced because of data "
+                            "validation error.")
                 self.got_error = True
                 show_error = False
             self.plot_num += 1
@@ -850,13 +850,13 @@ class CliProduct(object, metaclass=abc.ABCMeta):
         """ If requested add DQ segments
         """
         std_segments = [
-            '{ifo}:DMT-GRD_ISC_LOCK_NOMINAL:1',
-            '{ifo}:DMT-DC_READOUT_LOCKED:1',
-            '{ifo}:DMT-CALIBRATED:1',
-            '{ifo}:DMT-ANALYSIS_READY:1'
+            "{ifo}:DMT-GRD_ISC_LOCK_NOMINAL:1",
+            "{ifo}:DMT-DC_READOUT_LOCKED:1",
+            "{ifo}:DMT-CALIBRATED:1",
+            "{ifo}:DMT-ANALYSIS_READY:1"
         ]
         segments = list()
-        if hasattr(args, 'std_seg'):
+        if hasattr(args, "std_seg"):
             if args.std_seg:
                 segments = std_segments
             if args.seg:
@@ -865,8 +865,8 @@ class CliProduct(object, metaclass=abc.ABCMeta):
                     segments += seg
 
             chan = args.chan[0][0]
-            m = re.match('^([A-Za-z][0-9]):', chan)
-            ifo = m.group(1) if m else '?:'
+            m = re.match("^([A-Za-z][0-9]):", chan)
+            ifo = m.group(1) if m else "?:"
 
             start = None
             end = 0
@@ -879,7 +879,7 @@ class CliProduct(object, metaclass=abc.ABCMeta):
                     end = start + ts.duration
 
             for segment in segments:
-                seg_name = segment.replace('{ifo}', ifo)
+                seg_name = segment.replace("{ifo}", ifo)
                 seg_data = DataQualityFlag.query_dqsegdb(
                     seg_name,
                     start,
@@ -906,42 +906,42 @@ class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
     def arg_color_axis(cls, parser):
         """Add an `~argparse.ArgumentGroup` for colour-axis options.
         """
-        group = parser.add_argument_group('Colour axis options')
+        group = parser.add_argument_group("Colour axis options")
         group.add_argument(
-            '--imin',
+            "--imin",
             type=float,
-            help='minimum value for colorbar',
+            help="minimum value for colorbar",
         )
         group.add_argument(
-            '--imax',
+            "--imax",
             type=float,
-            help='maximum value for colorbar',
+            help="maximum value for colorbar",
         )
         group.add_argument(
-            '--cmap',
+            "--cmap",
             default=cls.DEFAULT_CMAP,
             help=(
-                'Colormap. See https://matplotlib.org/examples/color/'
-                'colormaps_reference.html for options'
+                "Colormap. See https://matplotlib.org/examples/color/"
+                "colormaps_reference.html for options"
             ),
         )
         group.add_argument(
-            '--color-scale',
-            choices=('log', 'linear'),
-            help='scale for colorbar',
+            "--color-scale",
+            choices=("log", "linear"),
+            help="scale for colorbar",
         )
         group.add_argument(
-            '--norm',
-            nargs='?',
-            const='median',
-            choices=('median', 'mean'),
-            metavar='NORM',
-            help='normalise each pixel against average in that frequency bin',
+            "--norm",
+            nargs="?",
+            const="median",
+            choices=("median", "mean"),
+            metavar="NORM",
+            help="normalise each pixel against average in that frequency bin",
         )
         group.add_argument(
-            '--nocolorbar',
-            action='store_true',
-            help='hide the colour bar',
+            "--nocolorbar",
+            action="store_true",
+            help="hide the colour bar",
         )
 
     @staticmethod
@@ -987,87 +987,87 @@ class FFTMixin(object, metaclass=abc.ABCMeta):
     def arg_fft(cls, parser):
         """Add an `~argparse.ArgumentGroup` for FFT options
         """
-        group = parser.add_argument_group('Fourier transform options')
+        group = parser.add_argument_group("Fourier transform options")
         group.add_argument(
-            '--secpfft',
+            "--secpfft",
             type=float,
             default=cls.DEFAULT_FFTLENGTH,
-            help='length of FFT in seconds',
+            help="length of FFT in seconds",
         )
         group.add_argument(
-            '--overlap',
+            "--overlap",
             type=float,
-            help='overlap as fraction of FFT length [0-1)',
+            help="overlap as fraction of FFT length [0-1)",
         )
         group.add_argument(
-            '--window',
+            "--window",
             type=str,
-            default='hann',
-            help='window function to use when overlapping FFTs',
+            default="hann",
+            help="window function to use when overlapping FFTs",
         )
         group.add_argument(
-            '--average-method',
-            dest='method',
+            "--average-method",
+            dest="method",
             default=DEFAULT_FFT_METHOD,
-            choices=('median', 'welch', 'bartlett'),
-            help='FFT averaging method',
+            choices=("median", "welch", "bartlett"),
+            help="FFT averaging method",
         )
         return group
 
     @classmethod
     def _arg_faxis(cls, axis, parser, **defaults):
-        defaults.setdefault('scale', 'log')
+        defaults.setdefault("scale", "log")
         axis = axis.lower()
-        name = f'{axis.title()} axis'
-        group = parser.add_argument_group(f'{name} options')
+        name = f"{axis.title()} axis"
+        group = parser.add_argument_group(f"{name} options")
 
         # label
         group.add_argument(
-            f'--{axis}label',
-            default=defaults.get('label'),
-            dest=f'{axis}label',
-            help=f'{name} label',
+            f"--{axis}label",
+            default=defaults.get("label"),
+            dest=f"{axis}label",
+            help=f"{name} label",
         )
 
         # min and max
-        for extrema in ('min', 'max'):
+        for extrema in ("min", "max"):
             meg = group.add_mutually_exclusive_group()
-            for ax_ in (axis, 'f'):
+            for ax_ in (axis, "f"):
                 meg.add_argument(
-                    f'--{ax_}{extrema}',
+                    f"--{ax_}{extrema}",
                     type=float,
                     default=defaults.get(extrema),
-                    dest=f'{axis}{extrema}',
-                    help=f'{extrema} value for {name}',
+                    dest=f"{axis}{extrema}",
+                    help=f"{extrema} value for {name}",
                 )
 
         # scale
         scaleg = group.add_mutually_exclusive_group()
         scaleg.add_argument(
-            f'--{axis}scale',
+            f"--{axis}scale",
             type=str,
-            default=defaults.get('scale'),
-            dest=f'{axis}scale',
-            help=f'scale for {name}',
+            default=defaults.get("scale"),
+            dest=f"{axis}scale",
+            help=f"scale for {name}",
         )
-        for ax_ in (axis, 'f'):
-            if defaults.get('scale') == 'log':
+        for ax_ in (axis, "f"):
+            if defaults.get("scale") == "log":
                 scaleg.add_argument(
-                    f'--nolog{ax_}',
-                    action='store_const',
-                    dest=f'{axis}scale',
+                    f"--nolog{ax_}",
+                    action="store_const",
+                    dest=f"{axis}scale",
                     const=None,
-                    default='log',
-                    help=f'use linear {name}',
+                    default="log",
+                    help=f"use linear {name}",
                 )
             else:
                 scaleg.add_argument(
-                    f'--log{ax_}',
-                    action='store_const',
-                    dest=f'{axis}scale',
-                    const='log',
+                    f"--log{ax_}",
+                    action="store_const",
+                    dest=f"{axis}scale",
+                    const="log",
                     default=None,
-                    help='use logarithmic {name}',
+                    help="use logarithmic {name}",
                 )
 
         return group
@@ -1093,32 +1093,32 @@ class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
         """
         group = super().arg_xaxis(parser)
         group.add_argument(
-            '--epoch',
+            "--epoch",
             type=to_gps,
             help=(
-                'center X axis on this GPS time, '
-                'may be absolute date/time or delta'
+                "center X axis on this GPS time, "
+                "may be absolute date/time or delta"
             ),
         )
 
         group.add_argument(
-            '--std-seg',
-            action='store_true',
-            help='add DQ segment describing IFO state',
+            "--std-seg",
+            action="store_true",
+            help="add DQ segment describing IFO state",
         )
         group.add_argument(
-            '--seg',
+            "--seg",
             type=str,
-            nargs='+',
-            action='append',
-            help='specify one or more DQ segment names',
+            nargs="+",
+            action="append",
+            help="specify one or more DQ segment names",
         )
         return group
 
     def _finalize_arguments(self, args):
         starts = [float(gps) for gpsl in args.start for gps in gpsl]
         if args.xscale is None:  # set default x-axis scale
-            args.xscale = 'auto-gps'
+            args.xscale = "auto-gps"
         if args.xmin is None:
             args.xmin = min(starts)
         if args.epoch is None:
@@ -1137,10 +1137,10 @@ class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
         if isinstance(trans, GPSTransform):
             epoch = trans.get_epoch()
             unit = trans.get_unit_name()
-            utc = re.sub(r'\.0+', '',
-                         Time(epoch, format='gps', scale='utc').iso)
-            return f'Time ({unit}) from {utc} ({epoch})'
-        return ''
+            utc = re.sub(r"\.0+", "",
+                         Time(epoch, format="gps", scale="utc").iso)
+            return f"Time ({unit}) from {utc} ({epoch})"
+        return ""
 
 
 class FrequencyDomainProduct(CliProduct, metaclass=abc.ABCMeta):
@@ -1149,7 +1149,7 @@ class FrequencyDomainProduct(CliProduct, metaclass=abc.ABCMeta):
     def get_xlabel(self):
         """Default X-axis label for plot
         """
-        return 'Frequency (Hz)'
+        return "Frequency (Hz)"
 
 
 class TransferFunctionProduct(FrequencyDomainProduct):

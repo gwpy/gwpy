@@ -83,7 +83,7 @@ if typing.TYPE_CHECKING:
         Self,
     )
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 __all__ = [
     "TimeSeriesBase",
@@ -93,11 +93,11 @@ __all__ = [
 
 
 _UFUNC_STRING = {
-    'less': '<',
-    'less_equal': '<=',
-    'equal': '==',
-    'greater_equal': '>=',
-    'greater': '>',
+    "less": "<",
+    "less_equal": "<=",
+    "equal": "==",
+    "greater_equal": ">=",
+    "greater": ">",
 }
 
 
@@ -190,7 +190,7 @@ class TimeSeriesBase(Series):
         allow passing of sub-classes by the array generator
     """
     _default_xunit = units.second
-    _print_slots = ('t0', 'dt', 'name', 'channel')
+    _print_slots = ("t0", "dt", "name", "channel")
     DictClass: type[TimeSeriesBaseDict]
 
     def __new__(cls, data, unit=None, t0=None, dt=None, sample_rate=None,
@@ -198,21 +198,21 @@ class TimeSeriesBase(Series):
         """Generate a new `TimeSeriesBase`.
         """
         # parse t0 or epoch
-        epoch = kwargs.pop('epoch', None)
+        epoch = kwargs.pop("epoch", None)
         if epoch is not None and t0 is not None:
             raise ValueError("give only one of epoch or t0")
         if epoch is None and t0 is not None:
-            kwargs['x0'] = _format_time(t0)
+            kwargs["x0"] = _format_time(t0)
         elif epoch is not None:
-            kwargs['x0'] = _format_time(epoch)
+            kwargs["x0"] = _format_time(epoch)
         # parse sample_rate or dt
         if sample_rate is not None and dt is not None:
             raise ValueError("give only one of sample_rate or dt")
         if sample_rate is None and dt is not None:
-            kwargs['dx'] = dt
+            kwargs["dx"] = dt
         # parse times
         if times is not None:
-            kwargs['xindex'] = times
+            kwargs["xindex"] = times
 
         # generate TimeSeries
         new = super().__new__(cls, data, name=name, unit=unit,
@@ -243,7 +243,7 @@ class TimeSeriesBase(Series):
         :type: `~astropy.time.Time`
         """
         try:
-            return Time(self.t0, format='gps', scale='utc')
+            return Time(self.t0, format="gps", scale="utc")
         except AttributeError:
             return None
 
@@ -268,7 +268,7 @@ class TimeSeriesBase(Series):
 
         :type: `~astropy.units.Quantity` scalar
         """
-        return (1 / self.dt).to('Hertz')
+        return (1 / self.dt).to("Hertz")
 
     @sample_rate.setter
     def sample_rate(self, val):
@@ -348,7 +348,7 @@ class TimeSeriesBase(Series):
 
     @classmethod
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
-                        version=None, format='hdf5',
+                        version=None, format="hdf5",
                         host=GWOSC_DEFAULT_HOST, verbose=False,
                         cache=None, **kwargs):
         """Fetch open-access data from GWOSC.
@@ -598,7 +598,7 @@ class TimeSeriesBase(Series):
 
     # -- utilities ------------------------------
 
-    def plot(self, method='plot', figsize=(12, 4), xscale='auto-gps',
+    def plot(self, method="plot", figsize=(12, 4), xscale="auto-gps",
              **kwargs):
         """Plot the data for this timeseries
 
@@ -693,12 +693,12 @@ class TimeSeriesBase(Series):
         channel = Channel.from_nds2(buffer_.channel)
 
         # set default metadata
-        metadata.setdefault('channel', channel)
-        metadata.setdefault('epoch', LIGOTimeGPS(buffer_.gps_seconds,
+        metadata.setdefault("channel", channel)
+        metadata.setdefault("epoch", LIGOTimeGPS(buffer_.gps_seconds,
                                                  buffer_.gps_nanoseconds))
-        metadata.setdefault('sample_rate', channel.sample_rate)
-        metadata.setdefault('unit', channel.unit)
-        metadata.setdefault('name', buffer_.name)
+        metadata.setdefault("sample_rate", channel.sample_rate)
+        metadata.setdefault("unit", channel.unit)
+        metadata.setdefault("name", buffer_.name)
 
         # unwrap data
         scaled = _dynamic_scaled(scaled, channel.name)
@@ -765,7 +765,7 @@ class TimeSeriesBase(Series):
             scale = 1
 
         # create TimeSeries
-        create = find_typed_function(self.dtype, 'Create', 'TimeSeries')
+        create = find_typed_function(self.dtype, "Create", "TimeSeries")
         lalts = create(
             self.name or str(self.channel or "") or None,
             LIGOTimeGPS(to_gps(self.epoch.gps)),
@@ -818,7 +818,7 @@ class TimeSeriesBase(Series):
         """
         from pycbc import types
         return types.TimeSeries(self.value,
-                                delta_t=self.dt.to('s').value,
+                                delta_t=self.dt.to("s").value,
                                 epoch=self.epoch.gps, copy=copy)
 
     # -- TimeSeries operations ------------------
@@ -836,7 +836,7 @@ class TimeSeriesBase(Series):
             out.__metadata_finalize__(orig)
             oname = orig.name if isinstance(orig, type(self)) else orig
             vname = value.name if isinstance(value, type(self)) else value
-            out.name = '{0!s} {1!s} {2!s}'.format(oname, op_, vname)
+            out.name = "{0!s} {1!s} {2!s}".format(oname, op_, vname)
         return out
 
     # Quantity overrides __eq__ and __ne__ in a way that doesn't work for us,
@@ -892,7 +892,7 @@ class TimeSeriesBaseDict(OrderedDict):
             return span.extent()
         except ValueError as exc:  # empty list
             exc.args = (
-                'cannot calculate span for empty {0}'.format(
+                "cannot calculate span for empty {0}".format(
                     type(self).__name__),
             )
             raise
@@ -1088,9 +1088,9 @@ class TimeSeriesBaseDict(OrderedDict):
         # open connection to specific host
         if connection is None and host is not None:
             print_verbose("Opening new connection to {0}...".format(host),
-                          end=' ', verbose=verbose)
+                          end=" ", verbose=verbose)
             connection = io_nds2.auth_connect(host, port)
-            print_verbose('connected', verbose=verbose)
+            print_verbose("connected", verbose=verbose)
         # otherwise cycle through connections in logical order
         elif connection is None:
             ifos = set([Channel(channel).ifo for channel in channels])
@@ -1113,7 +1113,7 @@ class TimeSeriesBaseDict(OrderedDict):
                                          scaled=scaled, allow_tape=allow_tape_)
                     except (RuntimeError, ValueError) as exc:
                         error = str(exc)  # need to assign to take out of scope
-                        msg = error.split('\n', 1)[0]
+                        msg = error.split("\n", 1)[0]
                         warnings.warn(
                             f"failed to fetch data for {', '.join(channels)} "
                             f"in interval [{start}, {end}): {msg}",
@@ -1122,7 +1122,7 @@ class TimeSeriesBaseDict(OrderedDict):
 
                 # if failing occurred because of data on tape, don't try
                 # reading channels individually, the same error will occur
-                if not allow_tape_ and 'Requested data is on tape' in error:
+                if not allow_tape_ and "Requested data is on tape" in error:
                     continue
 
                 # if we got this far, we can't get all channels in one go
@@ -1263,7 +1263,7 @@ class TimeSeriesBaseDict(OrderedDict):
             # find observatory for this group
             if observatory is None:
                 try:
-                    obs = ''.join(
+                    obs = "".join(
                         sorted(set(c.ifo[0] for c in channellist)))
                 except TypeError as exc:
                     raise ValueError(
@@ -1534,8 +1534,8 @@ class TimeSeriesBaseDict(OrderedDict):
                 buf, scaled=scaled, copy=copy, **metadata)
         return tsd
 
-    def plot(self, label='key', method='plot', figsize=(12, 4),
-             xscale='auto-gps', **kwargs):
+    def plot(self, label="key", method="plot", figsize=(12, 4),
+             xscale="auto-gps", **kwargs):
         """Plot the data for this `TimeSeriesBaseDict`.
 
         Parameters
@@ -1567,13 +1567,13 @@ class TimeSeriesBaseDict(OrderedDict):
             plot = Plot(self.values(), **kwargs)
 
         # update labels
-        artmap = {'plot': 'lines', 'scatter': 'collections'}
+        artmap = {"plot": "lines", "scatter": "collections"}
         artists = [x for ax in plot.axes for
-                   x in getattr(ax, artmap.get(method, 'lines'))]
+                   x in getattr(ax, artmap.get(method, "lines"))]
         for key, artist in zip(self, artists):
-            if label.lower() == 'name':
+            if label.lower() == "name":
                 lab = self[key].name
-            elif label.lower() == 'key':
+            elif label.lower() == "key":
                 lab = key
             else:
                 lab = label
@@ -1581,8 +1581,8 @@ class TimeSeriesBaseDict(OrderedDict):
 
         return plot
 
-    def step(self, label='key', where='post', figsize=(12, 4),
-             xscale='auto-gps', **kwargs):
+    def step(self, label="key", where="post", figsize=(12, 4),
+             xscale="auto-gps", **kwargs):
         """Create a step plot of this dict.
 
         Parameters
@@ -1680,7 +1680,7 @@ class TimeSeriesBaseList(list):
                     try:
                         this = self[i] = this.append(self[j])
                     except ValueError as exc:
-                        if 'cannot resize this array' in str(exc):
+                        if "cannot resize this array" in str(exc):
                             this = this.copy()
                             this = self[i] = this.append(self[j])
                         else:

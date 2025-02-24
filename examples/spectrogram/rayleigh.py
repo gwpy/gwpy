@@ -26,14 +26,14 @@ each time bin.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.spectrogram'
+__currentmodule__ = "gwpy.spectrogram"
 
 # To demonstate this, we can load some data from the LIGO Livingston
 # interferometer around the time of the GW151226 gravitational wave detection:
 
 from gwpy.timeseries import TimeSeries
-gwdata = TimeSeries.fetch_open_data('L1', 'Dec 26 2015 03:37',
-                                    'Dec 26 2015 03:47', verbose=True)
+gwdata = TimeSeries.fetch_open_data("L1", "Dec 26 2015 03:37",
+                                    "Dec 26 2015 03:47", verbose=True)
 
 # Next, we can calculate a Rayleigh statistic `Spectrogram` using the
 # :meth:`~gwpy.timeseries.TimeSeries.rayleigh_spectrogram` method of the
@@ -42,10 +42,10 @@ gwdata = TimeSeries.fetch_open_data('L1', 'Dec 26 2015 03:37',
 rayleigh = gwdata.rayleigh_spectrogram(5, fftlength=2, overlap=1)
 
 # and can make a plot using the :meth:`~Spectrogram.plot` method
-plot = rayleigh.plot(norm='log', vmin=0.25, vmax=4)
+plot = rayleigh.plot(norm="log", vmin=0.25, vmax=4)
 ax = plot.gca()
-ax.set_yscale('log')
+ax.set_yscale("log")
 ax.set_ylim(30, 1500)
-ax.set_title('Sensitivity of LIGO-Livingston around GW151226')
-ax.colorbar(cmap='coolwarm', label='Rayleigh statistic')
+ax.set_title("Sensitivity of LIGO-Livingston around GW151226")
+ax.colorbar(cmap="coolwarm", label="Rayleigh statistic")
 plot.show()

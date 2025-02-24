@@ -23,33 +23,33 @@ from astropy.time import Time
 from ... import cli
 from .base import _TestCliProduct, _TestTransferFunctionProduct
 
-__author__ = 'Evan Goetz <evan.goetz@ligo.org>'
+__author__ = "Evan Goetz <evan.goetz@ligo.org>"
 
 
 class TestCliTransferFunction(_TestTransferFunctionProduct):
     TEST_CLASS = cli.TransferFunction
-    ACTION = 'transferfunction'
+    ACTION = "transferfunction"
     TEST_ARGS = _TestCliProduct.TEST_ARGS + [
-        '--chan', 'Y1:TEST-CHANNEL', '--secpfft', '0.25',
+        "--chan", "Y1:TEST-CHANNEL", "--secpfft", "0.25",
     ]
 
     def test_init(self, prod):
-        assert prod.chan_list == ['X1:TEST-CHANNEL', 'Y1:TEST-CHANNEL']
+        assert prod.chan_list == ["X1:TEST-CHANNEL", "Y1:TEST-CHANNEL"]
         assert prod.ref_chan == prod.chan_list[0]
         assert prod.test_chan == prod.chan_list[1]
 
     def test_get_suptitle(self, prod):
-        assert prod.get_suptitle() == (f'Transfer function: '
-                                       f'{prod.chan_list[1]}/'
-                                       f'{prod.chan_list[0]}')
+        assert prod.get_suptitle() == (f"Transfer function: "
+                                       f"{prod.chan_list[1]}/"
+                                       f"{prod.chan_list[0]}")
 
     def test_get_title(self, prod):
         epoch = prod.start_list[0]
-        utc = Time(epoch, format='gps', scale='utc').iso
-        t = ', '.join([
-            f'{utc} | {epoch} ({prod.duration})',
-            f'fftlength={prod.args.secpfft}',
-            f'overlap={prod.args.overlap}',
+        utc = Time(epoch, format="gps", scale="utc").iso
+        t = ", ".join([
+            f"{utc} | {epoch} ({prod.duration})",
+            f"fftlength={prod.args.secpfft}",
+            f"overlap={prod.args.overlap}",
         ])
         assert prod.get_title() == t
 

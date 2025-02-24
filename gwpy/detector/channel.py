@@ -41,7 +41,7 @@ if typing.TYPE_CHECKING:
 
     from ..typing import Self
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 try:
     BOOL_TYPES = {bool, numpy.bool, numpy.dtype(bool)}
@@ -83,12 +83,12 @@ class Channel(object):
     (https://cis.ligo.org) for which a query interface is provided.
     """
     MATCH = re.compile(
-        r'((?:(?P<ifo>[A-Z]\d))?|[\w-]+):'  # match IFO prefix
-        r'(?:(?P<system>[a-zA-Z0-9]+))?'  # match system
-        r'(?:[-_](?P<subsystem>[a-zA-Z0-9]+))?'  # match subsystem
-        r'(?:[-_](?P<signal>[a-zA-Z0-9_-]+?))?'  # match signal
-        r'(?:[\.-](?P<trend>[a-z]+))?'  # match trend type
-        r'(?:,(?P<type>([a-z]-)?[a-z]+))?$'  # match channel type
+        r"((?:(?P<ifo>[A-Z]\d))?|[\w-]+):"  # match IFO prefix
+        r"(?:(?P<system>[a-zA-Z0-9]+))?"  # match system
+        r"(?:[-_](?P<subsystem>[a-zA-Z0-9]+))?"  # match subsystem
+        r"(?:[-_](?P<signal>[a-zA-Z0-9_-]+?))?"  # match signal
+        r"(?:[\.-](?P<trend>[a-z]+))?"  # match trend type
+        r"(?:,(?P<type>([a-z]-)?[a-z]+))?$"  # match channel type
     )
 
     def __init__(self, name, **params):
@@ -144,12 +144,12 @@ class Channel(object):
         except (TypeError, ValueError):
             self.name = str(name)
         else:
-            self.name = str(name).split(',')[0]
+            self.name = str(name).split(",")[0]
             for key, val in parts.items():
                 try:
                     setattr(self, key, val)
                 except AttributeError:
-                    setattr(self, f'_{key}', val)
+                    setattr(self, f"_{key}", val)
 
     # -- properties -----------------------------
 
@@ -212,7 +212,7 @@ class Channel(object):
             del self.frequency_range
         else:
             low, hi = frange
-            self._frequency_range = units.Quantity((low, hi), unit='Hz')
+            self._frequency_range = units.Quantity((low, hi), unit="Hz")
 
     @frequency_range.deleter
     def frequency_range(self):
@@ -321,7 +321,7 @@ class Channel(object):
         else:
             try:
                 url = urlparse(href)
-                assert url.scheme in ('http', 'https', 'file')
+                assert url.scheme in ("http", "https", "file")
             except (AttributeError, ValueError, AssertionError):
                 raise ValueError(f"Invalid URL {href!r}")
             self._url = href
@@ -403,8 +403,8 @@ class Channel(object):
     def ndsname(self):
         """Name of this channel as stored in the NDS database
         """
-        if self.type not in [None, 'raw', 'reduced', 'online']:
-            return f'{self.name},{self.type}'
+        if self.type not in [None, "raw", "reduced", "online"]:
+            return f"{self.name},{self.type}"
         return self.name
 
     # -- classmethods ---------------------------
@@ -624,12 +624,12 @@ class Channel(object):
     def __repr__(self):
         repr_ = f'<Channel("{self}"'
         if self.type:
-            repr_ += f' [{self.type}]'
-        repr_ += f', {self.sample_rate}'
-        return repr_ + f') at {hex(id(self))}>'
+            repr_ += f" [{self.type}]"
+        repr_ += f", {self.sample_rate}"
+        return repr_ + f") at {hex(id(self))}>"
 
     def __eq__(self, other):
-        for attr in ['name', 'sample_rate', 'unit', 'url', 'type', 'dtype']:
+        for attr in ["name", "sample_rate", "unit", "url", "type", "dtype"]:
             try:
                 if getattr(self, attr) != getattr(other, attr):
                     return False
@@ -639,7 +639,7 @@ class Channel(object):
 
     def __hash__(self):
         hash_ = 0
-        for attr in ['name', 'sample_rate', 'unit', 'url', 'type', 'dtype']:
+        for attr in ["name", "sample_rate", "unit", "url", "type", "dtype"]:
             hash_ += hash(getattr(self, attr))
         return hash_
 
@@ -694,22 +694,22 @@ class ChannelList(list):
         """Split a comma-separated list of channel names.
         """
         out = []
-        namestr = QUOTE_REGEX.sub('', namestr)
+        namestr = QUOTE_REGEX.sub("", namestr)
         while True:
-            namestr = namestr.strip('\' \n')
-            if ',' not in namestr:
+            namestr = namestr.strip("\' \n")
+            if "," not in namestr:
                 break
-            for nds2type in io_nds2.Nds2ChannelType.nds2names() + ['']:
-                if nds2type and f',{nds2type}' in namestr:
+            for nds2type in io_nds2.Nds2ChannelType.nds2names() + [""]:
+                if nds2type and f",{nds2type}" in namestr:
                     try:
-                        channel, ctype, namestr = namestr.split(',', 2)
+                        channel, ctype, namestr = namestr.split(",", 2)
                     except ValueError:
-                        channel, ctype = namestr.split(',')
-                        namestr = ''
-                    out.append(f'{channel},{ctype}')
+                        channel, ctype = namestr.split(",")
+                        namestr = ""
+                    out.append(f"{channel},{ctype}")
                     break
-                elif nds2type == '' and ',' in namestr:
-                    channel, namestr = namestr.split(',', 1)
+                elif nds2type == "" and "," in namestr:
+                    channel, namestr = namestr.split(",", 1)
                     out.append(channel)
                     break
         if namestr:
@@ -769,8 +769,8 @@ class ChannelList(list):
         else:
             flags = 0
         if exact_match:
-            name = name if name.startswith(r'\A') else fr"\A{name}"
-            name = name if name.endswith(r'\Z') else fr"{name}\Z"
+            name = name if name.startswith(r"\A") else fr"\A{name}"
+            name = name if name.endswith(r"\Z") else fr"{name}\Z"
         name_regexp = re.compile(name, flags=flags)
 
         matched = list(self)

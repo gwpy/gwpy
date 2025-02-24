@@ -33,7 +33,7 @@ from .connect import (
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
-__all__ = ['FrequencySeries']
+__all__ = ["FrequencySeries"]
 
 
 class FrequencySeries(Series):
@@ -88,19 +88,19 @@ class FrequencySeries(Series):
        ~FrequencySeries.plot
        ~FrequencySeries.zpk
     """
-    _default_xunit = units.Unit('Hz')
-    _print_slots = ['f0', 'df', 'epoch', 'name', 'channel']
+    _default_xunit = units.Unit("Hz")
+    _print_slots = ["f0", "df", "epoch", "name", "channel"]
 
     def __new__(cls, data, unit=None, f0=None, df=None, frequencies=None,
                 name=None, epoch=None, channel=None, **kwargs):
         """Generate a new FrequencySeries.
         """
         if f0 is not None:
-            kwargs['x0'] = f0
+            kwargs["x0"] = f0
         if df is not None:
-            kwargs['dx'] = df
+            kwargs["dx"] = df
         if frequencies is not None:
-            kwargs['xindex'] = frequencies
+            kwargs["xindex"] = frequencies
 
         # generate FrequencySeries
         return super().__new__(
@@ -133,7 +133,7 @@ class FrequencySeries(Series):
 
     # -- FrequencySeries methods ----------------
 
-    def plot(self, xscale='log', **kwargs):
+    def plot(self, xscale="log", **kwargs):
         # use log y-scale for ASD, PSD
         u = self.unit
         try:
@@ -142,7 +142,7 @@ class FrequencySeries(Series):
             pass
         else:
             if hzpow < 0:
-                kwargs.setdefault('yscale', 'log')
+                kwargs.setdefault("yscale", "log")
 
         kwargs.update(xscale=xscale)
         return super().plot(**kwargs)
@@ -351,7 +351,7 @@ class FrequencySeries(Series):
         epoch = lal.LIGOTimeGPS(0 if self.epoch is None else self.epoch.gps)
 
         # create FrequencySeries
-        create = find_typed_function(self.dtype, 'Create', 'FrequencySeries')
+        create = find_typed_function(self.dtype, "Create", "FrequencySeries")
         lalfs = create(self.name, epoch, self.f0.value, self.df.value,
                        unit, self.shape[0])
         lalfs.data.data = self.value * scale
@@ -399,11 +399,11 @@ class FrequencySeries(Series):
             epoch = None
         else:
             epoch = self.epoch.gps
-        if self.f0.to('Hz').value:
+        if self.f0.to("Hz").value:
             raise ValueError(
                 f"Cannot convert FrequencySeries to PyCBC with f0 = {self.f0}."
                 " Starting frequency must be equal to 0 Hz."
             )
         return types.FrequencySeries(self.value,
-                                     delta_f=self.df.to('Hz').value,
+                                     delta_f=self.df.to("Hz").value,
                                      epoch=epoch, copy=copy)

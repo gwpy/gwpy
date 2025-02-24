@@ -103,11 +103,11 @@ def get_read_format(cls, source, args, kwargs):
     ctx = None
     if isinstance(source, FILE_LIKE):
         fileobj = source
-        filepath = source.name if hasattr(source, 'name') else None
+        filepath = source.name if hasattr(source, "name") else None
     else:
         filepath = source
         try:
-            ctx = get_readable_fileobj(filepath, encoding='binary')
+            ctx = get_readable_fileobj(filepath, encoding="binary")
             fileobj = ctx.__enter__()  # pylint: disable=no-member
         except OSError:
             raise

@@ -27,15 +27,15 @@ the performance of the LIGO detectors and downstream data analysis procedures.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.table'
+__currentmodule__ = "gwpy.table"
 
 # First, we import the `EventTable` object and read in a set of events from
 # a LIGO_LW-format XML file containing a
 # :class:`sngl_burst <ligo.lw.lsctables.SnglBurstTable>` table
 from gwpy.table import EventTable
 events = EventTable.read(
-    'H1-LDAS_STRAIN-968654552-10.xml.gz', tablename='sngl_burst',
-    columns=['peak', 'central_freq', 'bandwidth', 'duration', 'snr'])
+    "H1-LDAS_STRAIN-968654552-10.xml.gz", tablename="sngl_burst",
+    columns=["peak", "central_freq", "bandwidth", "duration", "snr"])
 
 # .. note::
 #
@@ -44,13 +44,13 @@ events = EventTable.read(
 
 # We can make a plot of these events as 2-dimensional tiles by specifying
 # the x- and y-axis columns, and the widths in those directions:
-plot = events.tile('peak', 'central_freq', 'duration', 'bandwidth',
-                   color='snr')
+plot = events.tile("peak", "central_freq", "duration", "bandwidth",
+                   color="snr")
 ax = plot.gca()
-ax.set_yscale('log')
-ax.set_ylabel('Frequency [Hz]')
+ax.set_yscale("log")
+ax.set_ylabel("Frequency [Hz]")
 ax.set_epoch(968654552)
 ax.set_xlim(968654552, 968654552+10)
-ax.set_title('LIGO-Hanford event tiles for HW100916')
-ax.colorbar(clim=[1, 8], cmap='YlGnBu', label='Signal-to-noise ratio (SNR)')
+ax.set_title("LIGO-Hanford event tiles for HW100916")
+ax.colorbar(clim=[1, 8], cmap="YlGnBu", label="Signal-to-noise ratio (SNR)")
 plot.show()

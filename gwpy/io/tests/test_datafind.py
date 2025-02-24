@@ -33,12 +33,12 @@ from ...testing.utils import (
 )
 from .. import datafind as io_datafind
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 GWDATAFIND_PATH = "gwpy.io.datafind.gwdatafind"
 MOCK_ENV = {
-    'VIRGODATA': 'tmp',
-    'GWDATAFIND_SERVER': 'test:80',
+    "VIRGODATA": "tmp",
+    "GWDATAFIND_SERVER": "test:80",
 }
 
 
@@ -61,11 +61,11 @@ def _mock_gwdatafind(func):
         mock.MagicMock(return_value=[TEST_GWF_FILE]),
     )
     @mock.patch(
-        'gwpy.io.datafind.iter_channel_names',
-        mock.MagicMock(return_value=['L1:LDAS-STRAIN', 'H1:LDAS-STRAIN']),
+        "gwpy.io.datafind.iter_channel_names",
+        mock.MagicMock(return_value=["L1:LDAS-STRAIN", "H1:LDAS-STRAIN"]),
     )
     @mock.patch(
-        'gwpy.io.datafind.num_channels',
+        "gwpy.io.datafind.num_channels",
         mock.MagicMock(return_value=1),
     )
     def wrapper(*args, **kwargs):
@@ -95,9 +95,9 @@ def test_find_frametype():
     """Test that `find_frametype` works with basic input.
     """
     assert io_datafind.find_frametype(
-        'L1:LDAS-STRAIN',
+        "L1:LDAS-STRAIN",
         allow_tape=True,
-    ) == 'HW100916'
+    ) == "HW100916"
 
 
 @_mock_gwdatafind
@@ -105,9 +105,9 @@ def test_find_frametype_return_all():
     """Test that the ``return_all` keyword for `find_frametype` returns a list.
     """
     assert io_datafind.find_frametype(
-        'L1:LDAS-STRAIN',
+        "L1:LDAS-STRAIN",
         return_all=True,
-    ) == ['HW100916']
+    ) == ["HW100916"]
 
 
 @_mock_gwdatafind
@@ -115,11 +115,11 @@ def test_find_frametype_multiple():
     """Test that `find_frametype` can handle channels as MIMO.
     """
     assert io_datafind.find_frametype(
-        ['H1:LDAS-STRAIN', 'L1:LDAS-STRAIN'],
+        ["H1:LDAS-STRAIN", "L1:LDAS-STRAIN"],
         allow_tape=True,
     ) == {
-        'H1:LDAS-STRAIN': 'HW100916',
-        'L1:LDAS-STRAIN': 'HW100916',
+        "H1:LDAS-STRAIN": "HW100916",
+        "L1:LDAS-STRAIN": "HW100916",
     }
 
 
@@ -135,7 +135,7 @@ def test_find_frametype_error_not_found():
             "in any known frametype:\n    X1:TEST$"
         )
     ):
-        io_datafind.find_frametype('X1:TEST', allow_tape=True)
+        io_datafind.find_frametype("X1:TEST", allow_tape=True)
 
 
 @_mock_gwdatafind
@@ -150,7 +150,7 @@ def test_find_frametype_error_bad_channel():
             r"'bad channel name', cannot proceed with find\(\)$"
         ),
     ):
-        io_datafind.find_frametype('bad channel name')
+        io_datafind.find_frametype("bad channel name")
 
 
 @_mock_gwdatafind
@@ -159,13 +159,13 @@ def test_find_frametype_error_files_on_tape():
     discovered data are on tape, and we asked for not on tape.
     """
     # check that allow_tape errors get handled properly
-    patch = mock.patch('gwpy.io.datafind.on_tape', return_value=True)
+    patch = mock.patch("gwpy.io.datafind.on_tape", return_value=True)
     raises = pytest.raises(
         ValueError,
         match=r"\[files on tape have not been checked",
     )
     with patch, raises:
-        io_datafind.find_frametype('X1:TEST', allow_tape=False)
+        io_datafind.find_frametype("X1:TEST", allow_tape=False)
 
 
 # -- find_best_frametype
@@ -175,21 +175,21 @@ def test_find_best_frametype():
     """Test that `find_best_frametype` works in general.
     """
     assert io_datafind.find_best_frametype(
-        'L1:LDAS-STRAIN',
+        "L1:LDAS-STRAIN",
         968654552,
         968654553,
-    ) == 'HW100916'
+    ) == "HW100916"
 
 
 @pytest.mark.requires("lalframe")
 @pytest_skip_flaky_network
 @pytest.mark.skipif(
     "GWDATAFIND_SERVER" not in os.environ,
-    reason='No GWDataFind server configured on this host',
+    reason="No GWDataFind server configured on this host",
 )
-@pytest.mark.parametrize('channel, expected', [
-    ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend', 'H1_T'),
-    ('H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend', 'H1_M'),
+@pytest.mark.parametrize("channel, expected", [
+    ("H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend", "H1_T"),
+    ("H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend", "H1_M"),
 ])
 def test_find_best_frametype_ligo_trend(channel, expected):
     """Test that `find_best_frametype` correctly matches trends.
@@ -291,16 +291,16 @@ def test_on_tape_windows():
         assert io_datafind.on_tape(TEST_GWF_FILE) is False
 
 
-@pytest.mark.parametrize('ifo, ftype, trend, priority', [
-    ('L1', 'L1_HOFT_C00', None, 1),  # hoft
-    ('H1', 'H1_HOFT_C02_T1700406_v3', None, 1),  # cleaned hoft
-    ('H1', 'H1_M', 'm-trend', 0),  # minute trends
-    ('K1', 'K1_T', 's-trend', 0),  # second trends
-    ('K1', 'K1_R', 's-trend', 5),  # raw type when looking for second trend
-    ('K1', 'K1_M', None, 10),  # trend type, but not looking for trend channel
-    ('K1', 'K1_C', None, 6),  # commissioning type
-    ('X1', 'SOMETHING_GRB051103', None, 10),  # low priority type
-    ('X1', 'something else', None, 5),  # other
+@pytest.mark.parametrize("ifo, ftype, trend, priority", [
+    ("L1", "L1_HOFT_C00", None, 1),  # hoft
+    ("H1", "H1_HOFT_C02_T1700406_v3", None, 1),  # cleaned hoft
+    ("H1", "H1_M", "m-trend", 0),  # minute trends
+    ("K1", "K1_T", "s-trend", 0),  # second trends
+    ("K1", "K1_R", "s-trend", 5),  # raw type when looking for second trend
+    ("K1", "K1_M", None, 10),  # trend type, but not looking for trend channel
+    ("K1", "K1_C", None, 6),  # commissioning type
+    ("X1", "SOMETHING_GRB051103", None, 10),  # low priority type
+    ("X1", "something else", None, 5),  # other
 ])
 def test_type_priority(ifo, ftype, trend, priority):
     """Test that `_type_priority` works for various cases.

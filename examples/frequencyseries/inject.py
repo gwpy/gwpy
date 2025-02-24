@@ -30,7 +30,7 @@ frequency domain because it is much easier to model a sinusoid there.
 """
 
 __author__ = "Alex Urban <alexander.urban@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First, we prepare one second of Gaussian noise:
 
@@ -55,7 +55,7 @@ injfd = noisefd.inject(signal)
 
 from gwpy.plot import Plot
 plot = Plot(numpy.abs(noisefd), numpy.abs(injfd), separate=True,
-            sharex=True, sharey=True, xscale='log', yscale='log')
+            sharex=True, sharey=True, xscale="log", yscale="log")
 plot.show()
 
 # Finally, for completeness we can visualize the effect before and after

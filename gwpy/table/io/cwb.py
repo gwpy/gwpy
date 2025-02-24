@@ -109,32 +109,32 @@ class CwbHeader(core.BaseHeader):
             List of table lines
         """
         re_name_def = re.compile(
-            r'^\s*#\s+'  # whitespace and comment marker
-            r'(?P<colnumber>[0-9]+)\s+-\s+'  # number of column
-            r'(?P<colname>(.*))'
+            r"^\s*#\s+"  # whitespace and comment marker
+            r"(?P<colnumber>[0-9]+)\s+-\s+"  # number of column
+            r"(?P<colname>(.*))"
         )
         self.names = []
         include_cuts = False
         for line in lines:
             if not line:  # ignore empty lines in header (windows)
                 continue
-            if not line.startswith('# '):  # end of header lines
+            if not line.startswith("# "):  # end of header lines
                 break
-            if line.startswith('# -/+'):
+            if line.startswith("# -/+"):
                 include_cuts = True
             else:
                 match = re_name_def.search(line)
                 if match:
-                    self.names.append(match.group('colname').rstrip())
+                    self.names.append(match.group("colname").rstrip())
 
         if not self.names:
             raise core.InconsistentTableError(
-                'No column names found in cWB header')
+                "No column names found in cWB header")
 
         if include_cuts:
             self.cols = [  # pylint: disable=attribute-defined-outside-init
-                core.Column(name='selection cut 1'),
-                core.Column(name='selection cut 2'),
+                core.Column(name="selection cut 1"),
+                core.Column(name="selection cut 2"),
             ]
         else:
             self.cols = []  # pylint: disable=attribute-defined-outside-init
@@ -152,7 +152,7 @@ class CwbHeader(core.BaseHeader):
 class CwbData(core.BaseData):
     """Parser for cWB ASCII data.
     """
-    comment = '#'
+    comment = "#"
 
 
 class Cwb(core.BaseReader):

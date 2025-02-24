@@ -21,7 +21,7 @@
 from ...types.io.hdf5 import register_hdf5_array_io
 from .. import (FrequencySeries, SpectralVariance)
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 register_hdf5_array_io(FrequencySeries)
 register_hdf5_array_io(SpectralVariance)

@@ -74,7 +74,7 @@ def format_citations(
     lines = []
     for i, rec in enumerate(records["hits"]["hits"]):
         # print RST-format header
-        version = str(rec['metadata']['version'])[len(tag_prefix):]
+        version = str(rec["metadata"]["version"])[len(tag_prefix):]
         head = "-" * len(version)
         lines.extend([
             head,
@@ -94,7 +94,7 @@ def format_citations(
         # add break before next record
         lines.append("")
 
-    return '\n'.join(lines).strip()
+    return "\n".join(lines).strip()
 
 
 # -- command-line usage ---------------
@@ -158,10 +158,10 @@ def main(args: list[str] | None = None) -> None:
     if opts.output_file in {None, "stdout"}:
         f = sys.stdout
     else:
-        f = open(opts.output_file, 'w')
+        f = open(opts.output_file, "w")
     with f:
         print(citing, file=f)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

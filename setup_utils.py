@@ -35,9 +35,9 @@ def _parse_years(years):
     Source: https://stackoverflow.com/a/6405228/1307974
     """
     result = []
-    for part in years.split(','):
-        if '-' in part:
-            a, b = part.split('-')
+    for part in years.split(","):
+        if "-" in part:
+            a, b = part.split("-")
             a, b = int(a), int(b)
             result.extend(range(a, b + 1))
         else:

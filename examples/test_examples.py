@@ -34,14 +34,14 @@ from gwpy.testing.errors import pytest_skip_flaky_network
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-use('agg')  # force non-interactive backend
+use("agg")  # force non-interactive backend
 
 # find all examples
 EXAMPLE_BASE = Path(__file__).parent
 EXAMPLE_DIRS = [exdir for exdir in EXAMPLE_BASE.iterdir() if exdir.is_dir()]
 EXAMPLES = sorted([
     pytest.param(expy, id=str(expy.relative_to(EXAMPLE_BASE))) for
-    exdir in EXAMPLE_DIRS for expy in exdir.glob('*.py')],
+    exdir in EXAMPLE_DIRS for expy in exdir.glob("*.py")],
 )
 
 
@@ -64,7 +64,7 @@ def close_figures():
         yield
     finally:
         # close all open figures regardless of test status
-        pyplot.close('all')
+        pyplot.close("all")
 
 
 # acceptable authentication failures
@@ -126,7 +126,7 @@ def skip_missing_optional_dependency(func):
 
 # -- test -------------------
 
-@pytest.mark.parametrize('script', EXAMPLES)
+@pytest.mark.parametrize("script", EXAMPLES)
 @pytest.mark.filterwarnings(
     "ignore:Matplotlib is currently using agg",
     "ignore:.*Agg is non-interactive",

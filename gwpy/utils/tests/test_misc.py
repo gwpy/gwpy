@@ -29,14 +29,14 @@ from .. import misc as utils_misc
 def test_gprint(capsys):
     """Test for :func:`gwpy.utils.misc.gprint`
     """
-    utils_misc.gprint('test')
-    assert capsys.readouterr().out == 'test\n'
-    utils_misc.gprint('test', end=' ')
-    assert capsys.readouterr().out == 'test '
-    utils_misc.gprint('test', end='x', file=sys.stderr)
+    utils_misc.gprint("test")
+    assert capsys.readouterr().out == "test\n"
+    utils_misc.gprint("test", end=" ")
+    assert capsys.readouterr().out == "test "
+    utils_misc.gprint("test", end="x", file=sys.stderr)
     cap = capsys.readouterr()
     assert not cap.out
-    assert cap.err == 'testx'
+    assert cap.err == "testx"
 
 
 def test_round_to_power():
@@ -45,8 +45,8 @@ def test_round_to_power():
     # test basic features
     assert utils_misc.round_to_power(2) == 2
     assert utils_misc.round_to_power(9, base=10) == 10
-    assert utils_misc.round_to_power(5, which='lower') == 4
-    assert utils_misc.round_to_power(5, which='upper') == 8
+    assert utils_misc.round_to_power(5, which="lower") == 4
+    assert utils_misc.round_to_power(5, which="upper") == 8
     # test output
     base = 10.
     rounded = utils_misc.round_to_power(9, base=base)
@@ -61,7 +61,7 @@ def test_round_to_power_error():
         ValueError,
         match="^'which' argument must be one of 'lower', 'upper', or None$",
     ):
-        utils_misc.round_to_power(7, which='')
+        utils_misc.round_to_power(7, which="")
 
 
 def test_unique():
@@ -71,9 +71,9 @@ def test_unique():
     assert utils_misc.unique(a) == [1, 2, 4, 3, 5]
 
 
-@pytest.mark.parametrize('func, value, out', [
+@pytest.mark.parametrize("func, value, out", [
     (str, None, None),
-    (str, 1, '1'),
+    (str, 1, "1"),
 ])
 def test_if_not_none(func, value, out):
     """Test for :func:`gwpy.utils.misc.if_not_none`

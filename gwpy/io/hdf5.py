@@ -28,10 +28,10 @@ import h5py
 
 from .cache import FILE_LIKE
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def open_hdf5(filename, mode='r'):
+def open_hdf5(filename, mode="r"):
     """Wrapper to open a :class:`h5py.File` from disk, gracefully
     handling a few corner cases
     """
@@ -54,7 +54,7 @@ def with_read_hdf5(func):
         if not isinstance(fobj, h5py.HLObject):
             if isinstance(fobj, FILE_LIKE):
                 fobj = fobj.name
-            with h5py.File(fobj, 'r') as h5f:
+            with h5py.File(fobj, "r") as h5f:
                 return func(h5f, *args, **kwargs)
         return func(fobj, *args, **kwargs)
 
@@ -117,11 +117,11 @@ def with_write_hdf5(func):
     def decorated_func(obj, fobj, *args, **kwargs):
         # pylint: disable=missing-docstring
         if not isinstance(fobj, h5py.HLObject):
-            append = kwargs.get('append', False)
-            overwrite = kwargs.get('overwrite', False)
+            append = kwargs.get("append", False)
+            overwrite = kwargs.get("overwrite", False)
             if os.path.exists(fobj) and not (overwrite or append):
                 raise IOError(f"File exists: {fobj}")
-            with h5py.File(fobj, 'a' if append else 'w') as h5f:
+            with h5py.File(fobj, "a" if append else "w") as h5f:
                 return func(obj, h5f, *args, **kwargs)
         return func(obj, fobj, *args, **kwargs)
 
@@ -160,7 +160,7 @@ def create_dataset(parent, path, overwrite=False, **kwargs):
     try:
         return parent.create_dataset(path, **kwargs)
     except RuntimeError as exc:
-        if str(exc) == 'Unable to create link (Name already exists)':
+        if str(exc) == "Unable to create link (Name already exists)":
             exc.args = (
                 f"{exc}: '{path}', pass overwrite=True to ignore "
                 f"existing datasets",

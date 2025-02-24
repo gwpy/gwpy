@@ -30,13 +30,13 @@ from .. import Plot
 @pytest.mark.usefixtures("usetex")
 class _Base(object):
     @staticmethod
-    def save(fig, format='png'):
+    def save(fig, format="png"):
         out = BytesIO()
         fig.savefig(out, format=format)
         return fig
 
     @classmethod
-    def save_and_close(cls, fig, format='png'):
+    def save_and_close(cls, fig, format="png"):
         cls.save(fig, format=format)
         try:
             fig.close()
@@ -49,7 +49,7 @@ class FigureTestBase(_Base):
     FIGURE_CLASS = Plot
 
     @classmethod
-    @pytest.fixture(scope='function')
+    @pytest.fixture(scope="function")
     def fig(cls):
         """Yield a new figure of type ``FIGURE_CLASS`` and check that
         it saves as png after the test function finishes
@@ -63,8 +63,8 @@ class AxesTestBase(_Base):
     AXES_CLASS = Plot
 
     @classmethod
-    @pytest.fixture(scope='function')
+    @pytest.fixture(scope="function")
     def ax(cls):
-        fig = pyplot.figure(FigureClass=getattr(cls, 'FIGURE_CLASS', Plot))
+        fig = pyplot.figure(FigureClass=getattr(cls, "FIGURE_CLASS", Plot))
         yield fig.add_subplot(projection=cls.AXES_CLASS.name)
         cls.save_and_close(fig)

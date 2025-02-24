@@ -25,14 +25,14 @@ from .test_spectrum import TestCliSpectrum as _TestCliSpectrum
 
 class TestCliCoherence(_TestCliSpectrum):
     TEST_CLASS = cli.Coherence
-    ACTION = 'coherence'
+    ACTION = "coherence"
     TEST_ARGS = _TestCliProduct.TEST_ARGS + [
-        '--chan', 'Y1:TEST-CHANNEL', '--secpfft', '0.25',
+        "--chan", "Y1:TEST-CHANNEL", "--secpfft", "0.25",
     ]
 
     def test_init(self, prod):
-        assert prod.chan_list == ['X1:TEST-CHANNEL', 'Y1:TEST-CHANNEL']
+        assert prod.chan_list == ["X1:TEST-CHANNEL", "Y1:TEST-CHANNEL"]
         assert prod.ref_chan == prod.chan_list[0]
 
     def test_get_suptitle(self, prod):
-        assert prod.get_suptitle() == f'Coherence: {prod.chan_list[0]}'
+        assert prod.get_suptitle() == f"Coherence: {prod.chan_list[0]}"

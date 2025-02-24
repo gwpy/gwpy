@@ -52,25 +52,25 @@ from .cache import cache_segments
 from .gwf import (num_channels, iter_channel_names)
 from .utils import file_path
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 SINGLE_IFO_OBSERVATORY = re.compile("^[A-Z][0-9]$")
 
 # special-case frame types
-LIGO_SECOND_TREND_TYPE = re.compile(r'\A(.*_)?T\Z')  # T or *_T
-LIGO_MINUTE_TREND_TYPE = re.compile(r'\A(.*_)?M\Z')  # M or *_M
+LIGO_SECOND_TREND_TYPE = re.compile(r"\A(.*_)?T\Z")  # T or *_T
+LIGO_MINUTE_TREND_TYPE = re.compile(r"\A(.*_)?M\Z")  # M or *_M
 VIRGO_SECOND_TREND_TYPE = re.compile(r"\A(.*_)?[Tt]rend\Z")  # trend or *_trend
-GRB_TYPE = re.compile(r'^(?!.*_GRB\d{6}([A-Z])?$)')  # *_GRBYYMMDD{A}
+GRB_TYPE = re.compile(r"^(?!.*_GRB\d{6}([A-Z])?$)")  # *_GRBYYMMDD{A}
 HIGH_PRIORITY_TYPE = re.compile("({})".format("|".join((
-    r'\A[A-Z]\d_HOFT_C\d\d(_T\d{7}_v\d)?\Z',  # X1_HOFT_CXY
-    r'\AV1Online\Z',
-    r'\AHoftOnline\Z',
-    r'\AV1O[0-9]+([A-Z]+)?Repro[0-9]+[A-Z]+\Z',  # V1OXReproXY
+    r"\A[A-Z]\d_HOFT_C\d\d(_T\d{7}_v\d)?\Z",  # X1_HOFT_CXY
+    r"\AV1Online\Z",
+    r"\AHoftOnline\Z",
+    r"\AV1O[0-9]+([A-Z]+)?Repro[0-9]+[A-Z]+\Z",  # V1OXReproXY
 ))))
 LOW_PRIORITY_TYPE = re.compile("({})".format("|".join((
-    r'_GRB\d{6}([A-Z])?\Z',  # endswith _GRBYYMMDD{A}
-    r'_bck\Z',  # endswith _bck
-    r'\AT1200307_V4_EARLY_RECOLORED_V2\Z',  # annoying recoloured HOFT type
+    r"_GRB\d{6}([A-Z])?\Z",  # endswith _GRBYYMMDD{A}
+    r"_bck\Z",  # endswith _bck
+    r"\AT1200307_V4_EARLY_RECOLORED_V2\Z",  # annoying recoloured HOFT type
 ))))
 
 
@@ -84,9 +84,9 @@ def _type_priority(ifo, ftype, trend=None):
     """
     # if looking for a trend channel, prioritise the matching type
     for trendname, trend_regex in [
-            ('m-trend', LIGO_MINUTE_TREND_TYPE),
-            ('s-trend', LIGO_SECOND_TREND_TYPE),
-            ('s-trend', VIRGO_SECOND_TREND_TYPE),
+            ("m-trend", LIGO_MINUTE_TREND_TYPE),
+            ("s-trend", LIGO_SECOND_TREND_TYPE),
+            ("s-trend", VIRGO_SECOND_TREND_TYPE),
     ]:
         if trend == trendname and trend_regex.match(ftype):
             return 0, len(ftype)
@@ -94,7 +94,7 @@ def _type_priority(ifo, ftype, trend=None):
     # otherwise rank this type according to priority
     for reg, prio in {
             HIGH_PRIORITY_TYPE: 1,
-            re.compile(r'[A-Z]\d_C'): 6,
+            re.compile(r"[A-Z]\d_C"): 6,
             LOW_PRIORITY_TYPE: 10,
             LIGO_MINUTE_TREND_TYPE: 10,
             LIGO_SECOND_TREND_TYPE: 10,
@@ -139,9 +139,9 @@ def _gwdatafind_module(**datafind_kw):
     """
     # GWDataFind
     if (
-        os.getenv('GWDATAFIND_SERVER')
-        or os.getenv('LIGO_DATAFIND_SERVER')
-        or datafind_kw.get('host')
+        os.getenv("GWDATAFIND_SERVER")
+        or os.getenv("LIGO_DATAFIND_SERVER")
+        or datafind_kw.get("host")
     ):
         return gwdatafind
 
@@ -247,7 +247,7 @@ def _rank_types(match):
 @_select_gwdatafind_mod
 def find_frametype(channel, gpstime=None, frametype_match=None,
                    host=None, port=None, return_all=False, allow_tape=False,
-                   on_gaps='error'):
+                   on_gaps="error"):
     """Find the frametype(s) that hold data for a given channel
 
     Parameters
@@ -369,7 +369,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
                     ftype,
                     gpstime=gpstime,
                     allow_tape=allow_tape,
-                    on_missing='ignore',
+                    on_missing="ignore",
                 )
             except (RuntimeError, IOError, IndexError):  # something went wrong
                 continue
@@ -479,13 +479,13 @@ def find_best_frametype(channel, start, end,
     try:
         return find_frametype(channel, gpstime=(start, end),
                               frametype_match=frametype_match,
-                              allow_tape=allow_tape, on_gaps='error',
+                              allow_tape=allow_tape, on_gaps="error",
                               host=host, port=port)
     except RuntimeError:  # gaps (or something else went wrong)
         ftout = find_frametype(channel, gpstime=(start, end),
                                frametype_match=frametype_match,
                                return_all=True, allow_tape=allow_tape,
-                               on_gaps='ignore', host=host, port=port)
+                               on_gaps="ignore", host=host, port=port)
         try:
             if isinstance(ftout, dict):
                 return {key: ftout[key][0] for key in ftout}
@@ -509,7 +509,7 @@ def find_types(observatory, match=None, trend=None, **kwargs):
 
 
 @_select_gwdatafind_mod
-def find_urls(observatory, frametype, start, end, on_gaps='error', **kwargs):
+def find_urls(observatory, frametype, start, end, on_gaps="error", **kwargs):
     """Find the URLs of files of a given data type in a GPS interval.
 
     See also
@@ -550,13 +550,13 @@ def find_latest(
                 frametype,
                 gpstime,
                 gpstime+1,
-                on_gaps='ignore',
+                on_gaps="ignore",
             )[-1]
         else:
             path = gwdatafind.find_latest(
                 observatory,
                 frametype,
-                on_missing='ignore',
+                on_missing="ignore",
             )[-1]
     except (IndexError, RuntimeError):
         raise RuntimeError(f"no files found for {observatory}-{frametype}")

@@ -143,7 +143,7 @@ def _pad_series(
             "requested interval {type(span)(start, end)}",
         )
     # otherwise applying the padding
-    return ts.pad((pada, padb), mode='constant', constant_values=(pad,))
+    return ts.pad((pada, padb), mode="constant", constant_values=(pad,))
 
 
 # -- Unified I/O singletons ----------

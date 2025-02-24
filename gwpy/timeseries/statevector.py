@@ -56,8 +56,8 @@ from .core import (
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-__all__ = ['StateTimeSeries', 'StateTimeSeriesDict',
-           'StateVector', 'StateVectorDict', 'StateVectorList', 'Bits']
+__all__ = ["StateTimeSeries", "StateTimeSeriesDict",
+           "StateVector", "StateVectorDict", "StateVectorList", "Bits"]
 
 
 # -- utilities ----------------------------------------------------------------
@@ -179,7 +179,7 @@ class StateTimeSeries(TimeSeriesBase):
                 channel=None, name=None, **kwargs):
         """Generate a new StateTimeSeries
         """
-        if kwargs.pop('unit', None) is not None:
+        if kwargs.pop("unit", None) is not None:
             raise TypeError("%s does not accept keyword argument 'unit'"
                             % cls.__name__)
         if isinstance(data, (list, tuple)):
@@ -231,7 +231,7 @@ class StateTimeSeries(TimeSeriesBase):
         return new
     diff.__doc__ = TimeSeriesBase.diff.__doc__
 
-    @wraps(numpy.ndarray.all, assigned=('__doc__',))
+    @wraps(numpy.ndarray.all, assigned=("__doc__",))
     def all(self, axis=None, out=None):
         return numpy.all(self.value, axis=axis, out=out)
 
@@ -310,7 +310,7 @@ class StateTimeSeries(TimeSeriesBase):
     @classmethod
     @wraps(TimeSeriesBase.from_nds2_buffer)
     def from_nds2_buffer(cls, buffer, **metadata):
-        metadata.setdefault('unit', None)
+        metadata.setdefault("unit", None)
         return super().from_nds2_buffer(buffer, **metadata)
 
     def __getitem__(self, item):
@@ -367,7 +367,7 @@ class Bits(list):
             if bit is None or bit in self.description:
                 continue
             elif channel:
-                self.description[bit] = '%s bit %d' % (self.channel, i)
+                self.description[bit] = "%s bit %d" % (self.channel, i)
             else:
                 self.description[bit] = None
 
@@ -381,7 +381,7 @@ class Bits(list):
         See :mod:`~astropy.time` for details on the `Time` object.
         """
         try:
-            return Time(self._epoch, format='gps')
+            return Time(self._epoch, format="gps")
         except AttributeError:
             return None
 
@@ -424,8 +424,8 @@ class Bits(list):
             self._description = desc
 
     def __repr__(self):
-        indent = " " * len('<%s(' % self.__class__.__name__)
-        mask = ('\n%s' % indent).join(['%d: %r' % (idx, bit) for
+        indent = " " * len("<%s(" % self.__class__.__name__)
+        mask = ("\n%s" % indent).join(["%d: %r" % (idx, bit) for
                                        idx, bit in enumerate(self)
                                        if bit])
         return ("<{1}({2},\n{0}channel={3},\n{0}epoch={4})>".format(
@@ -433,8 +433,8 @@ class Bits(list):
             mask, repr(self.channel), repr(self.epoch)))
 
     def __str__(self):
-        indent = " " * len('%s(' % self.__class__.__name__)
-        mask = ('\n%s' % indent).join(['%d: %s' % (idx, bit) for
+        indent = " " * len("%s(" % self.__class__.__name__)
+        mask = ("\n%s" % indent).join(["%d: %s" % (idx, bit) for
                                        idx, bit in enumerate(self)
                                        if bit])
         return ("{1}({2},\n{0}channel={3},\n{0}epoch={4})".format(
@@ -442,7 +442,7 @@ class Bits(list):
             mask, str(self.channel), str(self.epoch)))
 
     def __array__(self, dtype="U"):
-        return numpy.array([b or '' for b in self], dtype=dtype)
+        return numpy.array([b or "" for b in self], dtype=dtype)
 
 
 # -- StateVector --------------------------------------------------------------
@@ -507,8 +507,8 @@ class StateVector(TimeSeriesBase):
         ~StateVector.plot
 
     """
-    _metadata_slots = TimeSeriesBase._metadata_slots + ('bits',)
-    _print_slots = TimeSeriesBase._print_slots + ('_bits',)
+    _metadata_slots = TimeSeriesBase._metadata_slots + ("bits",)
+    _print_slots = TimeSeriesBase._print_slots + ("_bits",)
 
     def __new__(cls, data, bits=None, t0=None, dt=None, sample_rate=None,
                 times=None, channel=None, name=None, **kwargs):
@@ -533,12 +533,12 @@ class StateVector(TimeSeriesBase):
         try:
             return self._bits
         except AttributeError:
-            if self.dtype.name.startswith(('uint', 'int')):
+            if self.dtype.name.startswith(("uint", "int")):
                 nbits = self.itemsize * 8
-                self.bits = Bits(['Bit %d' % b for b in range(nbits)],
+                self.bits = Bits(["Bit %d" % b for b in range(nbits)],
                                  channel=self.channel, epoch=self.epoch)
                 return self.bits
-            elif hasattr(self.channel, 'bits'):
+            elif hasattr(self.channel, "bits"):
                 self.bits = self.channel.bits
                 return self.bits
             return None
@@ -608,13 +608,13 @@ class StateVector(TimeSeriesBase):
             a `dict` of `StateTimeSeries`, one for each given bit
         """
         if bits is None:
-            bits = [b for b in self.bits if b not in {None, ''}]
+            bits = [b for b in self.bits if b not in {None, ""}]
         bindex = []
         for bit in bits:
             try:
                 bindex.append((self.bits.index(bit), bit))
             except (IndexError, ValueError) as exc:
-                exc.args = ('Bit %r not found in StateVector' % bit,)
+                exc.args = ("Bit %r not found in StateVector" % bit,)
                 raise
         self._bitseries = StateTimeSeriesDict()
         for i, bit in bindex:
@@ -767,7 +767,7 @@ class StateVector(TimeSeriesBase):
             new.bits = bits
         return new
 
-    def plot(self, format='segments', bits=None, **kwargs):
+    def plot(self, format="segments", bits=None, **kwargs):
         """Plot the data for this `StateVector`
 
         Parameters
@@ -805,13 +805,13 @@ class StateVector(TimeSeriesBase):
             for documentation of keyword arguments used in rendering each
             statevector flag.
         """
-        if format == 'timeseries':
+        if format == "timeseries":
             return super().plot(**kwargs)
-        if format == 'segments':
+        if format == "segments":
             from ..plot import Plot
-            kwargs.setdefault('xscale', 'auto-gps')
+            kwargs.setdefault("xscale", "auto-gps")
             return Plot(*self.to_dqflags(bits=bits).values(),
-                        projection='segments', **kwargs)
+                        projection="segments", **kwargs)
         raise ValueError("'format' argument must be one of: 'timeseries' or "
                          "'segments'")
 
@@ -860,9 +860,9 @@ class StateVector(TimeSeriesBase):
             # construct an iterator over the columns of the old array
             itr = numpy.nditer(
                 [old, None],
-                flags=['external_loop', 'reduce_ok'],
+                flags=["external_loop", "reduce_ok"],
                 op_axes=[None, [0, -1]],
-                op_flags=[['readonly'], ['readwrite', 'allocate']])
+                op_flags=[["readonly"], ["readwrite", "allocate"]])
             dtype = self.dtype
             type_ = self.dtype.type
             # for each new sample, each bit is logical AND of old samples
@@ -886,15 +886,15 @@ class StateVector(TimeSeriesBase):
 
 @as_series_dict_class(StateTimeSeries)
 class StateTimeSeriesDict(TimeSeriesBaseDict):
-    __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
-                                                 'StateTimeSeries')
+    __doc__ = TimeSeriesBaseDict.__doc__.replace("TimeSeriesBase",
+                                                 "StateTimeSeries")
     EntryClass = StateTimeSeries
 
 
 @as_series_dict_class(StateVector)
 class StateVectorDict(TimeSeriesBaseDict):
-    __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
-                                                 'StateVector')
+    __doc__ = TimeSeriesBaseDict.__doc__.replace("TimeSeriesBase",
+                                                 "StateVector")
     EntryClass = StateVector
 
     # -- i/o -------------------------
@@ -904,6 +904,6 @@ class StateVectorDict(TimeSeriesBaseDict):
 
 
 class StateVectorList(TimeSeriesBaseList):
-    __doc__ = TimeSeriesBaseList.__doc__.replace('TimeSeriesBase',
-                                                 'StateVector')
+    __doc__ = TimeSeriesBaseList.__doc__.replace("TimeSeriesBase",
+                                                 "StateVector")
     EntryClass = StateVector

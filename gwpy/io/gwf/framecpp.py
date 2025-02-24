@@ -336,7 +336,7 @@ def create_fradcdata(
     See Table 10 (§4.3.2.4) of LIGO-T970130 for more details
     """
     # assert correct type
-    if not series.xunit.is_equivalent('s') or series.ndim != 1:
+    if not series.xunit.is_equivalent("s") or series.ndim != 1:
         raise TypeError("only 1-dimensional timeseries data can be "
                         "written as FrAdcData")
 
@@ -345,7 +345,7 @@ def create_fradcdata(
         channelgroup,
         channelid,
         nbits,
-        (1 / series.dx.to('s')).value
+        (1 / series.dx.to("s")).value
     )
     frdata.SetTimeOffset(
         float(to_gps(series.x0.value) - to_gps(frame_epoch)),
@@ -354,15 +354,15 @@ def create_fradcdata(
 
 
 def _get_series_trange(series: Series) -> float:
-    if series.xunit.is_equivalent('s'):
+    if series.xunit.is_equivalent("s"):
         return abs(series.xspan)
     return 0
 
 
 def _get_series_frange(series: Series) -> float:
-    if series.xunit.is_equivalent('Hz'):  # FrequencySeries
+    if series.xunit.is_equivalent("Hz"):  # FrequencySeries
         return abs(series.xspan)
-    elif series.ndim == 2 and series.yunit.is_equivalent('Hz'):  # Spectrogram
+    elif series.ndim == 2 and series.yunit.is_equivalent("Hz"):  # Spectrogram
         return abs(series.yspan)
     return 0
 
@@ -487,13 +487,13 @@ def create_frsimdata(
     See Table 20 (§4.3.2.14) of LIGO-T970130 for more details
     """
     # assert correct type
-    if not series.xunit.is_equivalent('s'):
+    if not series.xunit.is_equivalent("s"):
         raise TypeError("only timeseries data can be written as FrSimData")
 
     return frameCPP.FrSimData(
         _series_name(series),
         str(comment or series.name),
-        (1 / series.dx.to('s')).value,
+        (1 / series.dx.to("s")).value,
         float(to_gps(series.x0.value) - to_gps(frame_epoch)),
         fshift,
         phase,
@@ -535,7 +535,7 @@ def create_frvect(series: Series) -> frameCPP.FrVect:
     )
 
     # populate FrVect
-    vect.GetDataArray()[:] = numpy.require(series.value, requirements=['C'])
+    vect.GetDataArray()[:] = numpy.require(series.value, requirements=["C"])
 
     return vect
 

@@ -20,7 +20,7 @@
 
 from .spectrogram import Spectrogram
 
-__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
+__author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 
 class Coherencegram(Spectrogram):
@@ -29,26 +29,26 @@ class Coherencegram(Spectrogram):
     DEFAULT_CMAP = "plasma"
     MIN_DATASETS = 2
     MAX_DATASETS = 2
-    action = 'coherencegram'
+    action = "coherencegram"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ref_chan = self.args.ref or self.chan_list[0]
         # deal with channel type (e.g. m-trend)
-        if ',' in self.ref_chan:
-            self.ref_chan = self.ref_chan.split(',')[0]
+        if "," in self.ref_chan:
+            self.ref_chan = self.ref_chan.split(",")[0]
 
     @classmethod
     def arg_channels(cls, parser):
         group = super().arg_channels(parser)
-        group.add_argument('--ref', help='Reference channel against which '
-                                         'others will be compared')
+        group.add_argument("--ref", help="Reference channel against which "
+                                         "others will be compared")
         return group
 
     def _finalize_arguments(self, args):
         if args.color_scale is None:
-            args.color_scale = 'linear'
-        if args.color_scale == 'linear':
+            args.color_scale = "linear"
+        if args.color_scale == "linear":
             if args.imin is None:
                 args.imin = 0.
             if args.imax is None:
@@ -58,7 +58,7 @@ class Coherencegram(Spectrogram):
     def get_ylabel(self):
         """Text for y-axis label
         """
-        return 'Frequency (Hz)'
+        return "Frequency (Hz)"
 
     def get_suptitle(self):
         """Start of default super title, first channel is appended to it
@@ -68,8 +68,8 @@ class Coherencegram(Spectrogram):
 
     def get_color_label(self):
         if self.args.norm:
-            return f'Normalized to {self.args.norm}'
-        return 'Coherence'
+            return f"Normalized to {self.args.norm}"
+        return "Coherence"
 
     def get_stride(self):
         fftlength = float(self.args.secpfft)

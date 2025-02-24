@@ -33,7 +33,7 @@ from ...testing import utils
 from ...types.tests.test_array2d import TestArray2D as _TestArray2D
 from .. import SpectralVariance
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class TestSpectralVariance(_TestArray2D):
@@ -133,10 +133,10 @@ class TestSpectralVariance(_TestArray2D):
         pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
 
     def test_plot(self, array):
-        with rc_context(rc={'text.usetex': False}):
-            plot = array.plot(yscale='linear')
+        with rc_context(rc={"text.usetex": False}):
+            plot = array.plot(yscale="linear")
             assert len(plot.gca().collections) == 1
-            plot.save(BytesIO(), format='png')
+            plot.save(BytesIO(), format="png")
             plot.close()
 
     def test_value_at(self, array):

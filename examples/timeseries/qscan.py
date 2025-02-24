@@ -32,13 +32,13 @@ detection GW150914, so we can reproduce `that result (bottom panel of figure 1)
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First, we need to download the `TimeSeries` record for the H1 strain
 # measurement from |GWOSC|_:
 
 from gwpy.timeseries import TimeSeries
-data = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+data = TimeSeries.fetch_open_data("H1", 1126259446, 1126259478)
 
 # Next, we generate the `~TimeSeries.q_transform` of these data:
 qspecgram = data.q_transform(outseg=(1126259462.2, 1126259462.5))
@@ -52,12 +52,12 @@ qspecgram = data.q_transform(outseg=(1126259462.2, 1126259462.5))
 
 plot = qspecgram.plot(figsize=[8, 4])
 ax = plot.gca()
-ax.set_xscale('seconds')
-ax.set_yscale('log')
+ax.set_xscale("seconds")
+ax.set_yscale("log")
 ax.set_ylim(20, 500)
-ax.set_ylabel('Frequency [Hz]')
-ax.grid(True, axis='y', which='both')
-ax.colorbar(cmap='viridis', label='Normalized energy')
+ax.set_ylabel("Frequency [Hz]")
+ax.grid(True, axis="y", which="both")
+ax.colorbar(cmap="viridis", label="Normalized energy")
 plot.show()
 
 # Here we can clearly see the trace of a compact binary coalescence,

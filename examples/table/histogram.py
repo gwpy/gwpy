@@ -22,7 +22,7 @@ I would like to study the distribution of the GW events detected to date.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.table'
+__currentmodule__ = "gwpy.table"
 
 # First, we can download the ``'GWTC-1-confident'`` catalogue using
 # :meth:`EventTable.fetch_open_data`:
@@ -40,7 +40,7 @@ events.add_column(
 # and can generate a new `~gwpy.plot.Plot` using the
 # :meth:`~EventTable.hist` method:
 
-plot = events.hist('mtotal', bins=10, range=(0, 100), histtype='stepfilled')
+plot = events.hist("mtotal", bins=10, range=(0, 100), histtype="stepfilled")
 ax = plot.gca()
 ax.set_xlabel(r"Total mass [M$_{\odot}$]")
 ax.set_ylabel("Number of events")

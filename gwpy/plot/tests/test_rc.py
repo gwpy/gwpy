@@ -27,15 +27,15 @@ from .. import rc as plot_rc
 
 DEFAULT_LRTB = [
     rcParams[f"figure.subplot.{x}"]
-    for x in ('left', 'right', 'bottom', 'top')
+    for x in ("left", "right", "bottom", "top")
 ]
 
 
-@pytest.mark.parametrize('figsize, lrbt', [
+@pytest.mark.parametrize("figsize, lrbt", [
     ((6.4, 4.8), (.1875, .87, .16, .88)),
     ((0, 0), DEFAULT_LRTB),
 ])
 def test_get_subplot_params(figsize, lrbt):
     params = plot_rc.get_subplot_params(figsize)
-    for key, val in zip(('left', 'right', 'bottom', 'top'), lrbt):
+    for key, val in zip(("left", "right", "bottom", "top"), lrbt):
         assert getattr(params, key) == val

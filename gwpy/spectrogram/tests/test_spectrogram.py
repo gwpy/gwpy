@@ -34,7 +34,7 @@ from ...testing import utils
 from ...types.tests.test_array2d import TestArray2D as _TestArray2D
 from .. import Spectrogram
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class TestSpectrogram(_TestArray2D):
@@ -71,14 +71,14 @@ class TestSpectrogram(_TestArray2D):
                            2000 * units.milliHertz)
         assert v == self.data[5][2] * array.unit
 
-    @pytest.mark.parametrize('ratio', ('mean', 'median'))
+    @pytest.mark.parametrize("ratio", ("mean", "median"))
     def test_ratio(self, array, ratio):
         rat = array.ratio(ratio)
         array_meth = getattr(array, ratio)
         utils.assert_quantity_sub_equal(rat, array / array_meth(axis=0))
 
         with pytest.raises(ValueError):
-            array.ratio('blah')
+            array.ratio("blah")
 
     def test_from_spectra(self, array):
         min_ = self.TEST_ARRAY.min(axis=0)
@@ -100,8 +100,8 @@ class TestSpectrogram(_TestArray2D):
         # check kwargs
         new = self.TEST_ARRAY.from_spectra(
             mean, min_, max_,
-            dt=2, epoch=0, f0=100, df=.5, unit='meter', name='test')
-        assert new.name == 'test'
+            dt=2, epoch=0, f0=100, df=.5, unit="meter", name="test")
+        assert new.name == "test"
         assert new.epoch.gps == 0
         assert new.f0 == 100 * units.Hertz
         assert new.df == 0.5 * units.Hertz
@@ -142,20 +142,20 @@ class TestSpectrogram(_TestArray2D):
         with pytest.warns(UserWarning):
             array.crop_frequencies(array.yspan[0], array.yspan[1]+1)
 
-    @pytest.mark.parametrize('method', ('imshow', 'pcolormesh'))
+    @pytest.mark.parametrize("method", ("imshow", "pcolormesh"))
     def test_plot(self, array, method):
-        with rc_context(rc={'text.usetex': False}):
+        with rc_context(rc={"text.usetex": False}):
             plot = array.plot(method=method)
             ax = plot.gca()
             assert len(ax.lines) == 0
-            if method == 'imshow':
+            if method == "imshow":
                 assert len(ax.images) == 1
             else:
                 assert len(ax.collections) == 1
             assert ax.get_epoch() == array.x0.value
             assert ax.get_xlim() == array.xspan
             assert ax.get_ylim() == array.yspan
-            plot.save(BytesIO(), format='png')
+            plot.save(BytesIO(), format="png")
             plot.close()
 
     def test_zpk(self, array):
@@ -185,13 +185,13 @@ class TestSpectrogram(_TestArray2D):
             array.filter(lti, blah=1)
 
     def test_read_write_hdf5(self):
-        array = self.create(name='X1:TEST')
-        utils.test_read_write(array, 'hdf5', write_kw={'overwrite': True})
+        array = self.create(name="X1:TEST")
+        utils.test_read_write(array, "hdf5", write_kw={"overwrite": True})
 
     def test_percentile(self):
-        array = self.create(name='Test', unit='m')
+        array = self.create(name="Test", unit="m")
         a2 = array.percentile(50)
         utils.assert_quantity_sub_equal(array.median(axis=0), a2,
-                                        exclude=('name',))
-        assert a2.name == 'Test: 50th percentile'
+                                        exclude=("name",))
+        assert a2.name == "Test: 50th percentile"
         assert a2.unit == array.unit

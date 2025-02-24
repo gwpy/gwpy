@@ -70,4 +70,4 @@ class TestNumpyTypeEnum:
             ValueError,
             match=f"^'blah' is not a valid {self.TEST_CLASS.__name__}$",
         ):
-            self.TEST_CLASS.find('blah')
+            self.TEST_CLASS.find("blah")

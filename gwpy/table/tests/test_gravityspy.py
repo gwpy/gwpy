@@ -30,7 +30,7 @@ from .. import (
 )
 from .test_table import TestEventTable as _TestEventTable
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 TEST_ID = "8FHTgA8MEu"
 TEST_IFO = "H1"

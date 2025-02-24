@@ -25,20 +25,20 @@ from .test_coherence import TestCliCoherence as _TestCliCoherence
 
 class TestCliCoherencegram(_TestCliSpectrogram):
     TEST_CLASS = cli.Coherencegram
-    ACTION = 'coherencegram'
+    ACTION = "coherencegram"
     TEST_ARGS = _TestCliCoherence.TEST_ARGS
 
     def test_finalize_arguments(self, prod):
         assert prod.args.cmap == "plasma"
-        assert prod.args.color_scale == 'linear'
+        assert prod.args.color_scale == "linear"
         assert prod.args.imin == 0.
         assert prod.args.imax == 1.
 
     def test_get_suptitle(self, prod):
         assert prod.get_suptitle() == (
-            'Coherence spectrogram: '
-            f'{prod.chan_list[0]} vs {prod.chan_list[1]}'
+            "Coherence spectrogram: "
+            f"{prod.chan_list[0]} vs {prod.chan_list[1]}"
         )
 
     def test_init(self, prod):
-        assert prod.chan_list == ['X1:TEST-CHANNEL', 'Y1:TEST-CHANNEL']
+        assert prod.chan_list == ["X1:TEST-CHANNEL", "Y1:TEST-CHANNEL"]

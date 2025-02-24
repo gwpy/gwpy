@@ -44,6 +44,6 @@ from ..utils.env import bool_env
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # load our rcParams as default (without latex unless requested)
-if bool_env('GWPY_RCPARAMS', True):
+if bool_env("GWPY_RCPARAMS", True):
     matplotlib.rcParams.update(
-        rc.rc_params(usetex=bool_env('GWPY_USETEX', False)))
+        rc.rc_params(usetex=bool_env("GWPY_USETEX", False)))

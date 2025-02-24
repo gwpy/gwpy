@@ -141,8 +141,8 @@ def hacr_engine(hacr_sqlite):
 
 
 @pytest.mark.parametrize(("start", "end", "result"), (
-    ("Jan 1 2024", "Jan 1 2024 00:01", ['geo202401']),
-    ("Jan 1 2024", "Mar 1 2024", ['geo202401', 'geo202402']),
+    ("Jan 1 2024", "Jan 1 2024 00:01", ["geo202401"]),
+    ("Jan 1 2024", "Mar 1 2024", ["geo202401", "geo202402"]),
 ))
 def test_get_database_names(start, end, result):
     """Test `get_database_names`.

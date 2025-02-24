@@ -65,7 +65,7 @@ __all__ = [
 ]
 
 # q-transform defaults
-DEFAULT_FRANGE: tuple[float, float] = (0, float('inf'))
+DEFAULT_FRANGE: tuple[float, float] = (0, float("inf"))
 DEFAULT_MISMATCH: float = 0.2
 DEFAULT_QRANGE: tuple[float, float] = (4, 64)
 
@@ -603,12 +603,12 @@ class QGram:
                 energy = energy.crop(*search)
             maxidx = energy.value.argmax()
             maxe = energy.value[maxidx]
-            if maxe > peak['energy']:
+            if maxe > peak["energy"]:
                 peak.update({
-                    'energy': maxe,
-                    'snr': (2 * maxe) ** (1 / 2.),
-                    'time': energy.t0.value + energy.dt.value * maxidx,
-                    'frequency': freq,
+                    "energy": maxe,
+                    "snr": (2 * maxe) ** (1 / 2.),
+                    "time": energy.t0.value + energy.dt.value * maxidx,
+                    "frequency": freq,
                 })
         return peak
 
@@ -779,21 +779,21 @@ class QGram:
             "bandwidth",
             "energy",
         )
-        rec = numpy.recarray((0,), names=names, formats=['f8'] * len(names))
+        rec = numpy.recarray((0,), names=names, formats=["f8"] * len(names))
         for f, bw, row in zip(freqs, bws, self.energies):
             ind, = (row.value >= snrthresh ** 2 / 2.).nonzero()
             new = ind.size
             if new > 0:
                 rec.resize((rec.size + new,), refcheck=False)
-                rec['time'][-new:] = row.times.value[ind]
-                rec['frequency'][-new:] = f
-                rec['duration'][-new:] = row.dt.to('s').value
-                rec['bandwidth'][-new:] = bw
-                rec['energy'][-new:] = row.value[ind]
+                rec["time"][-new:] = row.times.value[ind]
+                rec["frequency"][-new:] = f
+                rec["duration"][-new:] = row.dt.to("s").value
+                rec["bandwidth"][-new:] = bw
+                rec["energy"][-new:] = row.value[ind]
 
         # save to a table
         out = EventTable(rec, copy=False)
-        out.meta['q'] = self.plane.q
+        out.meta["q"] = self.plane.q
         return out
 
 

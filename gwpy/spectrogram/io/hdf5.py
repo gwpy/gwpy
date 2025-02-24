@@ -21,6 +21,6 @@
 from ...types.io.hdf5 import register_hdf5_array_io
 from .. import Spectrogram
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 register_hdf5_array_io(Spectrogram)

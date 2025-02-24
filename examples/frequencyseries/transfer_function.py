@@ -26,9 +26,9 @@ ground motion through the HEPI system.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from matplotlib import pyplot
     pyplot.ion()
 
@@ -38,10 +38,10 @@ from gwpy.timeseries import TimeSeriesDict
 from gwpy.plot import BodePlot
 
 # and set the times of our query, and the channels we want:
-start = tconvert('May 27 2014 04:00')
+start = tconvert("May 27 2014 04:00")
 end = start + 1800
-gndchannel = 'L1:ISI-GND_STS_ITMY_Z_DQ'
-hpichannel = 'L1:HPI-ITMY_BLND_L4C_Z_IN1_DQ'
+gndchannel = "L1:ISI-GND_STS_ITMY_Z_DQ"
+hpichannel = "L1:HPI-ITMY_BLND_L4C_Z_IN1_DQ"
 
 # We can call the :meth:`~TimeSeriesDict.get` method of the `TimeSeriesDict`
 # to retrieve all data in a single operation:
@@ -57,6 +57,6 @@ tf = gnd.transfer_function(hpi, 100, 50)
 # `~gwpy.frequencyseries.FrequencySeries` into magnitude and phase:
 plot = BodePlot(tf)
 plot.maxes.set_title(
-    r'L1 ITMY ground $\rightarrow$ HPI transfer function')
+    r"L1 ITMY ground $\rightarrow$ HPI transfer function")
 plot.maxes.set_ylim(-55, 50)
 plot.show()

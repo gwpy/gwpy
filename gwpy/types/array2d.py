@@ -100,9 +100,9 @@ class Array2D(Series):
     array : `Array`
         a new array, with a view of the data, and all associated metadata
     """
-    _metadata_slots = Series._metadata_slots + ('y0', 'dy', 'yindex')
-    _default_xunit = Unit('')
-    _default_yunit = Unit('')
+    _metadata_slots = Series._metadata_slots + ("y0", "dy", "yindex")
+    _default_xunit = Unit("")
+    _default_yunit = Unit("")
     _rowclass = Series
     _columnclass = Series
     _ndim = 2
@@ -159,7 +159,7 @@ class Array2D(Series):
             new = new.view(self._columnclass)
             del new.xindex
             new.__metadata_finalize__(self)
-            sliceutils.slice_axis_attributes(self, 'y', new, 'x', rowslice)
+            sliceutils.slice_axis_attributes(self, "y", new, "x", rowslice)
 
         # row slice
         elif new.ndim == 1:
@@ -168,14 +168,14 @@ class Array2D(Series):
         # slice axis 1 for Array2D (Series.__getitem__ will have performed
         #                           column slice already)
         elif new.ndim > 1 and not sliceutils.null_slice(rowslice):
-            sliceutils.slice_axis_attributes(self, 'y', new, 'y', rowslice)
+            sliceutils.slice_axis_attributes(self, "y", new, "y", rowslice)
 
         return new
 
     def __array_finalize__(self, obj):
         super().__array_finalize__(obj)
         # Series.__array_finalize__ might set _yindex to None, so delete it
-        if getattr(self, '_yindex', 0) is None:
+        if getattr(self, "_yindex", 0) is None:
             del self.yindex
 
     def __iter__(self):
@@ -295,12 +295,12 @@ class Array2D(Series):
     def T(self):
         trans = self.value.T.view(type(self))
         trans.__array_finalize__(self)
-        if hasattr(self, '_xindex'):
+        if hasattr(self, "_xindex"):
             trans.yindex = self.xindex.view()
         else:
             trans.y0 = self.x0
             trans.dy = self.dx
-        if hasattr(self, '_yindex'):
+        if hasattr(self, "_yindex"):
             trans.xindex = self.yindex.view()
         else:
             trans.x0 = self.y0
@@ -349,19 +349,19 @@ class Array2D(Series):
         return self[idx, idy]
 
     def imshow(self, **kwargs):
-        return self.plot(method='imshow', **kwargs)
+        return self.plot(method="imshow", **kwargs)
 
     def pcolormesh(self, **kwargs):
-        return self.plot(method='pcolormesh', **kwargs)
+        return self.plot(method="pcolormesh", **kwargs)
 
     def plot(self, method="imshow", **kwargs):
         from ..plot import Plot
 
         # correct for log scales and zeros
-        if kwargs.get('xscale') == 'log' and self.x0.value == 0:
-            kwargs.setdefault('xlim', (self.dx.value, self.xspan[1]))
-        if kwargs.get('yscale') == 'log' and self.y0.value == 0:
-            kwargs.setdefault('ylim', (self.dy.value, self.yspan[1]))
+        if kwargs.get("xscale") == "log" and self.x0.value == 0:
+            kwargs.setdefault("xlim", (self.dx.value, self.xspan[1]))
+        if kwargs.get("yscale") == "log" and self.y0.value == 0:
+            kwargs.setdefault("ylim", (self.dy.value, self.yspan[1]))
 
         # make plot
         return Plot(self, method=method, **kwargs)
@@ -374,22 +374,22 @@ class Array2D(Series):
         if out.ndim == 1:  # return Series
             # HACK: need to check astropy will always pass axis as first arg
             axis = args[0]
-            metadata = {'unit': out.unit, 'channel': out.channel,
-                        'epoch': self.epoch,
-                        'name': '%s %s' % (self.name, function.__name__)}
+            metadata = {"unit": out.unit, "channel": out.channel,
+                        "epoch": self.epoch,
+                        "name": "%s %s" % (self.name, function.__name__)}
             # return Column series
             if axis == 0:
-                if hasattr(self, '_yindex'):
-                    metadata['xindex'] = self.yindex
+                if hasattr(self, "_yindex"):
+                    metadata["xindex"] = self.yindex
                 else:
-                    metadata['x0'] = self.y0
-                    metadata['dx'] = self.dy
+                    metadata["x0"] = self.y0
+                    metadata["dx"] = self.dy
                 return self._columnclass(out.value, **metadata)
             # return Row series
-            if hasattr(self, '_xindex'):
-                metadata['xindex'] = self.xindex
+            if hasattr(self, "_xindex"):
+                metadata["xindex"] = self.xindex
             else:
-                metadata['x0'] = self.x0
-                metadata['dx'] = self.dx
+                metadata["x0"] = self.x0
+                metadata["dx"] = self.dx
             return self._rowclass(out.value, **metadata)
         return out

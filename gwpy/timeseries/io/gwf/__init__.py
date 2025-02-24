@@ -59,7 +59,7 @@ if typing:
         TimeSeriesBaseDict,
     )
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 BACKENDS = [
     "frameCPP",
@@ -203,16 +203,16 @@ def register_gwf_backend(backend):
 
         # format gap handling
         if gap is None and pad is not None:
-            gap = 'pad'
+            gap = "pad"
         elif gap is None:
-            gap = 'raise'
+            gap = "raise"
 
         # read cache file up-front
         if (
-            (isinstance(source, str) and source.endswith(('.lcf', '.cache')))
+            (isinstance(source, str) and source.endswith((".lcf", ".cache")))
             or (
                 isinstance(source, io_cache.FILE_LIKE)
-                and source.name.endswith(('.lcf', '.cache'))
+                and source.name.endswith((".lcf", ".cache"))
             )
         ):
             source = io_cache.read_cache(source)
@@ -233,7 +233,7 @@ def register_gwf_backend(backend):
         for i, src in enumerate(source):
             if i == 1:  # force data into fresh memory so that append works
                 for name in out:
-                    out[name] = numpy.require(out[name], requirements=['O'])
+                    out[name] = numpy.require(out[name], requirements=["O"])
             out.append(libread_(src, channels, start=start, end=end,
                                 series_class=series_class, **kwargs),
                        gap=gap, pad=pad, copy=False)
@@ -248,8 +248,8 @@ def register_gwf_backend(backend):
     def read_statevector(source, channel, *args, **kwargs):
         """Read `StateVector` from GWF source
         """
-        bits = kwargs.pop('bits', None)
-        kwargs.setdefault('series_class', StateVector)
+        bits = kwargs.pop("bits", None)
+        kwargs.setdefault("series_class", StateVector)
         statevector = read_timeseries(source, channel, *args, **kwargs)
         statevector.bits = bits
         return statevector
@@ -257,9 +257,9 @@ def register_gwf_backend(backend):
     def read_statevectordict(source, channels, *args, **kwargs):
         """Read `StateVectorDict` from GWF source
         """
-        bitss = channel_dict_kwarg(kwargs.pop('bits', {}), channels)
+        bitss = channel_dict_kwarg(kwargs.pop("bits", {}), channels)
         # read data as timeseriesdict and repackage with bits
-        kwargs.setdefault('series_class', StateVector)
+        kwargs.setdefault("series_class", StateVector)
         svd = StateVectorDict(
             read_timeseriesdict(source, channels, *args, **kwargs))
         for (channel, bits) in bitss.items():
@@ -325,9 +325,9 @@ def register_gwf_format(klass: type[TimeSeriesBase | TimeSeriesBaseDict]):
         writer = get_writer(fmt, klass)
         return writer(*args, **kwargs)
 
-    klass.read.registry.register_identifier('gwf', klass, io_gwf.identify_gwf)
-    klass.read.registry.register_reader('gwf', klass, read_)
-    klass.write.registry.register_writer('gwf', klass, write_)
+    klass.read.registry.register_identifier("gwf", klass, io_gwf.identify_gwf)
+    klass.read.registry.register_reader("gwf", klass, read_)
+    klass.write.registry.register_writer("gwf", klass, write_)
 
 
 # -- register frame API -------------------------------------------------------

@@ -32,9 +32,9 @@ from .axes import Axes
 from .colors import tint
 from .text import to_string
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-HATCHES = ['/', '\\', '|', '-', '+', 'x', 'o', 'O', '.', '*']
+HATCHES = ["/", "\\", "|", "-", "+", "x", "o", "O", ".", "*"]
 
 
 class SegmentAxes(Axes):
@@ -59,14 +59,14 @@ class SegmentAxes(Axes):
     gwpy.plot.Axes
         for documentation of other args and kwargs
     """
-    name = 'segments'
+    name = "segments"
 
     def __init__(self, *args, **kwargs):
         # default to auto-gps scale on the X-axis
-        kwargs.setdefault('xscale', 'auto-gps')
+        kwargs.setdefault("xscale", "auto-gps")
 
         # set labelling format
-        kwargs.setdefault('insetlabels', False)
+        kwargs.setdefault("insetlabels", False)
 
         # make axes
         super().__init__(*args, **kwargs)
@@ -131,10 +131,10 @@ class SegmentAxes(Axes):
             args.pop(0)
         if args:
             out.extend(super().plot(*args, **kwargs))
-        self.autoscale(enable=None, axis='both', tight=False)
+        self.autoscale(enable=None, axis="both", tight=False)
         return out
 
-    def plot_dict(self, flags, label='key', known='x', **kwargs):
+    def plot_dict(self, flags, label="key", known="x", **kwargs):
         """Plot a `~gwpy.segments.DataQualityDict` onto these axes
 
         Parameters
@@ -168,9 +168,9 @@ class SegmentAxes(Axes):
         """
         out = []
         for lab, flag in flags.items():
-            if label.lower() == 'name':
+            if label.lower() == "name":
                 lab = flag.name
-            elif label.lower() != 'key':
+            elif label.lower() != "key":
                 lab = label
             out.append(self.plot_flag(flag, label=to_string(lab), known=known,
                                       **kwargs))
@@ -215,37 +215,37 @@ class SegmentAxes(Axes):
 
         # default a 'good' flag to green segments and vice-versa
         if flag.isgood:
-            kwargs.setdefault('facecolor', '#33cc33')
-            kwargs.setdefault('known', '#ff0000')
+            kwargs.setdefault("facecolor", "#33cc33")
+            kwargs.setdefault("known", "#ff0000")
         else:
-            kwargs.setdefault('facecolor', '#ff0000')
-            kwargs.setdefault('known', '#33cc33')
-        known = kwargs.pop('known')
+            kwargs.setdefault("facecolor", "#ff0000")
+            kwargs.setdefault("known", "#33cc33")
+        known = kwargs.pop("known")
 
         # get flag name
-        name = kwargs.pop('label', flag.label or flag.name)
+        name = kwargs.pop("label", flag.label or flag.name)
 
         # make active collection
-        kwargs.setdefault('zorder', 0)
+        kwargs.setdefault("zorder", 0)
         coll = self.plot_segmentlist(flag.active, y=y, label=name,
                                      **kwargs)
 
         # make known collection
         if known not in (None, False):
             known_kw = {
-                'facecolor': coll.get_facecolor()[0],
-                'collection': 'ignore',
-                'zorder': -1000,
+                "facecolor": coll.get_facecolor()[0],
+                "collection": "ignore",
+                "zorder": -1000,
             }
             if isinstance(known, dict):
                 known_kw.update(known)
-            elif known == 'fancy':
-                known_kw.update(height=kwargs.get('height', .8)*.05)
+            elif known == "fancy":
+                known_kw.update(height=kwargs.get("height", .8)*.05)
             elif known in HATCHES:
                 known_kw.update(fill=False, hatch=known)
             else:
                 known_kw.update(fill=True, facecolor=known,
-                                height=kwargs.get('height', .8)*.5)
+                                height=kwargs.get("height", .8)*.5)
             self.plot_segmentlist(flag.known, y=y, label=name, **known_kw)
 
         return coll  # return active collection
@@ -280,9 +280,9 @@ class SegmentAxes(Axes):
             list of `~matplotlib.patches.Rectangle` patches
         """
         # get colour
-        facecolor = kwargs.pop('facecolor', kwargs.pop('color', '#629fca'))
+        facecolor = kwargs.pop("facecolor", kwargs.pop("color", "#629fca"))
         if is_color_like(facecolor):
-            kwargs.setdefault('edgecolor', tint(facecolor, factor=.5))
+            kwargs.setdefault("edgecolor", tint(facecolor, factor=.5))
 
         # get y
         if y is None:
@@ -294,9 +294,9 @@ class SegmentAxes(Axes):
 
         if collection:  # map to PatchCollection
             coll = PatchCollection(patches, match_original=patches,
-                                   zorder=kwargs.get('zorder', 1))
+                                   zorder=kwargs.get("zorder", 1))
             coll.set_rasterized(rasterized)
-            coll._ignore = collection == 'ignore'
+            coll._ignore = collection == "ignore"
             coll._ypos = y
             out = self.add_collection(coll)
             # reset label with tex-formatting now
@@ -311,9 +311,9 @@ class SegmentAxes(Axes):
             for patch in patches:
                 patch.set_label(label)
                 patch.set_rasterized(rasterized)
-                label = ''
+                label = ""
                 out.append(self.add_patch(patch))
-        self.autoscale(enable=None, axis='both', tight=False)
+        self.autoscale(enable=None, axis="both", tight=False)
         return out
 
     def plot_segmentlistdict(self, segmentlistdict, y=None, dy=1, **kwargs):
@@ -372,7 +372,7 @@ class SegmentAxes(Axes):
         if ignore is None:
             return self.collections
         return [c for c in self.collections if
-                getattr(c, '_ignore', None) == ignore]
+                getattr(c, "_ignore", None) == ignore]
 
     def set_insetlabels(self, inset=None):
         """Set the labels to be inset or not
@@ -405,10 +405,10 @@ class SegmentAxes(Axes):
                 tick._orig_ha = tick.get_ha()
                 tick._orig_pos = tick.get_position()
                 # modify tick
-                tick.set_horizontalalignment('left')
+                tick.set_horizontalalignment("left")
                 tick.set_position((0.01, tick.get_position()[1]))
-                tick.set_bbox({'alpha': 0.5, 'facecolor': 'white',
-                               'edgecolor': 'none'})
+                tick.set_bbox({"alpha": 0.5, "facecolor": "white",
+                               "edgecolor": "none"})
             elif self.get_insetlabels() is False:
                 # if label has been moved, reset things
                 # pylint: disable=protected-access
@@ -439,17 +439,17 @@ class SegmentFormatter(Formatter):
             if t == coll._ypos:  # pylint: disable=protected-access
                 return coll.get_label()
         for patch in self.axis.axes.patches:
-            if not patch.get_label() or patch.get_label() == '_nolegend_':
+            if not patch.get_label() or patch.get_label() == "_nolegend_":
                 continue
             if t in igwn_segments.segment(*patch.get_bbox().intervaly):
                 return patch.get_label()
-        return ''
+        return ""
 
 
 # -- segment patch ------------------------------------------------------------
 
 class SegmentRectangle(Rectangle):
-    def __init__(self, segment, y, height=.8, valign='center', **kwargs):
+    def __init__(self, segment, y, height=.8, valign="center", **kwargs):
         """Build a `~matplotlib.patches.Rectangle` from a segment
 
         Parameters
@@ -476,11 +476,11 @@ class SegmentRectangle(Rectangle):
         box : `~matplotlib.patches.Rectangle`
             rectangle patch for segment display
         """
-        if valign.lower() == 'bottom':
+        if valign.lower() == "bottom":
             y0 = y
-        elif valign.lower() in ['center', 'centre']:
+        elif valign.lower() in ["center", "centre"]:
             y0 = y - height/2.
-        elif valign.lower() == 'top':
+        elif valign.lower() == "top":
             y0 = y - height
         else:
             raise ValueError("valign must be one of 'top', 'center', or "

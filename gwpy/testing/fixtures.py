@@ -89,7 +89,7 @@ def noisy_sinusoid() -> TimeSeries:
     time = numpy.arange(size) / rate
     x = amp * numpy.sin(2 * numpy.pi * freq * time)
     x += numpy.random.normal(scale=numpy.sqrt(noise_power), size=time.shape)
-    return TimeSeries(x, xindex=time, unit='V', name="noisy sinusoid")
+    return TimeSeries(x, xindex=time, unit="V", name="noisy sinusoid")
 
 
 @pytest.fixture

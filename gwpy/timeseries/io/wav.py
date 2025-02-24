@@ -36,7 +36,7 @@ if typing:
 
     from ...typing import GpsLike
 
-WAV_SIGNATURE = ('RIFF', 'WAVE')
+WAV_SIGNATURE = ("RIFF", "WAVE")
 
 
 def read(
@@ -114,7 +114,7 @@ def write(
     fsamp = int(series.sample_rate.decompose().value)
     if scale is None:
         scale = 1 / numpy.abs(series.value).max()
-    data = (series.value * scale).astype('float32')
+    data = (series.value * scale).astype("float32")
     return wavfile.write(output, fsamp, data)
 
 
@@ -151,7 +151,7 @@ def _is_wav(
 
     # check the file extension
     if filepath is not None:
-        return filepath.endswith(('.wav', '.wave'))
+        return filepath.endswith((".wav", ".wave"))
 
     # attempt to read the file as .wav
     try:

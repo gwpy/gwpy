@@ -42,7 +42,7 @@ from ..time import (
     to_gps,
 )
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # -- type matching ------------------------------------------------------------
 
@@ -82,7 +82,7 @@ LAL_NUMPY_FROM_TYPE_STR: dict[str, type] = {
     v: k for k, v in LAL_TYPE_STR_FROM_NUMPY.items()
 }
 
-LAL_TYPE_REGEX: re.Pattern = re.compile(r'(U?INT|REAL|COMPLEX)\d+')
+LAL_TYPE_REGEX: re.Pattern = re.compile(r"(U?INT|REAL|COMPLEX)\d+")
 
 
 def to_lal_type_str(
@@ -203,7 +203,7 @@ def from_lal_type(laltype: type) -> type:
     name = laltype.__name__
     match = LAL_TYPE_REGEX.match(name)
     if not match or match[0] not in LAL_NUMPY_FROM_TYPE_STR:
-        raise ValueError(f'{name!r} has no known numpy type equivalent')
+        raise ValueError(f"{name!r} has no known numpy type equivalent")
     return LAL_NUMPY_FROM_TYPE_STR[match[0]]
 
 
@@ -216,7 +216,7 @@ LAL_UNIT_INDEX: list[units.Quantity] = [
     units.second,
     units.ampere,
     units.Kelvin,
-    units.Unit('strain'),
+    units.Unit("strain"),
     units.count,
 ]
 

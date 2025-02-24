@@ -28,9 +28,9 @@ MPL_RCPARAMS = rc_params()
 
 # record the LaTeX preamble
 try:
-    PREAMBLE = rcParams.get('text.latex.preamble', []) + tex.MACROS
+    PREAMBLE = rcParams.get("text.latex.preamble", []) + tex.MACROS
 except TypeError:  # matplotlib < 3.1.0
-    PREAMBLE = rcParams.get('text.latex.preamble', '') + '\n'.join(tex.MACROS)
+    PREAMBLE = rcParams.get("text.latex.preamble", "") + "\n".join(tex.MACROS)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -39,43 +39,43 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 # set default params
 GWPY_RCPARAMS = RcParams(**{
     # axes boundary colours
-    'axes.edgecolor': 'gray',
+    "axes.edgecolor": "gray",
     # grid
-    'axes.grid': True,
-    'axes.axisbelow': False,
-    'grid.linewidth': .5,
+    "axes.grid": True,
+    "axes.axisbelow": False,
+    "grid.linewidth": .5,
     # ticks
-    'axes.formatter.limits': (-3, 4),
-    'axes.formatter.use_mathtext': True,
-    'axes.labelpad': 5,
+    "axes.formatter.limits": (-3, 4),
+    "axes.formatter.use_mathtext": True,
+    "axes.labelpad": 5,
     # fonts
-    'axes.titlesize': 'large',
-    'axes.labelsize': 'large',
-    'font.family': ['sans-serif'],
-    'font.sans-serif': [
-        'FreeSans',
-        'Helvetica Neue',
-        'Helvetica',
-        'Arial',
-    ] + rcParams['font.sans-serif'],
-    'font.size': 12,
+    "axes.titlesize": "large",
+    "axes.labelsize": "large",
+    "font.family": ["sans-serif"],
+    "font.sans-serif": [
+        "FreeSans",
+        "Helvetica Neue",
+        "Helvetica",
+        "Arial",
+    ] + rcParams["font.sans-serif"],
+    "font.size": 12,
     # legend (revert to mpl 1.5 formatting in parts)
-    'legend.edgecolor': 'inherit',
-    'legend.numpoints': 2,
-    'legend.handlelength': 1,
-    'legend.fancybox': False,
+    "legend.edgecolor": "inherit",
+    "legend.numpoints": 2,
+    "legend.handlelength": 1,
+    "legend.fancybox": False,
 })
 
 # set latex options
 GWPY_TEX_RCPARAMS = RcParams(**{
     # use latex styling
-    'text.usetex': True,
-    'text.latex.preamble': PREAMBLE,
+    "text.usetex": True,
+    "text.latex.preamble": PREAMBLE,
     # use bigger font for labels (since the font is good)
-    'font.family': ['serif'],
-    'font.size': 16,
+    "font.family": ["serif"],
+    "font.size": 16,
     # don't use mathtext for offset
-    'axes.formatter.use_mathtext': False,
+    "axes.formatter.use_mathtext": False,
 })
 
 
@@ -110,8 +110,8 @@ def rc_params(usetex=None):
     # installed at all.
     if usetex is None:
         usetex = bool_env(
-            'GWPY_USETEX',
-            default=rcParams['text.usetex'] or tex.has_tex())
+            "GWPY_USETEX",
+            default=rcParams["text.usetex"] or tex.has_tex())
 
     # build RcParams from matplotlib.rcParams with GWpy extras
     rcp = GWPY_RCPARAMS.copy()

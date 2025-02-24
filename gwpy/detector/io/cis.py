@@ -22,9 +22,9 @@ import numpy
 
 from .. import (Channel, ChannelList)
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-CIS_API_URL = 'https://cis.ligo.org/api/channel'
+CIS_API_URL = "https://cis.ligo.org/api/channel"
 CIS_DATA_TYPE = {
     1: numpy.int16,
     2: numpy.int32,
@@ -65,15 +65,15 @@ def query(name, kerberos=None, **kwargs):
     while more:
         reply = _get(url, kerberos=kerberos, **kwargs)
         try:
-            out.extend(map(parse_json, reply[u'results']))
+            out.extend(map(parse_json, reply[u"results"]))
         except KeyError:
             pass
         except TypeError:  # reply is a list
             out.extend(map(parse_json, reply))
             break
-        more = 'next' in reply and reply['next'] is not None
+        more = "next" in reply and reply["next"] is not None
         if more:
-            url = reply['next']
+            url = reply["next"]
         else:
             break
     out.sort(key=lambda c: c.name)
@@ -102,10 +102,10 @@ def parse_json(data):
     c : `Channel`
         a `Channel` built from the data
     """
-    sample_rate = data['datarate']
-    unit = data['units']
-    dtype = CIS_DATA_TYPE[data['datatype']]
-    model = data['source']
-    url = data['displayurl']
-    return Channel(data['name'], sample_rate=sample_rate, unit=unit,
+    sample_rate = data["datarate"]
+    unit = data["units"]
+    dtype = CIS_DATA_TYPE[data["datatype"]]
+    model = data["source"]
+    url = data["displayurl"]
+    return Channel(data["name"], sample_rate=sample_rate, unit=unit,
                    dtype=dtype, model=model, url=url)

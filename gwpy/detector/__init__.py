@@ -26,15 +26,15 @@ import datetime
 from .channel import (Channel, ChannelList)
 from . import (units, io)
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # local time-zone for ground-based laser interferometers
 TIMEZONE = {
-    'C1': 'US/Pacific',
-    'G1': 'Europe/Berlin',
-    'H1': 'US/Pacific',
-    'L1': 'US/Central',
-    'V1': 'Europe/Rome',
+    "C1": "US/Pacific",
+    "G1": "Europe/Berlin",
+    "H1": "US/Pacific",
+    "L1": "US/Central",
+    "V1": "Europe/Rome",
 }
 
 
@@ -50,7 +50,7 @@ def get_timezone(ifo):
     try:
         return TIMEZONE[ifo]
     except KeyError as exc:
-        exc.args = (f'No time-zone information for {ifo!r} detector',)
+        exc.args = (f"No time-zone information for {ifo!r} detector",)
         raise
 
 

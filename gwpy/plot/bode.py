@@ -29,7 +29,7 @@ from astropy.units import Quantity
 from . import Plot
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__all__ = ['BodePlot']
+__all__ = ["BodePlot"]
 
 
 def to_db(a):  # pylint: disable=invalid-name
@@ -92,14 +92,14 @@ class BodePlot(Plot):
         """
         from ..frequencyseries import FrequencySeries
 
-        dB = kwargs.pop('dB', True)
-        frequencies = kwargs.pop('frequencies', None)
+        dB = kwargs.pop("dB", True)
+        frequencies = kwargs.pop("frequencies", None)
 
         # parse plotting arguments
         figargs = dict()
-        title = kwargs.pop('title', None)
-        for key in ['figsize', 'dpi', 'frameon', 'subplotpars',
-                    'tight_layout']:
+        title = kwargs.pop("title", None)
+        for key in ["figsize", "dpi", "frameon", "subplotpars",
+                    "tight_layout"]:
             if key in kwargs:
                 figargs[key] = kwargs.pop(key)
 
@@ -120,20 +120,20 @@ class BodePlot(Plot):
 
         # format plots
         if dB:
-            self.maxes.set_ylabel('Magnitude [dB]')
+            self.maxes.set_ylabel("Magnitude [dB]")
             ylim = self.maxes.get_ylim()
             if ylim[1] == 0:
                 self.maxes.set_ybound(
                     upper=ylim[1] + (ylim[1] - ylim[0]) * 0.1)
         else:
-            self.maxes.set_yscale('log')
-            self.maxes.set_ylabel('Amplitude')
-        self.paxes.set_xlabel('Frequency [Hz]')
-        self.paxes.set_ylabel('Phase [deg]')
-        self.maxes.set_xscale('log')
-        self.paxes.set_xscale('log')
+            self.maxes.set_yscale("log")
+            self.maxes.set_ylabel("Amplitude")
+        self.paxes.set_xlabel("Frequency [Hz]")
+        self.paxes.set_ylabel("Phase [deg]")
+        self.maxes.set_xscale("log")
+        self.paxes.set_xscale("log")
         self.paxes.yaxis.set_major_locator(
-            MaxNLocator(nbins='auto', steps=[4.5, 9]),
+            MaxNLocator(nbins="auto", steps=[4.5, 9]),
         )
         self.paxes.yaxis.set_minor_locator(
             MaxNLocator(nbins=20, steps=[4.5, 9]))
@@ -200,7 +200,7 @@ class BodePlot(Plot):
             if not sample_rate:
                 raise ValueError("Must give sample_rate frequency to display "
                                  "digital (analog=False) filter")
-            sample_rate = Quantity(sample_rate, 'Hz').value
+            sample_rate = Quantity(sample_rate, "Hz").value
             dt = 2 * pi / sample_rate
             if not isinstance(frequencies, (type(None), int)):
                 frequencies = numpy.atleast_1d(frequencies).copy()
@@ -253,7 +253,7 @@ class BodePlot(Plot):
             the lines drawn for the magnitude and phase of the filter.
         """
         # parse spectrum arguments
-        kwargs.setdefault('label', spectrum.name)
+        kwargs.setdefault("label", spectrum.name)
         # get magnitude
         mag = numpy.absolute(spectrum.value)
         if dB:

@@ -44,31 +44,31 @@ from .test_timeseries import (
 )
 
 GWOSC_GW150914_DQ_NAME = {
-    'hdf5': 'Data quality',
-    'gwf': 'L1:GWOSC-4KHZ_R1_DQMASK',
+    "hdf5": "Data quality",
+    "gwf": "L1:GWOSC-4KHZ_R1_DQMASK",
 }
 GWOSC_GW150914_DQ_BITS = {
-    'hdf5': [
-        'Passes DATA test',
-        'Passes CBC_CAT1 test',
-        'Passes CBC_CAT2 test',
-        'Passes CBC_CAT3 test',
-        'Passes BURST_CAT1 test',
-        'Passes BURST_CAT2 test',
-        'Passes BURST_CAT3 test',
+    "hdf5": [
+        "Passes DATA test",
+        "Passes CBC_CAT1 test",
+        "Passes CBC_CAT2 test",
+        "Passes CBC_CAT3 test",
+        "Passes BURST_CAT1 test",
+        "Passes BURST_CAT2 test",
+        "Passes BURST_CAT3 test",
     ],
-    'gwf': [
-        'DATA',
-        'CBC_CAT1',
-        'CBC_CAT2',
-        'CBC_CAT3',
-        'BURST_CAT1',
-        'BURST_CAT2',
-        'BURST_CAT3',
+    "gwf": [
+        "DATA",
+        "CBC_CAT1",
+        "CBC_CAT2",
+        "CBC_CAT3",
+        "BURST_CAT1",
+        "BURST_CAT2",
+        "BURST_CAT3",
     ],
 }
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 # -- StateTimeSeries ----------------------------------------------------------
@@ -85,7 +85,7 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
     def test_new(self):
         sts = self.create()
         assert isinstance(sts, self.TEST_CLASS)
-        assert sts.dtype is numpy.dtype('bool')
+        assert sts.dtype is numpy.dtype("bool")
 
     def test_getitem(self, array):
         assert isinstance(array[0], numpy.bool_)
@@ -99,7 +99,7 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
 
         # check that we can't set the unit
         with pytest.raises(TypeError):
-            self.create(unit='test')
+            self.create(unit="test")
 
     def test_math(self, array):
         # test that math operations give back booleans
@@ -111,12 +111,12 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
     def test_from_nds2_buffer(self):
         # build fake buffer
         nds_buffer = mocks.nds2_buffer(
-            'X1:TEST',
+            "X1:TEST",
             self.data,
             1000000000,
             self.data.shape[0],
-            'm',
-            name='test',
+            "m",
+            name="test",
         )
         array = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
         assert array.unit is units.dimensionless_unscaled
@@ -132,16 +132,16 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
         assert flag.label == array.name
         assert flag.description is None
 
-        flag = array.to_dqflag(minlen=2, dtype=LIGOTimeGPS, name='Test flag',
-                               round=True, label='Label',
-                               description='Description')
+        flag = array.to_dqflag(minlen=2, dtype=LIGOTimeGPS, name="Test flag",
+                               round=True, label="Label",
+                               description="Description")
         utils.assert_segmentlist_equal(
             flag.active, [(1, 4), (10, 13), (16, 20)],
         )
         assert isinstance(flag.active[0][0], LIGOTimeGPS)
-        assert flag.name == 'Test flag'
-        assert flag.label == 'Label'
-        assert flag.description == 'Description'
+        assert flag.name == "Test flag"
+        assert flag.label == "Label"
+        assert flag.description == "Description"
 
     def test_override_unit(self, array):
         with pytest.raises(NotImplementedError):
@@ -194,13 +194,13 @@ class TestStateTimeSeriesDict(_TestTimeSeriesBaseDict):
 class TestBits(object):
     TEST_CLASS = Bits
 
-    @pytest.mark.parametrize('in_, out', [
+    @pytest.mark.parametrize("in_, out", [
         # list
-        (['bit 0', 'bit 1', 'bit 2', None, 'bit 3', ''],
-         ['bit 0', 'bit 1', 'bit 2', None, 'bit 3', None]),
+        (["bit 0", "bit 1", "bit 2", None, "bit 3", ""],
+         ["bit 0", "bit 1", "bit 2", None, "bit 3", None]),
         # dict
-        ({1: 'bit 1', 4: 'bit 4', '6': 'bit 6'},
-         [None, 'bit 1', None, None, 'bit 4', None, 'bit 6']),
+        ({1: "bit 1", 4: "bit 4", "6": "bit 6"},
+         [None, "bit 1", None, None, "bit 4", None, "bit 6"]),
     ])
     def test_init(self, in_, out):
         bits = self.TEST_CLASS(in_)
@@ -210,12 +210,12 @@ class TestBits(object):
         assert bits.description == {bit: None for bit in bits if
                                     bit is not None}
 
-        bits = self.TEST_CLASS(in_, channel='L1:Test', epoch=0)
-        assert bits.epoch == Time(0, format='gps')
-        assert bits.channel == Channel('L1:Test')
+        bits = self.TEST_CLASS(in_, channel="L1:Test", epoch=0)
+        assert bits.epoch == Time(0, format="gps")
+        assert bits.channel == Channel("L1:Test")
 
     def test_str(self):
-        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        bits = self.TEST_CLASS(["a", "b", None, "c"])
         assert str(bits) == (
             "Bits(0: a\n"
             "     1: b\n"
@@ -224,7 +224,7 @@ class TestBits(object):
             "     epoch=None)")
 
     def test_repr(self):
-        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        bits = self.TEST_CLASS(["a", "b", None, "c"])
         assert repr(bits) == (
             "<Bits(0: 'a'\n"
             "      1: 'b'\n"
@@ -233,10 +233,10 @@ class TestBits(object):
             "      epoch=None)>")
 
     def test_array(self):
-        bits = self.TEST_CLASS(['a', 'b', None, 'c'])
+        bits = self.TEST_CLASS(["a", "b", None, "c"])
         utils.assert_array_equal(
             numpy.asarray(bits),
-            ['a', 'b', '', 'c'],
+            ["a", "b", "", "c"],
         )
 
 
@@ -244,7 +244,7 @@ class TestBits(object):
 
 class TestStateVector(_TestTimeSeriesBase):
     TEST_CLASS = StateVector
-    DTYPE = 'uint32'
+    DTYPE = "uint32"
 
     @classmethod
     def setup_class(cls):
@@ -254,9 +254,9 @@ class TestStateVector(_TestTimeSeriesBase):
 
     def test_bits(self, array):
         assert isinstance(array.bits, Bits)
-        assert array.bits == ['Bit %d' % i for i in range(32)]
+        assert array.bits == ["Bit %d" % i for i in range(32)]
 
-        bits = ['Bit %d' % i for i in range(4)]
+        bits = ["Bit %d" % i for i in range(4)]
 
         sv = self.create(bits=bits)
         assert isinstance(sv.bits, Bits)
@@ -267,10 +267,10 @@ class TestStateVector(_TestTimeSeriesBase):
         del sv.bits
         del sv.bits
         assert isinstance(sv.bits, Bits)
-        assert sv.bits == ['Bit %d' % i for i in range(32)]
+        assert sv.bits == ["Bit %d" % i for i in range(32)]
 
-        sv = self.create(dtype='uint16')
-        assert sv.bits == ['Bit %d' % i for i in range(16)]
+        sv = self.create(dtype="uint16")
+        assert sv.bits == ["Bit %d" % i for i in range(16)]
 
     def test_boolean(self, array):
         b = array.boolean
@@ -285,11 +285,11 @@ class TestStateVector(_TestTimeSeriesBase):
         assert isinstance(bs, StateTimeSeriesDict)
         assert list(bs.keys()) == array.bits
         # check that correct number of samples match (simple test)
-        assert bs['Bit 2'].sum() == 43
+        assert bs["Bit 2"].sum() == 43
 
         # check that bits in gives bits out
-        bs = array.get_bit_series(['Bit 0', 'Bit 3'])
-        assert list(bs.keys()) == ['Bit 0', 'Bit 3']
+        bs = array.get_bit_series(["Bit 0", "Bit 3"])
+        assert list(bs.keys()) == ["Bit 0", "Bit 3"]
         assert [v.sum() for v in bs.values()] == [50, 41]
 
         # check that invalid bits throws exception
@@ -297,20 +297,20 @@ class TestStateVector(_TestTimeSeriesBase):
             ValueError,
             match="^Bit 'blah' not found in StateVector$",
         ):
-            array.get_bit_series(['blah'])
+            array.get_bit_series(["blah"])
 
     def test_plot(self, array):
-        with rc_context(rc={'text.usetex': False}):
+        with rc_context(rc={"text.usetex": False}):
             plot = array.plot()
             # make sure there were no lines drawn
             assert len(plot.gca().lines) == 0
             # assert one collection for each of known and active segmentlists
             assert len(plot.gca().collections) == len(array.bits) * 2
-            plot.save(BytesIO(), format='png')
+            plot.save(BytesIO(), format="png")
             plot.close()
 
             # test timeseries plotting as normal
-            plot = array.plot(format='timeseries')
+            plot = array.plot(format="timeseries")
             line = plot.gca().lines[0]
             utils.assert_array_equal(line.get_xdata(), array.xindex.value)
             utils.assert_array_equal(line.get_ydata(), array.value)
@@ -341,8 +341,8 @@ class TestStateVector(_TestTimeSeriesBase):
 
     # -- data access ----------------------------
 
-    @pytest.mark.parametrize('format', [
-        'hdf5',
+    @pytest.mark.parametrize("format", [
+        "hdf5",
         pytest.param(  # only frameCPP actually reads units properly
             "gwf",
             marks=pytest.mark.requires("LDAStools.frameCPP"),
@@ -358,30 +358,30 @@ class TestStateVector(_TestTimeSeriesBase):
         )
         ref = StateVector(
             [127, 127, 127, 127],
-            unit='',
+            unit="",
             t0=GWOSC_GW150914_SEGMENT[0],
             dt=1,
             name=GWOSC_GW150914_DQ_NAME[format],
             bits=GWOSC_GW150914_DQ_BITS[format],
         )
-        utils.assert_quantity_sub_equal(sv, ref, exclude=['channel', 'bits'])
+        utils.assert_quantity_sub_equal(sv, ref, exclude=["channel", "bits"])
         assert sorted(map(str, sv.bits)) == sorted(map(str, ref.bits))
 
     @pytest.mark.requires("nds2")
     def test_from_nds2_buffer(self):
         # build fake buffer
         nds_buffer = mocks.nds2_buffer(
-            'X1:TEST',
+            "X1:TEST",
             self.data,
             1000000000,
             self.data.shape[0],
-            '',
-            name='test',
+            "",
+            name="test",
         )
         array = self.TEST_CLASS.from_nds2_buffer(nds_buffer)
         assert array.unit is units.dimensionless_unscaled
 
-    @pytest.mark.parametrize('ext', ('hdf5', 'h5'))
+    @pytest.mark.parametrize("ext", ("hdf5", "h5"))
     def test_read_write_hdf5(self, tmp_path, array, ext):
         array.bits = ["a", "b", "c", "d"]
         array.name = "test"
@@ -392,7 +392,7 @@ class TestStateVector(_TestTimeSeriesBase):
         array.write(tmp, overwrite=True)
 
         # check reading gives the same data (with/without auto-identify)
-        new = type(array).read(tmp, format='hdf5')
+        new = type(array).read(tmp, format="hdf5")
         utils.assert_quantity_sub_equal(array, new)
         new = type(array).read(tmp)
         utils.assert_quantity_sub_equal(array, new)
@@ -403,7 +403,7 @@ class TestStateVector(_TestTimeSeriesBase):
 class TestStateVectorDict(_TestTimeSeriesBaseDict):
     TEST_CLASS = StateVectorDict
     ENTRY_CLASS = StateVector
-    DTYPE = 'uint32'
+    DTYPE = "uint32"
 
 
 # -- StateVectorList ----------------------------------------------------------
@@ -411,4 +411,4 @@ class TestStateVectorDict(_TestTimeSeriesBaseDict):
 class TestStateVectorList(_TestTimeSeriesBaseList):
     TEST_CLASS = StateVectorList
     ENTRY_CLASS = StateVector
-    DTYPE = 'uint32'
+    DTYPE = "uint32"

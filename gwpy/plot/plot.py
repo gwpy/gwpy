@@ -42,7 +42,7 @@ from .gps import GPS_SCALES
 from .log import LogFormatter
 from .rc import (rcParams, MPL_RCPARAMS, get_subplot_params)
 
-__all__ = ['Plot']
+__all__ = ["Plot"]
 
 try:
     __IPYTHON__
@@ -104,16 +104,16 @@ class Plot(figure.Figure):
     def __init__(self, *data, **kwargs):
 
         # get default x-axis scale if all axes have the same x-axis units
-        kwargs.setdefault('xscale', _parse_xscale(
+        kwargs.setdefault("xscale", _parse_xscale(
             _group_axes_data(data, flat=True)))
 
         # set default size for time-axis figures
         if (
-            kwargs.get('projection', None) == 'segments'
-            or kwargs.get('xscale') in GPS_SCALES
+            kwargs.get("projection", None) == "segments"
+            or kwargs.get("xscale") in GPS_SCALES
         ):
-            kwargs.setdefault('figsize', (12, 6))
-            kwargs.setdefault('xscale', 'auto-gps')
+            kwargs.setdefault("figsize", (12, 6))
+            kwargs.setdefault("xscale", "auto-gps")
 
         # initialise figure
         figure_kw = {key: kwargs.pop(key) for key in utils.FIGURE_PARAMS if
@@ -132,7 +132,7 @@ class Plot(figure.Figure):
         self._coloraxes = []
 
         # create Figure
-        num = kwargs.pop('num', max(pyplot.get_fignums() or {0}) + 1)
+        num = kwargs.pop("num", max(pyplot.get_fignums() or {0}) + 1)
         self._parse_subplotpars(kwargs)
         super().__init__(**kwargs)
 
@@ -146,12 +146,12 @@ class Plot(figure.Figure):
             canvas = upstream_mod.FigureCanvasBase(self)
             manager = upstream_mod.FigureManagerBase(canvas, 1)
         manager._cidgcf = manager.canvas.mpl_connect(
-            'button_press_event',
+            "button_press_event",
             lambda ev: _pylab_helpers.Gcf.set_active(manager))
         _pylab_helpers.Gcf.set_active(manager)
         pyplot.draw_if_interactive()
 
-    def _init_axes(self, data, method='plot',
+    def _init_axes(self, data, method="plot",
                    xscale=None, sharex=False, sharey=False,
                    geometry=None, separate=None, **kwargs):
         """Populate this figure with data, creating `Axes` as necessary
@@ -184,15 +184,15 @@ class Plot(figure.Figure):
         axarr = numpy.empty((nrows, ncols), dtype=object)
 
         # set default labels
-        defxlabel = 'xlabel' not in axes_kw
-        defylabel = 'ylabel' not in axes_kw
+        defxlabel = "xlabel" not in axes_kw
+        defylabel = "ylabel" not in axes_kw
         flatdata = [s for group in axes_groups for s in group]
-        for axis in ('x', 'y'):
+        for axis in ("x", "y"):
             unit = _common_axis_unit(flatdata, axis=axis)
             if unit:
                 axes_kw.setdefault(
                     f"{axis}label",
-                    unit.to_string('latex_inline_dimensional'),
+                    unit.to_string("latex_inline_dimensional"),
                 )
 
         # create axes for each group and draw each data object
@@ -204,12 +204,12 @@ class Plot(figure.Figure):
                            "row": axarr[row, 0], "col": axarr[0, col]}
             axes_kw["sharex"] = shared_with[sharex]
             axes_kw["sharey"] = shared_with[sharey]
-            axes_kw['xscale'] = xscale if xscale else _parse_xscale(group)
+            axes_kw["xscale"] = xscale if xscale else _parse_xscale(group)
             ax = axarr[row, col] = self.add_subplot(gs[row, col], **axes_kw)
 
             # plot data
             plot_func = getattr(ax, method)
-            if method in ('imshow', 'pcolormesh'):
+            if method in ("imshow", "pcolormesh"):
                 for obj in group:
                     plot_func(obj, **kwargs)
             elif group:
@@ -221,8 +221,8 @@ class Plot(figure.Figure):
                     (ax.yaxis, sharey, col, ncols, defylabel),
             ):
                 # hide label if shared axis and not bottom left panel
-                if share == 'all' and pos < n - 1:
-                    axis.set_label_text('')
+                if share == "all" and pos < n - 1:
+                    axis.set_label_text("")
                 # otherwise set default status
                 else:
                     axis.isDefault_label = def_
@@ -233,18 +233,18 @@ class Plot(figure.Figure):
     def _parse_subplotpars(kwargs):
         # dynamically set the subplot positions based on the figure size
         # -- only if the user hasn't customised the subplot params
-        figsize = kwargs.get('figsize') or rcParams['figure.figsize']
+        figsize = kwargs.get("figsize") or rcParams["figure.figsize"]
         subplotpars = get_subplot_params(figsize)
         use_subplotpars = (
-            'subplotpars' not in kwargs
+            "subplotpars" not in kwargs
             and all([
                 rcParams[f"figure.subplot.{pos}"]
                 == MPL_RCPARAMS[f"figure.subplot.{pos}"]
-                for pos in ('left', 'bottom', 'right', 'top')
+                for pos in ("left", "bottom", "right", "top")
             ])
         )
         if use_subplotpars:
-            kwargs['subplotpars'] = subplotpars
+            kwargs["subplotpars"] = subplotpars
 
     # -- Plot methods ---------------------------
 
@@ -288,7 +288,7 @@ class Plot(figure.Figure):
         except AttributeError:
             pass
         else:
-            if 'matplotlib' in callframe.f_code.co_filename:
+            if "matplotlib" in callframe.f_code.co_filename:
                 block = False
 
         # render
@@ -317,8 +317,8 @@ class Plot(figure.Figure):
         from matplotlib.pyplot import close
         for ax in self.axes[::-1]:
             # avoid matplotlib/matplotlib#9970
-            ax.set_xscale('linear')
-            ax.set_yscale('linear')
+            ax.set_xscale("linear")
+            ax.set_yscale("linear")
             # clear the axes
             ax.cla()
         # close the figure
@@ -459,7 +459,7 @@ class Plot(figure.Figure):
 
         # update mappables for this axis
         if emit:
-            ax = kwargs.pop('ax')
+            ax = kwargs.pop("ax")
             norm = mappable.norm
             cmap = mappable.get_cmap()
             for map_ in ax.collections + ax.images:
@@ -471,7 +471,7 @@ class Plot(figure.Figure):
     # -- extra methods --------------------------
 
     def add_segments_bar(self, segments, ax=None, height=0.14, pad=0.1,
-                         sharex=True, location='bottom', **plotargs):
+                         sharex=True, location="bottom", **plotargs):
         """Add a segment bar `Plot` indicating state information.
 
         By default, segments are displayed in a thin horizontal set of Axes
@@ -513,18 +513,18 @@ class Plot(figure.Figure):
 
         # set options for new axes
         axes_kw = {
-            'pad': pad,
-            'sharex': ax if sharex is True else sharex or None,
-            'axes_class': get_projection_class('segments'),
+            "pad": pad,
+            "sharex": ax if sharex is True else sharex or None,
+            "axes_class": get_projection_class("segments"),
         }
 
         # map X-axis limit from old axes
-        if axes_kw['sharex'] is ax and not ax.get_autoscalex_on():
-            axes_kw['xlim'] = ax.get_xlim()
+        if axes_kw["sharex"] is ax and not ax.get_autoscalex_on():
+            axes_kw["xlim"] = ax.get_xlim()
 
         # if axes uses GPS scaling, copy the epoch as well
         try:
-            axes_kw['epoch'] = ax.get_epoch()
+            axes_kw["epoch"] = ax.get_epoch()
         except AttributeError:
             pass
 
@@ -536,13 +536,13 @@ class Plot(figure.Figure):
             # has been removed
             from mpl_toolkits.axes_grid1 import make_axes_locatable
             divider = make_axes_locatable(ax)
-        if location not in {'top', 'bottom'}:
+        if location not in {"top", "bottom"}:
             raise ValueError("Segments can only be positoned at 'top' or "
                              "'bottom'.")
         segax = divider.append_axes(location, height, **axes_kw)
 
         # update anchor axes
-        if axes_kw['sharex'] is ax and location == 'bottom':
+        if axes_kw["sharex"] is ax and location == "bottom":
             # map label
             segax.set_xlabel(ax.get_xlabel())
             segax.xaxis.isDefault_label = ax.xaxis.isDefault_label
@@ -552,8 +552,8 @@ class Plot(figure.Figure):
 
         # plot segments
         segax.plot(segments, **plotargs)
-        segax.grid(False, which='both', axis='y')
-        segax.autoscale(axis='y', tight=True)
+        segax.grid(False, which="both", axis="y")
+        segax.autoscale(axis="y", tight=True)
 
         return segax
 
@@ -643,7 +643,7 @@ def _group_axes_data(inputs, separate=None, flat=False):
     return out
 
 
-def _common_axis_unit(data, axis='x'):
+def _common_axis_unit(data, axis="x"):
     units = set()
     uname = f"{axis}unit"
     for x in data:
@@ -654,8 +654,8 @@ def _common_axis_unit(data, axis='x'):
 
 
 def _parse_xscale(data):
-    unit = _common_axis_unit(data, axis='x')
+    unit = _common_axis_unit(data, axis="x")
     if unit is None:
         return None
-    if unit.physical_type == 'time':
-        return 'auto-gps'
+    if unit.physical_type == "time":
+        return "auto-gps"

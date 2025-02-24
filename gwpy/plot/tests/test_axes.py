@@ -47,8 +47,8 @@ class TestAxes(AxesTestBase):
         series = Series(range(10), dx=.1)
         lines = ax.plot(
             series,
-            series * 2, 'k--',
-            series.xindex, series, 'b-',
+            series * 2, "k--",
+            series.xindex, series, "b-",
             [1, 2, 3], [4, 5, 6],
         )
 
@@ -63,16 +63,16 @@ class TestAxes(AxesTestBase):
         linex, liney = line.get_data()
         utils.assert_array_equal(linex, series.xindex.value)
         utils.assert_array_equal(liney, series.value * 2)
-        assert line.get_color() == 'k'
-        assert line.get_linestyle() == '--'
+        assert line.get_color() == "k"
+        assert line.get_linestyle() == "--"
 
         # check line 3
         line = lines[2]
         linex, liney = line.get_data()
         utils.assert_array_equal(linex, series.xindex.value)
         utils.assert_array_equal(liney, series.value)
-        assert line.get_color() == 'b'
-        assert line.get_linestyle() == '-'
+        assert line.get_color() == "b"
+        assert line.get_linestyle() == "-"
 
         # check line 4
         line = lines[3]
@@ -80,7 +80,7 @@ class TestAxes(AxesTestBase):
         utils.assert_array_equal(linex, [1, 2, 3])
         utils.assert_array_equal(liney, [4, 5, 6])
 
-    @pytest.mark.parametrize('sortbycolor', (False, True))
+    @pytest.mark.parametrize("sortbycolor", (False, True))
     def test_scatter(self, ax, sortbycolor):
         x = numpy.arange(10)
         y = numpy.arange(10)
@@ -99,19 +99,19 @@ class TestAxes(AxesTestBase):
             coll = ax.scatter(x, y, c=c, c_sort=True)
         utils.assert_array_equal(coll.get_array(), c[numpy.argsort(c)])
 
-    @pytest.mark.parametrize('sortbycolor', (False, True))
+    @pytest.mark.parametrize("sortbycolor", (False, True))
     def test_scatter_no_color(self, ax, sortbycolor):
         # check that c=None works
         x = numpy.arange(10)
         y = numpy.arange(10)
         ax.scatter(x, y, c=None, sortbycolor=sortbycolor)
 
-    @pytest.mark.parametrize('sortbycolor', (False, True))
+    @pytest.mark.parametrize("sortbycolor", (False, True))
     def test_scatter_non_array(self, ax, sortbycolor):
         # check that using non-array data works
         ax.scatter([1], [1], c=[1], sortbycolor=sortbycolor)
 
-    @pytest.mark.parametrize('sortbycolor', (False, True))
+    @pytest.mark.parametrize("sortbycolor", (False, True))
     def test_scatter_positional(self, ax, sortbycolor):
         # check that using positional arguments works
         x = numpy.arange(10)
@@ -120,12 +120,12 @@ class TestAxes(AxesTestBase):
         c = numpy.random.random(10)
         ax.scatter(x, y, s, c, sortbycolor=sortbycolor)
 
-    @pytest.mark.parametrize('sortbycolor', (False, True))
+    @pytest.mark.parametrize("sortbycolor", (False, True))
     def test_scatter_errors(self, ax, sortbycolor):
         # check that errors are handled properly
         x = 1
-        y = 'B'
-        c = 'something else'
+        y = "B"
+        c = "something else"
         if sortbycolor:  # gwpy error
             match = "^Axes.scatter argument 'sortbycolor'"
         else:  # matplotlib error
@@ -159,8 +159,8 @@ class TestAxes(AxesTestBase):
         ax.clear()
         ax.set_xlim(.1, 1)
         ax.set_ylim(.1, 1)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
+        ax.set_xscale("log")
+        ax.set_yscale("log")
         image = ax.imshow(array)
         assert tuple(image.get_extent()) == (
             1e-300,
@@ -224,7 +224,7 @@ class TestAxes(AxesTestBase):
         h = numpy.ones_like(x) * .8
 
         # check default tiling (without colour)
-        coll = ax.tile(x, y, w, h, anchor='ll')
+        coll = ax.tile(x, y, w, h, anchor="ll")
         assert isinstance(coll, PolyCollection)
         for i, path in enumerate(coll.get_paths()):
             utils.assert_array_equal(
@@ -278,9 +278,9 @@ class TestAxes(AxesTestBase):
         w = numpy.ones_like(x) * .8
         h = numpy.ones_like(x) * .8
         with pytest.raises(ValueError):
-            ax.tile(x, y, w, h, anchor='blah')
+            ax.tile(x, y, w, h, anchor="blah")
 
-    @pytest.mark.parametrize('cb_kw', [
+    @pytest.mark.parametrize("cb_kw", [
         {"fraction": 0},  # our default
         {"fraction": 0.15},  # matplotlib default
     ])
@@ -299,15 +299,15 @@ class TestAxes(AxesTestBase):
             assert ax.get_position().bounds != pos
 
     def test_legend(self, ax):
-        ax.plot(numpy.arange(5), label='test')
+        ax.plot(numpy.arange(5), label="test")
         leg = ax.legend()
         lframe = leg.get_frame()
-        assert lframe.get_linewidth() == rcParams['patch.linewidth']
+        assert lframe.get_linewidth() == rcParams["patch.linewidth"]
         for line in leg.get_lines():
             assert line.get_linewidth() == 6.
 
     def test_legend_no_handler_map(self, ax):
-        ax.plot(numpy.arange(5), label='test')
+        ax.plot(numpy.arange(5), label="test")
         leg = ax.legend(handler_map=None)
         for line in leg.get_lines():
             assert line.get_linewidth() == rcParams["lines.linewidth"]
@@ -330,13 +330,13 @@ class TestAxes(AxesTestBase):
         assert ax.format_xdata(value) == (
             ax.xaxis.get_major_formatter().format_data_short(value)
         )
-        ax.set_xscale('auto-gps')
-        ax.set_yscale('auto-gps')
+        ax.set_xscale("auto-gps")
+        ax.set_yscale("auto-gps")
         assert ax.format_xdata(value) == result
         assert ax.format_ydata(value) == result
 
     def test_epoch(self, ax):
-        ax.set_xscale('auto-gps')
+        ax.set_xscale("auto-gps")
         assert not ax.get_epoch()
         ax.set_epoch(12345)
         assert ax.get_epoch() == 12345.0

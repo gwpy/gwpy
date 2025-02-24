@@ -27,10 +27,10 @@ from astropy.io import registry
 from ...io.utils import with_open
 from .. import (Channel, ChannelList)
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-OMEGA_LOCATION = os.getenv('OMEGA_LOCATION', None)
-WPIPELINE = OMEGA_LOCATION and os.path.join(OMEGA_LOCATION, 'bin', 'wpipeline')
+OMEGA_LOCATION = os.getenv("OMEGA_LOCATION", None)
+WPIPELINE = OMEGA_LOCATION and os.path.join(OMEGA_LOCATION, "bin", "wpipeline")
 
 
 # -- read ---------------------------------------------------------------------
@@ -58,11 +58,11 @@ def read_omega_scan_config(source):
     append = out.append
     section = None
     for line in map(str.strip, source):
-        if not line or line.startswith('#'):
+        if not line or line.startswith("#"):
             continue
-        if line.startswith('['):
+        if line.startswith("["):
             section = line[1:-1]
-        elif line.startswith('{'):
+        elif line.startswith("{"):
             append(parse_omega_channel(source, section))
         else:
             raise RuntimeError(
@@ -89,14 +89,14 @@ def parse_omega_channel(fobj, section=None):
     params = OrderedDict()
     while True:
         line = next(fobj)
-        if line == '}\n':
+        if line == "}\n":
             break
-        key, value = line.split(':', 1)
+        key, value = line.split(":", 1)
         params[key.strip().rstrip()] = omega_param(value)
-    out = Channel(params.get('channelName'),
-                  sample_rate=params.get('sampleFrequency'),
-                  frametype=params.get('frameType'),
-                  frequency_range=params.get('searchFrequencyRange'))
+    out = Channel(params.get("channelName"),
+                  sample_rate=params.get("sampleFrequency"),
+                  frametype=params.get("frameType"),
+                  frequency_range=params.get("searchFrequencyRange"))
     out.group = section
     out.params = params
     return out
@@ -111,7 +111,7 @@ def omega_param(val):
     val = val.strip().rstrip()
     if val.startswith(('"', "'")):
         return str(val[1:-1])
-    if val.startswith('['):
+    if val.startswith("["):
         return tuple(map(float, val[1:-1].split()))
     return float(val)
 
@@ -127,14 +127,14 @@ def write_omega_scan_config(channellist, fobj, header=True):
     """
     # print header
     if header:
-        print('# Q Scan configuration file', file=fobj)
-        print('# Generated with GWpy from a ChannelList', file=fobj)
+        print("# Q Scan configuration file", file=fobj)
+        print("# Generated with GWpy from a ChannelList", file=fobj)
     group = None
     for channel in channellist:
         # print header
         if channel.group != group:
             group = channel.group
-            print(f'\n[{group}]', file=fobj)
+            print(f"\n[{group}]", file=fobj)
         print("", file=fobj)
         print_omega_channel(channel, file=fobj)
 
@@ -143,42 +143,42 @@ def write_omega_scan_config(channellist, fobj, header=True):
 def print_omega_channel(channel, file=sys.stdout):
     """Print a `Channel` in Omega-pipeline scan format
     """
-    print('{', file=file)
+    print("{", file=file)
     try:
         params = channel.params.copy()
     except AttributeError:
         params = OrderedDict()
-    params.setdefault('channelName', str(channel))
-    params.setdefault('alwaysPlotFlag', int(params.pop('important', False)))
+    params.setdefault("channelName", str(channel))
+    params.setdefault("alwaysPlotFlag", int(params.pop("important", False)))
     if channel.frametype:
-        params.setdefault('frameType', channel.frametype)
+        params.setdefault("frameType", channel.frametype)
     if channel.sample_rate is not None:
-        params.setdefault('sampleFrequency',
-                          channel.sample_rate.to('Hz').value)
+        params.setdefault("sampleFrequency",
+                          channel.sample_rate.to("Hz").value)
     if channel.frequency_range is not None:
-        low, high = channel.frequency_range.to('Hz').value
-        params.setdefault('searchFrequencyRange', (low, high))
-    if 'qlow' in params or 'qhigh' in params:
-        qlow = params.pop('qlow', 'sqrt(11)')
-        qhigh = params.pop('qhigh', 64)
-        params.setdefault('searchQRange', (qlow, qhigh))
+        low, high = channel.frequency_range.to("Hz").value
+        params.setdefault("searchFrequencyRange", (low, high))
+    if "qlow" in params or "qhigh" in params:
+        qlow = params.pop("qlow", "sqrt(11)")
+        qhigh = params.pop("qhigh", 64)
+        params.setdefault("searchQRange", (qlow, qhigh))
     # write params
-    for key in ['channelName', 'frameType']:
+    for key in ["channelName", "frameType"]:
         if key not in params:
             raise KeyError(f"No {key!r} defined for {channel}")
     for key, value in params.items():
-        key = f'{key}:'
+        key = f"{key}:"
         if isinstance(value, tuple):
             value = f"[{' '.join(map(str, value))}]"
         elif isinstance(value, float) and value.is_integer():
             value = int(value)
         elif isinstance(value, str):
             value = repr(value)
-        print(f'  {key: <30}  {value}', file=file)
-    print('}', file=file)
+        print(f"  {key: <30}  {value}", file=file)
+    print("}", file=file)
 
 
 # -- registry -----------------------------------------------------------------
 
-registry.register_reader('omega-scan', ChannelList, read_omega_scan_config)
-registry.register_writer('omega-scan', ChannelList, write_omega_scan_config)
+registry.register_reader("omega-scan", ChannelList, read_omega_scan_config)
+registry.register_writer("omega-scan", ChannelList, write_omega_scan_config)

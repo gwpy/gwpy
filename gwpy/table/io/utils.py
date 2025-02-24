@@ -36,7 +36,7 @@ if typing.TYPE_CHECKING:
     import numpy
     from astropy.table import Table
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 # -- dynamic column helpers ----------

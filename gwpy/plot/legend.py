@@ -20,7 +20,7 @@
 
 from matplotlib import legend_handler
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class HandlerLine2D(legend_handler.HandlerLine2D):

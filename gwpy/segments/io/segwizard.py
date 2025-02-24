@@ -196,13 +196,13 @@ def to_segwizard(
     """
     # write file object
     if header:
-        print('# seg\tstart\tstop\tduration', file=target)
+        print("# seg\tstart\tstop\tduration", file=target)
     for i, seg in enumerate(segs):
         a = coltype(seg[0])
         b = coltype(seg[1])
         c = float(b - a)
         print(
-            '\t'.join(map(str, (i, a, b, c))),
+            "\t".join(map(str, (i, a, b, c))),
             file=target,
         )
 

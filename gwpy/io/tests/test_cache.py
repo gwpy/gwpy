@@ -29,7 +29,7 @@ import pytest
 from ...segments import (Segment, SegmentList)
 from .. import cache as io_cache
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 SEGMENTS = SegmentList(map(Segment, [
     (0, 1),
@@ -110,10 +110,10 @@ def test_write_cache_cacheentry(cache, tmp_path):
     assert io_cache.read_cache(tmp) == cache
 
 
-@pytest.mark.parametrize('input_, result', [
+@pytest.mark.parametrize("input_, result", [
     (None, False),
     ([], False),
-    (['A-B-12345-6.txt'], True),
+    (["A-B-12345-6.txt"], True),
 ])
 def test_is_cache(input_, result):
     assert io_cache.is_cache(input_) is result
@@ -121,7 +121,7 @@ def test_is_cache(input_, result):
 
 @pytest.mark.requires("lal.utils")
 def test_is_cache_lal():
-    cache = [io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt')]
+    cache = [io_cache.CacheEntry.from_T050017("/tmp/A-B-12345-6.txt")]
     assert io_cache.is_cache(cache)
     assert not io_cache.is_cache(cache + [None])
 
@@ -143,7 +143,7 @@ def test_is_cache_file(tmp_path):
     """Check that `gwpy.io.cache.is_cache` returns `True` when it should
     """
     # write a cache file
-    e = io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt')
+    e = io_cache.CacheEntry.from_T050017("/tmp/A-B-12345-6.txt")
     tmp = tmp_path / "tmpfile"
     io_cache.write_cache([e], tmp)
 
@@ -164,10 +164,10 @@ def test_is_cache_file_empty(tmp_path):
 
 
 def test_is_cache_entry():
-    assert io_cache.is_cache_entry('/tmp/A-B-12345-6.txt')
-    assert not io_cache.is_cache_entry('random-file-name.blah')
+    assert io_cache.is_cache_entry("/tmp/A-B-12345-6.txt")
+    assert not io_cache.is_cache_entry("random-file-name.blah")
     try:
-        e = io_cache.CacheEntry.from_T050017('/tmp/A-B-12345-6.txt')
+        e = io_cache.CacheEntry.from_T050017("/tmp/A-B-12345-6.txt")
     except AttributeError:
         pass
     else:
@@ -193,7 +193,7 @@ def test_cache_segments(cache, segments):
 
 
 @pytest.mark.parametrize("path, metadata", [
-    ("A-B-0-1.txt", ('A', 'B', Segment(0, 1))),
+    ("A-B-0-1.txt", ("A", "B", Segment(0, 1))),
     ("/path/to/A-B-0.456-1.345.txt.gz", ("A", "B", Segment(0.456, 1.801))),
 ])
 def test_filename_metadata(path, metadata):
@@ -223,10 +223,10 @@ def test_file_segment(filename, seg):
     assert fs == seg
 
     # check mutliple file extensions
-    assert io_cache.file_segment('A-B-1-2.ext.gz') == (1, 3)
+    assert io_cache.file_segment("A-B-1-2.ext.gz") == (1, 3)
 
     # check floats (and multiple file extensions)
-    assert io_cache.file_segment('A-B-1.23-4.ext.gz') == (1.23, 5.23)
+    assert io_cache.file_segment("A-B-1.23-4.ext.gz") == (1.23, 5.23)
 
 
 def test_file_segment_errors():
@@ -236,7 +236,7 @@ def test_file_segment_errors():
         ValueError,
         match="^Failed to parse 'blah' as a LIGO-T050017-compatible filename$"
     ):
-        io_cache.file_segment('blah')
+        io_cache.file_segment("blah")
 
 
 def test_flatten(cache):
@@ -248,7 +248,7 @@ def test_flatten(cache):
 
     # check two caches get concatenated properly
     a = cache
-    b = [e.replace('A-B-', 'A-B-1') for e in cache]
+    b = [e.replace("A-B-", "A-B-1") for e in cache]
     c = a + b
     assert io_cache.flatten(a, b) == c
 

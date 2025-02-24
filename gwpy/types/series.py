@@ -109,8 +109,8 @@ class Series(Array):
            dx: 2.0 W,
            xindex: [  0.   2.   4.   6.   8.  10.] W)
     """
-    _metadata_slots = Array._metadata_slots + ('x0', 'dx', 'xindex')
-    _default_xunit = Unit('')
+    _metadata_slots = Array._metadata_slots + ("x0", "dx", "xindex")
+    _default_xunit = Unit("")
     _ndim = 1
 
     def __new__(cls, value, unit=None, x0=None, dx=None, xindex=None,
@@ -128,7 +128,7 @@ class Series(Array):
         if xindex is not None:
 
             if len(xindex) != len(value):
-                raise ValueError('xindex must have the same length as data.')
+                raise ValueError("xindex must have the same length as data.")
 
             # warn about duplicate settings
             if dx is not None:
@@ -162,7 +162,7 @@ class Series(Array):
     def __array_finalize__(self, obj):
         super().__array_finalize__(obj)
         # Array.__array_finalize__ might set _xindex to None, so delete it
-        if getattr(self, '_xindex', None) is None:
+        if getattr(self, "_xindex", None) is None:
             del self.xindex
 
     # -- series properties ----------------------
@@ -385,7 +385,7 @@ class Series(Array):
 
     # -- series plotting ------------------------
 
-    def plot(self, method='plot', **kwargs):
+    def plot(self, method="plot", **kwargs):
         """Plot the data for this series
 
         Returns
@@ -408,8 +408,8 @@ class Series(Array):
         from ..plot.text import default_unit_label
 
         # correct for log scales and zeros
-        if kwargs.get('xscale') == 'log' and self.x0.value == 0:
-            kwargs.setdefault('xlim', (self.dx.value, self.xspan[1]))
+        if kwargs.get("xscale") == "log" and self.x0.value == 0:
+            kwargs.setdefault("xlim", (self.dx.value, self.xspan[1]))
 
         # make plot
         plot = Plot(self, method=method, **kwargs)
@@ -478,7 +478,7 @@ class Series(Array):
             raise
         return self[idx]
 
-    def copy(self, order='C'):
+    def copy(self, order="C"):
         new = super().copy(order=order)
         try:
             new._xindex = self._xindex.copy()
@@ -558,7 +558,7 @@ class Series(Array):
         # slice axis 0 metadata
         slice_, = sliceutils.format_nd_slice(item, 1)
         if not sliceutils.null_slice(slice_):
-            sliceutils.slice_axis_attributes(self, 'x', new, 'x', slice_)
+            sliceutils.slice_axis_attributes(self, "x", new, "x", slice_)
 
         return new
 
@@ -726,8 +726,8 @@ class Series(Array):
             a new series containing joined data sets
         """
         if gap is None:
-            gap = 'raise' if pad is None else 'pad'
-        if pad is None and gap == 'pad':
+            gap = "raise" if pad is None else "pad"
+        if pad is None and gap == "pad":
             pad = 0.
 
         # check metadata
@@ -737,7 +737,7 @@ class Series(Array):
             self = self.copy()
         # fill gap
         if self.is_contiguous(other) != 1:
-            if gap == 'pad':
+            if gap == "pad":
                 ngap = floor(
                     (other.xspan[0] - self.xspan[1]) / self.dx.value + 0.5)
                 if ngap < 1:
@@ -749,7 +749,7 @@ class Series(Array):
                 gapshape[0] = int(ngap)
                 padding = (numpy.ones(gapshape) * pad).astype(self.dtype)
                 self.append(padding, inplace=True, resize=resize)
-            elif gap == 'ignore':
+            elif gap == "ignore":
                 pass
             elif self.xspan[0] < other.xspan[0] < self.xspan[1]:
                 raise ValueError(
@@ -774,7 +774,7 @@ class Series(Array):
             try:
                 self.resize(s, refcheck=False)
             except ValueError as e:
-                if 'resize only works on single-segment arrays' in str(e):
+                if "resize only works on single-segment arrays" in str(e):
                     self = self.copy()
                     self.resize(s)
                 else:
@@ -790,7 +790,7 @@ class Series(Array):
             self.value[-N:] = other.value[-N:]
         # otherwise if its just a numpy array
         elif type(other) is type(self.value) or (  # noqa: E721
-                other.dtype.name.startswith('uint')):
+                other.dtype.name.startswith("uint")):
             self.value[-N:] = other[-N:]
         else:
             self[-N:] = other[-N:]
@@ -804,7 +804,7 @@ class Series(Array):
                 try:
                     self.xindex.resize((s[0],), refcheck=False)
                 except ValueError as exc:
-                    if 'cannot resize' in str(exc):
+                    if "cannot resize" in str(exc):
                         self.xindex = self.xindex.copy()
                         self.xindex.resize((s[0],))
                     else:
@@ -942,7 +942,7 @@ class Series(Array):
             end = None
 
         # check if we have an index to use when searching
-        have_xindex = getattr(self, '_xindex', None) is not None
+        have_xindex = getattr(self, "_xindex", None) is not None
 
         # find start index
         if start is None:
@@ -997,7 +997,7 @@ class Series(Array):
             for details on the underlying functionality
         """
         # format arguments
-        kwargs.setdefault('mode', 'constant')
+        kwargs.setdefault("mode", "constant")
         if isinstance(pad_width, int):
             pad_width = (pad_width,)
         # form pad and view to this type
@@ -1050,8 +1050,8 @@ class Series(Array):
         ox0 = other.x0.to(self.x0.unit)
         idx = ((ox0 - self.x0) / self.dx).value
         if not idx.is_integer():
-            warn('Series have overlapping xspan but their x-axis values are '
-                 'uniformly offset. Returning a copy of the original Series.')
+            warn("Series have overlapping xspan but their x-axis values are "
+                 "uniformly offset. Returning a copy of the original Series.")
             return self.copy()
         # add the Series along their shared samples
         slice_ = slice(int(idx), int(idx) + other.size)

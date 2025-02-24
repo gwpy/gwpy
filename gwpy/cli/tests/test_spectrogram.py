@@ -27,7 +27,7 @@ from .base import (_TestImageProduct, _TestTimeDomainProduct, _TestFFTMixin)
 class TestCliSpectrogram(_TestFFTMixin, _TestTimeDomainProduct,
                          _TestImageProduct):
     TEST_CLASS = cli.Spectrogram
-    ACTION = 'spectrogram'
+    ACTION = "spectrogram"
 
     @classmethod
     @pytest.fixture
@@ -37,10 +37,10 @@ class TestCliSpectrogram(_TestFFTMixin, _TestTimeDomainProduct,
         return prod
 
     def test_get_title(self, prod):
-        assert prod.get_title() == ', '.join([
-            f'fftlength={prod.args.secpfft}',
-            f'overlap={prod.args.overlap}',
+        assert prod.get_title() == ", ".join([
+            f"fftlength={prod.args.secpfft}",
+            f"overlap={prod.args.overlap}",
         ])
 
     def test_get_suptitle(self, prod):
-        assert prod.get_suptitle() == f'Spectrogram: {prod.chan_list[0]}'
+        assert prod.get_suptitle() == f"Spectrogram: {prod.chan_list[0]}"

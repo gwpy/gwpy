@@ -26,14 +26,14 @@ For this example we can use the public data around the GW150914 detection.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First, we import the `TimeSeries` and call
 # :meth:`TimeSeries.fetch_open_data` the download the strain
 # data for the LIGO-Hanford interferometer
 from gwpy.timeseries import TimeSeries
 data = TimeSeries.fetch_open_data(
-    'H1', 'Sep 14 2015 09:45', 'Sep 14 2015 09:55')
+    "H1", "Sep 14 2015 09:45", "Sep 14 2015 09:55")
 
 # Next, we can calculate a `~gwpy.spectrogram.Spectrogram` using the
 # :meth:`spectrogram` method of the `TimeSeries` over a 2-second stride
@@ -47,12 +47,12 @@ specgram = data.spectrogram(2, fftlength=1, overlap=.5) ** (1/2.)
 
 # Finally, we can make a plot using the
 # :meth:`~gwpy.spectrogram.Spectrogram.plot` method
-plot = specgram.imshow(norm='log', vmin=5e-24, vmax=1e-19)
+plot = specgram.imshow(norm="log", vmin=5e-24, vmax=1e-19)
 ax = plot.gca()
-ax.set_yscale('log')
+ax.set_yscale("log")
 ax.set_ylim(10, 2000)
 ax.colorbar(
-    label=r'Gravitational-wave amplitude [strain/$\sqrt{\mathrm{Hz}}$]')
+    label=r"Gravitational-wave amplitude [strain/$\sqrt{\mathrm{Hz}}$]")
 plot.show()
 
 # This shows the relative stability of the interferometer sensitivity over

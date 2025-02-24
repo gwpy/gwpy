@@ -35,7 +35,7 @@ from ..window import canonical_name
 from ._utils import scale_timeseries_unit
 from . import _registry as fft_registry
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # cache windows and FFT plans internally
 LAL_WINDOWS = {}
@@ -45,7 +45,7 @@ LAL_FFTPLAN_LEVEL = 1
 
 # -- utilities ----------------------------------------------------------------
 
-def generate_fft_plan(length, level=None, dtype='float64', forward=True):
+def generate_fft_plan(length, level=None, dtype="float64", forward=True):
     """Build a `REAL8FFTPlan` for a fast Fourier transform.
 
     Parameters
@@ -79,14 +79,14 @@ def generate_fft_plan(length, level=None, dtype='float64', forward=True):
         return LAL_FFTPLANS[key]
     # or create one
     except KeyError:
-        create = find_typed_function(dtype, 'Create', 'FFTPlan')
+        create = find_typed_function(dtype, "Create", "FFTPlan")
         if level is None:
             level = LAL_FFTPLAN_LEVEL
         LAL_FFTPLANS[key] = create(length, int(bool(forward)), level)
         return LAL_FFTPLANS[key]
 
 
-def generate_window(length, window=None, dtype='float64'):
+def generate_window(length, window=None, dtype="float64"):
     """Generate a time-domain window for use in a LAL FFT
 
     Parameters
@@ -110,7 +110,7 @@ def generate_window(length, window=None, dtype='float64'):
     from ...utils.lal import (find_typed_function, to_lal_type_str)
 
     if window is None:
-        window = ('kaiser', 24)
+        window = ("kaiser", 24)
 
     # generate key for caching window
     laltype = to_lal_type_str(dtype)
@@ -128,7 +128,7 @@ def generate_window(length, window=None, dtype='float64'):
             beta = 0
         window = canonical_name(window)
         # create window
-        create = find_typed_function(dtype, 'CreateNamed', 'Window')
+        create = find_typed_function(dtype, "CreateNamed", "Window")
         LAL_WINDOWS[key] = create(window, beta, length)
         return LAL_WINDOWS[key]
 
@@ -142,16 +142,16 @@ def window_from_array(array, dtype=None):
         dtype = array.dtype
 
     # create sequence
-    seq = find_typed_function(dtype, 'Create', 'Sequence')(array.size)
+    seq = find_typed_function(dtype, "Create", "Sequence")(array.size)
     seq.data = numpy.asarray(array, dtype=dtype)
 
     # create window from sequence
-    return find_typed_function(dtype, 'Create', 'WindowFromSequence')(seq)
+    return find_typed_function(dtype, "Create", "WindowFromSequence")(seq)
 
 
 # -- spectrumm methods ------------------------------------------------------
 
-def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
+def _lal_spectrum(timeseries, segmentlength, noverlap=None, method="welch",
                   window=None, plan=None):
     """Generate a PSD `FrequencySeries` using |lal|_
 
@@ -201,7 +201,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
     # check data length
     size = timeseries.size
     numsegs = 1 + int((size - segmentlength) / stride)
-    if method == 'median-mean' and numsegs % 2:
+    if method == "median-mean" and numsegs % 2:
         numsegs -= 1
         if not numsegs:
             raise ValueError("Cannot calculate median-mean spectrum with "
@@ -216,7 +216,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
         timeseries = timeseries[:required]
 
     # generate output spectrum
-    create = find_typed_function(timeseries.dtype, 'Create', 'FrequencySeries')
+    create = find_typed_function(timeseries.dtype, "Create", "FrequencySeries")
     lalfs = create(
         timeseries.name,
         lal.LIGOTimeGPS(to_gps(timeseries.epoch.gps)),
@@ -227,9 +227,9 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
     )
 
     # find LAL method (e.g. median-mean -> lal.REAL8AverageSpectrumMedianMean)
-    methodname = ''.join(map(str.title, re.split('[-_]', method)))
-    spec_func = find_typed_function(timeseries.dtype, '',
-                                    'AverageSpectrum{}'.format(methodname))
+    methodname = "".join(map(str.title, re.split("[-_]", method)))
+    spec_func = find_typed_function(timeseries.dtype, "",
+                                    "AverageSpectrum{}".format(methodname))
 
     # calculate spectrum
     spec_func(lalfs, timeseries.to_lal(), segmentlength, stride, window, plan)
@@ -239,7 +239,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method='welch',
     spec.name = timeseries.name
     spec.channel = timeseries.channel
     spec.override_unit(scale_timeseries_unit(
-        timeseries.unit, scaling='density'))
+        timeseries.unit, scaling="density"))
     return spec
 
 
@@ -273,7 +273,7 @@ def welch(timeseries, segmentlength, noverlap=None, window=None, plan=None):
     lal.REAL8AverageSpectrumWelch
     """
     return _lal_spectrum(timeseries, segmentlength, noverlap=noverlap,
-                         method='welch', window=window, plan=plan)
+                         method="welch", window=window, plan=plan)
 
 
 def bartlett(timeseries, segmentlength, noverlap=None, window=None, plan=None):
@@ -307,7 +307,7 @@ def bartlett(timeseries, segmentlength, noverlap=None, window=None, plan=None):
     lal.REAL8AverageSpectrumWelch
     """
     return _lal_spectrum(timeseries, segmentlength, noverlap=0,
-                         method='welch', window=window, plan=plan)
+                         method="welch", window=window, plan=plan)
 
 
 def median(timeseries, segmentlength, noverlap=None, window=None, plan=None):
@@ -343,7 +343,7 @@ def median(timeseries, segmentlength, noverlap=None, window=None, plan=None):
     lal.REAL8AverageSpectrumMedian
     """
     return _lal_spectrum(timeseries, segmentlength, noverlap=noverlap,
-                         method='median', window=window, plan=plan)
+                         method="median", window=window, plan=plan)
 
 
 def median_mean(timeseries, segmentlength, noverlap=None,
@@ -382,13 +382,13 @@ def median_mean(timeseries, segmentlength, noverlap=None,
     lal.REAL8AverageSpectrumMedianMean
     """
     return _lal_spectrum(timeseries, segmentlength, noverlap=noverlap,
-                         method='median-mean', window=window, plan=plan)
+                         method="median-mean", window=window, plan=plan)
 
 
 # register LAL methods without overriding scipy method
 for func in (welch, bartlett, median, median_mean,):
     fft_registry.register_method(
         func,
-        name='lal-{}'.format(func.__name__),
+        name="lal-{}".format(func.__name__),
         deprecated=True,
     )

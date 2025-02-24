@@ -27,14 +27,14 @@ from astropy.units import Unit
 from .. import text as plot_text
 
 
-@pytest.mark.parametrize('in_, out, texout', [
-    ('test', 'test', 'test'),
-    (4.0, '4.0', '4',),
-    (8, '8', '8'),
-    (Unit('m/Hz2'), '$\\mathrm{m\\,Hz^{-2}}$', '$\\mathrm{m\\,Hz^{-2}}$'),
+@pytest.mark.parametrize("in_, out, texout", [
+    ("test", "test", "test"),
+    (4.0, "4.0", "4",),
+    (8, "8", "8"),
+    (Unit("m/Hz2"), "$\\mathrm{m\\,Hz^{-2}}$", "$\\mathrm{m\\,Hz^{-2}}$"),
 ])
 def test_to_string(in_, out, texout):
-    with rc_context(rc={'text.usetex': False}):
+    with rc_context(rc={"text.usetex": False}):
         assert plot_text.to_string(in_) == out
-    with rc_context(rc={'text.usetex': True}):
+    with rc_context(rc={"text.usetex": True}):
         assert plot_text.to_string(in_) == texout

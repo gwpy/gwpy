@@ -30,13 +30,13 @@ highlighting excursions from normal behaviour.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.frequencyseries'
+__currentmodule__ = "gwpy.frequencyseries"
 
 # To demonstate this, we can load some data from the LIGO Livingston
 # interferometer around the time of the GW151226 gravitational wave detection:
 
 from gwpy.timeseries import TimeSeries
-llo = TimeSeries.fetch_open_data('L1', 1135136228, 1135140324, verbose=True)
+llo = TimeSeries.fetch_open_data("L1", 1135136228, 1135140324, verbose=True)
 
 # We can then call the :meth:`~gwpy.timeseries.TimeSeries.spectral_variance`
 # method of the ``llo`` `~gwpy.timeseries.TimeSeries` by calculating an ASD
@@ -48,14 +48,14 @@ variance = llo.spectral_variance(5, fftlength=2, overlap=1, log=True,
 
 # We can then :meth:`~SpectralVariance.plot` the `SpectralVariance`
 
-plot = variance.plot(yscale='log', norm='log', vmin=.5, cmap='plasma')
+plot = variance.plot(yscale="log", norm="log", vmin=.5, cmap="plasma")
 ax = plot.gca()
 ax.grid()
 ax.set_xlim(20, 1500)
 ax.set_ylim(1e-24, 1e-20)
-ax.set_xlabel('Frequency [Hz]')
-ax.set_ylabel(r'[strain/$\sqrt{\mathrm{Hz}}$]')
-ax.set_title('LIGO-Livingston sensitivity variance')
+ax.set_xlabel("Frequency [Hz]")
+ax.set_ylabel(r"[strain/$\sqrt{\mathrm{Hz}}$]")
+ax.set_title("LIGO-Livingston sensitivity variance")
 plot.show()
 
 # From this we see that in general the sensitivity varies a few parts in

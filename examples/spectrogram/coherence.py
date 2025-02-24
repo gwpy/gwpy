@@ -32,7 +32,7 @@ These data are available as part of the |GWOSC_AUX_RELEASE|_.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First, we import the `TimeSeriesDict`
 from gwpy.timeseries import TimeSeriesDict
@@ -58,12 +58,12 @@ coh = darm.coherence_spectrogram(acc, 10, fftlength=.5, overlap=.25)
 # resulting data
 plot = coh.plot()
 ax = plot.gca()
-ax.set_ylabel('Frequency [Hz]')
-ax.set_yscale('log')
+ax.set_ylabel("Frequency [Hz]")
+ax.set_yscale("log")
 ax.set_ylim(10, 2000)
 ax.set_title(
-    'Coherence between PSL periscope motion and LIGO-Hanford strain data',
+    "Coherence between PSL periscope motion and LIGO-Hanford strain data",
 )
-ax.grid(True, 'both', 'both')
-ax.colorbar(label='Coherence', clim=[0, 1], cmap='plasma')
+ax.grid(True, "both", "both")
+ax.colorbar(label="Coherence", clim=[0, 1], cmap="plasma")
 plot.show()

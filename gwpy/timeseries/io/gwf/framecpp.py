@@ -36,17 +36,17 @@ from ...core import _dynamic_scaled
 
 from . import channel_dict_kwarg
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-FRAME_LIBRARY = 'LDAStools.frameCPP'
+FRAME_LIBRARY = "LDAStools.frameCPP"
 
 # error regexs
 FRERR_NO_FRAME_AT_NUM = re.compile(
-    r'\ARequest for frame (?P<frnum>\d+) exceeds the range of '
-    r'0 through (?P<nframes>\d+)\Z',
+    r"\ARequest for frame (?P<frnum>\d+) exceeds the range of "
+    r"0 through (?P<nframes>\d+)\Z",
 )
 FRERR_NO_CHANNEL_OF_TYPE = re.compile(
-    r'\ANo Fr(Adc|Proc|Sim)Data structures with the name ',
+    r"\ANo Fr(Adc|Proc|Sim)Data structures with the name ",
 )
 
 
@@ -109,7 +109,7 @@ def read(source, channels, start=None, end=None, scaled=None, type=None,
     for i, file_ in enumerate(source):
         if i == 1:  # force data into fresh memory so that append works
             for name in out:
-                out[name] = numpy.require(out[name], requirements=['O'])
+                out[name] = numpy.require(out[name], requirements=["O"])
         # read frame
         out.append(read_gwf(file_, channels, start=start, end=end, ctype=ctype,
                             scaled=scaled, series_class=series_class),
@@ -160,7 +160,7 @@ def read_gwf(filename, channels, start=None, end=None, scaled=None,
     span = Segment(start, end)
 
     # open file
-    stream = io_framecpp.open_gwf(filename, 'r')
+    stream = io_framecpp.open_gwf(filename, "r")
     nframes = stream.GetNumberOfFrames()
 
     # find channels
@@ -200,7 +200,7 @@ def read_gwf(filename, channels, start=None, end=None, scaled=None,
             try:
                 out[channel].append(new)
             except KeyError:
-                out[channel] = numpy.require(new, requirements=['O'])
+                out[channel] = numpy.require(new, requirements=["O"])
 
         # if we have all of the data we want, stop now
         if all(span in out[channel].span for channel in out):
@@ -212,7 +212,7 @@ def read_gwf(filename, channels, start=None, end=None, scaled=None,
             msg = "Failed to read {0!r} from {1!r}".format(
                 str(channel), filename)
             if start or end:
-                msg += ' for {0}'.format(span)
+                msg += " for {0}".format(span)
             raise ValueError(msg)
 
     return out
@@ -232,9 +232,9 @@ def _get_frdata(stream, num, name, ctype=None):
 
     This saves on pulling the channel type from the TOC
     """
-    ctypes = (ctype,) if ctype else ('adc', 'proc', 'sim')
+    ctypes = (ctype,) if ctype else ("adc", "proc", "sim")
     for ctype in ctypes:
-        _reader = getattr(stream, 'ReadFr{0}Data'.format(ctype.title()))
+        _reader = getattr(stream, "ReadFr{0}Data".format(ctype.title()))
         try:
             return _reader(num, name)
         except IndexError as exc:
@@ -330,7 +330,7 @@ def read_frdata(frdata, epoch, start, end, scaled=True,
             typechange = not numpy.can_cast(
                 rtype,
                 new.dtype,
-                casting='same_kind',
+                casting="same_kind",
             )
             # only apply scaling if interesting _or_ if it would lead to a
             # type change, otherwise we are unnecessarily duplicating memory
@@ -342,7 +342,7 @@ def read_frdata(frdata, epoch, start, end, scaled=True,
         elif slope is not None:
             # user has deliberately disabled the ADC calibration, so
             # the stored engineering unit is not valid, revert to 'counts':
-            new.override_unit('count')
+            new.override_unit("count")
 
         if out is None:
             out = new
@@ -452,8 +452,8 @@ def read_frvect(vect, epoch, start, end, name=None, series_class=TimeSeries):
 def write(tsdict, outfile,
           start=None, end=None,
           type=None,
-          name='gwpy', run=0,
-          compression='GZIP', compression_level=None):
+          name="gwpy", run=0,
+          compression="GZIP", compression_level=None):
     """Write data to a GWF file using the frameCPP API
 
     Parameters
@@ -526,7 +526,7 @@ def write(tsdict, outfile,
             or getattr(tsdict[key].channel, "_ctype", "proc").lower()
             or "proc"
         )
-        if ctype == 'adc':
+        if ctype == "adc":
             kw = {"channelid": i}
         else:
             kw = {}
@@ -541,7 +541,7 @@ def write(tsdict, outfile,
     )
 
 
-def _append_to_frame(frame, timeseries, type='proc', **kwargs):
+def _append_to_frame(frame, timeseries, type="proc", **kwargs):
     # pylint: disable=redefined-builtin
     """Append data from a `TimeSeries` to a `~frameCPP.FrameH`
 
@@ -571,13 +571,13 @@ def _append_to_frame(frame, timeseries, type='proc', **kwargs):
     epoch = LIGOTimeGPS(*frame.GetGTime())
 
     # create the data container
-    if type.lower() == 'adc':
+    if type.lower() == "adc":
         create = io_framecpp.create_fradcdata
         append = frame.AppendFrAdcData
-    elif type.lower() == 'proc':
+    elif type.lower() == "proc":
         create = io_framecpp.create_frprocdata
         append = frame.AppendFrProcData
-    elif type.lower() == 'sim':
+    elif type.lower() == "sim":
         create = io_framecpp.create_frsimdata
         append = frame.AppendFrSimData
     else:

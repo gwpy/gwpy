@@ -27,7 +27,7 @@ import pytest
 
 from .. import kerberos as io_kerberos
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def requires_gssapi():
@@ -47,8 +47,8 @@ def requires_gssapi():
 def mock_krb5_env():
     with mock.patch.dict(os.environ):
         for key in (
-            'KRB5_KTNAME',
-            'KRB5CCNAME',
+            "KRB5_KTNAME",
+            "KRB5CCNAME",
         ):
             os.environ.pop(key, None)
         yield
@@ -106,8 +106,8 @@ def test_kinit_up(creds, acquire, getpass, input_, _, capsys):
 
 
 @requires_gssapi()
-@mock.patch('gwpy.io.kerberos.input')
-@mock.patch('getpass.getpass')
+@mock.patch("gwpy.io.kerberos.input")
+@mock.patch("getpass.getpass")
 @mock.patch("gssapi.raw.acquire_cred_with_password")
 @mock.patch("gssapi.Credentials")
 def test_kinit_up_kwargs(creds, acquire, getpass, input_):
@@ -142,8 +142,8 @@ def test_kinit_keytab_dne(tmp_path):
         match=rf"\AKerberos keytab .*{keytab.name}' is invalid",
     ):
         io_kerberos.kinit(
-            username='test',
-            password='passwd',
+            username="test",
+            password="passwd",
             keytab=keytab,
         )
 
@@ -250,15 +250,15 @@ KVNO Principal
    2 ronald.drever@LIGO.ORG"""
 
 
-@mock.patch('subprocess.check_output', return_value=KLIST)
+@mock.patch("subprocess.check_output", return_value=KLIST)
 def test_parse_keytab(check_output):
     """Test `gwpy.io.kerberos.parse_keytab.
     """
     # assert principals get extracted correctly
     with pytest.deprecated_call():
-        principals = io_kerberos.parse_keytab('test.keytab')
-    assert principals == [('albert.einstein', 'LIGO.ORG', 1),
-                          ('ronald.drever', 'LIGO.ORG', 2)]
+        principals = io_kerberos.parse_keytab("test.keytab")
+    assert principals == [("albert.einstein", "LIGO.ORG", 1),
+                          ("ronald.drever", "LIGO.ORG", 2)]
 
 
 @mock.patch("subprocess.check_output")
@@ -277,4 +277,4 @@ def test_parse_keytab_oserror(mock_check_output, se, match):
         io_kerberos.KerberosError,
         match=match,
     ):
-        io_kerberos.parse_keytab('test.keytab')
+        io_kerberos.parse_keytab("test.keytab")

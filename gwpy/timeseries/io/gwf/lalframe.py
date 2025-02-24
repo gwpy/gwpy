@@ -35,9 +35,9 @@ from ....io.utils import (file_list, file_path)
 from ....utils import lal as lalutils
 from ... import TimeSeries
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-FRAME_LIBRARY = 'lalframe'
+FRAME_LIBRARY = "lalframe"
 
 
 # -- utilities ----------------------------------------------------------------
@@ -70,7 +70,7 @@ def open_data_source(source):
     # import cache from file
     if (
         isinstance(source, str)
-        and source.endswith(('.lcf', '.cache'))
+        and source.endswith((".lcf", ".cache"))
     ):
         source = lal.CacheImport(source)
 
@@ -187,7 +187,7 @@ def _read_channel(stream, channel, start, duration):
         if str(exc).lower() == "wrong name":
             exc.args = "channel '{}' not found".format(channel),
         raise
-    reader = lalutils.find_typed_function(dtype, 'FrStreamRead', 'TimeSeries',
+    reader = lalutils.find_typed_function(dtype, "FrStreamRead", "TimeSeries",
                                           module=lalframe)
     return reader(stream, channel, start, duration, 0)
 
@@ -198,7 +198,7 @@ def write(
         tsdict, outfile,
         start=None, end=None,
         type=None,
-        name='gwpy', run=0,
+        name="gwpy", run=0,
 ):
     """Write data to a GWF file using the LALFrame API
     """
@@ -237,8 +237,8 @@ def write(
         # find adder
         add_ = lalutils.find_typed_function(
             series.dtype,
-            'FrameAdd',
-            'TimeSeries{}Data'.format(ctype),
+            "FrameAdd",
+            "TimeSeries{}Data".format(ctype),
             module=lalframe,
         )
 

@@ -28,7 +28,7 @@ from typing import (
     Any,
 )
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def gprint(
@@ -37,8 +37,8 @@ def gprint(
 ) -> None:
     """Wrapper around `print` that flushes immediately.
     """
-    kwargs.setdefault('file', sys.stdout)
-    file_ = kwargs['file']
+    kwargs.setdefault("file", sys.stdout)
+    file_ = kwargs["file"]
     print(*values, **kwargs)
     file_.flush()
 
@@ -104,9 +104,9 @@ def round_to_power(
     4
     """
     selector: Callable
-    if which == 'lower':
+    if which == "lower":
         selector = math.floor
-    elif which == 'upper':
+    elif which == "upper":
         selector = math.ceil
     elif which is not None:
         raise ValueError("'which' argument must be one of 'lower', "

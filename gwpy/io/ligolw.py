@@ -41,12 +41,12 @@ except ImportError:  # no ligo.lw
 from .utils import (file_list, FILE_LIKE)
 from ..utils.decorators import deprecated_function
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # XML elements
-XML_SIGNATURE = b'<?xml'
-LIGOLW_SIGNATURE = b'<!doctype ligo_lw'
-LIGOLW_ELEMENT = b'<ligo_lw>'
+XML_SIGNATURE = b"<?xml"
+LIGOLW_SIGNATURE = b"<!doctype ligo_lw"
+LIGOLW_ELEMENT = b"<ligo_lw>"
 
 
 # -- hack around around TypeError from LIGOTimeGPS(numpy.int32(...)) ----------
@@ -123,7 +123,7 @@ def strip_ilwdchar(_ContentHandler):
                 }
                 if result.Name in stripped_column_to_valid_column:
                     result.setAttribute(
-                        'Name',
+                        "Name",
                         stripped_column_to_valid_column[result.Name],
                     )
 
@@ -576,8 +576,8 @@ def write_tables(
         name = target = str(target)
 
     # handle gzip compression kwargs
-    if name.endswith('.gz'):
-        kwargs.setdefault('compress', 'gz')
+    if name.endswith(".gz"):
+        kwargs.setdefault("compress", "gz")
 
     # write XML
     writer(xmldoc, target, **kwargs)
@@ -696,10 +696,10 @@ def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
                 )
             except TypeError:  # bytes vs str
                 return (
-                    line1.startswith(XML_SIGNATURE.decode('utf-8'))
+                    line1.startswith(XML_SIGNATURE.decode("utf-8"))
                     and line2.startswith((
-                        LIGOLW_SIGNATURE.decode('utf-8'),
-                        LIGOLW_ELEMENT.decode('utf-8'),
+                        LIGOLW_SIGNATURE.decode("utf-8"),
+                        LIGOLW_ELEMENT.decode("utf-8"),
                     ))
                 )
         finally:
@@ -726,4 +726,4 @@ def is_xml(origin, filepath, fileobj, *args, **kwargs):  # pragma: no cover
         finally:
             fileobj.seek(loc)
     elif filepath is not None:
-        return filepath.endswith(('.xml', '.xml.gz'))
+        return filepath.endswith((".xml", ".xml.gz"))

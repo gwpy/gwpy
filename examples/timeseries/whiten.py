@@ -36,11 +36,11 @@ a frequency of around 5-50Hz.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First, we import the `TimeSeries` and :meth:`~TimeSeries.get` the data:
 from gwpy.timeseries import TimeSeries
-data = TimeSeries.get('H1:ASC-Y_TR_A_NSUM_OUT_DQ', 1123084671, 1123084703)
+data = TimeSeries.get("H1:ASC-Y_TR_A_NSUM_OUT_DQ", 1123084671, 1123084703)
 
 # Now, we can `~TimeSeries.whiten` the data to enhance the higher-frequency
 # content
@@ -49,8 +49,8 @@ white = data.whiten(4, 2)
 # and can `~TimeSeries.plot` both the original and whitened data
 from gwpy.plot import Plot
 plot = Plot(data, white, separate=True, sharex=True)
-plot.axes[0].set_ylabel('Y-arm power [counts]', fontsize=16)
-plot.axes[1].set_ylabel('Whitened amplitude', fontsize=16)
+plot.axes[0].set_ylabel("Y-arm power [counts]", fontsize=16)
+plot.axes[1].set_ylabel("Whitened amplitude", fontsize=16)
 plot.show()
 
 # Here we see two large spikes that are completely undetected in the raw

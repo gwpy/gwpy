@@ -179,7 +179,7 @@ def nds2_connection(
     ) -> nds2.availability_list_type:
         out = []
         for buff in NdsConnection._buffers:
-            name = '{0.name},{0.type}'.format(Channel.from_nds2(buff.channel))
+            name = "{0.name},{0.type}".format(Channel.from_nds2(buff.channel))
             if name not in names:
                 segs = []
             else:

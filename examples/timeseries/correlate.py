@@ -40,12 +40,12 @@ Advanced LIGO's second observing run.
 """
 
 __author__ = "Alex Urban <alexander.urban@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First, we import the `TimeSeries` and :meth:`~TimeSeries.get` the data:
 from gwpy.timeseries import TimeSeries
-hoft = TimeSeries.get('L1:GDS-CALIB_STRAIN', 1172489751, 1172489815)
-aux = TimeSeries.get('L1:PSL-ISS_PDA_REL_OUT_DQ', 1172489751, 1172489815)
+hoft = TimeSeries.get("L1:GDS-CALIB_STRAIN", 1172489751, 1172489815)
+aux = TimeSeries.get("L1:PSL-ISS_PDA_REL_OUT_DQ", 1172489751, 1172489815)
 
 # Next, we should `~TimeSeries.whiten` the data to enhance the higher-frequency
 # content and make a more faithful comparison between data streams.
@@ -59,7 +59,7 @@ snr = whoft.correlate(mfilter).abs()
 # and plot the resulting normalised signal-to-noise ratio:
 plot = snr.crop(1172489782.07, 1172489784.07).plot()
 plot.axes[0].set_epoch(1172489783.07)
-plot.axes[0].set_ylabel('Signal-to-noise ratio', fontsize=16)
+plot.axes[0].set_ylabel("Signal-to-noise ratio", fontsize=16)
 plot.show()
 plot.close()  # hide
 
@@ -76,13 +76,13 @@ qhoft = whoft.q_transform(
 )
 plot = qhoft.imshow(figsize=[8, 4])
 ax = plot.gca()
-ax.set_xscale('seconds')
-ax.set_yscale('log')
+ax.set_xscale("seconds")
+ax.set_yscale("log")
 ax.set_epoch(1172489783.07)
 ax.set_ylim(20, 5000)
-ax.set_ylabel('Frequency [Hz]')
-ax.grid(True, axis='y', which='both')
-ax.colorbar(cmap='viridis', label='Normalized energy', clim=[0, 25])
+ax.set_ylabel("Frequency [Hz]")
+ax.grid(True, axis="y", which="both")
+ax.colorbar(cmap="viridis", label="Normalized energy", clim=[0, 25])
 plot.show()
 plot.close()  # hide
 
@@ -94,13 +94,13 @@ qaux = waux.q_transform(
 )
 plot = qaux.imshow(figsize=[8, 4])
 ax = plot.gca()
-ax.set_xscale('seconds')
-ax.set_yscale('log')
+ax.set_xscale("seconds")
+ax.set_yscale("log")
 ax.set_epoch(1172489783.07)
 ax.set_ylim(20, 5000)
-ax.set_ylabel('Frequency [Hz]')
-ax.grid(True, axis='y', which='both')
-ax.colorbar(cmap='viridis', label='Normalized energy', clim=[0, 25])
+ax.set_ylabel("Frequency [Hz]")
+ax.grid(True, axis="y", which="both")
+ax.colorbar(cmap="viridis", label="Normalized energy", clim=[0, 25])
 plot.show()
 plot.close()  # hide
 
