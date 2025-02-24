@@ -224,23 +224,11 @@ xfail_strict = true
 # -- ruff
 
 [tool.ruff.lint]
-select = [
-  # mccabe
-  "C90",
-  # pycodestyle errors
-  "E",
-  # flake8-executable
-  "EXE",
-  # pyflakes
-  "F",
-  # isort
-  "I",
-  # pep8-naming
-  "N",
-  # pyupgrade
-  "UP",
-  # pycodestyle warnings
-  "W",
+select = ["ALL"]
+ignore = [
+  "ICN001",  # unconventional import alias
+  "PLR0913",  # too many arguments
+  "TID252",  # relative imports
 ]
 
 [tool.ruff.lint.isort]
@@ -252,9 +240,20 @@ force-wrap-aliases = true
   "F401",  # unused-import
   "F403",  # undefined-local-with-import-star
 ]
-# ignore import location in example scripts
+"*/tests/*" = [
+  "ANN",  # type annotations
+  "PLR2004",  # magic value used in comparison
+  "S101",  # assert
+]
+"docs/*" = [
+  "A",  # builtins
+  "ANN",  # type annotations
+  "D",  # docstrings
+  "INP001",  # implicit namespace package
+]
 "examples/**.py" = [
-  "E402",
+  "ANN",  # type annotations
+  "E402",  # import location
 ]
 # ignore unused imoports in typing.py helper module
 "gwpy/typing.py" = [
