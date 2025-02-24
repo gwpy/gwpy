@@ -21,6 +21,12 @@
 .. |h5py| replace:: `h5py`
 .. _h5py: http://docs.h5py.org/en/latest/
 
+.. |htgettoken| replace:: `htgettoken`
+.. _htgettoken: https://github.com/fermitools/htgettoken
+
+.. |igwn-auth-utils| replace:: `igwn-auth-utils`
+.. _igwn-auth-utils: https://igwn-auth-utils.readthedocs.io
+
 .. |igwn-segments| replace:: `igwn-segments`
 .. _igwn-segments: https://igwn-segments.readthedocs.io/
 
@@ -36,8 +42,14 @@
 .. |nds2| replace:: `nds2`
 .. _nds2: https://wiki.ligo.org/Computing/NDSClient
 
+.. |requests-scitokens| replace:: `requests-scitokens`
+.. _requests-scitokens: https://requests-scitokens.readthedocs.io
+
 .. |scipy| replace:: `scipy`
 .. _scipy: http://www.scipy.org/
+
+.. |scitokens| replace:: `scitokens`
+.. _scitokens: https://scitokens.readthedocs.io
 
 .. |six| replace:: `six`
 .. _six: https://six.readthedocs.io/

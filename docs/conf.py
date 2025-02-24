@@ -234,14 +234,17 @@ intersphinx_mapping = {key: (value, None) for key, value in {
     "gwosc": "https://gwosc.readthedocs.io/en/stable/",
     "h5py": "https://docs.h5py.org/en/latest/",
     "ligo.skymap": "https://lscsoft.docs.ligo.org/ligo.skymap/",
+    "igwn-auth-utils": "https://igwn-auth-utils.readthedocs.io/en/stable/",
     "igwn-segments": "https://igwn-segments.readthedocs.io/en/stable/",
     "lscsoft-glue": "https://lscsoft.docs.ligo.org/glue/",
     "matplotlib": "https://matplotlib.org/",
     "numpy": "https://numpy.org/doc/stable/",
     "pycbc": "https://pycbc.org/pycbc/latest/html/",
     "python": "https://docs.python.org/3/",
+    "requests-scitokens": "https://requests-scitokens.readthedocs.io/en/stable/",
     "uproot": "https://uproot.readthedocs.io/en/stable/",
     "scipy": "https://docs.scipy.org/doc/scipy/reference/",
+    "scitokens": "https://scitokens.readthedocs.io/en/stable/",
 }.items()}
 
 
