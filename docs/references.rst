@@ -42,6 +42,9 @@
 .. |nds2| replace:: `nds2`
 .. _nds2: https://wiki.ligo.org/Computing/NDSClient
 
+.. |requests-pelican| replace:: `requests-pelican`
+.. _requests-pelican: https://requests-pelican.readthedocs.io
+
 .. |requests-scitokens| replace:: `requests-scitokens`
 .. _requests-scitokens: https://requests-scitokens.readthedocs.io
 

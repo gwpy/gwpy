@@ -241,6 +241,7 @@ intersphinx_mapping = {key: (value, None) for key, value in {
     "numpy": "https://numpy.org/doc/stable/",
     "pycbc": "https://pycbc.org/pycbc/latest/html/",
     "python": "https://docs.python.org/3/",
+    "requests-pelican": "https://requests-pelican.readthedocs.io/en/stable/",
     "requests-scitokens": "https://requests-scitokens.readthedocs.io/en/stable/",
     "uproot": "https://uproot.readthedocs.io/en/stable/",
     "scipy": "https://docs.scipy.org/doc/scipy/reference/",

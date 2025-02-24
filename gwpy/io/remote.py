@@ -22,6 +22,9 @@ automatically when reading all files with the `gwpy.io.registry.UnifiedRead`
 registry reader.
 This means that operations like `TimeSeries.read("http://...")` can access
 remote data.
+
+The `open_remote_file` function also handles (or tries to handle) Pelican
+URLs, via a hand-off to the function of the same name in `gwpy.io.pelican`.
 """
 
 from __future__ import annotations
@@ -31,22 +34,30 @@ import typing
 from astropy.utils.data import get_readable_fileobj
 
 from ..utils.env import bool_env
+from . import pelican as io_pelican
+
+if typing.TYPE_CHECKING:
+    from contextlib import AbstractContextManager
+    from typing import BinaryIO
 
 
 def open_remote_file(
     url: str,
     *,
     cache: bool | None = None,
+    encoding: str = "binary",
     **kwargs,
-) -> typing.BinaryIO:
+) -> AbstractContextManager[BinaryIO]:
     """Download a file and open it.
 
-    This function is just a thin wrapper around
-    `astropy.utils.data.get_readable_fileobj` with some modified defaults.
+    This function is a wrapper around `astropy.utils.data.get_readable_fileobj`
+    with the following customisations:
 
-    In addition to enabling ``cache`` based on the environment, this function
-    also copies any ``headers`` into the ``fsspec_kwargs`` by default to
-    simplify passing headers to fsspec when downloading over HTTP.
+    - Default to ``cache=True`` if the ``GWPY_CACHE`` environment variable
+      is set to something 'truthy'.
+
+    - If the URL looks like a |Pelican|_ URL, hand off to a dedicated
+      Pelican download wrapper to attempt the remote access.
 
     Parameters
     ----------
@@ -58,6 +69,20 @@ def open_remote_file(
         Whether to cache the contents of remote URLs.
         Default is `True` if the ``GWPY_CACHE`` environment variable
         is set to something 'truthy'.
+
+    encoding : `str`, optional
+        When ``'binary'`` (default), returns a file-like object where its
+        ``read`` method returns `bytes` objects.
+
+        When `None`, returns a file-like object with a
+        ``read`` method that returns `str` (``unicode``) objects, using
+        `locale.getpreferredencoding` as an encoding.  This matches
+        the default behavior of the built-in `open` when no ``mode``
+        argument is provided.
+
+        When another string, it is the name of an encoding, and the
+        file-like object's ``read`` method will return `str` (``unicode``)
+        objects, decoded from binary using the given encoding.
 
     kwargs
         All other positional and keyword arguments are passed directly
@@ -71,14 +96,29 @@ def open_remote_file(
     See also
     --------
     astropy.utils.data.get_readable_fileobj
+        For details of the underlying downloader.
+
+    gwpy.io.pelican.open_remote_file
+        For details of the Pelican-aware download wrapper.
     """
+    # enable caching by default based on environment
     if cache is None:
         cache = bool_env("GWPY_CACHE", False)
-    if "headers" in kwargs:
-        kwargs.setdefault("fsspec_kwargs", {"headers": kwargs.pop("headers")})
+
+    # if given a Pelican URL hand off to the Pelican-aware wrapper
+    if io_pelican.is_pelican_url(url):
+        return io_pelican.open_remote_file(
+            url,
+            cache=cache,
+            encoding=encoding,
+            **kwargs,
+        )
+
+    # download the file
+    # note: get_readable_fileobj is a context manager, so doesn't execute here
     return get_readable_fileobj(
         url,
         cache=cache,
-        encoding="binary",
+        encoding=encoding,
         **kwargs,
     )
