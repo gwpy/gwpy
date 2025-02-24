@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University(2017-2025)
 #
 # This file is part of GWpy.
 #
@@ -17,11 +18,27 @@
 
 """Interface to the LIGO Channel Information System."""
 
+from __future__ import annotations
+
+import typing
+from typing import TypedDict
+
 import numpy
 
-from .. import (Channel, ChannelList)
+from .. import (
+    Channel,
+    ChannelList,
+)
+
+if typing.TYPE_CHECKING:
+    try:
+        from typing import NotRequired
+    except ImportError:
+        from typing_extensions import NotRequired
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+# -- CIS definitions -----------------
 
 CIS_API_URL = "https://cis.ligo.org/api/channel"
 CIS_DATA_TYPE = {
@@ -35,51 +52,77 @@ CIS_DATA_TYPE = {
 }
 
 
-def query(name, kerberos=None, **kwargs):
-    """Query the Channel Information System for details on the given
-    channel name.
+class CisChannelResponse(TypedDict):
+    """Response from the CIS for one channel."""
+
+    datarate: float
+    datatype: int
+    displayurl: str
+    name: str
+    source: str
+    units: str
+
+
+class CisResponse(TypedDict):
+    """Response from a CIS API query."""
+
+    # list of channels
+    results: list[CisChannelResponse]
+    # pager
+    next: NotRequired[str]
+
+
+# -- I/O routines --------------------
+
+def query(
+    name: str | Channel,
+    kerberos: bool | None = None,
+    **kwargs,
+) -> ChannelList:
+    """Query the Channel Information System for details on a channel.
 
     Parameters
     ----------
-    name : `~gwpy.detector.Channel`, or `str`
-        Name of the channel of interest
+    name : `~gwpy.detector.Channel`, `str`
+        Name of the channel of interest.
 
-    kerberos : `bool`, optional
-        use an existing Kerberos ticket as the authentication credential,
-        default behaviour will check for credentials and request username
-        and password if none are found (`None`)
+    kerberos : `bool`, `None`, optional
+        Use an existing Kerberos ticket as the authentication credential.
+        Default behaviour (`kerberos=None`) is to check for credentials
+        and request username and passowrd (interactively) if none are foudn.
 
     kwargs
-        other keyword arguments are passed directly to
-        :func:`ciecplib.get`
+        Other keyword arguments are passed directly to :func:`ciecplib.get`.
 
     Returns
     -------
     channel : `~gwpy.detector.Channel`
         Channel with all details as acquired from the CIS
     """
-    url = f"{CIS_API_URL}/?q={name}"
-    more = True
     out = ChannelList()
-    while more:
+    url: str | None = f"{CIS_API_URL}/?q={name}"
+    while url:
         reply = _get(url, kerberos=kerberos, **kwargs)
-        try:
-            out.extend(map(parse_json, reply[u"results"]))
-        except KeyError:
-            pass
-        except TypeError:  # reply is a list
-            out.extend(map(parse_json, reply))
+
+        # list result
+        if not isinstance(reply, dict):
+            out.extend(map(_parse_json, reply))
             break
-        more = "next" in reply and reply["next"] is not None
-        if more:
-            url = reply["next"]
-        else:
-            break
+
+        # (paged) result
+        out.extend(map(_parse_json, reply["results"]))
+        url = reply.get("next", None)
+
     out.sort(key=lambda c: c.name)
     return out
 
 
-def _get(url, kerberos=None, idp="login.ligo.org", **kwargs):
+def _get(
+    url: str,
+    kerberos: bool | None = None,
+    idp: str = "login.ligo.org",
+    **kwargs,
+) -> CisResponse | list[CisChannelResponse]:
     """Perform a GET query against the CIS."""
     from ciecplib import get as get_cis
     response = get_cis(url, endpoint=idp, kerberos=kerberos, **kwargs)
@@ -87,23 +130,31 @@ def _get(url, kerberos=None, idp="login.ligo.org", **kwargs):
     return response.json()
 
 
-def parse_json(data):
+def _parse_json(
+    data: CisChannelResponse,
+) -> Channel:
     """Parse the input data dict into a `Channel`.
 
     Parameters
     ----------
     data : `dict`
-        input data from CIS json query
+        Input data from CIS json query.
 
     Returns
     -------
     c : `Channel`
-        a `Channel` built from the data
+        A `Channel` built from the data.
     """
     sample_rate = data["datarate"]
     unit = data["units"]
     dtype = CIS_DATA_TYPE[data["datatype"]]
     model = data["source"]
     url = data["displayurl"]
-    return Channel(data["name"], sample_rate=sample_rate, unit=unit,
-                   dtype=dtype, model=model, url=url)
+    return Channel(
+        data["name"],
+        sample_rate=sample_rate,
+        unit=unit,
+        dtype=dtype,
+        model=model,
+        url=url,
+    )

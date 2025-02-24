@@ -320,51 +320,57 @@ class TestChannel(object):
         assert c.ndsname == name
 
     @pytest.mark.requires("ciecplib")
-    @pytest.mark.parametrize("name", ("X1:TEST-CHANNEL", "Y1:TEST_CHANNEL"))
-    def test_query(self, name):
-        requests_mock = pytest.importorskip("requests_mock")
+    def test_query(self, requests_mock):
+        """Test `Channel.query`."""
         # build fake CIS response
-        channelinfo = {"X1:TEST-CHANNEL": {
-            "name": "X1:TEST-CHANNEL",
+        name = "X1:TEST-CHANNEL"
+        results = [{
+            "name": name,
             "units": "m",
             "datarate": 16384,
             "datatype": 4,
             "source": "X1MODEL",
             "displayurl": "https://cis.ligo.org/channel/123456",
-        }}
-        if name in channelinfo:
-            results = [channelinfo[name]]
-        else:
-            results = []
+        }]
 
-        # mock response and test parsing
-        with requests_mock.Mocker() as rmock:
-            rmock.get(
-                f"https://cis.ligo.org/api/channel/?q={name}",
-                json=results,
+        # apply the mock
+        requests_mock.get(
+            f"https://cis.ligo.org/api/channel/?q={name}",
+            json=results,
+        )
+
+        # run the query
+        chan = self.TEST_CLASS.query(
+            name,
+            idp="https://idp.example.com/profile/SAML2/SOAP/ECP",
+            kerberos=False,
+        )
+
+        # check
+        assert chan.name == name
+        assert chan.unit == units.m
+        assert chan.sample_rate == 16384 * units.Hz
+        assert chan.dtype == numpy.dtype("float32")
+        assert chan.model == "x1model"
+        assert chan.url == "https://cis.ligo.org/channel/123456"
+
+    @pytest.mark.requires("ciecplib")
+    def test_query_notfound(self, requests_mock):
+        """Test `Channel.query` handling of an empty response."""
+        name = "X1:TEST-CHANNEL"
+        requests_mock.get(
+            f"https://cis.ligo.org/api/channel/?q={name}",
+            json=[],
+        )
+        with pytest.raises(
+            ValueError,
+            match=f"^No channels found matching '{name}'$",
+        ):
+            self.TEST_CLASS.query(
+                name,
+                idp="https://idp.example.com/profile/SAML2/SOAP/ECP",
+                kerberos=False,
             )
-            if name == "X1:TEST-CHANNEL":
-                c = self.TEST_CLASS.query(
-                    name,
-                    kerberos=False,
-                    idp="https://idp.example.com/profile/SAML2/SOAP/ECP",
-                )
-                assert c.name == "X1:TEST-CHANNEL"
-                assert c.unit == units.m
-                assert c.sample_rate == 16384 * units.Hz
-                assert c.dtype == numpy.dtype("float32")
-                assert c.model == "x1model"
-                assert c.url == "https://cis.ligo.org/channel/123456"
-            else:
-                with pytest.raises(
-                    ValueError,
-                    match=f"^No channels found matching {name!r}$",
-                ):
-                    self.TEST_CLASS.query(
-                        name,
-                        kerberos=False,
-                        idp="https://idp.example.com/profile/SAML2/SOAP/ECP",
-                    )
 
     @pytest.mark.requires("nds2")
     def test_query_nds2(self, nds2_connection):
