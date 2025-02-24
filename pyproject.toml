@@ -226,8 +226,13 @@ xfail_strict = true
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+  "ANN003",  # type annotations for **kwargs
+  "D203",  # blank line before class docstring
+  "D213",  # docstring summary on second line
+  "D413",  # blank line after last section
   "ICN001",  # unconventional import alias
   "PLR0913",  # too many arguments
+  "SIM108",  # if-else instead of ternary if
   "TID252",  # relative imports
 ]
 
