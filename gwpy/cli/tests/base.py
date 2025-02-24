@@ -33,7 +33,7 @@ from ...timeseries import TimeSeries
 from ...plot import Plot
 from ...testing import utils
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def _random_data(*shape):
@@ -71,11 +71,11 @@ def update_namespace(args, **params):
 # -- function tests -----------------------------------------------------------
 
 def test_to_float():
-    to_s = cliproduct.to_float('s')
+    to_s = cliproduct.to_float("s")
     s = to_s(4)
     assert isinstance(s, float)
     assert s == 4.
-    assert to_s('4ms') == 0.004
+    assert to_s("4ms") == 0.004
 
 
 # -- class tests --------------------------------------------------------------
@@ -84,11 +84,11 @@ class _TestCliProduct(object):
     ACTION = None
     TEST_CLASS = cliproduct.CliProduct
     TEST_ARGS = [
-        '--chan', 'X1:TEST-CHANNEL',
-        '--start', 0,
-        '--nds2-server', 'nds.test.gwpy',
-        '--dpi', 100,
-        '--geometry', '640x480',
+        "--chan", "X1:TEST-CHANNEL",
+        "--start", 0,
+        "--nds2-server", "nds.test.gwpy",
+        "--dpi", 100,
+        "--geometry", "640x480",
     ]
     NDS2_CONNECTION_FIXTURE_DATA = NDS2_CONNECTION_FIXTURE_DATA
 
@@ -102,8 +102,8 @@ class _TestCliProduct(object):
         Returns the `argparse.Namespace`
         """
         parser = ArgumentParser()
-        parser.add_argument('--verbose', action='count', default=1)
-        parser.add_argument('--silent', action='store_true')
+        parser.add_argument("--verbose", action="count", default=1)
+        parser.add_argument("--silent", action="store_true")
         cls.TEST_CLASS.init_cli(parser)
         return parser.parse_args(map(str, cls.TEST_ARGS))
 
@@ -161,7 +161,7 @@ class _TestCliProduct(object):
         assert prod.plot_num == 0
         assert prod.start_list == [0]
         assert prod.duration == 10.
-        assert prod.chan_list == ['X1:TEST-CHANNEL']
+        assert prod.chan_list == ["X1:TEST-CHANNEL"]
         assert prod.n_datasets == len(prod.start_list) * len(prod.chan_list)
         assert prod.timeseries == []
         assert prod.dpi == 100.
@@ -174,15 +174,15 @@ class _TestCliProduct(object):
             raise NotImplementedError
         assert prod.action is self.ACTION
 
-    @pytest.mark.parametrize('level', (1, 2, 3))
+    @pytest.mark.parametrize("level", (1, 2, 3))
     def test_log(self, prod, level, capsys):
         v = prod.verbose
-        prod.log(level, 'Test')
+        prod.log(level, "Test")
         out, err = capsys.readouterr()
         if v >= level:
-            assert out == 'Test\n'
+            assert out == "Test\n"
         else:
-            assert out == ''
+            assert out == ""
 
     @pytest.mark.requires("nds2")
     def test_get_data(self, prod, nds2_connection):
@@ -194,26 +194,26 @@ class _TestCliProduct(object):
             exclude=("channel",),
         )
 
-    @pytest.mark.parametrize('ftype, filt', [
-        ('highpass', {'highpass': 10}),
-        ('lowpass', {'lowpass': 100}),
-        ('bandpass', {'highpass': 10, 'lowpass': 100}),
+    @pytest.mark.parametrize("ftype, filt", [
+        ("highpass", {"highpass": 10}),
+        ("lowpass", {"lowpass": 100}),
+        ("bandpass", {"highpass": 10, "lowpass": 100}),
     ])
     def test_filter_timeseries(self, dataprod, ftype, filt):
         ts = dataprod.timeseries[0]
-        if ftype == 'bandpass':
-            result = ts.bandpass(filt['highpass'], filt['lowpass'])
+        if ftype == "bandpass":
+            result = ts.bandpass(filt["highpass"], filt["lowpass"])
         else:
             result = getattr(ts, ftype)(filt[ftype])
 
         fts = dataprod._filter_timeseries(ts, **filt)
         utils.assert_quantity_sub_equal(fts, result)
 
-    @pytest.mark.parametrize('params, title', [
-        ({'highpass': 100}, 'high pass (100.0)'),
-        ({'lowpass': 100}, 'low pass (100.0)'),
-        ({'highpass': 100, 'lowpass': 200}, 'band pass (100.0-200.)'),
-        ({'highpass': 100, 'notch': [60]}, 'high pass (100.0), notch(60.0)'),
+    @pytest.mark.parametrize("params, title", [
+        ({"highpass": 100}, "high pass (100.0)"),
+        ({"lowpass": 100}, "low pass (100.0)"),
+        ({"highpass": 100, "lowpass": 200}, "band pass (100.0-200.)"),
+        ({"highpass": 100, "notch": [60]}, "high pass (100.0), notch(60.0)"),
     ])
     def test_get_title(self, prod, params, title):
         update_namespace(prod.args, **params)  # update parameters
@@ -222,10 +222,10 @@ class _TestCliProduct(object):
     def test_get_suptitle(self, prod):
         assert prod.get_suptitle() == prod.chan_list[0]
 
-    @pytest.mark.parametrize('params', [
+    @pytest.mark.parametrize("params", [
         {},
-        {'xscale': 'linear', 'xmin': 0, 'xmax': 5, 'xlabel': 'X-label',
-         'yscale': 'log', 'ymin': 0, 'ymax': 50, 'ylabel': 'Y-label'},
+        {"xscale": "linear", "xmin": 0, "xmax": 5, "xlabel": "X-label",
+         "yscale": "log", "ymin": 0, "ymax": 50, "ylabel": "Y-label"},
     ])
     def test_set_plot_properties(self, plotprod, params):
         args = plotprod.args
@@ -254,15 +254,15 @@ class _TestCliProduct(object):
 
         ymin, ymax = ax.get_ylim()
 
-        assert ax.get_xscale() == params.get('xscale', args.xscale)
-        assert ax.get_xlim() == (params.get('xmin', xmin),
-                                 params.get('xmax', xmax))
-        assert ax.get_xlabel() == params.get('xlabel', plotprod.get_xlabel())
+        assert ax.get_xscale() == params.get("xscale", args.xscale)
+        assert ax.get_xlim() == (params.get("xmin", xmin),
+                                 params.get("xmax", xmax))
+        assert ax.get_xlabel() == params.get("xlabel", plotprod.get_xlabel())
 
-        assert ax.get_yscale() == params.get('yscale', args.yscale or 'linear')
-        assert ax.get_ylim() == (params.get('ymin', ymin),
-                                 params.get('ymax', ymax))
-        assert ax.get_ylabel() == params.get('ylabel', plotprod.get_ylabel())
+        assert ax.get_yscale() == params.get("yscale", args.yscale or "linear")
+        assert ax.get_ylim() == (params.get("ymin", ymin),
+                                 params.get("ymax", ymax))
+        assert ax.get_ylabel() == params.get("ylabel", plotprod.get_ylabel())
 
     @pytest.mark.requires("nds2")
     def test_run(self, tmp_path, prod, nds2_connection):
@@ -285,10 +285,10 @@ class _TestImageProduct(_TestCliProduct):
         return dataprod
 
     def test_extra_plot_options(self, args):
-        for key in ('nocolorbar', 'cmap', 'imin', 'imax'):
+        for key in ("nocolorbar", "cmap", "imin", "imax"):
             assert hasattr(args, key)
 
-    @pytest.mark.parametrize('visible', [False, True])
+    @pytest.mark.parametrize("visible", [False, True])
     def test_set_plot_properties(self, plotprod, visible):
         update_namespace(plotprod.args, nocolorbar=not visible)
         plotprod.set_plot_properties()
@@ -332,14 +332,14 @@ class _TestTransferFunctionProduct(_TestCliProduct):
             nsamp = int(fftlength * 512 / 2.) + 1
             random.seed(i)
             if i % 2 == 0:
-                name = (f'{prod.timeseries[i+1].name}---'
-                        f'{prod.timeseries[i].name}')
+                name = (f"{prod.timeseries[i+1].name}---"
+                        f"{prod.timeseries[i].name}")
                 fs = FrequencySeries(
                     _random_data(nsamp) + 1j*_random_data(nsamp),
                     x0=0,
                     dx=1/fftlength,
                     channel=prod.timeseries[i+1].channel,
-                    name=f'{name}',
+                    name=f"{name}",
                     dtype=complex,
                 )
                 prod.test_chan = prod.timeseries[i+1].name

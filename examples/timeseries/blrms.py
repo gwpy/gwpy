@@ -23,7 +23,7 @@ should have had an impact on LIGO operations, I'd like to find out.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First: we import the objects we need, one for getting the data:
 from gwpy.timeseries import TimeSeriesDict
@@ -35,29 +35,29 @@ from gwpy.plot import Plot
 # We do this using string-replacement so we can substitute the interferometer
 # prefix easily when we need to:
 channels = [
-    '{ifo}:ISI-GND_STS_ITMY_Z_BLRMS_30M_100M',
+    "{ifo}:ISI-GND_STS_ITMY_Z_BLRMS_30M_100M",
 ]
 
 # At last we can :meth:`~TimeSeriesDict.get` 6 hours of data for each
 # interferometer:
-lho = TimeSeriesDict.get([c.format(ifo='H1') for c in channels],
-                         'Jan 16 2020 8:00', 'Jan 16 2020 14:00',
-                         host='losc-nds.ligo.org')
-llo = TimeSeriesDict.get([c.format(ifo='L1') for c in channels],
-                         'Jan 16 2020 8:00', 'Jan 16 2020 14:00',
-                         host='losc-nds.ligo.org')
+lho = TimeSeriesDict.get([c.format(ifo="H1") for c in channels],
+                         "Jan 16 2020 8:00", "Jan 16 2020 14:00",
+                         host="losc-nds.ligo.org")
+llo = TimeSeriesDict.get([c.format(ifo="L1") for c in channels],
+                         "Jan 16 2020 8:00", "Jan 16 2020 14:00",
+                         host="losc-nds.ligo.org")
 
 # Next we can plot the data, with a separate `~gwpy.plot.Axes` for each
 # instrument:
-plot = Plot(lho, llo, figsize=(12, 6), sharex=True, yscale='log')
+plot = Plot(lho, llo, figsize=(12, 6), sharex=True, yscale="log")
 ax1, ax2 = plot.axes
-for ifo, ax in zip(('Hanford', 'Livingston'), (ax1, ax2)):
-    ax.legend(['ground motion in the Z-direction'])
-    ax.text(1.01, 0.5, ifo, ha='left', va='center', transform=ax.transAxes,
+for ifo, ax in zip(("Hanford", "Livingston"), (ax1, ax2)):
+    ax.legend(["ground motion in the Z-direction"])
+    ax.text(1.01, 0.5, ifo, ha="left", va="center", transform=ax.transAxes,
             fontsize=18)
-ax1.set_ylabel(r'$1-3$\,Hz motion [nm/s]', y=-0.1)
-ax2.set_ylabel('')
-ax1.set_title('Impact of earthquakes on LIGO')
+ax1.set_ylabel(r"$1-3$\,Hz motion [nm/s]", y=-0.1)
+ax2.set_ylabel("")
+ax1.set_title("Impact of earthquakes on LIGO")
 plot.show()
 
 # As we can see, the earthquake had a huge impact on the LIGO observatories,

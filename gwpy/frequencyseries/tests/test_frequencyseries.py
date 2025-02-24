@@ -36,7 +36,7 @@ from ...timeseries import TimeSeries
 from ...types.tests.test_series import TestSeries as _TestSeries
 from .. import FrequencySeries
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 LIGO_LW_ARRAY = r"""<?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
@@ -112,12 +112,12 @@ class TestFrequencySeries(_TestSeries):
     # -- test methods ---------------------------
 
     def test_plot(self, array):
-        with rc_context(rc={'text.usetex': False}):
+        with rc_context(rc={"text.usetex": False}):
             plot = array.plot()
             line = plot.gca().lines[0]
             utils.assert_array_equal(line.get_xdata(), array.xindex.value)
             utils.assert_array_equal(line.get_ydata(), array.value)
-            plot.save(BytesIO(), format='png')
+            plot.save(BytesIO(), format="png")
             plot.close()
 
     def test_ifft(self):
@@ -145,17 +145,17 @@ class TestFrequencySeries(_TestSeries):
         z, p, k = signal.butter(
             3,
             30,
-            'low',
+            "low",
             analog=False,
-            output='zpk',
+            output="zpk",
             fs=fs
         )
         za, pa, ka = signal.butter(
             3,
             30,
-            'low',
+            "low",
             analog=True,
-            output='zpk'
+            output="zpk"
         )
 
         a2 = array.filter(za, pa, ka, analog=True)
@@ -189,12 +189,12 @@ class TestFrequencySeries(_TestSeries):
         # create a timeseries out of an array of zeros
         df, nyquist = 1, 2048
         nsamp = int(nyquist/df) + 1
-        data = FrequencySeries(numpy.zeros(nsamp), f0=0, df=df, unit='')
+        data = FrequencySeries(numpy.zeros(nsamp), f0=0, df=df, unit="")
 
         # create a second timeseries to inject into the first
         w_nyquist = 1024
         w_nsamp = int(w_nyquist/df) + 1
-        sig = FrequencySeries(numpy.ones(w_nsamp), f0=0, df=df, unit='')
+        sig = FrequencySeries(numpy.ones(w_nsamp), f0=0, df=df, unit="")
 
         # test that we recover this waveform when we add it to data,
         # and that the operation does not change the original data
@@ -210,7 +210,7 @@ class TestFrequencySeries(_TestSeries):
         # create a simple FrequencySeries
         df, nyquist = 1, 256
         nsamp = int(nyquist/df) + 1
-        fseries = FrequencySeries(numpy.ones(nsamp), f0=1, df=df, unit='')
+        fseries = FrequencySeries(numpy.ones(nsamp), f0=1, df=df, unit="")
 
         # create an interpolated FrequencySeries
         newf = fseries.interpolate(df/2.)
@@ -231,14 +231,14 @@ class TestFrequencySeries(_TestSeries):
         # check that to + from returns the same array
         lalts = array.to_lal()
         a2 = type(array).from_lal(lalts)
-        utils.assert_quantity_sub_equal(array, a2, exclude=['channel'])
+        utils.assert_quantity_sub_equal(array, a2, exclude=["channel"])
 
         # test copy=False
         a2 = type(array).from_lal(lalts, copy=False)
         assert shares_memory(a2.value, lalts.data.data)
 
         # test units
-        array.override_unit('undef')
+        array.override_unit("undef")
         with pytest.warns(UserWarning):
             lalts = array.to_lal()
         assert lalts.sampleUnits == lal.DimensionlessUnit
@@ -262,7 +262,7 @@ class TestFrequencySeries(_TestSeries):
         # go back and check we get back what we put in in the first place
         a2 = type(array).from_pycbc(pycbcfs)
         utils.assert_quantity_sub_equal(
-            array, a2, exclude=['name', 'unit', 'channel'])
+            array, a2, exclude=["name", "unit", "channel"])
 
         # test copy=False
         a2 = type(array).from_pycbc(array.to_pycbc(copy=False), copy=False)
@@ -279,15 +279,15 @@ class TestFrequencySeries(_TestSeries):
         ):
             array.to_pycbc()
 
-    @pytest.mark.parametrize('format', [
-        'txt',
-        'csv',
+    @pytest.mark.parametrize("format", [
+        "txt",
+        "csv",
     ])
     def test_read_write(self, array, format):
         utils.test_read_write(
             array, format,
             assert_equal=utils.assert_quantity_sub_equal,
-            assert_kw={'exclude': ['name', 'channel', 'unit', 'epoch']})
+            assert_kw={"exclude": ["name", "channel", "unit", "epoch"]})
 
     @staticmethod
     @pytest.fixture
@@ -298,7 +298,7 @@ class TestFrequencySeries(_TestSeries):
 
     @pytest.mark.requires("lal", "ligo.lw")
     def test_read_ligolw(self, ligolw):
-        array = FrequencySeries.read(ligolw, 'PSD1')
+        array = FrequencySeries.read(ligolw, "PSD1")
         utils.assert_quantity_equal(
             array,
             [1, 2, 3, 4, 5] / units.Hz,

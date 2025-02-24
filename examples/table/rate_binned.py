@@ -28,14 +28,14 @@ the performance of the LIGO detectors and downstream data analysis procedures.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.table'
+__currentmodule__ = "gwpy.table"
 
 # First, we import the `EventTable` object and read in a set of events from
 # a LIGO_LW-format XML file containing a
 # :class:`sngl_burst <ligo.lw.lsctables.SnglBurstTable>` table
 from gwpy.table import EventTable
-events = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz',
-                         tablename='sngl_burst', columns=['peak', 'snr'])
+events = EventTable.read("H1-LDAS_STRAIN-968654552-10.xml.gz",
+                         tablename="sngl_burst", columns=["peak", "snr"])
 
 # .. note::
 #
@@ -44,7 +44,7 @@ events = EventTable.read('H1-LDAS_STRAIN-968654552-10.xml.gz',
 
 # Now we can use the :meth:`~EventTable.binned_event_rates` method to
 # calculate the event rate in a number of bins of SNR.
-rates = events.binned_event_rates(1, 'snr', [2, 3, 5, 8], operator='>=',
+rates = events.binned_event_rates(1, "snr", [2, 3, 5, 8], operator=">=",
                                   start=968654552, end=968654562)
 # .. note::
 #
@@ -55,7 +55,7 @@ rates = events.binned_event_rates(1, 'snr', [2, 3, 5, 8], operator='>=',
 plot = rates.step()
 ax = plot.gca()
 ax.set_xlim(968654552, 968654562)
-ax.set_ylabel('Event rate [Hz]')
-ax.set_title('LIGO Hanford Observatory event rate for HW100916')
-ax.legend(title='SNR $>=$')
+ax.set_ylabel("Event rate [Hz]")
+ax.set_title("LIGO Hanford Observatory event rate for HW100916")
+ax.legend(title="SNR $>=$")
 plot.show()

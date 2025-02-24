@@ -24,7 +24,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
 METADATA: dict[str, str | None] = {
     # replacement for __metadata__ variables, use None to ignore

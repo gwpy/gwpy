@@ -227,7 +227,7 @@ def test_find_latest_on_missing(on_missing, ctx):
     mock.MagicMock(return_value=False),
 )
 @mock.patch(
-    'gwpy.io.datafind.num_channels',
+    "gwpy.io.datafind.num_channels",
     mock.MagicMock(return_value=1),
 )
 def test_datafind_find_frametype():

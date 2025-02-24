@@ -39,9 +39,9 @@ from ...types.tests.test_series import TestSeries as _TestSeries
 from .. import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList)
 
 numpy.random.seed(1)
-GPS_EPOCH = Time(0, format='gps', scale='utc')
+GPS_EPOCH = Time(0, format="gps", scale="utc")
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 # -- TimeSeriesBase -----------------------------------------------------------
@@ -57,8 +57,8 @@ class TestTimeSeriesBase(_TestSeries):
 
         # check time-domain metadata
         assert array.epoch == GPS_EPOCH
-        assert array.sample_rate == units.Quantity(1, 'Hertz')
-        assert array.dt == units.Quantity(1, 'second')
+        assert array.sample_rate == units.Quantity(1, "Hertz")
+        assert array.dt == units.Quantity(1, "second")
 
     def test_new_epoch_t0(self):
         """Test `gwpy.timeseries.TimeSeriesBase` handling of epoch vs t0.
@@ -90,7 +90,7 @@ class TestTimeSeriesBase(_TestSeries):
         """
         # check basic conversion from t0 -> epoch
         a = self.create(t0=1126259462)
-        assert a.epoch == Time('2015-09-14 09:50:45', format='iso')
+        assert a.epoch == Time("2015-09-14 09:50:45", format="iso")
 
         # test that we can't delete epoch
         with pytest.raises(AttributeError):
@@ -102,9 +102,9 @@ class TestTimeSeriesBase(_TestSeries):
             a._t0
 
         # check other types
-        a.epoch = Time('2015-09-14 09:50:45', format='iso')
+        a.epoch = Time("2015-09-14 09:50:45", format="iso")
         utils.assert_quantity_almost_equal(
-            a.t0, units.Quantity(1126259462, 's'))
+            a.t0, units.Quantity(1126259462, "s"))
 
     def test_sample_rate(self):
         """Test `gwpy.timeseries.TimeSeriesBase.sample_rate`.
@@ -161,12 +161,12 @@ class TestTimeSeriesBase(_TestSeries):
     # -- test methods ---------------------------
 
     def test_plot(self, array):
-        with rc_context(rc={'text.usetex': False}):
+        with rc_context(rc={"text.usetex": False}):
             plot = array.plot()
             line = plot.gca().lines[0]
             utils.assert_array_equal(line.get_xdata(), array.xindex.value)
             utils.assert_array_equal(line.get_ydata(), array.value)
-            plot.save(BytesIO(), format='png')
+            plot.save(BytesIO(), format="png")
             plot.close()
 
     @pytest.mark.requires("arrakis")
@@ -210,12 +210,12 @@ class TestTimeSeriesBase(_TestSeries):
     def test_from_nds2_buffer(self):
         # build fake buffer
         nds_buffer = mocks.nds2_buffer(
-            'X1:TEST',
+            "X1:TEST",
             self.data,
             1000000000,
             self.data.shape[0],
-            'm',
-            name='test',
+            "m",
+            name="test",
             slope=2,
             offset=1,
         )
@@ -229,13 +229,13 @@ class TestTimeSeriesBase(_TestSeries):
         utils.assert_array_equal(a.value, nds_buffer.data * 2 + 1)
         assert a.t0 == 1000000000 * units.s
         assert a.dt == units.s / nds_buffer.data.shape[0]
-        assert a.name == 'test'
+        assert a.name == "test"
         assert a.channel == Channel(
-            'X1:TEST',
+            "X1:TEST",
             sample_rate=self.data.shape[0],
-            unit='m',
-            type='raw',
-            dtype='float32',
+            unit="m",
+            type="raw",
+            dtype="float32",
         )
 
         # check that we can use keywords to override settings
@@ -249,7 +249,7 @@ class TestTimeSeriesBase(_TestSeries):
         # check that to + from returns the same array
         lalts = array.to_lal()
         a2 = type(array).from_lal(lalts)
-        utils.assert_quantity_sub_equal(array, a2, exclude=['channel'])
+        utils.assert_quantity_sub_equal(array, a2, exclude=["channel"])
 
     @pytest.mark.requires("lal")
     @pytest.mark.parametrize("copy", (False, True))
@@ -265,7 +265,7 @@ class TestTimeSeriesBase(_TestSeries):
         """Test that unrecognised units get warned, but the operation continues
         """
         import lal
-        array.override_unit('undef')
+        array.override_unit("undef")
         with pytest.warns(UserWarning):
             lalts = array.to_lal()
         assert lalts.sampleUnits == lal.DimensionlessUnit
@@ -306,7 +306,7 @@ class TestTimeSeriesBase(_TestSeries):
         # go back and check we get back what we put in in the first place
         a2 = type(array).from_pycbc(pycbcts)
         utils.assert_quantity_sub_equal(
-            array, a2, exclude=['name', 'unit', 'channel'])
+            array, a2, exclude=["name", "unit", "channel"])
 
         # test copy=False
         a2 = type(array).from_pycbc(array.to_pycbc(copy=False), copy=False)
@@ -323,10 +323,10 @@ class TestTimeSeriesBaseDict(object):
     @classmethod
     def create(cls):
         new = cls.TEST_CLASS()
-        new['a'] = cls.ENTRY_CLASS(numpy.random.normal(size=200),
-                                   name='a', x0=0, dx=1, dtype=cls.DTYPE)
-        new['b'] = cls.ENTRY_CLASS(numpy.random.normal(size=2000),
-                                   name='b', x0=0, dx=.1, dtype=cls.DTYPE)
+        new["a"] = cls.ENTRY_CLASS(numpy.random.normal(size=200),
+                                   name="a", x0=0, dx=1, dtype=cls.DTYPE)
+        new["b"] = cls.ENTRY_CLASS(numpy.random.normal(size=2000),
+                                   name="b", x0=0, dx=.1, dtype=cls.DTYPE)
         return new
 
     @pytest.fixture()
@@ -395,7 +395,7 @@ class TestTimeSeriesBaseDict(object):
         # check padding works (don't validate too much, that is tested
         # elsewhere)
         b = instance.copy()
-        b.append(new, pad=0, gap='pad')
+        b.append(new, pad=0, gap="pad")
 
     def test_prepend(self, instance):
         # test appending from empty (with and without copy)
@@ -508,29 +508,29 @@ class TestTimeSeriesBaseDict(object):
     @pytest.mark.requires("nds2")
     def test_from_nds2_buffers(self):
         buffers = [
-            mocks.nds2_buffer('X1:TEST', numpy.arange(100), 1000000000,
-                              1, 'm'),
-            mocks.nds2_buffer('X1:TEST2', numpy.arange(100, 200), 1000000100,
-                              1, 'm'),
+            mocks.nds2_buffer("X1:TEST", numpy.arange(100), 1000000000,
+                              1, "m"),
+            mocks.nds2_buffer("X1:TEST2", numpy.arange(100, 200), 1000000100,
+                              1, "m"),
         ]
         a = self.TEST_CLASS.from_nds2_buffers(buffers)
         assert isinstance(a, self.TEST_CLASS)
-        assert a['X1:TEST'].x0.value == 1000000000
-        assert a['X1:TEST2'].dx.value == 1
-        assert a['X1:TEST2'].x0.value == 1000000100
+        assert a["X1:TEST"].x0.value == 1000000000
+        assert a["X1:TEST2"].dx.value == 1
+        assert a["X1:TEST2"].x0.value == 1000000100
 
         a = self.TEST_CLASS.from_nds2_buffers(buffers, sample_rate=.01)
-        assert a['X1:TEST'].dx.value == 100
+        assert a["X1:TEST"].dx.value == 100
 
     def test_plot(self, instance):
-        with rc_context(rc={'text.usetex': False}):
+        with rc_context(rc={"text.usetex": False}):
             plot = instance.plot()
             for line, key in zip(plot.gca().lines, instance):
                 utils.assert_array_equal(line.get_xdata(),
                                          instance[key].xindex.value)
                 utils.assert_array_equal(line.get_ydata(),
                                          instance[key].value)
-            plot.save(BytesIO(), format='png')
+            plot.save(BytesIO(), format="png")
             plot.close()
 
     def test_plot_separate(self, instance):
@@ -538,7 +538,7 @@ class TestTimeSeriesBaseDict(object):
 
         See https://gitlab.com/gwpy/gwpy/-/issues/1609
         """
-        with rc_context(rc={'text.usetex': False}):
+        with rc_context(rc={"text.usetex": False}):
             plot = instance.plot(separate=True)
             assert len(plot.axes) == len(instance.keys())
             for ax, key in zip(plot.axes, instance):
@@ -546,7 +546,7 @@ class TestTimeSeriesBaseDict(object):
                                          instance[key].xindex.value)
                 utils.assert_array_equal(ax.lines[-1].get_ydata(),
                                          instance[key].value)
-            plot.save(BytesIO(), format='png')
+            plot.save(BytesIO(), format="png")
             plot.close()
 
 
@@ -628,7 +628,7 @@ class TestTimeSeriesBaseList(object):
             a.join()
 
         # but we can pad to get rid of the errors
-        t = a.join(gap='pad')
+        t = a.join(gap="pad")
         assert isinstance(t, a.EntryClass)
         assert t.span == (0, 16)
         utils.assert_array_equal(

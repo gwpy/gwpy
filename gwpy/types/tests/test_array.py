@@ -34,15 +34,15 @@ from ...testing import utils
 from ...time import LIGOTimeGPS
 from .. import Array
 
-warnings.filterwarnings('always', category=units.UnitsWarning)
-warnings.filterwarnings('always', category=UserWarning)
+warnings.filterwarnings("always", category=units.UnitsWarning)
+warnings.filterwarnings("always", category=UserWarning)
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 SEED = 1
 GPS_EPOCH = 12345
-TIME_EPOCH = Time(12345, format='gps', scale='utc')
-CHANNEL_NAME = 'G1:TEST-CHANNEL'
+TIME_EPOCH = Time(12345, format="gps", scale="utc")
+CHANNEL_NAME = "G1:TEST-CHANNEL"
 CHANNEL = Channel(CHANNEL_NAME)
 
 
@@ -61,7 +61,7 @@ class TestArray(object):
 
     @classmethod
     def create(cls, *args, **kwargs):
-        kwargs.setdefault('copy', False)
+        kwargs.setdefault("copy", False)
         return cls.TEST_CLASS(cls.data, *args, **kwargs)
 
     @classmethod
@@ -75,14 +75,14 @@ class TestArray(object):
             return self._TEST_ARRAY
         except AttributeError:
             # create array
-            self._TEST_ARRAY = self.create(name=CHANNEL_NAME, unit='meter',
+            self._TEST_ARRAY = self.create(name=CHANNEL_NAME, unit="meter",
                                            channel=CHANNEL_NAME,
                                            epoch=GPS_EPOCH)
             # customise channel a wee bit
             #    used to test pickle/unpickle when storing channel as
             #    dataset attr in HDF5
             self._TEST_ARRAY.channel.sample_rate = 128
-            self._TEST_ARRAY.channel.unit = 'm'
+            self._TEST_ARRAY.channel.unit = "m"
             return self.TEST_ARRAY
 
     # -- test basic construction ----------------
@@ -117,22 +117,22 @@ class TestArray(object):
         assert array.unit is None
 
         # test unit gets passed properly
-        array = self.create(unit='m')
+        array = self.create(unit="m")
         assert array.unit is units.m
 
         # test unrecognised units
         with mock.patch.dict(
-                'gwpy.detector.units.UNRECOGNIZED_UNITS', clear=True), \
+                "gwpy.detector.units.UNRECOGNIZED_UNITS", clear=True), \
                 pytest.warns(units.UnitsWarning):
-            array = self.create(unit='blah')
+            array = self.create(unit="blah")
         assert isinstance(array.unit, units.IrreducibleUnit)
-        assert str(array.unit) == 'blah'
+        assert str(array.unit) == "blah"
 
         # test setting unit doesn't work
         with pytest.raises(AttributeError):
-            array.unit = 'm'
+            array.unit = "m"
         del array.unit
-        array.unit = 'm'
+        array.unit = "m"
         assert array.unit is units.m
 
     def test_name(self, array):
@@ -145,8 +145,8 @@ class TestArray(object):
         assert array.name is None
 
         # test simple name
-        array = self.create(name='TEST CASE')
-        assert array.name == 'TEST CASE'
+        array = self.create(name="TEST CASE")
+        assert array.name == "TEST CASE"
 
         # test None gets preserved
         array.name = None
@@ -154,7 +154,7 @@ class TestArray(object):
 
         # but everything else gets str()
         array.name = 4
-        assert array.name == '4'
+        assert array.name == "4"
 
     def test_epoch(self, array):
         # test default is no epoch
@@ -206,7 +206,7 @@ class TestArray(object):
         assert array.channel is None
 
     def test_math(self, array):
-        array.override_unit('Hz')
+        array.override_unit("Hz")
         # test basic operations
         arraysq = array ** 2
         utils.assert_array_equal(arraysq.value, self.data ** 2)
@@ -216,7 +216,7 @@ class TestArray(object):
         assert arraysq.channel == array.channel
 
     def test_copy(self):
-        array = self.create(channel='X1:TEST')
+        array = self.create(channel="X1:TEST")
         copy = array.copy()
         utils.assert_quantity_sub_equal(array, copy)
         assert copy.channel is not array.channel
@@ -251,20 +251,20 @@ class TestArray(object):
         assert array.unit is units.dimensionless_unscaled
 
         # check basic override works
-        array.override_unit('m')
+        array.override_unit("m")
         assert array.unit is units.meter
 
         # check parse_strict works for each of 'raise' (default), 'warn',
         # and 'silent'
         with mock.patch.dict(
-                'gwpy.detector.units.UNRECOGNIZED_UNITS', clear=True):
+                "gwpy.detector.units.UNRECOGNIZED_UNITS", clear=True):
             with pytest.raises(ValueError):
-                array.override_unit('blah', parse_strict='raise')
+                array.override_unit("blah", parse_strict="raise")
             with pytest.warns(units.UnitsWarning):
-                array.override_unit('blah', parse_strict='warn')
-            array.override_unit('blah', parse_strict='silent')
+                array.override_unit("blah", parse_strict="warn")
+            array.override_unit("blah", parse_strict="silent")
         assert isinstance(array.unit, units.IrreducibleUnit)
-        assert str(array.unit) == 'blah'
+        assert str(array.unit) == "blah"
 
     def test_flatten(self, array):
         flat = array.flatten()
@@ -273,8 +273,8 @@ class TestArray(object):
         assert flat.shape[0] == numpy.prod(array.shape)
         try:
             utils.assert_quantity_equal(
-                array.flatten('C'),
-                array.T.flatten('F'),
+                array.flatten("C"),
+                array.T.flatten("F"),
             )
         except NotImplementedError:
             pass

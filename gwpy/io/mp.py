@@ -56,7 +56,7 @@ def read_multi(flatten, cls, source, *args, **kwargs):
     **kwargs
         keyword arguments to pass to the reader
     """
-    verbose = kwargs.pop('verbose', False)
+    verbose = kwargs.pop("verbose", False)
 
     # parse input as a list of files
     try:  # try and map to a list of file-like objects
@@ -72,11 +72,11 @@ def read_multi(flatten, cls, source, *args, **kwargs):
         raise IndexError(f"cannot read {cls.__name__} from empty source list")
 
     # determine input format (so we don't have to do it multiple times)
-    if kwargs.get('format', None) is None:
-        kwargs['format'] = get_read_format(cls, path, (source,) + args, kwargs)
+    if kwargs.get("format", None) is None:
+        kwargs["format"] = get_read_format(cls, path, (source,) + args, kwargs)
 
     # calculate maximum number of processes
-    nproc = min(kwargs.pop('nproc', 1), len(files))
+    nproc = min(kwargs.pop("nproc", 1), len(files))
 
     # format verbosity
     if verbose is True:
@@ -87,7 +87,7 @@ def read_multi(flatten, cls, source, *args, **kwargs):
 
     # read files
     output = mp_utils.multiprocess_with_queues(
-        nproc, _read_single_file, inputs, verbose=verbose, unit='files')
+        nproc, _read_single_file, inputs, verbose=verbose, unit="files")
 
     # raise exceptions (from multiprocessing, single process raises inline)
     for fobj, exc in output:

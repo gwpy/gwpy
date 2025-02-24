@@ -68,4 +68,4 @@ def get_default_fft_api() -> str:
     >>> get_default_fft_api()
     'scipy'
     """
-    return 'scipy'
+    return "scipy"

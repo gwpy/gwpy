@@ -32,15 +32,15 @@ vol. 119, p. 161101 <http://doi.org/10.1103/PhysRevLett.119.161101>`_).
 """
 
 __author__ = "Alex Urban <alexander.urban@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First, we need to download the `TimeSeries` record of L1 strain measurements
 # from |GWOSC|_:
 
 from gwosc import datasets
 from gwpy.timeseries import TimeSeries
-gps = datasets.event_gps('GW170817')
-data = TimeSeries.fetch_open_data('L1', gps-34, gps+34)
+gps = datasets.event_gps("GW170817")
+data = TimeSeries.fetch_open_data("L1", gps-34, gps+34)
 
 # We can Q-transform these data and scan over time-frequency planes to
 # find the one with the most significant tile near the time of merger:
@@ -62,24 +62,24 @@ qgram = data.q_gram(
 # specific window around the merger time:
 
 plot = qgram.tile(
-    'time',
-    'frequency',
-    'duration',
-    'bandwidth',
-    color='energy',
+    "time",
+    "frequency",
+    "duration",
+    "bandwidth",
+    color="energy",
 )
 ax = plot.gca()
-ax.set_xscale('seconds')
+ax.set_xscale("seconds")
 ax.set_xlim(gps-6, gps+1)
 ax.set_epoch(gps)
-ax.set_yscale('log')
+ax.set_yscale("log")
 ax.set_ylim(16, 1024)
-ax.set_ylabel('Frequency [Hz]')
-ax.grid(True, axis='y', which='both')
+ax.set_ylabel("Frequency [Hz]")
+ax.grid(True, axis="y", which="both")
 
 from matplotlib import colormaps
-cmap = colormaps['viridis']
-ax.colorbar(cmap=cmap.name, label='Normalized energy', clim=[0, 50])
+cmap = colormaps["viridis"]
+ax.colorbar(cmap=cmap.name, label="Normalized energy", clim=[0, 50])
 ax.set_facecolor(cmap(0))  # colour background to the bottom of the map
 
 plot.show()

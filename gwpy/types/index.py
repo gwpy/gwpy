@@ -80,12 +80,12 @@ class Index(Quantity):
         """`True` if this index is linearly increasing
         """
         try:
-            return self.info.meta['regular']
+            return self.info.meta["regular"]
         except (TypeError, KeyError):
             if self.info.meta is None:
                 self.info.meta = {}
-            self.info.meta['regular'] = self.is_regular()
-            return self.info.meta['regular']
+            self.info.meta["regular"] = self.is_regular()
+            return self.info.meta["regular"]
 
     def is_regular(self):
         """Determine whether this `Index` contains linearly increasing samples

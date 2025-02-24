@@ -39,13 +39,13 @@ class LatexInlineDimensional(LatexInline):
     >>> Unit('m/s').to_string(format='latex_inline_dimensional')
     'Speed [$\mathrm{m\,s^{-1}}$]'
     """
-    name = 'latex_inline_dimensional'
+    name = "latex_inline_dimensional"
 
     @classmethod
     def to_string(cls, unit, *args, **kwargs):
         u = f"[{super().to_string(unit, *args, **kwargs)}]"
 
-        if unit.physical_type not in {None, 'unknown', 'dimensionless'}:
+        if unit.physical_type not in {None, "unknown", "dimensionless"}:
             # format physical type of unit for LaTeX
             ptype = str(unit.physical_type).title().replace("_", r"\_")
             # return '<Physical type> [<unit>]'

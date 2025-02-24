@@ -26,13 +26,13 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # groups of input parameters (for passing to Plot())
 FIGURE_PARAMS = [
-    'figsize', 'dpi',
+    "figsize", "dpi",
 ]
 AXES_PARAMS = [
-    'projection', 'title',  # standard options
-    'sharex', 'xlim', 'xlabel', 'xscale',  # X-axis params
-    'sharey', 'ylim', 'ylabel', 'yscale',  # Y-axis params
-    'epoch', 'insetlabels',  # special GWpy extras
+    "projection", "title",  # standard options
+    "sharex", "xlim", "xlabel", "xscale",  # X-axis params
+    "sharey", "ylim", "ylabel", "yscale",  # Y-axis params
+    "epoch", "insetlabels",  # special GWpy extras
 ]
 
 
@@ -49,4 +49,4 @@ def marker_cycle(markers=None):
     """
     if markers:
         return itertools.cycle(markers)
-    return itertools.cycle(('o', 'x', '+', '^', 'D', 'H', '1'))
+    return itertools.cycle(("o", "x", "+", "^", "D", "H", "1"))

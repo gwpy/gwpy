@@ -39,15 +39,15 @@ class TestBodePlot(FigureTestBase):
         assert len(fig.axes) == 2
         maxes, paxes = fig.axes
         # test magnigtude axes
-        assert maxes.get_xscale() == 'log'
-        assert maxes.get_xlabel() == ''
-        assert maxes.get_yscale() == 'linear'
-        assert maxes.get_ylabel() == 'Magnitude [dB]'
+        assert maxes.get_xscale() == "log"
+        assert maxes.get_xlabel() == ""
+        assert maxes.get_yscale() == "linear"
+        assert maxes.get_ylabel() == "Magnitude [dB]"
         # test phase axes
-        assert paxes.get_xscale() == 'log'
-        assert paxes.get_xlabel() == 'Frequency [Hz]'
-        assert paxes.get_yscale() == 'linear'
-        assert paxes.get_ylabel() == 'Phase [deg]'
+        assert paxes.get_xscale() == "log"
+        assert paxes.get_xlabel() == "Frequency [Hz]"
+        assert paxes.get_yscale() == "linear"
+        assert paxes.get_ylabel() == "Phase [deg]"
 
     def test_add_filter(self, fig):
         lm, lp = fig.add_filter(ZPK, analog=True)
@@ -59,14 +59,14 @@ class TestBodePlot(FigureTestBase):
         nptest.assert_array_almost_equal(lp.get_ydata(), PHASE)
 
     def test_init_with_filter(self):
-        fig = self.FIGURE_CLASS(ZPK, analog=True, title='ZPK')
+        fig = self.FIGURE_CLASS(ZPK, analog=True, title="ZPK")
         lm = fig.maxes.get_lines()[0]
         lp = fig.paxes.get_lines()[0]
         nptest.assert_array_equal(lm.get_xdata(), FREQUENCIES)
         nptest.assert_array_equal(lm.get_ydata(), MAGNITUDE)
         nptest.assert_array_equal(lp.get_xdata(), FREQUENCIES)
         nptest.assert_array_almost_equal(lp.get_ydata(), PHASE)
-        assert fig.maxes.get_title() == 'ZPK'
+        assert fig.maxes.get_title() == "ZPK"
         self.save_and_close(fig)
 
     def test_add_frequencyseries(self, fig):

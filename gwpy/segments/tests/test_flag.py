@@ -38,7 +38,7 @@ from ...segments import (Segment, SegmentList,
 from ...testing import utils
 from ...testing.errors import pytest_skip_flaky_network
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 # -- veto definer fixture -----------------------------------------------------
@@ -128,7 +128,7 @@ def _as_segmentlist(*segments):
     return SegmentList([Segment(a, b) for a, b in segments])
 
 
-NAME = 'X1:TEST-FLAG_NAME:0'
+NAME = "X1:TEST-FLAG_NAME:0"
 
 # simple list of 'known' segments
 KNOWN = _as_segmentlist(
@@ -175,17 +175,17 @@ ACTIVEPADC = _as_segmentlist(
 
 # -- query helpers ------------------------------------------------------------
 
-QUERY_FLAGS = ['X1:TEST-FLAG:1', 'Y1:TEST-FLAG2:4']
+QUERY_FLAGS = ["X1:TEST-FLAG:1", "Y1:TEST-FLAG2:4"]
 
 QUERY_RESULT = DataQualityDict()
 
-QUERY_RESULT['X1:TEST-FLAG:1'] = DataQualityFlag(
-    'X1:TEST-FLAG:1',
+QUERY_RESULT["X1:TEST-FLAG:1"] = DataQualityFlag(
+    "X1:TEST-FLAG:1",
     known=[(0, 10)],
     active=[(0, 1), (1, 2), (3, 4), (6, 9)])
 
-QUERY_RESULT['Y1:TEST-FLAG2:4'] = DataQualityFlag(
-    'Y1:TEST-FLAG2:4',
+QUERY_RESULT["Y1:TEST-FLAG2:4"] = DataQualityFlag(
+    "Y1:TEST-FLAG2:4",
     known=[(0, 5), (9, 10)],
     active=[])
 
@@ -195,25 +195,25 @@ QUERY_RESULTC = type(QUERY_RESULT)({x: y.copy().coalesce() for
 
 def mock_query_segments(flag, start, end, **kwargs):
     try:
-        ifo, name, version = flag.split(':')
+        ifo, name, version = flag.split(":")
         version = int(version)
     except ValueError:
-        ifo, name = flag.split(':', 1)
+        ifo, name = flag.split(":", 1)
         version = None
     span = SegmentList([Segment(start, end)])
     reflag = re.compile(flag)
     try:
         actual = list(filter(reflag.match, QUERY_RESULT))[0]
     except IndexError:
-        raise HTTPError('test-url/', 404, 'Not found', None, None)
+        raise HTTPError("test-url/", 404, "Not found", None, None)
     return {
-        'ifo': ifo,
-        'name': name,
-        'version': version,
-        'known': list(map(tuple, QUERY_RESULT[actual].known & span)),
-        'active': list(map(tuple, QUERY_RESULT[actual].active & span)),
-        'query_information': {},
-        'metadata': kwargs,
+        "ifo": ifo,
+        "name": name,
+        "version": version,
+        "known": list(map(tuple, QUERY_RESULT[actual].known & span)),
+        "active": list(map(tuple, QUERY_RESULT[actual].active & span)),
+        "query_information": {},
+        "metadata": kwargs,
     }
 
 
@@ -242,9 +242,9 @@ class TestDataQualityFlag(object):
         assert empty.name is None
 
         assert flag.name == NAME
-        assert flag.ifo == NAME.split(':')[0]
-        assert flag.tag == NAME.split(':')[1]
-        assert flag.version == int(NAME.split(':')[2])
+        assert flag.ifo == NAME.split(":")[0]
+        assert flag.tag == NAME.split(":")[1]
+        assert flag.version == int(NAME.split(":")[2])
 
     def test_known(self, empty, flag):
         assert isinstance(empty.known, SegmentList)
@@ -268,7 +268,7 @@ class TestDataQualityFlag(object):
 
     def test_texname(self, empty, flag):
         assert empty.texname is None
-        assert flag.texname == NAME.replace('_', r'\_')
+        assert flag.texname == NAME.replace("_", r"\_")
 
     def test_extent(self, empty, flag):
         assert flag.extent == (KNOWN[0][0], KNOWN[-1][1])
@@ -305,34 +305,34 @@ class TestDataQualityFlag(object):
         assert flag.tag is None
         assert flag.version is None
 
-        flag = self.TEST_CLASS('test')
-        assert flag.name == 'test'
+        flag = self.TEST_CLASS("test")
+        assert flag.name == "test"
         assert flag.ifo is None
         assert flag.tag is None
         assert flag.version is None
 
-        flag = self.TEST_CLASS('L1:test')
-        assert flag.name == 'L1:test'
-        assert flag.ifo == 'L1'
-        assert flag.tag == 'test'
+        flag = self.TEST_CLASS("L1:test")
+        assert flag.name == "L1:test"
+        assert flag.ifo == "L1"
+        assert flag.tag == "test"
         assert flag.version is None
 
-        flag = self.TEST_CLASS('L1:test:1')
-        assert flag.name == 'L1:test:1'
-        assert flag.ifo == 'L1'
-        assert flag.tag == 'test'
+        flag = self.TEST_CLASS("L1:test:1")
+        assert flag.name == "L1:test:1"
+        assert flag.ifo == "L1"
+        assert flag.tag == "test"
         assert isinstance(flag.version, int)
         assert flag.version == 1
 
-        flag = self.TEST_CLASS('test:1')
-        assert flag.name == 'test:1'
+        flag = self.TEST_CLASS("test:1")
+        assert flag.name == "test:1"
         assert flag.ifo is None
-        assert flag.tag == 'test'
+        assert flag.tag == "test"
         assert flag.version == 1
 
     def test_plot(self, flag):
-        flag.label = 'Test label'
-        with rc_context(rc={'text.usetex': False}):
+        flag.label = "Test label"
+        with rc_context(rc={"text.usetex": False}):
             plot = flag.plot(figsize=(6.4, 3.8))
             assert isinstance(plot.gca(), SegmentAxes)
             assert plot.gca().get_epoch() == flag.known[0][0]
@@ -341,11 +341,11 @@ class TestDataQualityFlag(object):
             assert len(plot.gca().collections[0].get_paths()) == len(ACTIVE)
             assert plot.gca().collections[0].get_label() == flag.label
 
-            plot.save(BytesIO(), format='png')
+            plot.save(BytesIO(), format="png")
             plot.close()
 
         flag.label = None
-        with rc_context(rc={'text.usetex': True}):
+        with rc_context(rc={"text.usetex": True}):
             plot = flag.plot(figsize=(6.4, 3.8))
             assert plot.gca().collections[0].get_label() == flag.texname
             plot.close()
@@ -424,7 +424,7 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(flag.known, KNOWN)
         utils.assert_segmentlist_equal(flag.active, ACTIVE)
 
-    @pytest.mark.parametrize('contract, active', [
+    @pytest.mark.parametrize("contract, active", [
         (False, ACTIVE_CONTRACTED),
         (True, ACTIVE_PROTRACTED),
     ])
@@ -461,7 +461,7 @@ class TestDataQualityFlag(object):
 
         # check that other keyword arguments get rejected appropriately
         with pytest.raises(TypeError):
-            flag.pad(*PADDING, kwarg='test')
+            flag.pad(*PADDING, kwarg="test")
 
     @pytest.mark.requires("ligo.lw.lsctables")
     def test_from_veto_def(self):
@@ -469,25 +469,25 @@ class TestDataQualityFlag(object):
 
         def veto_def(ifo, name, version, **kwargs):
             vdef = VetoDef()
-            kwargs['ifo'] = ifo
-            kwargs['name'] = name
-            kwargs['version'] = version
+            kwargs["ifo"] = ifo
+            kwargs["name"] = name
+            kwargs["version"] = version
             for key in VetoDef.__slots__:
                 setattr(vdef, key, kwargs.get(key, None))
             return vdef
 
-        a = veto_def('X1', 'TEST-FLAG', 1, start_time=0, end_time=0,
-                     start_pad=-2, end_pad=2, comment='Comment')
+        a = veto_def("X1", "TEST-FLAG", 1, start_time=0, end_time=0,
+                     start_pad=-2, end_pad=2, comment="Comment")
         f = self.TEST_CLASS.from_veto_def(a)
-        assert f.name == 'X1:TEST-FLAG:1'
+        assert f.name == "X1:TEST-FLAG:1"
         assert f.category is None
         assert f.padding == (-2, 2)
-        assert f.description == 'Comment'
-        utils.assert_segmentlist_equal(f.known, [(0, float('inf'))])
+        assert f.description == "Comment"
+        utils.assert_segmentlist_equal(f.known, [(0, float("inf"))])
 
-        a = veto_def('X1', 'TEST-FLAG', None, start_time=0, end_time=1)
+        a = veto_def("X1", "TEST-FLAG", None, start_time=0, end_time=1)
         f = self.TEST_CLASS.from_veto_def(a)
-        assert f.name == 'X1:TEST-FLAG'
+        assert f.name == "X1:TEST-FLAG"
         assert f.version is None
 
     @mock.patch("gwpy.segments.flag.query_segments", mock_query_segments)
@@ -499,18 +499,18 @@ class TestDataQualityFlag(object):
 
     # -- test I/O -------------------------------
 
-    @pytest.mark.parametrize('format, ext, rw_kwargs, simple', [
-        ('hdf5', 'hdf5', {'path': 'test-dqflag'}, False),
-        ('hdf5', 'h5', {'path': 'test-dqflag'}, False),
-        ('json', 'json', {}, True),
+    @pytest.mark.parametrize("format, ext, rw_kwargs, simple", [
+        ("hdf5", "hdf5", {"path": "test-dqflag"}, False),
+        ("hdf5", "h5", {"path": "test-dqflag"}, False),
+        ("json", "json", {}, True),
     ])
     def test_read_write(self, flag, format, ext, rw_kwargs, simple):
         # simplify calling read/write tester
         def _read_write(**kwargs):
             read_kw = rw_kwargs.copy()
-            read_kw.update(kwargs.pop('read_kw', {}))
+            read_kw.update(kwargs.pop("read_kw", {}))
             write_kw = rw_kwargs.copy()
-            write_kw.update(kwargs.pop('write_kw', {}))
+            write_kw.update(kwargs.pop("write_kw", {}))
             return utils.test_read_write(flag, format, extension=ext,
                                          assert_equal=utils.assert_flag_equal,
                                          read_kw=read_kw, write_kw=write_kw,
@@ -525,7 +525,7 @@ class TestDataQualityFlag(object):
             _read_write(autoidentify=False)
             with pytest.raises(IOError):
                 _read_write(autoidentify=True)
-            _read_write(autoidentify=True, write_kw={'overwrite': True})
+            _read_write(autoidentify=True, write_kw={"overwrite": True})
 
     def test_read_write_hdf5(self, flag, tmp_path):
         tmp = tmp_path / "test.h5"
@@ -559,10 +559,10 @@ class TestDataQualityFlag(object):
         tmp = tmp_path / "tmp.xml"
         flag.write(
             tmp,
-            format='ligolw',
-            attrs={'process_id': 100},
+            format="ligolw",
+            attrs={"process_id": 100},
         )
-        segdeftab = read_table(tmp, 'segment_definer')
+        segdeftab = read_table(tmp, "segment_definer")
         assert int(segdeftab[0].process_id) == 100
 
     @pytest.mark.requires("ligo.lw.lsctables")
@@ -582,11 +582,11 @@ class TestDataQualityFlag(object):
         utils.assert_segmentlist_equal(result.known, RESULT.known)
         utils.assert_segmentlist_equal(result.active, RESULT.active)
 
-    @pytest.mark.parametrize('name, flag', [
+    @pytest.mark.parametrize("name, flag", [
         (QUERY_FLAGS[0], QUERY_FLAGS[0]),  # regular query
-        (QUERY_FLAGS[0].rsplit(':', 1)[0], QUERY_FLAGS[0]),  # versionless
+        (QUERY_FLAGS[0].rsplit(":", 1)[0], QUERY_FLAGS[0]),  # versionless
     ])
-    @mock.patch('gwpy.segments.flag.query_segments', mock_query_segments)
+    @mock.patch("gwpy.segments.flag.query_segments", mock_query_segments)
     def test_query_dqsegdb(self, name, flag):
         # standard query
         result = self.TEST_CLASS.query_dqsegdb(name, 0, 10)
@@ -605,7 +605,7 @@ class TestDataQualityFlag(object):
 
         # flag name malformed
         with pytest.raises(ValueError):
-            self.TEST_CLASS.query_dqsegdb('BAD-FLAG_NAME',
+            self.TEST_CLASS.query_dqsegdb("BAD-FLAG_NAME",
                                           SegmentList([(0, 10)]))
 
         # flag not in database
@@ -613,7 +613,7 @@ class TestDataQualityFlag(object):
             HTTPError,
             match=r"^HTTP Error 404: Not found \[X1:GWPY-TEST:0\]$",
         ):
-            self.TEST_CLASS.query_dqsegdb('X1:GWPY-TEST:0', 0, 10)
+            self.TEST_CLASS.query_dqsegdb("X1:GWPY-TEST:0", 0, 10)
 
         # bad syntax
         with pytest.raises(ValueError):
@@ -621,7 +621,7 @@ class TestDataQualityFlag(object):
         with pytest.raises(ValueError):
             self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS[0], (1, 2, 3))
 
-    @mock.patch('gwpy.segments.flag.query_segments', mock_query_segments)
+    @mock.patch("gwpy.segments.flag.query_segments", mock_query_segments)
     def test_query_dqsegdb_multi(self):
         segs = SegmentList([Segment(0, 2), Segment(8, 10)])
         result = self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS[0], segs)
@@ -634,13 +634,13 @@ class TestDataQualityFlag(object):
     @pytest_skip_flaky_network
     def test_fetch_open_data(self):
         segs = self.TEST_CLASS.fetch_open_data(
-            'H1_DATA',
+            "H1_DATA",
             946339215,
             946368015,
         )
-        assert segs.ifo == 'H1'
-        assert segs.name == 'H1:DATA'
-        assert segs.label == 'H1_DATA'
+        assert segs.ifo == "H1"
+        assert segs.name == "H1:DATA"
+        assert segs.label == "H1_DATA"
         utils.assert_segmentlist_equal(segs.known, [(946339215, 946368015)])
         utils.assert_segmentlist_equal(segs.active, [
             (946340946, 946351799),
@@ -658,9 +658,9 @@ class TestDataQualityDict(object):
     @classmethod
     def create(cls):
         flgd = cls.TEST_CLASS()
-        flgd['X1:TEST-FLAG:1'] = cls.ENTRY_CLASS(name='X1:TEST-FLAG:1',
+        flgd["X1:TEST-FLAG:1"] = cls.ENTRY_CLASS(name="X1:TEST-FLAG:1",
                                                  active=ACTIVE, known=KNOWN)
-        flgd['Y1:TEST-FLAG:2'] = cls.ENTRY_CLASS(name='Y1:TEST-FLAG:2',
+        flgd["Y1:TEST-FLAG:2"] = cls.ENTRY_CLASS(name="Y1:TEST-FLAG:2",
                                                  active=ACTIVE2, known=KNOWN2)
         return flgd
 
@@ -743,10 +743,10 @@ class TestDataQualityDict(object):
         utils.assert_segmentlist_equal(intersection.active, ACTIVE & ACTIVE2)
 
     def test_plot(self, instance):
-        with rc_context(rc={'text.usetex': False}):
+        with rc_context(rc={"text.usetex": False}):
             plot = instance.plot(figsize=(6.4, 3.8))
             assert isinstance(plot.gca(), SegmentAxes)
-            plot.save(BytesIO(), format='png')
+            plot.save(BytesIO(), format="png")
             plot.close()
 
     # -- test I/O -------------------------------
@@ -758,28 +758,28 @@ class TestDataQualityDict(object):
         assert len(vdf.keys()) == 4
 
         # test one flag to make sure it is well read
-        name = 'X1:TEST-FLAG:1'
+        name = "X1:TEST-FLAG:1"
         assert name in vdf
         utils.assert_segmentlist_equal(vdf[name].known,
-                                       [(100, float('inf'))])
+                                       [(100, float("inf"))])
         assert vdf[name].category == 1
         assert vdf[name].padding == (-1, 2)
 
         # test ifo kwarg
-        vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer, ifo='X1')
+        vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer, ifo="X1")
         assert len(vdf.keys()) == 3
-        assert 'Y1:TEST-FLAG_2:2' not in vdf
+        assert "Y1:TEST-FLAG_2:2" not in vdf
 
         # test start and end kwargs
         vdf = self.TEST_CLASS.from_veto_definer_file(veto_definer,
                                                      start=200, end=300)
         assert len(vdf.keys()) == 3
-        assert 'X1:TEST-FLAG_2:1' not in vdf
+        assert "X1:TEST-FLAG_2:1" not in vdf
 
-    @pytest.mark.parametrize('format, ext, dep, rw_kwargs', [
-        ('hdf5', 'hdf5', 'h5py', {}),
-        ('hdf5', 'h5', 'h5py', {}),
-        ('hdf5', 'hdf5', 'h5py', {'path': 'test-dqdict'}),
+    @pytest.mark.parametrize("format, ext, dep, rw_kwargs", [
+        ("hdf5", "hdf5", "h5py", {}),
+        ("hdf5", "h5", "h5py", {}),
+        ("hdf5", "hdf5", "h5py", {"path": "test-dqdict"}),
     ])
     def test_read_write(self, instance, format, ext, dep, rw_kwargs):
         # define assertion
@@ -789,9 +789,9 @@ class TestDataQualityDict(object):
         # simplify calling read/write tester
         def _read_write(**kwargs):
             read_kw = rw_kwargs.copy()
-            read_kw.update(kwargs.pop('read_kw', {}))
+            read_kw.update(kwargs.pop("read_kw", {}))
             write_kw = rw_kwargs.copy()
-            write_kw.update(kwargs.pop('write_kw', {}))
+            write_kw.update(kwargs.pop("write_kw", {}))
             return utils.test_read_write(instance, format, extension=ext,
                                          assert_equal=_assert,
                                          read_kw=read_kw, write_kw=write_kw,
@@ -800,7 +800,7 @@ class TestDataQualityDict(object):
         _read_write(autoidentify=False)
         with pytest.raises(IOError):
             _read_write(autoidentify=True)
-        _read_write(autoidentify=True, write_kw={'overwrite': True})
+        _read_write(autoidentify=True, write_kw={"overwrite": True})
 
     @pytest.mark.requires("ligo.lw.lsctables")
     def test_read_write_ligolw(self, instance):
@@ -817,16 +817,16 @@ class TestDataQualityDict(object):
 
     def test_read_on_missing(self, instance):
         with h5py.File(
-                'test',
-                mode='w-',
-                driver='core',
+                "test",
+                mode="w-",
+                driver="core",
                 backing_store=False,
         ) as h5f:
             instance.write(h5f)
-            names = ['randomname']
+            names = ["randomname"]
 
             def _read(**kwargs):
-                return self.TEST_CLASS.read(h5f, names=names, format='hdf5',
+                return self.TEST_CLASS.read(h5f, names=names, format="hdf5",
                                             **kwargs)
 
             # check on_missing='error' (default) raises ValueError
@@ -838,16 +838,16 @@ class TestDataQualityDict(object):
 
             # check on_missing='warn' prints warning
             with pytest.warns(UserWarning):
-                _read(on_missing='warn')
+                _read(on_missing="warn")
 
             # check on_missing='ignore' does nothing
             with warnings.catch_warnings():
                 warnings.simplefilter("error")
-                _read(on_missing='ignore')
+                _read(on_missing="ignore")
 
             # check on_missing=<anything else> raises exception
             with pytest.raises(ValueError):
-                _read(on_missing='blah')
+                _read(on_missing="blah")
 
     @pytest.mark.requires("ligo.lw.lsctables")
     def test_to_ligolw_tables(self, instance):
@@ -858,7 +858,7 @@ class TestDataQualityDict(object):
 
     # -- test queries ---------------------------
 
-    @mock.patch('gwpy.segments.flag.query_segments', mock_query_segments)
+    @mock.patch("gwpy.segments.flag.query_segments", mock_query_segments)
     def test_query(self):
         result = self.TEST_CLASS.query(QUERY_FLAGS, 0, 10)
         RESULT = QUERY_RESULT.copy().coalesce()
@@ -866,7 +866,7 @@ class TestDataQualityDict(object):
         assert isinstance(result, self.TEST_CLASS)
         utils.assert_dict_equal(result, RESULT, utils.assert_flag_equal)
 
-    @mock.patch('gwpy.segments.flag.query_segments', mock_query_segments)
+    @mock.patch("gwpy.segments.flag.query_segments", mock_query_segments)
     def test_query_dqsegdb(self):
         result = self.TEST_CLASS.query_dqsegdb(QUERY_FLAGS, 0, 10)
         assert isinstance(result, self.TEST_CLASS)
@@ -876,7 +876,7 @@ class TestDataQualityDict(object):
             utils.assert_flag_equal,
         )
 
-    @mock.patch('gwpy.segments.flag.query_segments', mock_query_segments)
+    @mock.patch("gwpy.segments.flag.query_segments", mock_query_segments)
     @pytest.mark.parametrize(("on_error, ctx"), [
         # does nothing
         ("ignore", nullcontext()),
@@ -893,7 +893,7 @@ class TestDataQualityDict(object):
     def test_query_dqsegdb_on_error(self, on_error, ctx):
         with ctx as record:
             result = self.TEST_CLASS.query_dqsegdb(
-                QUERY_FLAGS + ['X1:BLAHBLAH:1'],
+                QUERY_FLAGS + ["X1:BLAHBLAH:1"],
                 0,
                 10,
                 on_error=on_error,
@@ -910,7 +910,7 @@ class TestDataQualityDict(object):
             utils.assert_flag_equal,
         )
 
-    @mock.patch('gwpy.segments.flag.query_segments', mock_query_segments)
+    @mock.patch("gwpy.segments.flag.query_segments", mock_query_segments)
     def test_populate(self):
         def fake():
             return self.TEST_CLASS({
@@ -933,15 +933,15 @@ class TestDataQualityDict(object):
         vdf3.populate(segments=span)
 
         # test warnings on bad entries
-        vdf['TEST'] = self.ENTRY_CLASS('X1:BLAHBLAHBLAH:1', known=[(0, 1)])
+        vdf["TEST"] = self.ENTRY_CLASS("X1:BLAHBLAHBLAH:1", known=[(0, 1)])
         with pytest.warns(UserWarning) as record:
-            vdf.populate(on_error='warn')
-            vdf.populate(on_error='ignore')
+            vdf.populate(on_error="warn")
+            vdf.populate(on_error="ignore")
         assert len(record) == 1
-        vdf.pop('TEST')
+        vdf.pop("TEST")
 
         with pytest.raises(ValueError):
-            vdf.populate(on_error='blah')
+            vdf.populate(on_error="blah")
 
         # check basic populate worked
         utils.assert_dict_equal(vdf, QUERY_RESULTC, utils.assert_flag_equal)
@@ -959,5 +959,5 @@ class TestDataQualityDict(object):
     def test_coalesce(self):
         instance = self.create()
         instance.coalesce()
-        value = instance['X1:TEST-FLAG:1']
+        value = instance["X1:TEST-FLAG:1"]
         utils.assert_segmentlist_equal(value.active, KNOWNACTIVE)

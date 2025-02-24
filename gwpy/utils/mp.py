@@ -109,9 +109,9 @@ def multiprocess_with_queues(
     # create progress bar for verbose output
     if bool(verbose):
         if not isinstance(verbose, bool):
-            progress_kw['desc'] = str(verbose)
+            progress_kw["desc"] = str(verbose)
         if isinstance(inputs, (list, tuple)):
-            progress_kw.setdefault('total', len(inputs))
+            progress_kw.setdefault("total", len(inputs))
         pbar = progress_bar(**progress_kw)
     else:
         pbar = None

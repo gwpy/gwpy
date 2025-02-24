@@ -27,21 +27,21 @@ from ..plot.tex import label_to_latex
 from .cliproduct import (TransferFunctionProduct, FFTMixin)
 from ..plot.gps import GPS_SCALES
 
-__author__ = 'Evan Goetz <evan.goetz@ligo.org>'
+__author__ = "Evan Goetz <evan.goetz@ligo.org>"
 
 
 class TransferFunction(FFTMixin, TransferFunctionProduct):
     """Plot transfer function between a reference time series and one
     or more other time series
     """
-    action = 'transferfunction'
+    action = "transferfunction"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ref_chan = self.args.ref or self.chan_list[0]
         # deal with channel type appendages
-        if ',' in self.ref_chan:
-            self.ref_chan = self.ref_chan.split(',')[0]
+        if "," in self.ref_chan:
+            self.ref_chan = self.ref_chan.split(",")[0]
         self.plot_dB = self.args.plot_dB
         self.subplot = None
         self.test_chan = self.chan_list[1]
@@ -56,46 +56,46 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
     @classmethod
     def arg_channels(cls, parser):
         group = super().arg_channels(parser)
-        group.add_argument('--ref', help='Reference channel against which '
-                                         'others will be compared')
+        group.add_argument("--ref", help="Reference channel against which "
+                                         "others will be compared")
         return group
 
     @classmethod
     def arg_yaxis(cls, parser):
-        group = cls._arg_axis('ymag', parser, scale='log')
-        group.add_argument('--plot-dB', action='store_true',
-                           help='Plot transfer function in dB')
-        group = cls._arg_axis('yphase', parser, scale='linear')
+        group = cls._arg_axis("ymag", parser, scale="log")
+        group.add_argument("--plot-dB", action="store_true",
+                           help="Plot transfer function in dB")
+        group = cls._arg_axis("yphase", parser, scale="linear")
 
         return group
 
     def get_title(self):
         gps = self.start_list[0]
-        utc = Time(gps, format='gps', scale='utc').iso
-        tstr = f'{utc} | {gps} ({self.duration})'
+        utc = Time(gps, format="gps", scale="utc").iso
+        tstr = f"{utc} | {gps} ({self.duration})"
 
-        fftstr = f'fftlength={self.args.secpfft}, overlap={self.args.overlap}'
+        fftstr = f"fftlength={self.args.secpfft}, overlap={self.args.overlap}"
 
-        return ', '.join([tstr, fftstr])
+        return ", ".join([tstr, fftstr])
 
     def _finalize_arguments(self, args):
         if args.ymagscale is None:
-            args.ymagscale = 'log'
+            args.ymagscale = "log"
         if args.plot_dB:
-            args.ymagscale = 'linear'
+            args.ymagscale = "linear"
 
         return super()._finalize_arguments(args)
 
     def get_ylabel(self):
         """Text for y-axis label
         """
-        ylabelstr = ''
+        ylabelstr = ""
         if self.subplot == 0:
-            ylabelstr = 'Magnitude'
+            ylabelstr = "Magnitude"
             if self.plot_dB:
-                ylabelstr += ' [dB]'
+                ylabelstr += " [dB]"
         if self.subplot == 1:
-            ylabelstr = 'Phase [deg.]'
+            ylabelstr = "Phase [deg.]"
 
         return ylabelstr
 
@@ -118,26 +118,26 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
         """
         def _get(param):
             ret = getattr(self.plot.axes[self.subplot],
-                          f'get_{axis[0].lower()}{param}')()
+                          f"get_{axis[0].lower()}{param}")()
             return ret
 
         def _set(param, *args, **kwargs):
-            if axis.lower().startswith('y'):
-                ret = getattr(self.plot.axes[self.subplot], f'set_y{param}')(
+            if axis.lower().startswith("y"):
+                ret = getattr(self.plot.axes[self.subplot], f"set_y{param}")(
                     *args, **kwargs)
             else:
-                ret = getattr(self.plot.axes[self.subplot], f'set_x{param}')(
+                ret = getattr(self.plot.axes[self.subplot], f"set_x{param}")(
                     *args, **kwargs)
             return ret
 
-        scale = getattr(self.args, f'{axis}scale')
-        label = getattr(self.args, f'{axis}label')
-        min_ = getattr(self.args, f'{axis}min')
-        max_ = getattr(self.args, f'{axis}max')
+        scale = getattr(self.args, f"{axis}scale")
+        label = getattr(self.args, f"{axis}label")
+        min_ = getattr(self.args, f"{axis}min")
+        max_ = getattr(self.args, f"{axis}max")
 
         # parse limits
         if (
-            scale == 'auto-gps'
+            scale == "auto-gps"
             and min_ is not None
             and max_ is not None
             and max_ < 1e8
@@ -148,48 +148,48 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
 
         # set limits
         if limits[0] is not None or limits[1] is not None:
-            _set('lim', *limits)
+            _set("lim", *limits)
 
         # set scale
         if scale:
-            _set('scale', scale)
+            _set("scale", scale)
 
         # reset scale with epoch if using GPS scale
-        if _get('scale') in GPS_SCALES:
-            _set('scale', scale, epoch=self.args.epoch)
+        if _get("scale") in GPS_SCALES:
+            _set("scale", scale, epoch=self.args.epoch)
 
         # set label
         if label is None:
-            if axis.lower().startswith('y'):
-                label = getattr(self, 'get_ylabel')()
+            if axis.lower().startswith("y"):
+                label = getattr(self, "get_ylabel")()
             else:
-                label = getattr(self, 'get_xlabel')()
-        if self.subplot == 0 and axis == 'x':
+                label = getattr(self, "get_xlabel")()
+        if self.subplot == 0 and axis == "x":
             label = None
         if label:
             if self.usetex:
                 label = label_to_latex(label)
-            _set('label', label)
+            _set("label", label)
 
         # log
-        limits = _get('lim')
-        scale = _get('scale')
-        label = _get('label')
+        limits = _get("lim")
+        scale = _get("scale")
+        label = _get("label")
         self.log(
             2,
-            f'{axis.upper()}-axis parameters | '
-            f'scale: {scale} | '
-            f'limits: {limits[0]!s} - {limits[1]!s}'
+            f"{axis.upper()}-axis parameters | "
+            f"scale: {scale} | "
+            f"limits: {limits[0]!s} - {limits[1]!s}"
         )
-        self.log(3, (f'{axis.upper()}-axis label: {label}'))
+        self.log(3, (f"{axis.upper()}-axis label: {label}"))
 
     def set_yaxis_properties(self):
         """Set properties for Y-axis
         """
         if self.subplot == 0:
-            self._set_axis_properties('ymag')
+            self._set_axis_properties("ymag")
         else:
-            self._set_axis_properties('yphase')
+            self._set_axis_properties("yphase")
 
     def scale_axes_from_data(self):
         """Restrict data limits for Y-axis based on what you can see
@@ -200,7 +200,7 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
             # this is then typically zero, so if the xscale is log or None
             # we'll need to set to be the next bin higher (one step of df)
             if (self.args.xmin == 0
-                    and (self.args.xscale == 'log'
+                    and (self.args.xscale == "log"
                          or self.args.xscale is None)):
                 self.args.xmin = min(tf.df.value for tf in self.tfs)
         if self.args.xmax is None:
@@ -282,14 +282,14 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
 
                 label = name
                 if len(self.start_list) > 1:
-                    label += f', {series.epoch.gps}'
+                    label += f", {series.epoch.gps}"
                 if self.usetex:
                     label = label_to_latex(label)
 
                 plot.add_frequencyseries(tf, dB=self.plot_dB, label=label)
                 self.tfs.append(tf)
 
-        if args.xscale == 'log' and not args.xmin:
+        if args.xscale == "log" and not args.xmin:
             args.xmin = 1/fftlength
 
         return plot

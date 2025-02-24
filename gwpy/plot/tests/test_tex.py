@@ -62,22 +62,22 @@ def test_has_tex_true(_which_, _test_usetex):
     assert plot_tex.has_tex()
 
 
-@pytest.mark.parametrize('in_, out', [
-    (1, '1'),
-    (100, r'10^{2}'),
-    (-500, r'-5\!\!\times\!\!10^{2}'),
-    (0.00001, r'10^{-5}'),
+@pytest.mark.parametrize("in_, out", [
+    (1, "1"),
+    (100, r"10^{2}"),
+    (-500, r"-5\!\!\times\!\!10^{2}"),
+    (0.00001, r"10^{-5}"),
 ])
 def test_float_to_latex(in_, out):
     assert plot_tex.float_to_latex(in_) == out
 
 
-@pytest.mark.parametrize('in_, out', [
-    (None, ''),
-    ('normal text', 'normal text'),
-    (r'$1 + 2 = 3$', r'$1 + 2 = 3$'),
-    ('H1:ABC-DEF_GHI', r'H1:ABC-DEF\_GHI'),
-    (r'H1:ABC-DEF\_GHI', r'H1:ABC-DEF\_GHI'),
+@pytest.mark.parametrize("in_, out", [
+    (None, ""),
+    ("normal text", "normal text"),
+    (r"$1 + 2 = 3$", r"$1 + 2 = 3$"),
+    ("H1:ABC-DEF_GHI", r"H1:ABC-DEF\_GHI"),
+    (r"H1:ABC-DEF\_GHI", r"H1:ABC-DEF\_GHI"),
 ])
 def test_label_to_latex(in_, out):
     assert plot_tex.label_to_latex(in_) == out

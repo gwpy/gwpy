@@ -48,7 +48,7 @@ except ImportError:
 else:
     HAS_CACHE = True
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 @contextlib.contextmanager
@@ -108,14 +108,14 @@ def _parse_entry_ffl(line, gpstype=LIGOTimeGPS):
         start = gpstype(start)
     end = start + float(dur)
     try:
-        observatory, description = os.path.basename(path).split('-', 2)[:2]
+        observatory, description = os.path.basename(path).split("-", 2)[:2]
     except ValueError:
         return _CacheEntry(None, None, Segment(start, end), path)
     return _CacheEntry(observatory, description, Segment(start, end), path)
 
 
 class _CacheEntry(namedtuple(
-        '_CacheEntry', ['observatory', 'description', 'segment', 'path'])):
+        "_CacheEntry", ["observatory", "description", "segment", "path"])):
     """Quick version of lal.utils.CacheEntry for internal purposes only
 
     Just to allow metadata handling for files that don't follow LIGO-T050017.
@@ -128,7 +128,7 @@ class _CacheEntry(namedtuple(
 
         # format line string
         if isinstance(line, bytes):
-            line = line.decode('utf-8')
+            line = line.decode("utf-8")
         parts = line.strip().split()
 
         # if single entry, parse filename
@@ -167,7 +167,7 @@ def _iter_cache(cachefile, gpstype=LIGOTimeGPS):
             # virgo FFL format (seemingly) supports nested FFL files
             parts = line.split()
             if len(parts) == 3 and os.path.abspath(parts[0]) != path:
-                with open(parts[0], 'r') as cache2:
+                with open(parts[0], "r") as cache2:
                     for entry in _iter_cache(cache2, gpstype=gpstype):
                         yield entry
             else:
@@ -386,21 +386,21 @@ def filename_metadata(filename):
     from ..segments import Segment
     name = os.path.basename(filename)
     try:
-        obs, desc, start, dur = name.split('-')
+        obs, desc, start, dur = name.split("-")
     except ValueError as exc:
         exc.args = (
-            f'Failed to parse {name!r} as a LIGO-T050017-compatible filename',
+            f"Failed to parse {name!r} as a LIGO-T050017-compatible filename",
         )
         raise
     start = float(start)
-    dur = dur.rsplit('.', 1)[0]
+    dur = dur.rsplit(".", 1)[0]
     while True:  # recursively remove extension components
         try:
             dur = float(dur)
         except ValueError:
-            if '.' not in dur:
+            if "." not in dur:
                 raise
-            dur = dur.rsplit('.', 1)[0]
+            dur = dur.rsplit(".", 1)[0]
         else:
             break
     return obs, desc, Segment(start, start+dur)

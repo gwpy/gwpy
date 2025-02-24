@@ -27,7 +27,7 @@ import numpy
 
 from .. import ligolw as io_ligolw
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 OLD_FORMAT_LIGO_LW_XML = """
 <?xml version='1.0' encoding='utf-8'?>
@@ -103,8 +103,8 @@ def llwdoc_with_tables(llwdoc):
     """
     llw = llwdoc.childNodes[-1]  # get ligolw element
     for t in [
-        new_table('process'),
-        new_table('sngl_ringdown'),
+        new_table("process"),
+        new_table("sngl_ringdown"),
     ]:
         llw.appendChild(t)
     return llwdoc
@@ -199,18 +199,18 @@ def test_list_tables_file(llwdoc_with_tables):
         t.TableName(t.Name)
         for t in llwdoc_with_tables.childNodes[0].childNodes
     ]
-    with tempfile.NamedTemporaryFile(mode='w') as f:
+    with tempfile.NamedTemporaryFile(mode="w") as f:
         llwdoc_with_tables.write(f)
         f.seek(0)
         assert io_ligolw.list_tables(f) == names
 
 
 @pytest.mark.requires("ligo.lw.lsctables")
-@pytest.mark.parametrize('value, name, result', [
-    (None, 'peak_time', None),
-    (1.0, 'peak_time', numpy.int32(1)),
-    (1, 'process_id', 1),
-    (1.0, 'invalidname', 1.0),
+@pytest.mark.parametrize("value, name, result", [
+    (None, "peak_time", None),
+    (1.0, "peak_time", numpy.int32(1)),
+    (1, "process_id", 1),
+    (1.0, "invalidname", 1.0),
 ])
 def test_to_table_type(value, name, result):
     from ligo.lw.lsctables import SnglBurstTable
@@ -223,9 +223,9 @@ def test_write_tables_to_document(llwdoc_with_tables):
     # create new table
     def _new():
         return new_table(
-            'segment',
-            [{'segment': (1, 2)}, {'segment': (3, 4)}, {'segment': (5, 6)}],
-            columns=('start_time', 'start_time_ns', 'end_time', 'end_time_ns'),
+            "segment",
+            [{"segment": (1, 2)}, {"segment": (3, 4)}, {"segment": (5, 6)}],
+            columns=("start_time", "start_time_ns", "end_time", "end_time_ns"),
         )
 
     # get ligolw element
@@ -252,21 +252,21 @@ def test_write_tables_to_document(llwdoc_with_tables):
 
 def test_write_tables(tmp_path):
     stab = new_table(
-        'segment',
-        [{'segment': (1, 2)}, {'segment': (3, 4)}, {'segment': (5, 6)}],
-        columns=('start_time', 'start_time_ns', 'end_time', 'end_time_ns'),
+        "segment",
+        [{"segment": (1, 2)}, {"segment": (3, 4)}, {"segment": (5, 6)}],
+        columns=("start_time", "start_time_ns", "end_time", "end_time_ns"),
     )
     ptab = new_table(
-        'process',
-        [{'program': 'gwpy'}],
-        columns=('program',),
+        "process",
+        [{"program": "gwpy"}],
+        columns=("program",),
     )
 
     tmp = tmp_path / "test.xml"
 
     # write writing works
     io_ligolw.write_tables(tmp, [stab, ptab])
-    assert io_ligolw.list_tables(tmp) == ['segment', 'process']
+    assert io_ligolw.list_tables(tmp) == ["segment", "process"]
 
     # check writing to existing file raises IOError
     with pytest.raises(IOError):
@@ -275,8 +275,8 @@ def test_write_tables(tmp_path):
     # check overwrite=True works
     io_ligolw.write_tables(tmp, [stab], overwrite=True)
     xmldoc = io_ligolw.open_xmldoc(tmp)
-    assert io_ligolw.list_tables(xmldoc) == ['segment']
-    stab2 = io_ligolw.read_table(xmldoc, 'segment')
+    assert io_ligolw.list_tables(xmldoc) == ["segment"]
+    stab2 = io_ligolw.read_table(xmldoc, "segment")
     assert len(stab2) == len(stab)
 
     io_ligolw.write_tables(tmp, [stab, ptab], overwrite=True)  # rewrite
@@ -284,15 +284,15 @@ def test_write_tables(tmp_path):
     # check append=True works
     io_ligolw.write_tables(tmp, [stab], append=True)
     xmldoc = io_ligolw.open_xmldoc(tmp)
-    assert sorted(io_ligolw.list_tables(xmldoc)) == ['process', 'segment']
-    stab2 = io_ligolw.read_table(xmldoc, 'segment')
+    assert sorted(io_ligolw.list_tables(xmldoc)) == ["process", "segment"]
+    stab2 = io_ligolw.read_table(xmldoc, "segment")
     assert len(stab2) == len(stab) * 2
 
     # check append=True, overwrite=True works
     io_ligolw.write_tables(tmp, [stab], append=True, overwrite=True)
     xmldoc = io_ligolw.open_xmldoc(tmp)
-    assert sorted(io_ligolw.list_tables(xmldoc)) == ['process', 'segment']
-    stab2 = io_ligolw.read_table(xmldoc, 'segment')
+    assert sorted(io_ligolw.list_tables(xmldoc)) == ["process", "segment"]
+    stab2 = io_ligolw.read_table(xmldoc, "segment")
     assert len(stab2) == len(stab)
 
 

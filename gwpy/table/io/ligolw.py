@@ -253,7 +253,7 @@ def to_astropy_table(
     return table_class(
         data,
         copy=copy,
-        meta={'tablename': str(llwtable.Name)},
+        meta={"tablename": str(llwtable.Name)},
     )
 
 
@@ -582,7 +582,7 @@ def write_table(
         valid keyword arguments.
     """
     if tablename is None:  # try and get tablename from metadata
-        tablename = table.meta.get('tablename', None)
+        tablename = table.meta.get("tablename", None)
     if tablename is None:  # panic
         raise ValueError(
             "please pass ``tablename=`` to specify the target "

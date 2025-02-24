@@ -39,12 +39,12 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def print_verbose(*args, **kwargs):
     """Utility to print something only if verbose=True is given
     """
-    if kwargs.pop('verbose', False) is True:
+    if kwargs.pop("verbose", False) is True:
         gprint(*args, **kwargs)
 
 
 def _parse_nds_enum_dict_param(channels, key, value):
-    if key == 'type':
+    if key == "type":
         enum = io_nds2.Nds2ChannelType
         default = enum.any()
     else:
@@ -75,11 +75,11 @@ def set_parameter(connection, parameter, value, verbose=False):
             raise ValueError("invalid parameter or value")
     except (AttributeError, ValueError) as exc:
         warnings.warn(
-            'failed to set {}={!r}: {}'.format(parameter, value, str(exc)),
+            "failed to set {}={!r}: {}".format(parameter, value, str(exc)),
             io_nds2.NDSWarning)
     else:
         print_verbose(
-            '    [{}] set {}={!r}'.format(
+            "    [{}] set {}={!r}".format(
                 connection.get_host(), parameter, value),
             verbose=verbose,
         )
@@ -98,14 +98,14 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
     """
     # set ALLOW_DATA_ON_TAPE
     if allow_tape is not None:
-        set_parameter(connection, 'ALLOW_DATA_ON_TAPE', str(allow_tape),
+        set_parameter(connection, "ALLOW_DATA_ON_TAPE", str(allow_tape),
                       verbose=verbose)
 
-    type = _parse_nds_enum_dict_param(channels, 'type', type)
-    dtype = _parse_nds_enum_dict_param(channels, 'dtype', dtype)
+    type = _parse_nds_enum_dict_param(channels, "type", type)
+    dtype = _parse_nds_enum_dict_param(channels, "dtype", dtype)
 
     # verify channels exist
-    print_verbose("Checking channels list against NDS2 database...", end=' ',
+    print_verbose("Checking channels list against NDS2 database...", end=" ",
                   verbose=verbose)
     utype = reduce(operator.or_, type.values())  # logical OR of types
     udtype = reduce(operator.or_, dtype.values())
@@ -115,10 +115,10 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
                                         unique=True)
 
     names = [Channel.from_nds2(c).ndsname for c in ndschannels]
-    print_verbose('done', verbose=verbose)
+    print_verbose("done", verbose=verbose)
 
     # handle minute trend timing
-    if any(c.endswith('m-trend') for c in names) and (start % 60 or end % 60):
+    if any(c.endswith("m-trend") for c in names) and (start % 60 or end % 60):
         warnings.warn("Requested at least one minute trend, but "
                       "start and stop GPS times are not multiples of "
                       "60. Times will be expanded outwards to compensate")
@@ -128,18 +128,18 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
     span = SegmentList([Segment(start, end)])
     if pad is None:
         qsegs = span
-        gap = 'raise'
+        gap = "raise"
     elif connection.get_protocol() == 1:
         qsegs = span
-        gap = 'pad'
+        gap = "pad"
     else:
-        print_verbose("Querying for data availability...", end=' ',
+        print_verbose("Querying for data availability...", end=" ",
                       verbose=verbose)
         pad = float(pad)
-        gap = 'pad'
+        gap = "pad"
         qsegs = _get_data_segments(ndschannels, start, end, connection) & span
-        print_verbose('done\nFound {0} viable segments of data with {1:.2f}% '
-                      'coverage'.format(len(qsegs),
+        print_verbose("done\nFound {0} viable segments of data with {1:.2f}% "
+                      "coverage".format(len(qsegs),
                                         abs(qsegs) / abs(span) * 100),
                       verbose=verbose)
         if span - qsegs:
@@ -149,9 +149,9 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
 
     # query for each segment
     out = series_class.DictClass()
-    desc = verbose if isinstance(verbose, str) else 'Downloading data'
+    desc = verbose if isinstance(verbose, str) else "Downloading data"
     with progress_bar(total=float(abs(qsegs)), desc=desc,
-                      unit='s', disable=not bool(verbose)) as bar:
+                      unit="s", disable=not bool(verbose)) as bar:
         for seg in qsegs:
             total = 0.
             for buffers in connection.iterate(int(seg[0]), int(seg[1]), names):
@@ -166,7 +166,7 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
                 total += new
                 bar.update(new)
             # sometimes NDS2 returns no data at all
-            if not total and gap != 'pad':
+            if not total and gap != "pad":
                 raise RuntimeError("no data received from {0} for {1}".format(
                     connection.get_host(), seg))
 

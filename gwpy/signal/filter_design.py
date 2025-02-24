@@ -394,7 +394,7 @@ def convert_zpk_units(
     """
     zeros, poles, gain = filt
 
-    if unit == 'Hz':
+    if unit == "Hz":
         for zi in range(len(zeros)):
             zeros[zi] *= -2. * numpy.pi
         for pj in range(len(poles)):
@@ -444,7 +444,7 @@ def convert_to_digital(
         b, a = filter
         return form, signal.bilinear(b, a, fs=sample_rate)
 
-    if form == 'zpk':
+    if form == "zpk":
         return form, signal.bilinear_zpk(*filter, fs=sample_rate)
 
     raise ValueError(f"Cannot convert '{form}', only 'zpk' or 'ba'")

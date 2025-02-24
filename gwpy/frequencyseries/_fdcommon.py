@@ -38,9 +38,9 @@ def fdfilter(data, *filt, **kwargs):
     gwpy.spectrogram.Spectrogram.filter
     """
     # parse keyword args
-    inplace = kwargs.pop('inplace', False)
-    analog = kwargs.pop('analog', False)
-    fs = kwargs.pop('sample_rate', None)
+    inplace = kwargs.pop("inplace", False)
+    analog = kwargs.pop("analog", False)
+    fs = kwargs.pop("sample_rate", None)
     if kwargs:
         raise TypeError(
             "filter() got an unexpected keyword argument "
@@ -49,7 +49,7 @@ def fdfilter(data, *filt, **kwargs):
 
     # parse filter
     if fs is None:
-        fs = 2 * data.frequencies[-1].to('Hz').value
+        fs = 2 * data.frequencies[-1].to("Hz").value
     form, filt = parse_filter(filt)
     freqs = data.frequencies.value.copy()
 

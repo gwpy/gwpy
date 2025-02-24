@@ -26,16 +26,16 @@ ratio (SNR) of 8. We can estimate this using
 a detector.
 """
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__credits__ = 'Alex Urban <alexander.urban@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__credits__ = "Alex Urban <alexander.urban@ligo.org>"
 
 # First, we need to load some data. We can `fetch` the
 # `public data <https://gwosc.org/catalog/>`__
 # around the GW170817 BNS merger:
 
 from gwpy.timeseries import TimeSeries
-h1 = TimeSeries.fetch_open_data('H1', 1187006834, 1187010930)
-l1 = TimeSeries.fetch_open_data('L1', 1187006834, 1187010930)
+h1 = TimeSeries.fetch_open_data("H1", 1187006834, 1187010930)
+l1 = TimeSeries.fetch_open_data("L1", 1187006834, 1187010930)
 
 # Then, we can measure the inspiral range directly:
 
@@ -47,11 +47,11 @@ l1range = range_timeseries(l1, 30, fftlength=4, fmin=10)
 # sensitivity over an hour or so surrounding GW170817:
 
 plot = h1range.plot(
-    label='LIGO-Hanford', color='gwpy:ligo-hanford', figsize=(12, 5))
+    label="LIGO-Hanford", color="gwpy:ligo-hanford", figsize=(12, 5))
 ax = plot.gca()
-ax.plot(l1range, label='LIGO-Livingston', color='gwpy:ligo-livingston')
-ax.set_ylabel('Angle-averaged sensitive distance [Mpc]')
-ax.set_title('LIGO sensitivity to BNS around GW170817')
+ax.plot(l1range, label="LIGO-Livingston", color="gwpy:ligo-livingston")
+ax.set_ylabel("Angle-averaged sensitive distance [Mpc]")
+ax.set_title("LIGO sensitivity to BNS around GW170817")
 ax.set_epoch(1187008882)  # <- set 0 on plot to GW170817
 ax.legend()
 plot.show()

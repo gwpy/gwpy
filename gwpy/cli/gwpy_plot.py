@@ -33,16 +33,16 @@ from matplotlib import use
 from .. import __version__
 from . import PRODUCTS
 
-__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
+__author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 # if launched from a terminal with no display
 # Must be done before modules like pyplot are imported
-if len(os.getenv('DISPLAY', '')) == 0:
-    use('Agg')
+if len(os.getenv("DISPLAY", "")) == 0:
+    use("Agg")
 
 PROG_START = time.time()    # verbose enough times major ops
 
-INTERACTIVE = hasattr(sys, 'ps1')
+INTERACTIVE = hasattr(sys, "ps1")
 
 EPILOG = f"""
 Examples:
@@ -75,8 +75,8 @@ class HelpFormatter(ArgumentDefaultsHelpFormatter, RawTextHelpFormatter):
 class _ArgumentParser(ArgumentParser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._positionals.title = 'Positional arguments'
-        self._optionals.title = 'Options'
+        self._positionals.title = "Positional arguments"
+        self._optionals.title = "Options"
 
 
 def create_parser():
@@ -85,26 +85,26 @@ def create_parser():
         formatter_class=HelpFormatter,
         epilog=EPILOG,
     )
-    parser.add_argument('-V', '--version', action='version',
+    parser.add_argument("-V", "--version", action="version",
                         version=__version__)
 
     # set the argument parser to act as the parent
     parentparser = _ArgumentParser(add_help=False)
-    parentparser._optionals.title = 'Verbosity options'
-    parentparser.add_argument('-v', '--verbose', action='count', default=1,
-                              help='increase verbose output')
-    parentparser.add_argument('-s', '--silent', action='store_true',
-                              help='show only fatal errors')
+    parentparser._optionals.title = "Verbosity options"
+    parentparser.add_argument("-v", "--verbose", action="count", default=1,
+                              help="increase verbose output")
+    parentparser.add_argument("-s", "--silent", action="store_true",
+                              help="show only fatal errors")
 
     # subparsers are dependent on which action is chosen
     subparsers = parser.add_subparsers(
-        dest='mode', title='Actions',
-        description='Select one of the following actions:')
+        dest="mode", title="Actions",
+        description="Select one of the following actions:")
 
     # Add the subparsers for each plot product
     for product, product_class in PRODUCTS.items():
         subparser = subparsers.add_parser(
-            product, help=product_class.__doc__.strip().split('\n')[0],
+            product, help=product_class.__doc__.strip().split("\n")[0],
             parents=[parentparser],
             formatter_class=ArgumentDefaultsHelpFormatter,
         )
@@ -128,11 +128,11 @@ def main(args=None):
     # parse the command line and create a product object
     args = parse_command_line(args=args)
     prod = PRODUCTS[args.mode](args)
-    prod.log(2, f'{prod.action} created')
+    prod.log(2, f"{prod.action} created")
 
     # log how long it took us to get here
     setup_time = time.time() - PROG_START
-    prod.log(2, f'Setup time {setup_time:.1f} sec')
+    prod.log(2, f"Setup time {setup_time:.1f} sec")
 
     # -- generate the plot
     prod.run()
@@ -149,7 +149,7 @@ def main(args=None):
         ax = plot.gca()  # noqa: F841
 
     run_time = time.time() - PROG_START
-    prod.log(1, f'Program run time: {run_time:.1f}')
+    prod.log(1, f"Program run time: {run_time:.1f}")
     if prod.got_error:
         return 2     # make sure when running batch they can test for error
 

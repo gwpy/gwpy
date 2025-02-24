@@ -56,7 +56,7 @@ class TestArray2D(_TestSeries):
 
         # test quantity
         array.y0 = 5 * units.m
-        assert array.y0 == units.Quantity(5, 'm')
+        assert array.y0 == units.Quantity(5, "m")
 
     def test_dy(self, array):
         array.dy = 5 * self.TEST_CLASS._default_yunit
@@ -70,7 +70,7 @@ class TestArray2D(_TestSeries):
 
         # test quantity
         array.dy = 5 * units.m
-        assert array.dy == units.Quantity(5, 'm')
+        assert array.dy == units.Quantity(5, "m")
 
     def test_yindex(self):
         y = numpy.linspace(0, 100, num=self.data.shape[1])
@@ -91,24 +91,24 @@ class TestArray2D(_TestSeries):
             units.Quantity(y_default, self.TEST_CLASS._default_yunit))
 
         # test setting of y0 and dy
-        series = self.create(yindex=units.Quantity(y, 'Farad'))
-        assert series.y0 == units.Quantity(y[0], 'Farad')
-        assert series.dy == units.Quantity(y[1] - y[0], 'Farad')
+        series = self.create(yindex=units.Quantity(y, "Farad"))
+        assert series.y0 == units.Quantity(y[0], "Farad")
+        assert series.dy == units.Quantity(y[1] - y[0], "Farad")
         assert series.yunit == units.Farad
         assert series.yspan == (y[0], y[-1] + y[1] - y[0])
 
         # test that setting yindex warns about ignoring dy or y0
         with pytest.warns(UserWarning):
-            series = self.create(yindex=units.Quantity(y, 'Farad'), dy=1)
+            series = self.create(yindex=units.Quantity(y, "Farad"), dy=1)
         with pytest.warns(UserWarning):
-            series = self.create(yindex=units.Quantity(y, 'Farad'), y0=0)
+            series = self.create(yindex=units.Quantity(y, "Farad"), y0=0)
 
         # test non-regular yindex
         y = numpy.logspace(0, 2, num=self.data.shape[0])
-        series = self.create(yindex=units.Quantity(y, 'Mpc'))
+        series = self.create(yindex=units.Quantity(y, "Mpc"))
         with pytest.raises(AttributeError):
             series.dy
-        assert series.y0 == units.Quantity(1, 'Mpc')
+        assert series.y0 == units.Quantity(1, "Mpc")
         assert series.yspan == (y[0], y[-1] + y[-1] - y[-2])
 
     def test_yunit(self, unit=None):
@@ -143,14 +143,14 @@ class TestArray2D(_TestSeries):
 
     # -- test methods ---------------------------
 
-    @pytest.mark.parametrize('create_kwargs', [
-        {'x0': 0, 'dx': 1, 'y0': 100, 'dy': 2},
-        {'xindex': numpy.arange(20), 'yindex': numpy.linspace(0, 100, 5)},
-        {'x0': 0, 'dx': 1, 'yindex': numpy.linspace(0, 100, 5)},
-        {'xindex': numpy.arange(20), 'y0': 100, 'dy': 2},
+    @pytest.mark.parametrize("create_kwargs", [
+        {"x0": 0, "dx": 1, "y0": 100, "dy": 2},
+        {"xindex": numpy.arange(20), "yindex": numpy.linspace(0, 100, 5)},
+        {"x0": 0, "dx": 1, "yindex": numpy.linspace(0, 100, 5)},
+        {"xindex": numpy.arange(20), "y0": 100, "dy": 2},
     ])
     def test_getitem(self, array, create_kwargs):
-        array = self.create(name='test_getitem', **create_kwargs)
+        array = self.create(name="test_getitem", **create_kwargs)
 
         # test element returns as quantity
         element = array[0, 0]
@@ -175,7 +175,7 @@ class TestArray2D(_TestSeries):
                 x0=array.x0+array.dx, dx=array.dx*3,
                 name=array.name, channel=array.channel, unit=array.unit,
             ),
-            exclude=['epoch'],
+            exclude=["epoch"],
         )
 
         # test dual slice returns type(self) with metadata
@@ -188,7 +188,7 @@ class TestArray2D(_TestSeries):
                 y0=array.y0+array.dy, dy=array.dy*2,
                 name=array.name, channel=array.channel, unit=array.unit,
             ),
-            exclude=['epoch'],
+            exclude=["epoch"],
         )
 
     def test_single_column_slice(self):

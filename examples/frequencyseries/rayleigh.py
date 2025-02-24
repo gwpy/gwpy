@@ -30,14 +30,14 @@ and recorded at a LIGO site.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.frequencyseries'
+__currentmodule__ = "gwpy.frequencyseries"
 
 # To demonstate this, we can load some data from the LIGO Livingston
 # interferometer around the time of the GW151226 gravitational wave detection:
 
 from gwpy.timeseries import TimeSeries
-gwdata = TimeSeries.fetch_open_data('L1', 'Dec 26 2015 03:37',
-                                    'Dec 26 2015 03:47', verbose=True)
+gwdata = TimeSeries.fetch_open_data("L1", "Dec 26 2015 03:37",
+                                    "Dec 26 2015 03:47", verbose=True)
 
 # Next, we can calculate a Rayleigh statistic `FrequencySeries` using the
 # :meth:`~gwpy.timeseries.TimeSeries.rayleigh_spectrum` method of the
@@ -50,17 +50,17 @@ rayleigh = gwdata.rayleigh_spectrum(2, 1)
 
 from gwpy.plot import Plot
 plot = Plot(gwdata.asd(2, 1), rayleigh, geometry=(2, 1), sharex=True,
-            xscale='log', xlim=(30, 1500))
+            xscale="log", xlim=(30, 1500))
 asdax, rayax = plot.axes
 
-asdax.set_yscale('log')
+asdax.set_yscale("log")
 asdax.set_ylim(5e-24, 1e-21)
-asdax.set_ylabel(r'[strain/$\sqrt{\mathrm{Hz}}$]')
+asdax.set_ylabel(r"[strain/$\sqrt{\mathrm{Hz}}$]")
 
 rayax.set_ylim(0, 2)
-rayax.set_ylabel('Rayleigh statistic')
+rayax.set_ylabel("Rayleigh statistic")
 
-asdax.set_title('Sensitivity of LIGO-Livingston around GW151226', fontsize=20)
+asdax.set_title("Sensitivity of LIGO-Livingston around GW151226", fontsize=20)
 plot.show()
 
 # So, we see sharp dips at certain frequencies associated with 'lines' in

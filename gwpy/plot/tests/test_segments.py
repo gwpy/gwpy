@@ -35,7 +35,7 @@ from .test_axes import TestAxes as _TestAxes
 
 # extract color cycle
 COLOR_CONVERTER = ColorConverter()
-COLOR_CYCLE = rcParams['axes.prop_cycle'].by_key()['color']
+COLOR_CYCLE = rcParams["axes.prop_cycle"].by_key()["color"]
 COLOR0 = COLOR_CONVERTER.to_rgba(COLOR_CYCLE[0])
 
 
@@ -52,7 +52,7 @@ class TestSegmentAxes(_TestAxes):
     def flag():
         known = SegmentList([Segment(0, 3), Segment(6, 7)])
         active = SegmentList([Segment(1, 2), Segment(3, 4), Segment(5, 7)])
-        return DataQualityFlag(name='Test segments', known=known,
+        return DataQualityFlag(name="Test segments", known=known,
                                active=active)
 
     def test_plot_flag(self, ax, flag):
@@ -65,24 +65,24 @@ class TestSegmentAxes(_TestAxes):
         c = ax.plot_flag(flag)
         assert tuple(c.get_facecolors()[0]) == (1., 0., 0., 1.)
 
-        c = ax.plot_flag(flag, known={'facecolor': 'black'})
-        c = ax.plot_flag(flag, known='fancy')
+        c = ax.plot_flag(flag, known={"facecolor": "black"})
+        c = ax.plot_flag(flag, known="fancy")
 
     def test_plot_dict(self, ax, flag):
         dqd = DataQualityDict()
-        dqd['a'] = flag
-        dqd['b'] = flag
+        dqd["a"] = flag
+        dqd["b"] = flag
 
         colls = ax.plot_dict(dqd)
         assert len(colls) == len(dqd)
         assert all(isinstance(c, PatchCollection) for c in colls)
-        assert colls[0].get_label() == 'a'
-        assert colls[1].get_label() == 'b'
+        assert colls[0].get_label() == "a"
+        assert colls[1].get_label() == "b"
 
-        colls = ax.plot_dict(dqd, label='name')
-        assert colls[0].get_label() == 'Test segments'
-        colls = ax.plot_dict(dqd, label='anything')
-        assert colls[0].get_label() == 'anything'
+        colls = ax.plot_dict(dqd, label="name")
+        assert colls[0].get_label() == "Test segments"
+        colls = ax.plot_dict(dqd, label="anything")
+        assert colls[0].get_label() == "anything"
 
     def test_plot_segmentlist(self, ax, segments):
         c = ax.plot_segmentlist(segments)
@@ -97,23 +97,23 @@ class TestSegmentAxes(_TestAxes):
         p = ax.plot_segmentlist(segments, y=8).get_paths()[0].get_extents()
         assert p.y0 + p.height/2. == 8.
         # test kwargs
-        c = ax.plot_segmentlist(segments, label='My segments',
+        c = ax.plot_segmentlist(segments, label="My segments",
                                 rasterized=True)
-        assert c.get_label() == 'My segments'
+        assert c.get_label() == "My segments"
         assert c.get_rasterized() is True
         # test collection=False
-        c = ax.plot_segmentlist(segments, collection=False, label='test')
+        c = ax.plot_segmentlist(segments, collection=False, label="test")
         assert isinstance(c, list)
         assert not isinstance(c, PatchCollection)
-        assert c[0].get_label() == 'test'
-        assert c[1].get_label() == ''
+        assert c[0].get_label() == "test"
+        assert c[1].get_label() == ""
         assert len(ax.patches) == len(segments)
         # test empty
         c = ax.plot_segmentlist(type(segments)())
 
     def test_plot_segmentlistdict(self, ax, segments):
         sld = SegmentListDict()
-        sld['TEST'] = segments
+        sld["TEST"] = segments
         ax.plot(sld)
 
     def test_plot(self, ax, segments, flag):
@@ -146,13 +146,13 @@ def test_segmentrectangle():
     assert patch.get_facecolor() == COLOR0
 
     # check kwarg passing
-    patch = SegmentRectangle((1.1, 2.4), 10, facecolor='red')
-    assert patch.get_facecolor() == COLOR_CONVERTER.to_rgba('red')
+    patch = SegmentRectangle((1.1, 2.4), 10, facecolor="red")
+    assert patch.get_facecolor() == COLOR_CONVERTER.to_rgba("red")
 
     # check valign
-    patch = SegmentRectangle((1.1, 2.4), 10, valign='top')
+    patch = SegmentRectangle((1.1, 2.4), 10, valign="top")
     assert patch.get_xy() == (1.1, 9.2)
-    patch = SegmentRectangle((1.1, 2.4), 10, valign='bottom')
+    patch = SegmentRectangle((1.1, 2.4), 10, valign="bottom")
     assert patch.get_xy() == (1.1, 10.0)
     with pytest.raises(ValueError):
-        patch = SegmentRectangle((0, 1), 0, valign='blah')
+        patch = SegmentRectangle((0, 1), 0, valign="blah")

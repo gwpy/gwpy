@@ -42,7 +42,7 @@ from .connect import (
 )
 from .filter import (filter_table, parse_operator)
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 TIME_LIKE_COLUMN_NAMES = [
     "time",  # standard
@@ -56,9 +56,9 @@ TIME_LIKE_COLUMN_NAMES = [
 def _rates_preprocess(func):
     @wraps(func)
     def wrapped_func(self, *args, **kwargs):
-        timecolumn = kwargs.get('timecolumn')
-        start = kwargs.get('start')
-        end = kwargs.get('end')
+        timecolumn = kwargs.get("timecolumn")
+        start = kwargs.get("start")
+        end = kwargs.get("end")
 
         # get timecolumn if we are going to need it
         if (
@@ -66,20 +66,20 @@ def _rates_preprocess(func):
             or not self.colnames
         ):
             try:
-                kwargs['timecolumn'] = self._get_time_column()
+                kwargs["timecolumn"] = self._get_time_column()
             except ValueError as exc:
-                exc.args = ('{0}, please give `timecolumn` '
-                            'keyword'.format(exc.args[0]),)
+                exc.args = ("{0}, please give `timecolumn` "
+                            "keyword".format(exc.args[0]),)
                 raise
         # otherwise use anything (it doesn't matter)
-        kwargs.setdefault('timecolumn', self.colnames[0])
+        kwargs.setdefault("timecolumn", self.colnames[0])
 
         # set start and end
-        times = self[kwargs['timecolumn']]
+        times = self[kwargs["timecolumn"]]
         if start is None:
-            kwargs['start'] = times.min()
+            kwargs["start"] = times.min()
         if end is None:
-            kwargs['end'] = times.max()
+            kwargs["end"] = times.max()
 
         return func(self, *args, **kwargs)
     return wrapped_func
@@ -256,17 +256,17 @@ class EventTable(Table):
         # NOTE: decorator sets timecolumn, start, end to non-None values
         from gwpy.timeseries import TimeSeries
         times = self[timecolumn]
-        if times.dtype.name == 'object':  # cast to ufuncable type
-            times = times.astype('longdouble', copy=False)
+        if times.dtype.name == "object":  # cast to ufuncable type
+            times = times.astype("longdouble", copy=False)
         nsamp = int(ceil((end - start) / stride))
         timebins = numpy.arange(nsamp + 1) * stride + start
         # create histogram
         return TimeSeries(
             numpy.histogram(times, bins=timebins)[0] / float(stride),
-            t0=start, dt=stride, unit='Hz', name='Event rate')
+            t0=start, dt=stride, unit="Hz", name="Event rate")
 
     @_rates_preprocess
-    def binned_event_rates(self, stride, column, bins, operator='>=',
+    def binned_event_rates(self, stride, column, bins, operator=">=",
                            start=None, end=None, timecolumn=None):
         """Calculate an event rate `~gwpy.timeseries.TimeSeriesDict` over
         a number of bins.
@@ -321,7 +321,7 @@ class EventTable(Table):
         # generate column bins
         if not bins:
             bins = [(-numpy.inf, numpy.inf)]
-        if operator == 'in' and not isinstance(bins[0], tuple):
+        if operator == "in" and not isinstance(bins[0], tuple):
             bins = [(bin_, bins[i+1]) for i, bin_ in enumerate(bins[:-1])]
         elif isinstance(operator, str):
             op_func = parse_operator(operator)
@@ -339,15 +339,15 @@ class EventTable(Table):
                 keep = op_func(coldata, bin_)
             out[bin_] = self[keep].event_rate(stride, start=start, end=end,
                                               timecolumn=timecolumn)
-            out[bin_].name = ' '.join((column, str(operator), str(bin_)))
+            out[bin_].name = " ".join((column, str(operator), str(bin_)))
 
         return out
 
     def plot(self, *args, **kwargs):
         """DEPRECATED, use `EventTable.scatter`
         """
-        warnings.warn('{0}.plot was renamed {0}.scatter and will be removed '
-                      'in an upcoming release'.format(type(self).__name__),
+        warnings.warn("{0}.plot was renamed {0}.scatter and will be removed "
+                      "in an upcoming release".format(type(self).__name__),
                       DeprecationWarning)
         return self.scatter(*args, **kwargs)
 
@@ -384,10 +384,10 @@ class EventTable(Table):
         gwpy.plot.Axes.scatter
             for documentation of keyword arguments used to display the table
         """
-        color = kwargs.pop('color', None)
+        color = kwargs.pop("color", None)
         if color is not None:
-            kwargs['c'] = self[color]
-        return self._plot('scatter', self[x], self[y], **kwargs)
+            kwargs["c"] = self[color]
+        return self._plot("scatter", self[x], self[y], **kwargs)
 
     def tile(self, x, y, w, h, **kwargs):
         """Make a tile plot of this table.
@@ -428,10 +428,10 @@ class EventTable(Table):
         gwpy.plot.Axes.tile
             for documentation of keyword arguments used to display the table
         """
-        color = kwargs.pop('color', None)
+        color = kwargs.pop("color", None)
         if color is not None:
-            kwargs['color'] = self[color]
-        return self._plot('tile', self[x], self[y], self[w], self[h], **kwargs)
+            kwargs["color"] = self[color]
+        return self._plot("tile", self[x], self[y], self[w], self[h], **kwargs)
 
     def _plot(self, method, *args, **kwargs):
         from matplotlib import rcParams
@@ -440,23 +440,23 @@ class EventTable(Table):
 
         if self._is_time_column(args[0].name):
             # map X column to GPS axis
-            kwargs.setdefault('figsize', (12, 6))
-            kwargs.setdefault('xscale', 'auto-gps')
+            kwargs.setdefault("figsize", (12, 6))
+            kwargs.setdefault("xscale", "auto-gps")
 
-        kwargs['method'] = method
+        kwargs["method"] = method
         plot = Plot(*args, **kwargs)
 
         # set default labels
         ax = plot.gca()
         for axis, col in zip(
-                filter(attrgetter('isDefault_label'), (ax.xaxis, ax.yaxis)),
+                filter(attrgetter("isDefault_label"), (ax.xaxis, ax.yaxis)),
                 args[:2],
         ):
             name = col.name
-            if rcParams['text.usetex']:
-                name = r'\texttt{{{0}}}'.format(label_to_latex(col.name))
+            if rcParams["text.usetex"]:
+                name = r"\texttt{{{0}}}".format(label_to_latex(col.name))
             if col.unit is not None:
-                name += ' [{0}]'.format(col.unit.to_string('latex_inline'))
+                name += " [{0}]".format(col.unit.to_string("latex_inline"))
             axis.set_label_text(name)
             axis.isDefault_label = True
 
@@ -496,7 +496,7 @@ class EventTable(Table):
             might not actually be the one used.
         """
         from ..plot import Plot
-        return Plot(self[column], method='hist', **kwargs)
+        return Plot(self[column], method="hist", **kwargs)
 
     def filter(self, *column_filters):
         """Apply one or more column slice filters to this `EventTable`
@@ -570,7 +570,7 @@ class EventTable(Table):
         >>> table.cluster('end_time', 'snr', 0.1)
         """
         if window <= 0.0:
-            raise ValueError('Window must be a positive value')
+            raise ValueError("Window must be a positive value")
 
         # If no rows, no need to cluster
         if len(self) == 0:

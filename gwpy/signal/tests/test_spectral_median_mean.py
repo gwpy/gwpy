@@ -60,7 +60,7 @@ def test_median_mean(lal_func, pycbc_func):
         1,
         2,
         noverlap=3,
-        method='median-mean',
+        method="median-mean",
         window=None,
         plan=None,
     )

@@ -48,6 +48,6 @@ def progress_bar(
         **kwargs,
     )
     if not pbar.disable:
-        pbar.desc = pbar.desc.rstrip(': ')
+        pbar.desc = pbar.desc.rstrip(": ")
         pbar.refresh()
     return pbar

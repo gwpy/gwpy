@@ -44,7 +44,7 @@ from astropy import units
 
 from ..time import (to_gps, from_gps)
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 TIME_UNITS = [units.nanosecond,
               units.microsecond,
@@ -89,8 +89,8 @@ class GPSMixin(object):
     """Mixin adding GPS-related attributes to any class.
     """
     def __init__(self, *args, **kwargs):
-        self.set_unit(kwargs.pop('unit', None))
-        self.set_epoch(kwargs.pop('epoch', None))
+        self.set_unit(kwargs.pop("unit", None))
+        self.set_epoch(kwargs.pop("epoch", None))
         try:  # call super for __init__ if this is part of a larger MRO
             super().__init__(*args, **kwargs)
         except TypeError:  # otherwise return
@@ -126,7 +126,7 @@ class GPSMixin(object):
         # accept all core time units
         if unit is None or (
             isinstance(unit, units.NamedUnit)
-            and unit.physical_type == 'time'
+            and unit.physical_type == "time"
         ):
             self._unit = unit
             return
@@ -139,7 +139,7 @@ class GPSMixin(object):
         except ValueError as exc:
             # catch annoying plurals
             try:
-                unit = units.Unit(str(unit).rstrip('s'))
+                unit = units.Unit(str(unit).rstrip("s"))
             except ValueError:
                 raise exc
         # decompose and check that it's actually a time unit
@@ -400,7 +400,7 @@ class GPSFormatter(ticker.Formatter):
 class GPSScale(GPSMixin, LinearScale):
     """A GPS scale, displaying time (scaled units) from an epoch.
     """
-    name = 'auto-gps'
+    name = "auto-gps"
     GPSTransform = GPSTransform
     InvertedGPSTransform = InvertedGPSTransform
 
@@ -439,11 +439,11 @@ class GPSScale(GPSMixin, LinearScale):
         # round epoch in successive units for large scales
         unit = self.get_unit()
         date = from_gps(epoch)
-        fields = ('second', 'minute', 'hour', 'day')
+        fields = ("second", "minute", "hour", "day")
         for i, u in enumerate(fields[1:]):
             if unit < units.Unit(u):
                 break
-            if u in ('day',):
+            if u in ("day",):
                 date = date.replace(**{fields[i]: 1})
             else:
                 date = date.replace(**{fields[i]: 0})
@@ -511,7 +511,7 @@ for _unit in TIME_UNITS:
 # update the docstring for matplotlib scale methods
 try:
     _docstring.interpd.update(
-        scale=' | '.join([repr(x) for x in get_scale_names()]),
+        scale=" | ".join([repr(x) for x in get_scale_names()]),
         scale_docs=get_scale_docs().rstrip(),
     )
 except AttributeError:  # pragma: no cover

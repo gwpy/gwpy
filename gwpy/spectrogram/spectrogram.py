@@ -43,7 +43,7 @@ from .connect import (
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
-__all__ = ['Spectrogram', 'SpectrogramList']
+__all__ = ["Spectrogram", "SpectrogramList"]
 
 
 def _ordinal(n):
@@ -64,7 +64,7 @@ def _ordinal(n):
     '102nd'
     """
     idx = int((n//10 % 10 != 1) * (n % 10 < 4) * n % 10)
-    return '{}{}'.format(n, "tsnrhtdd"[idx::4])
+    return "{}{}".format(n, "tsnrhtdd"[idx::4])
 
 
 class Spectrogram(Array2D):
@@ -131,7 +131,7 @@ class Spectrogram(Array2D):
        ~Spectrogram.plot
        ~Spectrogram.zpk
     """
-    _metadata_slots = Series._metadata_slots + ('y0', 'dy', 'yindex')
+    _metadata_slots = Series._metadata_slots + ("y0", "dy", "yindex")
     _default_xunit = TimeSeries._default_xunit
     _default_yunit = FrequencySeries._default_xunit
     _rowclass = TimeSeries
@@ -143,27 +143,27 @@ class Spectrogram(Array2D):
         """Generate a new Spectrogram.
         """
         # parse t0 or epoch
-        epoch = kwargs.pop('epoch', None)
+        epoch = kwargs.pop("epoch", None)
         if epoch is not None and t0 is not None:
             raise ValueError("give only one of epoch or t0")
         if epoch is None and t0 is not None:
-            kwargs['x0'] = _format_time(t0)
+            kwargs["x0"] = _format_time(t0)
         elif epoch is not None:
-            kwargs['x0'] = _format_time(epoch)
+            kwargs["x0"] = _format_time(epoch)
         # parse sample_rate or dt
         if dt is not None:
-            kwargs['dx'] = dt
+            kwargs["dx"] = dt
         # parse times
         if times is not None:
-            kwargs['xindex'] = times
+            kwargs["xindex"] = times
 
         # parse y-axis params
         if f0 is not None:
-            kwargs['y0'] = f0
+            kwargs["y0"] = f0
         if df is not None:
-            kwargs['dy'] = df
+            kwargs["dy"] = df
         if frequencies is not None:
-            kwargs['yindex'] = frequencies
+            kwargs["yindex"] = frequencies
 
         # generate Spectrogram
         return super().__new__(cls, data, unit=unit, name=name,
@@ -260,9 +260,9 @@ class Spectrogram(Array2D):
             if ``operand`` is given as a `str` that isn't supported
         """
         if isinstance(operand, str):
-            if operand == 'mean':
+            if operand == "mean":
                 operand = self.mean(axis=0)
-            elif operand == 'median':
+            elif operand == "median":
                 operand = self.median(axis=0)
             else:
                 raise ValueError("operand %r unrecognised, please give a "
@@ -350,15 +350,15 @@ class Spectrogram(Array2D):
             raise ValueError("Cannot stack spectra with different f0")
         if not all(s.df == spec1.df for s in spectra):
             raise ValueError("Cannot stack spectra with different df")
-        kwargs.setdefault('name', spec1.name)
-        kwargs.setdefault('channel', spec1.channel)
-        kwargs.setdefault('epoch', spec1.epoch)
-        kwargs.setdefault('f0', spec1.f0)
-        kwargs.setdefault('df', spec1.df)
-        kwargs.setdefault('unit', spec1.unit)
-        if not ('dt' in kwargs or 'times' in kwargs):
+        kwargs.setdefault("name", spec1.name)
+        kwargs.setdefault("channel", spec1.channel)
+        kwargs.setdefault("epoch", spec1.epoch)
+        kwargs.setdefault("f0", spec1.f0)
+        kwargs.setdefault("df", spec1.df)
+        kwargs.setdefault("unit", spec1.unit)
+        if not ("dt" in kwargs or "times" in kwargs):
             try:
-                kwargs.setdefault('dt', spectra[1].epoch.gps - spec1.epoch.gps)
+                kwargs.setdefault("dt", spectra[1].epoch.gps - spec1.epoch.gps)
             except (AttributeError, IndexError):
                 raise ValueError("Cannot determine dt (time-spacing) for "
                                  "Spectrogram from inputs")
@@ -380,13 +380,13 @@ class Spectrogram(Array2D):
         """
         out = numpy.percentile(self.value, percentile, axis=0)
         if self.name is not None:
-            name = '{}: {} percentile'.format(self.name, _ordinal(percentile))
+            name = "{}: {} percentile".format(self.name, _ordinal(percentile))
         else:
             name = None
         return FrequencySeries(
             out, epoch=self.epoch, channel=self.channel, name=name,
             f0=self.f0, df=self.df, unit=self.unit, frequencies=(
-                hasattr(self, '_frequencies') and self.frequencies or None))
+                hasattr(self, "_frequencies") and self.frequencies or None))
 
     def zpk(self, zeros, poles, gain, analog=True):
         """Filter this `Spectrogram` by applying a zero-pole-gain filter
@@ -530,16 +530,16 @@ class Spectrogram(Array2D):
         if low is not None and low == self.f0:
             low = None
         elif low is not None and low < self.f0:
-            warnings.warn('Spectrogram.crop_frequencies given low frequency '
-                          'cutoff below f0 of the input Spectrogram. Low '
-                          'frequency crop will have no effect.')
+            warnings.warn("Spectrogram.crop_frequencies given low frequency "
+                          "cutoff below f0 of the input Spectrogram. Low "
+                          "frequency crop will have no effect.")
         # check high frequency
         if high is not None and high.value == self.band[1]:
             high = None
         elif high is not None and high.value > self.band[1]:
-            warnings.warn('Spectrogram.crop_frequencies given high frequency '
-                          'cutoff above cutoff of the input Spectrogram. High '
-                          'frequency crop will have no effect.')
+            warnings.warn("Spectrogram.crop_frequencies given high frequency "
+                          "cutoff above cutoff of the input Spectrogram. High "
+                          "frequency crop will have no effect.")
         # find low index
         if low is None:
             idx0 = None

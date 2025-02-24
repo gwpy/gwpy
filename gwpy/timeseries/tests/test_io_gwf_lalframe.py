@@ -164,13 +164,13 @@ def test_write(tmp_path):
 
 
 @pytest.mark.parametrize(
-    'data',
+    "data",
     [
         pytest.param(
             [],
             marks=pytest.mark.xfail(
                 raises=RuntimeError,
-                reason='Cannot add an empty series to a frame',
+                reason="Cannot add an empty series to a frame",
             )
         ),
         [1, 2, 3, 4, 5],

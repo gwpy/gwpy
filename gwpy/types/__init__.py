@@ -30,4 +30,4 @@ from .series import Series
 from . import io
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__all__ = ['Array', 'Series', 'Array2D', 'Index']
+__all__ = ["Array", "Series", "Array2D", "Index"]

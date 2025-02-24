@@ -256,7 +256,7 @@ def test_host_resolution_order_warning():
             env=None,
             include_gwosc=False,
         )
-        assert hro == [('nds.ligo.caltech.edu', None)]
+        assert hro == [("nds.ligo.caltech.edu", None)]
 
         # should _not_ produce warning
         hro = io_nds2.host_resolution_order("X1", env="TESTENV")

@@ -32,19 +32,19 @@ the GW178017 event, and also the 5th and 95th percentiles of the ASD, and
 plot them on a single figure.
 """
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__currentmodule__ = 'gwpy.timeseries'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__currentmodule__ = "gwpy.timeseries"
 
 # First, as always, we get the data using :meth:`TimeSeries.fetch_open_data`:
 
 from gwpy.timeseries import TimeSeries
-hoft = TimeSeries.fetch_open_data('H1', 1187007040, 1187009088)
+hoft = TimeSeries.fetch_open_data("H1", 1187007040, 1187009088)
 
 # Next we calculate a :class:`~gwpy.spectrogram.Spectrogram` by calculating
 # a number of ASDs, using the :meth:`~gwpy.timeseries.TimeSeries.spectrogram2`
 # method:
 
-sg = hoft.spectrogram2(fftlength=4, overlap=2, window='hann') ** (1 / 2.)
+sg = hoft.spectrogram2(fftlength=4, overlap=2, window="hann") ** (1 / 2.)
 
 # From this we can trivially extract the median, 5th and 95th percentiles:
 
@@ -58,12 +58,12 @@ high = sg.percentile(95)
 from gwpy.plot import Plot
 plot = Plot()
 ax = plot.add_subplot(
-    xscale='log', xlim=(10, 1500), xlabel='Frequency [Hz]',
-    yscale='log', ylim=(3e-24, 2e-20),
-    ylabel=r'Strain noise [1/$\sqrt{\mathrm{Hz}}$]',
+    xscale="log", xlim=(10, 1500), xlabel="Frequency [Hz]",
+    yscale="log", ylim=(3e-24, 2e-20),
+    ylabel=r"Strain noise [1/$\sqrt{\mathrm{Hz}}$]",
 )
-ax.plot_mmm(median, low, high, color='gwpy:ligo-hanford')
-ax.set_title('LIGO-Hanford strain noise variation around GW170817',
+ax.plot_mmm(median, low, high, color="gwpy:ligo-hanford")
+ax.set_title("LIGO-Hanford strain noise variation around GW170817",
              fontsize=16)
 plot.show()
 

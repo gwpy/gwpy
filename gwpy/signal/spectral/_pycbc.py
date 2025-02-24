@@ -26,7 +26,7 @@ from ...frequencyseries import FrequencySeries
 from ._utils import scale_timeseries_unit
 from . import _registry as fft_registry
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def welch(timeseries, segmentlength, noverlap=None, scheme=None, **kwargs):
@@ -61,7 +61,7 @@ def welch(timeseries, segmentlength, noverlap=None, scheme=None, **kwargs):
     from pycbc.psd import welch as pycbc_welch
 
     # default to 'standard' welch
-    kwargs.setdefault('avg_method', 'mean')
+    kwargs.setdefault("avg_method", "mean")
 
     # get scheme
     if scheme is None:
@@ -78,41 +78,41 @@ def welch(timeseries, segmentlength, noverlap=None, scheme=None, **kwargs):
     fseries = FrequencySeries.from_pycbc(pycbc_fseries, copy=False)
     fseries.name = timeseries.name
     fseries.override_unit(scale_timeseries_unit(
-        timeseries.unit, scaling='density'))
+        timeseries.unit, scaling="density"))
     return fseries
 
 
 def bartlett(*args, **kwargs):  # pylint: disable=missing-docstring
-    kwargs['avg_method'] = 'mean'
-    kwargs['noverlap'] = 0
+    kwargs["avg_method"] = "mean"
+    kwargs["noverlap"] = 0
     return welch(*args, **kwargs)
 
 
-bartlett.__doc__ = welch.__doc__.replace('mean average',
-                                         'non-overlapping mean average')
+bartlett.__doc__ = welch.__doc__.replace("mean average",
+                                         "non-overlapping mean average")
 
 
 def median(*args, **kwargs):  # pylint: disable=missing-docstring
-    kwargs['avg_method'] = 'median'
+    kwargs["avg_method"] = "median"
     return welch(*args, **kwargs)
 
 
-median.__doc__ = welch.__doc__.replace('mean average', 'median average')
+median.__doc__ = welch.__doc__.replace("mean average", "median average")
 
 
 def median_mean(*args, **kwargs):  # pylint: disable=missing-docstring
-    kwargs['avg_method'] = 'median-mean'
+    kwargs["avg_method"] = "median-mean"
     return welch(*args, **kwargs)
 
 
-median_mean.__doc__ = welch.__doc__.replace('mean average',
-                                            'median-mean average')
+median_mean.__doc__ = welch.__doc__.replace("mean average",
+                                            "median-mean average")
 
 
 # register new functions
 for func in (welch, bartlett, median, median_mean):
     fft_registry.register_method(
         func,
-        name='pycbc-{}'.format(func.__name__),
+        name="pycbc-{}".format(func.__name__),
         deprecated=True,
     )

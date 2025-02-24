@@ -151,14 +151,14 @@ def read_hdf5_flag(
     dataset = _get_flag_group(h5f, path)
 
     # read dataset
-    active = SegmentList.read(dataset['active'], format='hdf5',
+    active = SegmentList.read(dataset["active"], format="hdf5",
                               gpstype=gpstype)
     try:
-        known = SegmentList.read(dataset['known'], format='hdf5',
+        known = SegmentList.read(dataset["known"], format="hdf5",
                                  gpstype=gpstype)
     except KeyError as first_keyerror:
         try:
-            known = SegmentList.read(dataset['valid'], format='hdf5',
+            known = SegmentList.read(dataset["valid"], format="hdf5",
                                      gpstype=gpstype)
         except KeyError:
             raise first_keyerror
@@ -180,11 +180,11 @@ def read_hdf5_segmentlist(
     # find dataset
     dataset = io_hdf5.find_dataset(h5f, path=path)
 
-    segtable = Table.read(dataset, format='hdf5', **kwargs)
+    segtable = Table.read(dataset, format="hdf5", **kwargs)
     out = SegmentList()
     for row in segtable:
-        start = LIGOTimeGPS(int(row['start_time']), int(row['start_time_ns']))
-        end = LIGOTimeGPS(int(row['end_time']), int(row['end_time_ns']))
+        start = LIGOTimeGPS(int(row["start_time"]), int(row["start_time_ns"]))
+        end = LIGOTimeGPS(int(row["end_time"]), int(row["end_time_ns"]))
         if gpstype is LIGOTimeGPS:
             out.append(Segment(start, end))
         else:
@@ -246,13 +246,13 @@ def write_hdf5_flag_group(
     """Write a `DataQualityFlag` into the given HDF5 group.
     """
     # write segmentlists
-    flag.active.write(h5group, 'active', **kwargs)
-    kwargs['append'] = True
-    flag.known.write(h5group, 'known', **kwargs)
+    flag.active.write(h5group, "active", **kwargs)
+    kwargs["append"] = True
+    flag.known.write(h5group, "known", **kwargs)
 
     # store metadata
-    for attr in ['name', 'label', 'category', 'description', 'isgood',
-                 'padding']:
+    for attr in ["name", "label", "category", "description", "isgood",
+                 "padding"]:
         value = getattr(flag, attr)
         if value is None:
             continue

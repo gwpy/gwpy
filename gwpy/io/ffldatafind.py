@@ -84,10 +84,10 @@ def _get_ffl_basedir():
         If neither the ``FFLPATH`` or ``VIRGODATA`` environment variables
         are set.
     """
-    if 'FFLPATH' in os.environ:
-        return os.environ['FFLPATH']
-    if 'VIRGODATA' in os.environ:
-        return os.path.join(os.environ['VIRGODATA'], 'ffl')
+    if "FFLPATH" in os.environ:
+        return os.environ["FFLPATH"]
+    if "VIRGODATA" in os.environ:
+        return os.path.join(os.environ["VIRGODATA"], "ffl")
     raise KeyError(
         "failed to parse FFLPATH from environment, please set "
         "FFLPATH to point to the directory containing FFL files",

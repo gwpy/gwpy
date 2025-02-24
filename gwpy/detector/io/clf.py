@@ -78,7 +78,7 @@ from ...io.utils import (
 )
 from .. import (Channel, ChannelList)
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 CHANNEL_DEFINITION = re.compile(
     r"(?P<name>[a-zA-Z0-9:_-]+)"
@@ -104,11 +104,11 @@ def read_channel_list_file(*source):
     # loop over all groups and channels
     for group in config.sections():
         params = OrderedDict(config.items(group))
-        channels = params.pop('channels').strip('\n').split('\n')
-        if 'flow' in params or 'fhigh' in params:
-            low = params.pop('flow', 0)
-            high = params.pop('fhigh', inf)
-            if isinstance(high, str) and high.lower() == 'nyquist':
+        channels = params.pop("channels").strip("\n").split("\n")
+        if "flow" in params or "fhigh" in params:
+            low = params.pop("flow", 0)
+            high = params.pop("fhigh", inf)
+            if isinstance(high, str) and high.lower() == "nyquist":
                 high = inf
             frange = float(low), float(high)
         else:
@@ -121,17 +121,17 @@ def read_channel_list_file(*source):
                 raise
             # remove Nones from match
             match = dict((k, v) for k, v in match.items() if v is not None)
-            match.setdefault('safe', 'safe')
-            match.setdefault('fidelity', 'clean')
+            match.setdefault("safe", "safe")
+            match.setdefault("fidelity", "clean")
             # create channel and copy group params
-            safe = match.get('safe', 'safe').lower() != 'unsafe'
-            channel = Channel(match.pop('name'), frequency_range=frange,
-                              safe=safe, sample_rate=match.pop('sample_rate'))
+            safe = match.get("safe", "safe").lower() != "unsafe"
+            channel = Channel(match.pop("name"), frequency_range=frange,
+                              safe=safe, sample_rate=match.pop("sample_rate"))
             channel.params = params.copy()
             channel.params.update(match)
             channel.group = group
             # extract those params for which the Channel has an attribute
-            for key in ['frametype']:
+            for key in ["frametype"]:
                 setattr(channel, key, channel.params.pop(key, None))
             append(channel)
     return out
@@ -155,19 +155,19 @@ def write_channel_list_file(channels, fobj):
         entry += f" {channel.params.get('safe', 'safe')}"
         entry += f" {channel.params.get('fidelity', 'clean')}"
         try:
-            clist = out.get(group, 'channels')
+            clist = out.get(group, "channels")
         except configparser.NoOptionError:
-            out.set(group, 'channels', f'\n{entry}')
+            out.set(group, "channels", f"\n{entry}")
         else:
-            out.set(group, 'channels', clist + f'\n{entry}')
+            out.set(group, "channels", clist + f"\n{entry}")
 
     out.write(fobj)
 
 
-compat_registry.register_reader('ini', ChannelList, read_channel_list_file)
+compat_registry.register_reader("ini", ChannelList, read_channel_list_file)
 compat_registry.register_identifier(
-    'ini',
+    "ini",
     ChannelList,
-    identify_factory('.ini', '.clf'),
+    identify_factory(".ini", ".clf"),
 )
-compat_registry.register_writer('ini', ChannelList, write_channel_list_file)
+compat_registry.register_writer("ini", ChannelList, write_channel_list_file)

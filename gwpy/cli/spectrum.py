@@ -26,13 +26,13 @@ from ..utils import unique
 from ..plot import Plot
 from ..plot.tex import label_to_latex
 
-__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
+__author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 
 class Spectrum(FFTMixin, FrequencyDomainProduct):
     """Plot the ASD spectrum of one or more time series
     """
-    action = 'spectrum'
+    action = "spectrum"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -45,39 +45,39 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
     @classmethod
     def arg_xaxis(cls, parser):
         # use frequency axis on X
-        return cls._arg_faxis('x', parser)
+        return cls._arg_faxis("x", parser)
 
     @classmethod
     def arg_yaxis(cls, parser):
         # default log Y-axis
-        return cls._arg_axis('y', parser, scale='log')
+        return cls._arg_axis("y", parser, scale="log")
 
     def _finalize_arguments(self, args):
         if args.yscale is None:
-            args.yscale = 'log'
+            args.yscale = "log"
         super()._finalize_arguments(args)
 
     def get_ylabel(self):
         """Text for y-axis label
         """
         if len(self.units) == 1:
-            u = self.units[0].to_string('latex').strip('$')
-            return fr'ASD $\left({u}\right)$'
-        return 'ASD'
+            u = self.units[0].to_string("latex").strip("$")
+            return fr"ASD $\left({u}\right)$"
+        return "ASD"
 
     def get_suptitle(self):
         """Start of default super title, first channel is appended to it
         """
-        return f'Spectrum: {self.chan_list[0]}'
+        return f"Spectrum: {self.chan_list[0]}"
 
     def get_title(self):
         gps = self.start_list[0]
-        utc = Time(gps, format='gps', scale='utc').iso
-        tstr = f'{utc} | {gps} ({self.duration})'
+        utc = Time(gps, format="gps", scale="utc").iso
+        tstr = f"{utc} | {gps} ({self.duration})"
 
-        fftstr = f'fftlength={self.args.secpfft}, overlap={self.args.overlap}'
+        fftstr = f"fftlength={self.args.secpfft}, overlap={self.args.overlap}"
 
-        return ', '.join([tstr, fftstr])
+        return ", ".join([tstr, fftstr])
 
     def make_plot(self):
         """Generate the plot from time series and arguments
@@ -104,10 +104,10 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
             nlegargs = 0
         if nlegargs > 0 and nlegargs != self.n_datasets:
             warnings.warn(
-                'The number of legends specified must match the number of '
-                'time series (channels * start times). '
-                f'There are {len(self.timeseries)} series '
-                f'and {len(self.args.legend)} legends'
+                "The number of legends specified must match the number of "
+                "time series (channels * start times). "
+                f"There are {len(self.timeseries)} series "
+                f"and {len(self.args.legend)} legends"
             )
             nlegargs = 0  # don't use  themm
 
@@ -118,7 +118,7 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
             else:
                 label = series.name or series.channel.name
                 if len(self.start_list) > 1:
-                    label += f', {series.epoch.gps}'
+                    label += f", {series.epoch.gps}"
 
             asd = series.asd(
                 fftlength=fftlength,
@@ -132,7 +132,7 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
 
             ax.plot(asd, label=label)
 
-        if args.xscale == 'log' and not args.xmin:
+        if args.xscale == "log" and not args.xmin:
             args.xmin = 1/fftlength
 
         return plot

@@ -45,7 +45,7 @@ from gwpy.timeseries import TimeSeries
 # and the GPS start and stop times of our query (based around the GPS time
 # for GW150914):
 
-data = TimeSeries.fetch_open_data('L1', gps-5, gps+5)
+data = TimeSeries.fetch_open_data("L1", gps-5, gps+5)
 
 # and then we can make a plot:
 

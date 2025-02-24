@@ -229,7 +229,7 @@ def parse_eventapi_catalog(
         tab[name].unit = _get_unit(name, punits)
 
     # add an index on the event name
-    tab.add_index('name')
+    tab.add_index("name")
 
     return tab
 

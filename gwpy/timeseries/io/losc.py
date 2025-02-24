@@ -47,11 +47,11 @@ DQMASK_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*DQMASK\Z")
 STRAIN_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*STRAIN\Z")
 
 GWOSC_LOCATE_KWARGS = (
-    'sample_rate',
-    'version',
-    'host',
-    'format',
-    'dataset',
+    "sample_rate",
+    "version",
+    "host",
+    "format",
+    "dataset",
 )
 
 
@@ -59,7 +59,7 @@ GWOSC_LOCATE_KWARGS = (
 
 def _download_file(url, cache=None, verbose=False, timeout=None, **kwargs):
     if cache is None:
-        cache = bool_env('GWPY_CACHE', False)
+        cache = bool_env("GWPY_CACHE", False)
     return get_readable_fileobj(
         url,
         cache=cache,
@@ -72,52 +72,52 @@ def _download_file(url, cache=None, verbose=False, timeout=None, **kwargs):
 def _fetch_gwosc_data_file(url, *args, **kwargs):
     """Fetch a single GWOSC file and return a `Series`.
     """
-    cls = kwargs.pop('cls', TimeSeries)
-    cache = kwargs.pop('cache', None)
-    verbose = kwargs.pop('verbose', False)
-    timeout = kwargs.pop('timeout', None)  # astropy will set a default
+    cls = kwargs.pop("cls", TimeSeries)
+    cache = kwargs.pop("cache", None)
+    verbose = kwargs.pop("verbose", False)
+    timeout = kwargs.pop("timeout", None)  # astropy will set a default
 
     # match file format
-    if url.endswith('.gz'):
+    if url.endswith(".gz"):
         ext = os.path.splitext(url[:-3])[-1]
     else:
         ext = os.path.splitext(url)[-1]
-    if ext == '.hdf5':
-        kwargs.setdefault('format', 'hdf5.gwosc')
-    elif ext == '.txt':
-        kwargs.setdefault('format', 'ascii.gwosc')
-    elif ext == '.gwf':
-        kwargs.setdefault('format', 'gwf')
+    if ext == ".hdf5":
+        kwargs.setdefault("format", "hdf5.gwosc")
+    elif ext == ".txt":
+        kwargs.setdefault("format", "ascii.gwosc")
+    elif ext == ".gwf":
+        kwargs.setdefault("format", "gwf")
 
     with _download_file(url, cache, verbose=verbose, timeout=timeout) as rem:
         # get channel for GWF if not given
         if ext == ".gwf" and (not args or args[0] is None):
             args = (_gwf_channel(rem, cls, kwargs.get("verbose")),)
         if verbose:
-            print('Reading data...', end=' ')
+            print("Reading data...", end=" ")
         try:
             series = cls.read(rem, *args, **kwargs)
         except Exception as exc:
             if verbose:
-                print('')
+                print("")
             exc.args = ("Failed to read GWOSC data from %r: %s"
                         % (url, str(exc)),)
             raise
         else:
             # parse bits from unit in GWF
-            if ext == '.gwf' and isinstance(series, StateVector):
+            if ext == ".gwf" and isinstance(series, StateVector):
                 try:
                     bits = {}
                     for bit in str(series.unit).split():
-                        a, b = bit.split(':', 1)
+                        a, b = bit.split(":", 1)
                         bits[int(a)] = b
                     series.bits = bits
-                    series.override_unit('')
+                    series.override_unit("")
                 except (TypeError, ValueError):  # don't care, bad GWOSC
                     pass
 
             if verbose:
-                print('[Done]')
+                print("[Done]")
             return series
 
 
@@ -148,15 +148,15 @@ def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
     end = to_gps(end)
     span = Segment(start, end)
     kwargs.update({
-        'start': start,
-        'end': end,
+        "start": start,
+        "end": end,
     })
 
     # find URLs (requires gwopensci)
     url_kw = {key: kwargs.pop(key) for key in GWOSC_LOCATE_KWARGS if
               key in kwargs}
-    if 'sample_rate' in url_kw:  # format as Hertz
-        url_kw['sample_rate'] = Quantity(url_kw['sample_rate'], 'Hz').value
+    if "sample_rate" in url_kw:  # format as Hertz
+        url_kw["sample_rate"] = Quantity(url_kw["sample_rate"], "Hz").value
     cache = sieve_cache(
         get_urls(detector, int(start), int(ceil(end)), **url_kw),
         segment=span,
@@ -172,20 +172,20 @@ def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
             if a <= start and b >= end:
                 cache = [url]
                 break
-    if kwargs.get('verbose', False):  # get_urls() guarantees len(cache) >= 1
+    if kwargs.get("verbose", False):  # get_urls() guarantees len(cache) >= 1
         host = urlparse(cache[0]).netloc
         print("Fetched {0} URLs from {1} for [{2} .. {3}))".format(
             len(cache), host, int(start), int(ceil(end))))
 
-    is_gwf = cache[0].endswith('.gwf')
+    is_gwf = cache[0].endswith(".gwf")
     if is_gwf and len(cache):
-        args = (kwargs.pop('channel', None),)
+        args = (kwargs.pop("channel", None),)
     else:
         args = ()
 
     # read data
     out = None
-    kwargs['cls'] = cls
+    kwargs["cls"] = cls
     for url in cache:
         keep = file_segment(url) & span
         kwargs["start"], kwargs["end"] = keep
@@ -204,7 +204,7 @@ def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
 @io_hdf5.with_read_hdf5
 def read_gwosc_hdf5(
     h5f,
-    path='strain/Strain',
+    path="strain/Strain",
     start=None,
     end=None,
     copy=False,
@@ -228,20 +228,20 @@ def read_gwosc_hdf5(
     # read data
     nddata = dataset[()]
     # read metadata
-    xunit = parse_unit(dataset.attrs['Xunits'])
-    epoch = dataset.attrs['Xstart']
-    dt = Quantity(dataset.attrs['Xspacing'], xunit)
-    unit = dataset.attrs['Yunits']
+    xunit = parse_unit(dataset.attrs["Xunits"])
+    epoch = dataset.attrs["Xstart"]
+    dt = Quantity(dataset.attrs["Xspacing"], xunit)
+    unit = dataset.attrs["Yunits"]
     # build and return
-    return TimeSeries(nddata, epoch=epoch, sample_rate=(1/dt).to('Hertz'),
-                      unit=unit, name=path.rsplit('/', 1)[1],
+    return TimeSeries(nddata, epoch=epoch, sample_rate=(1/dt).to("Hertz"),
+                      unit=unit, name=path.rsplit("/", 1)[1],
                       copy=copy).crop(start=start, end=end)
 
 
 @io_hdf5.with_read_hdf5
 def read_gwosc_hdf5_state(
     f,
-    path='quality/simple',
+    path="quality/simple",
     start=None,
     end=None,
     copy=False,
@@ -271,21 +271,21 @@ def read_gwosc_hdf5_state(
         a new `TimeSeries` containing the data read from disk
     """
     # find data
-    dataset = io_hdf5.find_dataset(f, '%s/DQmask' % path)
-    maskset = io_hdf5.find_dataset(f, '%s/DQDescriptions' % path)
+    dataset = io_hdf5.find_dataset(f, "%s/DQmask" % path)
+    maskset = io_hdf5.find_dataset(f, "%s/DQDescriptions" % path)
     # read data
     nddata = dataset[()]
-    bits = [bytes.decode(bytes(b), 'utf-8') for b in maskset[()]]
+    bits = [bytes.decode(bytes(b), "utf-8") for b in maskset[()]]
     # read metadata
-    epoch = dataset.attrs['Xstart']
+    epoch = dataset.attrs["Xstart"]
     try:
-        dt = dataset.attrs['Xspacing']
+        dt = dataset.attrs["Xspacing"]
     except KeyError:
-        dt = Quantity(1, 's')
+        dt = Quantity(1, "s")
     else:
-        xunit = parse_unit(dataset.attrs['Xunits'])
+        xunit = parse_unit(dataset.attrs["Xunits"])
         dt = Quantity(dt, xunit)
-    return StateVector(nddata, bits=bits, t0=epoch, name='Data quality',
+    return StateVector(nddata, bits=bits, t0=epoch, name="Data quality",
                        dx=dt, copy=copy).crop(start=start, end=end)
 
 

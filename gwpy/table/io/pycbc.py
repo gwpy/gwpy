@@ -142,7 +142,7 @@ def table_from_file(
         read_cols.update(fs.column for fs in filters)
 
     # set up meta dict
-    meta = {'ifo': ifo}
+    meta = {"ifo": ifo}
     meta.update(source.attrs)
     if extended_metadata:
         meta.update(_get_extended_metadata(source))
@@ -329,7 +329,7 @@ def empty_hdf5_file(
     # check whether there is any useful content
     groups = h5f.keys() if ifo is None else [ifo]
     for group in groups:
-        if not set(h5f.get(group, [])).issubset({'gates', 'psd'}):
+        if not set(h5f.get(group, [])).issubset({"gates", "psd"}):
             return False
     return True
 

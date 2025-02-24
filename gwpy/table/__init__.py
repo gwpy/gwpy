@@ -37,4 +37,4 @@ from .gravityspy import GravitySpyTable
 # attach unified I/O
 from . import io
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

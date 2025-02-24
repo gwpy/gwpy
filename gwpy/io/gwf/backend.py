@@ -35,7 +35,7 @@ if typing.TYPE_CHECKING:
         ModuleType,
     )
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # Preferentially ordered list of available GWF backends
 BACKENDS = [

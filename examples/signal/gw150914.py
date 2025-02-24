@@ -29,12 +29,12 @@ well as notch out fixed frequencies polluted by known artefacts.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First we download the raw strain data from the GWOSC public archive:
 
 from gwpy.timeseries import TimeSeries
-hdata = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+hdata = TimeSeries.fetch_open_data("H1", 1126259446, 1126259478)
 
 # Next we can design a zero-pole-gain filter to remove the extranious noise.
 
@@ -83,26 +83,26 @@ hfilt = hfilt.crop(*hfilt.span.contract(1))
 
 from gwpy.plot import Plot
 plot = Plot(hdata, hfilt, figsize=[12, 6], separate=True, sharex=True,
-            color='gwpy:ligo-hanford')
+            color="gwpy:ligo-hanford")
 ax1, ax2 = plot.axes
-ax1.set_title('LIGO-Hanford strain data around GW150914')
-ax1.text(1.0, 1.01, 'Unfiltered data', transform=ax1.transAxes, ha='right')
-ax1.set_ylabel('Amplitude [strain]', y=-0.2)
-ax2.set_ylabel('')
-ax2.text(1.0, 1.01, r'50-250\,Hz bandpass, notches at 60, 120, 180 Hz',
-         transform=ax2.transAxes, ha='right')
+ax1.set_title("LIGO-Hanford strain data around GW150914")
+ax1.text(1.0, 1.01, "Unfiltered data", transform=ax1.transAxes, ha="right")
+ax1.set_ylabel("Amplitude [strain]", y=-0.2)
+ax2.set_ylabel("")
+ax2.text(1.0, 1.01, r"50-250\,Hz bandpass, notches at 60, 120, 180 Hz",
+         transform=ax2.transAxes, ha="right")
 plot.show()
 plot.close()  # hide
 
 # We see now a spike around 16 seconds into the data, so let's zoom into
 # that time (and prettify):
 
-plot = hfilt.plot(color='gwpy:ligo-hanford')
+plot = hfilt.plot(color="gwpy:ligo-hanford")
 ax = plot.gca()
-ax.set_title('LIGO-Hanford strain data around GW150914')
-ax.set_ylabel('Amplitude [strain]')
+ax.set_title("LIGO-Hanford strain data around GW150914")
+ax.set_ylabel("Amplitude [strain]")
 ax.set_xlim(1126259462, 1126259462.6)
-ax.set_xscale('seconds', epoch=1126259462)
+ax.set_xscale("seconds", epoch=1126259462)
 plot.show()
 plot.close()  # hide
 
@@ -113,7 +113,7 @@ plot.close()  # hide
 #
 # First, we load the new data
 
-ldata = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
+ldata = TimeSeries.fetch_open_data("L1", 1126259446, 1126259478)
 lfilt = ldata.filter(zpk, filtfilt=True)
 
 # The article announcing the detector told us that the signals were
@@ -121,19 +121,19 @@ lfilt = ldata.filter(zpk, filtfilt=True)
 # of those detectors means that we need to invert the data from one
 # before comparing them, so we apply those corrections:
 
-lfilt.shift('6.9ms')
+lfilt.shift("6.9ms")
 lfilt *= -1
 
 # and finally make a new plot with both detectors:
 
 plot = Plot(figsize=[12, 4])
 ax = plot.gca()
-ax.plot(hfilt, label='LIGO-Hanford', color='gwpy:ligo-hanford')
-ax.plot(lfilt, label='LIGO-Livingston', color='gwpy:ligo-livingston')
-ax.set_title('LIGO strain data around GW150914')
+ax.plot(hfilt, label="LIGO-Hanford", color="gwpy:ligo-hanford")
+ax.plot(lfilt, label="LIGO-Livingston", color="gwpy:ligo-livingston")
+ax.set_title("LIGO strain data around GW150914")
 ax.set_xlim(1126259462, 1126259462.6)
-ax.set_xscale('seconds', epoch=1126259462)
-ax.set_ylabel('Amplitude [strain]')
+ax.set_xscale("seconds", epoch=1126259462)
+ax.set_ylabel("Amplitude [strain]")
 ax.set_ylim(-1e-21, 1e-21)
 ax.legend()
 plot.show()

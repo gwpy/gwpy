@@ -31,7 +31,7 @@ from matplotlib.colors import LogNorm
 from .colors import format_norm
 from .log import LogFormatter
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 # -- custom colorbar generation -----------------------------------------------
@@ -96,12 +96,12 @@ def process_colorbar_kwargs(
     # parse normalisation
     norm, kwargs = format_norm(kwargs, mappable.norm)
     mappable.set_norm(norm)
-    mappable.set_cmap(kwargs.pop('cmap', mappable.get_cmap()))
+    mappable.set_cmap(kwargs.pop("cmap", mappable.get_cmap()))
 
     # -- set tick formatting
 
     if isinstance(norm, LogNorm):
-        kwargs.setdefault('format', LogFormatter())
+        kwargs.setdefault("format", LogFormatter())
 
     # -- create axes for colorbar (if required)
 
@@ -128,7 +128,7 @@ def find_mappable(*axes):
         one or more axes to search for a mappable
     """
     for ax in axes:
-        for aset in ('collections', 'images'):
+        for aset in ("collections", "images"):
             try:
                 return getattr(ax, aset)[-1]
             except (AttributeError, IndexError):
@@ -200,7 +200,7 @@ def _colorbar_bounds(
     location = location.lower()
 
     # calculate default width and padding for the relevant orientation
-    orientation = "vertical" if location in ('left', 'right') else "horizontal"
+    orientation = "vertical" if location in ("left", "right") else "horizontal"
     if orientation == "vertical":
         size = _scale_width(.1, ax)
     elif orientation == "horizontal":
@@ -223,7 +223,7 @@ def _colorbar_bounds(
 
 def _make_inset_axes(
     ax,
-    location='right',
+    location="right",
     width=0.012,
     length=1.,
     pad=None,
@@ -232,9 +232,9 @@ def _make_inset_axes(
     """Create a new `Axes` to support a colorbar using `Axes.inset_axes`.
     """
     # set default orientation
-    if location in ('left', 'right'):
+    if location in ("left", "right"):
         orientation = kwargs.setdefault("orientation", "vertical")
-    elif location in ('top', 'bottom'):
+    elif location in ("top", "bottom"):
         orientation = kwargs.setdefault("orientation", "horizontal")
     else:
         raise ValueError(f"inset Axes location '{location}' not recognised")

@@ -28,11 +28,11 @@ import warnings
 
 from . import _registry as fft_registry
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def median_mean(*args, **kwargs):
-    for api_name, api_func in filter(lambda x: x[0].endswith('_median_mean'),
+    for api_name, api_func in filter(lambda x: x[0].endswith("_median_mean"),
                                      fft_registry.METHODS.items()):
         try:
             result = api_func(*args, **kwargs)

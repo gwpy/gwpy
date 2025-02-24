@@ -27,7 +27,7 @@ import numpy
 from matplotlib import (rcParams, ticker as mticker)
 from matplotlib.scale import (LogScale as _LogScale, register_scale)
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def _math(s):
@@ -102,14 +102,14 @@ class LogFormatter(mticker.LogFormatterMathtext):
             return _math((fmt or "%s") % 0)
 
         # determine whether to label or not
-        sign = '-' if x < 0 else ''
+        sign = "-" if x < 0 else ""
         x = abs(x)
         b = self._base
         fx = log(x) / log(b)
 
         is_x_decade = isclose(fx, round(fx))
         if self.labelOnlyBase and not is_x_decade:
-            return ''
+            return ""
 
         # work out whether to show this label
         # if there are enough major ticks or this formatter doesn't support
@@ -122,7 +122,7 @@ class LogFormatter(mticker.LogFormatterMathtext):
                 and self._sublabels is not None
                 and coeff not in self._sublabels
         ):
-            return ''
+            return ""
 
         # enable custom format
         if fmt:

@@ -33,7 +33,7 @@ from .connect import (
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-__all__ = ['Segment', 'SegmentList', 'SegmentListDict']
+__all__ = ["Segment", "SegmentList", "SegmentListDict"]
 
 
 class Segment(segment):
@@ -160,7 +160,7 @@ class SegmentList(segmentlist):
         from astropy.table import Table
         return Table(
             rows=[(i, s[0], s[1], abs(s)) for i, s in enumerate(self)],
-            names=('index', 'start', 'end', 'duration'),
+            names=("index", "start", "end", "duration"),
         )
 
     # -- i/o ------------------------------------

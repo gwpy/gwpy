@@ -31,7 +31,7 @@ use those to build a multi-hour spectrogram plot of LIGO-Livingston strain
 data.
 """
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # .. currentmodule:: gwpy.segments
 #

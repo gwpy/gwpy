@@ -28,7 +28,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 # -- tex configuration --------------------------------------------------------
 
 MACROS = [
-    r'\def\rtHz{\ensuremath{\sqrt{\mathrm{Hz}}}}',  # \sqrt{Hz} label
+    r"\def\rtHz{\ensuremath{\sqrt{\mathrm{Hz}}}}",  # \sqrt{Hz} label
 ]
 
 
@@ -59,7 +59,7 @@ def has_tex():
         `True` if the test image is drawn correctly, otherwise `False`
     """
     # run basic sanity checks
-    for exe in ('latex', 'pdflatex', 'dvipng'):
+    for exe in ("latex", "pdflatex", "dvipng"):
         if which(exe) is None:
             return False
 
@@ -112,7 +112,7 @@ def float_to_latex(x, format="%.2g"):  # pylint: disable=redefined-builtin
     r'-5\!\!\times\!\!10^{2}'
     """
     if x == 0.:
-        return '0'
+        return "0"
     base_str = format % x
     if "e" not in base_str:
         return base_str
@@ -120,8 +120,8 @@ def float_to_latex(x, format="%.2g"):  # pylint: disable=redefined-builtin
     if float(mantissa).is_integer():
         mantissa = int(float(mantissa))
     exponent = exponent.lstrip("0+")
-    if exponent.startswith('-0'):
-        exponent = '-' + exponent[2:]
+    if exponent.startswith("-0"):
+        exponent = "-" + exponent[2:]
     if float(mantissa) == 1.0:
         return fr"10^{{{exponent}}}"
     return fr"{mantissa}\!\!\times\!\!10^{{{exponent}}}"
@@ -159,7 +159,7 @@ def label_to_latex(text):
     'H1:ABC-DEF\\_GHI'
     """
     if text is None:
-        return ''
+        return ""
     out = []
     x = None
     # loop over matches in reverse order and replace
@@ -173,4 +173,4 @@ def label_to_latex(text):
         return text
     # append prefix and return joined components
     out.append(text[b:])
-    return ''.join(out)
+    return "".join(out)

@@ -29,8 +29,8 @@ import requests
 from ..utils import mp as mp_utils
 from .table import EventTable
 
-__author__ = 'Scott Coughlin <scott.coughlin@ligo.org>'
-__all__ = ['GravitySpyTable']
+__author__ = "Scott Coughlin <scott.coughlin@ligo.org>"
+__all__ = ["GravitySpyTable"]
 
 JSON_CONTENT_TYPE = "application/json"
 
@@ -240,13 +240,13 @@ class GravitySpyTable(EventTable):
             ifos = [ifos[i:i+2] for i in range(0, len(ifos), 2)]
 
         query = urlencode({
-            'howmany': howmany,
-            'imageid': gravityspy_id,
-            'era': "event_time BETWEEN {} AND {}".format(*ERA[era]),
-            'ifo': ", ".join(map(repr, ifos)),
-            'database': database,
+            "howmany": howmany,
+            "imageid": gravityspy_id,
+            "era": "event_time BETWEEN {} AND {}".format(*ERA[era]),
+            "ifo": ", ".join(map(repr, ifos)),
+            "database": database,
         })
-        url = '{}/?{}'.format(base, query)
+        url = "{}/?{}".format(base, query)
 
         response = requests.get(url, **kwargs)
         response.raise_for_status()  # check the response

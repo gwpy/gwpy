@@ -92,7 +92,7 @@ def random_table(
         if dtypes:
             dtp = dtypes[i]
             # use map() to support non-primitive types
-            if dtype(dtp).name == 'object' and callable(dtp):
+            if dtype(dtp).name == "object" and callable(dtp):
                 data.append(list(map(dtp, col)))
             else:
                 data.append(col.astype(dtp))

@@ -31,36 +31,36 @@ from .. import (
 
 from .test_cache import cache  # noqa: F401
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def test_gopen(tmp_path):
     tmp = tmp_path / "test.tmp"
     # test simple use
-    with tmp.open('w') as f:
-        f.write('blah blah blah')
+    with tmp.open("w") as f:
+        f.write("blah blah blah")
     with io_utils.gopen(tmp) as f2:
-        assert f2.read() == 'blah blah blah'
+        assert f2.read() == "blah blah blah"
 
 
 @pytest.mark.parametrize("suffix", (".txt.gz", ""))
 def test_gopen_gzip(tmp_path, suffix):
     tmp = tmp_path / f"test{suffix}"
-    text = b'blah blah blah'
-    with gzip.open(tmp, 'wb') as fobj:
+    text = b"blah blah blah"
+    with gzip.open(tmp, "wb") as fobj:
         fobj.write(text)
-    with io_utils.gopen(tmp, mode='rb') as fobj2:
+    with io_utils.gopen(tmp, mode="rb") as fobj2:
         assert isinstance(fobj2, gzip.GzipFile)
         assert fobj2.read() == text
 
 
 def test_identify_factory():
-    id_func = io_utils.identify_factory('.blah', '.blah2')
+    id_func = io_utils.identify_factory(".blah", ".blah2")
     assert id_func(None, None, None) is False
-    assert id_func(None, 'test.txt', None) is False
-    assert id_func(None, 'test.blah', None) is True
-    assert id_func(None, 'test.blah2', None) is True
-    assert id_func(None, 'test.blah2x', None) is False
+    assert id_func(None, "test.txt", None) is False
+    assert id_func(None, "test.blah", None) is True
+    assert id_func(None, "test.blah2", None) is True
+    assert id_func(None, "test.blah2x", None) is False
 
 
 def test_file_list_file(cache):  # noqa: F811
@@ -80,7 +80,7 @@ def test_file_list_cache(cache):  # noqa: F811
     assert io_utils.file_list(lcache) == cache
 
     # test cache file -> pfnlist()
-    with tempfile.NamedTemporaryFile(suffix='.lcf', mode='w') as f:
+    with tempfile.NamedTemporaryFile(suffix=".lcf", mode="w") as f:
         io_cache.write_cache(lcache, f)
         f.seek(0)
         assert io_utils.file_list(f.name) == cache
@@ -88,10 +88,10 @@ def test_file_list_cache(cache):  # noqa: F811
 
 def test_file_list_str():
     # test comma-separated list -> list
-    assert io_utils.file_list('A,B,C,D') == ['A', 'B', 'C', 'D']
+    assert io_utils.file_list("A,B,C,D") == ["A", "B", "C", "D"]
 
     # test list -> list
-    assert io_utils.file_list(['A', 'B', 'C', 'D']) == ['A', 'B', 'C', 'D']
+    assert io_utils.file_list(["A", "B", "C", "D"]) == ["A", "B", "C", "D"]
 
 
 def test_file_list_error():

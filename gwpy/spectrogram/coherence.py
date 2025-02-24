@@ -39,7 +39,7 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
     is generated, with all resulting spectra stacked in time and returned.
     """
     # check sampling rates
-    if ts1.sample_rate.to('Hertz') != ts2.sample_rate.to('Hertz'):
+    if ts1.sample_rate.to("Hertz") != ts2.sample_rate.to("Hertz"):
         sampling = min(ts1.sample_rate.value, ts2.sample_rate.value)
         # resample higher rate series
         if ts1.sample_rate.value == sampling:
@@ -63,7 +63,7 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
 
     # generate output spectrogram
     out = Spectrogram(zeros((nsteps, nfreqs)), epoch=ts1.epoch, dt=stride,
-                      f0=0, df=1/fftlength, copy=True, unit='coherence')
+                      f0=0, df=1/fftlength, copy=True, unit="coherence")
 
     if not nsteps:
         return out

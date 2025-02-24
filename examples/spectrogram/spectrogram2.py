@@ -28,13 +28,13 @@ to produce a much more feature-rich output.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # To demonstrate this, we can download some data associated with the
 # gravitational-wave event GW510914:
 
 from gwpy.timeseries import TimeSeries
-lho = TimeSeries.fetch_open_data('H1', 1126259458, 1126259467, verbose=True)
+lho = TimeSeries.fetch_open_data("H1", 1126259458, 1126259467, verbose=True)
 
 # and can :meth:`~TimeSeries.highpass` and :meth:`~TimeSeries.whiten`
 # the remove low-frequency noise and try and enhance low-amplitude signals
@@ -58,11 +58,11 @@ specgram = specgram.crop_frequencies(20)  # drop everything below highpass
 
 # Finally, we make a plot:
 
-plot = specgram.plot(norm='log', cmap='viridis', yscale='log')
+plot = specgram.plot(norm="log", cmap="viridis", yscale="log")
 ax = plot.gca()
-ax.set_title('LIGO-Hanford strain data around GW150914')
+ax.set_title("LIGO-Hanford strain data around GW150914")
 ax.set_xlim(1126259462, 1126259463)
-ax.colorbar(label=r'Strain ASD [1/$\sqrt{\mathrm{Hz}}$]')
+ax.colorbar(label=r"Strain ASD [1/$\sqrt{\mathrm{Hz}}$]")
 plot.show()
 
 # Here we can see the trace of a high-mass binary black hole system,

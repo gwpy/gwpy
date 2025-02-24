@@ -83,7 +83,7 @@ class TestPlot(FigureTestBase):
 
         # Array2D with imshow
         array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
-        plot = self.FIGURE_CLASS(array, method='imshow')
+        plot = self.FIGURE_CLASS(array, method="imshow")
         assert len(plot.axes[0].images) == 1
         image = plot.axes[0].images[0]
         utils.assert_array_equal(image.get_array(), array.value.T)
@@ -95,10 +95,10 @@ class TestPlot(FigureTestBase):
         assert tmp.is_file()
 
     def test_get_axes(self, fig):
-        fig.add_subplot(2, 1, 1, projection='rectilinear')
-        fig.add_subplot(2, 1, 2, projection='polar')
+        fig.add_subplot(2, 1, 1, projection="rectilinear")
+        fig.add_subplot(2, 1, 2, projection="polar")
         assert fig.get_axes() == fig.axes
-        assert fig.get_axes(projection='polar') == fig.axes[1:]
+        assert fig.get_axes(projection="polar") == fig.axes[1:]
 
     def test_colorbar(self, fig):
         ax = fig.gca()
@@ -109,13 +109,13 @@ class TestPlot(FigureTestBase):
         assert cbar.mappable.get_clim() == (2., 4.)
 
     def test_add_segments_bar(self, fig):
-        ax = fig.add_subplot(xscale='auto-gps', epoch=150)
+        ax = fig.add_subplot(xscale="auto-gps", epoch=150)
         ax.set_xlim(100, 200)
-        ax.set_xlabel('test')
+        ax.set_xlabel("test")
         segs = SegmentList([Segment(10, 110), Segment(150, 400)])
         segax = fig.add_segments_bar(segs)
         assert segax._sharex is ax
-        assert ax.get_xlabel() == ''
+        assert ax.get_xlabel() == ""
         for ax_ in (ax, segax):
             assert ax_.get_xlim() == (100, 200)
             assert ax_.get_epoch() == 150.
@@ -125,4 +125,4 @@ class TestPlot(FigureTestBase):
 
         # check errors
         with pytest.raises(ValueError):
-            fig.add_segments_bar(segs, location='left')
+            fig.add_segments_bar(segs, location="left")

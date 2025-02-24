@@ -24,7 +24,7 @@ of events.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.table'
+__currentmodule__ = "gwpy.table"
 
 # First, we can download the ``'GWTC-1-confident'`` catalogue using
 # :meth:`EventTable.fetch_open_data`:

@@ -23,7 +23,7 @@ import pytest
 from ...testing.utils import TEST_GWF_FILE
 from .. import gwf as io_gwf
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 @pytest.mark.requires("LDAStools.frameCPP")
@@ -38,7 +38,7 @@ def test_open_gwf_w(tmp_path):
     from LDAStools import frameCPP
     open_gwf = io_gwf.get_backend_function("open_gwf", backend="frameCPP")
     tmp = tmp_path / "test.gwf"
-    assert isinstance(open_gwf(tmp, mode='w'), frameCPP.OFrameFStream)
+    assert isinstance(open_gwf(tmp, mode="w"), frameCPP.OFrameFStream)
 
 
 @pytest.mark.requires("LDAStools.frameCPP")
@@ -48,7 +48,7 @@ def test_open_gwf_w_file_url(tmp_path):
     # check that we can use a file:// URL as well
     tmp = tmp_path / "test.gwf"
     assert isinstance(
-        open_gwf(tmp.as_uri(), mode='w'),
+        open_gwf(tmp.as_uri(), mode="w"),
         frameCPP.OFrameFStream,
     )
 
@@ -57,7 +57,7 @@ def test_open_gwf_w_file_url(tmp_path):
 def test_open_gwf_a_error():
     open_gwf = io_gwf.get_backend_function("open_gwf", backend="frameCPP")
     with pytest.raises(ValueError):
-        open_gwf('test', mode='a')
+        open_gwf("test", mode="a")
 
 
 @pytest.mark.requires("LDAStools.frameCPP")

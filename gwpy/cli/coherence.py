@@ -24,14 +24,14 @@ from ..plot import Plot
 from ..plot.tex import label_to_latex
 from .spectrum import Spectrum
 
-__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
+__author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 
 class Coherence(Spectrum):
     """Plot coherence between a reference time series and one
     or more other time series
     """
-    action = 'coherence'
+    action = "coherence"
 
     MIN_DATASETS = 2
 
@@ -39,20 +39,20 @@ class Coherence(Spectrum):
         super().__init__(*args, **kwargs)
         self.ref_chan = self.args.ref or self.chan_list[0]
         # deal with channel type appendages
-        if ',' in self.ref_chan:
-            self.ref_chan = self.ref_chan.split(',')[0]
+        if "," in self.ref_chan:
+            self.ref_chan = self.ref_chan.split(",")[0]
 
     @classmethod
     def arg_channels(cls, parser):
         group = super().arg_channels(parser)
-        group.add_argument('--ref', help='Reference channel against which '
-                                         'others will be compared')
+        group.add_argument("--ref", help="Reference channel against which "
+                                         "others will be compared")
         return group
 
     def _finalize_arguments(self, args):
         if args.yscale is None:
-            args.yscale = 'linear'
-        if args.yscale == 'linear':
+            args.yscale = "linear"
+        if args.yscale == "linear":
             if not args.ymin:
                 args.ymin = 0
             if not args.ymax:
@@ -62,12 +62,12 @@ class Coherence(Spectrum):
     def get_ylabel(self):
         """Text for y-axis label
         """
-        return 'Coherence'
+        return "Coherence"
 
     def get_suptitle(self):
         """Start of default super title, first channel is appended to it
         """
-        return f'Coherence: {self.ref_chan}'
+        return f"Coherence: {self.ref_chan}"
 
     def make_plot(self):
         """Generate the coherence plot from all time series
@@ -81,7 +81,7 @@ class Coherence(Spectrum):
         if overlap is not None:
             overlap *= fftlength
 
-        self.log(3, 'Reference channel: ' + self.ref_chan)
+        self.log(3, "Reference channel: " + self.ref_chan)
 
         # group data by segment
         groups = OrderedDict()
@@ -109,14 +109,14 @@ class Coherence(Spectrum):
 
                 label = name
                 if len(self.start_list) > 1:
-                    label += f', {series.epoch.gps}'
+                    label += f", {series.epoch.gps}"
                 if self.usetex:
                     label = label_to_latex(label)
 
                 ax.plot(coh, label=label)
                 self.spectra.append(coh)
 
-        if args.xscale == 'log' and not args.xmin:
+        if args.xscale == "log" and not args.xmin:
             args.xmin = 1/fftlength
 
         return plot
@@ -126,5 +126,5 @@ class Coherence(Spectrum):
         """
         leg = super().set_legend()
         if leg is not None:
-            leg.set_title('Coherence with:')
+            leg.set_title("Coherence with:")
         return leg

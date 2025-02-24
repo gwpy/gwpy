@@ -56,7 +56,7 @@ from .core import (
     as_series_dict_class,
 )
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 DEFAULT_FFT_METHOD = "median"
 
@@ -244,7 +244,7 @@ class TimeSeries(TimeSeriesBase):
 
         # format window
         if window is None:
-            window = 'boxcar'
+            window = "boxcar"
         win = get_window(window, nfft).astype(self.dtype)
         scaling = 1. / numpy.absolute(win).mean()
 
@@ -273,7 +273,7 @@ class TimeSeries(TimeSeriesBase):
         mean.channel = self.channel
         return mean
 
-    def psd(self, fftlength=None, overlap=None, window='hann',
+    def psd(self, fftlength=None, overlap=None, window="hann",
             method=DEFAULT_FFT_METHOD, **kwargs):
         """Calculate the PSD `FrequencySeries` for this `TimeSeries`
 
@@ -320,7 +320,7 @@ class TimeSeries(TimeSeriesBase):
         return spectral.psd(self, method_func, fftlength=fftlength,
                             overlap=overlap, window=window, **kwargs)
 
-    def asd(self, fftlength=None, overlap=None, window='hann',
+    def asd(self, fftlength=None, overlap=None, window="hann",
             method=DEFAULT_FFT_METHOD, **kwargs):
         """Calculate the ASD `FrequencySeries` of this `TimeSeries`
 
@@ -363,7 +363,7 @@ class TimeSeries(TimeSeriesBase):
         return self.psd(method=method, fftlength=fftlength, overlap=overlap,
                         window=window, **kwargs) ** (1/2.)
 
-    def csd(self, other, fftlength=None, overlap=None, window='hann',
+    def csd(self, other, fftlength=None, overlap=None, window="hann",
             **kwargs):
         """Calculate the CSD `FrequencySeries` for two `TimeSeries`
 
@@ -399,7 +399,7 @@ class TimeSeries(TimeSeriesBase):
             **kwargs
         )
 
-    def spectrogram(self, stride, fftlength=None, overlap=None, window='hann',
+    def spectrogram(self, stride, fftlength=None, overlap=None, window="hann",
                     method=DEFAULT_FFT_METHOD, nproc=1, **kwargs):
         """Calculate the average power spectrogram of this `TimeSeries`
         using the specified average spectrum method.
@@ -464,7 +464,7 @@ class TimeSeries(TimeSeriesBase):
             **kwargs
         )
 
-    def spectrogram2(self, fftlength, overlap=None, window='hann', **kwargs):
+    def spectrogram2(self, fftlength, overlap=None, window="hann", **kwargs):
         """Calculate the non-averaged power `Spectrogram` of this `TimeSeries`
 
         Parameters
@@ -512,7 +512,7 @@ class TimeSeries(TimeSeriesBase):
         given `Spectrogram` time sample.
         """
         # set kwargs for periodogram()
-        kwargs.setdefault('fs', self.sample_rate.to('Hz').value)
+        kwargs.setdefault("fs", self.sample_rate.to("Hz").value)
         # run
         return spectral.spectrogram(
             self,
@@ -522,7 +522,7 @@ class TimeSeries(TimeSeriesBase):
             **kwargs
         )
 
-    def fftgram(self, fftlength, overlap=None, window='hann', **kwargs):
+    def fftgram(self, fftlength, overlap=None, window="hann", **kwargs):
         """Calculate the Fourier-gram of this `TimeSeries`.
 
         At every ``stride``, a single, complex FFT is calculated.
@@ -566,7 +566,7 @@ class TimeSeries(TimeSeriesBase):
                                                 window=window,
                                                 nperseg=nfft,
                                                 noverlap=noverlap,
-                                                mode='complex',
+                                                mode="complex",
                                                 **kwargs)
         return Spectrogram(sxx.T,
                            name=self.name, unit=self.unit,
@@ -574,7 +574,7 @@ class TimeSeries(TimeSeriesBase):
                            yindex=frequencies)
 
     def spectral_variance(self, stride, fftlength=None, overlap=None,
-                          method=DEFAULT_FFT_METHOD, window='hann', nproc=1,
+                          method=DEFAULT_FFT_METHOD, window="hann", nproc=1,
                           filter=None, bins=None, low=None, high=None,
                           nbins=500, log=False, norm=False, density=False):
         """Calculate the `SpectralVariance` of this `TimeSeries`.
@@ -655,7 +655,7 @@ class TimeSeries(TimeSeriesBase):
         return specgram.variance(bins=bins, low=low, high=high, nbins=nbins,
                                  log=log, norm=norm, density=density)
 
-    def rayleigh_spectrum(self, fftlength=None, overlap=0, window='hann'):
+    def rayleigh_spectrum(self, fftlength=None, overlap=0, window="hann"):
         """Calculate the Rayleigh `FrequencySeries` for this `TimeSeries`.
 
         The Rayleigh statistic is calculated as the ratio of the standard
@@ -690,7 +690,7 @@ class TimeSeries(TimeSeriesBase):
         )
 
     def rayleigh_spectrogram(self, stride, fftlength=None, overlap=0,
-                             window='hann', nproc=1, **kwargs):
+                             window="hann", nproc=1, **kwargs):
         """Calculate the Rayleigh statistic spectrogram of this `TimeSeries`
 
         Parameters
@@ -735,11 +735,11 @@ class TimeSeries(TimeSeriesBase):
             nproc=nproc,
             **kwargs
         )
-        specgram.override_unit('')
+        specgram.override_unit("")
         return specgram
 
     def csd_spectrogram(self, other, stride, fftlength=None, overlap=0,
-                        window='hann', nproc=1, **kwargs):
+                        window="hann", nproc=1, **kwargs):
         """Calculate the cross spectral density spectrogram of this
            `TimeSeries` with 'other'.
 
@@ -786,7 +786,7 @@ class TimeSeries(TimeSeriesBase):
 
     # -- filtering -------------------
 
-    def highpass(self, frequency, gpass=2, gstop=30, fstop=None, type='iir',
+    def highpass(self, frequency, gpass=2, gstop=30, fstop=None, type="iir",
                  filtfilt=True, **kwargs):
         """Filter this `TimeSeries` with a high-pass filter.
 
@@ -828,9 +828,9 @@ class TimeSeries(TimeSeriesBase):
                                       fstop=fstop, gpass=gpass, gstop=gstop,
                                       analog=False, type=type, **kwargs)
         # filter_design.highpass returns rad/sample already
-        return self.filter(*filt, unit='rad/sample', filtfilt=filtfilt)
+        return self.filter(*filt, unit="rad/sample", filtfilt=filtfilt)
 
-    def lowpass(self, frequency, gpass=2, gstop=30, fstop=None, type='iir',
+    def lowpass(self, frequency, gpass=2, gstop=30, fstop=None, type="iir",
                 filtfilt=True, **kwargs):
         """Filter this `TimeSeries` with a Butterworth low-pass filter.
 
@@ -872,9 +872,9 @@ class TimeSeries(TimeSeriesBase):
                                      fstop=fstop, gpass=gpass, gstop=gstop,
                                      analog=False, type=type, **kwargs)
         # apply filter, it is already rad/sample
-        return self.filter(*filt, unit='rad/sample', filtfilt=filtfilt)
+        return self.filter(*filt, unit="rad/sample", filtfilt=filtfilt)
 
-    def bandpass(self, flow, fhigh, gpass=2, gstop=30, fstop=None, type='iir',
+    def bandpass(self, flow, fhigh, gpass=2, gstop=30, fstop=None, type="iir",
                  filtfilt=True, **kwargs):
         """Filter this `TimeSeries` with a band-pass filter.
 
@@ -919,9 +919,9 @@ class TimeSeries(TimeSeriesBase):
                                       fstop=fstop, gpass=gpass, gstop=gstop,
                                       analog=False, type=type, **kwargs)
         # apply filter
-        return self.filter(*filt, unit='rad/sample', filtfilt=filtfilt)
+        return self.filter(*filt, unit="rad/sample", filtfilt=filtfilt)
 
-    def resample(self, rate, window='hamming', ftype='fir', n=None):
+    def resample(self, rate, window="hamming", ftype="fir", n=None):
         """Resample this Series to a new rate
 
         Parameters
@@ -947,7 +947,7 @@ class TimeSeries(TimeSeriesBase):
             a new Series with the resampling applied, and the same
             metadata
         """
-        if n is None and ftype == 'iir':
+        if n is None and ftype == "iir":
             n = 8
         elif n is None:
             n = 60
@@ -965,8 +965,8 @@ class TimeSeries(TimeSeriesBase):
             return self
         # if integer down-sampling, use decimate
         if factor.is_integer():
-            if ftype == 'iir':
-                filt = signal.cheby1(n, 0.05, 0.8/factor, output='zpk')
+            if ftype == "iir":
+                filt = signal.cheby1(n, 0.05, 0.8/factor, output="zpk")
             else:
                 filt = signal.firwin(n+1, 1./factor, window=window)
             return self.filter(filt, filtfilt=True)[::int(factor)]
@@ -980,7 +980,7 @@ class TimeSeries(TimeSeriesBase):
             new.sample_rate = rate
             return new
 
-    def zpk(self, zeros, poles, gain, analog=True, unit='Hz', **kwargs):
+    def zpk(self, zeros, poles, gain, analog=True, unit="Hz", **kwargs):
         """Filter this `TimeSeries` by applying a zero-pole-gain filter
 
         Parameters
@@ -1119,36 +1119,36 @@ class TimeSeries(TimeSeriesBase):
         >>> plot.show()
         """
         # parse keyword arguments
-        filtfilt = kwargs.pop('filtfilt', False)
+        filtfilt = kwargs.pop("filtfilt", False)
 
         # parse filter
         form, filt = filter_design.parse_filter(filt)
 
-        unit = kwargs.pop('unit', None)
+        unit = kwargs.pop("unit", None)
         if not unit:
-            if kwargs.get('analog', False):
-                unit = 'Hz'
+            if kwargs.get("analog", False):
+                unit = "Hz"
             else:
-                unit = 'rad/s'
+                unit = "rad/s"
 
         # convert units if the system was designed in Hz
         if form == "zpk":
             filt = filter_design.convert_zpk_units(filt, unit)
 
-        if kwargs.pop('analog', False):
+        if kwargs.pop("analog", False):
             form, filt = filter_design.convert_to_digital(
                 filt,
-                sample_rate=self.sample_rate.to('Hz').value,
+                sample_rate=self.sample_rate.to("Hz").value,
             )
 
-        if form == 'zpk':
+        if form == "zpk":
             sos = signal.zpk2sos(*filt)
         else:
             sos = None
             b, a = filt
 
         # perform filter
-        kwargs.setdefault('axis', 0)
+        kwargs.setdefault("axis", 0)
         if sos is not None and filtfilt:
             out = signal.sosfiltfilt(sos, self, **kwargs)
         elif sos is not None:
@@ -1165,7 +1165,7 @@ class TimeSeries(TimeSeriesBase):
         return new
 
     def transfer_function(self, other, fftlength=None, overlap=None,
-                          window='hann', average='mean', **kwargs):
+                          window="hann", average="mean", **kwargs):
         """Calculate the transfer function between this `TimeSeries` and
         another.
 
@@ -1223,7 +1223,7 @@ class TimeSeries(TimeSeriesBase):
         return csd[:size] / psd[:size]
 
     def coherence(self, other, fftlength=None, overlap=None,
-                  window='hann', **kwargs):
+                  window="hann", **kwargs):
         """Calculate the frequency-coherence between this `TimeSeries`
         and another.
 
@@ -1278,7 +1278,7 @@ class TimeSeries(TimeSeriesBase):
         )
 
     def auto_coherence(self, dt, fftlength=None, overlap=None,
-                       window='hann', **kwargs):
+                       window="hann", **kwargs):
         """Calculate the frequency-coherence between this `TimeSeries`
         and a time-shifted copy of itself.
 
@@ -1336,7 +1336,7 @@ class TimeSeries(TimeSeriesBase):
                                overlap=overlap, window=window, **kwargs)
 
     def coherence_spectrogram(self, other, stride, fftlength=None,
-                              overlap=None, window='hann', nproc=1):
+                              overlap=None, window="hann", nproc=1):
         """Calculate the coherence spectrogram between this `TimeSeries`
         and other.
 
@@ -1400,7 +1400,7 @@ class TimeSeries(TimeSeriesBase):
             stepseries = self[idx:idx_end]
             rms_ = numpy.sqrt(numpy.mean(numpy.abs(stepseries.value)**2))
             data[step] = rms_
-        name = '%s %.2f-second RMS' % (self.name, stride)
+        name = "%s %.2f-second RMS" % (self.name, stride)
         return self.__class__(data, channel=self.channel, t0=self.t0,
                               name=name, sample_rate=(1/float(stride)))
 
@@ -1473,13 +1473,13 @@ class TimeSeries(TimeSeriesBase):
                         else DataQualityFlag.query)
         (tstart, tend) = self.span
         span = SegmentList([self.span])
-        sample = self.sample_rate.to('Hz').value
+        sample = self.sample_rate.to("Hz").value
         npad = int(tpad * sample)
         out = self.copy()
         # query the requested data-quality flag
         if deadtime is None:
-            start = kwargs.pop('start', tstart)
-            end = kwargs.pop('end', tend)
+            start = kwargs.pop("start", tstart)
+            end = kwargs.pop("end", tend)
             dqflag = query_method(
                 flag, start=start, end=end, **kwargs)
             deadtime = (~dqflag.active if dqflag.isgood
@@ -1572,7 +1572,7 @@ class TimeSeries(TimeSeriesBase):
         mag = out.abs()
         phase = type(mag)(numpy.angle(out, deg=deg))
         phase.__array_finalize__(out)
-        phase.override_unit('deg' if deg else 'rad')
+        phase.override_unit("deg" if deg else "rad")
         return (mag, phase)
 
     def heterodyne(self, phase, stride=1, singlesided=False):
@@ -1683,7 +1683,7 @@ class TimeSeries(TimeSeriesBase):
             out.value[step] = 2 * mixed.mean() if singlesided else mixed.mean()
         return out
 
-    def taper(self, side='leftright', duration=None, nsamples=None):
+    def taper(self, side="leftright", duration=None, nsamples=None):
         """Taper the ends of this `TimeSeries` smoothly to zero.
 
         Parameters
@@ -1740,7 +1740,7 @@ class TimeSeries(TimeSeriesBase):
         window formats.
         """
         # check window properties
-        if side not in ('left', 'right', 'leftright'):
+        if side not in ("left", "right", "leftright"):
             raise ValueError("side must be one of 'left', 'right', "
                              "or 'leftright'")
         if duration:
@@ -1753,17 +1753,17 @@ class TimeSeries(TimeSeriesBase):
         if not nsamples:
             mini, = signal.argrelmin(out.value)
             maxi, = signal.argrelmax(out.value)
-        if 'left' in side:
+        if "left" in side:
             nleft = nsamples or max(mini[0], maxi[0])
             nleft = min(nleft, int(self.size/2))
-        if 'right' in side:
+        if "right" in side:
             nright = nsamples or out.size - min(mini[-1], maxi[-1])
             nright = min(nright, int(self.size/2))
         out *= planck(out.size, nleft=nleft, nright=nright)
         return out
 
     def whiten(self, fftlength=None, overlap=0, method=DEFAULT_FFT_METHOD,
-               window='hann', detrend='constant', asd=None,
+               window="hann", detrend="constant", asd=None,
                fduration=2, highpass=None, **kwargs):
         """Whiten this `TimeSeries` using inverse spectrum truncation
 
@@ -1902,7 +1902,7 @@ class TimeSeries(TimeSeriesBase):
             for a method that applies the identified gates
         """
         # Find points to gate based on a threshold
-        sample = self.sample_rate.to('Hz').value
+        sample = self.sample_rate.to("Hz").value
         data = self.whiten(**whiten_kwargs) if whiten else self
         window_samples = cluster_window * sample
         gates = signal.find_peaks(abs(data.value), height=threshold,
@@ -1992,7 +1992,7 @@ class TimeSeries(TimeSeriesBase):
                                 **whiten_kwargs)
         return self.mask(deadtime=gates, const=0, tpad=tpad)
 
-    def convolve(self, fir, window='hann'):
+    def convolve(self, fir, window="hann"):
         """Convolve this `TimeSeries` with an FIR filter using the
            overlap-save method
 
@@ -2036,29 +2036,29 @@ class TimeSeries(TimeSeriesBase):
         in_.value[-pad:] *= window[-pad:]
         # if FFT length is long enough, perform only one convolution
         if nfft >= self.size/2:
-            conv = signal.fftconvolve(in_.value, fir, mode='same')
+            conv = signal.fftconvolve(in_.value, fir, mode="same")
         # else use the overlap-save algorithm
         else:
             nstep = nfft - 2*pad
             conv = numpy.zeros(self.size)
             # handle first chunk separately
             conv[:nfft-pad] = signal.fftconvolve(in_.value[:nfft], fir,
-                                                 mode='same')[:nfft-pad]
+                                                 mode="same")[:nfft-pad]
             # process chunks of length nstep
             k = nfft - pad
             while k < self.size - nfft + pad:
                 yk = signal.fftconvolve(in_.value[k-pad:k+nstep+pad], fir,
-                                        mode='same')
+                                        mode="same")
                 conv[k:k+yk.size-2*pad] = yk[pad:-pad]
                 k += nstep
             # handle last chunk separately
             conv[-nfft+pad:] = signal.fftconvolve(in_.value[-nfft:], fir,
-                                                  mode='same')[-nfft+pad:]
+                                                  mode="same")[-nfft+pad:]
         out = type(self)(conv)
         out.__array_finalize__(self)
         return out
 
-    def correlate(self, mfilter, window='hann', detrend='linear',
+    def correlate(self, mfilter, window="hann", detrend="linear",
                   whiten=False, wduration=2, highpass=None, **asd_kw):
         """Cross-correlate this `TimeSeries` with another signal
 
@@ -2123,9 +2123,9 @@ class TimeSeries(TimeSeriesBase):
         self.is_compatible(mfilter)
         # condition data
         if whiten is True:
-            fftlength = asd_kw.pop('fftlength',
+            fftlength = asd_kw.pop("fftlength",
                                    _fft_length_default(self.dt))
-            overlap = asd_kw.pop('overlap', None)
+            overlap = asd_kw.pop("overlap", None)
             if overlap is None:
                 overlap = recommended_overlap(window) * fftlength
             asd = self.asd(fftlength, overlap, window=window, **asd_kw)
@@ -2133,7 +2133,7 @@ class TimeSeries(TimeSeriesBase):
             npad = int(wduration * mfilter.sample_rate.decompose().value / 2)
             mfilter = mfilter.pad(npad)
             # whiten (with errors on division by zero)
-            with numpy.errstate(all='raise'):
+            with numpy.errstate(all="raise"):
                 in_ = self.whiten(window=window, fduration=wduration, asd=asd,
                                   highpass=highpass, detrend=detrend)
                 mfilter = mfilter.whiten(window=window, fduration=wduration,
@@ -2148,7 +2148,7 @@ class TimeSeries(TimeSeriesBase):
         snr.__array_finalize__(self)
         return snr
 
-    def detrend(self, detrend='constant'):
+    def detrend(self, detrend="constant"):
         """Remove the trend from this `TimeSeries`
 
         This method just wraps :func:`scipy.signal.detrend` to return
@@ -2175,7 +2175,7 @@ class TimeSeries(TimeSeriesBase):
         data._unit = self.unit
         return data
 
-    def notch(self, frequency, type='iir', filtfilt=True, **kwargs):
+    def notch(self, frequency, type="iir", filtfilt=True, **kwargs):
         """Notch out a frequency in this `TimeSeries`.
 
         Parameters
@@ -2268,7 +2268,7 @@ class TimeSeries(TimeSeriesBase):
                     tres="<default>",
                     fres="<default>",
                     logf=False,
-                    norm='median',
+                    norm="median",
                     mismatch=qtransform.DEFAULT_MISMATCH,
                     outseg=None,
                     whiten=True,
@@ -2402,19 +2402,19 @@ class TimeSeries(TimeSeriesBase):
         from ..frequencyseries import FrequencySeries
         # condition data
         if whiten is True:  # generate ASD dynamically
-            window = asd_kw.pop('window', 'hann')
-            fftlength = asd_kw.pop('fftlength',
+            window = asd_kw.pop("window", "hann")
+            fftlength = asd_kw.pop("fftlength",
                                    _fft_length_default(self.dt))
-            overlap = asd_kw.pop('overlap', None)
+            overlap = asd_kw.pop("overlap", None)
             if overlap is None and fftlength == self.duration.value:
-                asd_kw['method'] = DEFAULT_FFT_METHOD
+                asd_kw["method"] = DEFAULT_FFT_METHOD
                 overlap = 0
             elif overlap is None:
                 overlap = recommended_overlap(window) * fftlength
             whiten = self.asd(fftlength, overlap, window=window, **asd_kw)
         if isinstance(whiten, FrequencySeries):
             # apply whitening (with error on division by zero)
-            with numpy.errstate(all='raise'):
+            with numpy.errstate(all="raise"):
                 data = self.whiten(asd=whiten, fduration=fduration,
                                    highpass=highpass)
         else:
@@ -2433,8 +2433,8 @@ class TimeSeries(TimeSeriesBase):
 
 @as_series_dict_class(TimeSeries)
 class TimeSeriesDict(TimeSeriesBaseDict):  # pylint: disable=missing-docstring
-    __doc__ = TimeSeriesBaseDict.__doc__.replace('TimeSeriesBase',
-                                                 'TimeSeries')
+    __doc__ = TimeSeriesBaseDict.__doc__.replace("TimeSeriesBase",
+                                                 "TimeSeries")
     EntryClass = TimeSeries
 
     read = UnifiedReadWriteMethod(TimeSeriesDictRead)
@@ -2443,6 +2443,6 @@ class TimeSeriesDict(TimeSeriesBaseDict):  # pylint: disable=missing-docstring
 
 
 class TimeSeriesList(TimeSeriesBaseList):  # pylint: disable=missing-docstring
-    __doc__ = TimeSeriesBaseList.__doc__.replace('TimeSeriesBase',
-                                                 'TimeSeries')
+    __doc__ = TimeSeriesBaseList.__doc__.replace("TimeSeriesBase",
+                                                 "TimeSeries")
     EntryClass = TimeSeries

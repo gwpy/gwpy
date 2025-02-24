@@ -24,7 +24,7 @@ import tempfile
 from functools import wraps
 from urllib.parse import urlparse
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # build list of file-like types
 from io import IOBase
@@ -33,7 +33,7 @@ FILE_LIKE = (
     tempfile._TemporaryFileWrapper,  # pylint: disable=protected-access
 )
 
-GZIP_SIGNATURE = b'\x1f\x8b\x08'
+GZIP_SIGNATURE = b"\x1f\x8b\x08"
 
 
 def identify_factory(*extensions):
@@ -86,7 +86,7 @@ def gopen(name, *args, **kwargs):
         the open file object
     """
     # filename declares gzip
-    if str(name).endswith('.gz'):
+    if str(name).endswith(".gz"):
         return gzip.open(name, *args, **kwargs)
 
     # open regular file
@@ -178,14 +178,14 @@ def file_list(flist):
     # open a cache file and return list of paths
     if (
         isinstance(flist, str)
-        and flist.endswith(('.cache', '.lcf', '.ffl'))
+        and flist.endswith((".cache", ".lcf", ".ffl"))
     ):
         from .cache import read_cache
         return read_cache(flist)
 
     # separate comma-separate list of names
     if isinstance(flist, str):
-        return flist.split(',')
+        return flist.split(",")
 
     # parse list of entries (of some format)
     if isinstance(flist, (list, tuple)):

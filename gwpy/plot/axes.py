@@ -45,7 +45,7 @@ from .gps import GPS_SCALES
 from .legend import HandlerLine2D
 from ..time import to_gps
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 matplotlib_version = Version(matplotlib_version)
 
@@ -56,7 +56,7 @@ def log_norm(func):
     @wraps(func)
     def decorated_func(*args, **kwargs):
         norm, kwargs = format_norm(kwargs)
-        kwargs['norm'] = norm
+        kwargs["norm"] = norm
         return func(*args, **kwargs)
     return decorated_func
 
@@ -68,10 +68,10 @@ def xlim_as_gps(func):
     def wrapped_func(self, left=None, right=None, **kw):
         if right is None and numpy.iterable(left):
             left, right = left
-        kw['left'] = left
-        kw['right'] = right
+        kw["left"] = left
+        kw["right"] = right
         gpsscale = self.get_xscale() in GPS_SCALES
-        for key in ('left', 'right'):
+        for key in ("left", "right"):
             if gpsscale:
                 try:
                     kw[key] = numpy.longdouble(str(to_gps(kw[key])))
@@ -184,8 +184,8 @@ class Axes(_Axes):
                 trans = ax.get_transform()
                 epoch = float(trans.get_epoch())
                 unit = trans.get_unit_name()
-                iso = Time(epoch, format='gps', scale='utc').iso
-                utc = iso.rstrip('0').rstrip('.')
+                iso = Time(epoch, format="gps", scale="utc").iso
+                utc = iso.rstrip("0").rstrip(".")
                 ax.set_label_text(f"Time [{unit}] from {utc} UTC ({epoch!r})")
 
         try:
@@ -253,10 +253,10 @@ class Axes(_Axes):
         return super().scatter(x, y, s=s, c=c, **kwargs)
 
     scatter.__doc__ = _Axes.scatter.__doc__.replace(
-        'marker :',
-        'sortbycolor : `bool`, optional, default: False\n'
-        '    Sort scatter points by `c` array value, if given.\n\n'
-        'marker :',
+        "marker :",
+        "sortbycolor : `bool`, optional, default: False\n"
+        "    Sort scatter points by `c` array value, if given.\n\n"
+        "marker :",
     )
 
     @log_norm
@@ -293,11 +293,11 @@ class Axes(_Axes):
             return self._imshow_array2d(array, *args, **kwargs)
 
         image = super().imshow(array, *args, **kwargs)
-        self.autoscale(enable=None, axis='both', tight=None)
+        self.autoscale(enable=None, axis="both", tight=None)
         return image
 
-    def _imshow_array2d(self, array, origin='lower', interpolation='none',
-                        aspect='auto', **kwargs):
+    def _imshow_array2d(self, array, origin="lower", interpolation="none",
+                        aspect="auto", **kwargs):
         """Render an `~gwpy.types.Array2D` using `Axes.imshow`
         """
         # NOTE: If you change the defaults for this method, please update
@@ -305,11 +305,11 @@ class Axes(_Axes):
 
         # calculate extent
         extent = tuple(array.xspan) + tuple(array.yspan)
-        if self.get_xscale() == 'log' and extent[0] == 0.:
+        if self.get_xscale() == "log" and extent[0] == 0.:
             extent = (1e-300,) + extent[1:]
-        if self.get_yscale() == 'log' and extent[2] == 0.:
+        if self.get_yscale() == "log" and extent[2] == 0.:
             extent = extent[:2] + (1e-300,) + extent[3:]
-        kwargs.setdefault('extent', extent)
+        kwargs.setdefault("extent", extent)
 
         return self.imshow(array.value.T, origin=origin, aspect=aspect,
                            interpolation=interpolation, **kwargs)
@@ -351,47 +351,47 @@ class Axes(_Axes):
         x = numpy.asarray(x)
 
         # re-format weights as array if given as float
-        weights = kwargs.get('weights', None)
+        weights = kwargs.get("weights", None)
         if isinstance(weights, Number):
-            kwargs['weights'] = numpy.ones_like(x) * weights
+            kwargs["weights"] = numpy.ones_like(x) * weights
 
         # calculate log-spaced bins on-the-fly
         if (
-            kwargs.pop('logbins', False)
-            and not numpy.iterable(kwargs.get('bins', None))
+            kwargs.pop("logbins", False)
+            and not numpy.iterable(kwargs.get("bins", None))
         ):
-            nbins = kwargs.get('bins', None) or rcParams.get('hist.bins', 30)
+            nbins = kwargs.get("bins", None) or rcParams.get("hist.bins", 30)
             # get range
-            hrange = kwargs.pop('range', None)
+            hrange = kwargs.pop("range", None)
             if hrange is None:
                 try:
                     hrange = numpy.min(x), numpy.max(x)
                 except ValueError as exc:
-                    if str(exc).startswith('zero-size array'):  # no data
-                        exc.args = ('cannot generate log-spaced histogram '
-                                    'bins for zero-size array, '
-                                    'please pass `bins` or `range` manually',)
+                    if str(exc).startswith("zero-size array"):  # no data
+                        exc.args = ("cannot generate log-spaced histogram "
+                                    "bins for zero-size array, "
+                                    "please pass `bins` or `range` manually",)
                     raise
             # log-scale the axis and extract the base
-            if kwargs.get('orientation') == 'horizontal':
-                self.set_yscale('log', nonpositive='clip')
+            if kwargs.get("orientation") == "horizontal":
+                self.set_yscale("log", nonpositive="clip")
                 logbase = self.yaxis._scale.base
             else:
-                self.set_xscale('log', nonpositive='clip')
+                self.set_xscale("log", nonpositive="clip")
                 logbase = self.xaxis._scale.base
             # generate the bins
-            kwargs['bins'] = numpy.logspace(
+            kwargs["bins"] = numpy.logspace(
                 log(hrange[0], logbase), log(hrange[1], logbase),
                 nbins+1, endpoint=True)
 
         return super().hist(x, *args, **kwargs)
 
     hist.__doc__ = _Axes.hist.__doc__.replace(
-        'color :',
-        'logbins : boolean, optional\n'
-        '    If ``True``, use logarithmically-spaced histogram bins.\n\n'
-        '    Default is ``False``\n\n'
-        'color :')
+        "color :",
+        "logbins : boolean, optional\n"
+        "    If ``True``, use logarithmically-spaced histogram bins.\n\n"
+        "    Default is ``False``\n\n"
+        "color :")
 
     # -- new plotting methods -------------------
 
@@ -434,7 +434,7 @@ class Axes(_Axes):
         matplotlib.axes.Axes.plot
             for a full description of acceptable ``*args`` and ``**kwargs``
         """
-        alpha = kwargs.pop('alpha', .1)
+        alpha = kwargs.pop("alpha", .1)
 
         # plot mean
         line, = self.plot(data, **kwargs)
@@ -442,10 +442,10 @@ class Axes(_Axes):
 
         # modify keywords for shading
         kwargs.update({
-            'label': '',
-            'linewidth': line.get_linewidth() / 2,
-            'color': line.get_color(),
-            'alpha': alpha * 2,
+            "label": "",
+            "linewidth": line.get_linewidth() / 2,
+            "color": line.get_color(),
+            "alpha": alpha * 2,
         })
 
         # plot lower and upper Series
@@ -457,14 +457,14 @@ class Axes(_Axes):
 
         # fill between
         out.append(self.fill_between(
-            *fill, alpha=alpha, color=kwargs['color'],
-            rasterized=kwargs.get('rasterized', True)))
+            *fill, alpha=alpha, color=kwargs["color"],
+            rasterized=kwargs.get("rasterized", True)))
 
         return out
 
     @deprecate_c_sort
     def tile(self, x, y, w, h, color=None,
-             anchor='center', edgecolors='face', linewidth=0.8,
+             anchor="center", edgecolors="face", linewidth=0.8,
              **kwargs):
         """Plot rectanguler tiles based onto these `Axes`.
 
@@ -525,19 +525,19 @@ class Axes(_Axes):
                 raise
 
         # define how to make a polygon for each tile
-        if anchor == 'll':
+        if anchor == "ll":
             def _poly(x, y, w, h):
                 return ((x, y), (x, y+h), (x+w, y+h), (x+w, y))
-        elif anchor == 'lr':
+        elif anchor == "lr":
             def _poly(x, y, w, h):
                 return ((x-w, y), (x-w, y+h), (x, y+h), (x, y))
-        elif anchor == 'ul':
+        elif anchor == "ul":
             def _poly(x, y, w, h):
                 return ((x, y-h), (x, y), (x+w, y), (x+w, y-h))
-        elif anchor == 'ur':
+        elif anchor == "ur":
             def _poly(x, y, w, h):
                 return ((x-w, y-h), (x-w, y), (x, y), (x, y-h))
-        elif anchor == 'center':
+        elif anchor == "center":
             def _poly(x, y, w, h):
                 return ((x-w/2., y-h/2.), (x-w/2., y+h/2.),
                         (x+w/2., y+h/2.), (x+w/2., y-h/2.))
@@ -545,7 +545,7 @@ class Axes(_Axes):
             raise ValueError(f"Unrecognised tile anchor '{anchor}'")
 
         # build collection
-        cmap = kwargs.pop('cmap', rcParams['image.cmap'])
+        cmap = kwargs.pop("cmap", rcParams["image.cmap"])
         coll = PolyCollection((_poly(*tile) for tile in zip(x, y, w, h)),
                               edgecolors=edgecolors, linewidth=linewidth,
                               **kwargs)

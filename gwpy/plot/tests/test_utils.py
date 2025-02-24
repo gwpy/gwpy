@@ -34,24 +34,24 @@ def test_color_cycle():
 
 
 def test_color_cycle_arg():
-    cyc = plot_utils.color_cycle(['1', '2', '3'])
+    cyc = plot_utils.color_cycle(["1", "2", "3"])
     assert isinstance(cyc, itertools.cycle)
-    assert next(cyc) == '1'
-    assert next(cyc) == '2'
-    assert next(cyc) == '3'
-    assert next(cyc) == '1'
+    assert next(cyc) == "1"
+    assert next(cyc) == "2"
+    assert next(cyc) == "3"
+    assert next(cyc) == "1"
 
 
 def test_marker_cycle():
     cyc = plot_utils.marker_cycle()
     assert isinstance(cyc, itertools.cycle)
-    assert next(cyc) == 'o'
+    assert next(cyc) == "o"
 
 
 def test_marker_cycle_arg():
-    cyc = plot_utils.marker_cycle(['1', '2', '3'])
+    cyc = plot_utils.marker_cycle(["1", "2", "3"])
     assert isinstance(cyc, itertools.cycle)
-    assert next(cyc) == '1'
-    assert next(cyc) == '2'
-    assert next(cyc) == '3'
-    assert next(cyc) == '1'
+    assert next(cyc) == "1"
+    assert next(cyc) == "2"
+    assert next(cyc) == "3"
+    assert next(cyc) == "1"

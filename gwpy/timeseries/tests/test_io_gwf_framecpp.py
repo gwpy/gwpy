@@ -72,4 +72,4 @@ def test_read_write_frvect_name(tmp_path):
     tmp = tmp_path / "test.gwf"
     data.write(tmp, format="gwf.framecpp", type="proc")
     new = type(data).read(tmp, "test")
-    assert_quantity_sub_equal(data, new, exclude=('channel',))
+    assert_quantity_sub_equal(data, new, exclude=("channel",))

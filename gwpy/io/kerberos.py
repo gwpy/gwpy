@@ -445,7 +445,7 @@ def parse_keytab(keytab):  # pragma: no cover
     [('albert.einstein', 'LIGO.ORG', 1)]
     """
     try:
-        out = subprocess.check_output(['klist', '-k', keytab],
+        out = subprocess.check_output(["klist", "-k", keytab],
                                       stderr=subprocess.PIPE)
     except OSError:
         raise KerberosError("Failed to locate klist, cannot read keytab")
@@ -454,14 +454,14 @@ def parse_keytab(keytab):  # pragma: no cover
     principals = []
     for line in out.splitlines():
         if isinstance(line, bytes):
-            line = line.decode('utf-8')
+            line = line.decode("utf-8")
         try:
-            kvno, principal, = re.split(r'\s+', line.strip(' '), 1)
+            kvno, principal, = re.split(r"\s+", line.strip(" "), 1)
         except ValueError:
             continue
         else:
             if not kvno.isdigit():
                 continue
-            principals.append(tuple(principal.split('@')) + (int(kvno),))
+            principals.append(tuple(principal.split("@")) + (int(kvno),))
     # return unique, ordered list
     return list(OrderedDict.fromkeys(principals).keys())

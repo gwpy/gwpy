@@ -29,12 +29,12 @@ Using |pycbc|_ (the actual search code), we can do that.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First, as always, we fetch some of the public data from |GWOSCl|_:
 
 from gwpy.timeseries import TimeSeries
-data = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
+data = TimeSeries.fetch_open_data("H1", 1126259446, 1126259478)
 
 # and condition it by applying a highpass filter at 15 Hz
 high = data.highpass(15)
@@ -83,8 +83,8 @@ plot = snrts.plot()
 ax = plot.gca()
 ax.set_xlim(1126259461, 1126259463)
 ax.set_epoch(1126259462.427)
-ax.set_ylabel('Signal-to-noise ratio (SNR)')
-ax.set_title('LIGO-Hanford signal-correlation for GW150914')
+ax.set_ylabel("Signal-to-noise ratio (SNR)")
+ax.set_title("LIGO-Hanford signal-correlation for GW150914")
 plot.show()
 
 # We can clearly see a large spike (above 17!) at the time of the GW150914

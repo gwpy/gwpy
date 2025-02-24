@@ -478,7 +478,7 @@ def spectrogram(timeseries: TimeSeries, **kwargs) -> Spectrogram:
 
     # create output spectrogram
     unit = fft_utils.scale_timeseries_unit(
-        timeseries.unit, scaling=kwargs.get('scaling', 'density'))
+        timeseries.unit, scaling=kwargs.get("scaling", "density"))
     out = Spectrogram(
         numpy.empty((numtimes, numfreqs), dtype=timeseries.dtype),
         copy=False,

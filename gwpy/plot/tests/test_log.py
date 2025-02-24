@@ -41,33 +41,33 @@ class TestLogFormatter(object):
         ):
             yield cls.TEST_CLASS()
 
-    @pytest.mark.parametrize('x, fmt, result, texresult', [
+    @pytest.mark.parametrize("x, fmt, result, texresult", [
         pytest.param(
             0.,
             None,
-            r'$\mathdefault{0}$',
-            '$0$',
+            r"$\mathdefault{0}$",
+            "$0$",
             id="0",
         ),
         pytest.param(
             1,
             None,
-            r'$\mathdefault{10^{0}}$',
-            r'$\mathdefault{10^{0}}$',
+            r"$\mathdefault{10^{0}}$",
+            r"$\mathdefault{10^{0}}$",
             id="fmt=None",
         ),
         pytest.param(
             1,
             "%s",
-            r'$\mathdefault{1}$',
-            r'$1$',
+            r"$\mathdefault{1}$",
+            r"$1$",
             id="fmt=%s",
         ),
     ])
     def test_call(self, formatter, x, fmt, result, texresult):
-        with rc_context(rc={'text.usetex': False}):
+        with rc_context(rc={"text.usetex": False}):
             assert formatter(x, fmt=fmt) == result
-        with rc_context(rc={'text.usetex': True}):
+        with rc_context(rc={"text.usetex": True}):
             assert formatter(x, fmt=fmt) == texresult
 
     @mock.patch(  # we don't need this function for this test

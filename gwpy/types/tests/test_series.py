@@ -54,7 +54,7 @@ class TestSeries(_TestArray):
 
         # test quantity
         array.x0 = 5 * units.m
-        assert array.x0 == units.Quantity(5, 'm')
+        assert array.x0 == units.Quantity(5, "m")
 
     def test_dx(self, array):
         array.dx = 5 * self.TEST_CLASS._default_xunit
@@ -68,7 +68,7 @@ class TestSeries(_TestArray):
 
         # test quantity
         array.dx = 5 * units.m
-        assert array.dx == units.Quantity(5, 'm')
+        assert array.dx == units.Quantity(5, "m")
 
     def test_xindex(self):
         x = numpy.linspace(0, 100, num=self.data.shape[0])
@@ -89,24 +89,24 @@ class TestSeries(_TestArray):
             units.Quantity(x_default, self.TEST_CLASS._default_xunit))
 
         # test setting of x0 and dx
-        series = self.create(xindex=units.Quantity(x, 'Farad'))
-        assert series.x0 == units.Quantity(x[0], 'Farad')
-        assert series.dx == units.Quantity(x[1] - x[0], 'Farad')
+        series = self.create(xindex=units.Quantity(x, "Farad"))
+        assert series.x0 == units.Quantity(x[0], "Farad")
+        assert series.dx == units.Quantity(x[1] - x[0], "Farad")
         assert series.xunit == units.Farad
         assert series.xspan == (x[0], x[-1] + x[1] - x[0])
 
         # test that setting xindex warns about ignoring dx or x0
         with pytest.warns(UserWarning):
-            series = self.create(xindex=units.Quantity(x, 'Farad'), dx=1)
+            series = self.create(xindex=units.Quantity(x, "Farad"), dx=1)
         with pytest.warns(UserWarning):
-            series = self.create(xindex=units.Quantity(x, 'Farad'), x0=0)
+            series = self.create(xindex=units.Quantity(x, "Farad"), x0=0)
 
         # test non-regular xindex
         x = numpy.logspace(0, 2, num=self.data.shape[0])
-        series = self.create(xindex=units.Quantity(x, 'Mpc'))
+        series = self.create(xindex=units.Quantity(x, "Mpc"))
         with pytest.raises(AttributeError):
             series.dx
-        assert series.x0 == units.Quantity(1, 'Mpc')
+        assert series.x0 == units.Quantity(1, "Mpc")
         assert series.xspan == (x[0], x[-1] + x[-1] - x[-2])
 
     def test_xindex_length_exception(self):
@@ -172,7 +172,7 @@ class TestSeries(_TestArray):
         # index array
         a = numpy.array([3, 4, 1, 2])
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='xindex was given',
+            warnings.filterwarnings("ignore", message="xindex was given",
                                     category=UserWarning)
             utils.assert_quantity_equal(array[a], self.TEST_CLASS(
                 array.value[a], xindex=array.xindex[a],
@@ -342,7 +342,7 @@ class TestSeries(_TestArray):
     def test_is_compatible(self, array):
         """Test the `Series.is_compatible` method
         """
-        other = self.create(name='TEST CASE 2')
+        other = self.create(name="TEST CASE 2")
         assert array.is_compatible(other)
 
     def test_is_compatible_error_dx(self, array):
@@ -355,7 +355,7 @@ class TestSeries(_TestArray):
     def test_is_compatible_error_unit(self, array):
         """Check that `Series.is_compatible` errors with mismatching ``unit``
         """
-        other = self.create(unit='m')
+        other = self.create(unit="m")
         with pytest.raises(ValueError, match="units do not match"):
             array.is_compatible(other)
 
@@ -405,13 +405,13 @@ class TestSeries(_TestArray):
         # test appending with one xindex deletes it in the output
         array.xindex
         a3 = array.append(a2, inplace=False)
-        assert hasattr(a3, '_xindex') is False
+        assert hasattr(a3, "_xindex") is False
 
         # test appending with both xindex appends as well
         array.xindex
         a2.xindex
         a3 = array.append(a2, inplace=False)
-        assert hasattr(a3, '_xindex')
+        assert hasattr(a3, "_xindex")
         utils.assert_array_equal(
             a3.xindex.value,
             numpy.concatenate((array.xindex.value, a2.xindex.value)))
@@ -428,14 +428,14 @@ class TestSeries(_TestArray):
             array.append(a3)
 
         # gap='ignore'
-        ts4.append(a3, gap='ignore')
+        ts4.append(a3, gap="ignore")
         assert ts4.shape[0] == array.shape[0] + a3.shape[0]
         utils.assert_array_equal(
             ts4.value, numpy.concatenate((array.value, a3.value)))
 
         # gap='pad'
         ts4 = array.copy()
-        ts4.append(a3, gap='pad', pad=0)
+        ts4.append(a3, gap="pad", pad=0)
         assert ts4.shape[0] == array.shape[0] + 1 + a3.shape[0]
         z = numpy.zeros((1,) + array.shape[1:])
         utils.assert_array_equal(
@@ -532,16 +532,16 @@ class TestSeries(_TestArray):
                 self.data[3] * ts1.unit)
 
     def test_shift(self):
-        a = self.create(x0=0, dx=1, xunit='s')
+        a = self.create(x0=0, dx=1, xunit="s")
         x0 = a.x0.copy()
         a.shift(5)
         assert a.x0 == x0 + 5 * x0.unit
 
-        a.shift('1 hour')
+        a.shift("1 hour")
         assert a.x0 == x0 + 3605 * x0.unit
 
         a.shift(-0.007)
         assert a.x0 == x0 + (3604.993) * x0.unit
 
         with pytest.raises(ValueError):
-            a.shift('1 Hz')
+            a.shift("1 Hz")

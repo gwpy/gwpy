@@ -31,22 +31,22 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 # as in grayscale, so are recommended for publications
 
 GWPY_COLORS = {
-    'geo600': '#222222',  # dark gray
-    'kagra': '#ffb200',  # yellow/orange
-    'ligo-hanford': '#ee0000',  # red
-    'ligo-india': '#b0dd8b',  # light green
-    'ligo-livingston': '#4ba6ff',  # blue
-    'virgo': '#9b59b6',  # magenta/purple
+    "geo600": "#222222",  # dark gray
+    "kagra": "#ffb200",  # yellow/orange
+    "ligo-hanford": "#ee0000",  # red
+    "ligo-india": "#b0dd8b",  # light green
+    "ligo-livingston": "#4ba6ff",  # blue
+    "virgo": "#9b59b6",  # magenta/purple
 }
 
 # provide user mapping by IFO prefix
 _GWO_PREFIX = {
-    'geo600': 'G1',
-    'kagra': 'K1',
-    'ligo-hanford': 'H1',
-    'ligo-india': 'I1',
-    'ligo-livingston': 'L1',
-    'virgo': 'V1',
+    "geo600": "G1",
+    "kagra": "K1",
+    "ligo-hanford": "H1",
+    "ligo-india": "I1",
+    "ligo-livingston": "L1",
+    "virgo": "V1",
 }
 GW_OBSERVATORY_COLORS = {_GWO_PREFIX[n]: GWPY_COLORS[n] for n in GWPY_COLORS}
 
@@ -80,20 +80,20 @@ def format_norm(kwargs, current=None):
     norm, kwargs
         the formatted `Normalize` instance, and the remaining keywords
     """
-    norm = kwargs.pop('norm', current) or 'linear'
-    vmin = kwargs.pop('vmin', None)
-    vmax = kwargs.pop('vmax', None)
-    clim = kwargs.pop('clim', (vmin, vmax)) or (None, None)
-    clip = kwargs.pop('clip', None)
+    norm = kwargs.pop("norm", current) or "linear"
+    vmin = kwargs.pop("vmin", None)
+    vmax = kwargs.pop("vmax", None)
+    clim = kwargs.pop("clim", (vmin, vmax)) or (None, None)
+    clip = kwargs.pop("clip", None)
 
-    if norm == 'linear':
+    if norm == "linear":
         norm = colors.Normalize()
-    elif norm == 'log':
+    elif norm == "log":
         norm = colors.LogNorm()
     elif not isinstance(norm, colors.Normalize):
         raise ValueError(f"unrecognised value for norm '{norm}'")
 
-    for attr, value in (('vmin', clim[0]), ('vmax', clim[1]), ('clip', clip)):
+    for attr, value in (("vmin", clim[0]), ("vmax", clim[1]), ("clip", clip)):
         if value is not None:
             setattr(norm, attr, value)
 

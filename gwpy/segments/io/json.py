@@ -41,18 +41,18 @@ def read_json_flag(fobj: IO) -> DataQualityFlag:
     data = json.load(fobj)
 
     # format flag
-    name = '{ifo}:{name}:{version}'.format(**data)
-    out = DataQualityFlag(name, active=data['active'],
-                          known=data['known'])
+    name = "{ifo}:{name}:{version}".format(**data)
+    out = DataQualityFlag(name, active=data["active"],
+                          known=data["known"])
 
     # parse 'metadata'
     try:
-        out.description = data['metadata'].get('flag_description', None)
+        out.description = data["metadata"].get("flag_description", None)
     except KeyError:  # no metadata available, but that's ok
         pass
     else:
-        out.isgood = not data['metadata'].get(
-            'active_indicates_ifo_badness', False)
+        out.isgood = not data["metadata"].get(
+            "active_indicates_ifo_badness", False)
 
     return out
 
@@ -85,14 +85,14 @@ def write_json_flag(
     """
     # build json packet
     data = {}
-    data['ifo'] = flag.ifo
-    data['name'] = flag.tag
-    data['version'] = flag.version
-    data['active'] = flag.active
-    data['known'] = flag.known
-    data['metadata'] = {}
-    data['metadata']['active_indicates_ifo_badness'] = not flag.isgood
-    data['metadata']['flag_description'] = flag.description
+    data["ifo"] = flag.ifo
+    data["name"] = flag.tag
+    data["version"] = flag.version
+    data["active"] = flag.active
+    data["known"] = flag.known
+    data["metadata"] = {}
+    data["metadata"]["active_indicates_ifo_badness"] = not flag.isgood
+    data["metadata"]["flag_description"] = flag.description
 
     # write
     json.dump(data, fobj, **kwargs)

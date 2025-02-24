@@ -23,41 +23,41 @@ from ..plot import Plot
 from ..plot.tex import label_to_latex
 import warnings
 
-__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
+__author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 
 class TimeSeries(TimeDomainProduct):
     """Plot one or more time series
     """
-    action = 'timeseries'
+    action = "timeseries"
 
     def get_ylabel(self):
         """Text for y-axis label,  check if channel defines it
         """
         units = self.units
-        if len(units) == 1 and str(units[0]) == '':  # dimensionless
-            return ''
+        if len(units) == 1 and str(units[0]) == "":  # dimensionless
+            return ""
         if len(units) == 1 and self.usetex:
-            return units[0].to_string('latex')
+            return units[0].to_string("latex")
         elif len(units) == 1:
             return units[0].to_string()
         elif len(units) > 1:
-            return 'Multiple units'
+            return "Multiple units"
         return super().get_ylabel()
 
     def get_suptitle(self):
         """Start of default super title, first channel is appended to it
         """
-        return f'Time series: {self.chan_list[0]}'
+        return f"Time series: {self.chan_list[0]}"
 
     def get_title(self):
         suffix = super().get_title()
         # limit significant digits for minute trends
         rates = {ts.sample_rate.round(3) for ts in self.timeseries}
         fss = f"({'), ('.join(map(str, rates))})"
-        return ', '.join([
-            f'Fs: {fss}',
-            f'duration: {self.duration}',
+        return ", ".join([
+            f"Fs: {fss}",
+            f"duration: {self.duration}",
             suffix,
         ])
 
@@ -65,7 +65,7 @@ class TimeSeries(TimeDomainProduct):
         """Generate the plot from time series and arguments
         """
         plot = Plot(figsize=self.figsize, dpi=self.dpi)
-        ax = plot.add_subplot(xscale='auto-gps')
+        ax = plot.add_subplot(xscale="auto-gps")
 
         # handle user specified plot labels
         if self.args.legend:
@@ -74,10 +74,10 @@ class TimeSeries(TimeDomainProduct):
             nlegargs = 0
         if nlegargs > 0 and nlegargs != self.n_datasets:
             warnings.warn(
-                'The number of legends specified must match the number of '
-                'time series (channels * start times). '
-                f'There are {len(self.timeseries)} series '
-                f'and {len(self.args.legend)} legends'
+                "The number of legends specified must match the number of "
+                "time series (channels * start times). "
+                f"There are {len(self.timeseries)} series "
+                f"and {len(self.args.legend)} legends"
             )
             nlegargs = 0    # don't use  them
 

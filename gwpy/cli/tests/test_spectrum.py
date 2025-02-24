@@ -26,17 +26,17 @@ from .base import _TestFrequencyDomainProduct
 
 class TestCliSpectrum(_TestFrequencyDomainProduct):
     TEST_CLASS = cli.Spectrum
-    ACTION = 'spectrum'
+    ACTION = "spectrum"
 
     def test_get_title(self, prod):
         epoch = prod.start_list[0]
-        utc = Time(epoch, format='gps', scale='utc').iso
-        t = ', '.join([
-            f'{utc} | {epoch} ({prod.duration})',
-            f'fftlength={prod.args.secpfft}',
-            f'overlap={prod.args.overlap}',
+        utc = Time(epoch, format="gps", scale="utc").iso
+        t = ", ".join([
+            f"{utc} | {epoch} ({prod.duration})",
+            f"fftlength={prod.args.secpfft}",
+            f"overlap={prod.args.overlap}",
         ])
         assert prod.get_title() == t
 
     def test_get_suptitle(self, prod):
-        assert prod.get_suptitle() == f'Spectrum: {prod.chan_list[0]}'
+        assert prod.get_suptitle() == f"Spectrum: {prod.chan_list[0]}"

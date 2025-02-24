@@ -31,15 +31,15 @@ from .connect import (
     SpectralVarianceWrite,
 )
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__all__ = ['SpectralVariance']
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__all__ = ["SpectralVariance"]
 
 
 class SpectralVariance(Array2D):
     """A 2-dimensional array containing the variance histogram of a
     frequency-series `FrequencySeries`
     """
-    _metadata_slots = FrequencySeries._metadata_slots + ('bins',)
+    _metadata_slots = FrequencySeries._metadata_slots + ("bins",)
     _default_xunit = FrequencySeries._default_xunit
     _rowclass = FrequencySeries
 
@@ -50,11 +50,11 @@ class SpectralVariance(Array2D):
         """
         # parse x-axis params
         if f0 is not None:
-            kwargs['x0'] = f0
+            kwargs["x0"] = f0
         if df is not None:
-            kwargs['dx'] = df
+            kwargs["dx"] = df
         if frequencies is not None:
-            kwargs['xindex'] = frequencies
+            kwargs["xindex"] = frequencies
 
         # generate SpectralVariance using the Series constructor
         new = super(Array2D, cls).__new__(cls, data, unit=unit, name=name,
@@ -212,13 +212,13 @@ class SpectralVariance(Array2D):
         # parse args and kwargs
         if not spectrograms:
             raise ValueError("Must give at least one Spectrogram")
-        bins = kwargs.pop('bins', None)
-        low = kwargs.pop('low', None)
-        high = kwargs.pop('high', None)
-        nbins = kwargs.pop('nbins', 500)
-        log = kwargs.pop('log', False)
-        norm = kwargs.pop('norm', False)
-        density = kwargs.pop('density', False)
+        bins = kwargs.pop("bins", None)
+        low = kwargs.pop("low", None)
+        high = kwargs.pop("high", None)
+        nbins = kwargs.pop("nbins", 500)
+        log = kwargs.pop("log", False)
+        norm = kwargs.pop("norm", False)
+        density = kwargs.pop("density", False)
         if norm and density:
             raise ValueError("Cannot give both norm=True and density=True, "
                              "please pick one")
@@ -291,8 +291,8 @@ class SpectralVariance(Array2D):
         return FrequencySeries(out, epoch=self.epoch, channel=self.channel,
                                frequencies=self.bins[:-1], name=name)
 
-    def plot(self, xscale='log', method='pcolormesh', **kwargs):
-        if method == 'imshow':
+    def plot(self, xscale="log", method="pcolormesh", **kwargs):
+        if method == "imshow":
             raise TypeError(
                 f"plotting a {type(self).__name__} with {method}() is not "
                 "supported"
@@ -302,6 +302,6 @@ class SpectralVariance(Array2D):
             numpy.all(bins > 0)
             and numpy.allclose(numpy.diff(numpy.log10(bins), n=2), 0)
         ):
-            kwargs.setdefault('yscale', 'log')
+            kwargs.setdefault("yscale", "log")
         kwargs.update(method=method, xscale=xscale)
         return super().plot(**kwargs)

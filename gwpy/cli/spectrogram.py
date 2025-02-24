@@ -23,13 +23,13 @@ from numpy import percentile
 from .cliproduct import (FFTMixin, TimeDomainProduct, ImageProduct)
 from ..utils import unique
 
-__author__ = 'Joseph Areeda <joseph.areeda@ligo.org>'
+__author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 
 class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
     """Plot the spectrogram of a time series
     """
-    action = 'spectrogram'
+    action = "spectrogram"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -39,11 +39,11 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
 
     @classmethod
     def arg_yaxis(cls, parser):
-        return cls._arg_faxis('y', parser)
+        return cls._arg_faxis("y", parser)
 
     def _finalize_arguments(self, args):
         if args.color_scale is None:
-            args.color_scale = 'log'
+            args.color_scale = "log"
         super()._finalize_arguments(args)
 
     @property
@@ -53,25 +53,25 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
     def get_ylabel(self):
         """Default text for y-axis label
         """
-        return 'Frequency (Hz)'
+        return "Frequency (Hz)"
 
     def get_title(self):
-        return f'fftlength={self.args.secpfft}, overlap={self.args.overlap}'
+        return f"fftlength={self.args.secpfft}, overlap={self.args.overlap}"
 
     def get_suptitle(self):
-        return f'Spectrogram: {self.chan_list[0]}'
+        return f"Spectrogram: {self.chan_list[0]}"
 
     def get_color_label(self):
         """Text for colorbar label
         """
         if self.args.norm:
-            return f'Normalized to {self.args.norm}'
+            return f"Normalized to {self.args.norm}"
         if len(self.units) == 1 and self.usetex:
-            u = self.units[0].to_string('latex').strip('$')
-            return fr'ASD $\left({u}\right)$'
+            u = self.units[0].to_string("latex").strip("$")
+            return fr"ASD $\left({u}\right)$"
         if len(self.units) == 1:
-            u = self.units[0].to_string('generic')
-            return f'ASD ({u})'
+            u = self.units[0].to_string("generic")
+            return f"ASD ({u})"
         return super().get_color_label()
 
     def get_stride(self):
@@ -117,8 +117,8 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             nfft = stride * (stride // (fftlength - overlap))
             self.log(
                 3,
-                f'Spectrogram calc, stride: {stride}, fftlength: {fftlength}, '
-                f'overlap: {overlap}, #fft: {nfft}'
+                f"Spectrogram calc, stride: {stride}, fftlength: {fftlength}, "
+                f"overlap: {overlap}, #fft: {nfft}"
             )
         else:
             specgram = self.timeseries[0].spectrogram2(
@@ -126,8 +126,8 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             nfft = specgram.shape[0]
             self.log(
                 3,
-                f'HR-Spectrogram calc, fftlength: {fftlength}, '
-                f'overlap: {overlap}, #fft: {nfft}'
+                f"HR-Spectrogram calc, fftlength: {fftlength}, "
+                f"overlap: {overlap}, #fft: {nfft}"
             )
 
         return specgram ** (1/2.)   # ASD
@@ -142,8 +142,8 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         inmin = self.timeseries[0].min().value
         if inmin == self.timeseries[0].max().value:
             if not self.got_error:
-                self.log(0, f'ERROR: Input has constant values [{inmin:g}]. '
-                            'Spectrogram-like products cannot process them.')
+                self.log(0, f"ERROR: Input has constant values [{inmin:g}]. "
+                            "Spectrogram-like products cannot process them.")
             self.got_error = True
         else:
             # create 'raw' spectrogram
@@ -160,9 +160,9 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
                 # -- update plot defaults
 
                 if not args.ymin:
-                    args.ymin = 1/args.secpfft if args.yscale == 'log' else 0
+                    args.ymin = 1/args.secpfft if args.yscale == "log" else 0
 
-                norm = 'log' if args.color_scale == 'log' else None
+                norm = "log" if args.color_scale == "log" else None
                 # vmin/vmax set in scale_axes_from_data()
                 return specgram.plot(figsize=self.figsize, dpi=self.dpi,
                                      norm=norm, cmap=args.cmap)
@@ -198,10 +198,10 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
         imin = args.imin if args.imin is not None else imin
         imax = args.imax if args.imax is not None else imax
 
-        if imin == 0 and args.color_scale == 'log':
+        if imin == 0 and args.color_scale == "log":
             imin = specgram.value[specgram.value > 0].min()
 
-        self.log(3, f'Colorbar limits set to {imin:f} - {imax:f}')
+        self.log(3, f"Colorbar limits set to {imin:f} - {imax:f}")
 
         try:
             image = self.ax.images[0]

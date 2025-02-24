@@ -29,7 +29,7 @@ noise, then inject a simulation of GW150914 into it at a known time.
 """
 
 __author__ = "Alex Urban <alexander.urban@ligo.org>"
-__currentmodule__ = 'gwpy.timeseries'
+__currentmodule__ = "gwpy.timeseries"
 
 # First, we prepare one second of Gaussian noise:
 
@@ -43,7 +43,7 @@ from astropy.utils.data import get_readable_fileobj
 url = ("https://gwosc.org/s/events/GW150914/P150914/"
        "fig2-unfiltered-waveform-H.txt")
 with get_readable_fileobj(url) as f:
-    signal = TimeSeries.read(f, format='txt')
+    signal = TimeSeries.read(f, format="txt")
 signal.t0 = .5  # make sure this intersects with noise time samples
 
 # Note, since this simulation cuts off before a certain time, it is

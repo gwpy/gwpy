@@ -26,11 +26,11 @@ import pytest
 
 from .. import mp as utils_mp
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-@pytest.mark.parametrize('verbose', [False, True, 'Test'])
-@pytest.mark.parametrize('nproc', [1, 2])
+@pytest.mark.parametrize("verbose", [False, True, "Test"])
+@pytest.mark.parametrize("nproc", [1, 2])
 def test_multiprocess_with_queues(capsys, nproc, verbose):
     inputs = [1, 4, 9, 16, 25]
     out = utils_mp.multiprocess_with_queues(
@@ -47,12 +47,12 @@ def test_multiprocess_with_queues(capsys, nproc, verbose):
     if verbose is True:
         assert stdout.startswith("Processing: ")
     elif verbose is False:
-        assert stdout == ''
+        assert stdout == ""
     else:
         assert stdout.startswith(verbose)
 
 
-@pytest.mark.parametrize('nproc', [1, 2])
+@pytest.mark.parametrize("nproc", [1, 2])
 def test_multiprocess_with_queues_errors(nproc):
     """Check that errors from child processes propagate to the parent
     """

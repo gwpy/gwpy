@@ -56,10 +56,10 @@ class TestSegment(object):
         assert segment.end == 2.
 
     def test_repr(self, segment):
-        assert repr(segment) == 'Segment(1, 2)'
+        assert repr(segment) == "Segment(1, 2)"
 
     def test_str(self, segment):
-        assert str(segment) == '[1 ... 2)'
+        assert str(segment) == "[1 ... 2)"
 
 
 # -- SegmentList --------------------------------------------------------------
@@ -104,7 +104,7 @@ class TestSegmentList(object):
                     (2, 4, 6, 2),
                     (3, 8, 10, 2),
                 ],
-                names=('index', 'start', 'end', 'duration'),
+                names=("index", "start", "end", "duration"),
             ),
         )
 
@@ -131,27 +131,27 @@ class TestSegmentList(object):
         tmp = tmp_path / "segments.txt"
         tmp.write_text("0 0 1 .5")
         with pytest.raises(ValueError):
-            self.TEST_CLASS.read(tmp, strict=True, format='segwizard')
-        sl = self.TEST_CLASS.read(tmp, strict=False, format='segwizard')
+            self.TEST_CLASS.read(tmp, strict=True, format="segwizard")
+        sl = self.TEST_CLASS.read(tmp, strict=False, format="segwizard")
         assert_segmentlist_equal(sl, [(0, 1)])
 
     def test_read_write_segwizard_twocol(self, tmp_path):
         tmp = tmp_path / "segments.txt"
         tmp.write_text("0 1\n2 3")
-        sl = self.TEST_CLASS.read(tmp, format='segwizard')
+        sl = self.TEST_CLASS.read(tmp, format="segwizard")
         assert_segmentlist_equal(sl, [(0, 1), (2, 3)])
 
-    @pytest.mark.parametrize('ext', ('.hdf5', '.h5'))
+    @pytest.mark.parametrize("ext", (".hdf5", ".h5"))
     def test_read_write_hdf5(self, segmentlist, tmp_path, ext):
         tmp = tmp_path / "segments{}".format(ext)
 
         # check basic write/read with auto-path discovery
-        segmentlist.write(tmp, 'test-segmentlist')
+        segmentlist.write(tmp, "test-segmentlist")
         sl2 = self.TEST_CLASS.read(tmp)
         assert_segmentlist_equal(sl2, segmentlist)
         assert isinstance(sl2[0][0], LIGOTimeGPS)
 
-        sl2 = self.TEST_CLASS.read(tmp, path='test-segmentlist')
+        sl2 = self.TEST_CLASS.read(tmp, path="test-segmentlist")
         assert_segmentlist_equal(sl2, segmentlist)
 
         # check we can read directly from the h5 object
@@ -161,8 +161,8 @@ class TestSegmentList(object):
 
         # check overwrite kwarg
         with pytest.raises(IOError):
-            segmentlist.write(tmp, 'test-segmentlist')
-        segmentlist.write(tmp, 'test-segmentlist', overwrite=True)
+            segmentlist.write(tmp, "test-segmentlist")
+        segmentlist.write(tmp, "test-segmentlist", overwrite=True)
 
         # check gpstype kwarg
         sl2 = self.TEST_CLASS.read(tmp, gpstype=float)

@@ -27,10 +27,10 @@ from matplotlib.colors import (Normalize, LogNorm)
 from .. import colors as plot_colors
 
 
-@pytest.mark.parametrize('in_, factor, out', [
-    ('red', 1., (1., 0., 0.)),
+@pytest.mark.parametrize("in_, factor, out", [
+    ("red", 1., (1., 0., 0.)),
     ((1., 0., 0.), 1., (1., 0., 0.)),
-    ('green', .75, (0.0, 0.37647058823529411, 0.0)),
+    ("green", .75, (0.0, 0.37647058823529411, 0.0)),
 ])
 def test_tint(in_, factor, out):
     assert_array_equal(plot_colors.tint(in_, factor=factor), out)
@@ -44,7 +44,7 @@ def test_format_norm():
 
     # log norm
     norm, kwargs = plot_colors.format_norm(
-        {'norm': 'log', 'vmin': 1, 'vmax': 10})
+        {"norm": "log", "vmin": 1, "vmax": 10})
     assert isinstance(norm, LogNorm)
     assert norm.vmin == 1
     assert norm.vmax == 10
@@ -52,11 +52,11 @@ def test_format_norm():
     # existing norm, change limits
     n = LogNorm()
     norm, kwargs = plot_colors.format_norm(
-        {'norm': n, 'clim': (10, 1000)})
+        {"norm": n, "clim": (10, 1000)})
     assert norm is n
     assert norm.vmin == 10
     assert norm.vmax == 1000
 
     # check clim=None is honoured
-    norm, kwargs = plot_colors.format_norm({'clim': None})
+    norm, kwargs = plot_colors.format_norm({"clim": None})
     assert norm.vmin is None and norm.vmax is None

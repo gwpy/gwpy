@@ -106,7 +106,7 @@ class Array(Quantity):
     #
     # this is used in __array_finalize__ to create new instances of this
     # object [http://docs.scipy.org/doc/numpy/user/basics.subclassing.html]
-    _metadata_slots = ('name', 'epoch', 'channel')
+    _metadata_slots = ("name", "epoch", "channel")
 
     def __new__(cls, value, unit=None,  # Quantity attrs
                 name=None, epoch=None, channel=None,  # new attrs
@@ -120,7 +120,7 @@ class Array(Quantity):
 
         # parse unit with forgiveness
         if unit is not None:
-            unit = parse_unit(unit, parse_strict='warn')
+            unit = parse_unit(unit, parse_strict="warn")
 
         # create new array
         new = super().__new__(
@@ -182,7 +182,7 @@ class Array(Quantity):
     def __metadata_finalize__(self, obj, force=False):
         # apply metadata from obj to self if creating a new object
         for attr in self._metadata_slots:
-            _attr = '_%s' % attr  # use private attribute (not property)
+            _attr = "_%s" % attr  # use private attribute (not property)
             # if attribute is unset, default it to None, then update
             # from obj if desired
             try:
@@ -218,25 +218,25 @@ class Array(Quantity):
 
     def _repr_helper(self, print_):
         if print_ is repr:
-            opstr = '='
+            opstr = "="
         else:
-            opstr = ': '
+            opstr = ": "
 
         # get prefix and suffix
-        prefix = '{}('.format(type(self).__name__)
-        suffix = ')'
+        prefix = "{}(".format(type(self).__name__)
+        suffix = ")"
         if print_ is repr:
-            prefix = '<{}'.format(prefix)
-            suffix += '>'
+            prefix = "<{}".format(prefix)
+            suffix += ">"
 
-        indent = ' ' * len(prefix)
+        indent = " " * len(prefix)
 
         # format value
-        arrstr = numpy.array2string(self.view(numpy.ndarray), separator=', ',
+        arrstr = numpy.array2string(self.view(numpy.ndarray), separator=", ",
                                     prefix=prefix)
 
         # format unit
-        metadata = [('unit', print_(self.unit) or 'dimensionless')]
+        metadata = [("unit", print_(self.unit) or "dimensionless")]
 
         # format other metadata
         try:
@@ -248,13 +248,13 @@ class Array(Quantity):
                 val = getattr(self, key)
             except (AttributeError, KeyError):
                 val = None
-            thisindent = indent + ' ' * (len(key) + len(opstr))
+            thisindent = indent + " " * (len(key) + len(opstr))
             metadata.append((
-                key.lstrip('_'),
-                print_(val).replace('\n', '\n{}'.format(thisindent)),
+                key.lstrip("_"),
+                print_(val).replace("\n", "\n{}".format(thisindent)),
             ))
-        metadata = (',\n{}'.format(indent)).join(
-            '{0}{1}{2}'.format(key, opstr, value) for key, value in metadata)
+        metadata = (",\n{}".format(indent)).join(
+            "{0}{1}{2}".format(key, opstr, value) for key, value in metadata)
 
         return "{0}{1}\n{2}{3}{4}".format(
             prefix, arrstr, indent, metadata, suffix)
@@ -281,7 +281,7 @@ class Array(Quantity):
         return super(Quantity, self).dumps()
     dumps.__doc__ = numpy.ndarray.dumps.__doc__
 
-    def tostring(self, order='C'):
+    def tostring(self, order="C"):
         return super(Quantity, self).tobytes(order=order)
     tostring.__doc__ = numpy.ndarray.tobytes.__doc__
 
@@ -321,7 +321,7 @@ class Array(Quantity):
         try:
             if self._epoch is None:
                 return None
-            return Time(*modf(self._epoch)[::-1], format='gps', scale='utc')
+            return Time(*modf(self._epoch)[::-1], format="gps", scale="utc")
         except AttributeError:
             self._epoch = None
             return self._epoch
@@ -385,7 +385,7 @@ class Array(Quantity):
 
     @unit.setter
     def unit(self, unit):
-        if not hasattr(self, '_unit') or self._unit is None:
+        if not hasattr(self, "_unit") or self._unit is None:
             self._unit = parse_unit(unit)
         else:
             raise AttributeError(
@@ -422,7 +422,7 @@ class Array(Quantity):
     def _to_own_unit(self, value, check_precision=True):
         if self.unit is None:
             try:
-                self.unit = ''
+                self.unit = ""
                 return super()._to_own_unit(
                     value, check_precision=check_precision)
             finally:
@@ -432,7 +432,7 @@ class Array(Quantity):
                 value, check_precision=check_precision)
     _to_own_unit.__doc__ = Quantity._to_own_unit.__doc__
 
-    def override_unit(self, unit, parse_strict='raise'):
+    def override_unit(self, unit, parse_strict="raise"):
         """Forcefully reset the unit of these data
 
         Use of this method is discouraged in favour of `to()`,
@@ -455,7 +455,7 @@ class Array(Quantity):
         """
         self._unit = parse_unit(unit, parse_strict=parse_strict)
 
-    def flatten(self, order='C'):
+    def flatten(self, order="C"):
         """Return a copy of the array collapsed into one dimension.
 
         Any index information is removed as part of the flattening,
@@ -490,10 +490,10 @@ class Array(Quantity):
         """
         return super().flatten(order=order).view(Quantity)
 
-    def copy(self, order='C'):
+    def copy(self, order="C"):
         out = super().copy(order=order)
         for slot in self._metadata_slots:
-            old = getattr(self, '_{0}'.format(slot), None)
+            old = getattr(self, "_{0}".format(slot), None)
             if old is not None:
                 setattr(out, slot, copy.copy(old))
         return out

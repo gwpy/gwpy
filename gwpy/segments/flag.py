@@ -67,7 +67,7 @@ if typing.TYPE_CHECKING:
     from ...typing import GpsLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__all__ = ['DataQualityFlag', 'DataQualityDict']
+__all__ = ["DataQualityFlag", "DataQualityDict"]
 
 DEFAULT_SEGMENT_SERVER = get_default_host()
 
@@ -96,8 +96,8 @@ def _parse_query_segments(args, func):
     try:
         start, end = args
     except ValueError as exc:
-        exc.args = ('{0}() takes 2 arguments for start and end GPS time, '
-                    'or 1 argument containing a Segment or SegmentList'.format(
+        exc.args = ("{0}() takes 2 arguments for start and end GPS time, "
+                    "or 1 argument containing a Segment or SegmentList".format(
                         func.__name__),)
         raise
 
@@ -329,7 +329,7 @@ class DataQualityFlag(object):
         """Name of this flag in LaTeX printable format.
         """
         try:
-            return self.name.replace('_', r'\_')
+            return self.name.replace("_", r"\_")
         except AttributeError:
             return None
 
@@ -418,7 +418,7 @@ class DataQualityFlag(object):
         qsegs = _parse_query_segments(args, cls.query_dqsegdb)
 
         # parse deprecated 'url' keyword as 'host'
-        url = kwargs.pop('url', None)
+        url = kwargs.pop("url", None)
         if url:
             warnings.warn(
                 "the `url` keyword argument for `query_dqsegdb` "
@@ -438,7 +438,7 @@ class DataQualityFlag(object):
         for start, end in qsegs:
             # handle infinities
             if float(end) == +inf:
-                end = int(to_gps('now'))
+                end = int(to_gps("now"))
 
             # query
             try:
@@ -451,13 +451,13 @@ class DataQualityFlag(object):
                 )
             except HTTPError as exc:
                 if exc.code == 404:  # if not found, annotate flag name
-                    exc.msg += ' [{0}]'.format(flag)
+                    exc.msg += " [{0}]".format(flag)
                 raise
 
             # read from json buffer
             new = cls.read(
-                BytesIO(json.dumps(data).encode('utf-8')),
-                format='json',
+                BytesIO(json.dumps(data).encode("utf-8")),
+                format="json",
             )
 
             # restrict to query segments
@@ -524,7 +524,7 @@ class DataQualityFlag(object):
         end = to_gps(end).gpsSeconds
         known = [(start, end)]
         active = timeline.get_segments(flag, start, end, **kwargs)
-        return cls(flag.replace('_', ':', 1), known=known, active=active,
+        return cls(flag.replace("_", ":", 1), known=known, active=active,
                    label=flag)
 
     @classmethod
@@ -536,9 +536,9 @@ class DataQualityFlag(object):
         veto : :class:`~ligo.lw.lsctables.VetoDef`
             veto definition to convert from
         """
-        name = '%s:%s' % (veto.ifo, veto.name)
+        name = "%s:%s" % (veto.ifo, veto.name)
         try:
-            name += ':%d' % int(veto.version)
+            name += ":%d" % int(veto.version)
         except TypeError:
             pass
         known = Segment(veto.start_time, veto.end_time or +inf)
@@ -665,7 +665,7 @@ class DataQualityFlag(object):
         else:
             start, end = args
 
-        if kwargs.pop('inplace', False):
+        if kwargs.pop("inplace", False):
             new = self
         else:
             new = self.copy()
@@ -743,13 +743,13 @@ class DataQualityFlag(object):
             "\n{}      ".format(indent),
         ).split("\n")
         if len(known) > 10:  # use ellipsis
-            known = known[:3] + ['{}      ...'.format(indent)] + known[-3:]
+            known = known[:3] + ["{}      ...".format(indent)] + known[-3:]
         active = str(self.active).replace(
             "\n",
             "\n{}       ".format(indent),
-        ).split('\n')
+        ).split("\n")
         if len(active) > 10:  # use ellipsis
-            active = active[:3] + ['{}      ...'.format(indent)] + active[-3:]
+            active = active[:3] + ["{}      ...".format(indent)] + active[-3:]
 
         # print the thing
         return "".join((
@@ -773,7 +773,7 @@ class DataQualityFlag(object):
         """
         return deepcopy(self)
 
-    def plot(self, figsize=(12, 4), xscale='auto-gps', **kwargs):
+    def plot(self, figsize=(12, 4), xscale="auto-gps", **kwargs):
         """Plot this flag on a segments projection.
 
         Parameters
@@ -802,14 +802,14 @@ class DataQualityFlag(object):
         from ..plot import Plot
 
         if self.label:
-            kwargs.setdefault('label', self.label)
-        elif rcParams['text.usetex']:
-            kwargs.setdefault('label', self.texname)
+            kwargs.setdefault("label", self.label)
+        elif rcParams["text.usetex"]:
+            kwargs.setdefault("label", self.texname)
         else:
-            kwargs.setdefault('label', self.name)
+            kwargs.setdefault("label", self.name)
 
         kwargs.update(figsize=figsize, xscale=xscale)
-        return Plot(self, projection='segments', **kwargs)
+        return Plot(self, projection="segments", **kwargs)
 
     def _parse_name(self, name):
         """Internal method to parse a `string` name into constituent
@@ -834,26 +834,26 @@ class DataQualityFlag(object):
             {ifo}:{tag}:{version} format.
         """
         if isinstance(name, bytes):
-            name = name.decode('utf-8')
+            name = name.decode("utf-8")
         if name is None:
             self.ifo = None
             self.tag = None
             self.version = None
         elif re_IFO_TAG_VERSION.match(name):
             match = re_IFO_TAG_VERSION.match(name).groupdict()
-            self.ifo = match['ifo']
-            self.tag = match['tag']
-            self.version = int(match['version'])
+            self.ifo = match["ifo"]
+            self.tag = match["tag"]
+            self.version = int(match["version"])
         elif re_IFO_TAG.match(name):
             match = re_IFO_TAG.match(name).groupdict()
-            self.ifo = match['ifo']
-            self.tag = match['tag']
+            self.ifo = match["ifo"]
+            self.tag = match["tag"]
             self.version = None
         elif re_TAG_VERSION.match(name):
             match = re_TAG_VERSION.match(name).groupdict()
             self.ifo = None
-            self.tag = match['tag']
-            self.version = int(match['version'])
+            self.tag = match["tag"]
+            self.version = int(match["version"])
         else:
             raise ValueError("No flag name structure detected in '%s', flags "
                              "should be named as '{ifo}:{tag}:{version}'. "
@@ -1040,7 +1040,7 @@ class DataQualityDict(OrderedDict):
 
     @classmethod
     def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
-                               format='ligolw'):
+                               format="ligolw"):
         """Read a `DataQualityDict` from a LIGO_LW XML VetoDefinerTable.
 
         Parameters
@@ -1072,7 +1072,7 @@ class DataQualityDict(OrderedDict):
         >>> flags.populate()
 
         """
-        if format != 'ligolw':
+        if format != "ligolw":
             raise NotImplementedError("Reading veto definer from non-ligolw "
                                       "format file is not currently "
                                       "supported")
@@ -1080,7 +1080,7 @@ class DataQualityDict(OrderedDict):
         # read veto definer file
         with get_readable_fileobj(fp, show_progress=False) as fobj:
             from ..io.ligolw import read_table as read_ligolw_table
-            veto_def_table = read_ligolw_table(fobj, 'veto_definer')
+            veto_def_table = read_ligolw_table(fobj, "veto_definer")
 
         if start is not None:
             start = to_gps(start)
@@ -1113,7 +1113,7 @@ class DataQualityDict(OrderedDict):
     @classmethod
     def from_ligolw_tables(cls, segmentdeftable, segmentsumtable,
                            segmenttable, names=None, gpstype=LIGOTimeGPS,
-                           on_missing='error'):
+                           on_missing="error"):
         """Build a `DataQualityDict` from a set of LIGO_LW segment tables
 
         Parameters
@@ -1156,10 +1156,10 @@ class DataQualityDict(OrderedDict):
         # read segment definers and generate DataQualityFlag object
         for row in segmentdeftable:
             ifos = sorted(row.instruments)
-            ifo = ''.join(ifos) if ifos else None
+            ifo = "".join(ifos) if ifos else None
             tag = row.name
             version = row.version
-            name = ':'.join([str(k) for k in (ifo, tag, version) if
+            name = ":".join([str(k) for k in (ifo, tag, version) if
                              k is not None])
             if names is None or name in names:
                 out[name] = DataQualityFlag(name)
@@ -1171,10 +1171,10 @@ class DataQualityDict(OrderedDict):
 
         # verify all requested flags were found
         for flag in names or []:
-            if flag not in out and on_missing != 'ignore':
+            if flag not in out and on_missing != "ignore":
                 msg = ("no segment definition found for flag={0!r} in "
                        "file".format(flag))
-                if on_missing == 'warn':
+                if on_missing == "warn":
                     warnings.warn(msg)
                 else:
                     raise ValueError(msg)
@@ -1183,7 +1183,7 @@ class DataQualityDict(OrderedDict):
         def _parse_segments(table, listattr):
             # handle missing *_ns columns in LIGO_LW XML
             # (LIGO DMT doesn't/didn't write them)
-            if 'start_time_ns' in table.columnnames:
+            if "start_time_ns" in table.columnnames:
                 row_segment = operator.attrgetter("segment")
             else:
                 row_segment = operator.attrgetter("start_time", "end_time")
@@ -1482,7 +1482,7 @@ class DataQualityDict(OrderedDict):
             are the union of those of the values of this dict
         """
         usegs = reduce(operator.or_, self.values())
-        usegs.name = ' | '.join(self.keys())
+        usegs.name = " | ".join(self.keys())
         return usegs
 
     def intersection(self):
@@ -1495,10 +1495,10 @@ class DataQualityDict(OrderedDict):
             are the intersection of those of the values of this dict
         """
         isegs = reduce(operator.and_, self.values())
-        isegs.name = ' & '.join(self.keys())
+        isegs.name = " & ".join(self.keys())
         return isegs
 
-    def plot(self, label='key', **kwargs):
+    def plot(self, label="key", **kwargs):
         """Plot this flag on a segments projection.
 
         Parameters
@@ -1534,14 +1534,14 @@ class DataQualityDict(OrderedDict):
         """
         # make plot
         from ..plot import Plot
-        plot = Plot(self, projection='segments', **kwargs)
+        plot = Plot(self, projection="segments", **kwargs)
 
         # update labels
         artists = [x for ax in plot.axes for x in ax.collections]
         for key, artist in zip(self, artists):
-            if label.lower() == 'name':
+            if label.lower() == "name":
                 lab = self[key].name
-            elif label.lower() != 'key':
+            elif label.lower() != "key":
                 lab = key
             else:
                 lab = label
