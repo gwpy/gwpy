@@ -301,7 +301,7 @@ class TestTimeSeriesBase(_TestSeries):
 
 # -- TimeSeriesBaseDict -------------------------------------------------------
 
-class TestTimeSeriesBaseDict(object):
+class TestTimeSeriesBaseDict:
     TEST_CLASS = TimeSeriesBaseDict
     ENTRY_CLASS = TimeSeriesBase
     DTYPE = None
@@ -536,7 +536,7 @@ class TestTimeSeriesBaseDict(object):
 
 # -- TimeSeriesBaseList -------------------------------------------------------
 
-class TestTimeSeriesBaseList(object):
+class TestTimeSeriesBaseList:
     TEST_CLASS = TimeSeriesBaseList
     ENTRY_CLASS = TimeSeriesBase
     DTYPE = None
