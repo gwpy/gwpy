@@ -116,10 +116,14 @@ class TestArray(object):
         assert array.unit is units.m
 
         # test unrecognised units
-        with mock.patch.dict(
-                "gwpy.detector.units.UNRECOGNIZED_UNITS", clear=True), \
-                pytest.warns(units.UnitsWarning):
-            array = self.create(unit="blah")
+        with (
+            mock.patch.dict(
+                "gwpy.detector.units.UNRECOGNIZED_UNITS",
+                clear=True,
+            ),
+            pytest.warns(units.UnitsWarning)
+        ):
+            array = self.create(unit='blah')
         assert isinstance(array.unit, units.IrreducibleUnit)
         assert str(array.unit) == "blah"
 
