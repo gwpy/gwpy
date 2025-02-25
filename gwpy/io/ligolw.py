@@ -540,7 +540,7 @@ def write_tables(
     from ligo.lw import utils as ligolw_utils
 
     # allow writing directly to XML
-    if isinstance(target, (Document, LIGO_LW)):
+    if isinstance(target, Document | LIGO_LW):
         xmldoc = target
     # open existing document, if possible
     elif append:
@@ -553,7 +553,7 @@ def write_tables(
     # fail on existing document and not overwriting
     elif (
         not overwrite
-        and isinstance(target, (str, os.PathLike))
+        and isinstance(target, str | os.PathLike)
         and os.path.exists(target)
     ):
         raise OSError(f"File exists: {target}")

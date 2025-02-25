@@ -34,7 +34,7 @@ def open_hdf5(filename, mode="r"):
     """Wrapper to open a :class:`h5py.File` from disk, gracefully
     handling a few corner cases.
     """
-    if isinstance(filename, (h5py.Group, h5py.Dataset)):
+    if isinstance(filename, h5py.Group | h5py.Dataset):
         return filename
     if isinstance(filename, FILE_LIKE):
         return h5py.File(filename.name, mode)

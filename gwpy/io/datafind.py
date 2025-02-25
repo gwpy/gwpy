@@ -315,7 +315,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     from ..detector import Channel
 
     # format channel names as list
-    if isinstance(channel, (list, tuple)):
+    if isinstance(channel, list | tuple):
         channels = channel
     else:
         channels = [channel]
@@ -327,7 +327,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     names = {val: key for key, val in channels.items()}
 
     # format GPS time(s)
-    if isinstance(gpstime, (list, tuple)):
+    if isinstance(gpstime, list | tuple):
         gpssegment = LigoSegment(*gpstime)
         gpstime = gpssegment[0]
     else:
@@ -418,7 +418,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
         output = {key: val[0] for key, val in output.items()}
 
     # if given a list of channels, return the dict
-    if isinstance(channel, (list, tuple)):
+    if isinstance(channel, list | tuple):
         return output
 
     # otherwise just return the result for the given channel

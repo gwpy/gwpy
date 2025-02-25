@@ -312,7 +312,7 @@ def is_cache(cache):
     if HAS_CACHE and isinstance(cache, Cache):
         return True
     return bool(
-        isinstance(cache, (list, tuple))
+        isinstance(cache, list | tuple)
         and cache
         and all(map(is_cache_entry, cache))
     )

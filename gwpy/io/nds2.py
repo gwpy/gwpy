@@ -567,7 +567,7 @@ def find_channels(
 
     # format {min,max}_sample_rate options
     kwargs = {}
-    if isinstance(sample_rate, (int, float)):
+    if isinstance(sample_rate, int | float):
         kwargs["min_sample_rate"] = sample_rate
         kwargs["max_sample_rate"] = sample_rate
     elif sample_rate is not None:
