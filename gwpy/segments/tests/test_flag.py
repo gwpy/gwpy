@@ -218,7 +218,7 @@ def mock_query_segments(flag, start, end, **kwargs):
 
 # -- DataQualityFlag ----------------------------------------------------------
 
-class TestDataQualityFlag(object):
+class TestDataQualityFlag:
     TEST_CLASS = DataQualityFlag
 
     @classmethod
@@ -650,7 +650,7 @@ class TestDataQualityFlag(object):
 
 # -- DataQualityDict ----------------------------------------------------------
 
-class TestDataQualityDict(object):
+class TestDataQualityDict:
     TEST_CLASS = DataQualityDict
     ENTRY_CLASS = DataQualityFlag
 

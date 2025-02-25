@@ -42,7 +42,7 @@ TEST_SEGWIZARD_URI = (
 
 # -- Segment ------------------------------------------------------------------
 
-class TestSegment(object):
+class TestSegment:
     TEST_CLASS = Segment
 
     @classmethod
@@ -63,7 +63,7 @@ class TestSegment(object):
 
 # -- SegmentList --------------------------------------------------------------
 
-class TestSegmentList(object):
+class TestSegmentList:
     TEST_CLASS = SegmentList
     ENTRY_CLASS = Segment
 
