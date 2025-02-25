@@ -181,7 +181,7 @@ class StateTimeSeries(TimeSeriesBase):
         if kwargs.pop("unit", None) is not None:
             raise TypeError("%s does not accept keyword argument 'unit'"
                             % cls.__name__)
-        if isinstance(data, (list, tuple)):
+        if isinstance(data, list | tuple):
             data = numpy.asarray(data)
         if not isinstance(data, cls):
             data = data.astype(bool, copy=False)
@@ -312,7 +312,7 @@ class StateTimeSeries(TimeSeriesBase):
         return super().from_nds2_buffer(buffer, **metadata)
 
     def __getitem__(self, item):
-        if isinstance(item, (float, int)):
+        if isinstance(item, float | int):
             return numpy.ndarray.__getitem__(self, item)
         else:
             return super().__getitem__(item)

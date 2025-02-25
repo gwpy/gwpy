@@ -1850,7 +1850,7 @@ class TimeSeries(TimeSeriesBase):
         asd = asd.interpolate(1./self.duration.decompose().value)
         # design whitening filter, with highpass if requested
         ncorner = int(highpass / asd.df.decompose().value) if highpass else 0
-        if isinstance(window, (str, tuple)):
+        if isinstance(window, str | tuple):
             ntaps = int((fduration * self.sample_rate).decompose().value)
         else:
             window = numpy.asarray(window)

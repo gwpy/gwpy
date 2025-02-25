@@ -52,7 +52,7 @@ def _parse_nds_enum_dict_param(channels, key, value):
     if value is None:
         value = default
     # parse non-int enum representation
-    if not isinstance(value, (dict, int)):
+    if not isinstance(value, dict | int):
         value = enum.find(value).value
     # return dict of ints
     if isinstance(value, int):
