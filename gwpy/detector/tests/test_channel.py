@@ -96,7 +96,7 @@ channels =
 
 # -- Channel ------------------------------------------------------------------
 
-class TestChannel(object):
+class TestChannel:
     TEST_CLASS = Channel
 
     # -- test creation --------------------------
@@ -415,7 +415,7 @@ class TestChannel(object):
 
 # -- ChannelList --------------------------------------------------------------
 
-class TestChannelList(object):
+class TestChannelList:
     TEST_CLASS = ChannelList
     ENTRY_CLASS = Channel
 
