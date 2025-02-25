@@ -24,24 +24,24 @@ from numbers import Number
 import numpy
 
 from matplotlib import ticker
-from matplotlib.scale import (register_scale, LinearScale, get_scale_names)
+from matplotlib.scale import (
+    _get_scale_docs as get_scale_docs,
+    LinearScale,
+    get_scale_names,
+    register_scale,
+)
 from matplotlib.transforms import Transform
 try:
-    from matplotlib.scale import _get_scale_docs as get_scale_docs
-except ImportError:  # matplotlib < 3.1
-    from matplotlib.scale import get_scale_docs
-try:
     from matplotlib import _docstring
-except ImportError:  # matplotlib < 3.6
-    try:
-        from matplotlib import docstring as _docstring
-    except ImportError:  # pragma: no cover
-        # maybe matplotlib >= 3.9?
-        _docstring = None
+except ImportError:  # maybe matplotlib >= 3.9?
+    _docstring = None
 
 from astropy import units
 
-from ..time import (to_gps, from_gps)
+from ..time import (
+    from_gps,
+    to_gps,
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

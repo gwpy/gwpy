@@ -78,44 +78,6 @@ def xlim_as_gps(func):
     return wrapped_func
 
 
-def restore_grid(func):
-    """Wrap ``func`` to preserve the Axes current grid settings.
-
-    Prior to matplotlib 3.7.0 (unreleased ATOW) pcolor() and pcolormesh()
-    automatically removed a grid on a set of Axes. This decorator just
-    undoes that.
-    """
-    if matplotlib_version >= Version("3.7.0"):
-        return func
-
-    @wraps(func)
-    def wrapped_func(self, *args, **kwargs):
-        try:
-            grid = (
-                self.xaxis._minor_tick_kw["gridOn"],
-                self.xaxis._major_tick_kw["gridOn"],
-                self.yaxis._minor_tick_kw["gridOn"],
-                self.yaxis._major_tick_kw["gridOn"],
-            )
-        except KeyError:  # matplotlib < 3.3.3
-            grid = (self.xaxis._gridOnMinor, self.xaxis._gridOnMajor,
-                    self.yaxis._gridOnMinor, self.yaxis._gridOnMajor)
-        # matplotlib >=3.5.0,<3.7.0 presents a warning if you have a grid
-        # that it won't be automatically removed, so we forcibly remove it
-        # ahead of time, knowing that if we had one, we will restore it
-        # in the 'finally' block below.
-        self.grid(False)
-        try:
-            return func(self, *args, **kwargs)
-        finally:
-            # reset grid
-            self.xaxis.grid(grid[0], which="minor")
-            self.xaxis.grid(grid[1], which="major")
-            self.yaxis.grid(grid[2], which="minor")
-            self.yaxis.grid(grid[3], which="major")
-    return wrapped_func
-
-
 def deprecate_c_sort(func):
     """Wrap ``func`` to replace the deprecated ``c_sort`` keyword.
 
@@ -309,7 +271,6 @@ class Axes(_Axes):
         return self.imshow(array.value.T, origin=origin, aspect=aspect,
                            interpolation=interpolation, **kwargs)
 
-    @restore_grid
     @log_norm
     def pcolormesh(self, *args, **kwargs):
         """Create a pseudocolor plot with a non-regular rectangular grid.
