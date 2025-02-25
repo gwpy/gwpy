@@ -167,8 +167,7 @@ def _iter_cache(cachefile, gpstype=LIGOTimeGPS):
             parts = line.split()
             if len(parts) == 3 and os.path.abspath(parts[0]) != path:
                 with open(parts[0], "r") as cache2:
-                    for entry in _iter_cache(cache2, gpstype=gpstype):
-                        yield entry
+                    yield from _iter_cache(cache2, gpstype=gpstype)
             else:
                 raise
 
