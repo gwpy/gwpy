@@ -94,7 +94,7 @@ def get_window(
         pass
 
     # 2. try a name or tuple of params
-    if isinstance(window, (str, tuple)):
+    if isinstance(window, str | tuple):
         return _get_window(window, Nx, *args, **kwargs)
 
     # 3. otherwise we were something array-like

@@ -236,10 +236,10 @@ def is_zpk(zpktup: Any) -> bool:
         zeros and poles, and a gain (`float`).
     """
     return (
-        isinstance(zpktup, (tuple, list))
+        isinstance(zpktup, tuple | list)
         and len(zpktup) == 3
-        and isinstance(zpktup[0], (list, tuple, numpy.ndarray))
-        and isinstance(zpktup[1], (list, tuple, numpy.ndarray))
+        and isinstance(zpktup[0], list | tuple | numpy.ndarray)
+        and isinstance(zpktup[1], list | tuple | numpy.ndarray)
         and isinstance(zpktup[2], float)
     )
 

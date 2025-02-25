@@ -260,7 +260,7 @@ def _normalize_window(
         return generate_window(nfft, window=window, dtype=dtype)
     if isinstance(window, str):
         window = canonical_name(window)
-    if isinstance(window, (str, tuple)):
+    if isinstance(window, str | tuple):
         return get_window(window, nfft)
     return window
 
