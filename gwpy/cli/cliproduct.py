@@ -87,7 +87,7 @@ to_s = to_float("s")  # pylint: disable=invalid-name
 
 # -- base product class -------------------------------------------------------
 
-class CliProduct(object, metaclass=abc.ABCMeta):
+class CliProduct(metaclass=abc.ABCMeta):
     """Base class for all cli plot products.
 
     Parameters
@@ -927,7 +927,7 @@ class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
         return  # image plots don't have legends
 
 
-class FFTMixin(object, metaclass=abc.ABCMeta):
+class FFTMixin(metaclass=abc.ABCMeta):
     """Mixin for `CliProduct` class that will perform FFTs.
 
     This just adds FFT-based command line options
