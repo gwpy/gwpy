@@ -45,7 +45,7 @@ CHANNEL_NAME = "G1:TEST-CHANNEL"
 CHANNEL = Channel(CHANNEL_NAME)
 
 
-class TestArray(object):
+class TestArray:
     """Test `gwpy.types.Array`."""
     TEST_CLASS = Array
     DTYPE = None
