@@ -34,7 +34,7 @@ def to_string(input_):
     usetex = rcParams["text.usetex"]
     if isinstance(input_, units.UnitBase):
         return input_.to_string("latex_inline")
-    if isinstance(input_, (float, int)) and usetex:
+    if isinstance(input_, float | int) and usetex:
         return tex.float_to_latex(input_)
     if usetex:
         return tex.label_to_latex(input_)

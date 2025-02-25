@@ -103,7 +103,7 @@ class GPSMixin:
         if epoch is None:
             self._epoch = None
             return
-        if isinstance(epoch, (Number, Decimal)):
+        if isinstance(epoch, Number | Decimal):
             self._epoch = float(epoch)
         else:
             self._epoch = float(to_gps(epoch))
@@ -194,7 +194,7 @@ class GPSTransformBase(GPSMixin, Transform):
 
     def transform(self, values):
         # format ticks using decimal for precision display
-        if isinstance(values, (Number, Decimal)):
+        if isinstance(values, Number | Decimal):
             return self._transform_decimal(values, self.epoch or 0, self.scale)
         return super().transform(values)
 
