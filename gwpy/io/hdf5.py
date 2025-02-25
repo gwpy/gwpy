@@ -119,7 +119,7 @@ def with_write_hdf5(func):
             append = kwargs.get("append", False)
             overwrite = kwargs.get("overwrite", False)
             if os.path.exists(fobj) and not (overwrite or append):
-                raise IOError(f"File exists: {fobj}")
+                raise OSError(f"File exists: {fobj}")
             with h5py.File(fobj, "a" if append else "w") as h5f:
                 return func(obj, h5f, *args, **kwargs)
         return func(obj, fobj, *args, **kwargs)

@@ -369,7 +369,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
                     allow_tape=allow_tape,
                     on_missing="ignore",
                 )
-            except (RuntimeError, IOError, IndexError):  # something went wrong
+            except (OSError, RuntimeError, IndexError):  # something went wrong
                 continue
 
             # check for gaps in the record for this type
@@ -561,7 +561,7 @@ def find_latest(
 
     path = file_path(path)
     if not allow_tape and on_tape(path):
-        raise IOError(
+        raise OSError(
             f"Latest frame file for {observatory}-{frametype} is on tape "
             f"(pass allow_tape=True to force): {path}",
         )

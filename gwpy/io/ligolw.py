@@ -437,7 +437,7 @@ def open_xmldoc(fobj, contenthandler=None, **kwargs):
                     contenthandler=contenthandler,
                     **kwargs,
                 )
-        except (OSError, IOError):
+        except OSError:
             # or just create a new Document
             return Document()
 
@@ -556,7 +556,7 @@ def write_tables(
         and isinstance(target, (str, os.PathLike))
         and os.path.exists(target)
     ):
-        raise IOError(f"File exists: {target}")
+        raise OSError(f"File exists: {target}")
     else:  # or create a new document
         xmldoc = Document()
 
