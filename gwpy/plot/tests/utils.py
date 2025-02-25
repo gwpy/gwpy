@@ -27,7 +27,7 @@ from .. import Plot
 
 
 @pytest.mark.usefixtures("usetex")
-class _Base(object):
+class _Base:
     @staticmethod
     def save(fig, format="png"):
         out = BytesIO()

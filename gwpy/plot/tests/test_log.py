@@ -28,7 +28,7 @@ from matplotlib import (
 from .. import log as plot_log
 
 
-class TestLogFormatter(object):
+class TestLogFormatter:
     TEST_CLASS = plot_log.LogFormatter
 
     @classmethod

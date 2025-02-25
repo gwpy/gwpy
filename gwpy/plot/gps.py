@@ -84,7 +84,7 @@ def _truncate(f, n):
 
 # -- base mixin for all GPS manipulations -------------------------------------
 
-class GPSMixin(object):
+class GPSMixin:
     """Mixin adding GPS-related attributes to any class."""
     def __init__(self, *args, **kwargs):
         self.set_unit(kwargs.pop("unit", None))
@@ -266,7 +266,7 @@ class InvertedGPSTransform(GPSTransform):
 # -- locators and formatters --------------------------------------------------
 
 
-class GPSLocatorMixin(object):
+class GPSLocatorMixin:
     """Metaclass for GPS-axis locator."""
     def __call__(self):
         vmin, vmax = self.axis.get_view_interval()
