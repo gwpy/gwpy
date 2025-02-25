@@ -162,7 +162,7 @@ class Qtransform(Spectrogram):
     def get_title(self):
         """Default title for plot."""
         def fformat(x):  # float format
-            if isinstance(x, (list, tuple)):
+            if isinstance(x, list | tuple):
                 return f"[{', '.join(map(fformat, x))}]"
             if isinstance(x, Quantity):
                 x = x.value
