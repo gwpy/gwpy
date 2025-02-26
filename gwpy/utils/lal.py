@@ -284,7 +284,7 @@ def to_lal_unit(
         scale = aunit.scale
 
     # decompose unit into LAL base units
-    for base, power in zip(aunit.bases, aunit.powers):
+    for base, power in zip(aunit.bases, aunit.powers, strict=True):
         try:  # try this base
             i = LAL_UNIT_INDEX.index(base)
         except ValueError as exc:
@@ -329,6 +329,7 @@ def from_lal_unit(
             for i, (num, den) in enumerate(zip(
                 lunit.unitNumerator,
                 lunit.unitDenominatorMinusOne,
+                strict=True,
             ))
         ),
     ) * 10 ** lunit.powerOfTen
