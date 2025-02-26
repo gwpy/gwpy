@@ -16,13 +16,27 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""A `Segment` is a interval of time marked by a GPS [start, stop)
-semi-open interval. These typically represent periods when a
-gravitational-wave laser interferometer was operating in a specific
-configuration.
+"""Representations of semi-open intervals (of time).
+
+These are typically used to represents periods when a gravitational-wave
+detector was operating in a particular state.
 """
 
-from igwn_segments import (segment, segmentlist, segmentlistdict)
+from __future__ import annotations
+
+import os
+import typing
+from functools import wraps
+from typing import (
+    Generic,
+    TypeVar,
+)
+
+from igwn_segments import (
+    segment,
+    segmentlist,
+    segmentlistdict,
+)
 
 from ..io.registry import UnifiedReadWriteMethod
 from ..utils.decorators import return_as
@@ -31,12 +45,23 @@ from .connect import (
     SegmentListWrite,
 )
 
+if typing.TYPE_CHECKING:
+    from astropy.table import Table
+
+    from ..typing import Self
+
+T = TypeVar("T")
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-__all__ = ["Segment", "SegmentList", "SegmentListDict"]
+__all__ = [
+    "Segment",
+    "SegmentList",
+    "SegmentListDict",
+]
 
 
-class Segment(segment):
+class Segment(segment, Generic[T]):
     """A tuple defining a semi-open interval ``[start, end)``.
 
     Each `Segment` represents the range of values in a given interval, with
@@ -45,10 +70,10 @@ class Segment(segment):
     Parameters
     ----------
     start : `float`
-        the start value of this `Segment`
+        The start value of this `Segment`.
 
     end : `float`
-        the end value of this `Segment`
+        The end value of this `Segment`.
 
     Examples
     --------
@@ -71,21 +96,20 @@ class Segment(segment):
     >>> bool(Segment(0, 1))
     True
     """
+
     @property
-    def start(self):
-        """The GPS start time of this segment."""
+    def start(self) -> T:
+        """The beginning of this segment."""
         return self[0]
 
     @property
-    def end(self):
-        """The GPS end time of this segment."""
+    def end(self) -> T:
+        """The end of this segment."""
         return self[1]
 
-    def __repr__(self):
-        return "%s(%s, %s)" % (self.__class__.__name__, self[0], self[1])
-
-    def __str__(self):
-        return "[%s ... %s)" % (self[0], self[1])
+    def __repr__(self) -> str:
+        """Return a representation of this segment."""
+        return f"{type(self).__name__}({self[0]}, {self[1]})"
 
 
 class SegmentList(segmentlist):
@@ -127,24 +151,29 @@ class SegmentList(segmentlist):
 
     # -- representations ------------------------
 
-    def __repr__(self):
-        return "<SegmentList([%s])>" % "\n              ".join(map(repr, self))
+    def __repr__(self) -> str:
+        """Return a representation of this segmentlist."""
+        return f"<{type(self).__name__}([{{}}])>".format(
+            f"{os.linesep}              ".join(map(repr, self)),
+        )
 
-    def __str__(self):
-        return "[%s]" % "\n ".join(map(str, self))
+    def __str__(self) -> str:
+        """Return a string representation of this segmentlist."""
+        return "[{}]".format("\n ".join(map(str, self)))
 
     # -- type casting ---------------------------
 
     extent = return_as(Segment)(segmentlist.extent)
 
-    def coalesce(self):
+    @wraps(segmentlist.coalesce)
+    def coalesce(self) -> Self:
+        """Coalesce this `SegmentList` by joining connected segments."""
         super().coalesce()
         for i, seg in enumerate(self):
             self[i] = Segment(seg[0], seg[1])
         return self
-    coalesce.__doc__ = segmentlist.coalesce.__doc__
 
-    def to_table(self):
+    def to_table(self) -> Table:
         """Convert this `SegmentList` to a `~astropy.table.Table`.
 
         The resulting `Table` has four columns: `index`, `start`, `end`, and
@@ -207,8 +236,3 @@ class SegmentListDict(segmentlistdict):
     >>> c
     {'H2': [Segment(6.0, 15)], 'H1': [Segment(0.0, 9.0)]}
     """
-    pass
-
-
-# clean up the namespace
-del segment, segmentlist, segmentlistdict

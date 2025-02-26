@@ -1,5 +1,5 @@
 # Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2023)
+#               Cardiff University (2017-2025)
 #
 # This file is part of GWpy.
 #
@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module defines the `DataQualityFlag` and `DataQualityDict`.
+"""The `DataQualityFlag` and `DataQualityDict`.
 
 The `DataQualityFlag` represents an annotated set of data-quality segments
 indicating something about the state of a laser-interferometer
@@ -28,32 +28,46 @@ for handling multiple flags over the same global time interval.
 
 from __future__ import annotations
 
-import datetime
+import contextlib
 import json
 import operator
+import os
 import re
-import warnings
+import textwrap
 import typing
-from io import BytesIO
-from collections import OrderedDict
+import warnings
 from concurrent.futures import ThreadPoolExecutor
-from copy import (copy as shallowcopy, deepcopy)
-from functools import reduce
-from math import (floor, ceil)
-from urllib.error import (URLError, HTTPError)
+from copy import (
+    copy as shallowcopy,
+    deepcopy,
+)
+from functools import (
+    reduce,
+    wraps,
+)
+from io import BytesIO
+from math import (
+    ceil,
+    floor,
+)
 from urllib.parse import urlparse
 
-from numpy import inf
-
-from astropy.utils.data import get_readable_fileobj
-
-from gwosc import timeline
-
+from astropy.table import Row as AstropyTableRow
 from dqsegdb2.query import query_segments
 from dqsegdb2.utils import get_default_host
+from gwosc import timeline
+from numpy import inf
+from requests import codes as http_codes
+from requests.exceptions import (
+    HTTPError,
+    RequestException,
+)
 
 from ..io.registry import UnifiedReadWriteMethod
-from ..time import to_gps, LIGOTimeGPS
+from ..time import (
+    LIGOTimeGPS,
+    to_gps,
+)
 from ..utils.misc import if_not_none
 from .connect import (
     DataQualityDictRead,
@@ -61,26 +75,57 @@ from .connect import (
     DataQualityFlagRead,
     DataQualityFlagWrite,
 )
-from .segments import Segment, SegmentList
+from .segments import (
+    Segment,
+    SegmentList,
+)
 
 if typing.TYPE_CHECKING:
-    from ...typing import GpsLike
+    from collections.abc import (
+        Callable,
+        Iterable,
+    )
+    from typing import (
+        ParamSpec,
+        SupportsFloat,
+        TypeVar,
+    )
+
+    import astropy.table
+    import ligo.lw
+
+    from ...plot import Plot
+    from ...typing import (
+        GpsLike,
+        Self,
+    )
+
+    P = ParamSpec("P")
+    R = TypeVar("R")
+
+    SegmentListLike = Iterable[tuple[SupportsFloat, SupportsFloat]]
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__all__ = ["DataQualityFlag", "DataQualityDict"]
+__all__ = [
+    "DataQualityFlag",
+    "DataQualityDict",
+]
 
 DEFAULT_SEGMENT_SERVER = get_default_host()
 
-re_IFO_TAG_VERSION = re.compile(
+IFO_TAG_VERSION_REGEX = re.compile(
     r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+):(?P<version>\d+)\Z")
-re_IFO_TAG = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
-re_TAG_VERSION = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
+IFO_TAG_REGEX = re.compile(r"\A(?P<ifo>[A-Z]\d):(?P<tag>[^/]+)\Z")
+TAG_VERSION_REGEX = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
 
 
-# -- utilities ----------------------------------------------------------------
+# -- utilities -----------------------
 
-def _parse_query_segments(args, func):
-    """Parse *args for query_dqsegdb() or query_segdb().
+def _parse_query_segments(
+    args: tuple[SegmentList | tuple[GpsLike, GpsLike]] | tuple[GpsLike, GpsLike],
+    func: Callable,
+) -> SegmentList:
+    """Parse ``args`` for query_dqsegdb() or query_segdb().
 
     Returns a SegmentList in all cases
     """
@@ -96,16 +141,32 @@ def _parse_query_segments(args, func):
     try:
         start, end = args
     except ValueError as exc:
-        exc.args = ("{0}() takes 2 arguments for start and end GPS time, "
-                    "or 1 argument containing a Segment or SegmentList".format(
-                        func.__name__),)
+        exc.args = (f"{func.__name__}() takes 2 arguments for start and end GPS time, "
+                    "or 1 argument containing a Segment or SegmentList",)
         raise
 
     # return list with one Segment
     return SegmentList([Segment(to_gps(start), to_gps(end))])
 
 
-# -- DataQualityFlag ----------------------------------------------------------
+def _check_on_error(func: Callable[P, R]) -> Callable[P, R]:
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        on_error = kwargs.get("on_error", "raise")
+        # check on_error flag
+        if on_error not in {"raise", "warn", "ignore"}:
+            msg = (
+                "on_error must be one of 'raise', 'warn', or 'ignore', "
+                f"not '{on_error}'"
+            )
+            raise ValueError(msg)
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+
+# -- DataQualityFlag -----------------
 
 class DataQualityFlag:
     """A representation of a named set of segments.
@@ -135,11 +196,22 @@ class DataQualityFlag:
     isgood : `bool`, optional
         Do active segments mean the IFO was in a good state?
     """
-    _EntryClass = Segment
-    _ListClass = SegmentList
 
-    def __init__(self, name=None, active=None, known=None, label=None,
-                 category=None, description=None, isgood=True, padding=None):
+    _EntryClass: type[Segment] = Segment
+    _ListClass: type[SegmentList] = SegmentList
+
+    def __init__(
+        self,
+        name: str | None = None,
+        active: SegmentListLike | None = None,
+        known: SegmentListLike | None = None,
+        *,
+        label: str | None = None,
+        category: int | None = None,
+        description: str | None = None,
+        isgood: bool = True,
+        padding: tuple[float | None, float | None] | None = None,
+    ) -> None:
         """Define a new DataQualityFlag."""
         self.name = name
         self.known = known
@@ -150,10 +222,10 @@ class DataQualityFlag:
         self.isgood = isgood
         self.padding = padding
 
-    # -- properties -----------------------------
+    # -- properties ------------------
 
     @property
-    def name(self):
+    def name(self) -> str | None:
         """The name associated with this flag.
 
         This normally takes the form {ifo}:{tag}:{version}. If found,
@@ -164,7 +236,7 @@ class DataQualityFlag:
         return self._name
 
     @name.setter
-    def name(self, name):
+    def name(self, name: str | None) -> None:
         self._name = name
         try:
             self._parse_name(name)
@@ -172,204 +244,173 @@ class DataQualityFlag:
             self._parse_name(None)
 
     @property
-    def ifo(self):
+    def ifo(self) -> str | None:
         """The interferometer associated with this flag.
 
         This should be a single uppercase letter and a single number,
         e.g. ``'H1'``.
-
-        :type: `str`
         """
         return self._ifo
 
     @ifo.setter
-    def ifo(self, ifoname):
+    def ifo(self, ifoname: str | None) -> None:
         self._ifo = ifoname
 
     @property
-    def tag(self):
+    def tag(self) -> str | None:
         """The tag (name) associated with this flag.
 
         This should take the form ``'AAA-BBB_CCC_DDD'``, i.e. where
         each component is an uppercase acronym of alphanumeric
         characters only, e.g. ``'DCH-IMC_BAD_CALIBRATION'`` or
         ``'DMT-SCIENCE'``.
-
-        :type: `str`
         """
         return self._tag
 
     @tag.setter
-    def tag(self, n):
-        self._tag = n
+    def tag(self, tag: str | None) -> None:
+        self._tag = tag
 
     @property
-    def version(self):
+    def version(self) -> int | None:
         """The version number of this flag.
 
         Each flag in the segment database is stored with a version
         integer, with each successive version representing a more
         accurate dataset for its known segments than any previous.
-
-        :type: `int`
         """
         return self._version
 
     @version.setter
-    def version(self, v):
-        self._version = int(v) if v is not None else None
+    def version(self, v: int | None) -> None:
+        self._version = if_not_none(int, v)
 
     @property
-    def label(self):
+    def label(self) -> str | None:
         """A human-readable label for this flag.
 
         For example: ``'Science-mode'``.
-
-        :type: `str`
         """
         return self._label
 
     @label.setter
-    def label(self, lab):
+    def label(self, lab: str | None) -> None:
         self._label = lab
 
     @property
-    def active(self):
-        """The set of segments during which this flag was
-        active.
-        """
+    def active(self) -> SegmentList:
+        """The set of segments during which this flag was active."""
         return self._active
 
     @active.setter
-    def active(self, segmentlist):
+    def active(self, segmentlist: SegmentListLike | None) -> None:
         if segmentlist is None:
             del self.active
         else:
             self._active = self._ListClass(map(self._EntryClass, segmentlist))
 
     @active.deleter
-    def active(self):
+    def active(self) -> None:
         self._active = self._ListClass()
 
     @property
-    def known(self):
-        """The set of segments during which this flag was
-        known, and its state was well defined.
-        """
+    def known(self) -> SegmentList:
+        """The segments during which this flag was known."""
         return self._known
 
     @known.setter
-    def known(self, segmentlist):
+    def known(self, segmentlist: SegmentListLike | None) -> None:
         if segmentlist is None:
             del self.known
         else:
             self._known = self._ListClass(map(self._EntryClass, segmentlist))
 
     @known.deleter
-    def known(self):
+    def known(self) -> None:
         self._known = self._ListClass()
 
     @property
-    def category(self):
-        """Veto category for this flag.
-
-        :type: `int`
-        """
+    def category(self) -> int | None:
+        """Veto category for this flag."""
         return self._category
 
     @category.setter
-    def category(self, cat):
+    def category(self, cat: int | None) -> None:
         self._category = if_not_none(int, cat)
 
     @property
-    def description(self):
-        """Description of why/how this flag was generated.
-
-        :type: `str`
-        """
+    def description(self) -> str | None:
+        """Description of why/how this flag was generated."""
         return self._description
 
     @description.setter
-    def description(self, desc):
+    def description(self, desc: str | None) -> None:
         self._description = desc
 
     @property
-    def isgood(self):
-        """Whether `active` segments mean the instrument was in a good state.
-
-        :type: `bool`
-        """
+    def isgood(self) -> bool:
+        """Whether `active` segments mean the instrument was in a good state."""
         return self._isgood
 
     @isgood.setter
-    def isgood(self, good):
+    def isgood(self, good: bool) -> None:
         self._isgood = bool(good)
 
     @property
-    def padding(self):
-        """[start, end) padding for this flag's active segments."""
+    def padding(self) -> tuple[float, float]:
+        """(start, end) padding for this flag's active segments."""
         return self._padding
 
     @padding.setter
-    def padding(self, pad):
+    def padding(self, pad: None | tuple[float | None, float | None]) -> None:
         if pad is None:
-            pad = (None, None)
-        self._padding = tuple(float(p or 0.) for p in pad)
+            self._padding = (0, 0)
+        else:
+            self._padding = (float(pad[0] or 0.), float(pad[1] or 0.))
 
     @padding.deleter
-    def padding(self):
+    def padding(self) -> None:
         self._padding = (0., 0.)
 
-    # -- read-only properties -------------------
+    # -- read-only properties --------
 
     @property
-    def texname(self):
+    def texname(self) -> str | None:
         """Name of this flag in LaTeX printable format."""
-        try:
-            return self.name.replace("_", r"\_")
-        except AttributeError:
+        if self.name is None:
             return None
+        return self.name.replace("_", r"\_")
 
     @property
-    def extent(self):
-        """The single GPS ``[start, stop)`` enclosing segment of this
-        `DataQualityFlag`.
-
-        :type: `Segment`
-        """
+    def extent(self) -> Segment:
+        """The GPS ``[start, stop)`` enclosing segment of this `DataQualityFlag`."""
         return self.known.extent()
 
     @property
-    def livetime(self):
-        """Amount of time this flag was `active`.
-
-        :type: `float`
-        """
+    def livetime(self) -> float:
+        """Amount of time this flag was `active`."""
         return abs(self.active)
 
     @property
-    def regular(self):
-        """`True` if the `active` segments are a proper subset of the `known`.
-
-        :type: `bool`
-        """
+    def regular(self) -> bool:
+        """`True` if the `active` segments are a proper subset of the `known`."""
         return abs(self.active - self.known) == 0
 
-    # -- i/o ------------------------------------
+    # -- i/o -------------------------
 
     read = UnifiedReadWriteMethod(DataQualityFlagRead)
     write = UnifiedReadWriteMethod(DataQualityFlagWrite)
 
-    # -- classmethods ---------------------------
+    # -- classmethods ----------------
 
     @classmethod
     def query_dqsegdb(
         cls,
         flag: str,
         *args: GpsLike | Segment | SegmentList,
-        host: str = DEFAULT_SEGMENT_SERVER,
+        host: str | None = DEFAULT_SEGMENT_SERVER,
         **kwargs,
-    ):
+    ) -> Self:
         """Query a DQSegDB server for a flag.
 
         Parameters
@@ -382,7 +423,7 @@ class DataQualityFlag:
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments
 
-        host : `str`
+        host : `str`, optional
             Name or URL of the DQSegDB instance to talk to.
             Defaults to :func:`dqsegdb2.utils.get_default_host`.
 
@@ -422,20 +463,21 @@ class DataQualityFlag:
                 "has been renamed `host`; this warning will become "
                 "an error in the future",
                 DeprecationWarning,
+                stacklevel=2,
             )
             host = url
 
         # parse flag
         out = cls(name=flag)
         if out.ifo is None or out.tag is None:
-            raise ValueError("Cannot parse ifo or tag (name) for flag %r"
-                             % flag)
+            msg = f"Cannot parse ifo or tag (name) for flag '{flag}'"
+            raise ValueError(msg)
 
         # process query
         for start, end in qsegs:
             # handle infinities
             if float(end) == +inf:
-                end = int(to_gps("now"))
+                end = int(to_gps("now"))  # noqa: PLW2901
 
             # query
             try:
@@ -447,8 +489,8 @@ class DataQualityFlag:
                     **kwargs,
                 )
             except HTTPError as exc:
-                if exc.code == 404:  # if not found, annotate flag name
-                    exc.msg += " [{0}]".format(flag)
+                if exc.response.status_code == http_codes.NOT_FOUND:
+                    exc.args = (exc.args[0] + f" [{flag}]",)
                 raise
 
             # read from json buffer
@@ -469,29 +511,34 @@ class DataQualityFlag:
         return out
 
     # alias for compatibility
-    query = query_dqsegdb
+    query = classmethod(query_dqsegdb)
 
     @classmethod
-    def fetch_open_data(cls, flag, start, end, **kwargs):
+    def fetch_open_data(
+        cls,
+        flag: str,
+        start: GpsLike,
+        end: GpsLike,
+        **kwargs,
+    ) -> Self:
         """Fetch Open Data timeline segments into a flag.
 
         flag : `str`
-            the name of the flag to query
+            The name of the flag to query
 
-        start : `int`, `str`
-            the GPS start time (or parseable date string) to query
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS start time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
 
-        end : `int`, `str`
-            the GPS end time (or parseable date string) to query
-
-        verbose : `bool`, optional
-            show verbose download progress, default: `False`
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS end time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
 
         timeout : `int`, optional
-            timeout for download (seconds)
+            Timeout for download (seconds).
 
         host : `str`, optional
-            URL of GWOSC host, default: ``'https://gwosc.org'``
+            URL of GWOSC host, default: ``'https://gwosc.org'``.
 
         Returns
         -------
@@ -517,36 +564,59 @@ class DataQualityFlag:
                                  [1126309877 ... 1126310417)]
                          description=None)>
         """
-        start = to_gps(start).gpsSeconds
-        end = to_gps(end).gpsSeconds
+        start = int(to_gps(start))
+        end = ceil(to_gps(end))
         known = [(start, end)]
         active = timeline.get_segments(flag, start, end, **kwargs)
-        return cls(flag.replace("_", ":", 1), known=known, active=active,
-                   label=flag)
+        return cls(
+            flag.replace("_", ":", 1),
+            known=known,
+            active=active,
+            label=flag,
+        )
 
     @classmethod
-    def from_veto_def(cls, veto):
+    def from_veto_def(
+        cls,
+        veto: ligo.lw.lsctables.VetoDef | astropy.table.Row,
+    ) -> Self:
         """Define a `DataQualityFlag` from a `VetoDef`.
 
         Parameters
         ----------
-        veto : :class:`~ligo.lw.lsctables.VetoDef`
-            veto definition to convert from
+        veto : `~ligo.lw.lsctables.VetoDef`, `~astropy.table.Row`.
+            Veto definition to convert from.
         """
-        name = "%s:%s" % (veto.ifo, veto.name)
-        try:
-            name += ":%d" % int(veto.version)
-        except TypeError:
-            pass
-        known = Segment(veto.start_time, veto.end_time or +inf)
-        pad = (veto.start_pad, veto.end_pad)
-        return cls(name=name, known=[known], category=veto.category,
-                   description=veto.comment, padding=pad)
+        # handle getting by item name (astropy) or attribute name (ligo.lw)
+        if isinstance(veto, AstropyTableRow):
+            get = veto.get
+        else:
+            def get(name, default=None):  # noqa: ANN001,ANN202
+                return getattr(veto, name, default)
 
-    # -- methods --------------------------------
+        name = f"{get('ifo')}:{get('name')}"
+        with contextlib.suppress(TypeError):
+            name += f":{int(get('version'))}"
+        known = Segment(get("start_time"), get("end_time") or +inf)
+        pad = (get("start_pad") or 0, get("end_pad") or 0)
+        return cls(
+            name=name,
+            known=[known],
+            category=get("category", None),
+            description=get("comment", None),
+            padding=pad,
+        )
 
-    def populate(self, source=DEFAULT_SEGMENT_SERVER, segments=None,
-                 pad=True, **kwargs):
+    # -- methods ---------------------
+
+    def populate(
+        self,
+        source: str | None = DEFAULT_SEGMENT_SERVER,
+        segments: SegmentList | None = None,
+        *,
+        pad: bool = True,
+        **kwargs,
+    ) -> Self:
         """Query the segment database for this flag's active segments.
 
         This method assumes all of the metadata for each flag have been
@@ -565,11 +635,11 @@ class DataQualityFlag:
         Parameters
         ----------
         source : `str`
-            source of segments for this flag. This must be
+            Source of segments for this flag. This must be
             either a URL for a segment database or a path to a file on disk.
 
         segments : `SegmentList`, optional
-            a list of segments during which to query, if not given,
+            A list of segments during which to query, if not given,
             existing known segments for this flag will be used.
 
         pad : `bool`, optional, default: `True`
@@ -590,8 +660,8 @@ class DataQualityFlag:
         tmp.populate(source=source, segments=segments, pad=pad, **kwargs)
         return tmp[self.name]
 
-    def contract(self, x):
-        """Contract each of the `active` `Segments` by ``x`` seconds.
+    def contract(self, x: float) -> SegmentList:
+        """Contract each of the ``active`` segments by ``x`` seconds.
 
         This method adds ``x`` to each segment's lower bound, and subtracts
         ``x`` from the upper bound.
@@ -602,13 +672,13 @@ class DataQualityFlag:
         Parameters
         ----------
         x : `float`
-            number of seconds by which to contract each `Segment`.
+            Number of seconds by which to contract each `Segment`.
         """
         self.active = self.active.contract(x)
         return self.active
 
-    def protract(self, x):
-        """Protract each of the `active` `Segments` by ``x`` seconds.
+    def protract(self, x: float) -> SegmentList:
+        """Protract each of the ``active`` segments by ``x`` seconds.
 
         This method subtracts ``x`` from each segment's lower bound,
         and adds ``x`` to the upper bound, while maintaining that each
@@ -620,12 +690,16 @@ class DataQualityFlag:
         Parameters
         ----------
         x : `float`
-            number of seconds by which to protact each `Segment`.
+            Number of seconds by which to protact each `Segment`.
         """
         self.active = self.active.protract(x)
         return self.active
 
-    def pad(self, *args, **kwargs):
+    def pad(
+        self,
+        *args: float,
+        inplace: bool = False,
+    ) -> Self:
         """Apply a padding to each segment in this `DataQualityFlag`.
 
         This method either takes no arguments, in which case the value of
@@ -644,52 +718,55 @@ class DataQualityFlag:
 
         Parameters
         ----------
-        start : `float`
-            padding to apply to the start of the each segment
-        end : `float`
-            padding to apply to the end of each segment
-        inplace : `bool`, optional, default: `False`
-            modify this object in-place, default is `False`, i.e. return
-            a copy of the original object with padded segments
+        args : `float`, optional
+            Two floats giving the start and end padding to apply.
+            If not given, `self.padding` will be used.
+
+        inplace : `bool`, optional
+            Modify this object in-place.
+            Default is `False`, i.e. return a copy of the original
+            object with padded segments.
 
         Returns
         -------
         paddedflag : `DataQualityFlag`
-            a view of the modified flag
+            A view of the modified flag.
         """
         if not args:
             start, end = self.padding
         else:
             start, end = args
 
-        if kwargs.pop("inplace", False):
+        if inplace:
             new = self
         else:
             new = self.copy()
-        if kwargs:
-            raise TypeError("unexpected keyword argument %r"
-                            % list(kwargs.keys())[0])
-        new.known = [(s[0]+start, s[1]+end) for s in self.known]
-        new.active = [(s[0]+start, s[1]+end) for s in self.active]
+
+        def _pad(s):
+            return type(s)(s[0]+start, s[1]+end)
+
+        new.known = type(self.known)(map(_pad, self.known))
+        new.active = type(self.active)(map(_pad, self.active))
+
         return new
 
-    def round(self, contract=False):
+    def round(self, *, contract: bool = False) -> Self:
         """Round this flag to integer segments.
 
         Parameters
         ----------
         contract : `bool`, optional
-            if `False` (default) expand each segment to the containing
+            If `False` (default) expand each segment to the containing
             integer boundaries, otherwise contract each segment to the
-            contained boundaries
+            contained boundaries.
 
         Returns
         -------
         roundedflag : `DataQualityFlag`
             A copy of the original flag with the `active` and `known` segments
-            padded out to integer boundaries.
+            padded out to integer boundaries..
         """
-        def _round(seg):
+        def _round(seg: Segment) -> Segment:
             if contract:  # round inwards
                 a = type(seg[0])(ceil(seg[0]))
                 b = type(seg[1])(floor(seg[1]))
@@ -705,7 +782,7 @@ class DataQualityFlag:
         new.known = type(new.known)(map(_round, new.known))
         return new.coalesce()
 
-    def coalesce(self):
+    def coalesce(self) -> Self:
         """Coalesce the segments for this flag.
 
         This method does two things:
@@ -717,173 +794,197 @@ class DataQualityFlag:
 
         .. note::
 
-            this operations is performed in-place.
+            This operation is performed in-place.
 
         Returns
         -------
         self
-            a view of this flag, not a copy.
+            A view of this flag, not a copy.
         """
         self.known = self.known.coalesce()
         self.active = self.active.coalesce()
         self.active = (self.known & self.active).coalesce()
         return self
 
-    def __repr__(self):
-        prefix = "<{}(".format(type(self).__name__)
+    def __repr__(self) -> str:
+        """Return a representation of this flag."""
+        prefix = f"<{type(self).__name__}("
         suffix = ")>"
         indent = " " * len(prefix)
 
         # format segment lists
-        known = str(self.known).replace(
-            "\n",
-            "\n{}      ".format(indent),
-        ).split("\n")
-        if len(known) > 10:  # use ellipsis
-            known = known[:3] + ["{}      ...".format(indent)] + known[-3:]
-        active = str(self.active).replace(
-            "\n",
-            "\n{}       ".format(indent),
-        ).split("\n")
-        if len(active) > 10:  # use ellipsis
-            active = active[:3] + ["{}      ...".format(indent)] + active[-3:]
+        parts = {}
+        for attr in ("known", "active"):
+            parts[attr] = rep = textwrap.indent(
+                str(getattr(self, attr)),
+                f"{indent}      ",
+            ).strip().splitlines()
+            if len(rep) > 10:  # use ellipsis
+                rep = rep[:3] + [f"{indent}      ..."] + rep[-3:]
 
         # print the thing
         return "".join((
             prefix,
-            "\n{}".format(indent).join([
-                "{},".format(repr(self.name)),
-                "known={}".format("\n".join(known)),
-                "active={}".format("\n".join(active)),
-                "description={}".format(repr(self.description)),
+            f"{os.linesep}{indent}".join([
+                f"'{self.name}',",
+                f"known={os.linesep.join(parts['known'])}",
+                f"active={os.linesep.join(parts['active'])}",
+                f"description='{self.description}'",
             ]),
             suffix,
         ))
 
-    def copy(self):
+    def copy(self) -> Self:
         """Build an exact copy of this flag.
 
         Returns
         -------
-        flag2 : `DataQualityFlag`
-            a copy of the original flag, but with a fresh memory address.
+        flag : `DataQualityFlag`
+            A deepcopy of the original flag.
         """
         return deepcopy(self)
 
-    def plot(self, figsize=(12, 4), xscale="auto-gps", **kwargs):
+    def plot(
+        self,
+        figsize: tuple[float, float] = (12, 4),
+        xscale: str = "auto-gps",
+        **kwargs,
+    ) -> Plot:
         """Plot this flag on a segments projection.
 
         Parameters
         ----------
-        **kwargs
-            all keyword arguments are passed to the
+        figsize : `tuple` of `float`
+            The size (width, height) of the figure to create.
+
+        xscale: `str`
+            The scaling to use for the X-axis (time axis).
+            Default is ``"auto-gps"`` to dynamically choose the right scaling
+            based on how much time is covered by the visible span.
+
+        kwargs
+            Other keyword arguments are passed to the
             :class:`~gwpy.plot.Plot` constructor.
 
         Returns
         -------
         figure : `~matplotlib.figure.Figure`
-            the newly created figure, with populated Axes.
+            The newly created figure, with populated Axes.
 
-        See also
+        See Also
         --------
         matplotlib.pyplot.figure
-            for documentation of keyword arguments used to create the
-            figure
+            For documentation of keyword arguments used to create the figure.
+
         matplotlib.figure.Figure.add_subplot
-            for documentation of keyword arguments used to create the
-            axes
+            For documentation of keyword arguments used to create the axes
+
         gwpy.plot.SegmentAxes.plot_segmentlist
-            for documentation of keyword arguments used in rendering the data
+            For documentation of keyword arguments used in rendering the data.
         """
         from matplotlib import rcParams
+
         from ..plot import Plot
 
-        if self.label:
-            kwargs.setdefault("label", self.label)
-        elif rcParams["text.usetex"]:
-            kwargs.setdefault("label", self.texname)
-        else:
-            kwargs.setdefault("label", self.name)
+        # get the right default label
+        if "label" not in kwargs:
+            if self.label:
+                kwargs["label"] =  self.label
+            elif rcParams["text.usetex"]:
+                kwargs["label"] =  self.texname
+            else:
+                kwargs["label"] =  self.name
 
-        kwargs.update(figsize=figsize, xscale=xscale)
-        return Plot(self, projection="segments", **kwargs)
+        return Plot(
+            self,
+            projection="segments",
+            figsize=figsize,
+            xscale=xscale,
+            **kwargs,
+        )
 
-    def _parse_name(self, name):
-        """Internal method to parse a `string` name into constituent
-        `ifo, `name` and `version` components.
+    def _parse_name(
+        self,
+        name: str | None,
+    ) -> tuple[str | None, str | None, str | None]:
+        """Parse a flag name and set properties of this flag.
 
         Parameters
         ----------
         name : `str`, `None`
-            the full name of a `DataQualityFlag` to parse, e.g.
-            ``'H1:DMT-SCIENCE:1'``, or `None` to set all components
-            to `None`
+            The full name of a `DataQualityFlag` to parse, e.g.
+            ``"H1:DMT-SCIENCE:1"``, or `None` to set all components
+            to `None`.
 
         Returns
         -------
-        (ifo, name, version)
-            A tuple of component string parts
+        ifo : `str` or `None`
+            The IFO prefix for this flag.
+
+        tag : `str` or `None`
+            The name tag for this flag.
+
+        version : `int` or `None`
+            The version number for this flag.
 
         Raises
         ------
-        `ValueError`
+        ValueError
             If the input ``name`` cannot be parsed into
             {ifo}:{tag}:{version} format.
         """
-        if isinstance(name, bytes):
-            name = name.decode("utf-8")
         if name is None:
             self.ifo = None
             self.tag = None
             self.version = None
-        elif re_IFO_TAG_VERSION.match(name):
-            match = re_IFO_TAG_VERSION.match(name).groupdict()
+        elif match := IFO_TAG_VERSION_REGEX.match(name):
             self.ifo = match["ifo"]
             self.tag = match["tag"]
             self.version = int(match["version"])
-        elif re_IFO_TAG.match(name):
-            match = re_IFO_TAG.match(name).groupdict()
+        elif match := IFO_TAG_REGEX.match(name):
             self.ifo = match["ifo"]
             self.tag = match["tag"]
             self.version = None
-        elif re_TAG_VERSION.match(name):
-            match = re_TAG_VERSION.match(name).groupdict()
+        elif match := TAG_VERSION_REGEX.match(name):
             self.ifo = None
             self.tag = match["tag"]
             self.version = int(match["version"])
         else:
-            raise ValueError("No flag name structure detected in '%s', flags "
-                             "should be named as '{ifo}:{tag}:{version}'. "
-                             "For arbitrary strings, use the "
-                             "`DataQualityFlag.label` attribute" % name)
+            msg = (
+                f"no flag name structure detected in '{name}', flags "
+                "should be named as '{ifo}:{tag}:{version}'; "
+                "for arbitrary strings, use the "
+                "`DataQualityFlag.label` attribute"
+            )
+            raise ValueError(msg)
         return self.ifo, self.tag, self.version
 
-    def __and__(self, other):
+    def __and__(self, other: Self) -> Self:
         """Find the intersection of this one and ``other``."""
         return self.copy().__iand__(other)
 
-    def __iand__(self, other):
+    def __iand__(self, other: Self) -> Self:
         """Intersect this flag with ``other`` in-place."""
         self.known &= other.known
         self.active &= other.active
         return self
 
-    def __sub__(self, other):
+    def __sub__(self, other: Self) -> Self:
         """Find the difference between this flag and another."""
         return self.copy().__isub__(other)
 
-    def __isub__(self, other):
+    def __isub__(self, other: Self) -> Self:
         """Subtract the ``other`` `DataQualityFlag` from this one in-place."""
         self.known &= other.known
         self.active -= other.active
         self.active &= self.known
         return self
 
-    def __or__(self, other):
+    def __or__(self, other: Self) -> Self:
         """Find the union of this flag and ``other``."""
         return self.copy().__ior__(other)
 
-    def __ior__(self, other):
+    def __ior__(self, other: Self) -> Self:
         """Add the ``other`` `DataQualityFlag` to this one in-place."""
         self.known |= other.known
         self.active |= other.active
@@ -892,48 +993,47 @@ class DataQualityFlag:
     __add__ = __or__
     __iadd__ = __ior__
 
-    def __xor__(self, other):
+    def __xor__(self, other: Self) -> Self:
         """Find the exclusive OR of this one and ``other``."""
         return self.copy().__ixor__(other)
 
-    def __ixor__(self, other):
+    def __ixor__(self, other: Self) -> Self:
         """Exclusive OR this flag with ``other`` in-place."""
         self.known &= other.known
         self.active ^= other.active
         return self
 
-    def __invert__(self):
+    def __invert__(self) -> Self:
+        """Return the logical inverse of this flag."""
         new = self.copy()
         new.active = ~self.active
         new.active &= new.known
         return new
 
 
-class DataQualityDict(OrderedDict):
-    """An `~collections.OrderedDict` of (key, `DataQualityFlag`) pairs.
+class DataQualityDict(dict):
+    """An `dict` of (key, `DataQualityFlag`) pairs."""
 
-    Since the `DataQualityDict` is an `OrderedDict`, all iterations over
-    its elements retain the order in which they were inserted.
-    """
-    _EntryClass = DataQualityFlag
+    _EntryClass: type[DataQualityFlag] = DataQualityFlag
 
-    # -- i/o ------------------------------------
+    # -- i/o -------------------------
 
     read = UnifiedReadWriteMethod(DataQualityDictRead)
     write = UnifiedReadWriteMethod(DataQualityDictWrite)
 
-    # -- classmethods ---------------------------
+    # -- classmethods ----------------
 
     @classmethod
+    @_check_on_error
     def query_dqsegdb(
         cls,
         flags: list[str],
         *args: GpsLike | Segment | SegmentList,
-        host: str = DEFAULT_SEGMENT_SERVER,
+        host: str | None = DEFAULT_SEGMENT_SERVER,
         on_error: str = "raise",
         parallel: int = 10,
         **kwargs,
-    ):
+    ) -> Self:
         """Query the advanced LIGO DQSegDB for a list of flags.
 
         Parameters
@@ -946,18 +1046,18 @@ class DataQualityDict(OrderedDict):
             GPS [start, stop) interval, or a `SegmentList`
             defining a number of summary segments.
 
-        host : `str`
+        host : `str`, optional
             Name or URL of the DQSegDB instance to talk to.
             Defaults to :func:`dqsegdb2.utils.get_default_host`.
 
-        on_error : `str`
+        on_error : `str`, optional
             how to handle an error querying for one flag, one of
 
             - `'raise'` (default): raise the Exception
             - `'warn'`: print a warning
             - `'ignore'`: move onto the next flag as if nothing happened
 
-        parallel : `int`
+        parallel : `int`, optional
             Maximum number of threads to use for parallel connections to
             the DQSegDB host.
 
@@ -986,31 +1086,25 @@ class DataQualityDict(OrderedDict):
 
         >>> DataQualityDict.query_dqsegdb(["X1:OBSERVING:1", "Y1:OBSERVING:1"], intervals)
         """  # noqa: E501
-        # check on_error flag
-        if on_error not in {"raise", "warn", "ignore"}:
-            raise ValueError(
-                "on_error must be one of 'raise', 'warn', or 'ignore', "
-                f"not '{on_error}'",
-            )
-
         # parse segments
         qsegs = _parse_query_segments(args, cls.query_dqsegdb)
 
         # thread function
-        def _query(flag):
+        def _query(flag: str) -> DataQualityFlag | None:
             try:
-                return cls._EntryClass.query(
+                return cls._EntryClass.query_dqsegdb(
                     flag,
                     qsegs,
                     host=host,
                     **kwargs,
                 )
             except Exception as exc:
-                exc.args = f"{exc} [{flag}]",
+                exc.args = (f"{exc} [{flag}]",)
                 if on_error == "raise":
                     raise
                 if on_error == "warn":
-                    warnings.warn(str(exc))
+                    warnings.warn(str(exc), stacklevel=2)
+                return None
 
         # execute queries in threads
         out = cls()
@@ -1025,30 +1119,44 @@ class DataQualityDict(OrderedDict):
         return out
 
     # alias for compatibility
-    query = query_dqsegdb
+    query = classmethod(query_dqsegdb)
 
     @classmethod
-    def from_veto_definer_file(cls, fp, start=None, end=None, ifo=None,
-                               format="ligolw"):
+    def from_veto_definer_file(
+        cls,
+        source: str,
+        start: GpsLike | None = None,
+        end: GpsLike | None = None,
+        ifo: str | None = None,
+        **read_kw,
+    ) -> Self:
         """Read a `DataQualityDict` from a LIGO_LW XML VetoDefinerTable.
 
         Parameters
         ----------
-        fp : `str`
-            path of veto definer file to read
-        start : `~gwpy.time.LIGOTimeGPS`, `int`, optional
-            GPS start time at which to restrict returned flags
-        end : `~gwpy.time.LIGOTimeGPS`, `int`, optional
-            GPS end time at which to restrict returned flags
+        source : `str`, `Path`, `file`
+            Path or URL of veto definer file to read, or open file.
+
+        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS start time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
+
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+            GPS end time of required data,
+            any input parseable by `~gwpy.time.to_gps` is fine
+
         ifo : `str`, optional
-            interferometer prefix whose flags you want to read
-        format : `str`, optional
-            format of file to read, currently only 'ligolw' is supported
+            Interferometer prefix whose flags you want to read.
+            Default is `None` (read all flags).
+
+        read_kw
+            Other keyword arguments are passed to
+            `~astropy.table.Table.read` when reading the veto definer file.
 
         Returns
         -------
         flags : `DataQualityDict`
-            a `DataQualityDict` of flags parsed from the `veto_def_table`
+            A `DataQualityDict` of flags parsed from the `veto_def_table`
             of the input file.
 
         Notes
@@ -1059,73 +1167,87 @@ class DataQualityDict(OrderedDict):
 
         >>> flags = DataQualityDict.from_veto_definer_file('/path/to/file.xml')
         >>> flags.populate()
-
         """
-        if format != "ligolw":
-            raise NotImplementedError("Reading veto definer from non-ligolw "
-                                      "format file is not currently "
-                                      "supported")
+        from ..table import Table
 
-        # read veto definer file
-        with get_readable_fileobj(fp, show_progress=False) as fobj:
-            from ..io.ligolw import read_table as read_ligolw_table
-            veto_def_table = read_ligolw_table(fobj, "veto_definer")
+        # read veto definer file as a table
+        read_kw.setdefault("tablename", "veto_definer")
+        read_kw.setdefault("columns", [
+            "ifo",
+            "name",
+            "version",
+            "category",
+            "comment",
+            "start_time",
+            "start_pad",
+            "end_time",
+            "end_pad",
+        ])
+        veto_def_table = Table.read(source, **read_kw)
 
-        if start is not None:
-            start = to_gps(start)
-        if end is not None:
-            end = to_gps(end)
+        # handle GPS types
+        startgps = None if start is None else to_gps(start)
+        endgps = None if end is None else to_gps(end)
+
+        def _keep(row: astropy.table.Row) -> bool:
+            """Return `True` if this row is relevant."""
+            if ifo and row["ifo"] != ifo:
+                return False
+            if startgps and 0 < row["end_time"] <= startgps:
+                return False
+            return not (endgps and row["start_time"] >= endgps)
 
         # parse flag definitions
         out = cls()
-        for row in veto_def_table:
-            if ifo and row.ifo != ifo:
-                continue
-            if start and 0 < row.end_time <= start:
-                continue
-            elif start:
-                row.start_time = max(row.start_time, start)
-            if end and row.start_time >= end:
-                continue
-            elif end and not row.end_time:
-                row.end_time = end
-            elif end:
-                row.end_time = min(row.end_time, end)
+        for row in filter(_keep, veto_def_table):
+            # pin the times
+            if startgps:
+                row["start_time"] = max(row["start_time"], startgps)
+            if endgps and not row["end_time"]:
+                row["end_time"] = endgps
+            elif endgps:
+                row["end_time"] = min(row["end_time"], endgps)
             flag = DataQualityFlag.from_veto_def(row)
             if flag.name in out:
-                out[flag.name].known.extend(flag.known)
-                out[flag.name].known.coalesce()
+                out[flag.name] |= flag
             else:
                 out[flag.name] = flag
         return out
 
     @classmethod
-    def from_ligolw_tables(cls, segmentdeftable, segmentsumtable,
-                           segmenttable, names=None, gpstype=LIGOTimeGPS,
-                           on_missing="error"):
+    def from_ligolw_tables(
+        cls,
+        segmentdeftable: ligo.lw.lsctables.SegmentDefTable,
+        segmentsumtable: ligo.lw.lsctables.SegmentSumTable,
+        segmenttable: ligo.lw.lsctables.SegmentTable,
+        names: list[str] | None = None,
+        gpstype: type[SupportsFloat] | Callable[[float], SupportsFloat] = LIGOTimeGPS,
+        on_missing: str = "error",
+    ) -> Self:
         """Build a `DataQualityDict` from a set of LIGO_LW segment tables.
 
         Parameters
         ----------
         segmentdeftable : :class:`~ligo.lw.lsctables.SegmentDefTable`
-            the ``segment_definer`` table to read
+            The ``segment_definer`` table to read.
 
         segmentsumtable : :class:`~ligo.lw.lsctables.SegmentSumTable`
-            the ``segment_summary`` table to read
+            The ``segment_summary`` table to read.
 
         segmenttable : :class:`~ligo.lw.lsctables.SegmentTable`
-            the ``segment`` table to read
+            The ``segment`` table to read.
 
         names : `list` of `str`, optional
-            a list of flag names to read, defaults to returning all
+            A list of flag names to read.
+            Default is to read all names.
 
         gpstype : `type`, `callable`, optional
-            class to use for GPS times in returned objects, can be a function
-            to convert GPS time to something else, default is
-            `~gwpy.time.LIGOTimeGPS`
+            Class to use for GPS times in returned objects, can be a function
+            to convert GPS time to something else.
+            Default is `~gwpy.time.LIGOTimeGPS`.
 
         on_missing : `str`, optional
-            action to take when a one or more ``names`` are not found in
+            Action to take when a one or more ``names`` are not found in
             the ``segment_definer`` table, one of
 
             - ``'ignore'`` : do nothing
@@ -1135,12 +1257,10 @@ class DataQualityDict(OrderedDict):
         Returns
         -------
         dqdict : `DataQualityDict`
-            a dict of `DataQualityFlag` objects populated from the LIGO_LW
-            tables
+            A dict of `DataQualityFlag` objects populated from the LIGO_LW tables.
         """
         out = cls()
-
-        id_ = dict()  # need to record relative IDs from LIGO_LW
+        id_: dict[str, list[int]] = {}  # need to record relative IDs from LIGO_LW
 
         # read segment definers and generate DataQualityFlag object
         for row in segmentdeftable:
@@ -1148,28 +1268,32 @@ class DataQualityDict(OrderedDict):
             ifo = "".join(ifos) if ifos else None
             tag = row.name
             version = row.version
-            name = ":".join([str(k) for k in (ifo, tag, version) if
-                             k is not None])
+            name = ":".join(
+                str(k) for k in (ifo, tag, version) if k is not None
+            )
             if names is None or name in names:
                 out[name] = DataQualityFlag(name)
                 thisid = int(row.segment_def_id)
                 try:
                     id_[name].append(thisid)
-                except (AttributeError, KeyError):
+                except KeyError:
                     id_[name] = [thisid]
 
         # verify all requested flags were found
         for flag in names or []:
             if flag not in out and on_missing != "ignore":
-                msg = ("no segment definition found for flag={0!r} in "
-                       "file".format(flag))
+                msg = f"no segment definition found for flag='{flag}' in file"
                 if on_missing == "warn":
-                    warnings.warn(msg)
+                    warnings.warn(msg, stacklevel=2)
                 else:
                     raise ValueError(msg)
 
-        # parse a table into the target DataQualityDict
-        def _parse_segments(table, listattr):
+
+        def _parse_segments(
+            table: ligo.lw.ligolw.Table,
+            listattr: str,
+        ) -> None:
+            """Parse a table into the target DataQualityDict."""
             # handle missing *_ns columns in LIGO_LW XML
             # (LIGO DMT doesn't/didn't write them)
             if "start_time_ns" in table.columnnames:
@@ -1194,37 +1318,46 @@ class DataQualityDict(OrderedDict):
 
         return out
 
-    def to_ligolw_tables(self, **attrs):
+    def to_ligolw_tables(
+        self,
+        **attrs,
+    ) -> tuple[
+        ligo.lw.lsctables.SegmentDefTable,
+        ligo.lw.lsctables.SegmentSumTable,
+        ligo.lw.lsctables.SegmentTable,
+    ]:
         """Convert this `DataQualityDict` into a trio of LIGO_LW segment tables.
 
         Parameters
         ----------
-        **attrs
-            other attributes to add to all rows in all tables
-            (e.g. ``'process_id'``)
+        attrs
+            Other attributes to add to all rows in all tables
+            (e.g. ``'process_id'``).
 
         Returns
         -------
         segmentdeftable : :class:`~ligo.lw.lsctables.SegmentDefTable`
-            the ``segment_definer`` table
+            The ``segment_definer`` table.
 
         segmentsumtable : :class:`~ligo.lw.lsctables.SegmentSumTable`
-            the ``segment_summary`` table
+            The ``segment_summary`` table.
 
         segmenttable : :class:`~ligo.lw.lsctables.SegmentTable`
-            the ``segment`` table
+            The ``segment`` table.
         """
         from ligo.lw import lsctables
+
         from ..io.ligolw import to_table_type as to_ligolw_table_type
 
-        SegmentDefTable = lsctables.SegmentDefTable
-        SegmentSumTable = lsctables.SegmentSumTable
-        SegmentTable = lsctables.SegmentTable
-        segdeftab = lsctables.New(SegmentDefTable)
-        segsumtab = lsctables.New(SegmentSumTable)
-        segtab = lsctables.New(SegmentTable)
+        segdeftab_class = lsctables.SegmentDefTable
+        segsumtab_class = lsctables.SegmentSumTable
+        segtab_class = lsctables.SegmentTable
+        segdeftab = lsctables.New(segdeftab_class)
+        segsumtab = lsctables.New(segsumtab_class)
+        segtab = lsctables.New(segtab_class)
 
-        def _write_attrs(table, row):
+        def _write_attrs(table: ligo.lw.ligolw.Table, row: ligo.lw.ligolw.Row) -> None:
+            """Write custom attributes to this row."""
             for key, val in attrs.items():
                 setattr(row, key, to_ligolw_table_type(val, table, key))
 
@@ -1238,8 +1371,8 @@ class DataQualityDict(OrderedDict):
             segdef.name = flag.tag
             segdef.version = flag.version
             segdef.comment = flag.description
-            segdef.insertion_time = to_gps(datetime.datetime.now()).gpsSeconds
-            segdef.segment_def_id = SegmentDefTable.get_next_id()
+            segdef.insertion_time = to_gps("now").gpsSeconds
+            segdef.segment_def_id = segdeftab_class.get_next_id()
             _write_attrs(segdeftab, segdef)
             segdeftab.append(segdef)
 
@@ -1251,7 +1384,7 @@ class DataQualityDict(OrderedDict):
                 segsum.segment_def_id = segdef.segment_def_id
                 segsum.segment = map(LIGOTimeGPS, vseg)
                 segsum.comment = None
-                segsum.segment_sum_id = SegmentSumTable.get_next_id()
+                segsum.segment_sum_id = segsumtab_class.get_next_id()
                 _write_attrs(segsumtab, segsum)
                 segsumtab.append(segsum)
 
@@ -1262,15 +1395,15 @@ class DataQualityDict(OrderedDict):
                     setattr(seg, col, None)
                 seg.segment_def_id = segdef.segment_def_id
                 seg.segment = map(LIGOTimeGPS, aseg)
-                seg.segment_id = SegmentTable.get_next_id()
+                seg.segment_id = segtab_class.get_next_id()
                 _write_attrs(segtab, seg)
                 segtab.append(seg)
 
         return segdeftab, segsumtab, segtab
 
-    # -- methods --------------------------------
+    # -- methods ---------------------
 
-    def coalesce(self):
+    def coalesce(self) -> Self:
         """Coalesce all segments lists in this `DataQualityDict`.
 
         **This method modifies this object in-place.**
@@ -1278,20 +1411,22 @@ class DataQualityDict(OrderedDict):
         Returns
         -------
         self
-            a view of this flag, not a copy.
+            A view of this flag, not a copy.
         """
         for flag in self:
             self[flag].coalesce()
         return self
 
+    @_check_on_error
     def populate(
         self,
-        source=DEFAULT_SEGMENT_SERVER,
-        segments=None,
-        pad=True,
-        on_error="raise",
+        source: str | None = DEFAULT_SEGMENT_SERVER,
+        segments: SegmentList | None = None,
+        *,
+        pad: bool = True,
+        on_error: str = "raise",
         **kwargs,
-    ):
+    ) -> Self:
         """Query the segment database for each flag's active segments.
 
         This method assumes all of the metadata for each flag have been
@@ -1328,7 +1463,7 @@ class DataQualityDict(OrderedDict):
             - `'warn'`: print a warning
             - `'ignore'`: move onto the next flag as if nothing happened
 
-        **kwargs
+        kwargs
             Any other keyword arguments to be passed to
             :meth:`DataQualityFlag.query` or :meth:`DataQualityFlag.read`.
 
@@ -1337,54 +1472,54 @@ class DataQualityDict(OrderedDict):
         self : `DataQualityDict`
             A reference to the modified DataQualityDict
         """
-        # check on_error flag
-        if on_error not in {"raise", "warn", "ignore"}:
-            raise ValueError(
-                "on_error must be one of 'raise', 'warn', or 'ignore', "
-                f"not '{on_error}'",
-            )
-
         # format source
-        source = urlparse(source)
+        url = urlparse(source)
+        # query DQSegDB if the URL is just a hostname
+        use_dqsegdb = bool(url.netloc and url.path in ("", "/"))
 
-        # perform query for all segments
-        if source.netloc and segments is not None:
+        # if given the segments to use, query DQSegDB for everthing now
+        if not use_dqsegdb:
+            tmp = type(self).read(source, **kwargs)
+        elif segments is not None:
             segments = SegmentList(map(Segment, segments))
             tmp = type(self).query_dqsegdb(
                 self.keys(),
                 segments,
-                host=source.geturl(),
+                host=source,
                 on_error=on_error,
                 **kwargs,
             )
-        elif not source.netloc:
-            tmp = type(self).read(source.geturl(), **kwargs)
+
         # apply padding and wrap to given known segments
         for key in self:
-            if segments is None and source.netloc:
+            if use_dqsegdb and segments is None:
+                # get segments for this flag now
                 try:
-                    tmp = {key: self[key].query(
+                    tmp = {key: self[key].query_dqsegdb(
                         self[key].name,
                         self[key].known,
-                        host=source.geturl(),
+                        host=source,
                         **kwargs,
                     )}
-                except URLError as exc:
+                except RequestException as exc:
                     if on_error == "raise":
                         raise
                     if on_error == "warn":
-                        warnings.warn(f"Error querying for '{key}': {exc}")
+                        warnings.warn(
+                            f"Error querying for '{key}': {exc}",
+                            stacklevel=2,
+                        )
                     continue
             self[key].known &= tmp[key].known
             self[key].active = tmp[key].active
             if pad:
-                self[key] = self[key].pad(inplace=True)
+                self[key] = self[key].pad(inplace=True)  # noqa: PD002
                 if segments is not None:
                     self[key].known &= segments
                     self[key].active &= segments
         return self
 
-    def copy(self, deep=False):
+    def copy(self, *, deep: bool = False) -> Self:
         """Build a copy of this dictionary.
 
         Parameters
@@ -1400,9 +1535,10 @@ class DataQualityDict(OrderedDict):
         """
         if deep:
             return deepcopy(self)
-        return super().copy()
+        return shallowcopy(self)
 
-    def __iand__(self, other):
+    def __iand__(self, other: Self) -> Self:
+        """Intersect this dict with ``other`` in-place."""
         for key, value in other.items():
             if key in self:
                 self[key] &= value
@@ -1410,7 +1546,8 @@ class DataQualityDict(OrderedDict):
                 self[key] = self._EntryClass()
         return self
 
-    def __and__(self, other):
+    def __and__(self, other: Self) -> Self:
+        """Find the intersection of this dict and ``other``."""
         if (
             sum(len(s.active) for s in self.values())
             <= sum(len(s.active) for s in other.values())
@@ -1418,7 +1555,8 @@ class DataQualityDict(OrderedDict):
             return self.copy(deep=True).__iand__(other)
         return other.copy(deep=True).__iand__(self)
 
-    def __ior__(self, other):
+    def __ior__(self, other: Self) -> Self:
+        """Add the ``other`` `DataQualityDict` to this one in-place."""
         for key, value in other.items():
             if key in self:
                 self[key] |= value
@@ -1426,7 +1564,8 @@ class DataQualityDict(OrderedDict):
                 self[key] = shallowcopy(value)
         return self
 
-    def __or__(self, other):
+    def __or__(self, other: Self) -> Self:
+        """Find the union of this dict and ``other``."""
         if (
             sum(len(s.active) for s in self.values())
             >= sum(len(s.active) for s in other.values())
@@ -1437,31 +1576,36 @@ class DataQualityDict(OrderedDict):
     __iadd__ = __ior__
     __add__ = __or__
 
-    def __isub__(self, other):
+    def __isub__(self, other: Self) -> Self:
+        """Subtract the ``other`` `DataQualityDict` from this one in-place."""
         for key, value in other.items():
             if key in self:
                 self[key] -= value
         return self
 
-    def __sub__(self, other):
+    def __sub__(self, other: Self) -> Self:
+        """Find the difference between this dict and another."""
         return self.copy(deep=True).__isub__(other)
 
-    def __ixor__(self, other):
+    def __ixor__(self, other: Self) -> Self:
+        """Exclusive OR this dict with ``other`` in-place."""
         for key, value in other.items():
             if key in self:
                 self[key] ^= value
         return self
 
-    def __xor__(self, other):
+    def __xor__(self, other: Self) -> Self:
+        """Find the exclusive OR of this dict and ``other``."""
         return self.copy(deep=True).__ixor__(other)
 
-    def __invert__(self):
+    def __invert__(self) -> Self:
+        """Return the logical inverse of this dict."""
         new = self.copy(deep=True)
         for key, value in new.items():
             new[key] = ~value
         return new
 
-    def union(self):
+    def union(self) -> DataQualityFlag:
         """Return the union of all flags in this dict.
 
         Returns
@@ -1474,7 +1618,7 @@ class DataQualityDict(OrderedDict):
         usegs.name = " | ".join(self.keys())
         return usegs
 
-    def intersection(self):
+    def intersection(self) -> DataQualityFlag:
         """Return the intersection of all flags in this dict.
 
         Returns
@@ -1487,7 +1631,11 @@ class DataQualityDict(OrderedDict):
         isegs.name = " & ".join(self.keys())
         return isegs
 
-    def plot(self, label="key", **kwargs):
+    def plot(
+        self,
+        label: str = "key",
+        **kwargs,
+    ) -> Plot:
         """Plot this dict on a segments projection.
 
         Parameters
@@ -1502,7 +1650,7 @@ class DataQualityDict(OrderedDict):
             If anything else, that fixed label will be used for all lines.
 
         kwargs
-            all keyword arguments are passed to the
+            All keyword arguments are passed to the
             :class:`~gwpy.plot.Plot` constructor.
 
         Returns
@@ -1510,16 +1658,16 @@ class DataQualityDict(OrderedDict):
         figure : `~matplotlib.figure.Figure`
             the newly created figure, with populated Axes.
 
-        See also
+        See Also
         --------
         matplotlib.pyplot.figure
-            for documentation of keyword arguments used to create the
-            figure
+            For documentation of keyword arguments used to create the figure.
+
         matplotlib.figure.Figure.add_subplot
-            for documentation of keyword arguments used to create the
-            axes
+            For documentation of keyword arguments used to create the axes.
+
         gwpy.plot.SegmentAxes.plot_segmentlist
-            for documentation of keyword arguments used in rendering the data
+            For documentation of keyword arguments used in rendering the data.
         """
         # make plot
         from ..plot import Plot
