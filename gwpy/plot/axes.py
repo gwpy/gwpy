@@ -501,9 +501,12 @@ class Axes(_Axes):
 
         # build collection
         cmap = kwargs.pop("cmap", rcParams["image.cmap"])
-        coll = PolyCollection((_poly(*tile) for tile in zip(x, y, w, h)),
-                              edgecolors=edgecolors, linewidth=linewidth,
-                              **kwargs)
+        coll = PolyCollection(
+            (_poly(*tile) for tile in zip(x, y, w, h, strict=True)),
+            edgecolors=edgecolors,
+            linewidth=linewidth,
+            **kwargs,
+        )
         if color is not None:
             coll.set_array(color)
             coll.set_cmap(cmap)
