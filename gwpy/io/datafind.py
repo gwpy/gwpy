@@ -413,7 +413,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     _rank_types(match)
 
     # and format as a dict for each channel
-    output = {key: list(list(zip(*match[key]))[0]) for key in match}
+    output = {key: list(list(zip(*match[key], strict=True))[0]) for key in match}
     if not return_all:  # reduce the list-of-one to a single element
         output = {key: val[0] for key, val in output.items()}
 

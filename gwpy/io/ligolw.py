@@ -140,6 +140,7 @@ def strip_ilwdchar(_ContentHandler):
                     for pytype, colname in zip(
                         parent.columnpytypes,
                         parent.columnnames,
+                        strict=True,
                     )
                 ])
             return result

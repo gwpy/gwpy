@@ -96,7 +96,7 @@ def read_multi(flatten, cls, source, *args, **kwargs):
             raise exc
 
     # return combined object
-    _, out = zip(*output)
+    _, out = zip(*output, strict=True)
     return flatten(out)
 
 

@@ -771,7 +771,7 @@ def get_availability(
 
     # map to segment types
     out = SegmentListDict()
-    for name, result in zip(channels, result):
+    for name, result in zip(channels, result, strict=True):
         out[name] = SegmentList([
             Segment(s.gps_start, s.gps_stop)
             for s in result.simple_list()
