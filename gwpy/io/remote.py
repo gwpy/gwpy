@@ -35,7 +35,7 @@ from ..utils.env import bool_env
 
 def open_remote_file(
     url: str,
-    *args,
+    *,
     cache: bool | None = None,
     **kwargs,
 ) -> typing.BinaryIO:
@@ -59,7 +59,7 @@ def open_remote_file(
         Default is `True` if the ``GWPY_CACHE`` environment variable
         is set to something 'truthy'.
 
-    args, kwargs
+    kwargs
         All other positional and keyword arguments are passed directly
         to `astropy.utils.data.get_readable_fileobj`.
 
