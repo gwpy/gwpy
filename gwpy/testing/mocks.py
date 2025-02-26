@@ -173,15 +173,19 @@ def nds2_connection(
         names: list[str],
     ) -> nds2.availability_list_type:
         out = []
+        match = set()
         for buff in NdsConnection._buffers:
             name = "{0.name},{0.type}".format(Channel.from_nds2(buff.channel))
             if name not in names:
-                segs = []
-            else:
-                start = buff.gps_seconds + buff.gps_nanoseconds * 1e-9
-                end = start + buff.length / buff.sample_rate
-                segs = [(start, end)]
+                continue
+            start = buff.gps_seconds + buff.gps_nanoseconds * 1e-9
+            end = start + buff.length / buff.sample_rate
+            segs = [(start, end)]
             out.append(nds2_availability(name, segs))
+            match.add(name)
+        if missing := match.symmetric_difference(names):
+            msg = "bad channel: {missing.pop()}"
+            raise RuntimeError(msg)
         return out
 
     NdsConnection.get_availability = mock.Mock(side_effect=get_availability)

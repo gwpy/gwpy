@@ -174,7 +174,7 @@ def to_gps(
             t = _str_to_datetime(t)
 
     # tuple -> datetime.date
-    if isinstance(t, (tuple, list)):
+    if isinstance(t, tuple | list):
         t = datetime.datetime(*t)
 
     # datetime.datetime -> Time
@@ -186,7 +186,7 @@ def to_gps(
         t = t.to("second").value
 
     # Number/Decimal -> str
-    if isinstance(t, (Decimal, Number)):
+    if isinstance(t, Decimal | Number):
         t = str(t)
 
     # -- convert to LIGOTimeGPS

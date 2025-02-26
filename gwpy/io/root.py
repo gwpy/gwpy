@@ -54,7 +54,4 @@ def identify_root(
     except ImportError:
         return False
     else:
-        return isinstance(args[0], (
-            uproot.ReadOnlyFile,
-            uproot.ReadOnlyDirectory,
-        ))
+        return isinstance(args[0], uproot.ReadOnlyFile | uproot.ReadOnlyDirectory)

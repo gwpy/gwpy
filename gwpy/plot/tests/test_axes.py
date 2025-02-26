@@ -178,21 +178,13 @@ class TestAxes(AxesTestBase):
             utils.assert_array_equal(mesh.get_array(), array.T.flatten())
         utils.assert_array_equal(mesh.get_paths()[-1].vertices[2],
                                  (array.xspan[1], array.yspan[1]))
-        # check that restore_grid decorator did its job
-        try:
-            assert all((
-                ax.xaxis._major_tick_kw["gridOn"],
-                ax.xaxis._minor_tick_kw["gridOn"],
-                ax.yaxis._major_tick_kw["gridOn"],
-                ax.yaxis._minor_tick_kw["gridOn"],
-            ))
-        except KeyError:  # matplotlib < 3.3.3
-            assert all((
-                ax.xaxis._gridOnMajor,
-                ax.xaxis._gridOnMinor,
-                ax.yaxis._gridOnMajor,
-                ax.yaxis._gridOnMinor,
-            ))
+        # check that axes were preserved
+        assert all((
+            ax.xaxis._major_tick_kw["gridOn"],
+            ax.xaxis._minor_tick_kw["gridOn"],
+            ax.yaxis._major_tick_kw["gridOn"],
+            ax.yaxis._minor_tick_kw["gridOn"],
+        ))
 
     def test_hist(self, ax):
         x = numpy.random.random(100) + 1

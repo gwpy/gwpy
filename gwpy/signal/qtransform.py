@@ -583,7 +583,7 @@ class QGram:
             "time": 0.,
             "frequency": 0.,
         }
-        for freq, energy in zip(self.plane.frequencies, self.energies):
+        for freq, energy in zip(self.plane.frequencies, self.energies, strict=True):
             if search is not None:
                 energy = energy.crop(*search)
             maxidx = energy.value.argmax()
@@ -765,7 +765,7 @@ class QGram:
             "energy",
         )
         rec = numpy.recarray((0,), names=names, formats=["f8"] * len(names))
-        for f, bw, row in zip(freqs, bws, self.energies):
+        for f, bw, row in zip(freqs, bws, self.energies, strict=True):
             ind, = (row.value >= snrthresh ** 2 / 2.).nonzero()
             new = ind.size
             if new > 0:

@@ -122,7 +122,7 @@ def generate_window(length, window=None, dtype="float64"):
     # or create one
     except KeyError:
         # parse window as name and arguments, e.g. ('kaiser', 24)
-        if isinstance(window, (list, tuple)):
+        if isinstance(window, list | tuple):
             window, beta = window
         else:
             beta = 0

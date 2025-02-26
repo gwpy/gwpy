@@ -107,7 +107,7 @@ def _parse_query_segments(args, func):
 
 # -- DataQualityFlag ----------------------------------------------------------
 
-class DataQualityFlag(object):
+class DataQualityFlag:
     """A representation of a named set of segments.
 
     Parameters

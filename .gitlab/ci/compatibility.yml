@@ -16,7 +16,7 @@ spec:
       description: "Extra options to pass to pytest"
       type: string
     minimum_python_version:
-      default: "3.9"
+      default: "3.10"
       description: "Python version for minimum dependency compatibility check"
       type: string
 

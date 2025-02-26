@@ -79,7 +79,7 @@ def test_to_float():
 
 # -- class tests --------------------------------------------------------------
 
-class _TestCliProduct(object):
+class _TestCliProduct:
     ACTION = None
     TEST_CLASS = cliproduct.CliProduct
     TEST_ARGS = [
@@ -296,7 +296,7 @@ class _TestImageProduct(_TestCliProduct):
             assert not plotprod.plot.colorbars
 
 
-class _TestFFTMixin(object):
+class _TestFFTMixin:
     pass
 
 

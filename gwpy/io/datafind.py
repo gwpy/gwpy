@@ -315,7 +315,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     from ..detector import Channel
 
     # format channel names as list
-    if isinstance(channel, (list, tuple)):
+    if isinstance(channel, list | tuple):
         channels = channel
     else:
         channels = [channel]
@@ -327,7 +327,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     names = {val: key for key, val in channels.items()}
 
     # format GPS time(s)
-    if isinstance(gpstime, (list, tuple)):
+    if isinstance(gpstime, list | tuple):
         gpssegment = LigoSegment(*gpstime)
         gpstime = gpssegment[0]
     else:
@@ -369,7 +369,7 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
                     allow_tape=allow_tape,
                     on_missing="ignore",
                 )
-            except (RuntimeError, IOError, IndexError):  # something went wrong
+            except (OSError, RuntimeError, IndexError):  # something went wrong
                 continue
 
             # check for gaps in the record for this type
@@ -413,12 +413,12 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     _rank_types(match)
 
     # and format as a dict for each channel
-    output = {key: list(list(zip(*match[key]))[0]) for key in match}
+    output = {key: list(list(zip(*match[key], strict=True))[0]) for key in match}
     if not return_all:  # reduce the list-of-one to a single element
         output = {key: val[0] for key, val in output.items()}
 
     # if given a list of channels, return the dict
-    if isinstance(channel, (list, tuple)):
+    if isinstance(channel, list | tuple):
         return output
 
     # otherwise just return the result for the given channel
@@ -561,7 +561,7 @@ def find_latest(
 
     path = file_path(path)
     if not allow_tape and on_tape(path):
-        raise IOError(
+        raise OSError(
             f"Latest frame file for {observatory}-{frametype} is on tape "
             f"(pass allow_tape=True to force): {path}",
         )

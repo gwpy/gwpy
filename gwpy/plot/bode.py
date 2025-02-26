@@ -145,7 +145,7 @@ class BodePlot(Plot):
             and isinstance(filters[0], FrequencySeries)
         ):
             frequencies = filters[0].frequencies.value
-        if not isinstance(frequencies, (type(None), int)):
+        if not isinstance(frequencies, type(None) | int):
             frequencies = frequencies[frequencies > 0]
             self.maxes.set_xlim(frequencies.min(), frequencies.max())
 
@@ -198,7 +198,7 @@ class BodePlot(Plot):
                                  "digital (analog=False) filter")
             sample_rate = Quantity(sample_rate, "Hz").value
             dt = 2 * pi / sample_rate
-            if not isinstance(frequencies, (type(None), int)):
+            if not isinstance(frequencies, type(None) | int):
                 frequencies = numpy.atleast_1d(frequencies).copy()
                 frequencies *= dt
 

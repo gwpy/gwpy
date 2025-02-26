@@ -640,7 +640,7 @@ def _channel_segments(
     )
 
     # for each segment, try and read the data for this channel
-    for i, (s, ns, dt) in enumerate(zip(secs, nano, dur)):
+    for i, (s, ns, dt) in enumerate(zip(secs, nano, dur, strict=True)):
         for read in readers:
             try:
                 read(i, channel)

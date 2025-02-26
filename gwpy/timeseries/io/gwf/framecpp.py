@@ -496,7 +496,7 @@ def write(tsdict, outfile,
     """
     # set frame header metadata
     if not start or not end:
-        starts, ends = zip(*(ts.span for ts in tsdict.values()))
+        starts, ends = zip(*(ts.span for ts in tsdict.values()), strict=True)
         start = to_gps(start or min(starts))
         end = to_gps(end or max(ends))
     duration = end - start

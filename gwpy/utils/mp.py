@@ -109,7 +109,7 @@ def multiprocess_with_queues(
     if bool(verbose):
         if not isinstance(verbose, bool):
             progress_kw["desc"] = str(verbose)
-        if isinstance(inputs, (list, tuple)):
+        if isinstance(inputs, list | tuple):
             progress_kw.setdefault("total", len(inputs))
         pbar = progress_bar(**progress_kw)
     else:

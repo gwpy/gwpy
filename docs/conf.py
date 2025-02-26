@@ -58,7 +58,7 @@ _setuptools_scm_version_regex = re.compile(
 if match := _setuptools_scm_version_regex.search(GWPY_VERSION):
     GWPY_GIT_REF, = match.groups()
 else:
-    GWPY_GIT_REF = "v{}".format(GWPY_VERSION)
+    GWPY_GIT_REF = f"v{GWPY_VERSION}"
 
 # -- matplotlib -------------
 
@@ -217,8 +217,8 @@ inheritance_graph_attrs = dict(rankdir="TB")
 LALSUITE_DOCS = "https://lscsoft.docs.ligo.org/lalsuite"
 
 doxylink = {
-    "lal": ("lal.tag", "%s/lal/" % LALSUITE_DOCS),
-    "lalframe": ("lalframe.tag", "%s/lalframe/" % LALSUITE_DOCS),
+    "lal": ("lal.tag", f"{LALSUITE_DOCS}/lal/"),
+    "lalframe": ("lalframe.tag", f"{LALSUITE_DOCS}/lalframe/"),
 }
 
 # -- intersphinx
@@ -271,11 +271,7 @@ def linkcode_resolve(domain, info):
         # get line numbers of this object
         source, lineno = inspect.getsourcelines(obj)
         if lineno:
-            return "{}#L{:d}-L{:d}".format(
-                filename,
-                lineno,
-                lineno + len(source) - 1,
-            )
+            return f"{filename}#L{lineno:d}-L{lineno + len(source) - 1}"
         return filename
 
     try:
@@ -288,10 +284,7 @@ def linkcode_resolve(domain, info):
     ):
         return None
 
-    return "https://gitlab.com/gwpy/gwpy/-/tree/{}/gwpy/{}".format(
-        GWPY_GIT_REF,
-        fileref,
-    )
+    return f"https://gitlab.com/gwpy/gwpy/-/tree/{GWPY_GIT_REF}/gwpy/{fileref}"
 
 
 # -- plugins ----------------
@@ -380,7 +373,7 @@ def _render_cli_example(config, section, outdir, logger):
     rstfile = outdir / f"{section}.rst"
     if _new_or_different(rst, rstfile):
         rstfile.write_text(rst)
-        logger.info("[cli] wrote {}".format(rstfile))
+        logger.info(f"[cli] wrote {rstfile}")
     return rstfile
 
 
@@ -408,7 +401,7 @@ def render_cli_examples(_):
         rsts.append(rst.relative_to(clidir))
 
     rst = CLI_INDEX_TEMPLATE.substitute(
-        examples="\n   ".join((str(rst.with_suffix("")) for rst in rsts)),
+        examples="\n   ".join(str(rst.with_suffix("")) for rst in rsts),
     )
     (exdir / "examples.rst").write_text(rst)
 
@@ -424,7 +417,7 @@ def _render_example(example, outdir, logger):
     target = outdir / example.with_suffix(".rst").name
     if _new_or_different(rst, target):
         target.write_text(rst)
-        logger.debug("[examples] wrote {0}".format(target))
+        logger.debug(f"[examples] wrote {target}")
 
 
 def render_examples(_):
@@ -446,11 +439,11 @@ def render_examples(_):
         # copy index
         index = subdir / "index.rst"
         shutil.copyfile(srcdir / exdir / index.name, index)
-        logger.debug("[examples] copied {0}".format(index))
+        logger.debug(f"[examples] copied {index}")
         # render python script as RST
         for expy in (srcdir / exdir).glob("*.py"):
             _render_example(expy, subdir, logger)
-        logger.info("[examples] converted all in examples/{0}".format(exdir))
+        logger.info(f"[examples] converted all in examples/{exdir}")
 
 
 # -- create citation file
@@ -463,7 +456,7 @@ def write_citing_rst(app):
     content = citing.with_suffix(".rst.in").read_text()
     content += "\n" + zenodo.format_citations(597016)
     citing.write_text(content)
-    logger.info("[zenodo] wrote {0}".format(citing))
+    logger.info(f"[zenodo] wrote {citing}")
 
 
 # -- setup sphinx -----------

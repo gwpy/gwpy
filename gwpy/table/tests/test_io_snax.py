@@ -101,14 +101,14 @@ def test_read_snax_compact(snaxtable, snaxfile):
     tables = {}
     t2 = t2.group_by("channel")
     t2.remove_column("channel")
-    for key, group in zip(t2.groups.keys, t2.groups):
+    for key, group in zip(t2.groups.keys, t2.groups, strict=True):
         channel = t2.meta["channel_map"][key["channel"]]
         tables[channel] = EventTable(group, copy=True)
 
     # verify table groups are identical
     t_ref = snaxtable.copy().group_by("channel")
     t_ref.remove_column("channel")
-    for key, group in zip(t_ref.groups.keys, t_ref.groups):
+    for key, group in zip(t_ref.groups.keys, t_ref.groups, strict=True):
         channel = key["channel"]
         assert_table_equal(group, tables[channel])
 

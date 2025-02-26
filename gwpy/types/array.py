@@ -31,13 +31,8 @@ from decimal import Decimal
 from math import modf
 
 import numpy
-
 from astropy.units import Quantity
-try:
-    from astropy.utils.compat.numpycompat import COPY_IF_NEEDED
-except ImportError:  # astropy < 6.1
-    from astropy.utils import minversion
-    COPY_IF_NEEDED = None if minversion(numpy, "2.0.0.dev") else False
+from astropy.utils.compat.numpycompat import COPY_IF_NEEDED
 
 from ..detector import Channel
 from ..detector.units import parse_unit

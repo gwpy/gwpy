@@ -567,7 +567,7 @@ def find_channels(
 
     # format {min,max}_sample_rate options
     kwargs = {}
-    if isinstance(sample_rate, (int, float)):
+    if isinstance(sample_rate, int | float):
         kwargs["min_sample_rate"] = sample_rate
         kwargs["max_sample_rate"] = sample_rate
     elif sample_rate is not None:
@@ -771,7 +771,7 @@ def get_availability(
 
     # map to segment types
     out = SegmentListDict()
-    for name, result in zip(channels, result):
+    for name, result in zip(channels, result, strict=True):
         out[name] = SegmentList([
             Segment(s.gps_start, s.gps_stop)
             for s in result.simple_list()

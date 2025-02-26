@@ -50,7 +50,7 @@ except AttributeError:  # numpy < 2.0
 QUOTE_REGEX = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 
 
-class Channel(object):
+class Channel:
     """Representation of a laser-interferometer data channel.
 
     Parameters
@@ -903,4 +903,8 @@ class ChannelList(list):
                                       type=ctype)
         availability = io_nds2.get_availability(chans, start, end,
                                                 connection=connection)
-        return type(availability)(zip(channels, availability.values()))
+        return type(availability)(zip(
+            channels,
+            availability.values(),
+            strict=True,
+        ))

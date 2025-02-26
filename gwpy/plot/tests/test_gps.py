@@ -31,7 +31,7 @@ from .. import gps as plot_gps
 from ...time import LIGOTimeGPS
 
 
-class TestGPSMixin(object):
+class TestGPSMixin:
     TYPE = plot_gps.GPSMixin
 
     def test_init(self):

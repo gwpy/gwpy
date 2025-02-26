@@ -236,10 +236,10 @@ def is_zpk(zpktup: Any) -> bool:
         zeros and poles, and a gain (`float`).
     """
     return (
-        isinstance(zpktup, (tuple, list))
+        isinstance(zpktup, tuple | list)
         and len(zpktup) == 3
-        and isinstance(zpktup[0], (list, tuple, numpy.ndarray))
-        and isinstance(zpktup[1], (list, tuple, numpy.ndarray))
+        and isinstance(zpktup[0], list | tuple | numpy.ndarray)
+        and isinstance(zpktup[1], list | tuple | numpy.ndarray)
         and isinstance(zpktup[2], float)
     )
 
@@ -847,7 +847,7 @@ def concatenate_zpks(*zpks: ZpkType) -> ZpkType:
     >>> plot = BodePlot(zpk, sample_rate=4096)
     >>> plot.show()
     """
-    zeros, poles, gains = zip(*zpks)
+    zeros, poles, gains = zip(*zpks, strict=True)
     return (
         numpy.concatenate(zeros),
         numpy.concatenate(poles),

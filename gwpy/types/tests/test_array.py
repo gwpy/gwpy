@@ -45,7 +45,7 @@ CHANNEL_NAME = "G1:TEST-CHANNEL"
 CHANNEL = Channel(CHANNEL_NAME)
 
 
-class TestArray(object):
+class TestArray:
     """Test `gwpy.types.Array`."""
     TEST_CLASS = Array
     DTYPE = None
@@ -116,10 +116,14 @@ class TestArray(object):
         assert array.unit is units.m
 
         # test unrecognised units
-        with mock.patch.dict(
-                "gwpy.detector.units.UNRECOGNIZED_UNITS", clear=True), \
-                pytest.warns(units.UnitsWarning):
-            array = self.create(unit="blah")
+        with (
+            mock.patch.dict(
+                "gwpy.detector.units.UNRECOGNIZED_UNITS",
+                clear=True,
+            ),
+            pytest.warns(units.UnitsWarning)
+        ):
+            array = self.create(unit='blah')
         assert isinstance(array.unit, units.IrreducibleUnit)
         assert str(array.unit) == "blah"
 

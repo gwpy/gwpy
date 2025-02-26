@@ -140,6 +140,7 @@ def strip_ilwdchar(_ContentHandler):
                     for pytype, colname in zip(
                         parent.columnpytypes,
                         parent.columnnames,
+                        strict=True,
                     )
                 ])
             return result
@@ -437,7 +438,7 @@ def open_xmldoc(fobj, contenthandler=None, **kwargs):
                     contenthandler=contenthandler,
                     **kwargs,
                 )
-        except (OSError, IOError):
+        except OSError:
             # or just create a new Document
             return Document()
 
@@ -540,7 +541,7 @@ def write_tables(
     from ligo.lw import utils as ligolw_utils
 
     # allow writing directly to XML
-    if isinstance(target, (Document, LIGO_LW)):
+    if isinstance(target, Document | LIGO_LW):
         xmldoc = target
     # open existing document, if possible
     elif append:
@@ -553,10 +554,10 @@ def write_tables(
     # fail on existing document and not overwriting
     elif (
         not overwrite
-        and isinstance(target, (str, os.PathLike))
+        and isinstance(target, str | os.PathLike)
         and os.path.exists(target)
     ):
-        raise IOError(f"File exists: {target}")
+        raise OSError(f"File exists: {target}")
     else:  # or create a new document
         xmldoc = Document()
 

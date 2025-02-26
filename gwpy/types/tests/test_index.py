@@ -22,7 +22,7 @@ from astropy import units
 from .. import Index
 
 
-class TestIndex(object):
+class TestIndex:
     TEST_CLASS = Index
 
     def test_define_regular(self):

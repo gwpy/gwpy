@@ -186,7 +186,7 @@ def file_list(flist):
         return flist.split(",")
 
     # parse list of entries (of some format)
-    if isinstance(flist, (list, tuple)):
+    if isinstance(flist, list | tuple):
         return list(map(file_path, flist))
 
     # otherwise parse a single entry
@@ -236,7 +236,7 @@ def file_path(fobj):
     """
     if isinstance(fobj, str) and fobj.startswith("file:"):
         return urlparse(fobj).path
-    if isinstance(fobj, (str, os.PathLike)):
+    if isinstance(fobj, str | os.PathLike):
         return str(fobj)
     if (isinstance(fobj, FILE_LIKE) and hasattr(fobj, "name")):
         return fobj.name

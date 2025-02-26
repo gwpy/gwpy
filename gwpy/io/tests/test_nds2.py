@@ -513,9 +513,14 @@ def test_get_nds2_name():
 @pytest.mark.requires("nds2")
 def test_get_nds2_names():
     """Test `gwpy.io.nds2._get_nds2_names`."""
-    channels, names = zip(*(
-        ("test", "test"),
-        (Channel("X1:TEST", type="m-trend"), "X1:TEST,m-trend"),
-        (mocks.nds2_channel("X1:TEST", 16, "NONE"), "X1:TEST,raw"),
-    ))
+    channels = [
+        "test",
+        Channel("X1:TEST", type="m-trend"),
+        mocks.nds2_channel("X1:TEST", 16, "NONE"),
+    ]
+    names = [
+        "test",
+        "X1:TEST,m-trend",
+        "X1:TEST,raw",
+    ]
     assert list(io_nds2._get_nds2_names(channels)) == list(names)

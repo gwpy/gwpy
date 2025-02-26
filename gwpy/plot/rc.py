@@ -17,7 +17,13 @@
 
 """Custom default figure configuration."""
 
-from matplotlib import (rcParams, rc_params, RcParams)
+import os
+
+from matplotlib import (
+    rcParams,
+    rc_params,
+    RcParams,
+)
 
 from . import tex
 from ..utils.env import bool_env
@@ -26,10 +32,7 @@ from ..utils.env import bool_env
 MPL_RCPARAMS = rc_params()
 
 # record the LaTeX preamble
-try:
-    PREAMBLE = rcParams.get("text.latex.preamble", []) + tex.MACROS
-except TypeError:  # matplotlib < 3.1.0
-    PREAMBLE = rcParams.get("text.latex.preamble", "") + "\n".join(tex.MACROS)
+PREAMBLE = rcParams.get("text.latex.preamble", "") + os.linesep.join(tex.MACROS)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

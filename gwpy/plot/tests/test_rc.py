@@ -36,5 +36,5 @@ DEFAULT_LRTB = [
 ])
 def test_get_subplot_params(figsize, lrbt):
     params = plot_rc.get_subplot_params(figsize)
-    for key, val in zip(("left", "right", "bottom", "top"), lrbt):
+    for key, val in zip(("left", "right", "bottom", "top"), lrbt, strict=True):
         assert getattr(params, key) == val

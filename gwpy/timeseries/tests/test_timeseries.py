@@ -641,8 +641,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
         nds_buffer = mocks.nds2_buffer_from_timeseries(ts)
         nds_connection = mocks.nds2_connection(buffers=[nds_buffer],
                                                protocol=protocol)
-        with mock.patch("nds2.connection") as mock_connection, \
-                mock.patch("nds2.buffer", nds_buffer):
+        with (
+            mock.patch("nds2.connection") as mock_connection,
+            mock.patch("nds2.buffer", nds_buffer),
+        ):
             mock_connection.return_value = nds_connection
 
             # use verbose=True to hit more lines
@@ -691,15 +693,16 @@ class TestTimeSeries(_TestTimeSeriesBase):
     )
     def test_fetch_warning_message(self, _):
         """Test that TimeSeries.fetch emits a useful warning on NDS2 issues."""
-        with \
-                pytest.raises(
-                    RuntimeError,
-                    match="Cannot find all relevant data",
-                ), \
-                pytest.warns(
-                    NDSWarning,
-                    match="failed to fetch data for X1:TEST",
-                ):
+        with (
+            pytest.raises(
+                RuntimeError,
+                match="Cannot find all relevant data",
+            ),
+            pytest.warns(
+                NDSWarning,
+                match="failed to fetch data for X1:TEST",
+            ),
+        ):
             self.TEST_CLASS.fetch("X1:TEST", 0, 1)
 
     @pytest_skip_flaky_network

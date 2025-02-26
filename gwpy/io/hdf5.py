@@ -34,7 +34,7 @@ def open_hdf5(filename, mode="r"):
     """Wrapper to open a :class:`h5py.File` from disk, gracefully
     handling a few corner cases.
     """
-    if isinstance(filename, (h5py.Group, h5py.Dataset)):
+    if isinstance(filename, h5py.Group | h5py.Dataset):
         return filename
     if isinstance(filename, FILE_LIKE):
         return h5py.File(filename.name, mode)
@@ -119,7 +119,7 @@ def with_write_hdf5(func):
             append = kwargs.get("append", False)
             overwrite = kwargs.get("overwrite", False)
             if os.path.exists(fobj) and not (overwrite or append):
-                raise IOError(f"File exists: {fobj}")
+                raise OSError(f"File exists: {fobj}")
             with h5py.File(fobj, "a" if append else "w") as h5f:
                 return func(obj, h5f, *args, **kwargs)
         return func(obj, fobj, *args, **kwargs)

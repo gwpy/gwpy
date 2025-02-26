@@ -96,7 +96,7 @@ channels =
 
 # -- Channel ------------------------------------------------------------------
 
-class TestChannel(object):
+class TestChannel:
     TEST_CLASS = Channel
 
     # -- test creation --------------------------
@@ -415,7 +415,7 @@ class TestChannel(object):
 
 # -- ChannelList --------------------------------------------------------------
 
-class TestChannelList(object):
+class TestChannelList:
     TEST_CLASS = ChannelList
     ENTRY_CLASS = Channel
 
@@ -425,8 +425,10 @@ class TestChannelList(object):
     @classmethod
     @pytest.fixture()
     def instance(cls):
-        return cls.TEST_CLASS([cls.ENTRY_CLASS(n, sample_rate=s) for
-                               n, s in zip(cls.NAMES, cls.SAMPLE_RATES)])
+        return cls.TEST_CLASS([
+            cls.ENTRY_CLASS(n, sample_rate=s) for
+            n, s in zip(cls.NAMES, cls.SAMPLE_RATES, strict=True)
+        ])
 
     def test_from_names(self):
         cl = self.TEST_CLASS.from_names(*self.NAMES)

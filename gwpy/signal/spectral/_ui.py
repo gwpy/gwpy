@@ -260,7 +260,7 @@ def _normalize_window(
         return generate_window(nfft, window=window, dtype=dtype)
     if isinstance(window, str):
         window = canonical_name(window)
-    if isinstance(window, (str, tuple)):
+    if isinstance(window, str | tuple):
         return get_window(window, nfft)
     return window
 
@@ -403,7 +403,7 @@ def average_spectrogram(
     tschunks = _chunk_timeseries(timeseries, nstride, noverlap)
     if other is not None:
         otherchunks = _chunk_timeseries(other, nstride, noverlap)
-        tschunks = zip(tschunks, otherchunks)
+        tschunks = zip(tschunks, otherchunks, strict=True)
 
     # bundle inputs for _psd
     inputs = [(chunk, method_func, args, kwargs) for chunk in tschunks]

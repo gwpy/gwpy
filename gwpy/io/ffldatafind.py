@@ -28,7 +28,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 import os
 import re
 from collections import defaultdict
-from functools import lru_cache
+from functools import cache
 from warnings import warn
 
 from igwn_segments import (
@@ -117,7 +117,7 @@ def _find_ffl_files(basedir=None):
             yield os.path.join(root, name)
 
 
-@lru_cache()
+@cache
 def _find_ffls(basedir=None):
     """Find all readable FFL files."""
     ffls = defaultdict(list)
@@ -142,7 +142,7 @@ def _ffl_paths(site, tag, basedir=None):
         )
 
 
-@lru_cache()
+@cache
 def _read_ffls(site, tag, basedir=None):
     """Read all FFL files for a given site and tag
     as a list of `CacheEntry` objects.

@@ -190,7 +190,7 @@ class TestStateTimeSeriesDict(_TestTimeSeriesBaseDict):
 
 # -- Bits ---------------------------------------------------------------------
 
-class TestBits(object):
+class TestBits:
     TEST_CLASS = Bits
 
     @pytest.mark.parametrize("in_, out", [

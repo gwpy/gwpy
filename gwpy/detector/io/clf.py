@@ -95,7 +95,7 @@ def read_channel_list_file(*source):
     source = file_list(source)
     success_ = config.read(*source)
     if len(success_) != len(source):
-        raise IOError("Failed to read one or more CLF files")
+        raise OSError("Failed to read one or more CLF files")
     # create channel list
     out = ChannelList()
     out.source = source

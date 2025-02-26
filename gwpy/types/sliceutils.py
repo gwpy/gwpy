@@ -118,13 +118,13 @@ def null_slice(slice_):
 
 def as_slice(slice_):
     """Convert an object to a slice, if possible."""
-    if isinstance(slice_, (Integral, numpy.integer, type(None))):
+    if isinstance(slice_, Integral | numpy.integer | type(None)):
         return slice(0, None, 1)
 
     if isinstance(slice_, list):
         slice_ = numpy.array(slice_)
 
-    if isinstance(slice_, (slice, numpy.ndarray)):
+    if isinstance(slice_, slice | numpy.ndarray):
         return slice_
 
     if isinstance(slice_, tuple):

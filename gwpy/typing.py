@@ -27,17 +27,11 @@ except ImportError:  # python < 3.11
     from typing_extensions import Self
 
 from astropy.units import UnitBase
+from astropy.units.typing import QuantityLike
 from numpy.typing import (
     ArrayLike,
     DTypeLike,
 )
-
-try:
-    from astropy.units.typing import QuantityLike
-except ImportError:  # astropy < 6.1
-    from astropy.units import Quantity as _Quantity
-    QuantityLike = typing.Union[_Quantity, ArrayLike]
-
 
 from .time import (
     GpsConvertible,
