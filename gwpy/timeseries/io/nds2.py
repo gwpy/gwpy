@@ -152,7 +152,7 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
         for seg in qsegs:
             total = 0.
             for buffers in connection.iterate(int(seg[0]), int(seg[1]), names):
-                for buffer_, chan in zip(buffers, channels):
+                for buffer_, chan in zip(buffers, channels, strict=True):
                     series = series_class.from_nds2_buffer(
                         buffer_,
                         scaled=scaled,
@@ -170,7 +170,7 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
     # finalise timeseries to make sure each channel has the correct limits
     # only if user asked to pad gaps
     if pad is not None:
-        for chan, ndschan in zip(channels, ndschannels):
+        for chan, ndschan in zip(channels, ndschannels, strict=True):
             try:
                 ts = out[chan]
             except KeyError:

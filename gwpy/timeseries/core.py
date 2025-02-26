@@ -1297,7 +1297,8 @@ class TimeSeriesBaseDict(OrderedDict):
 
             # map back to user-given channel name and append
             out.append(type(new)(
-                (key, new[chan]) for (key, chan) in zip(clist, names)
+                (key, new[chan]) for
+                (key, chan) in zip(clist, names, strict=True)
             ))
         return out
 
@@ -1566,7 +1567,7 @@ class TimeSeriesBaseDict(OrderedDict):
         artmap = {"plot": "lines", "scatter": "collections"}
         artists = [x for ax in plot.axes for
                    x in getattr(ax, artmap.get(method, "lines"))]
-        for key, artist in zip(self, artists):
+        for key, artist in zip(self, artists, strict=True):
             if label.lower() == "name":
                 lab = self[key].name
             elif label.lower() == "key":

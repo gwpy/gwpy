@@ -97,7 +97,7 @@ def channel_dict_kwarg(value, channels, types=None, astype=None):
     if types is not None and isinstance(value, tuple(types)):
         out = dict((c, value) for c in channels)
     elif isinstance(value, tuple | list):
-        out = dict(zip(channels, value))
+        out = dict(zip(channels, value, strict=True))
     elif value is None:
         out = dict()
     elif isinstance(value, dict):

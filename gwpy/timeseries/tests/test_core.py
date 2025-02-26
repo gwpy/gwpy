@@ -509,7 +509,7 @@ class TestTimeSeriesBaseDict:
     def test_plot(self, instance):
         with rc_context(rc={"text.usetex": False}):
             plot = instance.plot()
-            for line, key in zip(plot.gca().lines, instance):
+            for line, key in zip(plot.gca().lines, instance, strict=True):
                 utils.assert_array_equal(line.get_xdata(),
                                          instance[key].xindex.value)
                 utils.assert_array_equal(line.get_ydata(),
@@ -525,7 +525,7 @@ class TestTimeSeriesBaseDict:
         with rc_context(rc={"text.usetex": False}):
             plot = instance.plot(separate=True)
             assert len(plot.axes) == len(instance.keys())
-            for ax, key in zip(plot.axes, instance):
+            for ax, key in zip(plot.axes, instance, strict=True):
                 utils.assert_array_equal(ax.lines[-1].get_xdata(),
                                          instance[key].xindex.value)
                 utils.assert_array_equal(ax.lines[-1].get_ydata(),
@@ -627,6 +627,6 @@ class TestTimeSeriesBaseList:
     def test_copy(self, instance):
         a = instance.copy()
         assert type(a) is type(instance)
-        for x, y in zip(instance, a):
+        for x, y in zip(instance, a, strict=True):
             utils.assert_quantity_sub_equal(x, y)
             assert not shares_memory(x.value, y.value)
