@@ -196,7 +196,7 @@ def open_gwf(
 def write_frames(
     gwf: str | Path | IO,
     frames: Iterable[frameCPP.FrameH],
-    compression: int | str = "GZIP",
+    compression: int | str | None = None,
     compression_level: int | None = None,
 ):
     """Write a list of frame objects to a file.
@@ -216,7 +216,7 @@ def write_frames(
         ID, choose from
 
         - ``'RAW'``
-        - ``'GZIP'``
+        - ``'GZIP'`` (default)
         - ``'DIFF_GZIP'``
         - ``'ZERO_SUPPRESS'``
         - ``'ZERO_SUPPRESS_OTHERWISE_GZIP'``
@@ -227,7 +227,9 @@ def write_frames(
     """
     # handle compression arguments
     comp: Compression
-    if isinstance(compression, int):
+    if compression is None:
+        comp = Compression.GZIP
+    elif isinstance(compression, int):
         comp = Compression(compression)
     else:
         comp = Compression[compression]
