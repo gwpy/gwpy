@@ -742,9 +742,38 @@ class TestDataQualityDict:
         utils.assert_segmentlist_equal(intersection.active, ACTIVE & ACTIVE2)
 
     def test_plot(self, instance):
+        """Test `DataQualityDict.plot()`."""
         with rc_context(rc={"text.usetex": False}):
             plot = instance.plot(figsize=(6.4, 3.8))
             assert isinstance(plot.gca(), SegmentAxes)
+            assert plot.get_figwidth() == 6.4
+            assert plot.get_figheight() == 3.8
+            plot.save(BytesIO(), format="png")
+            plot.close()
+
+    def test_plot_known_label(self, instance):
+        """Test `DataQualityDict.plot(..., known=None, label=...)`."""
+        with rc_context(rc={"text.usetex": False}):
+            plot = instance.plot(
+                known=None,
+                figsize=(6.4, 3.8),
+            )
+            ax = plot.gca()
+            for key, artist in zip(instance, ax.collections, strict=True):
+                assert artist.get_label() == instance[key].name
+            plot.save(BytesIO(), format="png")
+            plot.close()
+
+    def test_plot_label(self, instance):
+        """Test `DataQualityDict.plot(..., label=...)`."""
+        with rc_context(rc={"text.usetex": False}):
+            plot = instance.plot(
+                label="Fixed label",
+                figsize=(6.4, 3.8),
+            )
+            ax = plot.gca()
+            for artist in ax.collections:
+                assert artist.get_label() == "Fixed label"
             plot.save(BytesIO(), format="png")
             plot.close()
 

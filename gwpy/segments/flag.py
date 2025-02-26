@@ -1488,7 +1488,7 @@ class DataQualityDict(OrderedDict):
         return isegs
 
     def plot(self, label="key", **kwargs):
-        """Plot this flag on a segments projection.
+        """Plot this dict on a segments projection.
 
         Parameters
         ----------
@@ -1501,7 +1501,7 @@ class DataQualityDict(OrderedDict):
 
             If anything else, that fixed label will be used for all lines.
 
-        **kwargs
+        kwargs
             all keyword arguments are passed to the
             :class:`~gwpy.plot.Plot` constructor.
 
@@ -1523,17 +1523,9 @@ class DataQualityDict(OrderedDict):
         """
         # make plot
         from ..plot import Plot
-        plot = Plot(self, projection="segments", **kwargs)
-
-        # update labels
-        artists = [x for ax in plot.axes for x in ax.collections]
-        for key, artist in zip(self, artists):
-            if label.lower() == "name":
-                lab = self[key].name
-            elif label.lower() != "key":
-                lab = key
-            else:
-                lab = label
-            artist.set_label(lab)
-
-        return plot
+        return Plot(
+            [self],
+            projection="segments",
+            label=label,
+            **kwargs,
+        )
