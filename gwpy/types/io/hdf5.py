@@ -260,7 +260,7 @@ def format_index_array_attrs(series: Series) -> dict[str, Any]:
     """
     attrs = {}
     # loop through named axes
-    for i, axis in zip(range(series.ndim), ("x", "y")):
+    for i, axis in zip(range(series.ndim), ("x", "y", "z"), strict=False):
         # find property names
         unit = f"{axis}unit"
         origin = f"{axis}0"
