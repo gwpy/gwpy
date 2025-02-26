@@ -246,6 +246,8 @@ force-wrap-aliases = true
 ]
 "*/tests/*" = [
   "ANN",  # type annotations
+  "B904",  # raise from
+  "EM101",  # string literal in exception
   "PLR2004",  # magic value used in comparison
   "S101",  # assert
 ]
