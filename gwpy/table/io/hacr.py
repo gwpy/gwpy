@@ -344,7 +344,7 @@ def get_hacr_triggers(
         names, dtypes = zip(*(
             (name, valid_columns.get(name))
             for name in read_cols
-        ))
+        ), strict=True)
         table = Table(
             names=names,
             dtype=dtypes,

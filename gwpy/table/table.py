@@ -447,8 +447,9 @@ class EventTable(Table):
         # set default labels
         ax = plot.gca()
         for axis, col in zip(
-                filter(attrgetter("isDefault_label"), (ax.xaxis, ax.yaxis)),
-                args[:2],
+            filter(attrgetter("isDefault_label"), (ax.xaxis, ax.yaxis)),
+            args[:2],
+            strict=True,
         ):
             name = col.name
             if rcParams["text.usetex"]:

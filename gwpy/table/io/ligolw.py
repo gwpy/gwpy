@@ -131,7 +131,7 @@ def _get_property_columns(
             columns = list(zip(*inspect.getmembers(
                 rowtype,
                 predicate=lambda x: isinstance(x, LIGOLW_PROPERTY_TYPES),
-            )))[0]
+            ), strict=True))[0]
         except IndexError:
             # this object doesn't have any property columns
             return {}
@@ -425,7 +425,7 @@ def table_to_ligolw(
     cls = lsctables.TableByName[tablename]
     inst = lsctables.New(cls)
     try:
-        columnnamesreal = dict(zip(inst.columnnames, inst.columnnamesreal))
+        columnnamesreal = dict(zip(inst.columnnames, inst.columnnamesreal, strict=False))
     except AttributeError:  # glue doesn't have these attributes
         columnnamesreal = {}
     llwcolumns = [columnnamesreal.get(n, n) for n in columns]
