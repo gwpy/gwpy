@@ -847,7 +847,7 @@ def concatenate_zpks(*zpks: ZpkType) -> ZpkType:
     >>> plot = BodePlot(zpk, sample_rate=4096)
     >>> plot.show()
     """
-    zeros, poles, gains = zip(*zpks)
+    zeros, poles, gains = zip(*zpks, strict=True)
     return (
         numpy.concatenate(zeros),
         numpy.concatenate(poles),

@@ -403,7 +403,7 @@ def average_spectrogram(
     tschunks = _chunk_timeseries(timeseries, nstride, noverlap)
     if other is not None:
         otherchunks = _chunk_timeseries(other, nstride, noverlap)
-        tschunks = zip(tschunks, otherchunks)
+        tschunks = zip(tschunks, otherchunks, strict=True)
 
     # bundle inputs for _psd
     inputs = [(chunk, method_func, args, kwargs) for chunk in tschunks]
