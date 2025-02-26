@@ -25,6 +25,7 @@ import typing
 from functools import cache
 
 import numpy
+from astropy.utils.compat.numpycompat import COPY_IF_NEEDED
 
 from ...io.ligolw import (
     is_ligolw,
@@ -57,13 +58,6 @@ if typing.TYPE_CHECKING:
         ArrayLike,
         DTypeLike,
     )
-
-try:
-    from astropy.utils.compat.numpycompat import COPY_IF_NEEDED
-except ImportError:  # astropy < 6.1
-    from astropy.utils import minversion
-    COPY_IF_NEEDED = None if minversion(numpy, "2.0.0.dev") else False
-
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
