@@ -44,7 +44,6 @@ import typing
 import warnings
 from collections import OrderedDict
 from inspect import signature
-from math import ceil
 
 import numpy
 from astropy import units
@@ -76,6 +75,7 @@ if typing.TYPE_CHECKING:
     from typing import Any
 
     import arrakis
+    import nds2
 
     from ..typing import (
         DTypeLike,
@@ -294,56 +294,102 @@ class TimeSeriesBase(Series):
     # -- TimeSeries accessors -------------------
 
     @classmethod
-    def fetch(cls, channel, start, end, host=None, port=None, verbose=False,
-              connection=None, verify=False, pad=None, allow_tape=None,
-              scaled=None, type=None, dtype=None):
+    def fetch(
+        cls,
+        channel: str | Channel,
+        start: GpsLike,
+        end: GpsLike,
+        *,
+        host: str | None = None,
+        port: int | None = None,
+        verbose: bool | str = False,
+        connection: nds2.connection | None = None,
+        verify: bool = False,
+        pad: float | None = None,
+        allow_tape: bool | None = None,
+        scaled: bool | None = None,
+        type: int | str | None = None,
+        dtype: int | str | None = None,
+    ):
         """Fetch data from NDS.
 
         Parameters
         ----------
         channel : `str`, `~gwpy.detector.Channel`
-            the data channel for which to query
+            The name (or representation) of the data channel to fetch.
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
-            GPS end time of required data,
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
 
         host : `str`, optional
             URL of NDS server to use, if blank will try any server
             (in a relatively sensible order) to get the data
 
+            One of ``connection`` or ``host`` must be given.
+
         port : `int`, optional
-            port number for NDS server query, must be given with `host`
+            Port number for NDS server query, must be given with `host`.
 
-        verify : `bool`, optional, default: `False`
-            check channels exist in database before asking for data
-
-        scaled : `bool`, optional
-            apply slope and bias calibration to ADC data, for non-ADC data
-            this option has no effect
-
-        connection : `nds2.connection`, optional
-            open NDS connection to use
+        verify : `bool`, optional
+            Check channels exist in database before asking for data.
+            Default is `True`.
 
         verbose : `bool`, optional
-            print verbose output about NDS progress, useful for debugging;
-            if ``verbose`` is specified as a string, this defines the
-            prefix for the progress meter
+            Print verbose progress information about NDS download.
+            If ``verbose`` is specified as a string, this defines the
+            prefix for the progress meter.
 
-        type : `int`, optional
-            NDS2 channel type integer or string name to match
+        connection : `nds2.connection`, optional
+            Open NDS connection to use.
+            Default is to open a new connection using ``host`` and ``port``
+            arguments.
 
-        dtype : `type`, `numpy.dtype`, `str`, optional
-            NDS2 data type to match
+            One of ``connection`` or ``host`` must be given.
+
+        pad : `float`, optional
+            Float value to insert between gaps.
+            Default behaviour is to raise an exception when any gaps are
+            found.
+
+        scaled : `bool`, optional
+            Apply slope and bias calibration to ADC data, for non-ADC data
+            this option has no effect.
+
+        allow_tape : `bool`, optional
+            Allow data access from slow tapes.
+            If ``host`` or ``connection`` is given, the default is to do
+            whatever the server default is, otherwise servers will be searched
+            with ``allow_tape=False`` first, then ``allow_tape=True` if that
+            fails.
+
+        type : `int`, `str`, optional
+            NDS2 channel type integer or string name to match.
+            Default is to search for any channel type.
+
+        dtype : `numpy.dtype`, `str`, `type`, or `dict`, optional
+            NDS2 data type to match.
+            Default is to search for any data type.
         """
         return cls.DictClass.fetch(
-            [channel], start, end, host=host, port=port, verbose=verbose,
-            connection=connection, verify=verify, pad=pad, scaled=scaled,
-            allow_tape=allow_tape, type=type, dtype=dtype)[str(channel)]
+            [channel],
+            start,
+            end,
+            host=host,
+            port=port,
+            verbose=verbose,
+            connection=connection,
+            verify=verify,
+            pad=pad,
+            scaled=scaled,
+            allow_tape=allow_tape,
+            type=type,
+            dtype=dtype,
+        )[str(channel)]
 
     @classmethod
     def fetch_open_data(cls, ifo, start, end, sample_rate=4096,
@@ -1014,16 +1060,29 @@ class TimeSeriesBaseDict(OrderedDict):
         return self
 
     @classmethod
-    def fetch(cls, channels, start, end, host=None, port=None,
-              verify=False, verbose=False, connection=None,
-              pad=None, scaled=None, allow_tape=None, type=None,
-              dtype=None):
+    def fetch(
+        cls,
+        channels: list[str | Channel],
+        start: GpsLike,
+        end: GpsLike,
+        *,
+        host: str | None = None,
+        port: int | None = None,
+        verbose: bool | str = False,
+        connection: nds2.connection | None = None,
+        verify: bool = False,
+        pad: float | None = None,
+        allow_tape: bool | None = None,
+        scaled: bool | None = None,
+        type: int | str | None = None,
+        dtype: int | str | None = None,
+    ):
         """Fetch data from NDS for a number of channels.
 
         Parameters
         ----------
-        channels : `list`
-            required data channels.
+        channel : `str`, `~gwpy.detector.Channel`
+            The name (or representation) of the data channel to fetch.
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
@@ -1037,118 +1096,75 @@ class TimeSeriesBaseDict(OrderedDict):
             URL of NDS server to use, if blank will try any server
             (in a relatively sensible order) to get the data
 
-        port : `int`, optional
-            port number for NDS server query, must be given with `host`.
+            One of ``connection`` or ``host`` must be given.
 
-        verify : `bool`, optional, default: `True`
-            check channels exist in database before asking for data
+        port : `int`, optional
+            Port number for NDS server query, must be given with `host`.
+
+        verify : `bool`, optional
+            Check channels exist in database before asking for data.
+            Default is `True`.
 
         verbose : `bool`, optional
-            print verbose output about NDS download progress, if ``verbose``
-            is specified as a string, this defines the prefix for the
-            progress meter
+            Print verbose progress information about NDS download.
+            If ``verbose`` is specified as a string, this defines the
+            prefix for the progress meter.
 
         connection : `nds2.connection`, optional
-            open NDS connection to use.
+            Open NDS connection to use.
+            Default is to open a new connection using ``host`` and ``port``
+            arguments.
+
+            One of ``connection`` or ``host`` must be given.
+
+        pad : `float`, optional
+            Float value to insert between gaps.
+            Default behaviour is to raise an exception when any gaps are
+            found.
 
         scaled : `bool`, optional
-            apply slope and bias calibration to ADC data, for non-ADC data
+            Apply slope and bias calibration to ADC data, for non-ADC data
             this option has no effect.
 
         allow_tape : `bool`, optional
-            allow data access from slow tapes. If `host` or `connection` is
-            given, the default is to do whatever the server default is,
-            otherwise servers will be searched in logical order allowing tape
-            access if necessary to retrieve the data
+            Allow data access from slow tapes.
+            If ``host`` or ``connection`` is given, the default is to do
+            whatever the server default is, otherwise servers will be searched
+            with ``allow_tape=False`` first, then ``allow_tape=True` if that
+            fails.
 
         type : `int`, `str`, optional
             NDS2 channel type integer or string name to match.
+            Default is to search for any channel type.
 
-        dtype : `numpy.dtype`, `str`, `type`, or `dict`
-            NDS2 data type to match
+        dtype : `numpy.dtype`, `str`, `type`, or `dict`, optional
+            NDS2 data type to match.
+            Default is to search for any data type.
 
         Returns
         -------
-        data : :class:`~gwpy.timeseries.TimeSeriesBaseDict`
-            a new `TimeSeriesBaseDict` of (`str`, `TimeSeries`) pairs fetched
+        data : `TimeSeriesBaseDict`
+            A new `TimeSeriesBaseDict` of (`str`, `TimeSeries`) pairs fetched
             from NDS.
         """
-        from ..io import nds2 as io_nds2
-        from .io.nds2 import (print_verbose, fetch)
+        from .io.nds2 import fetch_dict
 
-        if dtype is None:
-            dtype = {}
-
-        # -- open a connection ------------------
-
-        # open connection to specific host
-        if connection is None and host is not None:
-            print_verbose("Opening new connection to {0}...".format(host),
-                          end=" ", verbose=verbose)
-            connection = io_nds2.auth_connect(host, port)
-            print_verbose("connected", verbose=verbose)
-        # otherwise cycle through connections in logical order
-        elif connection is None:
-            ifos = set([Channel(channel).ifo for channel in channels])
-            if len(ifos) == 1:
-                ifo = list(ifos)[0]
-            else:
-                ifo = None
-            hostlist = io_nds2.host_resolution_order(ifo, epoch=start)
-            if allow_tape is None:
-                tapes = [False, True]
-            else:
-                tapes = [allow_tape]
-            for allow_tape_ in tapes:
-                error = ""  # container for error message from cls.fetch()
-                for host_, port_ in hostlist:
-                    try:
-                        return cls.fetch(channels, start, end, host=host_,
-                                         port=port_, verbose=verbose,
-                                         type=type, dtype=dtype, pad=pad,
-                                         scaled=scaled, allow_tape=allow_tape_)
-                    except (RuntimeError, ValueError) as exc:
-                        error = str(exc)  # need to assign to take out of scope
-                        msg = error.split("\n", 1)[0]
-                        warnings.warn(
-                            f"failed to fetch data for {', '.join(channels)} "
-                            f"in interval [{start}, {end}): {msg}",
-                            io_nds2.NDSWarning,
-                        )
-
-                # if failing occurred because of data on tape, don't try
-                # reading channels individually, the same error will occur
-                if not allow_tape_ and "Requested data is on tape" in error:
-                    continue
-
-                # if we got this far, we can't get all channels in one go
-                if len(channels) > 1:
-                    return cls(
-                        (c, cls.EntryClass.fetch(c, start, end,
-                                                 verbose=verbose, type=type,
-                                                 verify=verify,
-                                                 dtype=dtype.get(c), pad=pad,
-                                                 scaled=scaled,
-                                                 allow_tape=allow_tape_))
-                        for c in channels)
-            err = "Cannot find all relevant data on any known server."
-            if not verbose:
-                err += (" Try again using the verbose=True keyword argument "
-                        " to see detailed failures.")
-            raise RuntimeError(err)
-
-        # -- at this point we have an open connection, so perform fetch
-
-        start = to_gps(start)
-        end = to_gps(end)
-        istart = int(start)
-        iend = int(ceil(end))
-
-        return fetch(channels, istart, iend, connection=connection,
-                     host=host, port=port, verbose=verbose, type=type,
-                     dtype=dtype, pad=pad, allow_tape=allow_tape,
-                     scaled=scaled,
-                     series_class=cls.EntryClass).crop(start, end)
+        return fetch_dict(
+            channels,
+            start,
+            end,
+            host=host,
+            port=port,
+            verify=verify,
+            verbose=verbose,
+            connection=connection,
+            pad=pad,
+            scaled=scaled,
+            allow_tape=allow_tape,
+            type=type,
+            dtype=dtype,
+            series_class=cls.EntryClass,
+        )
 
     @classmethod
     def find(cls, channels, start, end, frametype=None,

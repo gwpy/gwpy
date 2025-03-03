@@ -1,5 +1,5 @@
 # Copyright (C) Louisiana State University (2017)
-#               Cardiff University (2017-)
+#               Cardiff University (2017-2025)
 #
 # This file is part of GWpy.
 #
@@ -18,45 +18,88 @@
 
 """NDS2 data query routines for the TimeSeries."""
 
+from __future__ import annotations
+
 import operator
+import typing
 import warnings
 from functools import reduce
+from math import ceil
 
 from numpy import ones as numpy_ones
 
 from ...detector import Channel
 from ...io import nds2 as io_nds2
-from ...segments import (Segment, SegmentList)
-from ...utils import gprint
+from ...segments import (
+    Segment,
+    SegmentList,
+)
+from ...time import to_gps
 from ...utils.progress import progress_bar
-from .. import (TimeSeries)
+from .. import TimeSeries
 from ..connect import _pad_series
+
+if typing.TYPE_CHECKING:
+    from collections.abc import (
+        Iterable,
+        Iterator,
+    )
+    from typing import (
+        Any,
+        TypeVar,
+    )
+
+    import nds2
+
+    from ...time import LIGOTimeGPS
+    from ...typing import GpsLike
+    from .. import (
+        TimeSeriesBase,
+        TimeSeriesBaseDict,
+    )
+
+    _TChan = TypeVar("_TChan")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def print_verbose(*args, **kwargs):
-    """Utility to print something only if verbose=True is given."""
-    if kwargs.pop("verbose", False) is True:
-        gprint(*args, **kwargs)
+def _print_verbose(
+    *args: Any,
+    verbose: bool = False,
+    flush: bool = True,
+    **kwargs,
+) -> None:
+    """Print something only if verbose=True is given."""
+    if verbose:
+        print(*args, flush=flush, **kwargs)  # noqa: T201
 
 
-def _parse_nds_enum_dict_param(channels, key, value):
+def _parse_nds_enum_dict_param(
+    channels: Iterable[_TChan],
+    key: str,
+    value: dict | int | str | None,
+) -> dict[_TChan, int]:
+    """Parse an NDS2 Enum value into a dict keyed on ``channels``."""
+    # parse input key
     if key == "type":
         enum = io_nds2.Nds2ChannelType
-        default = enum.any()
+        default = enum.any().value
     else:
         enum = io_nds2.Nds2DataType
-        default = enum.any()
+        default = enum.any().value
+
     # set default
     if value is None:
         value = default
+
     # parse non-int enum representation
     if not isinstance(value, dict | int):
         value = enum.find(value).value
+
     # return dict of ints
     if isinstance(value, int):
-        return dict((c, value) for c in channels)
+        return {c: value for c in channels}
+
     # here we know ``value`` is a dict, so just fill in the blanks
     value = value.copy()
     for chan in channels:
@@ -64,65 +107,339 @@ def _parse_nds_enum_dict_param(channels, key, value):
     return value
 
 
-def set_parameter(connection, parameter, value, verbose=False):
+def _set_parameter(
+    connection: nds2.connection,
+    parameter: str,
+    value: str | int | bool,
+    *,
+    verbose: bool = False,
+) -> None:
     """Set a parameter for the connection, handling errors as warnings."""
-    value = str(value)
-    try:
-        if not connection.set_parameter(parameter, value):
-            raise ValueError("invalid parameter or value")
-    except (AttributeError, ValueError) as exc:
-        warnings.warn(
-            "failed to set {}={!r}: {}".format(parameter, value, str(exc)),
-            io_nds2.NDSWarning)
-    else:
-        print_verbose(
-            "    [{}] set {}={!r}".format(
-                connection.get_host(), parameter, value),
+    ref = f"set {parameter}='{value}'"
+    if connection.set_parameter(parameter, str(value)):
+        _print_verbose(
+            f"    [{connection.get_host()}] set {ref}",
             verbose=verbose,
+        )
+    else:
+        warnings.warn(
+            f"failed to {ref}",
+            io_nds2.NDSWarning,
         )
 
 
-@io_nds2.open_connection
-def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
-          connection=None, host=None, port=None, pad=None, scaled=True,
-          verbose=False, series_class=TimeSeries):
-    # host and port keywords are used by the decorator only
-    # pylint: disable=unused-argument
+def _get_connection_kw(
+    connection: nds2.connection | None,
+    host: str | None,
+    port: int | None,
+    channels: Iterable[str | Channel],
+    start: GpsLike | None,
+    allow_tape: bool | None,
+) -> Iterator[dict[str, str | int | bool | nds2.connection]]:
+    """Yield a dict of connection keywords for each endpoint candidate."""
+    if connection is not None or host is not None:
+        yield {
+            "connection": connection,
+            "host": host,
+            "port": port,
+            "allow_tape": allow_tape,
+        }
+    else:
+        ifos = {Channel(channel).ifo for channel in channels}
+        try:
+            ifo = ifos.pop()
+        except KeyError:  # ifos is empty
+            ifo = None
+
+        hostlist = io_nds2.host_resolution_order(ifo, epoch=start)
+
+        if allow_tape is None:
+            tapes = [False, True]
+        else:
+            tapes = [allow_tape]
+
+        for allow_tape_ in tapes:
+            for host_, port_ in hostlist:
+                yield {
+                    "connection": None,
+                    "host": host_,
+                    "port": port_,
+                    "allow_tape": allow_tape_,
+                }
+
+
+def fetch_dict(
+    channels: list[str | Channel],
+    start: GpsLike,
+    end: GpsLike,
+    *,
+    host: str | None = None,
+    port: int | None = None,
+    verify: bool = False,
+    verbose: bool | str = False,
+    connection: nds2.connection | None = None,
+    pad: float | None = None,
+    scaled: bool | None = None,
+    allow_tape: bool | None = None,
+    type: int | str | None = None,
+    dtype: int | str | None = None,
+    series_class: type[TimeSeriesBase] = TimeSeries,
+) -> TimeSeriesBaseDict:
+    """Fetch data from NDS for a number of channels.
+
+    Parameters
+    ----------
+    channels : `list` of `str` or `~gwpy.detector.Channel`
+        List of data channels to fetch.
+
+    start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS start time of required data,
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS end time of required data, defaults to end of data found;
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    host : `str`, optional
+        URL of NDS server to use, if blank will try any server
+        (in a relatively sensible order) to get the data
+
+        One of ``connection`` or ``host`` must be given.
+
+    port : `int`, optional
+        Port number for NDS server query, must be given with `host`.
+
+    verify : `bool`, optional
+        Check channels exist in database before asking for data.
+        Default is `True`.
+
+    verbose : `bool`, optional
+        Print verbose progress information about NDS download.
+        If ``verbose`` is specified as a string, this defines the
+        prefix for the progress meter.
+
+    connection : `nds2.connection`, optional
+        Open NDS connection to use.
+        Default is to open a new connection using ``host`` and ``port``
+        arguments.
+
+        One of ``connection`` or ``host`` must be given.
+
+    pad : `float`, optional
+        Float value to insert between gaps.
+        Default behaviour is to raise an exception when any gaps are
+        found.
+
+    scaled : `bool`, optional
+        Apply slope and bias calibration to ADC data, for non-ADC data
+        this option has no effect.
+
+    allow_tape : `bool`, optional
+        Allow data access from slow tapes.
+        If ``host`` or ``connection`` is given, the default is to do
+        whatever the server default is, otherwise servers will be searched
+        with ``allow_tape=False`` first, then ``allow_tape=True` if that
+        fails.
+
+    type : `int`, `str`, optional
+        NDS2 channel type integer or string name to match.
+        Default is to search for any channel type.
+
+    dtype : `numpy.dtype`, `str`, `type`, or `dict`, optional
+        NDS2 data type to match.
+        Default is to search for any data type.
+
+    series_class : `type[TimeSeriesBase]`, optional
+        The type to use for each `Series` object to be returned.
+        Default is `TimeSeries.`
+
+    Returns
+    -------
+    data : :class:`~gwpy.timeseries.TimeSeriesBaseDict`
+        a new `TimeSeriesBaseDict` of (`str`, `TimeSeries`) pairs fetched
+        from NDS.
+    """
+    channels = list(map(str, channels))
+
+    # format GPS times
+    gpsstart = to_gps(start)
+    gpsend = to_gps(end)
+
+    # -- determine list of hosts to try
+
+    connection_kws = list(_get_connection_kw(
+        connection,
+        host,
+        port,
+        channels,
+        gpsstart,
+        allow_tape,
+    ))
+    nsources = len(connection_kws)
+
+    # -- try each one in turn
+
+    error: Exception | None = None
+
+    for conn_kw in connection_kws:
+        try:
+            return fetch(
+                channels,
+                gpsstart,
+                gpsend,
+                verbose=verbose,
+                type=type,
+                dtype=dtype,
+                pad=pad,
+                scaled=scaled,
+                series_class=series_class,
+                **conn_kw,
+            )
+        except (RuntimeError, ValueError) as exc:
+            if len(channels) == 1 and nsources == 1:
+                raise
+            if error:
+                # add this error to the chain of errors
+                exc.__context__ = error
+            error = exc
+
+        msg = str(error).split("\n", 1)[0]
+        warnings.warn(
+            f"failed to fetch data for {', '.join(channels)} "
+            f"in interval [{gpsstart}, {gpsend}): {msg}",
+            io_nds2.NDSWarning,
+        )
+
+        # if failing occurred because of data on tape, don't try
+        # reading channels individually, the same error will occur
+        if (
+            not conn_kw.get("allow_tape")
+            and "Requested data is on tape" in str(error)
+        ):
+            continue
+
+    # if we got this far, we can't get all channels in one go
+    if len(channels) == 1:
+        err = "Cannot find all relevant data on any known server."
+        if not verbose:
+            err += (
+                " Try again using the verbose=True keyword argument "
+                " to see detailed failures."
+            )
+        raise RuntimeError(err) from error
+
+    return series_class.DictClass((c, fetch_dict(
+        [c],
+        gpsstart,
+        gpsend,
+        host=host,
+        port=port,
+        verify=verify,
+        verbose=verbose,
+        connection=connection,
+        pad=pad,
+        scaled=scaled,
+        allow_tape=allow_tape,
+        type=type,
+        dtype=dtype,
+        series_class=series_class,
+    )[c]) for c in channels)
+
+
+def fetch(
+    channels: list[str],
+    start: LIGOTimeGPS,
+    end: LIGOTimeGPS,
+    *,
+    type: str | int | dict | None = None,
+    dtype: str | int | dict | None = None,
+    allow_tape: bool | None = None,
+    connection: nds2.connection | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    pad: float | None = None,
+    scaled: bool | None = None,
+    series_class: type[TimeSeriesBase] = TimeSeries,
+    verbose: bool | str = False,
+) -> TimeSeriesBaseDict:
     """Fetch a dict of data series from NDS2.
 
     This method sits underneath `TimeSeries.fetch` and related methods,
-    and isn't really designed to be called directly.
+    and isn't designed to be called directly.
     """
+    # format verbose progress
+    desc: str
+    if isinstance(verbose, str):
+        desc = verbose
+        verbose = True
+    else:
+        desc = "Downloading data"
+        verbose = bool(verbose)
+
+    # get a connection to an NDS2 server
+    if connection is None:
+        if host is None:
+            msg = (
+                "either connection= or host= keyword arguments "
+                "must be given to fetch data from NDS2"
+            )
+            raise ValueError(msg)
+        _print_verbose(
+            f"Opening new connection to {host}...",
+            end=" ",
+            verbose=verbose,
+        )
+        connection = io_nds2.auth_connect(host, port)
+        _print_verbose("connected", verbose=verbose)
+
     # set ALLOW_DATA_ON_TAPE
     if allow_tape is not None:
-        set_parameter(connection, "ALLOW_DATA_ON_TAPE", str(allow_tape),
-                      verbose=verbose)
+        _set_parameter(
+            connection,
+            "ALLOW_DATA_ON_TAPE",
+            str(allow_tape),
+            verbose=verbose,
+        )
 
-    type = _parse_nds_enum_dict_param(channels, "type", type)
+    ctype = _parse_nds_enum_dict_param(channels, "type", type)
     dtype = _parse_nds_enum_dict_param(channels, "dtype", dtype)
 
+    # read using integers
+    istart = int(start)
+    iend = int(ceil(end))
+
     # verify channels exist
-    print_verbose("Checking channels list against NDS2 database...", end=" ",
-                  verbose=verbose)
-    utype = reduce(operator.or_, type.values())  # logical OR of types
+    _print_verbose(
+        "Checking channels list against NDS2 database...",
+        end=" ",
+        verbose=verbose,
+    )
+    utype = reduce(operator.or_, ctype.values())  # logical OR of types
     udtype = reduce(operator.or_, dtype.values())
-    epoch = (start, end) if connection.get_protocol() > 1 else None
-    ndschannels = io_nds2.find_channels(channels, connection=connection,
-                                        epoch=epoch, type=utype, dtype=udtype,
-                                        unique=True)
+    epoch = (istart, iend) if connection.get_protocol() > 1 else None
+    ndschannels = io_nds2.find_channels(
+        channels,
+        connection=connection,
+        epoch=epoch,
+        type=utype,
+        dtype=udtype,
+        unique=True,
+    )
 
     names = [Channel.from_nds2(c).ndsname for c in ndschannels]
-    print_verbose("done", verbose=verbose)
+    _print_verbose("done", verbose=verbose)
 
     # handle minute trend timing
-    if any(c.endswith("m-trend") for c in names) and (start % 60 or end % 60):
-        warnings.warn("Requested at least one minute trend, but "
-                      "start and stop GPS times are not multiples of "
-                      "60. Times will be expanded outwards to compensate")
-        start, end = io_nds2.minute_trend_times(start, end)
+    if any(c.endswith("m-trend") for c in names) and (istart % 60 or iend % 60):
+        warnings.warn(
+            "Requested at least one minute trend, but "
+            "start and stop GPS times are not multiples of "
+            "60. Times will be expanded outwards to compensate",
+        )
+        istart, iend = io_nds2.minute_trend_times(istart, iend)
 
     # get data availability
-    span = SegmentList([Segment(start, end)])
+    span = SegmentList([Segment(istart, iend)])
     if pad is None:
         qsegs = span
         gap = "raise"
@@ -130,25 +447,34 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
         qsegs = span
         gap = "pad"
     else:
-        print_verbose("Querying for data availability...", end=" ",
-                      verbose=verbose)
+        _print_verbose(
+            "Querying for data availability...",
+            end=" ",
+            verbose=verbose,
+        )
         pad = float(pad)
         gap = "pad"
         qsegs = _get_data_segments(ndschannels, start, end, connection) & span
-        print_verbose("done\nFound {0} viable segments of data with {1:.2f}% "
-                      "coverage".format(len(qsegs),
-                                        abs(qsegs) / abs(span) * 100),
-                      verbose=verbose)
+        cov = abs(qsegs) / abs(span) * 100
+        _print_verbose(
+            f"done\nFound {len(qsegs)} viable segments of data with "
+            f"{cov:.2f}% coverage",
+            verbose=verbose,
+        )
         if span - qsegs:
-            warnings.warn("Gaps were found in data available from {0}, "
-                          "but will be padded with {1}".format(
-                              connection.get_host(), pad))
+            warnings.warn(
+                "Gaps were found in data available from "
+                f"{connection.get_host()}, but will be padded with {pad}",
+            )
 
     # query for each segment
     out = series_class.DictClass()
-    desc = verbose if isinstance(verbose, str) else "Downloading data"
-    with progress_bar(total=float(abs(qsegs)), desc=desc,
-                      unit="s", disable=not bool(verbose)) as bar:
+    with progress_bar(
+        total=float(abs(qsegs)),
+        desc=desc,
+        unit="s",
+        disable=not bool(verbose),
+    ) as bar:
         for seg in qsegs:
             total = 0.
             for buffers in connection.iterate(int(seg[0]), int(seg[1]), names):
@@ -164,8 +490,8 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
                 bar.update(new)
             # sometimes NDS2 returns no data at all
             if not total and gap != "pad":
-                raise RuntimeError("no data received from {0} for {1}".format(
-                    connection.get_host(), seg))
+                msg = f"no data received from {connection.get_host()} for {seg}"
+                raise RuntimeError(msg)
 
     # finalise timeseries to make sure each channel has the correct limits
     # only if user asked to pad gaps
@@ -173,29 +499,56 @@ def fetch(channels, start, end, type=None, dtype=None, allow_tape=None,
         for chan, ndschan in zip(channels, ndschannels, strict=True):
             try:
                 ts = out[chan]
-            except KeyError:
-                out[chan] = _create_series(ndschan, pad, start, end,
-                                           series_class=series_class)
+            except KeyError:  # noqa: PERF203
+                out[chan] = _create_series(
+                    ndschan,
+                    pad,
+                    start,
+                    end,
+                    series_class=series_class,
+                )
             else:
                 out[chan] = _pad_series(ts, pad, start, end)
+
+    # constrain to the non-integer GPS times we were actually given
+    if start != istart or end != iend:
+        out.crop(start=start, end=end)
 
     return out
 
 
-def _create_series(ndschan, value, start, end, series_class=TimeSeries):
+def _create_series(
+    ndschan: nds2.channel,
+    value: float,
+    start: LIGOTimeGPS,
+    end: LIGOTimeGPS,
+    series_class: type[TimeSeriesBase] = TimeSeries,
+) -> TimeSeriesBase:
     """Create a timeseries to cover the specified [start, end) limits.
 
-    To cover a gap in data returned from NDS
+    To cover a gap in data returned from NDS.
     """
     channel = Channel.from_nds2(ndschan)
     nsamp = int((end - start) * channel.sample_rate.value)
-    return series_class(numpy_ones(nsamp) * value, t0=start,
-                        sample_rate=channel.sample_rate, unit=channel.unit,
-                        channel=channel)
+    return series_class(
+        numpy_ones(nsamp) * value,
+        t0=start,
+        sample_rate=channel.sample_rate,
+        unit=channel.unit,
+        channel=channel)
 
 
-def _get_data_segments(channels, start, end, connection):
+def _get_data_segments(
+    channels: list[nds2.channel],
+    start: LIGOTimeGPS,
+    end: LIGOTimeGPS,
+    connection: nds2.connection,
+) -> SegmentList:
     """Get available data segments for the given channels."""
-    allsegs = io_nds2.get_availability(channels, start, end,
-                                       connection=connection)
+    allsegs = io_nds2.get_availability(
+        channels,
+        start,
+        end,
+        connection=connection,
+    )
     return allsegs.intersection(allsegs.keys())

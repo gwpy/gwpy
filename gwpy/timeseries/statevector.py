@@ -27,6 +27,9 @@ arrays, representing a bit mask of states that combine to make a detailed
 statement of instrumental operation
 """
 
+from __future__ import annotations
+
+import typing
 from functools import wraps
 from math import (
     ceil,
@@ -37,7 +40,6 @@ import numpy
 from astropy import units
 
 from ..detector import Channel
-from ..io.nds2 import Nds2ChannelType
 from ..io.registry import UnifiedReadWriteMethod
 from ..time import Time
 from ..types import Array2D
@@ -53,6 +55,11 @@ from .core import (
     TimeSeriesBaseList,
     as_series_dict_class,
 )
+
+if typing.TYPE_CHECKING:
+    import nds2
+
+    from ..typing import GpsLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -657,50 +664,101 @@ class StateVector(TimeSeriesBase):
         return out
 
     @classmethod
-    def fetch(cls, channel, start, end, bits=None, host=None, port=None,
-              verbose=False, connection=None, type=Nds2ChannelType.any()):
+    def fetch(
+        cls,
+        channel: str | Channel,
+        start: GpsLike,
+        end: GpsLike,
+        *,
+        bits: list[str] | dict[int, str] | Bits | None = None,
+        host: str | None = None,
+        port: int | None = None,
+        verbose: bool | str = False,
+        connection: nds2.connection | None = None,
+        verify: bool = False,
+        pad: float | None = None,
+        allow_tape: bool | None = None,
+        scaled: bool | None = None,
+        type: int | str | None = None,
+        dtype: int | str | None = None,
+    ):
         """Fetch data from NDS into a `StateVector`.
 
         Parameters
         ----------
         channel : `str`, `~gwpy.detector.Channel`
-            the name of the channel to read, or a `Channel` object.
+            The name (or representation) of the data channel to fetch.
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
-            GPS end time of required data,
+        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+            GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
 
         bits : `Bits`, `list`, optional
-            definition of bits for this `StateVector`
+            Definition of bits for this `StateVector`.
 
         host : `str`, optional
-            URL of NDS server to use, defaults to observatory site host
+            URL of NDS server to use, if blank will try any server
+            (in a relatively sensible order) to get the data
+
+            One of ``connection`` or ``host`` must be given.
 
         port : `int`, optional
-            port number for NDS server query, must be given with `host`
+            Port number for NDS server query, must be given with `host`.
 
-        verify : `bool`, optional, default: `True`
-            check channels exist in database before asking for data
-
-        connection : `nds2.connection`
-            open NDS connection to use
+        verify : `bool`, optional
+            Check channels exist in database before asking for data.
+            Default is `True`.
 
         verbose : `bool`, optional
-            print verbose output about NDS progress
+            Print verbose progress information about NDS download.
+            If ``verbose`` is specified as a string, this defines the
+            prefix for the progress meter.
 
-        type : `int`, optional
-            NDS2 channel type integer
+        connection : `nds2.connection`, optional
+            Open NDS connection to use.
+            Default is to open a new connection using ``host`` and ``port``
+            arguments.
 
-        dtype : `type`, `numpy.dtype`, `str`, optional
-            identifier for desired output data type
+            One of ``connection`` or ``host`` must be given.
+
+        scaled : `bool`, optional
+            Apply slope and bias calibration to ADC data, for non-ADC data
+            this option has no effect.
+
+        allow_tape : `bool`, optional
+            Allow data access from slow tapes.
+            If ``host`` or ``connection`` is given, the default is to do
+            whatever the server default is, otherwise servers will be searched
+            with ``allow_tape=False`` first, then ``allow_tape=True` if that
+            fails.
+
+        type : `int`, `str`, optional
+            NDS2 channel type integer or string name to match.
+            Default is to search for any channel type.
+
+        dtype : `numpy.dtype`, `str`, `type`, or `dict`, optional
+            NDS2 data type to match.
+            Default is to search for any data type.
         """
         new = cls.DictClass.fetch(
-            [channel], start, end, host=host, port=port,
-            verbose=verbose, connection=connection)[channel]
+            [channel],
+            start,
+            end,
+            host=host,
+            port=port,
+            verbose=verbose,
+            connection=connection,
+            verify=verify,
+            pad=pad,
+            scaled=scaled,
+            allow_tape=allow_tape,
+            type=type,
+            dtype=dtype,
+        )[channel]
         if bits:
             new.bits = bits
         return new

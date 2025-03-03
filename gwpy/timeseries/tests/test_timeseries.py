@@ -635,56 +635,89 @@ class TestTimeSeries(_TestTimeSeriesBase):
             )
 
     @pytest.mark.requires("nds2")
-    @pytest.mark.parametrize("protocol", (1, 2))
-    def test_fetch(self, protocol):
-        ts = self.create(name="L1:TEST", t0=1000000000, unit="m")
-        nds_buffer = mocks.nds2_buffer_from_timeseries(ts)
-        nds_connection = mocks.nds2_connection(buffers=[nds_buffer],
-                                               protocol=protocol)
-        with (
-            mock.patch("nds2.connection") as mock_connection,
-            mock.patch("nds2.buffer", nds_buffer),
-        ):
-            mock_connection.return_value = nds_connection
+    @pytest.mark.parametrize("protocol", [
+        pytest.param(1, id="nds1"),
+        pytest.param(2, id="nds2"),
+    ])
+    def test_fetch(self, nds2_connection, protocol):
+        """Test `TimeSeries.fetch`."""
+        # set protocol
+        nds2_connection.get_protocol.return_value = protocol
 
-            # use verbose=True to hit more lines
-            ts2 = self.TEST_CLASS.fetch("L1:TEST", *ts.span, verbose=True)
-            utils.assert_quantity_sub_equal(ts, ts2, exclude=["channel"])
+        # get expected result
+        expected = self.TEST_CLASS.from_nds2_buffer(nds2_connection._buffers[0])
 
-            # check open connection works
-            ts2 = self.TEST_CLASS.fetch("L1:TEST", *ts.span, verbose=True,
-                                        connection=nds_connection)
-            utils.assert_quantity_sub_equal(ts, ts2, exclude=["channel"])
-
-            # check padding works (with warning for nds2-server connections)
-            ctx = pytest.warns(UserWarning) if protocol > 1 else nullcontext()
-            with ctx:
-                ts2 = self.TEST_CLASS.fetch("L1:TEST", *ts.span.protract(10),
-                                            pad=-100., host="anything")
-            assert ts2.span == ts.span.protract(10)
-            assert ts2[0] == -100. * ts.unit
-            assert ts2[10] == ts[0]
-            assert ts2[-11] == ts[-1]
-            assert ts2[-1] == -100. * ts.unit
+        # execute fetch()
+        ts = self.TEST_CLASS.fetch(
+            "X1:test",
+            1000000000,
+            1000000004,
+            verbose=True,
+        )
+        utils.assert_quantity_sub_equal(ts, expected)
 
     @pytest.mark.requires("nds2")
-    def test_fetch_empty_iterate_error(self):
-        # test that the correct error is raised if nds2.connection.iterate
-        # yields no buffers (and no errors)
+    def test_fetch_connection(self, nds2_connection):
+        """Test `TimeSeries.fetch(..., connection=<>)`."""
+        expected = self.TEST_CLASS.from_nds2_buffer(nds2_connection._buffers[0])
+        ts = self.TEST_CLASS.fetch(
+            "X1:test",
+            1000000000,
+            1000000004,
+            verbose=True,
+            connection=nds2_connection,
+        )
+        utils.assert_quantity_sub_equal(ts, expected)
 
-        # mock connection with no data
-        nds_connection = mocks.nds2_connection()
+    @pytest.mark.requires("nds2")
+    @pytest.mark.parametrize("protocol", [
+        pytest.param(1, id="nds1"),
+        pytest.param(2, id="nds2"),
+    ])
+    def test_fetch_pad(self, nds2_connection, protocol):
+        """Test `TimeSeries.fetch(..., pad=...)`."""
+        # set protocol
+        nds2_connection.get_protocol.return_value = protocol
 
+        # get expected result
+        expected = self.TEST_CLASS.from_nds2_buffer(nds2_connection._buffers[0])
+
+        # check padding works (with warning for nds2-server connections)
+        ctx = pytest.warns(UserWarning) if protocol > 1 else nullcontext()
+        with ctx:
+            ts = self.TEST_CLASS.fetch(
+                "X1:test",
+                *expected.span.protract(2),
+                pad=-100.,
+                connection=nds2_connection,
+            )
+        assert ts.span == expected.span.protract(2)
+        nptest.assert_array_equal(
+            ts.value,
+            numpy.concatenate((
+                numpy.ones(int(2 * ts.sample_rate.value)) * -100.,
+                expected.value,
+                numpy.ones(int(2 * ts.sample_rate.value)) * -100.,
+            )),
+        )
+
+    @pytest.mark.requires("nds2")
+    def test_fetch_empty_iterate_error(self, nds2_connection):
+        """Test `TimeSeries.fetch()` handling of no data."""
+        # patch find_channels() to return the channel, even though
+        # iterate() won't return any data
         def find_channels(name, *args, **kwargs):
             return [mocks.nds2_channel(name, 128, "")]
 
-        nds_connection.find_channels = find_channels
+        nds2_connection.find_channels = find_channels
+        nds2_connection._buffers = []
 
-        # run fetch and assert error
-        with mock.patch("nds2.connection") as mock_connection:
-            mock_connection.return_value = nds_connection
-            with pytest.raises(RuntimeError, match="no data received"):
-                self.TEST_CLASS.fetch("L1:TEST", 0, 1, host="nds.gwpy")
+        # check that we get the right error
+        with pytest.raises(
+            RuntimeError,
+            match="no data received",
+        ):
+            self.TEST_CLASS.fetch("X1:test-missing", 0, 1, host="nds.gwpy")
 
     @pytest.mark.requires("nds2")
     @mock.patch(
@@ -693,16 +726,15 @@ class TestTimeSeries(_TestTimeSeriesBase):
     )
     def test_fetch_warning_message(self, _):
         """Test that TimeSeries.fetch emits a useful warning on NDS2 issues."""
-        with (
-            pytest.raises(
-                RuntimeError,
-                match="Cannot find all relevant data",
-            ),
-            pytest.warns(
-                NDSWarning,
-                match="failed to fetch data for X1:TEST",
-            ),
-        ):
+        err = pytest.raises(
+            RuntimeError,
+            match="Cannot find all relevant data",
+        )
+        wrn = pytest.warns(
+            NDSWarning,
+            match="failed to fetch data for X1:TEST",
+        )
+        with err, wrn:
             self.TEST_CLASS.fetch("X1:TEST", 0, 1)
 
     @pytest_skip_flaky_network
