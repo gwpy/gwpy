@@ -126,6 +126,17 @@ hacr = [
 kerberos = [
   "gssapi",
 ]
+# Pelican federation data access
+pelican = [
+  "requests-pelican >=0.2.0",
+]
+# SciTokens
+scitokens = [
+  "htgettoken >=2.1",
+  "igwn-auth-utils >=1.2.0",
+  "requests-scitokens",
+  "scitokens >=1.8.0",
+]
 # SQL
 sql = [
   "pandas",
