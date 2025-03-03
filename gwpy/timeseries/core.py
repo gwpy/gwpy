@@ -78,7 +78,6 @@ if typing.TYPE_CHECKING:
     import nds2
 
     from ..typing import (
-        DTypeLike,
         GpsLike,
         Self,
     )
@@ -558,11 +557,6 @@ class TimeSeriesBase(Series):
         end: GpsLike,
         *,
         source: str | None = None,
-        pad: float | None = None,
-        scaled: bool | None = None,
-        dtype: DTypeLike | None = None,
-        verbose: bool = False,
-        allow_tape: bool | None = None,
         **kwargs,
     ) -> Self:
         """Get data for this channel.
@@ -1326,11 +1320,7 @@ class TimeSeriesBaseDict(OrderedDict):
         end: GpsLike,
         *,
         source: str | list[str] | None = None,
-        pad: float | None = None,
-        scaled: bool | None = None,
-        dtype: DTypeLike | None = None,
         verbose: bool = False,
-        allow_tape: bool | None = None,
         **kwargs,
     ):
         """Retrieve data for multiple channels from any data source.
