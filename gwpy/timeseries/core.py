@@ -54,6 +54,7 @@ from ..detector import (
     ChannelList,
 )
 from ..io.registry import UnifiedReadWriteMethod
+from ..log import logger
 from ..segments import SegmentList
 from ..time import (
     GPS_TYPES,
@@ -1143,22 +1144,26 @@ class TimeSeriesBaseDict(OrderedDict):
         """
         from .io.nds2 import fetch_dict
 
-        return fetch_dict(
-            channels,
-            start,
-            end,
-            host=host,
-            port=port,
-            verify=verify,
-            verbose=verbose,
-            connection=connection,
-            pad=pad,
-            scaled=scaled,
-            allow_tape=allow_tape,
-            type=type,
-            dtype=dtype,
-            series_class=cls.EntryClass,
-        )
+        with logger(
+            name=fetch_dict.__module__,
+            level="DEBUG" if verbose else None,
+        ):
+            return fetch_dict(
+                channels,
+                start,
+                end,
+                host=host,
+                port=port,
+                verify=verify,
+                verbose=verbose,
+                connection=connection,
+                pad=pad,
+                scaled=scaled,
+                allow_tape=allow_tape,
+                type=type,
+                dtype=dtype,
+                series_class=cls.EntryClass,
+            )
 
     @classmethod
     def find(cls, channels, start, end, frametype=None,
