@@ -47,7 +47,7 @@ if typing.TYPE_CHECKING:
 
     from ..segments import (
         DataQualityFlag,
-        SegmentList,
+        Segment,
     )
     from ..types import Array
 
@@ -252,8 +252,8 @@ def assert_table_equal(
 
 
 def assert_segmentlist_equal(
-    a: SegmentList,
-    b: SegmentList,
+    a: Iterable[Segment],
+    b: Iterable[Segment],
 ):
     """Assert that two `SegmentList`s contain the same data."""
     for aseg, bseg in zip_longest(a, b):

@@ -1,5 +1,5 @@
 # Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+#               Cardiff University (2017-2025)
 #
 # This file is part of GWpy.
 #
@@ -18,6 +18,10 @@
 
 """Tests for :mod:`gwpy.segments.segments`."""
 
+from __future__ import annotations
+
+import typing
+
 import h5py
 import pytest
 from astropy.table import Table
@@ -26,10 +30,16 @@ from ...testing.errors import pytest_skip_flaky_network
 from ...testing.utils import (
     TEST_DATA_PATH,
     assert_segmentlist_equal,
-    assert_table_equal
+    assert_table_equal,
 )
 from ...time import LIGOTimeGPS
-from .. import (Segment, SegmentList)
+from .. import (
+    Segment,
+    SegmentList,
+)
+
+if typing.TYPE_CHECKING:
+    from typing import SupportsFloat
 
 TEST_SEGWIZARD_FILE = TEST_DATA_PATH / "X1-GWPY_TEST_SEGMENTS-0-10.txt"
 TEST_SEGWIZARD_URI = (
@@ -40,58 +50,75 @@ TEST_SEGWIZARD_URI = (
 )
 
 
-# -- Segment ------------------------------------------------------------------
+def _as_segmentlist(*segments: tuple[SupportsFloat, SupportsFloat]) -> SegmentList:
+    """Return ``segments`` as a `SegmentList`."""
+    return SegmentList([Segment(a, b) for a, b in segments])
+
+
+# -- Segment -------------------------
 
 class TestSegment:
+    """Test `gwpy.segments.Segment`."""
+
     TEST_CLASS = Segment
 
     @classmethod
-    @pytest.fixture()
+    @pytest.fixture
     def segment(cls):
+        """Create a test segment (fixture)."""
         return cls.TEST_CLASS(1, 2)
 
     def test_start_end(self, segment):
+        """Test the start and end properties."""
         assert segment.start == 1.
         assert segment.end == 2.
 
     def test_repr(self, segment):
+        """Test ``repr(segment)``."""
         assert repr(segment) == "Segment(1, 2)"
 
     def test_str(self, segment):
+        """Test ``str(segment)``."""
         assert str(segment) == "[1 ... 2)"
 
 
-# -- SegmentList --------------------------------------------------------------
+# -- SegmentList ---------------------
 
 class TestSegmentList:
+    """Test `gwpy.segments.SegmentList`."""
+
     TEST_CLASS = SegmentList
     ENTRY_CLASS = Segment
 
     @classmethod
     def create(cls, *segments):
+        """Create a test segment list."""
         return cls.TEST_CLASS([cls.ENTRY_CLASS(a, b) for a, b in segments])
 
     @classmethod
-    @pytest.fixture()
+    @pytest.fixture
     def segmentlist(cls):
+        """Create a test segment list (fixture)."""
         return cls.create((1, 2), (3, 4), (4, 6), (8, 10))
 
-    # -- test methods ---------------------------
+    # -- test methods ----------------
 
     def test_extent(self, segmentlist):
-        """Test `gwpy.segments.SegmentList.extent returns the right type."""
+        """Test `SegmentList.extent()` returns the right type."""
         extent = segmentlist.extent()
         assert isinstance(extent, self.ENTRY_CLASS)
         assert extent == Segment(1, 10)
 
     def test_coalesce(self):
+        """Test `SegmentList.coalesce()`."""
         segmentlist = self.create((1, 2), (3, 4), (4, 5))
         c = segmentlist.coalesce()
         assert c is segmentlist
-        assert_segmentlist_equal(c, [(1, 2), (3, 5)])
+        assert_segmentlist_equal(c, _as_segmentlist((1, 2), (3, 5)))
         assert isinstance(c[0], self.ENTRY_CLASS)
 
     def test_to_table(self, segmentlist):
+        """Test `SegmentList.to_table()`."""
         segtable = segmentlist.to_table()
         assert_table_equal(
             segtable,
@@ -106,9 +133,10 @@ class TestSegmentList:
             ),
         )
 
-    # -- test I/O -------------------------------
+    # -- test I/O --------------------
 
     def test_read_write_segwizard(self, segmentlist, tmp_path):
+        """Test writing and reading back a `SegmentList` in ASCII format."""
         tmp = tmp_path / "segments.txt"
         # check write/read returns the same list
         segmentlist.write(tmp)
@@ -126,22 +154,28 @@ class TestSegmentList:
         assert isinstance(sl2[0][0], float)
 
     def test_read_write_segwizard_strict(self, tmp_path):
+        """Test writing and reading back a `SegmentList` in strict ASCII format."""
         tmp = tmp_path / "segments.txt"
         tmp.write_text("0 0 1 .5")
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="incorrect duration .5",
+        ):
             self.TEST_CLASS.read(tmp, strict=True, format="segwizard")
         sl = self.TEST_CLASS.read(tmp, strict=False, format="segwizard")
-        assert_segmentlist_equal(sl, [(0, 1)])
+        assert_segmentlist_equal(sl, _as_segmentlist((0, 1)))
 
     def test_read_write_segwizard_twocol(self, tmp_path):
+        """Test writing and reading back a `SegmentList` in two-col ASCII format."""
         tmp = tmp_path / "segments.txt"
         tmp.write_text("0 1\n2 3")
         sl = self.TEST_CLASS.read(tmp, format="segwizard")
-        assert_segmentlist_equal(sl, [(0, 1), (2, 3)])
+        assert_segmentlist_equal(sl, _as_segmentlist((0, 1), (2, 3)))
 
-    @pytest.mark.parametrize("ext", (".hdf5", ".h5"))
+    @pytest.mark.parametrize("ext", [".hdf5", ".h5"])
     def test_read_write_hdf5(self, segmentlist, tmp_path, ext):
-        tmp = tmp_path / "segments{}".format(ext)
+        """Test writing and reading back a `SegmentList` in HDF5 format."""
+        tmp = tmp_path / f"segments{ext}"
 
         # check basic write/read with auto-path discovery
         segmentlist.write(tmp, "test-segmentlist")
@@ -158,7 +192,10 @@ class TestSegmentList:
             assert_segmentlist_equal(sl2, segmentlist)
 
         # check overwrite kwarg
-        with pytest.raises(IOError):
+        with pytest.raises(
+            OSError,
+            match="File .* already exists",
+        ):
             segmentlist.write(tmp, "test-segmentlist")
         segmentlist.write(tmp, "test-segmentlist", overwrite=True)
 
