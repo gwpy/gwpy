@@ -226,6 +226,7 @@ doxylink = {
 # Intersphinx
 intersphinx_mapping = {key: (value, None) for key, value in {
     "astropy": "https://docs.astropy.org/en/stable/",
+    "coloredlogs": "https://coloredlogs.readthedocs.io/en/latest/",
     "dateparser": "https://dateparser.readthedocs.io/en/stable/",
     "dateutil": "https://dateutil.readthedocs.io/en/stable/",
     "dqsegdb2": "https://dqsegdb2.readthedocs.io/en/stable/",
@@ -233,6 +234,7 @@ intersphinx_mapping = {key: (value, None) for key, value in {
     "gwdatafind": "https://gwdatafind.readthedocs.io/en/stable/",
     "gwosc": "https://gwosc.readthedocs.io/en/stable/",
     "h5py": "https://docs.h5py.org/en/latest/",
+    "humanfriendly": "https://humanfriendly.readthedocs.io/en/latest/",
     "ligo.skymap": "https://lscsoft.docs.ligo.org/ligo.skymap/",
     "igwn-auth-utils": "https://igwn-auth-utils.readthedocs.io/en/stable/",
     "igwn-segments": "https://igwn-segments.readthedocs.io/en/stable/",
