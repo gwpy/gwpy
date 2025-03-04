@@ -84,6 +84,12 @@ LAL_NUMPY_FROM_TYPE_STR: dict[str, type] = {
 
 LAL_TYPE_REGEX: re.Pattern = re.compile(r"(U?INT|REAL|COMPLEX)\d+")
 
+# type alias for 'any' timeseries
+LALTimeSeriesType = reduce(
+    operator.or_,
+    (getattr(lal, f"{typ}TimeSeries") for typ in LAL_TYPE_STR.values()),
+)
+
 
 def to_lal_type_str(
     pytype: type | DTypeLike | str | int,

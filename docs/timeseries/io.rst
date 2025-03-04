@@ -112,7 +112,7 @@ GWF
 
 **Additional dependencies:**  :ref:`gwpy-external-framecpp` or :ref:`gwpy-external-framel` or :ref:`gwpy-external-lalframe`
 
-The raw observatory data are archived in ``.gwf`` files, a custom binary format that efficiently stores the time streams and all necessary metadata, for more details about this particular data format, take a look at the specification document |GWFSpec|_.
+The raw observatory data are archived in ``.gwf`` files, a custom binary format that efficiently stores the time streams and all necessary metadata, for more details about this particular data format, take a look at the specification document |LIGO-T970130|_.
 
 GWF library availability
 ------------------------

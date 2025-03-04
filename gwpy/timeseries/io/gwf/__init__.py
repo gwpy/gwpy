@@ -1,5 +1,5 @@
 # Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2022)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -18,326 +18,35 @@
 
 """Input/output routines for gravitational-wave frame (GWF) format files.
 
-The frame format is defined in LIGO-T970130 available from dcc.ligo.org.
+The API for GWF I/O integration is defined by the core module, which
+specifies that each backend module provides two functions:
 
-Currently supported are two separate libraries:
+`read`
+    A function that takes in a source reference (file path) and a list of
+    channels to read, and returns a `TimeSeriesDict` of data.
 
-- `lalframe` : using the LIGO Algorithm Library Frame API (based off the
-  FrameL library)
-- `framecpp` : using the alternative ``frameCPP`` library
+`write`
+    A function that takes in a `TimeSeriesDict` of data and a target reference
+    (file path) and writes the data to that file.
 
-Due to the lower-level nature of the frameCPP python package, it is
-preferred, in the instance that both lalframe and frameCPP are available
-on a system.
+See `gwpy.timeseries.io.gwf.core.read_timeseriesdict` and
+`gwpy.timeseries.io.gwf.core.write_timeseriesdict` for full function
+signatures and docstrings.
+
+A backend module can then register itself to act as a backend for the
+`format='gwf'` series reader by calling the
+`gwpy.timeseries.io.gwf.core.register_gwf_backend` function.
 """
 
-from __future__ import annotations
+# basic routines
+from . import core
 
-import importlib
-import os
-import typing
-from functools import wraps
-
-import numpy
-from igwn_segments import segment as LigoSegment
-
-from ....io import (
-    cache as io_cache,
-    gwf as io_gwf,
-)
-from ....time import to_gps
-from ... import (
-    StateVector,
-    StateVectorDict,
-    TimeSeries,
-    TimeSeriesDict,
-)
-
-if typing:
-    from ...core import (
-        TimeSeriesBase,
-        TimeSeriesBaseDict,
-    )
-
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
-BACKENDS = [
+# backends
+for backend_mod_name in (
     "frameCPP",
-    "FrameL",
-    "LALFrame",
-]
-
-
-# -- utilities ----------------------------------------------------------------
-
-def channel_dict_kwarg(value, channels, types=None, astype=None):
-    """Format the given kwarg value in a dict with one value per channel.
-
-    Parameters
-    ----------
-    value : any type
-        keyword argument value as given by user
-
-    channels : `list`
-        list of channels being read
-
-    types : `list` of `type`
-        list of valid object types for value
-
-    astype : `type`
-        output type for `dict` values
-
-    Returns
-    -------
-    dict : `dict`
-        `dict` of values, one value per channel key, if parsing is successful
-    None : `None`
-        `None`, if parsing was unsuccessful
-    """
-    if types is not None and isinstance(value, tuple(types)):
-        out = dict((c, value) for c in channels)
-    elif isinstance(value, tuple | list):
-        out = dict(zip(channels, value, strict=True))
-    elif value is None:
-        out = dict()
-    elif isinstance(value, dict):
-        out = value.copy()
-    else:
-        return None
-    if astype is not None:
-        return dict((key, astype(out[key])) for key in out)
-    return out
-
-
-# -- generic I/O methods ------------------------------------------------------
-
-def register_gwf_backend(backend):
-    """Register a full set of GWF I/O methods for the given backend.
-
-    The `timeseries.io.gwf` backend module must define the following methods:
-
-    - `read` : which receives one of more frame files which can be assumed
-               to be contiguous, and should return a `TimeSeriesDict`
-    - `write` : which receives an output frame file path an a `TimeSeriesDict`
-                and does all of the work
-
-    Additionally, the backend must store the name of the third-party
-    dependency using the ``FRAME_LIBRARY`` variable.
-    """
-    # import backend to get details (don't require backend to importable)
-    try:
-        lib = io_gwf.import_backend(backend, package=__package__)
-    except ImportError:
-        # _import_backend wrapper will fail before we get to this 'function'
-        libread_ = None
-        libwrite_ = None
-    else:
-        libread_ = lib.read
-        libwrite_ = lib.write
-
-    # set I/O format name
-    fmt = f"gwf.{backend.lower()}"
-
-    def _import_backend(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            # import the frame backend to have any ImportErrors occur early
-            io_gwf.import_backend(
-                backend,
-                package=__package__,
-            )
-            return func(*args, **kwargs)
-
-        return wrapper
-
-
-    # -- read -----------------------------------
-
-    @_import_backend
-    def read_timeseriesdict(source, channels, start=None, end=None,
-                            gap=None, pad=None, nproc=1,
-                            series_class=TimeSeries, **kwargs):
-        """Read the data for a list of channels from a GWF data source.
-
-        Parameters
-        ----------
-        source : `str`, `list`
-            Source of data, any of the following:
-
-            - `str` path of single data file,
-            - `str` path of LAL-format cache file,
-            - `list` of paths.
-
-        channels : `list`
-            list of channel names (or `Channel` objects) to read from frame.
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS start time of required data, defaults to start of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
-            GPS end time of required data, defaults to end of data found;
-            any input parseable by `~gwpy.time.to_gps` is fine
-
-        pad : `float`, optional
-            value with which to fill gaps in the source data, if not
-            given gaps will result in an exception being raised
-
-        Returns
-        -------
-        dict : :class:`~gwpy.timeseries.TimeSeriesDict`
-            dict of (channel, `TimeSeries`) data pairs
-        """
-        # import the frame backend here to have any ImportErrors occur early
-        io_gwf.import_backend(
-            backend,
-            package=__package__,
-        )
-
-        # -- from here read data
-
-        if start:
-            start = to_gps(start)
-        if end:
-            end = to_gps(end)
-
-        # format gap handling
-        if gap is None and pad is not None:
-            gap = "pad"
-        elif gap is None:
-            gap = "raise"
-
-        # read cache file up-front
-        if (
-            (isinstance(source, str) and source.endswith((".lcf", ".cache")))
-            or (
-                isinstance(source, io_cache.FILE_LIKE)
-                and source.name.endswith((".lcf", ".cache"))
-            )
-        ):
-            source = io_cache.read_cache(source)
-        # separate cache into contiguous segments
-        if io_cache.is_cache(source):
-            if start is not None and end is not None:
-                source = io_cache.sieve(
-                    source,
-                    segment=LigoSegment(start, end),
-                )
-            source = list(io_cache.find_contiguous(source))
-        # convert everything else into a list if needed
-        if not isinstance(source, list | tuple):
-            source = [source]
-
-        # now read the data
-        out = series_class.DictClass()
-        for i, src in enumerate(source):
-            if i == 1:  # force data into fresh memory so that append works
-                for name in out:
-                    out[name] = numpy.require(out[name], requirements=["O"])
-            out.append(libread_(src, channels, start=start, end=end,
-                                series_class=series_class, **kwargs),
-                       gap=gap, pad=pad, copy=False)
-
-        return out
-
-    def read_timeseries(source, channel, *args, **kwargs):
-        """Read `TimeSeries` from GWF source."""
-        return read_timeseriesdict(source, [channel], *args, **kwargs)[channel]
-
-    def read_statevector(source, channel, *args, **kwargs):
-        """Read `StateVector` from GWF source."""
-        bits = kwargs.pop("bits", None)
-        kwargs.setdefault("series_class", StateVector)
-        statevector = read_timeseries(source, channel, *args, **kwargs)
-        statevector.bits = bits
-        return statevector
-
-    def read_statevectordict(source, channels, *args, **kwargs):
-        """Read `StateVectorDict` from GWF source."""
-        bitss = channel_dict_kwarg(kwargs.pop("bits", {}), channels)
-        # read data as timeseriesdict and repackage with bits
-        kwargs.setdefault("series_class", StateVector)
-        svd = StateVectorDict(
-            read_timeseriesdict(source, channels, *args, **kwargs))
-        for (channel, bits) in bitss.items():
-            svd[channel].bits = bits
-        return svd
-
-    # -- write ----------------------------------
-
-    write_timeseriesdict = _import_backend(libwrite_)
-
-    def write_timeseries(series, *args, **kwargs):
-        """Write a `TimeSeries` to disk in GWF format.
-
-        See also
-        --------
-        write_timeseriesdict
-            for available arguments and keyword arguments
-        """
-        return write_timeseriesdict({None: series}, *args, **kwargs)
-
-    # -- register -------------------------------
-
-    # register gwf.<backend> format
-    for klass, reader, writer in (
-        (TimeSeries, read_timeseries, write_timeseries),
-        (TimeSeriesDict, read_timeseriesdict, write_timeseriesdict),
-        (StateVector, read_statevector, write_timeseries),
-        (StateVectorDict, read_statevectordict, write_timeseriesdict),
-    ):
-        klass.read.registry.register_reader(fmt, klass, reader)
-        klass.write.registry.register_writer(fmt, klass, writer)
-
-
-# -- generic API for 'gwf' format ---------------------------------------------
-
-def register_gwf_format(klass: type[TimeSeriesBase | TimeSeriesBaseDict]):
-    """Register I/O methods for `format='gwf'`.
-
-    The created methods loop through the registered sub-formats.
-
-    Parameters
-    ----------
-    klass : `Series`, `dict`
-        Series class or series dict class to register
-    """
-    def _backend():
-        return io_gwf.get_backend(
-            package=__package__,
-            backends=BACKENDS,
-        )
-
-    get_reader = klass.read.registry.get_reader
-
-    def read_(*args, **kwargs):
-        fmt = f"gwf.{_backend().lower()}"
-        reader = get_reader(fmt, klass)
-        return reader(*args, **kwargs)
-
-    get_writer = klass.write.registry.get_writer
-
-    def write_(*args, **kwargs):
-        fmt = f"gwf.{_backend().lower()}"
-        writer = get_writer(fmt, klass)
-        return writer(*args, **kwargs)
-
-    klass.read.registry.register_identifier("gwf", klass, io_gwf.identify_gwf)
-    klass.read.registry.register_reader("gwf", klass, read_)
-    klass.write.registry.register_writer("gwf", klass, write_)
-
-
-# -- register frame API -------------------------------------------------------
-
-# register 'gwf.<backend>' sub-format for each backend
-for backend in BACKENDS:
-    register_gwf_backend(backend)
-
-# register generic 'gwf' format for each class
-for klass in (
-    TimeSeries,
-    TimeSeriesDict,
-    StateVector,
-    StateVectorDict,
+    "framel",
+    "lalframe",
 ):
-    register_gwf_format(klass)
+    core.register_gwf_backend(backend_mod_name)
+
+BACKENDS = core.BACKENDS

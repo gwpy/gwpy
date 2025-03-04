@@ -22,8 +22,9 @@ from __future__ import annotations
 
 import typing
 from io import BytesIO
-from math import inf
 from os import PathLike
+
+from igwn_segments import infinity
 
 from ...io.cache import (
     FILE_LIKE,
@@ -39,6 +40,8 @@ if typing.TYPE_CHECKING:
     from typing import IO
 
     from ...typing import GpsLike
+
+inf = infinity()
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

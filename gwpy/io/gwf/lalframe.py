@@ -21,21 +21,27 @@ from __future__ import annotations
 
 import typing
 import warnings
-from collections.abc import Iterator
 
 import lalframe
 
 from ...segments import Segment
 from ...time import LIGOTimeGPS
+from ...utils import lal as lalutils
 from ..utils import file_path
 from .core import FRDATA_TYPES
 
 if typing.TYPE_CHECKING:
+    from collections.abc import (
+        Iterable,
+        Iterator,
+    )
     from pathlib import Path
     from typing import (
         IO,
         Literal,
     )
+
+    from ...typing import GpsLike
 
 
 def open_gwf(
@@ -46,7 +52,7 @@ def open_gwf(
 
     Parameters
     ----------
-    gwf : `str`, `pathlib.Path`, `file`, or open frameCPP stream
+    gwf : `str`, `pathlib.Path`, `file`, `lalframe.FrameUFrFile`
         The path to read from, or write to. Already open GWF streams
         are returned unmodified, if the type matches the mode.
 
@@ -69,6 +75,8 @@ def open_gwf(
             raise OSError(f"failed to open '{path}'") from exc
         raise
 
+
+# -- read ----------------------------
 
 @typing.overload
 def _iter_toc(
@@ -214,3 +222,88 @@ def _channel_segments(
         dur = lalframe.FrameUFrTOCQueryDt(frtoc, i)
         offset = lalframe.FrameUFrChanQueryTimeOffset(chan)
         yield Segment(gps + offset, gps + dur + offset)
+
+
+# -- write ---------------------------
+
+def write_frames(
+    gwf: str | Path | IO | lalframe.FrameUFrFile,
+    frames: Iterable[lalframe.FrameUFrameH],
+) -> None:
+    """Write a list of frame objects to a file.
+
+    **Requires:** |lalframe|_
+
+    Parameters
+    ----------
+    gwf : `str`, `pathlib.Path`, `file`, `lalframe.FrameUFrFile`
+        The path to write to, or an open `lalframe.FrameUFrFile` stream.
+
+    frames : `list` of `lalframe.FrameUFrameH`
+        List of frames to write into file.
+    """
+    # open stream for writing
+    stream = open_gwf(gwf, "w")
+
+    # write frames one-by-one
+    for frame in frames:
+        lalframe.FrameUFrameHWrite(stream, frame)
+
+
+def create_frame(
+    time: GpsLike,
+    duration: float,
+    name: str = "gwpy",
+    run: int = -1,
+    frame: int = 0,
+    ifos: Iterable[str] | None = None,
+) -> lalframe.FrameUFrameH:
+    """Create a new :class:`lalframe.FrameUFrameH`.
+
+    **Requires:** |lalframe|_
+
+    Parameters
+    ----------
+    time : `float`, optional
+        Frame start time in GPS seconds.
+
+    duration : `float`, optional
+        Frame length in seconds.
+
+    name : `str`, optional
+        Name of project or other experiment description.
+
+    run : `int`, optional
+        Run number (number < 0 reserved for simulated data); monotonic for
+        experimental runs.
+
+    frame : `int`, optional
+        Frame number, monotonically increasing until end of run, re-starting
+        from ``0`` with each new run.
+
+    ifos : `list`, optional
+        List of interferometer prefices (e.g. ``'L1'``) associated with this
+        frame.
+
+    Returns
+    -------
+    frame : :class:`lalframe.FrameUFrameH`
+        The newly created frame header.
+    """
+    # get ifos list
+    detectors = 0
+    _detidx = list(lalutils.LAL_DETECTORS.keys())
+    for ifo in ifos or []:
+        if ifo in _detidx:
+            idx = _detidx.index(ifo)
+            detectors |= 1 << 2 * idx
+
+    # create new frame
+    return lalframe.FrameNew(
+        lalutils.to_lal_ligotimegps(time),
+        float(duration),
+        name,
+        run,
+        frame,
+        detectors,
+    )

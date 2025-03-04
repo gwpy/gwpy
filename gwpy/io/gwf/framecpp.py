@@ -196,7 +196,7 @@ def open_gwf(
 def write_frames(
     gwf: str | Path | IO,
     frames: Iterable[frameCPP.FrameH],
-    compression: int | str = "GZIP",
+    compression: int | str | None = None,
     compression_level: int | None = None,
 ):
     """Write a list of frame objects to a file.
@@ -216,7 +216,7 @@ def write_frames(
         ID, choose from
 
         - ``'RAW'``
-        - ``'GZIP'``
+        - ``'GZIP'`` (default)
         - ``'DIFF_GZIP'``
         - ``'ZERO_SUPPRESS'``
         - ``'ZERO_SUPPRESS_OTHERWISE_GZIP'``
@@ -227,7 +227,9 @@ def write_frames(
     """
     # handle compression arguments
     comp: Compression
-    if isinstance(compression, int):
+    if compression is None:
+        comp = Compression.GZIP
+    elif isinstance(compression, int):
         comp = Compression(compression)
     else:
         comp = Compression[compression]
@@ -332,7 +334,7 @@ def create_fradcdata(
 
     Notes
     -----
-    See Table 10 (§4.3.2.4) of LIGO-T970130 for more details
+    See Table 10 (§4.3.2.4) of |LIGO-T970130|_ for more details.
     """
     # assert correct type
     if not series.xunit.is_equivalent("s") or series.ndim != 1:
@@ -425,7 +427,7 @@ def create_frprocdata(
 
     Notes
     -----
-    See Table 17 (§4.3.2.11) of LIGO-T970130 for more details
+    See Table 17 (§4.3.2.11) of |LIGO-T970130|_ for more details.
     """
     # format auxiliary data
     if trange is None:
@@ -483,7 +485,7 @@ def create_frsimdata(
 
     Notes
     -----
-    See Table 20 (§4.3.2.14) of LIGO-T970130 for more details
+    See Table 20 (§4.3.2.14) of |LIGO-T970130|_ for more details.
     """
     # assert correct type
     if not series.xunit.is_equivalent("s"):
@@ -678,7 +680,7 @@ def _get_frprocdata_type(
 
     Notes
     -----
-    See Table 17 (§4.3.2.11) of LIGO-T970130 for more details
+    See Table 17 (§4.3.2.11) of |LIGO-T970130|_ for more details.
     """
     if type_ is not None:  # format user value
         return _get_type(type_, FrProcDataType)
@@ -709,7 +711,7 @@ def _get_frprocdata_subtype(
 
     Notes
     -----
-    See Table 17 (§4.3.2.11) of LIGO-T970130 for more details
+    See Table 17 (§4.3.2.11) of |LIGO-T970130|_ for more details.
     """
     if subtype is not None:  # format user value
         return _get_type(subtype, FrProcDataSubType)
