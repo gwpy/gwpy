@@ -251,7 +251,15 @@ conda_test_linux:
     - !reference [.linux, rules]
     - !reference [.rules_full_test, rules]
   image: quay.io/condaforge/miniforge3
+  variables:
+    DEBIAN_FRONTEND: noninteractive
   before_script:
+    # install latex packages
+    - apt-get -yqq update && apt-get install -yqq --no-install-recommends
+        cm-super-minimal
+        dvipng
+        texlive-fonts-recommended
+        texlive-latex-extra
     # install curl
     - apt-get -yqq update && apt-get -yqq install curl
     # install uv
