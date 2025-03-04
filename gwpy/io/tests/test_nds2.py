@@ -116,6 +116,7 @@ def test_parse_nds_env(key, value, result):
     assert hosts == result
 
 
+@mock.patch.dict(os.environ, clear=True)
 @pytest.mark.parametrize(("ifo", "include_gwosc", "result"), (
     pytest.param(
         None,
