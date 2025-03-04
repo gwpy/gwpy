@@ -128,6 +128,9 @@
 .. |LIGO-T970130| replace:: LIGO-T970130
 .. _LIGO-T970130: https://dcc.ligo.org/LIGO-T970130/public
 
+.. |LIGO-T990033| replace:: LIGO-T990033
+.. _LIGO-T990033: https://dcc.ligo.org/LIGO-T990033/public
+
 .. -- Other references --------------------------
 
 .. |GravitySpy| replace:: Gravity Spy

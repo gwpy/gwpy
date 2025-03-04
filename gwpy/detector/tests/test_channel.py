@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2025)
 #
 # This file is part of GWpy.
 #
@@ -15,7 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for detector module."""
+"""Test the `Channel` and `ChannelList` objects."""
+
+from unittest import mock
 
 import numpy
 import pytest
@@ -94,22 +97,29 @@ channels =
 """
 
 
-# -- Channel ------------------------------------------------------------------
+# -- Channel -------------------------
 
 class TestChannel:
+    """Test `Channel`."""
+
     TEST_CLASS = Channel
 
-    # -- test creation --------------------------
+    # -- test creation ---------------
 
     def test_empty(self):
+        """Test `Channel` with no params."""
         new = self.TEST_CLASS("")
         assert str(new) == ""
         assert new.sample_rate is None
         assert new.dtype is None
 
     def test_new(self):
-        new = self.TEST_CLASS("X1:GWPY-TEST_CHANNEL_NAME",
-                              sample_rate=64, unit="m")
+        """Test `Channel` creation with params."""
+        new = self.TEST_CLASS(
+            "X1:GWPY-TEST_CHANNEL_NAME",
+            sample_rate=64,
+            unit="m",
+        )
         assert str(new) == "X1:GWPY-TEST_CHANNEL_NAME"
         assert new.ifo == "X1"
         assert new.system == "GWPY"
@@ -123,32 +133,35 @@ class TestChannel:
         assert new2.unit == new.unit
         assert new2.texname == new.texname
 
-    # -- test properties ------------------------
+    # -- test properties -------------
 
-    @pytest.mark.parametrize("arg, fs", [
-        (None, None),
-        (1, 1 * units.Hz),
-        (1 * units.Hz, 1 * units.Hz),
-        (1000 * units.mHz, 1 * units.Hz),
-        ("1", 1 * units.Hz),
+    @pytest.mark.parametrize(("arg", "fs"), [
+        pytest.param(None, None, id="None"),
+        pytest.param(1, 1 * units.Hz, id="float"),
+        pytest.param(1 * units.Hz, 1 * units.Hz, id="hz"),
+        pytest.param(1000 * units.mHz, 1 * units.Hz, id="mHz"),
+        pytest.param("1", 1 * units.Hz, id="string"),
     ])
     def test_sample_rate(self, arg, fs):
+        """Test `Channel.sample_rate`."""
         new = self.TEST_CLASS("test", sample_rate=arg)
         if arg is not None:
             assert isinstance(new.sample_rate, units.Quantity)
         assert new.sample_rate == fs
 
-    @pytest.mark.parametrize("arg, unit", [
+    @pytest.mark.parametrize(("arg", "unit"), [
         (None, None),
         ("m", units.m),
     ])
     def test_unit(self, arg, unit):
+        """Test `Channel.unit`."""
         new = self.TEST_CLASS("test", unit=arg)
         if arg is not None:
             assert isinstance(new.unit, units.UnitBase)
         assert new.unit == unit
 
     def test_frequency_range(self):
+        """Test `Channel.frequency_range`."""
         new = self.TEST_CLASS("test", frequency_range=(1, 40))
         assert isinstance(new.frequency_range, units.Quantity)
         utils.assert_quantity_equal(new.frequency_range, (1, 40) * units.Hz)
@@ -157,30 +170,43 @@ class TestChannel:
             Channel("", frequency_range=1)
 
     def test_safe(self):
+        """Test `Channel.safe`."""
         new = self.TEST_CLASS("")
         assert new.safe is None
-        new.safe = 1
-        assert new.safe is True
 
-    @pytest.mark.parametrize("arg, model", [
+    @pytest.mark.parametrize(("value", "result"), [
+        pytest.param(None, None, id="None"),
+        pytest.param(True, True, id="True"),
+        pytest.param(1, True, id="truthy"),
+    ])
+    def test_safe_setter(self, value, result):
+        """Test `Channel.safe` property setting."""
+        new = self.TEST_CLASS("")
+        new.safe = value  # type: ignore[assignment]
+        assert new.safe == result
+
+    @pytest.mark.parametrize(("arg", "model"), [
         (None, None),
         ("H1ASCIMC", "h1ascimc"),
     ])
     def test_model(self, arg, model):
+        """Test `Channel.model`."""
         new = self.TEST_CLASS("test", model=arg)
         assert new.model == model
 
-    @pytest.mark.parametrize("arg, type_, ndstype", [
-        (None, None, None),
-        ("m-trend", "m-trend", 16),
-        (8, "s-trend", 8),
+    @pytest.mark.parametrize(("arg", "type_", "ndstype"), [
+        pytest.param(None, None, 0, id="unknown"),
+        pytest.param("m-trend", "m-trend", 16, id="m-trend"),
+        pytest.param(8, "s-trend", 8, id="s-trend"),
     ])
     def test_type_ndstype(self, arg, type_, ndstype):
+        """Test `Channel.ndstype`."""
         c = self.TEST_CLASS("", type=arg)
-        assert getattr(c, "type") == type_
-        assert getattr(c, "ndstype") == ndstype
+        assert c.type == type_
+        assert c.ndstype == ndstype
 
     def test_type_ndstype_unknown(self):
+        """Test `Channel.ndstype` 'unknown'."""
         assert self.TEST_CLASS("", type="blah").type == "UNKNOWN"
         assert self.TEST_CLASS("", type="blah").ndstype == 0
 
@@ -194,6 +220,7 @@ class TestChannel:
         (bool, numpy.dtype("bool")),
     ])
     def test_dtype(self, arg, dtype):
+        """Test `Channel.dtype`."""
         new = self.TEST_CLASS("test", dtype=arg)
         assert new.dtype is dtype
 
@@ -203,48 +230,119 @@ class TestChannel:
         "file://local/path",
     ])
     def test_url(self, url):
+        """Test `Channel.url`."""
         new = self.TEST_CLASS("test", url=url)
         assert new.url == url
 
     @pytest.mark.parametrize("url", [
         "BAD",
-        1,
+        "ftp://example.com/data",
     ])
     def test_url_error(self, url):
+        """Test `Channel.url` error handling."""
         with pytest.raises(ValueError, match=f"^Invalid URL {url!r}$"):
             self.TEST_CLASS("test", url=url)
 
     def test_frametype(self):
+        """Test `Channel.frametype`."""
         new = self.TEST_CLASS("test", frametype="BLAH")
         assert new.frametype == "BLAH"
 
-    @pytest.mark.parametrize("name, texname", [
+    @pytest.mark.parametrize(("name", "texname"), [
         ("X1:TEST", "X1:TEST"),
         ("X1:TEST-CHANNEL_NAME", r"X1:TEST-CHANNEL\_NAME"),
     ])
     def test_texname(self, name, texname):
+        """Test `Channel.texname`."""
         new = self.TEST_CLASS(name)
         assert new.texname == texname
 
-    @pytest.mark.parametrize("ndstype, ndsname", [
+    @pytest.mark.parametrize(("ndstype", "ndsname"), [
         (None, "X1:TEST"),
         ("m-trend", "X1:TEST,m-trend"),
         ("raw", "X1:TEST"),
     ])
     def test_ndsname(self, ndstype, ndsname):
+        """Test `Channel.ndsname`."""
         new = self.TEST_CLASS("X1:TEST", type=ndstype)
         assert new.ndsname == ndsname
 
-    # -- test methods ---------------------------
+    # -- test magic ------------------
+
+    @pytest.mark.parametrize(("name", "result"), [
+        ("X1:TEST", "X1:TEST"),
+        ("X1:TEST,m-trend", "X1:TEST"),
+    ])
+    def test_str(self, name, result):
+        """Test `str(channel)`."""
+        assert str(self.TEST_CLASS(name)) == result
+
+    @mock.patch("builtins.hex", lambda x: 12345)  # noqa: ARG005,PT008
+    def test_repr(self):
+        """Test `repr(channel)`."""
+        new = self.TEST_CLASS(
+            "X1:TEST-CHANNEL",
+            type=8,
+            sample_rate=16384,
+        )
+        assert repr(new) == (
+            f'<{type(new).__name__}("{new}" [s-trend], 16384.0 Hz) at 12345>'
+        )
+
+    @pytest.mark.parametrize(("a", "b", "result"), [
+        pytest.param(
+            TEST_CLASS("test"),
+            TEST_CLASS("test"),
+            True,
+            id="channel match",
+        ),
+        pytest.param(
+            TEST_CLASS("test", sample_rate=2),
+            TEST_CLASS("test", sample_rate=4),
+            False,
+            id="channel mismatch",
+        ),
+        pytest.param(
+            TEST_CLASS("test"),
+            None,
+            False,
+            id="wrong type",
+        ),
+    ])
+    def test_eq(self, a, b, result):
+        """Test `Channel.__eq__`."""
+        assert a.__eq__(b) is result
+
+    # -- test methods ----------------
 
     def test_copy(self):
-        new = self.TEST_CLASS("X1:TEST", sample_rate=128, unit="m",
-                              frequency_range=(1, 40), safe=False,
-                              dtype="float64")
+        """Test `Channel.copy()`."""
+        new = self.TEST_CLASS(
+            "X1:TEST",
+            sample_rate=128,
+            unit="m",
+            frequency_range=(1, 40),
+            safe=False,
+            dtype="float64",
+        )
         copy = new.copy()
-        for attr in ("name", "ifo", "system", "subsystem", "signal",
-                     "trend", "type", "sample_rate", "unit", "dtype",
-                     "frametype", "model", "url", "frequency_range", "safe"):
+        for attr in (
+            "name",
+            "ifo",
+            "system",
+            "subsystem",
+            "signal",
+            "trend",
+            "type",
+            "sample_rate",
+            "unit",
+            "dtype",
+            "frametype",
+            "model",
+            "url",
+            "frequency_range",
+            "safe",
+        ):
             a = getattr(new, attr)
             b = getattr(copy, attr)
             if isinstance(a, units.Quantity):
@@ -252,49 +350,70 @@ class TestChannel:
             else:
                 assert a == b
 
-    @pytest.mark.parametrize("name, pdict", [
-        ("X1:TEST-CHANNEL_NAME_PARSING.rms,m-trend", {
-            "ifo": "X1",
-            "system": "TEST",
-            "subsystem": "CHANNEL",
-            "signal": "NAME_PARSING",
-            "trend": "rms",
-            "type": "m-trend",
-        }),
-        ("G1:PSL_SL_PWR-AMPL-OUTLP-av", {
-            "ifo": "G1",
-            "system": "PSL",
-            "subsystem": "SL",
-            "signal": "PWR-AMPL-OUTLP",
-            "trend": "av",
-            "type": None,
-        }),
-        ("V1:h_16384Hz", {
-            "ifo": "V1",
-            "system": "h",
-            "subsystem": "16384Hz",
-            "signal": None,
-            "trend": None,
-            "type": None,
-        }),
-        ("V1:Sa_PR_f0_zL_500Hz", {
-            "ifo": "V1",
-            "system": "Sa",
-            "subsystem": "PR",
-            "signal": "f0_zL_500Hz",
-            "trend": None,
-            "type": None,
-        }),
-        ("LVE-EX:X3_810BTORR.mean,m-trend", {
-            "ifo": None,
-            "system": "X3",
-            "subsystem": "810BTORR",
-            "signal": None,
-            "trend": "mean",
-            "type": "m-trend",
-        })
+    @pytest.mark.parametrize(("name", "pdict"), [
+        pytest.param(
+            "X1:TEST-CHANNEL_NAME_PARSING.rms,m-trend",
+            {
+                "ifo": "X1",
+                "system": "TEST",
+                "subsystem": "CHANNEL",
+                "signal": "NAME_PARSING",
+                "trend": "rms",
+                "type": "m-trend",
+            },
+            id="LIGO-m-trend",
+        ),
+        pytest.param(
+            "G1:PSL_SL_PWR-AMPL-OUTLP-av",
+            {
+                "ifo": "G1",
+                "system": "PSL",
+                "subsystem": "SL",
+                "signal": "PWR-AMPL-OUTLP",
+                "trend": "av",
+                "type": None,
+            },
+            id="GEO trend",
+        ),
+        pytest.param(
+            "V1:h_16384Hz",
+            {
+                "ifo": "V1",
+                "system": "h",
+                "subsystem": "16384Hz",
+                "signal": None,
+                "trend": None,
+                "type": None,
+            },
+            id="Virgo",
+        ),
+        pytest.param(
+            "V1:Sa_PR_f0_zL_500Hz",
+            {
+                "ifo": "V1",
+                "system": "Sa",
+                "subsystem": "PR",
+                "signal": "f0_zL_500Hz",
+                "trend": None,
+                "type": None,
+            },
+            id="Virgo2",
+        ),
+        pytest.param(
+            "LVE-EX:X3_810BTORR.mean,m-trend",
+            {
+                "ifo": None,
+                "system": "X3",
+                "subsystem": "810BTORR",
+                "signal": None,
+                "trend": "mean",
+                "type": "m-trend",
+            },
+            id="LIGO-LVE",
+        ),
     ])
     def test_parse_channel_name(self, name, pdict):
+        """Test `Channel.parse_channel_name()`."""
         # check empty parse via __init__
         c = self.TEST_CLASS("")
         for key in pdict:
@@ -305,7 +424,7 @@ class TestChannel:
             ValueError,
             match=(
                 "^Cannot parse channel name according to "
-                "LIGO channel-naming convention T990033$"
+                "LIGO-T990033$"
             ),
         ):
             self.TEST_CLASS.parse_channel_name("blah")
@@ -373,7 +492,9 @@ class TestChannel:
             )
 
     @pytest.mark.requires("nds2")
-    def test_query_nds2(self, nds2_connection):
+    @pytest.mark.usefixtures("nds2_connection")
+    def test_query_nds2(self):
+        """Test `Channel.query_nds2()`."""
         c = self.TEST_CLASS.query_nds2("X1:test", host="test")
         assert c.name == "X1:test"
         assert c.sample_rate == 16 * units.Hz
@@ -382,7 +503,9 @@ class TestChannel:
         assert c.type == "raw"
 
     @pytest.mark.requires("nds2")
-    def test_query_nds2_error(self, nds2_connection):
+    @pytest.mark.usefixtures("nds2_connection")
+    def test_query_nds2_error(self):
+        """Test `Channel.query_nds2()` error handling."""
         with pytest.raises(
             ValueError,
             match="unique NDS2 channel match not found for 'Z1:test'",
@@ -391,6 +514,7 @@ class TestChannel:
 
     @pytest.mark.requires("nds2")
     def test_from_nds2(self):
+        """Test `Channel.from_nds2()`."""
         nds2c = mocks.nds2_channel("X1:TEST-CHANNEL", 64, "m")
         c = self.TEST_CLASS.from_nds2(nds2c)
         assert c.name == "X1:TEST-CHANNEL"
@@ -401,6 +525,7 @@ class TestChannel:
 
     @pytest.mark.requires("arrakis")
     def test_from_arrakis(self):
+        """Test `Channel.from_arrakis()`."""
         import arrakis
         maker = arrakis.Channel.from_name(
             "X1:TEST-CHANNEL",
@@ -413,24 +538,32 @@ class TestChannel:
         assert chan.dtype == maker.data_type
 
 
-# -- ChannelList --------------------------------------------------------------
+# -- ChannelList ---------------------
 
 class TestChannelList:
+    """Test `ChannelList`."""
+
     TEST_CLASS = ChannelList
     ENTRY_CLASS = Channel
 
-    NAMES = ["X1:GWPY-CHANNEL_1", "X1:GWPY-CHANNEL_2", "X1:GWPY-CHANNEL_3"]
-    SAMPLE_RATES = [1, 4, 8]
+    NAMES = (
+        "X1:GWPY-CHANNEL_1",
+        "X1:GWPY-CHANNEL_2",
+        "X1:GWPY-CHANNEL_3",
+    )
+    SAMPLE_RATES = (1, 4, 8)
 
     @classmethod
-    @pytest.fixture()
+    @pytest.fixture
     def instance(cls):
+        """Create a new instance of the class under test."""
         return cls.TEST_CLASS([
             cls.ENTRY_CLASS(n, sample_rate=s) for
             n, s in zip(cls.NAMES, cls.SAMPLE_RATES, strict=True)
         ])
 
     def test_from_names(self):
+        """Test `ChannelList.from_names()`."""
         cl = self.TEST_CLASS.from_names(*self.NAMES)
         assert cl == list(map(self.ENTRY_CLASS, self.NAMES))
 
@@ -438,11 +571,19 @@ class TestChannelList:
         assert cl == cl2
 
     def test_find(self, instance):
+        """Test `ChannelList.find()`."""
         assert instance.find(self.NAMES[2]) == 2
-        with pytest.raises(ValueError):
+
+    def test_find_error(self, instance):
+        """Test `ChannelList.find()` error handling."""
+        with pytest.raises(
+            ValueError,
+            match="blah",
+        ):
             instance.find("blah")
 
     def test_sieve(self, instance):
+        """Test `ChannelList.sieve()`."""
         cl = instance.sieve(name="GWPY-CHANNEL")
         assert cl == instance
 
@@ -453,7 +594,9 @@ class TestChannelList:
         assert cl == instance[1:]
 
     @pytest.mark.requires("nds2")
-    def test_query_nds2(self, nds2_connection):
+    @pytest.mark.usefixtures("nds2_connection")
+    def test_query_nds2(self):
+        """Test `ChannelList.query_nds2()`."""
         # test query_nds2
         c = self.TEST_CLASS.query_nds2(
             ["X1:test", "Y1:test"],
@@ -464,14 +607,18 @@ class TestChannelList:
         assert c[0].sample_rate == 16 * units.Hz
 
     @pytest.mark.requires("nds2")
-    def test_query_nds2_error(self, nds2_connection):
+    @pytest.mark.usefixtures("nds2_connection")
+    def test_query_nds2_error(self):
+        """Test `ChannelList.query_nds2` error handling."""
         # check errors
         assert len(
             self.TEST_CLASS.query_nds2(["Z1:test"], host="test"),
         ) == 0
 
     @pytest.mark.requires("nds2")
-    def test_query_nds2_availability(self, nds2_connection):
+    @pytest.mark.usefixtures("nds2_connection")
+    def test_query_nds2_availability(self):
+        """Test `ChannelList.query_nds2_availability`."""
         avail = self.TEST_CLASS.query_nds2_availability(
             ["X1:test"],
             1000000000,
@@ -485,9 +632,10 @@ class TestChannelList:
         )
 
     def test_read_write_omega_config(self, tmp_path):
+        """Test `ChannelList.read(... format='omega-scan')`."""
         tmp = tmp_path / "config.ini"
         # write OMEGA_CONFIG to file and read it back
-        with open(tmp, "w") as f:
+        with tmp.open("w") as f:
             f.write(OMEGA_CONFIG)
         cl = self.TEST_CLASS.read(tmp, format="omega-scan")
         assert len(cl) == 2
@@ -514,15 +662,16 @@ class TestChannelList:
 
         # write omega config again using ChannelList.write and read it back
         # and check that the two lists match
-        with open(tmp, "w") as f:
+        with tmp.open("w") as f:
             cl.write(f, format="omega-scan")
         cl2 = type(cl).read(tmp, format="omega-scan")
         assert cl == cl2
 
     def test_read_write_clf(self, tmp_path):
+        """Test `ChannelList.read(... format='ini')`."""
         tmp = tmp_path / "config.clf"
         # write clf to file and read it back
-        with open(tmp, "w") as f:
+        with tmp.open("w") as f:
             f.write(CLF)
         cl = ChannelList.read(tmp)
         assert len(cl) == 4
@@ -533,8 +682,11 @@ class TestChannelList:
         assert a.frequency_range[0] == 4. * units.Hz
         assert a.frequency_range[1] == float("inf") * units.Hz
         assert a.safe is False
-        assert a.params == {"qhigh": "150", "safe": "unsafe",
-                            "fidelity": "clean"}
+        assert a.params == {
+            "qhigh": "150",
+            "safe": "unsafe",
+            "fidelity": "clean",
+        }
         b = cl[1]
         assert b.name == "H1:ISI-GND_STS_HAM2_X_DQ"
         assert b.frequency_range[0] == .1 * units.Hz
@@ -550,7 +702,7 @@ class TestChannelList:
 
         # write clf again using ChannelList.write and read it back
         # and check that the two lists match
-        with open(tmp, "w") as f:
+        with tmp.open("w") as f:
             cl.write(f)
         cl2 = type(cl).read(tmp)
         assert cl == cl2
