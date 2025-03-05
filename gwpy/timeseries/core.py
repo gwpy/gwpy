@@ -54,6 +54,7 @@ from ..detector import (
     ChannelList,
 )
 from ..io.registry import UnifiedReadWriteMethod
+from ..log import logger
 from ..segments import SegmentList
 from ..time import (
     GPS_TYPES,
@@ -78,7 +79,6 @@ if typing.TYPE_CHECKING:
     import nds2
 
     from ..typing import (
-        DTypeLike,
         GpsLike,
         Self,
     )
@@ -558,11 +558,6 @@ class TimeSeriesBase(Series):
         end: GpsLike,
         *,
         source: str | None = None,
-        pad: float | None = None,
-        scaled: bool | None = None,
-        dtype: DTypeLike | None = None,
-        verbose: bool = False,
-        allow_tape: bool | None = None,
         **kwargs,
     ) -> Self:
         """Get data for this channel.
@@ -1149,22 +1144,26 @@ class TimeSeriesBaseDict(OrderedDict):
         """
         from .io.nds2 import fetch_dict
 
-        return fetch_dict(
-            channels,
-            start,
-            end,
-            host=host,
-            port=port,
-            verify=verify,
-            verbose=verbose,
-            connection=connection,
-            pad=pad,
-            scaled=scaled,
-            allow_tape=allow_tape,
-            type=type,
-            dtype=dtype,
-            series_class=cls.EntryClass,
-        )
+        with logger(
+            name=fetch_dict.__module__,
+            level="DEBUG" if verbose else None,
+        ):
+            return fetch_dict(
+                channels,
+                start,
+                end,
+                host=host,
+                port=port,
+                verify=verify,
+                verbose=verbose,
+                connection=connection,
+                pad=pad,
+                scaled=scaled,
+                allow_tape=allow_tape,
+                type=type,
+                dtype=dtype,
+                series_class=cls.EntryClass,
+            )
 
     @classmethod
     def find(cls, channels, start, end, frametype=None,
@@ -1326,11 +1325,7 @@ class TimeSeriesBaseDict(OrderedDict):
         end: GpsLike,
         *,
         source: str | list[str] | None = None,
-        pad: float | None = None,
-        scaled: bool | None = None,
-        dtype: DTypeLike | None = None,
         verbose: bool = False,
-        allow_tape: bool | None = None,
         **kwargs,
     ):
         """Retrieve data for multiple channels from any data source.

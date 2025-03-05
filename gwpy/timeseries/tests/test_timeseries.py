@@ -18,6 +18,7 @@
 
 """Unit test for timeseries module."""
 
+import logging
 import os.path
 from contextlib import nullcontext
 from itertools import (chain, product)
@@ -37,7 +38,6 @@ from astropy import units
 
 from ...frequencyseries import (FrequencySeries, SpectralVariance)
 from ...io.gwf import get_backend as get_gwf_backend
-from ...io.nds2 import NDSWarning
 from ...segments import (Segment, SegmentList, DataQualityFlag)
 from ...signal import filter_design
 from ...signal.window import planck
@@ -663,23 +663,23 @@ class TestTimeSeries(_TestTimeSeriesBase):
         pytest.param(1, id="nds1"),
         pytest.param(2, id="nds2"),
     ])
-    def test_fetch_pad(self, nds2_connection, protocol):
+    def test_fetch_pad(self, caplog, nds2_connection, protocol):
         """Test `TimeSeries.fetch(..., pad=...)`."""
+        caplog.set_level(logging.DEBUG, logger="gwpy.timeseries.io.nds2")
+
         # set protocol
         nds2_connection.get_protocol.return_value = protocol
 
         # get expected result
         expected = self.TEST_CLASS.from_nds2_buffer(nds2_connection._buffers[0])
 
-        # check padding works (with warning for nds2-server connections)
-        ctx = pytest.warns(UserWarning) if protocol > 1 else nullcontext()
-        with ctx:
-            ts = self.TEST_CLASS.fetch(
-                "X1:test",
-                *expected.span.protract(2),
-                pad=-100.,
-                connection=nds2_connection,
-            )
+        # check padding works
+        ts = self.TEST_CLASS.fetch(
+            "X1:test",
+            *expected.span.protract(2),
+            pad=-100.,
+            connection=nds2_connection,
+        )
         assert ts.span == expected.span.protract(2)
         nptest.assert_array_equal(
             ts.value,
@@ -689,6 +689,19 @@ class TestTimeSeries(_TestTimeSeriesBase):
                 numpy.ones(int(2 * ts.sample_rate.value)) * -100.,
             )),
         )
+
+        # check that the logger emitted warnings about the padding
+        if protocol == 2:
+            for msg in (
+                "[nds.test.gwpy] Availability check complete, "
+                "found 1 viable segments of data with 66.67% coverage",
+                "[nds.test.gwpy] Gaps will be padded with -100.0",
+            ):
+                assert (
+                    "gwpy.timeseries.io.nds2",
+                    logging.DEBUG,
+                    msg,
+                ) in caplog.record_tuples
 
     @pytest.mark.requires("nds2")
     def test_fetch_empty_iterate_error(self, nds2_connection):
@@ -713,18 +726,19 @@ class TestTimeSeries(_TestTimeSeriesBase):
         "gwpy.io.nds2.host_resolution_order",
         return_value=(["nds.example.com", 31200],),
     )
-    def test_fetch_warning_message(self, _):
+    def test_fetch_warning_message(self, _, caplog):
         """Test that TimeSeries.fetch emits a useful warning on NDS2 issues."""
-        err = pytest.raises(
+        with pytest.raises(
             RuntimeError,
             match="Cannot find all relevant data",
-        )
-        wrn = pytest.warns(
-            NDSWarning,
-            match="failed to fetch data for X1:TEST",
-        )
-        with err, wrn:
+        ):
             self.TEST_CLASS.fetch("X1:TEST", 0, 1)
+        assert (
+            "gwpy.timeseries.io.nds2",
+            logging.WARNING,
+            "[nds.example.com] Failed to fetch data for X1:TEST in interval [0, 1): "
+            "Failed to establish a connection[INFO: Invalid IP address]",
+        ) in caplog.record_tuples
 
     @pytest_skip_flaky_network
     @_gwosc_cvmfs

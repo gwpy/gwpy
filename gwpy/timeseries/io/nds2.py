@@ -20,9 +20,9 @@
 
 from __future__ import annotations
 
+import logging
 import operator
 import typing
-import warnings
 from functools import reduce
 from math import ceil
 
@@ -30,6 +30,7 @@ from numpy import ones as numpy_ones
 
 from ...detector import Channel
 from ...io import nds2 as io_nds2
+from ...log import get_logger
 from ...segments import (
     Segment,
     SegmentList,
@@ -44,10 +45,7 @@ if typing.TYPE_CHECKING:
         Iterable,
         Iterator,
     )
-    from typing import (
-        Any,
-        TypeVar,
-    )
+    from typing import TypeVar
 
     import nds2
 
@@ -62,16 +60,21 @@ if typing.TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+LOGGER = get_logger(__name__)
 
-def _print_verbose(
-    *args: Any,
-    verbose: bool = False,
-    flush: bool = True,
+
+def log_nds2(
+    connection: nds2.connection | str,
+    message: str,
+    *args: str | float,
+    level: int = logging.DEBUG,
     **kwargs,
 ) -> None:
-    """Print something only if verbose=True is given."""
-    if verbose:
-        print(*args, flush=flush, **kwargs)  # noqa: T201
+    """Emit a log message related to an open NDS2 connection."""
+    if not isinstance(connection, str):
+        connection = connection.get_host()
+    message = f"[{connection}] {message}"
+    LOGGER.log(level, message, *args, **kwargs)
 
 
 def _parse_nds_enum_dict_param(
@@ -111,21 +114,13 @@ def _set_parameter(
     connection: nds2.connection,
     parameter: str,
     value: str | int | bool,
-    *,
-    verbose: bool = False,
 ) -> None:
     """Set a parameter for the connection, handling errors as warnings."""
-    ref = f"set {parameter}='{value}'"
+    ref = f"{parameter}='{value}'"
     if connection.set_parameter(parameter, str(value)):
-        _print_verbose(
-            f"    [{connection.get_host()}] set {ref}",
-            verbose=verbose,
-        )
+        log_nds2(connection, "Set %s", ref)
     else:
-        warnings.warn(
-            f"failed to {ref}",
-            io_nds2.NDSWarning,
-        )
+        log_nds2(connection, "Failed to set %s", ref, level=logging.WARNING)
 
 
 def _get_connection_kw(
@@ -277,6 +272,8 @@ def fetch_dict(
     ))
     nsources = len(connection_kws)
 
+    LOGGER.debug("Identified %s potential NDS2 sources for data", nsources)
+
     # -- try each one in turn
 
     error: Exception | None = None
@@ -304,10 +301,14 @@ def fetch_dict(
             error = exc
 
         msg = str(error).split("\n", 1)[0]
-        warnings.warn(
-            f"failed to fetch data for {', '.join(channels)} "
-            f"in interval [{gpsstart}, {gpsend}): {msg}",
-            io_nds2.NDSWarning,
+        log_nds2(
+            conn_kw.get("connection") or conn_kw.get("host"),
+            "Failed to fetch data for %s in interval [%s, %s): %s",
+            ", ".join(map(str, channels)),
+            gpsstart,
+            gpsend,
+            msg,
+            level=logging.WARNING,
         )
 
         # if failing occurred because of data on tape, don't try
@@ -377,20 +378,18 @@ def fetch(
         verbose = bool(verbose)
 
     # get a connection to an NDS2 server
-    if connection is None:
+    if connection:
+        log_nds2(connection, "Using existing connection")
+    else:
         if host is None:
             msg = (
                 "either connection= or host= keyword arguments "
                 "must be given to fetch data from NDS2"
             )
             raise ValueError(msg)
-        _print_verbose(
-            f"Opening new connection to {host}...",
-            end=" ",
-            verbose=verbose,
-        )
+        LOGGER.debug("Connecting to %s", host)
         connection = io_nds2.auth_connect(host, port)
-        _print_verbose("connected", verbose=verbose)
+        log_nds2(connection, "Connected to NDS%s server", connection.get_protocol())
 
     # set ALLOW_DATA_ON_TAPE
     if allow_tape is not None:
@@ -398,7 +397,6 @@ def fetch(
             connection,
             "ALLOW_DATA_ON_TAPE",
             str(allow_tape),
-            verbose=verbose,
         )
 
     ctype = _parse_nds_enum_dict_param(channels, "type", type)
@@ -409,11 +407,7 @@ def fetch(
     iend = int(ceil(end))
 
     # verify channels exist
-    _print_verbose(
-        "Checking channels list against NDS2 database...",
-        end=" ",
-        verbose=verbose,
-    )
+    log_nds2(connection, "Checking channels list against database")
     utype = reduce(operator.or_, ctype.values())  # logical OR of types
     udtype = reduce(operator.or_, dtype.values())
     epoch = (istart, iend) if connection.get_protocol() > 1 else None
@@ -427,14 +421,15 @@ def fetch(
     )
 
     names = [Channel.from_nds2(c).ndsname for c in ndschannels]
-    _print_verbose("done", verbose=verbose)
+    log_nds2(connection, "Channel check complete, %s names found", len(names))
 
     # handle minute trend timing
     if any(c.endswith("m-trend") for c in names) and (istart % 60 or iend % 60):
-        warnings.warn(
+        log_nds2(
+            connection,
             "Requested at least one minute trend, but "
             "start and stop GPS times are not multiples of "
-            "60. Times will be expanded outwards to compensate",
+            "60; times will be expanded outwards to compensate",
         )
         istart, iend = io_nds2.minute_trend_times(istart, iend)
 
@@ -447,25 +442,19 @@ def fetch(
         qsegs = span
         gap = "pad"
     else:
-        _print_verbose(
-            "Querying for data availability...",
-            end=" ",
-            verbose=verbose,
-        )
+        log_nds2(connection, "Querying for data availability...")
         pad = float(pad)
         gap = "pad"
-        qsegs = _get_data_segments(ndschannels, start, end, connection) & span
-        cov = abs(qsegs) / abs(span) * 100
-        _print_verbose(
-            f"done\nFound {len(qsegs)} viable segments of data with "
-            f"{cov:.2f}% coverage",
-            verbose=verbose,
+        qsegs = _get_data_segments(ndschannels, istart, iend, connection) & span
+        log_nds2(
+            connection,
+            "Availability check complete, found %s viable segments of data "
+            "with %.2f%% coverage",
+            len(qsegs),
+            abs(qsegs) / abs(span) * 100,
         )
         if span - qsegs:
-            warnings.warn(
-                "Gaps were found in data available from "
-                f"{connection.get_host()}, but will be padded with {pad}",
-            )
+            log_nds2(connection, "Gaps will be padded with %s", pad)
 
     # query for each segment
     out = series_class.DictClass()
