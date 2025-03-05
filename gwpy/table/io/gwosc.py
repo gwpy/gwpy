@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2019-)
+# Copyright (C) Cardiff University (2019-2025)
 #
 # This file is part of GWpy.
 #
@@ -57,7 +57,8 @@ UNITS: dict[str, units.Quantity] = {
 }
 
 #: set of values corresponding to 'missing' or 'null' data
-MISSING_DATA: set[str] = {
+MISSING_DATA: set[str | None] = {
+    None,
     "NA",
 }
 
@@ -91,6 +92,17 @@ def _get_unit(
     return UNITS.get(rawunit, rawunit)
 
 
+def _get_fill_value(type_: type) -> Any:
+    """Get the fill value for this ``type_``.
+
+    If no default is set for the ``type_``, return `None`.
+    """
+    for key, replacement in _FILL_VALUE.items():
+        if issubclass(type_, key):
+            return replacement
+    return None
+
+
 def _mask_replace(
     value: Any,
     dtype: type,
@@ -115,12 +127,13 @@ def _mask_column(col: Iterable) -> tuple[Iterable, list]:
     mask = [v in MISSING_DATA for v in col]
 
     # find common dtype of unmasked values
-    dtype = numpy.array(x for i, x in enumerate(col) if not mask[i]).dtype.type
+    dtype = numpy.array([x for i, x in enumerate(col) if not mask[i]]).dtype.type
 
     # replace the column with a new version that has the masked
     # values replaced by a 'sensible' default for the relevant dtype
+    fill_value = _get_fill_value(dtype)
     return (
-        [_mask_replace(x, dtype) if mask[i] else x for i, x in enumerate(col)],
+        [fill_value or x if mask[i] else x for i, x in enumerate(col)],
         mask,
     )
 
