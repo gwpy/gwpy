@@ -1,5 +1,5 @@
 # Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University(2017-2025)
+#               Cardiff University (2017-2025)
 #
 # This file is part of GWpy.
 #
@@ -76,6 +76,7 @@ class CisResponse(TypedDict):
 
 def query(
     name: str | Channel,
+    *,
     kerberos: bool | None = None,
     **kwargs,
 ) -> ChannelList:
@@ -119,6 +120,7 @@ def query(
 
 def _get(
     url: str,
+    *,
     kerberos: bool | None = None,
     idp: str = "login.ligo.org",
     **kwargs,

@@ -254,6 +254,7 @@ force-wrap-aliases = true
 "__init__.py" = [
   "F401",  # unused-import
   "F403",  # undefined-local-with-import-star
+  "I001",  # import order
 ]
 "*/tests/*" = [
   "ANN",  # type annotations
@@ -275,6 +276,11 @@ force-wrap-aliases = true
 # ignore unused imoports in typing.py helper module
 "gwpy/typing.py" = [
   "F401",  # unused-import
+]
+# ignore some docstring rules in connect.py modules
+"gwpy/*/connect.py" = [
+  "D209",  # docstring closing quotes on separate line
+  "D414",  # section has no content ("Notes")
 ]
 
 # -- rstcheck
