@@ -18,7 +18,7 @@
 
 """Representations of time intervals and time-indexed state flags."""
 
-from .flag import (  # noqa: I001
+from .flag import (
     DataQualityDict,
     DataQualityFlag,
 )
