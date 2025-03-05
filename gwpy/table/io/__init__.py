@@ -19,9 +19,9 @@
 
 # apply useful decorators to the I/O formats provided by Astropy
 # _before_ we add any of our own
-from .. import EventTable                # noqa: I001
-from . import reg                        # noqa: I001
-reg.wrap_unified_io_readers(EventTable)  # noqa: I001
+from .. import EventTable
+from . import reg
+reg.wrap_unified_io_readers(EventTable)
 
 # other readers are defined in their own modules, and are responsible
 # for applying the decorators themselves.
