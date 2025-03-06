@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2019-)
+# Copyright (C) Cardiff University (2019-2025)
 #
 # This file is part of GWpy.
 #
@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import numbers
 import typing
+from pathlib import Path
 
 import numpy
 from astropy import (
@@ -42,7 +43,6 @@ from .utils import (
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
-    from pathlib import Path
     from typing import (
         IO,
         Any,
@@ -57,7 +57,8 @@ UNITS: dict[str, units.Quantity] = {
 }
 
 #: set of values corresponding to 'missing' or 'null' data
-MISSING_DATA: set[str] = {
+MISSING_DATA: set[str | None] = {
+    None,
     "NA",
 }
 
@@ -91,6 +92,17 @@ def _get_unit(
     return UNITS.get(rawunit, rawunit)
 
 
+def _get_fill_value(type_: type) -> Any:
+    """Get the fill value for this ``type_``.
+
+    If no default is set for the ``type_``, return `None`.
+    """
+    for key, replacement in _FILL_VALUE.items():
+        if issubclass(type_, key):
+            return replacement
+    return None
+
+
 def _mask_replace(
     value: Any,
     dtype: type,
@@ -106,7 +118,7 @@ def _mask_replace(
     return value
 
 
-def _mask_column(col: Iterable) -> tuple[Iterable, list]:
+def _mask_column(col: Iterable) -> tuple[list, list]:
     """Find and replace missing data in a column.
 
     Returns the new data, and the mask as `list`.
@@ -115,27 +127,26 @@ def _mask_column(col: Iterable) -> tuple[Iterable, list]:
     mask = [v in MISSING_DATA for v in col]
 
     # find common dtype of unmasked values
-    dtype = numpy.array(x for i, x in enumerate(col) if not mask[i]).dtype.type
+    dtype = numpy.array([x for i, x in enumerate(col) if not mask[i]]).dtype.type
 
     # replace the column with a new version that has the masked
     # values replaced by a 'sensible' default for the relevant dtype
+    fill_value = _get_fill_value(dtype)
     return (
-        [_mask_replace(x, dtype) if mask[i] else x for i, x in enumerate(col)],
+        [fill_value or x if mask[i] else x for i, x in enumerate(col)],
         mask,
     )
 
 
 def fetch_catalog(
-    catalog,
-    *args,
-    host=DEFAULT_GWOSC_URL,
+    catalog: str,
+    host: str = DEFAULT_GWOSC_URL,
     **kwargs,
-):
+) -> Table:
     """Download a `Table` of events from the GWOSC EventApi."""
     # fetch and parse data
     table = parse_eventapi_catalog(
         fetch_catalog_json(catalog, host=host),
-        *args,
         **kwargs,
     )
 
@@ -149,7 +160,7 @@ def fetch_catalog(
 def read_catalog(
     source: str | Path | IO,
     **kwargs,
-):
+) -> Table:
     """Read a `Table` from a GWOSC EventAPI JSON file.
 
     Parameters
@@ -157,14 +168,19 @@ def read_catalog(
     source : `str`, `~pathlib.Path`, `file`
         A file path or file-like object pointing at GWOSC EventAPI
         JSON data.
+
+    kwargs
+        Other keyword arguments are passed to `parse_eventapi_catalog`.
     """
     # read a file (object)
     if isinstance(source, str | Path):
         with open(source) as file:
-            rawdata = json.load(file)
-    else:
-        rawdata = json.loads(source)
+            return read_catalog(file)
 
+    # read an open file
+    rawdata = json.load(file)
+
+    # and parse it
     return parse_eventapi_catalog(rawdata, **kwargs)
 
 
@@ -173,7 +189,7 @@ def read_catalog(
 def parse_eventapi_catalog(
     rawdata: dict,
     **kwargs,
-):
+) -> Table:
     """Parse a `Table` from the GWOSC EventAPI JSON output.
 
     Parameters
@@ -185,7 +201,7 @@ def parse_eventapi_catalog(
         All keyword arguments are passed to the
         `~astropy.table.Table` constructor.
 
-    See also
+    See Also
     --------
     gwosc.api.fetch_catalog_json
         For details of remote data access.
