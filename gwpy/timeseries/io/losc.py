@@ -132,6 +132,32 @@ def _overlapping(files):
     return False
 
 
+def _name_from_gwosc_hdf5(f, path):
+    """Forge a name from a path in a GWOSC HDF5 file.
+
+    We want to be as close as possible to the GWF channel name.
+
+    New files (starting at O2 circa 2016-2017) contain a dataset called
+    GWOSCmeta (in the path) that stores the GWF channel (without the ifo name)
+    so we use this to reconstruct the GWF channel.
+    It works for strain, DQ and injections.
+
+    For old files, we return the path.
+    """
+    try:
+        # New files store the channel name in GWOSCmeta
+        meta_ds = io_hdf5.find_dataset(f, "%s/%s" % (path, "GWOSCmeta"))
+    except KeyError:
+        # GWOSCmeta isn't stored in old files
+        return path
+    channel = meta_ds[()].decode("utf-8")
+    # We can then find the observatory
+    # This is just the letter code, not the number so we assume 1
+    ifo_ds = io_hdf5.find_dataset(f, 'meta/Observatory')
+    ifo = ifo_ds[()].decode("utf-8")
+    return "%s1:%s" % (ifo, channel)
+
+
 # -- remote data access (the main event) --------------------------------------
 
 def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
@@ -291,7 +317,9 @@ def read_gwosc_hdf5_state(
     else:
         xunit = parse_unit(bits_ds.attrs["Xunits"])
         dt = Quantity(dt, xunit)
-    return StateVector(bits, bits=bit_def, t0=epoch, name=path,
+    # Name
+    name = _name_from_gwosc_hdf5(f, path)
+    return StateVector(bits, bits=bit_def, t0=epoch, name=name,
                        dx=dt, copy=copy).crop(start=start, end=end)
 
 
