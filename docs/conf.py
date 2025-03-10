@@ -16,22 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import inspect
 import os.path
 import re
 import shlex
 import shutil
-import sys
 import warnings
 from configparser import ConfigParser
 from pathlib import Path
 from string import Template
 
 import matplotlib
-
-from sphinx.util import logging
-
+import sphinx_github_style
 from numpydoc import docscrape_sphinx
+from sphinx.util import logging
 
 import gwpy
 from gwpy.utils.sphinx import (
@@ -250,47 +247,14 @@ intersphinx_mapping = {key: (value, None) for key, value in {
     "scitokens": "https://scitokens.readthedocs.io/en/stable/",
 }.items()}
 
-
 # -- linkcode
 
-def linkcode_resolve(domain, info):
-    """Determine the URL corresponding to Python object
-
-    This code is stolen with thanks from the scipy team.
-    """
-    if domain != "py" or not info["module"]:
-        return None
-
-    def find_source(module, fullname):
-        obj = sys.modules[module]
-        for part in fullname.split("."):
-            obj = getattr(obj, part)
-        try:  # unwrap a decorator
-            obj = obj.im_func.func_closure[0].cell_contents
-        except (AttributeError, TypeError):
-            pass
-        # get filename
-        filename = Path(inspect.getsourcefile(obj)).relative_to(
-            Path(gwpy.__file__).parent,
-        ).as_posix()
-        # get line numbers of this object
-        source, lineno = inspect.getsourcelines(obj)
-        if lineno:
-            return f"{filename}#L{lineno:d}-L{lineno + len(source) - 1}"
-        return filename
-
-    try:
-        fileref = find_source(info["module"], info["fullname"])
-    except (
-        AttributeError,  # object not found
-        OSError,  # file not found
-        TypeError,  # source for object not found
-        ValueError,  # file not from GWpy
-    ):
-        return None
-
-    return f"https://gitlab.com/gwpy/gwpy/-/tree/{GWPY_GIT_REF}/gwpy/{fileref}"
-
+# linkcode
+linkcode_url = sphinx_github_style.get_linkcode_url(
+    blob=sphinx_github_style.get_linkcode_revision("head"),
+    url="https://gitlab.com/gwpy/gwpy",
+)
+linkcode_resolve = sphinx_github_style.get_linkcode_resolve(linkcode_url)
 
 # -- plugins ----------------
 
