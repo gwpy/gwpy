@@ -233,6 +233,11 @@ xfail_strict = true
 
 # -- ruff
 
+[tool.ruff]
+namespace-packages = [
+  "examples",
+]
+
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
