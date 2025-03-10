@@ -18,19 +18,21 @@
 
 """Plotting a transfer function
 
-I would like to study how a signal transfers from one part of the
-interferometer to another.
+In this example we demonstrate how to calculate the transfer function
+between two `TimeSeries` signals.
 
-Specifically, it is interesting to measure the amplitude transfer of
-ground motion through the HEPI system.
+All ground-based gravitational wave observatories would be unable to
+operate if they did not employ sophisticated ground-motion suppression
+technology to prevent vibrations from the local (or remote) environment
+from transferring through to optical components.
+
+The impact of the seismic isolation system can be seen by calculating
+the transfer function between the ground motion at the laboratory
+and that of the optical suspension points.
 """
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = "gwpy.timeseries"
-
-if __name__ == "__main__":
-    from matplotlib import pyplot
-    pyplot.ion()
 
 # Before anything else, we import the objects we will need:
 from gwpy.time import tconvert
@@ -38,25 +40,36 @@ from gwpy.timeseries import TimeSeriesDict
 from gwpy.plot import BodePlot
 
 # and set the times of our query, and the channels we want:
-start = tconvert("May 27 2014 04:00")
+start = tconvert("August 14 2017 10:25")
 end = start + 1800
-gndchannel = "L1:ISI-GND_STS_ITMY_Z_DQ"
-hpichannel = "L1:HPI-ITMY_BLND_L4C_Z_IN1_DQ"
+gndchannel = "L1:ISI-GND_STS_ITMY_Y_DQ"
+suschannel = "L1:ISI-ITMY_SUSPOINT_ITMY_EUL_L_DQ"
 
 # We can call the :meth:`~TimeSeriesDict.get` method of the `TimeSeriesDict`
 # to retrieve all data in a single operation:
-data = TimeSeriesDict.get([gndchannel, hpichannel], start, end, verbose=True)
+data = TimeSeriesDict.get(
+    [gndchannel, suschannel],
+    start,
+    end,
+    verbose=True,
+    host="nds.gwosc.org",
+)
 gnd = data[gndchannel]
-hpi = data[hpichannel]
+sus = data[suschannel]
 
 # The transfer function between time series is easily computed with the
 # :meth:`~TimeSeries.transfer_function` method:
-tf = gnd.transfer_function(hpi, 100, 50)
+tf = gnd.transfer_function(sus, fftlength=128, overlap=64)
 
 # The `~gwpy.plot.BodePlot` knows how to separate a complex-valued
 # `~gwpy.frequencyseries.FrequencySeries` into magnitude and phase:
 plot = BodePlot(tf)
 plot.maxes.set_title(
-    r"L1 ITMY ground $\rightarrow$ HPI transfer function")
-plot.maxes.set_ylim(-55, 50)
+    r"L1 ITMY ground $\rightarrow$ SUS transfer function",
+)
+plot.maxes.set_xlim(5e-2, 30)
 plot.show()
+
+# This example demonstrates the impressive noise suppression of the LIGO
+# seismic isolation system. For more details, please see
+# https://www.ligo.caltech.edu/page/vibration-isolation.

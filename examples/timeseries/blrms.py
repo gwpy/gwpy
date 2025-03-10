@@ -40,12 +40,16 @@ channels = [
 
 # At last we can :meth:`~TimeSeriesDict.get` 6 hours of data for each
 # interferometer:
-lho = TimeSeriesDict.get([c.format(ifo="H1") for c in channels],
-                         "Jan 16 2020 8:00", "Jan 16 2020 14:00",
-                         host="losc-nds.ligo.org")
-llo = TimeSeriesDict.get([c.format(ifo="L1") for c in channels],
-                         "Jan 16 2020 8:00", "Jan 16 2020 14:00",
-                         host="losc-nds.ligo.org")
+lho = TimeSeriesDict.get(
+    [c.format(ifo="H1") for c in channels],
+    "Jan 16 2020 8:00", "Jan 16 2020 14:00",
+    host="nds.gwosc.org",
+)
+llo = TimeSeriesDict.get(
+    [c.format(ifo="L1") for c in channels],
+    "Jan 16 2020 8:00", "Jan 16 2020 14:00",
+    host="nds.gwosc.org",
+)
 
 # Next we can plot the data, with a separate `~gwpy.plot.Axes` for each
 # instrument:
