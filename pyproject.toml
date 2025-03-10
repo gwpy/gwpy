@@ -153,6 +153,7 @@ docs = [
   "numpydoc >=0.8.0",
   "Sphinx >=4.4.0",
   "sphinx-automodapi",
+  "sphinx-gallery >=0.19.0",
   "sphinx-github-style >=1.2.2",
   "sphinx-immaterial >=0.7.3",
   "sphinxcontrib-programoutput",

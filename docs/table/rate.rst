@@ -35,7 +35,7 @@ event rate on a 1-second stride:
    >>> ax.set_title('LIGO Hanford Observatory event rate for HW100916')
    >>> plot.show()
 
-This code is a snippet of the example :ref:`gwpy-example-table-rate`.
+This code is a snippet of the example :ref:`sphx_glr_examples_table_rate.py`.
 
 =================
 Binned event rate
@@ -62,4 +62,4 @@ signal-to-noise ratio (SNR) above some threshold, for the same table as above.
    >>> ax.set_title('LIGO Hanford Observatory event rate for HW100916')
    >>> plot.show()
 
-This code is a snippet of the example on :ref:`gwpy-example-table-rate_binned`.
+This code is a snippet of the example on :ref:`sphx_glr_examples_table_rate_binned.py`.

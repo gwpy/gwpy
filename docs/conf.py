@@ -19,7 +19,6 @@
 import os.path
 import re
 import shlex
-import shutil
 import warnings
 from configparser import ConfigParser
 from datetime import date
@@ -33,7 +32,6 @@ from sphinx.util import logging
 
 import gwpy
 from gwpy.utils.sphinx import (
-    ex2rst,
     zenodo,
 )
 
@@ -96,6 +94,7 @@ extensions = [
     "sphinx.ext.linkcode",
     "sphinx.ext.ifconfig",
     "sphinx_automodapi.automodapi",
+    "sphinx_gallery.gen_gallery",
     "sphinxcontrib.programoutput",
     "numpydoc",
     "matplotlib.sphinxext.plot_directive",
@@ -256,6 +255,22 @@ linkcode_url = sphinx_github_style.get_linkcode_url(
 )
 linkcode_resolve = sphinx_github_style.get_linkcode_resolve(linkcode_url)
 
+# -- sphinx-gallery
+
+sphinx_gallery_conf = {
+    # where to find the examples
+    "examples_dirs": [
+        str(SPHINX_DIR.parent / "examples"),
+    ],
+    # where to render them
+    "gallery_dirs": [
+        str(SPHINX_DIR / "examples"),
+    ],
+    "filename_pattern": r"/.*\.py",  # execute all examples
+    "ignore_pattern": r"test_.*\.py",  # ignore example tests
+    "write_computation_times": False,
+}
+
 # -- plugins ----------------
 
 # -- build CLI examples
@@ -375,46 +390,6 @@ def render_cli_examples(_):
     (exdir / "examples.rst").write_text(rst)
 
 
-# -- examples
-
-def _render_example(example, outdir, logger):
-    # render the example
-    rst = ex2rst.ex2rst(example)
-
-    # if it has changed, write it (prevents sphinx from
-    # unnecessarily reprocessing)
-    target = outdir / example.with_suffix(".rst").name
-    if _new_or_different(rst, target):
-        target.write_text(rst)
-        logger.debug(f"[examples] wrote {target}")
-
-
-def render_examples(_):
-    """Render all examples as RST to be processed by Sphinx.
-    """
-    logger = logging.getLogger("examples")
-    logger.info("[examples] converting examples to RST...")
-
-    srcdir = SPHINX_DIR.parent / "examples"
-    outdir = SPHINX_DIR / "examples"
-    outdir.mkdir(exist_ok=True)
-
-    # find all examples
-    for exdir in next(os.walk(srcdir))[1]:
-        if exdir in {"__pycache__"}:  # ignore
-            continue
-        subdir = outdir / exdir
-        subdir.mkdir(exist_ok=True)
-        # copy index
-        index = subdir / "index.rst"
-        shutil.copyfile(srcdir / exdir / index.name, index)
-        logger.debug(f"[examples] copied {index}")
-        # render python script as RST
-        for expy in (srcdir / exdir).glob("*.py"):
-            _render_example(expy, subdir, logger)
-        logger.info(f"[examples] converted all in examples/{exdir}")
-
-
 # -- create citation file
 
 def write_citing_rst(app):
@@ -432,5 +407,4 @@ def write_citing_rst(app):
 
 def setup(app):
     app.connect("builder-inited", write_citing_rst)
-    app.connect("builder-inited", render_examples)
     app.connect("builder-inited", render_cli_examples)

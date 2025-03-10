@@ -65,7 +65,7 @@ Available methods include:
 
 Each of the above methods eventually calls out to :meth:`TimeSeries.filter` to apply a digital linear filter, normally via cascaded second-order-sections (requires `scipy >= 0.16`).
 
-For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`gwpy-example-signal-gw150914`.
+For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`sphx_glr_examples_signal_gw150914.py`.
 
 ==========================
 Frequency-domain filtering
@@ -84,7 +84,7 @@ Available methods include:
    TimeSeries.rayleigh_spectrum
    TimeSeries.rayleigh_spectrogram
 
-For a worked example of how to load data and calculate the Amplitude Spectral Density `~gwpy.frequencyseries.FrequencySeries`, see the example :ref:`gwpy-example-frequencyseries-hoff`.
+For a worked example of how to load data and calculate the Amplitude Spectral Density `~gwpy.frequencyseries.FrequencySeries`, see the example :ref:`sphx_glr_examples_frequencyseries_hoff.py`.
 
 .. _gwpy-filter-design:
 
@@ -105,7 +105,7 @@ The :mod:`gwpy.signal` provides a number of filter design methods which, when co
 
 Each of these will return filter coefficients that can be passed directly into `~TimeSeries.zpk` (default for analogue filters) or `~TimeSeries.filter` (default for digital filters).
 
-For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`gwpy-example-signal-gw150914`.
+For a worked example of how to filter LIGO data to discover a gravitational-wave signal, see the example :ref:`sphx_glr_examples_signal_gw150914.py`.
 
 **Cross-channel correlations:**
 
@@ -115,7 +115,7 @@ For a worked example of how to filter LIGO data to discover a gravitational-wave
    TimeSeries.coherence
    TimeSeries.coherence_spectrogram
 
-For a worked example of how to compare channels like this, see the example :ref:`gwpy-example-frequencyseries-coherence`.
+For a worked example of how to compare channels like this, see the example :ref:`sphx_glr_examples_frequencyseries_coherence.py`.
 
 .. currentmodule:: gwpy.signal
 

@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -16,7 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Plotting a transfer function
+"""
+.. sectionauthor:: Duncan Macleod <duncan.macleod@ligo.org>
+.. currentmodule:: gwpy.timeseries
+
+Transfer function
+#################
 
 In this example we demonstrate how to calculate the transfer function
 between two `TimeSeries` signals.
@@ -31,20 +36,19 @@ the transfer function between the ground motion at the laboratory
 and that of the optical suspension points.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = "gwpy.timeseries"
-
-# Before anything else, we import the objects we will need:
 from gwpy.time import tconvert
 from gwpy.timeseries import TimeSeriesDict
 from gwpy.plot import BodePlot
 
-# and set the times of our query, and the channels we want:
+# %%
+# For this example we will use data from the |GWOSC_AUX_RELEASE|_:
+
 start = tconvert("August 14 2017 10:25")
 end = start + 1800
 gndchannel = "L1:ISI-GND_STS_ITMY_Y_DQ"
 suschannel = "L1:ISI-ITMY_SUSPOINT_ITMY_EUL_L_DQ"
 
+# %%
 # We can call the :meth:`~TimeSeriesDict.get` method of the `TimeSeriesDict`
 # to retrieve all data in a single operation:
 data = TimeSeriesDict.get(
@@ -57,10 +61,12 @@ data = TimeSeriesDict.get(
 gnd = data[gndchannel]
 sus = data[suschannel]
 
+# %%
 # The transfer function between time series is easily computed with the
 # :meth:`~TimeSeries.transfer_function` method:
 tf = gnd.transfer_function(sus, fftlength=128, overlap=64)
 
+# %%
 # The `~gwpy.plot.BodePlot` knows how to separate a complex-valued
 # `~gwpy.frequencyseries.FrequencySeries` into magnitude and phase:
 plot = BodePlot(tf)

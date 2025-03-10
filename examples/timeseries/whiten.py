@@ -1,5 +1,5 @@
 # Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+#               Cardiff University (2017-2025)
 #
 # This file is part of GWpy.
 #
@@ -16,7 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Whitening a `TimeSeries`
+"""
+.. sectionauthor:: Duncan Macleod <duncan.macleod@ligo.org>
+.. currentmodule:: gwpy.timeseries
+
+Whitening a `TimeSeries`
+########################
 
 Most data recorded from a gravitational-wave interferometer carry information
 across a wide band of frequencies, typically up to a few kiloHertz, but
@@ -29,25 +34,27 @@ We employ a technique called 'whitening' to normalize the power at all
 frequencies so that excess power at any frequency is more obvious.
 
 We demonstrate below the LIGO-Livingston gravitational-wave strain
-measurement signal around |GW200129_065458|_, the loudest signal as yet
+measurement signal around |GW200129|_, the loudest signal as yet
 detected by LIGO.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = "gwpy.timeseries"
-
+# %%
+# Data access
+# -----------
 # First, we use the |gwosc-mod| Python client to get the GPS time of the
 # event:
 
 from gwosc.datasets import event_gps
 gps = event_gps("GW200129_065458")
 
+# %%
 # Then we can import the `TimeSeries` object and fetch the strain data using
 # :meth:`TimeSeries.fetch_open_data` in a window around that event:
 
 from gwpy.timeseries import TimeSeries
 data = TimeSeries.fetch_open_data("L1", int(gps) - 64, int(gps) + 64)
 
+# %%
 # To demonstrate the relative power across the frequency band, we can
 # quickly estimate an Amplitude Spectral Density (ASD) for these data:
 
@@ -57,8 +64,10 @@ plot = asd.plot(
     ylabel="Strain ASD [$1/\\sqrt{Hz}$]",
 )
 plot.show()
-plot.close()  # hide
 
+# %%
+# Whitening
+# ---------
 # The ASD clearly shows the dominance in amplitude of the lowest frequency
 # components of the data, where the seismic noise around the observatory
 # is most impactful.
@@ -67,6 +76,7 @@ plot.close()  # hide
 
 white = data.whiten(fftlength=8)
 
+# %%
 # and can `~TimeSeries.plot` both the original and whitened data around the
 # event time:
 
@@ -82,8 +92,8 @@ plot = Plot(
 plot.axes[0].set_ylabel("Strain amplitude", fontsize=16)
 plot.axes[1].set_ylabel("Whitened strain amplitude", fontsize=16)
 plot.show()
-plot.close()  # hide
 
+# %%
 # The top figure is dominated by the low-frequency noise, whereas the
 # whitened data below highlights a few spikes in the data at higher
 # frequencies.
@@ -96,7 +106,8 @@ plot = white.crop(gps - .1, gps + .1).plot(
 plot.axes[0].set_epoch(gps)
 plot.show()
 
+# %%
 # Here, centred around time 0.03 is the clear signature of a binary black hole
-# merger, |GW200129_065458|_.
+# merger, |GW200129|_.
 # This signal is completely hidden in the unfiltered data, but the simple act
 # of whitening has exposed the loudest gravitational-wave event ever detected!

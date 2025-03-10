@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# Copyright (C) Duncan Macleod (2019-2020)
+# Copyright (C) Cardiff University (2019-2025)
 #
 # This file is part of GWpy.
 #
@@ -16,7 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Plotting a spectrogram of all open data for 1 day
+"""
+.. sectionauthor:: Duncan Macleod <duncan.macleod@ligo.org>
+.. currentmodule:: gwpy.timeseries
+
+Plotting a spectrogram of all open data for many hours
+######################################################
 
 In order to study interferometer performance, it is common in LIGO to plot
 all of the data for a day, in order to determine trends, and see data-quality
@@ -31,8 +35,7 @@ use those to build a multi-hour spectrogram plot of LIGO-Livingston strain
 data.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
+# %%
 # .. currentmodule:: gwpy.segments
 #
 # Getting the segments
@@ -50,6 +53,7 @@ l1segs = DataQualityFlag.fetch_open_data(
     "Aug 17 2017 16:00",
 )
 
+# %%
 # For sanity, lets plot these segments:
 
 splot = l1segs.plot(
@@ -59,14 +63,17 @@ splot = l1segs.plot(
 splot.show()
 splot.close()  # hide
 
+# %%
 # We see that the LIGO Hanford Observatory detector was operating for the
 # majority of the day, with a few outages of ~30 minutes or so.
 
+# %%
 # We can use the :func:`abs` function to display the total amount of time
 # spent taking data:
 
 print(abs(l1segs.active))
 
+# %%
 # .. currentmodule:: gwpy.timeseries
 #
 # Working with strain data
@@ -88,13 +95,17 @@ for start, end in l1segs.active:
     specgram = l1strain.spectrogram(30, fftlength=4) ** (1/2.)
     spectrograms.append(specgram)
 
+# %%
 # Finally, we can build a :meth:`~gwpy.spectrogram.Spectrogram.plot`:
 
+# Create an empty plot with a single set of Axes
 from gwpy.plot import Plot
 plot = Plot(figsize=(12, 6))
 ax = plot.gca()
+# add each spectrogram to the Axes
 for specgram in spectrograms:
     ax.imshow(specgram)
+# finalise the plot metadata
 ax.set_xscale("auto-gps", epoch="Aug 17 2017")
 ax.set_ylim(20, 2000)
 ax.set_yscale("log")
@@ -106,5 +117,6 @@ ax.colorbar(
     clim=(5e-24, 1e-21),
     label=r"Strain noise [1/$\sqrt{\mathrm{Hz}}$]",
 )
+# add the segments as a 'state' indicator along the bottom
 plot.add_segments_bar(l1segs)
 plot.show()

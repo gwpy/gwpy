@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-)
 #
 # This file is part of GWpy.
 #
@@ -16,7 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Calculating and plotting a `SpectralVariance` histogram
+"""
+.. sectionauthor:: Duncan Macleod <duncan.macleod@ligo.org>
+.. currentmodule:: gwpy.timeseries
+
+Generating a `SpectralVariance` histogram
+#########################################
 
 The most common visualisation of the spectral content of a data series is
 via the power or amplitude spectral density calculations (PSD or ASD).
@@ -29,23 +34,30 @@ which frequencies sit at which amplitude *most* of the time, but also
 highlighting excursions from normal behaviour.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = "gwpy.frequencyseries"
-
+# %%
 # To demonstate this, we can load some data from the LIGO Livingston
 # interferometer around the time of the GW151226 gravitational wave detection:
 
 from gwpy.timeseries import TimeSeries
-llo = TimeSeries.fetch_open_data("L1", 1135136228, 1135140324, verbose=True)
+llo = TimeSeries.fetch_open_data("L1", 1135136228, 1135140324)
 
+# %%
 # We can then call the :meth:`~gwpy.timeseries.TimeSeries.spectral_variance`
 # method of the ``llo`` `~gwpy.timeseries.TimeSeries` by calculating an ASD
 # every 5 seconds and counting the amount of time each frequency bin spends
 # at each ASD value:
 
-variance = llo.spectral_variance(5, fftlength=2, overlap=1, log=True,
-                                 low=1e-24, high=1e-19, nbins=100)
+variance = llo.spectral_variance(
+    5,
+    fftlength=2,
+    overlap=1,
+    log=True,
+    low=1e-24,
+    high=1e-19,
+    nbins=100,
+)
 
+# %%
 # We can then :meth:`~SpectralVariance.plot` the `SpectralVariance`
 
 plot = variance.plot(yscale="log", norm="log", vmin=.5, cmap="plasma")
@@ -58,6 +70,7 @@ ax.set_ylabel(r"[strain/$\sqrt{\mathrm{Hz}}$]")
 ax.set_title("LIGO-Livingston sensitivity variance")
 plot.show()
 
+# %%
 # From this we see that in general the sensitivity varies a few parts in
-# 10 :sup:`-23`, while many of the lines (narrow-band peaks in the spectrum)
+# 10:sup:`-23`, while many of the lines (narrow-band peaks in the spectrum)
 # are much more stationary.

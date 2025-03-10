@@ -71,7 +71,7 @@ For example:
     ax.legend()
     plot.show()
 
-The above code was adapted from the example :ref:`gwpy-example-signal-gw150914`.
+The above code was adapted from the example :ref:`sphx_glr_examples_signal_gw150914.py`.
 
 The colours can also be specified using the interferometer prefix (e.g. ``'H1'``) via the `gwpy.plot.colors.GW_OBSERVATORY_COLORS` object:
 

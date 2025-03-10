@@ -188,13 +188,22 @@
 .. events
 
 .. |GW150914| replace:: GW150914
-.. _GW150914: https://www.ligo.org/science/Publication-GW150914/
+.. _GW150914: https://ligo.org/detections/gw150914/
 
 .. |GW170814| replace:: GW170814
-.. _GW170814: https://www.ligo.org/science/Publication-GW170814/
+.. _GW170814: https://ligo.org/detections/gw170814/
 
 .. |GW170817| replace:: GW170817
-.. _GW170817: https://www.ligo.org/science/Publication-GW170817BNS/
+.. _GW170817: https://ligo.org/detections/gw170817/
 
 .. |GW200105| replace:: GW200105
-.. _GW200105: https://www.ligo.org/science/Publication-NSBHDiscovery/
+.. _GW200105: https://ligo.org/gw200105-gw200115/
+
+.. |GW200115| replace:: GW200115
+.. _GW200115: https://ligo.org/gw200105-gw200115/
+
+.. |GW200129| replace:: GW200129
+.. _GW200129: https://gwosc.org/eventapi/html/GWTC-3-confident/GW200129_065458/
+
+.. |GW230529| replace:: GW230529
+.. _GW230529: https://ligo.org/detections/gw230529/
