@@ -25,3 +25,5 @@ The sensitive distance (sometimes called 'range', or 'horizon') is a measure of 
    burst_range_spectrum
    inspiral_range
    inspiral_range_psd
+   range_timeseries
+   range_spectrogram
