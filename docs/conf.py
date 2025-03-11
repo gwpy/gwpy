@@ -18,12 +18,9 @@
 
 import os.path
 import re
-import shlex
 import warnings
-from configparser import ConfigParser
 from datetime import date
 from pathlib import Path
-from string import Template
 
 import matplotlib
 import sphinx_github_style
@@ -32,6 +29,7 @@ from sphinx.util import logging
 
 import gwpy
 from gwpy.utils.sphinx import (
+    gallery as cli_gallery,
     zenodo,
 )
 
@@ -107,7 +105,7 @@ exclude_patterns = [
     "references.rst",
     "_build",
     "_generated",
-    "cli/examples/examples.rst",
+    "cli/_examples*",
 ]
 templates_path = [
     "_templates",
@@ -260,135 +258,32 @@ linkcode_resolve = sphinx_github_style.get_linkcode_resolve(linkcode_url)
 sphinx_gallery_conf = {
     # where to find the examples
     "examples_dirs": [
-        str(SPHINX_DIR.parent / "examples"),
+        str(Path("..") / "examples"),
+        str(Path() / "cli" / "_examples"),
     ],
     # where to render them
     "gallery_dirs": [
-        str(SPHINX_DIR / "examples"),
+        str(Path() / "examples"),
+        str(Path() / "cli" / "examples"),
     ],
+    "download_all_examples": False,
     "filename_pattern": r"/.*\.py",  # execute all examples
     "ignore_pattern": r"test_.*\.py",  # ignore example tests
     "write_computation_times": False,
+    "within_subsection_order": "ExampleTitleSortKey",
 }
-
-# -- plugins ----------------
 
 # -- build CLI examples
 
-CLI_INDEX_TEMPLATE = Template("""
-.. toctree::
-   :numbered:
-
-   ${examples}
-""".strip())
-
-CLI_TEMPLATE = Template("""
-.. _gwpy-cli-example-${tag}:
-
-${titleunderline}
-${title}
-${titleunderline}
-
-${description}
-
-.. code-block:: shell
-
-   ${command}
-
-.. plot::
-   :align: center
-   :alt: ${title}
-   :context: reset
-   :format: python
-   :include-source: false
-
-   ${code}
-""".strip())
-
-
-def _new_or_different(content, target):
-    """Return `True` if a target file doesn't exist, or doesn't have the
-    specified content
-    """
-    try:
-        return Path(target).read_text() != content
-    except FileNotFoundError:
-        return True
-
-
-def _render_cli_example(config, section, outdir, logger):
-    """Render a :mod:`gwpy.cli` example as RST to be processed by Sphinx.
-    """
-    # read config values (allow for multi-line definition)
-    raw = config.get(
-        section,
-        "command",
-    ).strip().replace("\n", " ") + " --interactive"
-    title = config.get(
-        section,
-        "title",
-        fallback=" ".join(map(str.title, section.split("-"))),
+def render_cli_examples(app):
+    """Render the CLI examples for sphinx-gallery."""
+    clidir = Path(app.confdir) / "cli"
+    return cli_gallery.render_entry_point_examples(
+        clidir / "examples.ini",
+        clidir / "_examples",
+        logger=logging.getLogger("gwpy-plot-gallery"),
+        filename_prefix="gwpy-plot-",
     )
-    desc = config.get(section, "description", fallback="")
-
-    # build command-line string for display
-    cmdstr = f"gwpy-plot {raw}".replace(  # split onto multiple lines
-        " --",
-        " \\\n       --",
-    )
-
-    # build code to generate the plot when sphinx runs
-    args = ", ".join(map(repr, shlex.split(raw)))
-    code = "\n   ".join([
-        "from gwpy.cli.gwpy_plot import main as gwpy_plot",
-        f"gwpy_plot([{args}])",
-    ])
-
-    rst = CLI_TEMPLATE.substitute(
-        title=title,
-        titleunderline="#" * len(title),
-        description=desc,
-        tag=section,
-        command=cmdstr,
-        code=code,
-    )
-
-    # only write RST if new or changed
-    rstfile = outdir / f"{section}.rst"
-    if _new_or_different(rst, rstfile):
-        rstfile.write_text(rst)
-        logger.info(f"[cli] wrote {rstfile}")
-    return rstfile
-
-
-def render_cli_examples(_):
-    """Render all :mod:`gwpy.cli` examples as RST to be processed by Sphinx.
-    """
-    logger = logging.getLogger("cli-examples")
-
-    # directories
-    clidir = SPHINX_DIR / "cli"
-    exini = clidir / "examples.ini"
-    exdir = clidir / "examples"
-    exdir.mkdir(exist_ok=True, parents=True)
-
-    # read example config
-    config = ConfigParser()
-    config.read(exini)
-
-    # render examples
-    rsts = []
-    for sect in config.sections():
-        rst = _render_cli_example(config, sect, exdir, logger)
-        # record the path relative to the /cli/ directory
-        # because that's where the toctree is included
-        rsts.append(rst.relative_to(clidir))
-
-    rst = CLI_INDEX_TEMPLATE.substitute(
-        examples="\n   ".join(str(rst.with_suffix("")) for rst in rsts),
-    )
-    (exdir / "examples.rst").write_text(rst)
-
 
 # -- create citation file
 
@@ -406,5 +301,8 @@ def write_citing_rst(app):
 # -- setup sphinx -----------
 
 def setup(app):
+    # write the Citing file
     app.connect("builder-inited", write_citing_rst)
-    app.connect("builder-inited", render_cli_examples)
+    # render the CLI examples, with low priority number so that this occurs
+    # before sphinx-gallery attempts to execute them
+    app.connect("builder-inited", render_cli_examples, priority=10)
