@@ -50,10 +50,7 @@ from ...signal.window import planck
 from ...spectrogram import Spectrogram
 from ...table import EventTable
 from ...testing import mocks, utils
-from ...testing.errors import (
-    pytest_skip_cvmfs_read_error,
-    pytest_skip_flaky_network,
-)
+from ...testing.errors import pytest_skip_flaky_network
 from ...time import LIGOTimeGPS
 from ...types import Index
 from .. import StateTimeSeries, TimeSeries, TimeSeriesDict, TimeSeriesList
@@ -194,16 +191,16 @@ GWOSC_GW190814_INJ_BITS = GWOSC_GW150914_INJ_BITS
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def _gwosc_cvmfs(func):
-    """Decorate ``func`` with all necessary CVMFS-related decorators."""
+def _gwosc_pelican(func):
+    """Decorate ``func`` with all necessary GWOSC/Pelican-related decorators."""
     for dec in (
-        pytest.mark.cvmfs,
         pytest.mark.requires("lalframe"),
-        pytest.mark.skipif(
-            not os.path.isdir("/cvmfs/gwosc.osgstorage.org/"),
-            reason="GWOSC CVMFS repository not available",
-        ),
-        pytest_skip_cvmfs_read_error,
+        pytest.mark.requires("requests_pelican"),
+        pytest_skip_flaky_network,
+        mock.patch.dict(
+            "os.environ",
+            {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
+        )
     ):
         func = dec(func)
     return func
@@ -844,12 +841,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             "Failed to establish a connection[INFO: Invalid IP address]",
         ) in caplog.record_tuples
 
-    @pytest_skip_flaky_network
-    @_gwosc_cvmfs
-    @mock.patch.dict(
-        "os.environ",
-        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
-    )
+    @_gwosc_pelican
     @pytest.mark.parametrize("kwargs", [
         pytest.param({"verbose": True}, id="default"),
         pytest.param({"observatory": GWOSC_GW150914_IFO[0]}, id="observatory"),
@@ -860,6 +852,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             GWOSC_GW150914_CHANNEL,
             *GWOSC_GW150914_SEGMENT,
             frametype=GWOSC_GW150914_FRAMETYPE,
+            urltype="osdf",
             **kwargs,
         )
         utils.assert_quantity_sub_equal(
@@ -868,14 +861,13 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             exclude=["name", "channel", "unit"],
         )
 
-    @pytest_skip_flaky_network
-    @mock.patch.dict(
-        "os.environ",
-        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
-    )
+    @_gwosc_pelican
     def test_find_datafind_httperror(self):
         """Test that HTTPErrors are presented in `find()`."""
-        with pytest.raises(HTTPError):
+        with pytest.raises(
+            HTTPError,
+            match="400 Client Error: BAD REQUEST for url",
+        ):
             self.TEST_CLASS.find(
                 GWOSC_GW150914_CHANNEL,
                 *GWOSC_GW150914_SEGMENT,
@@ -909,18 +901,14 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
                 frametype="X1_TEST",
             )
 
-    @pytest_skip_flaky_network
-    @_gwosc_cvmfs
-    @mock.patch.dict(
-        "os.environ",
-        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
-    )
+    @_gwosc_pelican
     def test_find_best_frametype_in_find(self, gw150914_16384):
         """Test that `TimeSeries.find()` best frametype selection works."""
         ts = self.TEST_CLASS.find(
             GWOSC_GW150914_CHANNEL,
             GWOSC_GW150914_SEGMENT.start,
             GWOSC_GW150914_SEGMENT.end,
+            urltype="osdf",
         )
         utils.assert_quantity_sub_equal(
             ts,
@@ -928,17 +916,12 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             exclude=["name", "channel", "unit"],
         )
 
-    @pytest_skip_flaky_network
-    @_gwosc_cvmfs
+    @_gwosc_pelican
     @mock.patch.dict(
         # force 'import nds2' to fail so that we are actually testing
         # the gwdatafind API or nothing
         "sys.modules",
         {"nds2": None},
-    )
-    @mock.patch.dict(
-        "os.environ",
-        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_get_datafind(self, gw150914_16384):
         """Test that `TimeSeries.get(..., source='datafind')` works."""
@@ -949,6 +932,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
                 GWOSC_GW150914_SEGMENT.end,
                 source="files",
                 frametype_match=r"V1\Z",
+                urltype="osdf",
             )
         except (ImportError, RuntimeError) as e:  # pragma: no-cover
             pytest.skip(str(e))

@@ -18,10 +18,7 @@
 """Custom pytest marks for GWpy.
 
 This is mainly to allow downstream users/builders/packagers to skip tests
-that require annoying/flaky configuration, or just take too long, e.g.
-tests that use CVMFS could be skipped via
-
-    $ python -m pytest --pyargs gwpy -m 'not cvmfs'
+that require annoying/flaky configuration, or just take too long.
 
 This module is imported in :mod:`gwpy.conftest` such that all marks are
 registered up front and visible via ``python -m pytest gwpy --markers``.
