@@ -48,10 +48,12 @@ def find(
     start: GpsLike,
     end: GpsLike,
     *,
-    host: str | None = None,
     observatory: str | None = None,
     frametype: str | None = None,
     frametype_match: str | Pattern | None = None,
+    host: str | None = None,
+    urltype: str | None = "file",
+    ext: str = "gwf",
     pad: float | None = None,
     scaled: bool | None = None,
     allow_tape: bool | None = None,
@@ -96,6 +98,15 @@ def find(
     host : `str`, optional
         Name of the GWDataFind server to use.
         Default is set by `gwdatafind.utils.get_default_host`.
+
+    urltype : `str`, optional
+        The URL type to use.
+        Default is "file" to use paths available on the file system.
+
+    ext : `str`, optional
+        The file extension for which to search.
+        "gwf" is the only file extension supported, but this may be
+        extended in the future.
 
     pad : `float`, optional
         Value with which to fill gaps in the source data,
@@ -148,6 +159,8 @@ def find(
             start,
             end,
             host=host,
+            ext=ext,
+            urltype=urltype,
             frametype_match=frametype_match,
             allow_tape=allow_tape,
         )
@@ -196,6 +209,8 @@ def find(
             start,
             end,
             host=host,
+            ext=ext,
+            urltype=urltype,
             on_gaps="error" if pad is None else "warn",
         )
         if not cache:

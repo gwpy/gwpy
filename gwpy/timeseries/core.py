@@ -570,6 +570,10 @@ class TimeSeriesBase(Series):
         *,
         observatory: str | None = None,
         frametype: str | None = None,
+        frametype_match: str | re.Pattern | None = None,
+        host: str | None = None,
+        urltype: str | None = "file",
+        ext: str = "gwf",
         pad: float | None = None,
         scaled: bool | None = None,
         allow_tape: bool | None = None,
@@ -610,6 +614,19 @@ class TimeSeriesBase(Series):
         frametype_match : `str`, optional
             Regular expression to use for frametype matching.
 
+        host : `str`, optional
+            Name of the GWDataFind server to use.
+            Default is set by `gwdatafind.utils.get_default_host`.
+
+        urltype : `str`, optional
+            The URL type to use.
+            Default is "file" to use paths available on the file system.
+
+        ext : `str`, optional
+            The file extension for which to search.
+            "gwf" is the only file extension supported, but this may be
+            extended in the future.
+
         pad : `float`, optional
             Value with which to fill gaps in the source data,
             by default gaps will result in a `ValueError`.
@@ -638,6 +655,10 @@ class TimeSeriesBase(Series):
             end,
             observatory=observatory,
             frametype=frametype,
+            frametype_match=frametype_match,
+            host=host,
+            urltype=urltype,
+            ext=ext,
             verbose=verbose,
             pad=pad,
             scaled=scaled,
@@ -1353,6 +1374,9 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
         observatory: str | None = None,
         frametype: str | None = None,
         frametype_match: str | re.Pattern | None = None,
+        host: str | None = None,
+        urltype: str | None = "file",
+        ext: str = "gwf",
         pad: float | None = None,
         scaled: bool | None = None,
         allow_tape: bool | None = None,
@@ -1392,6 +1416,19 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
 
         frametype_match : `str`, optional
             Regular expression to use for frametype matching.
+
+        host : `str`, optional
+            Name of the GWDataFind server to use.
+            Default is set by `gwdatafind.utils.get_default_host`.
+
+        urltype : `str`, optional
+            The URL type to use.
+            Default is "file" to use paths available on the file system.
+
+        ext : `str`, optional
+            The file extension for which to search.
+            "gwf" is the only file extension supported, but this may be
+            extended in the future.
 
         pad : `float`, optional
             Value with which to fill gaps in the source data,
@@ -1434,6 +1471,9 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
             observatory=observatory,
             frametype=frametype,
             frametype_match=frametype_match,
+            host=host,
+            urltype=urltype,
+            ext=ext,
             pad=pad,
             scaled=scaled,
             allow_tape=allow_tape,
