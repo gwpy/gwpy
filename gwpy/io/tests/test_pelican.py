@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2025-)
+# Copyright (c) 2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -21,7 +21,7 @@ from unittest import mock
 
 import pytest
 
-from ...testing.errors import pytest_skip_network_error
+from ...testing.errors import pytest_skip_flaky_network
 from .. import pelican as io_pelican
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -39,14 +39,14 @@ def _protocols():
     pytest.param("osdf:///path/to/data", True, id="osdf"),
 ])
 def test_is_pelican_url(url, result):
-    """Test `gwpy.io.pelican.is_pelican_url`."""
+    """Test `is_pelican_url()`."""
     assert io_pelican.is_pelican_url(url) is result
 
 
-@pytest_skip_network_error
+@pytest_skip_flaky_network
 @pytest.mark.requires("requests_pelican")
 def test_query_director():
-    """Test that the `query_director` function works."""
+    """Test `query_director()`."""
     urls, needauth, authkw = io_pelican.query_director(
         "osdf:///igwn/ligo",
     )
@@ -54,3 +54,26 @@ def test_query_director():
     assert all(u.endswith(":8443/igwn/ligo") for u in urls)
     assert needauth is True
     assert authkw.get("issuer", None)
+
+
+@pytest_skip_flaky_network
+@pytest.mark.requires("requests_pelican")
+def test_download_file():
+    """Test `download_file()`."""
+    path = io_pelican.download_file(
+        "osdf:///gwdata/zenodo/README.zenodo",
+        cache=False,
+    )
+    with open(path) as file:
+        assert next(file).strip() == "## Mirror of IGWN Zenodo Communities"
+
+
+@pytest_skip_flaky_network
+@pytest.mark.requires("requests_pelican")
+def test_open_remote_file():
+    """Test `open_remote_file()`."""
+    with io_pelican.open_remote_file(
+        "osdf:///gwdata/zenodo/README.zenodo",
+        cache=False,
+    ) as file:
+        assert next(file).strip() == "## Mirror of IGWN Zenodo Communities"

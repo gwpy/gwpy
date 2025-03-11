@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2025-)
+# Copyright (c) 2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -23,6 +23,8 @@ This module handles translation of `pelican://` URLs into lists of HTTP URLs
 to pass back to `astropy.utils.data.download_file` and friends, and some
 SciToken authorisation initialisation.
 """
+
+# ruff: noqa: PLC0415
 
 from __future__ import annotations
 
@@ -192,6 +194,54 @@ def _pelican_download_context(
             yield result
 
 
+def _prepare_download_kwargs(
+    url: str,
+    federation: str | None,
+    cache: bool | Literal["update"],
+    show_progress: bool,  # noqa: FBT001
+    kwargs: dict[str, Any],
+) -> tuple[str, dict[str, Any]]:
+    """Prepare the keyword arguments for downloading a file from Pelican."""
+    from requests_pelican.pelican import pelican_uri
+
+    url = pelican_uri(url, federation=federation)
+
+    # check if the file is already in the cache
+    if cache is True:
+        with _pelican_is_url_context():
+            need_download = not astropy_data.is_url_in_cache(url)
+    else:
+        need_download = True
+
+    # if we are going to download the file, query the Pelican director
+    # for HTTP(S) sources, and required auth information
+    if need_download:
+        if (  # copy logic for when astropy will show download progress
+            show_progress
+            and hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+        ):
+            print("Getting Pelican information from director...")
+
+        # query Pelican director for information
+        sources, need_auth, auth_kw = query_director(url)
+
+        # resolve URL to real HTTP URLs
+        kwargs.setdefault("sources", sources)
+
+        # add auth
+        if need_auth:
+            io_scitokens.add_http_authorization_header(
+                kwargs.setdefault("http_headers", {}),
+                url=url,
+                error=False,
+                create=False,
+                **auth_kw,
+            )
+
+    return url, kwargs
+
+
 def open_remote_file(
     url: str,
     *,
@@ -241,39 +291,13 @@ def open_remote_file(
     --------
     astropy.utils.data.get_readable_fileobj
     """
-    from requests_pelican.pelican import pelican_uri
-
-    url = pelican_uri(url, federation=federation)
-
-    # check if the file is already in the cache
-    if cache is True:
-        with _pelican_is_url_context():
-            need_download = not astropy_data.is_url_in_cache(url)
-    else:
-        need_download = True
-
-    # if we are going to download the file, query the Pelican director
-    # for HTTP(S) sources, and required auth information
-    if need_download:
-        if (  # copy logic for when astropy will show download progress
-            show_progress
-            and hasattr(sys.stdout, "isatty")
-            and sys.stdout.isatty()
-        ):
-            print("Getting Pelican information from director...")
-        # query Pelican director for information
-        sources, need_auth, auth_kw = query_director(url)
-        # resolve URL to real HTTP URLs
-        kwargs.setdefault("sources", sources)
-        # add auth
-        if need_auth:
-            io_scitokens.add_http_authorization_header(
-                kwargs.setdefault("http_headers", {}),
-                url=url,
-                error=False,
-                create=False,
-                **auth_kw,
-            )
+    url, kwargs = _prepare_download_kwargs(
+        url,
+        federation,
+        cache,
+        show_progress,
+        kwargs,
+    )
 
     # download the file using our 'is_url' hack
     # note: get_readable_fileobj is a context manager, so doesn't execute here
@@ -283,3 +307,70 @@ def open_remote_file(
         show_progress=show_progress,
         **kwargs,
     ))
+
+
+def download_file(
+    url: str,
+    *,
+    federation: str | None = None,
+    cache: bool | Literal["update"] = False,
+    show_progress: bool = False,
+    **kwargs,
+) -> str:
+    """Download a remote file from a Pelican federation.
+
+    This function is a wrapper around `astropy.utils.data.download_file`
+    that uses |requests-pelican|_ to resolve the actual HTTP(S) URLs and
+    pass those as the ``sources`` keyword to `download_file`.
+
+    Also, if the Pelican director informs that an authorisation token is
+    required, this function attempts to an HTTP ``Authorization`` header
+    using a locally-discovered |SciToken|_ (requires |igwn_auth_utils|_).
+
+    Parameters
+    ----------
+    url : `str`
+        The name of the resource to access. Must be a Pelican federation
+        URL, either using the `pelican://` scheme or a federation
+        scheme understood by |requests-pelican|_ (e.g. ``osdf://``), or
+        the ``federation`` keyword must be provided.
+
+    federation: `str`, optional
+        The URL of the federation. This is required if ``url`` does not
+        include federation information.
+
+    cache : `bool`, ``"update"``, optional
+        Whether to cache the contents of remote URLs.
+
+    show_progress: `bool`, optional
+        Print verbose progress information to the screen.
+
+    kwargs
+        All other positional and keyword arguments are passed directly
+        to `astropy.utils.data.download_file`.
+
+    Returns
+    -------
+    file : file-like
+        The file opened in binary format.
+
+    See Also
+    --------
+    astropy.utils.data.download_file
+    """
+    url, kwargs = _prepare_download_kwargs(
+        url,
+        federation,
+        cache,
+        show_progress,
+        kwargs,
+    )
+
+    # download the file using our 'is_url' hack
+    with _pelican_is_url_context():
+        return astropy_data.download_file(
+            url,
+            cache=cache,
+            show_progress=show_progress,
+            **kwargs,
+        )
