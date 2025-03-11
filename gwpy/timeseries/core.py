@@ -49,10 +49,7 @@ import numpy
 from astropy import units
 from gwosc.api import DEFAULT_URL as GWOSC_DEFAULT_HOST
 
-from ..detector import (
-    Channel,
-    ChannelList,
-)
+from ..detector import Channel
 from ..io.registry import UnifiedReadWriteMethod
 from ..log import logger
 from ..segments import SegmentList
@@ -63,7 +60,6 @@ from ..time import (
     to_gps,
 )
 from ..types import Series
-from ..utils import gprint
 from .connect import (
     TimeSeriesBaseDictRead,
     TimeSeriesBaseDictWrite,
@@ -72,6 +68,7 @@ from .connect import (
 )
 
 if typing.TYPE_CHECKING:
+    import re
     from collections.abc import Callable
     from typing import Any
 
@@ -500,54 +497,88 @@ class TimeSeriesBase(Series):
         )
 
     @classmethod
-    def find(cls, channel, start, end, frametype=None, pad=None,
-             scaled=None, nproc=1, verbose=False, **readargs):
-        """Find and read data from frames for a channel.
+    def find(
+        cls,
+        channel: str | Channel,
+        start: GpsLike,
+        end: GpsLike,
+        *,
+        observatory: str | None = None,
+        frametype: str | None = None,
+        pad: float | None = None,
+        scaled: bool | None = None,
+        allow_tape: bool | None = None,
+        parallel: int = 1,
+        verbose: bool | str = False,
+        **readargs,
+    ) -> Self:
+        """Find and return data for multiple channels using GWDataFind.
+
+        This method uses :mod:`gwdatafind` to discover the URLs
+        that provide the requested data, then reads those files using
+        :meth:`TimeSeriesDict.read()`.
 
         Parameters
         ----------
-        channel : `str`, `~gwpy.detector.Channel`
-            the name of the channel to read, or a `Channel` object.
+        channel : `str`
+            Name of data channel to find.
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
             any input parseable by `~gwpy.time.to_gps` is fine
 
         end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
-            GPS end time of required data,
+            GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        frametype : `str`, optional
-            name of frametype in which this channel is stored, will search
-            for containing frame types if necessary
+        observatory : `str`, optional
+            The observatory to use when searching for data.
+            Default is to use the observatory from the channel name prefix,
+            but this should be specified when searching for data in a
+            multi-observatory dataset (e.g. `observatory='HLV'`).
 
-        nproc : `int`, optional, default: `1`
-            number of parallel processes to use, serial process by
-            default.
+        frametype : `str`, optional
+            Name of frametype (dataset) in which this channel is stored.
+            Default is to search all available datasets for a match, which
+            can be very slow.
+
+        frametype_match : `str`, optional
+            Regular expression to use for frametype matching.
 
         pad : `float`, optional
-            value with which to fill gaps in the source data,
+            Value with which to fill gaps in the source data,
             by default gaps will result in a `ValueError`.
 
-        allow_tape : `bool`, optional, default: `True`
-            allow reading from frame files on (slow) magnetic tape
+        scaled : `bool`, optional
+            Apply slope and bias calibration to ADC data, for non-ADC data
+            this option has no effect.
+
+        parallel : `int`, optional
+            Number of parallel processes to use.
+
+        allow_tape : `bool`, optional
+            Allow reading from frame files on (slow) magnetic tape.
 
         verbose : `bool`, optional
-            print verbose output about read progress, if ``verbose``
+            Print verbose output about read progress, if ``verbose``
             is specified as a string, this defines the prefix for the
-            progress meter
+            progress meter.
 
-        **readargs
-            any other keyword arguments to be passed to `.read()`
+        readargs
+            Any other keyword arguments to be passed to `.read()`.
         """
         return cls.DictClass.find(
-            [channel], start, end,
+            [channel],
+            start,
+            end,
+            observatory=observatory,
             frametype=frametype,
             verbose=verbose,
             pad=pad,
             scaled=scaled,
-            nproc=nproc,
-            **readargs
+            allow_tape=allow_tape,
+            parallel=parallel,
+            **readargs,
         )[str(channel)]
 
     @classmethod
@@ -1166,9 +1197,22 @@ class TimeSeriesBaseDict(OrderedDict):
             )
 
     @classmethod
-    def find(cls, channels, start, end, frametype=None,
-             frametype_match=None, pad=None, scaled=None, nproc=1,
-             verbose=False, allow_tape=True, observatory=None, **readargs):
+    def find(
+        cls,
+        channels: list[str | Channel],
+        start: GpsLike,
+        end: GpsLike,
+        *,
+        observatory: str | None = None,
+        frametype: str | None = None,
+        frametype_match: str | re.Pattern | None = None,
+        pad: float | None = None,
+        scaled: bool | None = None,
+        allow_tape: bool | None = None,
+        parallel: int = 1,
+        verbose: bool | str = False,
+        **readargs,
+    ) -> Self:
         """Find and read data from frames for a number of channels.
 
         This method uses :mod:`gwdatafind` to discover the (`file://`) URLs
@@ -1178,7 +1222,7 @@ class TimeSeriesBaseDict(OrderedDict):
         Parameters
         ----------
         channels : `list`
-            Required data channels.
+            List of names of data channels to find.
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
@@ -1188,26 +1232,32 @@ class TimeSeriesBaseDict(OrderedDict):
             GPS end time of required data, defaults to end of data found;
             any input parseable by `~gwpy.time.to_gps` is fine
 
-        frametype : `str`
-            Name of frametype in which this channel is stored; if not given
-            all frametypes discoverable via GWDataFind will be searched for
-            the required channels.
+        observatory : `str`, optional
+            The observatory to use when searching for data.
+            Default is to use the observatory from the channel name prefix,
+            but this should be specified when searching for data in a
+            multi-observatory dataset (e.g. `observatory='HLV'`).
 
-        frametype_match : `str`
+        frametype : `str`, optional
+            Name of frametype (dataset) in which this channel is stored.
+            Default is to search all available datasets for a match, which
+            can be very slow.
+
+        frametype_match : `str`, optional
             Regular expression to use for frametype matching.
 
-        pad : `float`
+        pad : `float`, optional
             Value with which to fill gaps in the source data,
             by default gaps will result in a `ValueError`.
 
-        scaled : `bool`
+        scaled : `bool`, optional
             Apply slope and bias calibration to ADC data, for non-ADC data
             this option has no effect.
 
-        nproc : `int`
-            Number of parallel processes to use.
+        parallel : `int`, optional
+            Number of parallel threads to use when reading data.
 
-        allow_tape : `bool`
+        allow_tape : `bool`, optional
             Allow reading from frame files on (slow) magnetic tape.
 
         verbose : `bool`, optional
@@ -1227,95 +1277,28 @@ class TimeSeriesBaseDict(OrderedDict):
             If no files are found to read, or if the read operation
             fails.
         """
-        from ..io import datafind as io_datafind
+        from .io.gwdatafind import find
 
-        start = to_gps(start)
-        end = to_gps(end)
-
-        # -- find frametype(s)
-
-        frametypes = {}
-
-        if frametype is None:
-            matched = io_datafind.find_best_frametype(
+        series_class = readargs.pop("series_class", cls.EntryClass)
+        with logger(
+            name=find.__module__,
+            level="DEBUG" if verbose else None,
+        ):
+            return cls(find(
                 channels,
                 start,
                 end,
+                observatory=observatory,
+                frametype=frametype,
                 frametype_match=frametype_match,
-                allow_tape=allow_tape,
-            )
-
-            # flip dict to frametypes with a list of channels
-            for name, ftype in matched.items():
-                try:
-                    frametypes[ftype].append(name)
-                except KeyError:
-                    frametypes[ftype] = [name]
-
-            if verbose and len(frametypes) > 1:
-                gprint(f"Determined {len(frametypes)} frametypes to read")
-            elif verbose:
-                gprint(f"Determined best frametype as '{list(frametypes)[0]}'")
-        else:  # use the given frametype for all channels
-            frametypes[frametype] = channels
-
-        # -- read data
-
-        out = cls()
-        for frametype, clist in frametypes.items():
-            if verbose:
-                verbose = f"Reading '{frametype}' data"
-
-            # parse as a ChannelList
-            channellist = ChannelList.from_names(*clist)
-            # strip trend tags from channel names
-            names = [c.name for c in channellist]
-
-            # find observatory for this group
-            if observatory is None:
-                try:
-                    obs = "".join(
-                        sorted(set(c.ifo[0] for c in channellist)))
-                except TypeError as exc:
-                    raise ValueError(
-                        "Cannot parse list of IFOs from channel names",
-                    ) from exc
-
-            else:
-                obs = observatory
-            # find frames
-            cache = io_datafind.find_urls(
-                obs,
-                frametype,
-                start,
-                end,
-                on_gaps="error" if pad is None else "warn",
-            )
-            if not cache:
-                raise RuntimeError(
-                    f"No {observatory}-{frametype} URLs found for "
-                    f"[{start}, {end})",
-                )
-
-            # read data
-            new = cls.read(
-                cache,
-                names,
-                start=start,
-                end=end,
                 pad=pad,
                 scaled=scaled,
-                nproc=nproc,
+                allow_tape=allow_tape,
+                parallel=parallel,
                 verbose=verbose,
+                series_class=series_class,
                 **readargs,
-            )
-
-            # map back to user-given channel name and append
-            out.append(type(new)(
-                (key, new[chan]) for
-                (key, chan) in zip(clist, names, strict=True)
             ))
-        return out
 
     @classmethod
     def get(  # type: ignore[override]
