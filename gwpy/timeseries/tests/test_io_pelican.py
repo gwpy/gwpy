@@ -17,6 +17,8 @@
 
 """Tests of pelican interaction with `TimeSeries`."""
 
+from unittest import mock
+
 import pytest
 
 from ...testing.errors import pytest_skip_network_error
@@ -30,12 +32,14 @@ ET_CHANNEL = "E0:STRAIN"
 
 @pytest_skip_network_error
 @pytest.mark.requires("lalframe", "requests_pelican")
-def test_timeseries_read_pelican():
+def test_timeseries_read_pelican(tmp_path):
     """Check that `TimeSeries.read` can handle Pelican URLs."""
-    data = TimeSeries.read(
-        ET_PELICAN_URL,
-        ET_CHANNEL,
-        cache=False,
-        verbose=True,
-    )
+    # force astropy to use tmp_path as the temporary download directory
+    with mock.patch("tempfile.gettempdir", return_value=str(tmp_path)):
+        data = TimeSeries.read(
+            ET_PELICAN_URL,
+            ET_CHANNEL,
+            cache=False,
+            verbose=True,
+        )
     assert data.mean().value == pytest.approx(5.778819180203806e-29)
