@@ -10,14 +10,26 @@ include:
       job_name: "basic_test"
       pip_cmd: "uv pip"
       pip_options: "--group test"
-      pytest_options: "--color yes --cov gwpy --numprocesses auto gwpy/"
+      pytest_options: >-
+        --color yes
+        --cov gwpy
+        --numprocesses auto
+        -ra
+        --timeout 1800
+        gwpy/
 
   # full test template
   - local: .gitlab/ci/test-job.yml
     inputs:
       pip_cmd: "uv pip"
       pip_options: "--group dev"
-      pytest_options: "--color yes --cov gwpy --durations 50 --numprocesses auto gwpy/"
+      pytest_options: >-
+        --color yes
+        --cov gwpy
+        --numprocesses auto
+        -ra
+        --timeout 1800
+        gwpy/
 
   # examples tests
   - local: .gitlab/ci/test-job.yml
@@ -25,7 +37,14 @@ include:
       job_name: "examples_test"
       pip_cmd: "uv pip"
       pip_options: "--group dev"
-      pytest_options: "--color yes --cov gwpy --durations 50 --numprocesses auto examples/"
+      pytest_options: >-
+        --color yes
+        --cov gwpy
+        --durations 50
+        --numprocesses auto
+        -ra
+        --timeout 1800
+        examples/
 
   # compatibility test template (smaller test suite)
   - local: .gitlab/ci/compatibility.yml

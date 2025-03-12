@@ -203,6 +203,7 @@ test = [
   "pytest-requires",
   "pytest-rerunfailures",
   "pytest-socket",
+  "pytest-timeout",
   "pytest-xdist",
   "requests-mock",
 ]
