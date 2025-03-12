@@ -1,0 +1,28 @@
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+version: 2
+
+build:
+  os: "ubuntu-lts-latest"
+  tools:
+    python: "mambaforge-latest"
+  jobs:
+    post_install:
+      # show what is installed in the build environment
+      - conda list
+
+conda:
+  environment: docs/environment.yaml
+
+python:
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - dev
+        - docs
+
+sphinx:
+  builder: dirhtml
+  configuration: docs/conf.py
