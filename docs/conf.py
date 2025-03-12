@@ -1,5 +1,5 @@
 # Copyright (C) Louisiana State University (2014-2017),
-#               Cardiff University (2017-2021)
+#               Cardiff University (2017-2025)
 #
 # This file is part of GWpy.
 #
@@ -22,6 +22,7 @@ import shlex
 import shutil
 import warnings
 from configparser import ConfigParser
+from datetime import date
 from pathlib import Path
 from string import Template
 
@@ -35,6 +36,8 @@ from gwpy.utils.sphinx import (
     ex2rst,
     zenodo,
 )
+
+TODAY = date.today()
 
 SPHINX_DIR = Path(__file__).parent.absolute()
 STATIC_DIRNAME = "_static"
@@ -74,10 +77,7 @@ if "CI" not in os.environ:
 
 needs_sphinx = "4.0"
 project = "GWpy"
-copyright = " and ".join((
-    "2013, 2017-2021 Cardiff University",
-    "2013-2017 Lousiana State University",
-))
+copyright = f"{TODAY.year} Cardiff University"
 version = "dev" if ".dev" in GWPY_VERSION else GWPY_VERSION
 release = GWPY_VERSION
 
