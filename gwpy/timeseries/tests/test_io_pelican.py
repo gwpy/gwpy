@@ -29,7 +29,7 @@ ET_CHANNEL = "E0:STRAIN"
 
 
 @pytest_skip_network_error
-@pytest.mark.requires("requests_pelican")
+@pytest.mark.requires("lalframe", "requests_pelican")
 def test_timeseries_read_pelican():
     """Check that `TimeSeries.read` can handle Pelican URLs."""
     data = TimeSeries.read(
