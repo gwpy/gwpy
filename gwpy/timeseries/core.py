@@ -1610,11 +1610,7 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
                     verbose=verbose,
                     **these_kwargs,
                 )
-            except (
-                ImportError,  # optional dependency is missing
-                RuntimeError,
-                ValueError,
-            ) as exc:
+            except Exception as exc:
                 if len(channels) == 1 and nsources == 1:
                     raise
                 if error:
