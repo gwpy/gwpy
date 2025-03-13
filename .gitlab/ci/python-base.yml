@@ -29,9 +29,3 @@ $[[ inputs.job_prefix ]]_base:
   extends:
     - $[[ inputs.job_prefix ]]_image
     - $[[ inputs.job_prefix ]]_cache
-  retry:
-    # retry all jobs at most twice when gitlab-ci fails to start the job properly
-    # see https://docs.gitlab.com/ee/ci/yaml/#retry
-    max: 2
-    when:
-      - runner_system_failure
