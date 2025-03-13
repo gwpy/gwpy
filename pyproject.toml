@@ -58,29 +58,95 @@ dynamic = [
 ]
 
 [project.optional-dependencies]
-# test suite
-test = [
-  "pytest >=8.2",
-  "pytest-cov >=5.0.0",
-  "pytest-freezer",
-  "pytest-requires",
-  "pytest-rerunfailures",
-  "pytest-socket",
-  "pytest-xdist",
-  "requests-mock",
-]
+# -- optional features
+
 # arrakis I/O
 arrakis = [
   "arrakis-python",
 ]
+
 # astronomy/cosmology calculations
 astro = [
   "inspiral-range >=0.9.0",
 ]
+
 # auth
 auth = [
   "gssapi >=1.9.0",
 ]
+
+# GWF I/O
+gwf = [
+  "lalsuite ; sys_platform != 'win32'",
+]
+
+# GravitySpy
+gravityspy = [
+  "pandas",
+  "psycopg2",
+  "sqlalchemy",
+]
+
+# HACR
+hacr = [
+  "pandas",
+  "pymysql",
+  "sqlalchemy",
+]
+
+# Kerberos authentication
+kerberos = [
+  "gssapi",
+]
+
+# Pelican federation data access
+pelican = [
+  "requests-pelican >=0.2.0",
+]
+
+# SciTokens
+scitokens = [
+  "htgettoken >=2.1",
+  "igwn-auth-utils >=1.2.0",
+  "requests-scitokens",
+  "scitokens >=1.8.0",
+]
+
+# SQL
+sql = [
+  "pandas",
+  "sqlalchemy",
+]
+
+# -- build/dev
+
+# conda packages for development
+# NOTE: this isn't a valid extra to install with pip, but works with pip2conda
+conda = [
+  "lxml !=4.9.1 ; sys_platform == 'win32'",
+  "python-framel >=8.40.1,!=8.46.0",
+  "python-ldas-tools-framecpp >=2.6.9 ; sys_platform != 'win32' and python_version<'3.12'",
+  "python-nds2-client >=0.16",
+]
+
+# development environments
+# NOTE: this should include everything in all of the above groups,
+#       but may contain more
+dev = [
+  "arrakis-python",
+  "ciecplib",
+  "gssapi >=1.9.0",
+  "inspiral-range >=0.9.0",
+  "lalsuite ; sys_platform != 'win32'",
+  "lscsoft-glue ; sys_platform != 'win32'",
+  "psycopg2; sys_platform == 'linux'",
+  "pycbc >=1.13.4 ; sys_platform != 'win32'",
+  "pymysql",
+  "python-ligo-lw >=1.7.0 ; sys_platform != 'win32'",
+  "sqlalchemy",
+  "uproot >=4.1.5",
+]
+
 # sphinx documentation
 docs = [
   "matplotlib >=3.7.0",
@@ -91,66 +157,17 @@ docs = [
   "sphinx-immaterial >=0.7.3",
   "sphinxcontrib-programoutput",
 ]
-# GWF I/O
-gwf = [
-  "lalsuite ; sys_platform != 'win32'",
-]
 
-# development environments
-dev = [
-  "arrakis-python ; python_version >= '3.10'",
-  "ciecplib",
-  "gssapi >=1.9.0",
-  "inspiral-range >=0.9.0",
-  "lalsuite ; sys_platform != 'win32'",
-  "lscsoft-glue ; sys_platform != 'win32'",
-  "psycopg2 ; sys_platform == 'linux'",
-  "pycbc >=1.13.4 ; sys_platform != 'win32'",
-  "pymysql",
-  "python-ligo-lw >=1.7.0 ; sys_platform != 'win32'",
-  "sqlalchemy",
-  "uproot >=4.1.5",
-]
-# GravitySpy
-gravityspy = [
-  "pandas",
-  "psycopg2",
-  "sqlalchemy",
-]
-# HACR
-hacr = [
-  "pandas",
-  "pymysql",
-  "sqlalchemy",
-]
-# Kerberos authentication
-kerberos = [
-  "gssapi",
-]
-# Pelican federation data access
-pelican = [
-  "requests-pelican >=0.2.0",
-]
-# SciTokens
-scitokens = [
-  "htgettoken >=2.1",
-  "igwn-auth-utils >=1.2.0",
-  "requests-scitokens",
-  "scitokens >=1.8.0",
-]
-# SQL
-sql = [
-  "pandas",
-  "sqlalchemy",
-]
-
-# conda packages for development
-# NOTE: this isn't a valid extra to install with pip
-conda = [
-  "lxml !=4.9.1 ; sys_platform == 'win32'",
-  "python-framel >=8.40.1,!=8.46.0",
-  "python-ldas-tools-framecpp >=2.6.9 ; sys_platform != 'win32' and python_version<'3.12'",
-  "python-nds2-client >=0.16",
+# test suite
+test = [
+  "pytest >=8.2",
+  "pytest-cov >=5.0.0",
+  "pytest-freezer",
+  "pytest-requires",
+  "pytest-rerunfailures",
+  "pytest-socket",
+  "pytest-xdist",
+  "requests-mock",
 ]
 
 [project.scripts]
@@ -236,6 +253,7 @@ xfail_strict = true
 
 [tool.ruff]
 namespace-packages = [
+  ".gitlab/ci",
   "examples",
 ]
 
@@ -321,4 +339,8 @@ ignore_roles = [
 ]
 # rstcheck doesn't known about our referenced.txt which is implicitly included
 # in all pages via Sphinx's epilog option
-ignore_messages = "(Unknown target name:.*|Undefined substitution referenced: .*)"
+ignore_messages = [
+  "Hyperlink target .* is not referenced",
+  "Unknown target name:.*",
+  "Undefined substitution referenced: .*",
+]
