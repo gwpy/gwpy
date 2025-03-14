@@ -28,6 +28,16 @@ default:
   # no job should take more than an hour
   timeout: 1h
 
+workflow:
+  rules:
+    # run for merge requests
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    # don't run on branches if there's an open merge request
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    # run on branches and tags
+    - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
+
 include:
   # -- Quality assurance checks
 
