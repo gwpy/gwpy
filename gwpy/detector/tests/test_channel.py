@@ -527,7 +527,7 @@ class TestChannel:
     def test_from_arrakis(self):
         """Test `Channel.from_arrakis()`."""
         import arrakis
-        maker = arrakis.Channel.from_name(
+        maker = arrakis.Channel(
             "X1:TEST-CHANNEL",
             numpy.dtype("int32"),
             128,

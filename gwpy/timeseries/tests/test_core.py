@@ -168,7 +168,7 @@ class TestTimeSeriesBase(_TestSeries):
         from arrakis.block import Series as ArrakisSeries
 
         # create arrakis objects
-        achan = ArrakisChannel.from_name(
+        achan = ArrakisChannel(
             "X1:TEST-CHANNEL",
             self.data.dtype,
             128,
@@ -445,12 +445,12 @@ class TestTimeSeriesBaseDict:
 
         # arrakis metadata (channels)
         channels = {
-            "X1:TEST-CHANNEL_1": ArrakisChannel.from_name(
+            "X1:TEST-CHANNEL_1": ArrakisChannel(
                 "X1:TEST-CHANNEL_1",
                 data_type=self.DTYPE,
                 sample_rate=64,
             ),
-            "X1:TEST-CHANNEL_2": ArrakisChannel.from_name(
+            "X1:TEST-CHANNEL_2": ArrakisChannel(
                 "X1:TEST-CHANNEL_2",
                 data_type=self.DTYPE,
                 sample_rate=128,
