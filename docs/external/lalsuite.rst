@@ -26,16 +26,17 @@ The full LALsuite can be installed alongside GWpy using
 (or `Mamba <https://mamba.readthedocs.io/en/stable/>`__)
 or `pip`:
 
-.. md-tab-set::
-    :name: gwpy-install-lalsuite
+.. tab-set::
 
-    .. md-tab-item:: Install LALSuite with conda/mamba
+    .. tab-item:: Install LALSuite with conda/mamba
+        :name: gwpy-install-lalsuite-conda
 
         .. code-block:: shell
 
             conda install -c conda-forge lalsuite
 
-    .. md-tab-item:: Install LALSuite with pip
+    .. tab-item:: Install LALSuite with pip
+        :name: gwpy-install-lalsuite-pip
 
         .. code-block:: shell
 

@@ -18,28 +18,6 @@
  */
 
 /*
- * This file contains sphinx-specific extensions to the core GWpy CSS
- */
-
-/* change font for parameter names for callables */
-.field-list p strong {
-		font-family: "Roboto Mono", "Courier New", Courier, monospace;
-}
-
-/* remove left border from parameter descriptions for callables
- * and indent more */
-[dir=ltr] .md-typeset blockquote {
-		border-left: 0;
-		padding-left: 1em;
-}
-
-/* remove padding for code blocks forced in by sphinx-panels */
-.literal-block-wrapper.container {
-		padding-left: 0;
-		padding-right: 0;
-}
-
-/*
  * Sphinx-gallery
  */
 

@@ -38,6 +38,8 @@ TODAY = date.today()
 SPHINX_DIR = Path(__file__).parent.absolute()
 STATIC_DIRNAME = "_static"
 
+PROJECT_URL = "https://gitlab.com/gwpy/gwpy"
+
 # use caching in GWpy calls
 os.environ.update({
     "GWPY_CACHE": "true",
@@ -92,6 +94,8 @@ extensions = [
     "sphinx.ext.linkcode",
     "sphinx.ext.ifconfig",
     "sphinx_automodapi.automodapi",
+    "sphinx_copybutton",
+    "sphinx_design",
     "sphinx_gallery.gen_gallery",
     "sphinxcontrib.programoutput",
     "numpydoc",
@@ -116,52 +120,42 @@ rst_epilog = "\n.. include:: /references.rst"
 
 # -- HTML formatting --------
 
-extensions.append("sphinx_immaterial")
-html_theme = "sphinx_immaterial"
-html_theme_options = {
-    # metadata
-    "repo_name": "GWpy",
-    "repo_type": "gitlab",
-    "repo_url": "https://gitlab.com/gwpy/gwpy",
-    "edit_uri": "blob/main/docs",
-    "globaltoc_collapse": True,
-    # features
-    "features": [
-        "navigation.sections",
-    ],
-    # colouring and light/dark mode
-    "palette": [
-        {
-            "media": "(prefers-color-scheme: light)",
-            "scheme": "default",
-            "primary": "blue-grey",
-            "accent": "deep-orange",
-            "toggle": {
-                "icon": "material/eye-outline",
-                "name": "Switch to dark mode",
-            },
-        },
-        {
-            "media": "(prefers-color-scheme: dark)",
-            "scheme": "slate",
-            "primary": "amber",
-            "accent": "deep-orange",
-            "toggle": {
-                "icon": "material/eye",
-                "name": "Switch to light mode",
-            },
-        },
-    ],
-    # table of contents
-    "toc_title_is_page_title": True,
-    # version dropdown
-    "version_dropdown": True,
-    "version_json": "../versions.json",
-}
+html_theme = "furo"
+html_title = f"{project} {version}"
 html_static_path = [STATIC_DIRNAME]
 html_favicon = str(Path(STATIC_DIRNAME) / "favicon.png")
 html_logo = str(Path(STATIC_DIRNAME) / "favicon.png")
-html_css_files = ["css/gwpy-sphinx.css"]
+html_css_files = [
+    # GWpy customisations
+    "css/gwpy-sphinx.css",
+    # add fontawesome for icons
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/fontawesome.min.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/solid.min.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/brands.min.css",
+]
+html_theme_options = {
+    # add gitlab link in footer
+    "footer_icons": [
+        {
+            "name": "GitLab",
+            "url": PROJECT_URL,
+            "class": "fa-brands fa-gitlab",
+        },
+    ],
+    # hide project name in sidebar, we have a logo
+    "sidebar_hide_name": True,
+    # colours
+    "dark_css_variables": {
+        "color-brand-content": (gwpy_dark_mode_colour := "#ededed"),
+        "color-brand-primary": gwpy_dark_mode_colour,
+        "color-brand-visited": gwpy_dark_mode_colour,
+    },
+    "light_css_variables": {
+        "color-brand-content": (gwpy_light_mode_colour := "#29435f"),
+        "color-brand-primary": gwpy_light_mode_colour,
+        "color-brand-visited": gwpy_light_mode_colour,
+    },
+}
 
 # -- extensions config ------
 
@@ -173,6 +167,19 @@ autodoc_default_flags = ["show-inheritance", "members", "inherited-members"]
 # -- autosummary
 
 autosummary_generate = True
+
+# -- copybutton
+
+copybutton_prompt_text = " |".join((
+    ">>>",
+    r"\.\.\.",
+    r"\$"
+    r"In \[\d*\]:",
+    r" {2,5}\.\.\.:",
+    " {5,8}: ",
+))
+copybutton_prompt_is_regexp = True
+copybutton_line_continuation_character = "\\"
 
 # -- plot_directive
 
@@ -249,7 +256,7 @@ intersphinx_mapping = {key: (value, None) for key, value in {
 # linkcode
 linkcode_url = sphinx_github_style.get_linkcode_url(
     blob=sphinx_github_style.get_linkcode_revision("head"),
-    url="https://gitlab.com/gwpy/gwpy",
+    url=PROJECT_URL,
 )
 linkcode_resolve = sphinx_github_style.get_linkcode_resolve(linkcode_url)
 

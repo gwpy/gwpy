@@ -117,10 +117,10 @@ significantly speed up the search.
 The following table is an incomplete, but probably OK, reference to which
 dataset (``frametype``) you want to use for file-based data access:
 
-.. md-tab-set::
-    :name: gwpy_gwdatafind_datasets
+.. tab-set::
 
-    .. md-tab-item:: GEO-600
+    .. tab-item:: GEO-600
+        :name: gwpy_gwdatafind_datasets_GEO600
 
         .. table:: GEO-600 datasets available with |gwdatafind|_
             :name: gwdatafind-datasets-geo600
@@ -131,7 +131,8 @@ dataset (``frametype``) you want to use for file-based data access:
             ``G1_RDS_C01_L3``         The GEO-600 data, including calibrated strain *h(t)*
             ========================  =====================================================
 
-    .. md-tab-item:: LIGO-Hanford
+    .. tab-item:: LIGO-Hanford
+        :name: gwpy_gwdatafind_datasets_LHO
 
         .. table:: LIGO-Hanford datasets available with |gwdatafind|_
             :name: gwdatafind-datasets-ligo-hanford
@@ -155,7 +156,8 @@ dataset (``frametype``) you want to use for file-based data access:
                                       |GWOSC|_ for the O2 data release
             ========================  =====================================================
 
-    .. md-tab-item:: LIGO-Livingston
+    .. tab-item:: LIGO-Livingston
+        :name: gwpy_gwdatafind_datasets_LLO
 
         .. table:: LIGO-Livingston datasets available with |gwdatafind|_
             :name: gwdatafind-datasets-ligo-livingston
@@ -179,7 +181,8 @@ dataset (``frametype``) you want to use for file-based data access:
                                       |GWOSC|_ for the O2 data release
             ========================  =====================================================
 
-    .. md-tab-item:: Virgo
+    .. tab-item:: Virgo
+        :name: gwpy_gwdatafind_datasets_Virgo
 
         .. table:: Virgo datasets available with |gwdatafind|_
             :name: gwdatafind-datasets-virgo
@@ -198,7 +201,8 @@ dataset (``frametype``) you want to use for file-based data access:
                                       |GWOSC|_ for the O2 data release
             ========================  =====================================================
 
-    .. md-tab-item:: KAGRA
+    .. tab-item:: KAGRA
+        :name: gwpy_gwdatafind_datasets_KAGRA
 
         .. table:: KAGRA datasets available with |gwdatafind|_
             :name: gwdatafind-datasets-kagra
