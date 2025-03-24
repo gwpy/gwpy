@@ -123,7 +123,7 @@ def test_find_token_error(tokenstr):
 
 # -- get_token
 
-@pytest.mark.requires("htgettoken", "scitokens")
+@pytest.mark.requires("htgettoken", "scitokens", exc_type=(ImportError, OSError))
 @pytest.mark.usefixtures("htgettoken_main")
 def test_get_token(token, tokenpath):
     """Test `get_scitoken`."""
@@ -138,7 +138,7 @@ def test_get_token(token, tokenpath):
     assert_tokens_equal(new, token)
 
 
-@pytest.mark.requires("htgettoken", "scitokens")
+@pytest.mark.requires("htgettoken", "scitokens", exc_type=(ImportError, OSError))
 def test_get_token_error_systemexit():
     """Test that `get_scitoken` handles `SystemExit` well."""
     with pytest.raises(
@@ -186,7 +186,12 @@ def test_add_http_authorization_header_find(tokenstr):
 
 
 @mock.patch.dict(os.environ)
-@pytest.mark.requires("htgettoken", "igwn_auth_utils", "requests_scitokens")
+@pytest.mark.requires(
+    "htgettoken",
+    "igwn_auth_utils",
+    "requests_scitokens",
+    exc_type=(ImportError, OSError),
+)
 @pytest.mark.usefixtures("htgettoken_main")
 def test_add_http_authorization_header_get():
     """Test `add_http_authorization_header` calling out to get_scitoken."""

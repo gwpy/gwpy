@@ -73,6 +73,10 @@ astro = [
 # auth
 auth = [
   "gssapi >=1.9.0",
+  "htgettoken >=2.1",
+  "igwn-auth-utils >=1.2.0",
+  "requests-scitokens",
+  "scitokens >=1.8.0",
 ]
 
 # GWF I/O
@@ -136,13 +140,17 @@ dev = [
   "arrakis >=0.2.0",
   "ciecplib",
   "gssapi >=1.9.0",
+  "htgettoken >=2.1",
+  "igwn-auth-utils >=1.2.0",
   "inspiral-range >=0.9.0",
   "lalsuite ; sys_platform != 'win32'",
   "lscsoft-glue ; sys_platform != 'win32'",
-  "psycopg2; sys_platform == 'linux'",
+  "psycopg2 ; sys_platform == 'linux'",
   "pycbc >=1.13.4 ; sys_platform != 'win32'",
   "pymysql",
   "python-ligo-lw >=1.7.0 ; sys_platform != 'win32'",
+  "requests-scitokens",
+  "scitokens >=1.8.0",
   "sqlalchemy",
   "uproot >=4.1.5",
 ]
