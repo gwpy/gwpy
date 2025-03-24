@@ -6,10 +6,10 @@ If you have used GWpy as part of a project that leads to a scientific
 publication, please acknowledge this by citing the
 `GWpy paper <https://www.sciencedirect.com/science/article/pii/S2352711021000029>`_: D. M. Macleod *et al*, SoftwareX, **13**, 100657 (2021). The citation in various formats is given below:
 
-.. md-tab-set::
-    :name: gwpy_citation_examples
+.. tab-set::
 
-    .. md-tab-item:: BibTeX
+    .. tab-item:: BibTeX
+        :name: gwpy_citation_examples_bibtex
 
         .. code-block:: bibtex
 
@@ -25,7 +25,8 @@ publication, please acknowledge this by citing the
                   url = {https://www.sciencedirect.com/science/article/pii/S2352711021000029},
             }
 
-    .. md-tab-item:: RIS
+    .. tab-item:: RIS
+        :name: gwpy_citation_examples_ris
 
         .. code-block::
 
@@ -46,7 +47,8 @@ publication, please acknowledge this by citing the
             UR  - https://www.sciencedirect.com/science/article/pii/S2352711021000029
             ER  - 
 
-    .. md-tab-item:: EndNode
+    .. tab-item:: EndNode
+        :name: gwpy_citation_examples_endnote
 
          .. code-block::
 
@@ -64,7 +66,8 @@ publication, please acknowledge this by citing the
             %R 10.1016/j.softx.2021.100657
             %@ 2352-7110
 
-    .. md-tab-item:: RefWorks
+    .. tab-item:: RefWorks
+        :name: gwpy_citation_examples_refworks
 
         .. code-block::
 
