@@ -90,6 +90,7 @@ Working with data
    :maxdepth: 1
    :caption: Examples
 
+   examples/index
    examples/timeseries/index
    examples/signal/index
    examples/frequencyseries/index

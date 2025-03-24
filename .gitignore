@@ -37,9 +37,10 @@ pip-delete-this-directory.txt
 /docs/lal*.tag
 /docs/*.inv
 /docs/api/
-/docs/cli/*.png
-/docs/cli/examples/
 /docs/citing.rst
+/docs/cli/examples/
+/docs/cli/_examples/
+/docs/examples/
 
 # OS/editor files
 *.swp
@@ -50,7 +51,6 @@ pip-delete-this-directory.txt
 # Examples output
 /examples/*.png
 /examples/*/*.png
-/docs/examples/*/*.rst
 
 # Patches
 /*.patch

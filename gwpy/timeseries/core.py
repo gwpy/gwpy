@@ -361,7 +361,7 @@ class TimeSeriesBase(Series):
             Allow data access from slow tapes.
             If ``host`` or ``connection`` is given, the default is to do
             whatever the server default is, otherwise servers will be searched
-            with ``allow_tape=False`` first, then ``allow_tape=True` if that
+            with ``allow_tape=False`` first, then ``allow_tape=True`` if that
             fails.
 
         type : `int`, `str`, optional
@@ -1156,7 +1156,7 @@ class TimeSeriesBaseDict(OrderedDict):
             Allow data access from slow tapes.
             If ``host`` or ``connection`` is given, the default is to do
             whatever the server default is, otherwise servers will be searched
-            with ``allow_tape=False`` first, then ``allow_tape=True` if that
+            with ``allow_tape=False`` first, then ``allow_tape=True`` if that
             fails.
 
         type : `int`, `str`, optional

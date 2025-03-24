@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2025)
 #
 # This file is part of GWpy.
 #
@@ -16,7 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Generate the Q-transform of a `TimeSeries`
+"""
+.. sectionauthor:: Duncan Macleod <duncan.macleod@ligo.org>
+.. currentmodule:: gwpy.timeseries
+
+Generate the Q-transform of a `TimeSeries`
+##########################################
 
 One of the most useful tools for filtering and visualising short-duration
 features in a `TimeSeries` is the
@@ -31,23 +36,23 @@ detection GW150914, so we can reproduce `that result (bottom panel of figure 1)
 <https://doi.org/10.1103/PhysRevLett.116.061102>`_ here.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = "gwpy.timeseries"
-
+# %%
 # First, we need to download the `TimeSeries` record for the H1 strain
 # measurement from |GWOSC|_:
 
 from gwpy.timeseries import TimeSeries
 data = TimeSeries.fetch_open_data("H1", 1126259446, 1126259478)
 
+# %%
 # Next, we generate the `~TimeSeries.q_transform` of these data:
 qspecgram = data.q_transform(outseg=(1126259462.2, 1126259462.5))
 
+# %%
 # .. note::
 #    We can save memory by focusing on a specific window around the
 #    interesting time. The ``outseg`` keyword argument returns a `Spectrogram`
 #    that is only as long as we need it to be.
-
+#
 # Now, we can plot the resulting `~gwpy.spectrogram.Spectrogram`:
 
 plot = qspecgram.plot(figsize=[8, 4])
@@ -60,7 +65,7 @@ ax.grid(True, axis="y", which="both")
 ax.colorbar(cmap="viridis", label="Normalized energy")
 plot.show()
 
+# %%
 # Here we can clearly see the trace of a compact binary coalescence,
 # specifically a binary black hole merger!
-# For more details on this result, please see
-# http://www.ligo.org/science/Publication-GW150914/.
+# For more details on this historic result, please see |GW150914|_.

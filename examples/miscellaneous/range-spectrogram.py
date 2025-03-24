@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# Copyright (C) Alex Urban (2019-2020)
+# Copyright (C) Louisiana State University (2019-2020)
+#               Cardiff University (2020-2025)
 #
 # This file is part of GWpy.
 #
@@ -16,30 +16,43 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Estimating the spectral contribution to inspiral range
+"""
+.. sectionauthor:: Alex Urban <alexander.urban@ligo.org>
 
-We have seen how the binary neutron star (BNS) inspiral range of a
-gravitational-wave detector can be measured directly from the strain
-readout. In this example, we will estimate the average spectral
+Estimating the spectral contribution to inspiral range
+######################################################
+
+:ref:`sphx_glr_examples_miscellaneous_range-timeseries.py` shows
+how the binary neutron star (BNS) inspiral range of a gravitational-wave
+detector can be measured directly from the strain readout.
+
+In this example, we estimate the average spectral
 contribution to BNS range from the strain record surrounding GW170817
 using :func:`gwpy.astro.range_spectrogram`.
 """
 
-__author__ = "Alex Urban <alexander.urban@ligo.org>"
-
-# First, we need to load some data. As before we can `fetch` the
-# `public data <https://gwosc.org/catalog/>`__
-# around the GW170817 BNS merger:
+# %%
+# Data access
+# -----------
+# First, we need to load some data.
+# For this we can `fetch` the `public data <https://gwosc.org/catalog/>`__
+# around the |GW170817|_ BNS merger:
 
 from gwpy.timeseries import TimeSeries
 l1 = TimeSeries.fetch_open_data("L1", 1187006834, 1187010930)
 
+# %%
+# Generate a range `Spectrogram`
+# ------------------------------
 # Then, we can calculate a `Spectrogram` of the inspiral range
 # amplitude spectrum:
 
 from gwpy.astro import range_spectrogram
 l1spec = range_spectrogram(l1, 30, fftlength=4, fmin=15, fmax=500) ** (1./2)
 
+# %%
+# Visualisation
+# -------------
 # We can plot this `Spectrogram` to visualise spectral variation in
 # LIGO-Livingston's sensitivity in the hour or so surrounding GW170817:
 
@@ -49,11 +62,14 @@ ax.set_yscale("log")
 ax.set_ylim(15, 500)
 ax.set_title("LIGO-Livingston sensitivity to BNS around GW170817")
 ax.set_epoch(1187008882)  # <- set 0 on plot to GW170817
-ax.colorbar(cmap="cividis", clim=(0, 16),
-            label="BNS range amplitude spectral density "
-                  r"[Mpc/$\sqrt{\mathrm{Hz}}$]")
+ax.colorbar(
+    cmap="cividis",
+    clim=(0, 16),
+    label=r"BNS range amplitude spectral density [Mpc/$\sqrt{\mathrm{Hz}}$]",
+)
 plot.show()
 
+# %%
 # Note, the extreme dip in sensitivity near GW170817 is caused by a
 # loud, transient noise event, see `Phys. Rev. Lett. vol. 119, p.
 # 161101 <http://doi.org/10.1103/PhysRevLett.119.161101>`_ for more

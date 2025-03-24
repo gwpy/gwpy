@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2025)
 #
 # This file is part of GWpy.
 #
@@ -16,7 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Plotting segments for a `StateVector`
+"""
+.. sectionauthor:: Duncan Macleod <duncan.macleod@ligo.org>
+.. currentmodule:: gwpy.timeseries
+
+Plotting segments for a `StateVector`
+#####################################
 
 Confident detection of gravitational-wave signals is critically dependent
 on understanding the quality of the data searched.
@@ -26,12 +31,11 @@ We can use this to check on the quality of the data from the LIGO Livingston
 detector around |GW170817|_.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = "gwpy.timeseries"
-
+# %%
 # First, we can import the `StateVector` class:
 from gwpy.timeseries import StateVector
 
+# %%
 # and download the state information surrounding GW170817:
 data = StateVector.fetch_open_data(
     "L1",
@@ -40,6 +44,7 @@ data = StateVector.fetch_open_data(
     verbose=True,
 )
 
+# %%
 # Finally, we make a :meth:`~StateVector.plot`, passing `insetlabels=True` to
 # display the bit names inside the axes:
 plot = data.plot(insetlabels=True)
@@ -49,9 +54,9 @@ ax.axvline(1187008882, color="orange", linestyle="--")
 ax.set_title("LIGO-Livingston data quality around GW170817")
 plot.show()
 
+# %%
 # This plot shows that for a short time exactly overlapping with GW170817
 # there was a data quality issue recorded that would negatively impact a
 # search for generic gravitational-wave transients (bursts).
 # For more details on this *glitch*, and on how it was excised, please see
-# the `Science Summary for GW170817
-# <https://www.ligo.org/science/Publication-GW170817BNS/>`__.
+# the science summary for |GW170817|_.

@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (C) Louisiana State University (2014-2017)
+#               Cardiff University (2017-2025)
 #
 # This file is part of GWpy.
 #
@@ -16,31 +16,39 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Plotting a `Spectrogram` of the Rayleigh statistic
+"""
+.. sectionauthor:: Duncan Macleod <duncan.macleod@ligo.org>
+.. currentmodule:: gwpy.timeseries
 
-As described in :ref:`gwpy-example-frequencyseries-rayleigh`, the Rayleigh
+Plotting a `Spectrogram` of the Rayleigh statistic
+##################################################
+
+As described in :ref:`sphx_glr_examples_frequencyseries_rayleigh.py`, the Rayleigh
 statistic can be used to study non-Gaussianity in a timeseries.
 We can study the time variance of these features by plotting a
 time-frequency spectrogram where we calculate the Rayleigh statistic for
 each time bin.
 """
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__currentmodule__ = "gwpy.spectrogram"
-
+# %%
 # To demonstate this, we can load some data from the LIGO Livingston
 # interferometer around the time of the GW151226 gravitational wave detection:
 
 from gwpy.timeseries import TimeSeries
-gwdata = TimeSeries.fetch_open_data("L1", "Dec 26 2015 03:37",
-                                    "Dec 26 2015 03:47", verbose=True)
+gwdata = TimeSeries.fetch_open_data(
+    "L1",
+    "Dec 26 2015 03:37",
+    "Dec 26 2015 03:47",
+)
 
+# %%
 # Next, we can calculate a Rayleigh statistic `Spectrogram` using the
 # :meth:`~gwpy.timeseries.TimeSeries.rayleigh_spectrogram` method of the
 # `~gwpy.timeseries.TimeSeries` and a 5-second stride with a 2-second FFT and
 # 1-second overlap (50%):
 rayleigh = gwdata.rayleigh_spectrogram(5, fftlength=2, overlap=1)
 
+# %%
 # and can make a plot using the :meth:`~Spectrogram.plot` method
 plot = rayleigh.plot(norm="log", vmin=0.25, vmax=4)
 ax = plot.gca()

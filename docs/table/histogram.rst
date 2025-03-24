@@ -27,4 +27,4 @@ Using the above method we can generate a histogram as follows
    >>> ax.autoscale(axis='x', tight=True)
    >>> plot.show()
 
-This is a snippet from the example :ref:`gwpy-example-table-histogram`.
+This is a snippet from the example :ref:`sphx_glr_examples_table_histogram.py`.

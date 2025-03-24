@@ -50,4 +50,4 @@ These tiles can be plotted in a similar manner to simple triggers.
    >>> ax.set_ylabel('Frequency [Hz]')
    >>> ax.colorbar(clim=[1, 10], cmap='YlGnBu', norm='log', label='Signal-to-noise ratio (SNR)')
 
-These code snippets are part of the example :ref:`gwpy-example-table-tiles`.
+These code snippets are part of the example :ref:`sphx_glr_examples_table_tiles.py`.
