@@ -18,13 +18,15 @@
 
 """Extension of the basic matplotlib Figure for GWpy."""
 
+from __future__ import annotations
+
 import itertools
 import importlib
+import typing
 from collections.abc import (KeysView, ValuesView)
 from itertools import zip_longest
 
 import numpy
-
 from matplotlib import (
     _pylab_helpers,
     backends,
@@ -33,13 +35,17 @@ from matplotlib import (
 )
 from matplotlib.artist import setp
 from matplotlib.gridspec import GridSpec
-from matplotlib.ticker import LogFormatterSciNotation
 from matplotlib.projections import get_projection_class
 
 from . import (colorbar as gcbar, utils)
 from .gps import GPS_SCALES
-from .log import LogFormatter
 from .rc import (rcParams, MPL_RCPARAMS, get_subplot_params)
+
+if typing.TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    from matplotlib.collections import Collection
+    from matplotlib.colorbar import Colorbar
+    from matplotlib.image import AxesImage
 
 __all__ = ["Plot"]
 
@@ -124,10 +130,6 @@ class Plot(figure.Figure):
 
     def _init_figure(self, **kwargs):
         from matplotlib import pyplot
-
-        # add new attributes
-        self.colorbars = []
-        self._coloraxes = []
 
         # create Figure
         num = kwargs.pop("num", max(pyplot.get_fignums() or {0}) + 1)
@@ -247,8 +249,6 @@ class Plot(figure.Figure):
 
     def refresh(self):
         """Refresh the current figure."""
-        for cbar in self.colorbars:
-            cbar.draw_all()
         self.canvas.draw()
 
     def show(self, block=None, warn=True):
@@ -341,14 +341,14 @@ class Plot(figure.Figure):
 
     def colorbar(
         self,
-        mappable=None,
-        cax=None,
-        ax=None,
-        fraction=0.,
-        use_axesgrid=True,
-        emit=True,
+        mappable: Collection | AxesImage | None = None,
+        *,
+        cax: Axes | None = None,
+        ax: Axes | None = None,
+        fraction: float = 0.,
+        emit: bool = True,
         **kwargs,
-    ):
+    ) -> Colorbar:
         """Add a colorbar to the current `Plot`.
 
         This method differs from the default
@@ -358,14 +358,17 @@ class Plot(figure.Figure):
 
         Parameters
         ----------
-        mappable : matplotlib data collection
-            Collection against which to map the colouring
+        mappable : `~matplotlib.image.AxesImage`, `~matplotlib.collections.Collection`, optional
+            Collection against which to map the colorbar.
+            Default is the most-recently-added mappable artist.
 
-        cax : `~matplotlib.axes.Axes`
-            Axes on which to draw colorbar
+        cax : `~matplotlib.axes.Axes`, optional
+            Axes on which to draw colorbar.
+            By default a new `Axes` will be created.
 
         ax : `~matplotlib.axes.Axes`
-            Axes relative to which to position colorbar
+            Axes relative to which to position colorbar.
+            The default is the `Axes` containing the ``mappable``.
 
         fraction : `float`, optional
             Fraction of original axes to use for colorbar.
@@ -376,21 +379,20 @@ class Plot(figure.Figure):
             If `True` update all mappables on `Axes` to match the same
             colouring as the colorbar.
 
-        **kwargs
-            other keyword arguments to be passed to the
-            :meth:`~matplotlib.figure.Figure.colorbar`
+        kwargs
+            Other keyword arguments are passed to
+            :meth:`~matplotlib.figure.Figure.colorbar`.
 
         Returns
         -------
         cbar : `~matplotlib.colorbar.Colorbar`
-            the newly added `Colorbar`
+            The newly added `Colorbar`.
 
         Notes
         -----
-        To revert to the default matplotlib behaviour, pass
-        ``use_axesgrid=False, fraction=0.15``.
+        To revert to the default matplotlib behaviour, pass ``fraction=0.15``.
 
-        See also
+        See Also
         --------
         matplotlib.figure.Figure.colorbar
         matplotlib.colorbar.Colorbar
@@ -417,51 +419,14 @@ class Plot(figure.Figure):
         >>> ax.colorbar(label='Value')
         >>> plot.show()
         """
-        # pre-process kwargs (and maybe create new Axes)
-        mappable, kwargs = gcbar.process_colorbar_kwargs(
+        return gcbar.colorbar(
             self,
-            mappable,
             ax,
+            mappable,
             cax=cax,
             fraction=fraction,
             **kwargs,
         )
-
-        # generate colour bar
-        cbar = super().colorbar(mappable, **kwargs)
-
-        # force the minor ticks to be the same as the major ticks;
-        # in practice, this normally swaps out LogFormatterSciNotation to
-        # gwpy's LogFormatter;
-        # this is hacky, and would be improved using a
-        # subclass of Colorbar in the first place, but matplotlib's
-        # cbar_factory doesn't support that
-        longaxis = (
-            cbar.ax.yaxis if cbar.orientation == "vertical"
-            else cbar.ax.xaxis
-        )
-        if (
-            isinstance(cbar.formatter, LogFormatter)
-            and isinstance(
-                longaxis.get_minor_formatter(),
-                LogFormatterSciNotation,
-            )
-        ):
-            longaxis.set_minor_formatter(type(cbar.formatter)())
-
-        # record colorbar in parent object
-        self.colorbars.append(cbar)
-
-        # update mappables for this axis
-        if emit:
-            ax = kwargs.pop("ax")
-            norm = mappable.norm
-            cmap = mappable.get_cmap()
-            for map_ in ax.collections + ax.images:
-                map_.set_norm(norm)
-                map_.set_cmap(cmap)
-
-        return cbar
 
     # -- extra methods --------------------------
 
