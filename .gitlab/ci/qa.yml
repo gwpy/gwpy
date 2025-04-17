@@ -64,7 +64,7 @@ semgrep-sast:
 
 ruff:
   extends: .qa
-  image: python
+  image: quay.io/lib/python
   script:
     - python -m pip install
           ruff
@@ -85,7 +85,7 @@ ruff:
 
 mypy:
   extends: .qa
-  image: python
+  image: quay.io/lib/python
   script:
     - python -m pip install
           mypy
@@ -113,7 +113,7 @@ rstcheck:
   extends:
     - .python_base
     - .qa
-  image: python
+  image: quay.io/lib/python
   script:
     - python -m pip install rstcheck[sphinx]
     - python .gitlab/ci/rstcheck.py > rstcheck.json
