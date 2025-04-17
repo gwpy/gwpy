@@ -6,7 +6,7 @@ spec:
       default: ".cache/pip"
       description: "The path to cache to (relative to CI_PROJECT_DIR)"
     image:
-      default: "python"
+      default: "quay.io/lib/python"
       description: "The default image to use for jobs"
     job_prefix:
       default: ".python"

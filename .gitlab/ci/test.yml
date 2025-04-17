@@ -82,7 +82,7 @@ basic_test:
   extends:
     - .prod_test
     - .basic_test
-  image: python:${PYTHON_VERSION}
+  image: quay.io/lib/python:${PYTHON_VERSION}
   rules:
     - !reference [.rules_basic_test, rules]
 
@@ -101,7 +101,7 @@ python_test_linux:
   extends:
     - .dev_test
     - .linux
-  image: python:${PYTHON_VERSION}
+  image: quay.io/lib/python:${PYTHON_VERSION}
   rules:
     - !reference [.linux, rules]
     - !reference [.rules_full_test, rules]
@@ -200,7 +200,7 @@ conda_test_linux:
   rules:
     - !reference [.linux, rules]
     - !reference [.rules_full_test, rules]
-  image: condaforge/miniforge3
+  image: quay.io/condaforge/miniforge3
   before_script:
     # init conda
     - . $(conda info --base)/etc/profile.d/conda.sh
