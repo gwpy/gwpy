@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (c) 2018-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides plotting utilities for visualising GW data.
+"""Utilities for visualising GW data with Matplotlib.
 
 The standard data types (`TimeSeries`, `Table`, `DataQualityFlag`, ...) can
 all be easily visualised using the relevant plotting objects, with
@@ -24,6 +24,7 @@ many configurable parameters both interactive, and in saving to disk.
 
 import matplotlib
 
+from ..utils.env import bool_env
 # utilities
 from . import (
     rc,  # updated default parameters
@@ -36,14 +37,16 @@ from . import (
 # figure and axes extensions
 from .plot import Plot
 from .axes import Axes
+
 from .bode import BodePlot
 from .segments import SegmentAxes
-
-from ..utils.env import bool_env
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # load our rcParams as default (without latex unless requested)
-if bool_env("GWPY_RCPARAMS", True):
+if bool_env("GWPY_RCPARAMS", default=True):
     matplotlib.rcParams.update(
-        rc.rc_params(usetex=bool_env("GWPY_USETEX", False)))
+        rc.rc_params(usetex=bool_env("GWPY_USETEX", default=False)),
+    )
+
+del bool_env
