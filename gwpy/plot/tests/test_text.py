@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (c) 2018-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -18,22 +18,78 @@
 """Tests for `gwpy.plot.text`."""
 
 import pytest
-
-from matplotlib import rc_context
-
 from astropy.units import Unit
+from matplotlib import (
+    pyplot,
+    rc_context,
+)
 
 from .. import text as plot_text
 
 
-@pytest.mark.parametrize("in_, out, texout", [
-    ("test", "test", "test"),
-    (4.0, "4.0", "4",),
-    (8, "8", "8"),
-    (Unit("m/Hz2"), "$\\mathrm{m\\,Hz^{-2}}$", "$\\mathrm{m\\,Hz^{-2}}$"),
+@pytest.mark.parametrize(("in_", "out", "texout"), [
+    pytest.param(
+        "test",
+        "test",
+        "test",
+        id="str",
+    ),
+    pytest.param(
+        4.0,
+        "4.0",
+        "4",
+        id="float",
+    ),
+    pytest.param(
+        8,
+        "8",
+        "8",
+        id="int",
+    ),
+    pytest.param(
+        Unit("m/Hz2"),
+        "$\\mathrm{m\\,Hz^{-2}}$",
+        "$\\mathrm{m\\,Hz^{-2}}$",
+        id="unit",
+    ),
 ])
 def test_to_string(in_, out, texout):
+    """Test `to_string()`."""
     with rc_context(rc={"text.usetex": False}):
         assert plot_text.to_string(in_) == out
     with rc_context(rc={"text.usetex": True}):
         assert plot_text.to_string(in_) == texout
+
+
+@pytest.mark.parametrize(("unit", "label", "format_", "result"), [
+    pytest.param(
+        Unit("m"),
+        None,
+        "latex_inline_dimensional",
+        r"Length [$\mathrm{m}$]",
+        id="unit",
+    ),
+    pytest.param(
+        Unit("m"),
+        "My label",
+        "latex_inline_dimensional",
+        r"My label",
+        id="label",
+    ),
+    pytest.param(
+        Unit("m"),
+        None,
+        "console",
+        "m",
+        id="format",
+    ),
+])
+def test_default_unit_label(unit, label, format_, result):
+    """Test `default_unit_label()`."""
+    fig = pyplot.figure()
+    ax = fig.gca()
+    if label:
+        ax.set_xlabel(label)
+    assert plot_text.default_unit_label(ax.xaxis, unit, format=format_) == result
+    if not label:
+        assert ax.xaxis.isDefault_label
