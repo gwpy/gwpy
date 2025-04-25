@@ -288,6 +288,8 @@ ignore = [
   "SIM108",  # if-else instead of ternary if
   "TID252",  # relative imports
 ]
+# allow 'mock_...' variables to go unused in tests
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)|mock_.*)$"
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
