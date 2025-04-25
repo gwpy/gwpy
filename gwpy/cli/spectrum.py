@@ -106,6 +106,9 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
             )
             nlegargs = 0  # don't use  themm
 
+        # determine colour
+        colors = self._color_by_ifo()
+
         for i in range(0, self.n_datasets):
             series = self.timeseries[i]
             if nlegargs:
@@ -125,7 +128,8 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
             if self.usetex:
                 label = label_to_latex(label)
 
-            ax.plot(asd, label=label)
+            # plot
+            ax.plot(asd, label=label, color=colors[i])
 
         if args.xscale == "log" and not args.xmin:
             args.xmin = 1/fftlength
