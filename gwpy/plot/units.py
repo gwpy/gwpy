@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2021)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -18,7 +18,15 @@
 
 """Support for plotting with units."""
 
+from __future__ import annotations
+
+import typing
+from functools import wraps
+
 from astropy.units.format import LatexInline
+
+if typing.TYPE_CHECKING:
+    from astropy.units import UnitBase
 
 
 class LatexInlineDimensional(LatexInline):
@@ -36,17 +44,31 @@ class LatexInlineDimensional(LatexInline):
     This custom 'dimensional' formatter gives:
 
     >>> Unit('m/s').to_string(format='latex_inline_dimensional')
-    'Speed [$\mathrm{m\,s^{-1}}$]'
+    'Speed/Velocity [$\mathrm{m\,s^{-1}}$]'
     """
+
     name = "latex_inline_dimensional"
 
     @classmethod
-    def to_string(cls, unit, *args, **kwargs):
-        u = f"[{super().to_string(unit, *args, **kwargs)}]"
+    @wraps(LatexInline.to_string)
+    def to_string(
+        cls,
+        unit: UnitBase,
+        **kwargs,
+    ) -> str:
+        """Output this unit in LaTeX format with dimensions."""
+        if unit.physical_type == "dimensionless":
+            return "Dimensionless"
 
-        if unit.physical_type not in {None, "unknown", "dimensionless"}:
-            # format physical type of unit for LaTeX
-            ptype = str(unit.physical_type).title().replace("_", r"\_")
-            # return '<Physical type> [<unit>]'
-            return f"{ptype} {u}"
-        return u
+        u = f"[{super().to_string(unit, **kwargs)}]"
+
+        if (
+            unit.physical_type is None
+            or unit.physical_type == "unknown"
+        ):
+            return u
+
+        # format physical type of unit for LaTeX
+        ptype = str(unit.physical_type).title().replace("_", r"\_")
+        # looks like '<Physical type> [<unit>]'
+        return f"{ptype} {u}"
