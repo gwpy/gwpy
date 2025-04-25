@@ -149,7 +149,9 @@ python_test_windows:
         --cache $CHOCO_CACHE_DIR
         --yes
         python${PYTHON_VERSION_NODOTS}
-    - $env:PATH += ";C:\Python" + ${PYTHON_VERSION_NODOTS} + ";C:\Python" + ${PYTHON_VERSION_NODOTS} + "\Scripts"
+    - $chocoPath = "C:\Python" + ${PYTHON_VERSION_NODOTS}
+    - $env:PATH = $chocoPath + "\Scripts" + ";" + $chocoPath + ";" + $env:PATH
+    - $env:PATH -split ';'
     - echo $PYTEST_ADDOPTS
   cache:
     # cache pip packages
