@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (c) 2018-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -17,6 +17,8 @@
 
 """Tests for `gwpy.plot.tex`."""
 
+from __future__ import annotations
+
 from unittest import mock
 
 import pytest
@@ -24,8 +26,20 @@ import pytest
 from .. import tex as plot_tex
 
 
-def _which(arg):
-    """Fake which to force pdflatex to being not found."""
+def _which(arg: str) -> str | None:
+    """Fake which to force pdflatex to being not found.
+
+    Parameters
+    ----------
+    arg : `str`
+        The path to find.
+
+    Returns
+    -------
+    path : `str` or `None`
+        If ``arg`` is ``"pdflatex"`` this function returns `None`,
+        otherwise ``arg`` is returned verbatim.
+    """
     if arg == "pdflatex":
         return None
     return arg
@@ -33,49 +47,80 @@ def _which(arg):
 
 @mock.patch("gwpy.plot.tex.which", _which)
 def test_has_tex_missing_exe():
-    """Test that `gwpy.plot.tex.has_tex` returns `False` when
-    any one of the necessary executables is missing.
-    """
+    """Test `has_tex()` handling of missing executables."""
     plot_tex.has_tex.cache_clear()
     assert not plot_tex.has_tex()
 
 
 @mock.patch("gwpy.plot.tex._test_usetex", side_effect=RuntimeError)
-def test_has_tex_bad_latex(_):
-    """Test that `gwpy.plot.tex.has_tex` returns `False` when
-    the LaTeX figure fails to render.
-    """
+def test_has_tex_bad_latex(mock_test_usetex):
+    """Test `has_tex()` handling of a rendering failure."""
     plot_tex.has_tex.cache_clear()
     assert not plot_tex.has_tex()
 
 
 @mock.patch("gwpy.plot.tex.which", return_value="path")
 @mock.patch("gwpy.plot.tex._test_usetex")
-def test_has_tex_true(_which_, _test_usetex):
-    """Test that `gwpy.plot.tex.has_tex` returns `True` when
-    all of the necessary executables are found, and the LaTeX figure
-    doesn't raise an exception.
-    """
+def test_has_tex_true(mock_which_, mock_test_usetex):
+    """Test `has_tex()` returns `True` when everything works."""
     plot_tex.has_tex.cache_clear()
     assert plot_tex.has_tex()
 
 
-@pytest.mark.parametrize("in_, out", [
-    (1, "1"),
-    (100, r"10^{2}"),
-    (-500, r"-5\!\!\times\!\!10^{2}"),
-    (0.00001, r"10^{-5}"),
+@pytest.mark.parametrize(("in_", "out"), [
+    pytest.param(
+        1,
+        "1",
+        id="1",
+    ),
+    pytest.param(
+        100,
+        r"10^{2}",
+        id="power of ten",
+    ),
+    pytest.param(
+        -500,
+        r"-5\!\!\times\!\!10^{2}",
+        id="scientific notation",
+    ),
+    pytest.param(
+        0.00001,
+        r"10^{-5}",
+        id="negative power of ten",
+    ),
 ])
 def test_float_to_latex(in_, out):
+    """Test `float_to_latex()`."""
     assert plot_tex.float_to_latex(in_) == out
 
 
-@pytest.mark.parametrize("in_, out", [
-    (None, ""),
-    ("normal text", "normal text"),
-    (r"$1 + 2 = 3$", r"$1 + 2 = 3$"),
-    ("H1:ABC-DEF_GHI", r"H1:ABC-DEF\_GHI"),
-    (r"H1:ABC-DEF\_GHI", r"H1:ABC-DEF\_GHI"),
+@pytest.mark.parametrize(("in_", "out"), [
+    pytest.param(
+        None,
+        "",
+        id="None",
+    ),
+    pytest.param(
+        "normal text",
+        "normal text",
+        id="text",
+    ),
+    pytest.param(
+        r"$1 + 2 = 3$",
+        r"$1 + 2 = 3$",
+        id="mathtex",
+    ),
+    pytest.param(
+        "H1:ABC-DEF_GHI",
+        r"H1:ABC-DEF\_GHI",
+        id="underscore",
+    ),
+    pytest.param(
+        r"H1:ABC-DEF\_GHI",
+        r"H1:ABC-DEF\_GHI",
+        id="escaped",
+    ),
 ])
 def test_label_to_latex(in_, out):
+    """Test `label_to_latex()`."""
     assert plot_tex.label_to_latex(in_) == out
