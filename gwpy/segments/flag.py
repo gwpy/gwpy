@@ -92,7 +92,7 @@ if typing.TYPE_CHECKING:
     )
 
     import astropy.table
-    import ligo.lw
+    import igwn_ligolw
 
     from ...plot import Plot
     from ...typing import (
@@ -578,16 +578,16 @@ class DataQualityFlag:
     @classmethod
     def from_veto_def(
         cls,
-        veto: ligo.lw.lsctables.VetoDef | astropy.table.Row,
+        veto: igwn_ligolw.lsctables.VetoDef | astropy.table.Row,
     ) -> Self:
         """Define a `DataQualityFlag` from a `VetoDef`.
 
         Parameters
         ----------
-        veto : `~ligo.lw.lsctables.VetoDef`, `~astropy.table.Row`.
+        veto : `~igwn_ligolw.lsctables.VetoDef`, `~astropy.table.Row`.
             Veto definition to convert from.
         """
-        # handle getting by item name (astropy) or attribute name (ligo.lw)
+        # handle getting by item name (astropy) or attribute name (igwn_ligolw)
         if isinstance(veto, AstropyTableRow):
             get = veto.get
         else:
@@ -1217,9 +1217,9 @@ class DataQualityDict(dict):
     @classmethod
     def from_ligolw_tables(
         cls,
-        segmentdeftable: ligo.lw.lsctables.SegmentDefTable,
-        segmentsumtable: ligo.lw.lsctables.SegmentSumTable,
-        segmenttable: ligo.lw.lsctables.SegmentTable,
+        segmentdeftable: igwn_ligolw.lsctables.SegmentDefTable,
+        segmentsumtable: igwn_ligolw.lsctables.SegmentSumTable,
+        segmenttable: igwn_ligolw.lsctables.SegmentTable,
         names: list[str] | None = None,
         gpstype: type[SupportsFloat] | Callable[[float], SupportsFloat] = LIGOTimeGPS,
         on_missing: str = "error",
@@ -1228,13 +1228,13 @@ class DataQualityDict(dict):
 
         Parameters
         ----------
-        segmentdeftable : :class:`~ligo.lw.lsctables.SegmentDefTable`
+        segmentdeftable : :class:`~igwn_ligolw.lsctables.SegmentDefTable`
             The ``segment_definer`` table to read.
 
-        segmentsumtable : :class:`~ligo.lw.lsctables.SegmentSumTable`
+        segmentsumtable : :class:`~igwn_ligolw.lsctables.SegmentSumTable`
             The ``segment_summary`` table to read.
 
-        segmenttable : :class:`~ligo.lw.lsctables.SegmentTable`
+        segmenttable : :class:`~igwn_ligolw.lsctables.SegmentTable`
             The ``segment`` table to read.
 
         names : `list` of `str`, optional
@@ -1290,7 +1290,7 @@ class DataQualityDict(dict):
 
 
         def _parse_segments(
-            table: ligo.lw.ligolw.Table,
+            table: igwn_ligolw.ligolw.Table,
             listattr: str,
         ) -> None:
             """Parse a table into the target DataQualityDict."""
@@ -1322,9 +1322,9 @@ class DataQualityDict(dict):
         self,
         **attrs,
     ) -> tuple[
-        ligo.lw.lsctables.SegmentDefTable,
-        ligo.lw.lsctables.SegmentSumTable,
-        ligo.lw.lsctables.SegmentTable,
+        igwn_ligolw.lsctables.SegmentDefTable,
+        igwn_ligolw.lsctables.SegmentSumTable,
+        igwn_ligolw.lsctables.SegmentTable,
     ]:
         """Convert this `DataQualityDict` into a trio of LIGO_LW segment tables.
 
@@ -1336,16 +1336,16 @@ class DataQualityDict(dict):
 
         Returns
         -------
-        segmentdeftable : :class:`~ligo.lw.lsctables.SegmentDefTable`
+        segmentdeftable : :class:`~igwn_ligolw.lsctables.SegmentDefTable`
             The ``segment_definer`` table.
 
-        segmentsumtable : :class:`~ligo.lw.lsctables.SegmentSumTable`
+        segmentsumtable : :class:`~igwn_ligolw.lsctables.SegmentSumTable`
             The ``segment_summary`` table.
 
-        segmenttable : :class:`~ligo.lw.lsctables.SegmentTable`
+        segmenttable : :class:`~igwn_ligolw.lsctables.SegmentTable`
             The ``segment`` table.
         """
-        from ligo.lw import lsctables
+        from igwn_ligolw import lsctables
 
         from ..io.ligolw import to_table_type as to_ligolw_table_type
 
@@ -1356,7 +1356,10 @@ class DataQualityDict(dict):
         segsumtab = lsctables.New(segsumtab_class)
         segtab = lsctables.New(segtab_class)
 
-        def _write_attrs(table: ligo.lw.ligolw.Table, row: ligo.lw.ligolw.Row) -> None:
+        def _write_attrs(
+            table: igwn_ligolw.ligolw.Table,
+            row: igwn_ligolw.ligolw.Row,
+        ) -> None:
             """Write custom attributes to this row."""
             for key, val in attrs.items():
                 setattr(row, key, to_ligolw_table_type(val, table, key))

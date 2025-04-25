@@ -45,7 +45,7 @@ if typing.TYPE_CHECKING:
         Column,
         Table,
     )
-    from ligo.lw.ligolw import Document
+    from igwn_ligolw.ligolw import Document
 
 __author__ = "Derk Davis <derek.davis@ligo.org>"
 __credits__ = "Patrick Godwin <patrick.godwin@ligo.org>"
@@ -87,7 +87,7 @@ def read_gstlal_sngl(
 ) -> Table:
     """Read a `sngl_inspiral` table from one or more GstLAL LIGO_LW XML files.
 
-    source : `file`, `str`, `~ligo.lw.ligolw.Document`, `list`
+    source : `file`, `str`, `~igwn_ligolw.ligolw.Document`, `list`
         One or more open files or file paths, or a single LIGO_LW ``Document``.
 
     kwargs
@@ -101,7 +101,7 @@ def read_gstlal_sngl(
     gwpy.table.io.ligolw.to_astropy_table
         for details of keyword arguments for the conversion operation.
     """
-    from ligo.lw import lsctables
+    from igwn_ligolw import lsctables
 
     # handle column selection
     read_cols, dynamic_cols = dynamic_columns(
@@ -141,7 +141,7 @@ def read_gstlal_coinc(
 
     Parameters
     ----------
-    source : `file`, `str`, `~ligo.lw.ligolw.Document`, `list`
+    source : `file`, `str`, `~igwn_ligolw.ligolw.Document`, `list`
         One or more open files or file paths, or a single LIGO_LW ``Document``.
 
     kwargs
@@ -155,7 +155,7 @@ def read_gstlal_coinc(
     gwpy.table.io.ligolw.to_astropy_table
         for details of keyword arguments for the conversion operation.
     """
-    from ligo.lw.lsctables import TableByName
+    from igwn_ligolw.lsctables import TableByName
     extra_cols = set()
 
     if columns:
@@ -218,7 +218,7 @@ def read_gstlal(
 ) -> Table:
     """Read a `Table` from one or more GstLAL LIGO_LW XML files.
 
-    source : `file`, `str`, `~ligo.lw.ligolw.Document`, `list`
+    source : `file`, `str`, `~igwn_ligolw.ligolw.Document`, `list`
         One or more open files or file paths, or a single LIGO_LW ``Document``.
 
     triggers : `str`, optional

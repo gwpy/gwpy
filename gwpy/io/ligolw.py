@@ -30,11 +30,11 @@ from importlib import import_module
 import numpy
 
 try:
-    from ligo.lw.ligolw import (
+    from igwn_ligolw.ligolw import (
         ElementError as LigolwElementError,
         LIGOLWContentHandler,
     )
-except ImportError:  # no ligo.lw
+except ImportError:  # no igwn-ligolw
     LigolwElementError = None
     LIGOLWContentHandler = None
 
@@ -61,7 +61,7 @@ def _ligotimegps(s, ns=0):
 
 
 @contextmanager
-def patch_ligotimegps(module="ligo.lw.lsctables"):
+def patch_ligotimegps(module="igwn_ligolw.lsctables"):
     """Context manager to on-the-fly patch LIGOTimeGPS to accept all int types."""
     module = import_module(module)
     orig = module.LIGOTimeGPS
@@ -90,9 +90,9 @@ def strip_ilwdchar(_ContentHandler):
     This is adapted from :func:`ligo.skymap.utils.ilwd`, copyright
     Leo Singer (GPL-3.0-or-later).
     """
-    from ligo.lw.lsctables import TableByName
-    from ligo.lw.table import (Column, TableStream)
-    from ligo.lw.types import FromPyType
+    from igwn_ligolw.lsctables import TableByName
+    from igwn_ligolw.table import (Column, TableStream)
+    from igwn_ligolw.types import FromPyType
 
     class IlwdMapContentHandler(_ContentHandler):
 
@@ -149,7 +149,7 @@ def strip_ilwdchar(_ContentHandler):
 
 
 def _wrap_content_handler(contenthandler):
-    from ligo.lw.lsctables import use_in
+    from igwn_ligolw.lsctables import use_in
 
     @strip_ilwdchar
     @use_in
@@ -167,9 +167,9 @@ def default_content_handler():
 
     Returns
     -------
-    contenthandler : subclass of `ligo.lw.ligolw.LIGOLWContentHandler`
+    contenthandler : subclass of `igwn_ligolw.ligolw.LIGOLWContentHandler`
     """
-    from ligo.lw.ligolw import LIGOLWContentHandler
+    from igwn_ligolw.ligolw import LIGOLWContentHandler
     return _wrap_content_handler(LIGOLWContentHandler)
 
 
@@ -178,17 +178,17 @@ def get_partial_contenthandler(element):
 
     Parameters
     ----------
-    element : `type`, subclass of :class:`~ligo.lw.ligolw.Element`
+    element : `type`, subclass of :class:`~igwn_ligolw.ligolw.Element`
         the element class to be read
 
     Returns
     -------
     contenthandler : `type`
-        a subclass of `~ligo.lw.ligolw.PartialLIGOLWContentHandler`
+        a subclass of `~igwn_ligolw.ligolw.PartialLIGOLWContentHandler`
         to read only the given `element`
     """
-    from ligo.lw.ligolw import PartialLIGOLWContentHandler
-    from ligo.lw.table import Table
+    from igwn_ligolw.ligolw import PartialLIGOLWContentHandler
+    from igwn_ligolw.table import Table
 
     if issubclass(element, Table):
         def _element_filter(name, attrs):
@@ -205,17 +205,17 @@ def get_filtering_contenthandler(element):
 
     Parameters
     ----------
-    element : `type`, subclass of :class:`~ligo.lw.ligolw.Element`
+    element : `type`, subclass of :class:`~igwn_ligolw.ligolw.Element`
         the element to exclude (and its children)
 
     Returns
     -------
     contenthandler : `type`
-        a subclass of `~ligo.lw.ligolw.FilteringLIGOLWContentHandler`
+        a subclass of `~igwn_ligolw.ligolw.FilteringLIGOLWContentHandler`
         to exclude an element and its children
     """
-    from ligo.lw.ligolw import FilteringLIGOLWContentHandler
-    from ligo.lw.table import Table
+    from igwn_ligolw.ligolw import FilteringLIGOLWContentHandler
+    from igwn_ligolw.table import Table
 
     if issubclass(element, Table):
         def _element_filter(name, attrs):
@@ -274,12 +274,12 @@ def read_ligolw(source, contenthandler=None, **kwargs):
 
     Returns
     -------
-    xmldoc : :class:`~ligo.lw.ligolw.Document`
+    xmldoc : :class:`~igwn_ligolw.ligolw.Document`
         the document object as parsed from the file(s)
     """
-    from ligo.lw.ligolw import Document
-    from ligo.lw import types
-    from ligo.lw.utils import (load_url, ligolw_add)
+    from igwn_ligolw.ligolw import Document
+    from igwn_ligolw import types
+    from igwn_ligolw.utils import (load_url, ligolw_add)
 
     # mock ToPyType to link to numpy dtypes
     topytype = types.ToPyType.copy()
@@ -319,14 +319,14 @@ def read_table(
     contenthandler=None,
     **kwargs,
 ):
-    """Read a :class:`~ligo.lw.table.Table` from one or more LIGO_LW files.
+    """Read a :class:`~igwn_ligolw.table.Table` from one or more LIGO_LW files.
 
     Parameters
     ----------
     source : `Document`, `file`, `str`, `CacheEntry`, `list`
         object representing one or more files. One of
 
-        - a LIGO_LW :class:`~ligo.lw.ligolw.Document`
+        - a LIGO_LW :class:`~igwn_ligolw.ligolw.Document`
         - an open `file`
         - a `str` pointing to a file path on disk
         - a formatted :class:`~lal.utils.CacheEntry` representing one file
@@ -346,11 +346,11 @@ def read_table(
 
     Returns
     -------
-    table : :class:`~ligo.lw.table.Table`
+    table : :class:`~igwn_ligolw.table.Table`
         `Table` of data
     """
-    from ligo.lw.ligolw import Document
-    from ligo.lw import (table, lsctables)
+    from igwn_ligolw.ligolw import Document
+    from igwn_ligolw import (table, lsctables)
 
     # get content handler to read only this table (if given)
     if tablename is not None:
@@ -415,16 +415,16 @@ def open_xmldoc(fobj, contenthandler=None, **kwargs):
 
     **kwargs
         other keyword arguments to pass to
-        :func:`~ligo.lw.utils.load_fileobj` as appropriate
+        :func:`~igwn_ligolw.utils.load_fileobj` as appropriate
 
     Returns
     --------
-    xmldoc : :class:`~ligo.lw.ligolw.Document`
+    xmldoc : :class:`~igwn_ligolw.ligolw.Document`
         either the `Document` as parsed from an existing file, or a new, empty
         `Document`
     """
-    from ligo.lw.ligolw import Document
-    from ligo.lw.utils import load_fileobj
+    from igwn_ligolw.ligolw import Document
+    from igwn_ligolw.utils import load_fileobj
 
     if contenthandler is None:
         contenthandler = default_content_handler()
@@ -451,7 +451,7 @@ def open_xmldoc(fobj, contenthandler=None, **kwargs):
 
 def get_ligolw_element(xmldoc):
     """Find an existing <LIGO_LW> element in this XML Document."""
-    from ligo.lw.ligolw import (LIGO_LW, WalkChildren)
+    from igwn_ligolw.ligolw import (LIGO_LW, WalkChildren)
 
     if isinstance(xmldoc, LIGO_LW):
         return xmldoc
@@ -466,18 +466,18 @@ def write_tables_to_document(xmldoc, tables, overwrite=False):
 
     Parameters
     ----------
-    xmldoc : :class:`~ligo.lw.ligolw.Document`
+    xmldoc : :class:`~igwn_ligolw.ligolw.Document`
         the document to write into
 
-    tables : `list` of :class:`~ligo.lw.table.Table`
+    tables : `list` of :class:`~igwn_ligolw.table.Table`
         the set of tables to write
 
     overwrite : `bool`, optional, default: `False`
         if `True`, delete an existing instance of the table type, otherwise
         append new rows
     """
-    from ligo.lw.ligolw import LIGO_LW
-    from ligo.lw import lsctables
+    from igwn_ligolw.ligolw import LIGO_LW
+    from igwn_ligolw import lsctables
 
     # find or create LIGO_LW tag
     try:
@@ -515,10 +515,10 @@ def write_tables(
 
     Parameters
     ----------
-    target : `str`, `file`, :class:`~ligo.lw.ligolw.Document`
+    target : `str`, `file`, :class:`~igwn_ligolw.ligolw.Document`
         the file or document to write into
 
-    tables : `list`, `tuple` of :class:`~ligo.lw.table.Table`
+    tables : `list`, `tuple` of :class:`~igwn_ligolw.table.Table`
         the tables to write
 
     append : `bool`, optional, default: `False`
@@ -535,10 +535,10 @@ def write_tables(
 
     **kwargs
         other keyword arguments to pass to
-        :func:`~ligo.lw.utils.load_fileobj` as appropriate
+        :func:`~igwn_ligolw.utils.load_fileobj` as appropriate
     """
-    from ligo.lw.ligolw import Document, LIGO_LW
-    from ligo.lw import utils as ligolw_utils
+    from igwn_ligolw.ligolw import Document, LIGO_LW
+    from igwn_ligolw import utils as ligolw_utils
 
     # allow writing directly to XML
     if isinstance(target, Document | LIGO_LW):
@@ -587,15 +587,15 @@ def iter_tables(source):
 
     Parameters
     ----------
-    source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
+    source : `file`, `str`, :class:`~igwn_ligolw.ligolw.Document`, `list`
         one or more open files, file paths, or LIGO_LW `Document`s
 
     Yields
     ------
-    ligo.lw.table.Table
+    igwn_ligolw.table.Table
         a table structure from the document(s)
     """
-    from ligo.lw.ligolw import (Element, Stream, WalkChildren)
+    from igwn_ligolw.ligolw import (Element, Stream, WalkChildren)
 
     # get LIGO_LW object
     if not isinstance(source, Element):
@@ -614,7 +614,7 @@ def list_tables(source):
 
     Parameters
     ----------
-    source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
+    source : `file`, `str`, :class:`~igwn_ligolw.ligolw.Document`, `list`
         one or more open files, file paths, or LIGO_LW `Document`s
 
     Examples
@@ -637,7 +637,7 @@ def to_table_type(val, cls, colname):
     val : `object`
         The input object to convert, of any type
 
-    cls : `type`, subclass of :class:`~ligo.lw.table.Table`
+    cls : `type`, subclass of :class:`~igwn_ligolw.table.Table`
         the table class to map against
 
     colname : `str`
@@ -651,12 +651,12 @@ def to_table_type(val, cls, colname):
     Examples
     --------
     >>> from gwpy.io.ligolw import to_table_type as to_ligolw_type
-    >>> from ligo.lw.lsctables import SnglBurstTable
+    >>> from igwn_ligolw.lsctables import SnglBurstTable
     >>> x = to_ligolw_type(1.0, SnglBurstTable, 'central_freq'))
     >>> print(type(x), x)
     <class 'numpy.float32'> 1.0
     """
-    from ligo.lw.types import (
+    from igwn_ligolw.types import (
         ToNumPyType as numpytypes,
         ToPyType as pytypes,
     )
@@ -702,7 +702,7 @@ def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
             fileobj.seek(loc)
 
     try:
-        from ligo.lw.ligolw import Element
+        from igwn_ligolw.ligolw import Element
     except ImportError:
         return
     return len(args) > 0 and isinstance(args[0], Element)

@@ -95,8 +95,8 @@
 .. |numpydoc| replace:: `numpydoc`
 .. _numpydoc: https://numpydoc.readthedocs.io/
 
-.. |python-ligo-lw| replace:: `python-ligo-lw`
-.. _python-ligo-lw: https://git.ligo.org/kipp.cannon/python-ligo-lw
+.. |igwn-ligolw| replace:: `igwn-ligolw`
+.. _igwn-ligolw: https://igwn-ligolw.readthedocs.io/
 
 .. |pycbc| replace:: PyCBC
 .. _pycbc: https://pycbc.org/

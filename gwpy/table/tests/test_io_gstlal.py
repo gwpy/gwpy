@@ -108,7 +108,7 @@ SNGL_LEN = 3
 COINC_LEN = 2
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_gstlal_sngl(gstlal_table):
     table = EventTable.read(
         gstlal_table,
@@ -118,13 +118,13 @@ def test_read_gstlal_sngl(gstlal_table):
     assert len(table) == SNGL_LEN
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_sngl_format(gstlal_table):
     table = EventTable.read(gstlal_table, format="ligolw.gstlal.sngl")
     assert len(table) == SNGL_LEN
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_sngl_columns(gstlal_table):
     table = EventTable.read(
         gstlal_table,
@@ -134,7 +134,7 @@ def test_read_sngl_columns(gstlal_table):
     assert set(table.keys()) == {"snr", "end_time"}
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_coinc(gstlal_table):
     table = EventTable.read(
         gstlal_table,
@@ -144,7 +144,7 @@ def test_read_coinc(gstlal_table):
     assert len(table) == COINC_LEN
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_coinc_format(gstlal_table):
     table = EventTable.read(
         gstlal_table,
@@ -153,7 +153,7 @@ def test_read_coinc_format(gstlal_table):
     assert len(table) == COINC_LEN
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_coinc_columns(gstlal_table):
     table = EventTable.read(
         gstlal_table,
@@ -163,7 +163,7 @@ def test_read_coinc_columns(gstlal_table):
     assert set(table.keys()) == {"snr", "end_time"}
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_derived_values(gstlal_table):
     table = EventTable.read(
         gstlal_table,
@@ -176,7 +176,7 @@ def test_derived_values(gstlal_table):
     assert "snr" not in table.colnames
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_incorrect_sngl_column(gstlal_table):
     with pytest.raises(
         ValueError,
@@ -189,7 +189,7 @@ def test_incorrect_sngl_column(gstlal_table):
         )
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_incorrect_coinc_column(gstlal_table):
     with pytest.raises(
         ValueError,
@@ -202,7 +202,7 @@ def test_incorrect_coinc_column(gstlal_table):
        )
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_incorrect_trigger_name(gstlal_table):
     with pytest.raises(
         ValueError,

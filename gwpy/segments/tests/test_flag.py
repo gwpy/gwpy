@@ -88,8 +88,8 @@ def veto_definer(tmp_path):
 
 
 def veto_def(ifo, name, version, **kwargs):
-    """Create a `ligo.lw.lsctables.VetoDef`."""
-    from ligo.lw.lsctables import VetoDef
+    """Create a `igwn_ligolw.lsctables.VetoDef`."""
+    from igwn_ligolw.lsctables import VetoDef
 
     vdef = VetoDef()
     kwargs["ifo"] = ifo
@@ -558,7 +558,7 @@ class TestDataQualityFlag:
         with pytest.raises(TypeError):
             flag.pad(*PADDING, kwarg="test")
 
-    @pytest.mark.requires("ligo.lw.lsctables")
+    @pytest.mark.requires("igwn_ligolw.lsctables")
     def test_from_veto_def(self):
         """Test `DataQualityFlag.from_veto_def()`."""
         a = veto_def(
@@ -578,7 +578,7 @@ class TestDataQualityFlag:
         assert f.description == "Comment"
         utils.assert_segmentlist_equal(f.known, [(0, float("inf"))])
 
-    @pytest.mark.requires("ligo.lw.lsctables")
+    @pytest.mark.requires("igwn_ligolw.lsctables")
     def test_from_veto_def_version(self):
         """Test `DataQualityFlag.from_veto_def()` with missing version."""
         a = veto_def("X1", "TEST-FLAG", None, start_time=0, end_time=1)
@@ -649,7 +649,7 @@ class TestDataQualityFlag:
         f2 = self.TEST_CLASS.read(tmp)
         utils.assert_flag_equal(f2, flag)
 
-    @pytest.mark.requires("ligo.lw.lsctables")
+    @pytest.mark.requires("igwn_ligolw.lsctables")
     def test_read_write_ligolw(self, flag):
         """Test writing and reading back a `DataQualityFlag` in LIGO_LW format."""
         utils.test_read_write(
@@ -661,7 +661,7 @@ class TestDataQualityFlag:
             read_kw={},
         )
 
-    @pytest.mark.requires("ligo.lw.lsctables")
+    @pytest.mark.requires("igwn_ligolw.lsctables")
     def test_write_ligolw_attrs(self, tmp_path, flag):
         """Test writing a `DataQualityFlag` in LIGO_LW format with attributes."""
         from gwpy.io.ligolw import read_table
@@ -674,7 +674,7 @@ class TestDataQualityFlag:
         segdeftab = read_table(tmp, "segment_definer")
         assert int(segdeftab[0].process_id) == 100
 
-    @pytest.mark.requires("ligo.lw.lsctables")
+    @pytest.mark.requires("igwn_ligolw.lsctables")
     def test_read_ligolw_no_ns(self, ligolw_no_ns):
         """Test writing and reading back a `DataQualityFlag` in LIGO_LW format.
 
@@ -936,7 +936,7 @@ class TestDataQualityDict:
 
     # -- test I/O --------------------
 
-    @pytest.mark.requires("ligo.lw.lsctables")
+    @pytest.mark.requires("igwn_ligolw.lsctables")
     def test_from_veto_definer_file(self, veto_definer):
         """Test `DataQualityDict.from_veto_definer_file()`."""
         # read veto definer
@@ -1001,7 +1001,7 @@ class TestDataQualityDict:
         # unless overwrite=True is given
         _read_write(autoidentify=True, write_kw={"overwrite": True})
 
-    @pytest.mark.requires("ligo.lw.lsctables")
+    @pytest.mark.requires("igwn_ligolw.lsctables")
     def test_read_write_ligolw(self, instance):
         """Test writing and reading back a `DataQualityDict` in LIGO_LW format."""
         def _assert(a, b):
@@ -1058,7 +1058,7 @@ class TestDataQualityDict:
             ):
                 _read(on_missing="blah")
 
-    @pytest.mark.requires("ligo.lw.lsctables")
+    @pytest.mark.requires("igwn_ligolw.lsctables")
     def test_to_ligolw_tables(self, instance):
         """Test `DataQualityDict.to_ligolw_tables()`."""
         tables = instance.to_ligolw_tables()

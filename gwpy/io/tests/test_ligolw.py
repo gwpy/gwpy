@@ -66,7 +66,7 @@ OLD_FORMAT_LIGO_LW_XML = """
 def llwdoc():
     """Build an empty LIGO_LW Document."""
     try:
-        from ligo.lw.ligolw import (Document, LIGO_LW)
+        from igwn_ligolw.ligolw import (Document, LIGO_LW)
     except ImportError as exc:
         pytest.skip(str(exc))
     xmldoc = Document()
@@ -77,10 +77,10 @@ def llwdoc():
 def new_table(tablename, data=None, **new_kw):
     """Create a new LIGO_LW Table with data."""
     try:
-        from ligo.lw import lsctables
+        from igwn_ligolw import lsctables
     except ImportError as exc:
         pytest.skip(str(exc))
-    from ligo.lw.table import Table
+    from igwn_ligolw.table import Table
 
     table = lsctables.New(
         lsctables.TableByName[Table.TableName(tablename)],
@@ -121,7 +121,7 @@ def test_read_table_empty(llwdoc):
         io_ligolw.read_table(llwdoc)
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_table_ilwd(tmp_path):
     xmlpath = tmp_path / "test.xml"
     with open(xmlpath, "w") as f:
@@ -155,7 +155,7 @@ def test_open_xmldoc(tmp_path, llwdoc_with_tables):
 
 
 def test_open_xmldoc_new(tmp_path, llwdoc):
-    from ligo.lw.ligolw import Document
+    from igwn_ligolw.ligolw import Document
     new = io_ligolw.open_xmldoc(tmp_path / "new.xml")
     assert isinstance(new, Document)
     assert not new.childNodes  # empty
@@ -200,7 +200,7 @@ def test_list_tables_file(llwdoc_with_tables):
         assert io_ligolw.list_tables(f) == names
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 @pytest.mark.parametrize("value, name, result", [
     (None, "peak_time", None),
     (1.0, "peak_time", numpy.int32(1)),
@@ -208,7 +208,7 @@ def test_list_tables_file(llwdoc_with_tables):
     (1.0, "invalidname", 1.0),
 ])
 def test_to_table_type(value, name, result):
-    from ligo.lw.lsctables import SnglBurstTable
+    from igwn_ligolw.lsctables import SnglBurstTable
     out = io_ligolw.to_table_type(value, SnglBurstTable, name)
     assert isinstance(out, type(result))
     assert out == result
@@ -291,7 +291,7 @@ def test_write_tables(tmp_path):
     assert len(stab2) == len(stab)
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_is_ligolw_false():
     assert not io_ligolw.is_ligolw("read", None, None, 1)
 
