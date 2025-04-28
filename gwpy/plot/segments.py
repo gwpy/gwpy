@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2022)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -18,18 +18,43 @@
 
 """Plotting utilities for segments."""
 
-from matplotlib.artist import allow_rasterization
-from matplotlib.colors import is_color_like
-from matplotlib.ticker import (Formatter, MultipleLocator)
-from matplotlib.projections import register_projection
-from matplotlib.collections import PatchCollection
-from matplotlib.patches import Rectangle
+from __future__ import annotations
+
+import typing
+from functools import wraps
 
 import igwn_segments
+from matplotlib.artist import allow_rasterization
+from matplotlib.collections import PatchCollection
+from matplotlib.colors import is_color_like
+from matplotlib.patches import Rectangle
+from matplotlib.projections import register_projection
+from matplotlib.ticker import (
+    Formatter,
+    MultipleLocator,
+)
 
 from .axes import Axes
 from .colors import tint
 from .text import to_string
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import Literal
+
+    from igwn_segments import (
+        segment,
+        segmentlist,
+        segmentlistdict,
+    )
+    from matplotlib.artists import Artist
+    from matplotlib.backend_bases import RendererBase
+    from matplotlib.collections import Collection
+
+    from gwpy.segments import (
+        DataQualityDict,
+        DataQualityFlag,
+    )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -53,30 +78,43 @@ class SegmentAxes(Axes):
         display segment labels inside the axes. Prevents very long segment
         names from getting squeezed off the end of a standard figure
 
-    See also
+    See Also
     --------
     gwpy.plot.Axes
         for documentation of other args and kwargs
     """
+
     name = "segments"
 
-    def __init__(self, *args, **kwargs):
-        # default to auto-gps scale on the X-axis
-        kwargs.setdefault("xscale", "auto-gps")
-
-        # set labelling format
-        kwargs.setdefault("insetlabels", False)
-
+    def __init__(
+        self,
+        *args,
+        xscale: str = "auto-gps",
+        insetlabels: bool = False,
+        **kwargs,
+    ) -> None:
+        """Initialise a new `SegmentAxes`."""
         # make axes
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            *args,
+            xscale=xscale,
+            insetlabels=insetlabels,
+            **kwargs,
+        )
 
         # set y-axis labels
         self.yaxis.set_major_locator(MultipleLocator())
         formatter = SegmentFormatter()
         self.yaxis.set_major_formatter(formatter)
 
-    def _plot_method(self, obj):
-        from ..segments import (DataQualityFlag, DataQualityDict)
+    def _plot_method(
+        self,
+        obj: DataQualityFlag | DataQualityDict | segmentlist | segmentlistdict,
+    ) -> Callable:
+        from ..segments import (
+            DataQualityDict,
+            DataQualityFlag,
+        )
 
         if isinstance(obj, DataQualityDict):
             return self.plot_dict
@@ -86,40 +124,48 @@ class SegmentAxes(Axes):
             return self.plot_segmentlistdict
         if isinstance(obj, igwn_segments.segmentlist):
             return self.plot_segmentlist
-        raise TypeError(
+        msg = (
             f"no known {type(self).__name__}.plot_xxx method "
-            f"for {type(obj).__name__}",
+            f"for {type(obj).__name__}"
         )
+        raise TypeError(msg)
 
-    def plot(self, *args, **kwargs):
+    def plot(
+        self,
+        *args: DataQualityFlag | DataQualityDict | segmentlist | segmentlistdict,
+        **kwargs,
+    ) -> list[Artist]:
         """Plot data onto these axes.
 
         Parameters
         ----------
         args
-            a single instance of
+            A single instance of
 
                 - `~gwpy.segments.DataQualityFlag`
                 - `~gwpy.segments.Segment`
                 - `~gwpy.segments.SegmentList`
                 - `~gwpy.segments.SegmentListDict`
 
-            or equivalent types upstream from :mod:`igwn_segments`
+            or equivalent types upstream from :mod:`igwn_segments`.
 
         kwargs
-            keyword arguments applicable to `~matplotib.axes.Axes.plot`
+            All keyword arguments are passed to `~matplotib.axes.Axes.plot`
+            when drawing each object.
 
         Returns
         -------
-        Line2D
-            the `~matplotlib.lines.Line2D` for this line layer
+        artists : `list` of `~matplotlib.artist.Artist`
+            The list of things that were rendered.
 
-        See also
+        See Also
         --------
         matplotlib.axes.Axes.plot
-            for a full description of acceptable ``*args` and ``**kwargs``
+            for a full description of acceptable ``*args` and ``**kwargs``.
         """
         out = []
+
+        # loop over the various arguments, and plot them
         args = list(args)
         while args:
             try:
@@ -128,54 +174,78 @@ class SegmentAxes(Axes):
                 break
             out.append(plotter(args[0], **kwargs))
             args.pop(0)
+
         if args:
             out.extend(super().plot(*args, **kwargs))
-        self.autoscale(enable=None, axis="both", tight=False)
+
+        self.autoscale(
+            enable=None,
+            axis="both",
+            tight=False,
+        )
         return out
 
-    def plot_dict(self, flags, label="key", known="x", **kwargs):
+    def plot_dict(
+        self,
+        flags: DataQualityDict,
+        label: str = "key",
+        known: str | dict | None = "x",
+        **kwargs,
+    ) -> list[PatchCollection]:
         """Plot a `~gwpy.segments.DataQualityDict` onto these axes.
 
         Parameters
         ----------
         flags : `~gwpy.segments.DataQualityDict`
-            data-quality dict to display
+            The data-quality dict to display.
 
         label : `str`, optional
-            labelling system to use, or fixed label for all `DataQualityFlags`.
+            Labelling system to use, or fixed label for all `DataQualityFlags`.
             Special values include
 
-            - ``'key'``: use the key of the `DataQualityDict`,
-            - ``'name'``: use the :attr:`~DataQualityFlag.name` of the
-              `DataQualityFlag`
+            ``'key'``
+                Use the key of the `DataQualityDict`.
+
+            ``'name'``
+                Use the :attr:`~DataQualityFlag.name` of the `DataQualityFlag`.
 
             If anything else, that fixed label will be used for all lines.
 
-        known : `str`, `dict`, `None`, default: '/'
-            display `known` segments with the given hatching, or give a
+        known : `str`, `dict`, `None`, optional
+            Display `known` segments with the given hatching, or give a
             dict of keyword arguments to pass to
             :meth:`~SegmentAxes.plot_segmentlist`, or `None` to hide.
 
-        **kwargs
-            any other keyword arguments acceptable for
-            `~matplotlib.patches.Rectangle`
+        kwargs
+            All other keyword arguments are passed to `SegmentRectangle`.
 
         Returns
         -------
-        collection : `~matplotlib.patches.PatchCollection`
-            list of `~matplotlib.patches.Rectangle` patches
+        artists : `list` of `~matplotlib.patches.PatchCollection`
+            The list of patch collections that were drawn.
         """
         out = []
-        for lab, flag in flags.items():
+        for name, flag in flags.items():
             if label.lower() == "name":
                 lab = flag.name
-            elif label.lower() != "key":
+            elif label.lower() == "key":
+                lab = name
+            else:
                 lab = label
-            out.append(self.plot_flag(flag, label=to_string(lab), known=known,
-                                      **kwargs))
+            out.append(self.plot_flag(
+                flag,
+                label=to_string(lab),
+                known=known,
+                **kwargs,
+            ))
         return out
 
-    def plot_flag(self, flag, y=None, **kwargs):
+    def plot_flag(
+        self,
+        flag: DataQualityFlag,
+        y: float | None = None,
+        **kwargs,
+    ) -> PatchCollection | list[SegmentRectangle]:
         """Plot a `~gwpy.segments.DataQualityFlag` onto these axes.
 
         Parameters
@@ -198,15 +268,13 @@ class SegmentAxes(Axes):
             - `dict` of kwargs to use
             - `None` to ignore known segmentlist
 
-        **kwargs
-            Any other keyword arguments acceptable for
-            `~matplotlib.patches.Rectangle`.
+        kwargs
+            All other keyword arguments are passed to `SegmentRectangle`.
 
         Returns
         -------
-        collection : `~matplotlib.patches.PatchCollection`
-            list of `~matplotlib.patches.Rectangle` patches for active
-            segments
+        artists : `list` of `~matplotlib.patches.PatchCollection`
+            The list of patch collections that were drawn.
         """
         # get y axis position
         if y is None:
@@ -226,8 +294,12 @@ class SegmentAxes(Axes):
 
         # make active collection
         kwargs.setdefault("zorder", 0)
-        coll = self.plot_segmentlist(flag.active, y=y, label=name,
-                                     **kwargs)
+        coll = self.plot_segmentlist(
+            flag.active,
+            y=y,
+            label=name,
+            **kwargs,
+        )
 
         # make known collection
         if known not in (None, False):
@@ -239,44 +311,62 @@ class SegmentAxes(Axes):
             if isinstance(known, dict):
                 known_kw.update(known)
             elif known == "fancy":
-                known_kw.update(height=kwargs.get("height", .8)*.05)
+                known_kw.update(height=kwargs.get("height", .8) * .05)
             elif known in HATCHES:
                 known_kw.update(fill=False, hatch=known)
             else:
-                known_kw.update(fill=True, facecolor=known,
-                                height=kwargs.get("height", .8)*.5)
+                known_kw.update(
+                    fill=True,
+                    facecolor=known,
+                    height=kwargs.get("height", .8) * .5,
+                )
             self.plot_segmentlist(flag.known, y=y, label=name, **known_kw)
 
-        return coll  # return active collection
+        return coll
 
-    def plot_segmentlist(self, segmentlist, y=None, height=.8, label=None,
-                         collection=True, rasterized=None, **kwargs):
+    def plot_segmentlist(
+        self,
+        segmentlist: segmentlist,
+        y: float | None = None,
+        height: float = .8,
+        label: str | None = None,
+        *,
+        collection: bool = True,
+        rasterized: bool | None = None,
+        **kwargs,
+    ) -> PatchCollection | list[SegmentRectangle]:
         """Plot a `~gwpy.segments.SegmentList` onto these axes.
 
         Parameters
         ----------
         segmentlist : `~gwpy.segments.SegmentList`
-            list of segments to display
+            List of segments to display.
 
         y : `float`, optional
-            y-axis value for new segments
+            Y-axis value for new segments.
 
-        collection : `bool`, default: `True`
-            add all patches as a
-            `~matplotlib.collections.PatchCollection`, doesn't seem
-            to work for hatched rectangles
+        height : `float`, optional
+            Height (in y-axis units) for segment.
+
+        collection : `bool`, optional
+            If `True` (default), bundle all patches as a
+            `~matplotlib.collections.PatchCollection`, otherwise
+            just return a `list` of `SegmentRectangle` patches.
+
+        rasterized : `bool`, optional
+            If `True`, rasterise the patches when drawing.
+            Default is `False`.
 
         label : `str`, optional
             custom descriptive name to print as y-axis tick label
 
-        **kwargs
-            any other keyword arguments acceptable for
-            `~matplotlib.patches.Rectangle`
+        kwargs
+            All other keyword arguments are passed to `SegmentRectangle`.
 
         Returns
         -------
-        collection : `~matplotlib.patches.PatchCollection`
-            list of `~matplotlib.patches.Rectangle` patches
+        patches : `~matplotlib.patches.PatchCollection` or `list[SegmentRectangle]`
+            The drawn patches, bundled in a `PatchCollection` if ``collection=True``.
         """
         # get colour
         facecolor = kwargs.pop("facecolor", kwargs.pop("color", "#629fca"))
@@ -288,12 +378,23 @@ class SegmentAxes(Axes):
             y = self.get_next_y()
 
         # build patches
-        patches = [SegmentRectangle(seg, y, height=height, facecolor=facecolor,
-                                    **kwargs) for seg in segmentlist]
+        patches = [
+            SegmentRectangle(
+                seg,
+                y,
+                height=height,
+                facecolor=facecolor,
+                **kwargs,
+            )
+            for seg in segmentlist
+        ]
 
         if collection:  # map to PatchCollection
-            coll = PatchCollection(patches, match_original=patches,
-                                   zorder=kwargs.get("zorder", 1))
+            coll = PatchCollection(
+                patches,
+                match_original=patches,
+                zorder=kwargs.get("zorder", 1),
+            )
             coll.set_rasterized(rasterized)
             coll._ignore = collection == "ignore"
             coll._ypos = y
@@ -310,43 +411,55 @@ class SegmentAxes(Axes):
             for patch in patches:
                 patch.set_label(label)
                 patch.set_rasterized(rasterized)
-                label = ""
+                label = ""  # don't label any other patches
                 out.append(self.add_patch(patch))
         self.autoscale(enable=None, axis="both", tight=False)
         return out
 
-    def plot_segmentlistdict(self, segmentlistdict, y=None, dy=1, **kwargs):
-        """Plot a `~gwpy.segments.SegmentListDict` onto
-        these axes.
+    def plot_segmentlistdict(
+        self,
+        segmentlistdict: segmentlistdict,
+        y: float | None = None,
+        dy: float = 1,
+        **kwargs,
+    ) -> PatchCollection | list[SegmentRectangle]:
+        """Plot a `~gwpy.segments.SegmentListDict` onto these axes.
 
         Parameters
         ----------
         segmentlistdict : `~gwpy.segments.SegmentListDict`
-            (name, `~gwpy.segments.SegmentList`) dict
+            (name, `~gwpy.segments.SegmentList`) dict.
 
         y : `float`, optional
-            starting y-axis value for new segmentlists
+            Starting y-axis value for new segmentlists.
 
-        **kwargs
-            any other keyword arguments acceptable for
-            `~matplotlib.patches.Rectangle`
+        dy : `float`, optional
+            Y-axis separation between each (anchor of each) segmentlist.
+
+        kwargs
+            All other keyword arguments are passed to
+            `~matplotlib.patches.Rectangle`.
 
         Returns
         -------
-        collections : `list`
-            list of `~matplotlib.patches.PatchCollection` sets for
-            each segmentlist
+        collections : `list` of `PatchCollection`
+            List of `~matplotlib.patches.PatchCollection` sets for
+            each segmentlist.
         """
         if y is None:
             y = self.get_next_y()
         collections = []
         for name, segmentlist in segmentlistdict.items():
-            collections.append(self.plot_segmentlist(segmentlist, y=y,
-                                                     label=name, **kwargs))
+            collections.append(self.plot_segmentlist(
+                segmentlist,
+                y=y,
+                label=name,
+                **kwargs,
+            ))
             y += dy
         return collections
 
-    def get_next_y(self):
+    def get_next_y(self) -> int:
         """Find the next y-axis value at which a segment list can be placed.
 
         This method simply counts the number of independent segmentlists or
@@ -354,62 +467,69 @@ class SegmentAxes(Axes):
         """
         return len(self.get_collections(ignore=False))
 
-    def get_collections(self, ignore=None):
+    def get_collections(self, ignore: bool | None = None) -> list[Collection]:
         """Return the collections matching the given `_ignore` value.
 
         Parameters
         ----------
         ignore : `bool`, or `None`
-            value of `_ignore` to match
+            Value of `_ignore` to match.
 
         Returns
         -------
-        collections : `list`
-            if `ignore=None`, simply returns all collections, otherwise
-            returns those collections matching the `ignore` parameter
+        collections : `list` of `~matplotlib.collections.Collection`
+            If `ignore=None`, simply returns all collections, otherwise
+            returns those collections matching the `ignore` parameter.
         """
         if ignore is None:
             return self.collections
-        return [c for c in self.collections if
-                getattr(c, "_ignore", None) == ignore]
+        return [
+            c for c in self.collections
+            if getattr(c, "_ignore", None) == ignore
+        ]
 
-    def set_insetlabels(self, inset=None):
+    def set_insetlabels(self, inset: bool | None = None) -> None:
         """Set the labels to be inset or not.
 
         Parameters
         ----------
         inset : `bool`, `None`
-            if `None`, toggle the inset state, otherwise set the labels to
-            be inset (`True) or not (`False`)
+            Enable (`True`) or disable (`False`) inset labels.
+            Default (`None`) toggles the current state.
         """
-        # pylint: disable=attribute-defined-outside-init
         self._insetlabels = not self._insetlabels if inset is None else inset
 
-    def get_insetlabels(self):
-        """Returns the inset labels state."""
+    def get_insetlabels(self) -> bool:
+        """Return the inset labels state."""
         return self._insetlabels
 
-    insetlabels = property(fget=get_insetlabels, fset=set_insetlabels,
-                           doc=get_insetlabels.__doc__)
+    insetlabels = property(
+        fget=get_insetlabels,
+        fset=set_insetlabels,
+        doc=get_insetlabels.__doc__,
+    )
 
     @allow_rasterization
-    def draw(self, *args, **kwargs):  # pylint: disable=missing-docstring
+    @wraps(Axes.draw)
+    def draw(self, renderer: RendererBase) -> None:
+        """Draw the current `SegmentAxes`."""
         # inset the labels if requested
         for tick in self.get_yaxis().get_ticklabels():
             if self.get_insetlabels():
                 # record parameters we are changing
-                # pylint: disable=protected-access
                 tick._orig_bbox = tick.get_bbox_patch()
                 tick._orig_ha = tick.get_ha()
                 tick._orig_pos = tick.get_position()
                 # modify tick
                 tick.set_horizontalalignment("left")
                 tick.set_position((0.01, tick.get_position()[1]))
-                tick.set_bbox({"alpha": 0.5, "facecolor": "white",
-                               "edgecolor": "none"})
+                tick.set_bbox({
+                    "alpha": 0.5,
+                    "edgecolor": "none",
+                    "facecolor": "white",
+                })
             elif self.get_insetlabels() is False:
                 # if label has been moved, reset things
-                # pylint: disable=protected-access
                 try:
                     tick.set_bbox(tick._orig_bbox)
                 except AttributeError:
@@ -420,7 +540,7 @@ class SegmentAxes(Axes):
                     del tick._orig_bbox
                     del tick._orig_ha
                     del tick._orig_pos
-        return super().draw(*args, **kwargs)
+        return super().draw(renderer)
 
     draw.__doc__ = Axes.draw.__doc__
 
@@ -430,60 +550,87 @@ register_projection(SegmentAxes)
 
 class SegmentFormatter(Formatter):
     """Custom tick formatter for y-axis flag names."""
-    def __call__(self, t, pos=None):
+
+    def __call__(
+        self,
+        t: float,
+        pos: float | None = None,  # noqa: ARG002
+    ) -> str:
+        """Format ticks using segment names."""
+        ax = self.axis.axes
+
         # if segments have been plotted at this y-axis value, continue
-        for coll in self.axis.axes.get_collections(ignore=False):
-            if t == coll._ypos:  # pylint: disable=protected-access
+        for coll in ax.get_collections(ignore=False):
+            if t == getattr(coll, "_ypos", None):
                 return coll.get_label()
-        for patch in self.axis.axes.patches:
+
+        for patch in ax.patches:
+            # if this patch doesn't have a label or doesn't want one, carry on
             if not patch.get_label() or patch.get_label() == "_nolegend_":
                 continue
+            # otherwise if the axis position overlaps the bbox, emit the
+            # patch label as the tick label
             if t in igwn_segments.segment(*patch.get_bbox().intervaly):
                 return patch.get_label()
+
         return ""
 
 
-# -- segment patch ------------------------------------------------------------
+# -- segment patch -------------------
 
 class SegmentRectangle(Rectangle):
-    def __init__(self, segment, y, height=.8, valign="center", **kwargs):
+    """Custom `~matplotlib.patches.Rectangle` for a `~gwpy.segments.Segment`."""
+
+    def __init__(
+        self,
+        segment: segment,
+        y: float,
+        height: float = .8,
+        valign: Literal["top", "center", "bottom"] = "center",
+        **kwargs,
+    ) -> None:
         """Build a `~matplotlib.patches.Rectangle` from a segment.
 
         Parameters
         ----------
         segment : `~gwpy.segments.Segment`
-            ``[start, stop)`` GPS segment
+            ``[start, stop)`` GPS segment.
 
         y : `float`
-            y-axis position for segment
+            Y-axis position for segment.
 
-        height : `float`, optional, default: 1
-            height (in y-axis units) for segment
+        height : `float`, optional
+            Height (in y-axis units) for segment.
 
-        valign : `str`
-            alignment of segment on y-axis value:
-                `top`, `center`, or `bottom`
+        valign : `str`, optional
+            Alignment of segment on y-axis value, one of
+            ``"top"``, ``"center"``, or ``"bottom"``.
+            Default: ``"center"``.
 
-        **kwargs
-            any other keyword arguments acceptable for
-            `~matplotlib.patches.Rectangle`
+        kwargs
+            All other keyword arguments are passed to
+            `~matplotlib.patches.Rectangle`.
 
-        Returns
-        -------
-        box : `~matplotlib.patches.Rectangle`
-            rectangle patch for segment display
+        Raises
+        ------
+        ValueError
+            If an invalid ``valign`` value is given.
         """
         if valign.lower() == "bottom":
             y0 = y
-        elif valign.lower() in ["center", "centre"]:
-            y0 = y - height/2.
+        elif valign.lower() in {"center", "centre"}:
+            y0 = y - height / 2.
         elif valign.lower() == "top":
             y0 = y - height
         else:
-            raise ValueError("valign must be one of 'top', 'center', or "
-                             "'bottom'")
+            msg = "valign must be one of 'top', 'center', or 'bottom'"
+            raise ValueError(msg)
         width = segment[1] - segment[0]
 
-        super().__init__((segment[0], y0), width=width,
-                         height=height, **kwargs)
+        super().__init__(
+            (segment[0], y0),
+            width=width,
+            height=height,
+            **kwargs,
+        )
         self.segment = segment
