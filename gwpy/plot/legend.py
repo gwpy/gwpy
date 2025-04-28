@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2019-2022)
+# Copyright (c) 2019-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -17,7 +17,18 @@
 
 """Extensions of `~matplotlib.legend` for gwpy."""
 
+from __future__ import annotations
+
+import typing
+
 from matplotlib import legend_handler
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from matplotlib.artist import Artist
+    from matplotlib.legend import Legend
+    from matplotlib.transforms import Transform
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -30,22 +41,42 @@ class HandlerLine2D(legend_handler.HandlerLine2D):
     linewidth : `float`, optional
         the linewidth to use when drawing lines on the legend
 
-    **kw
-        all keywords are passed to `matplotlib.legend_handler.HandlerLine2D`
+    kwargs
+        All keyword arguments are passed to
+        :class`matplotlib.legend_handler.HandlerLine2D`.
 
-    See also
+    See Also
     --------
     matplotlib.legend_handler.HanderLine2D
-        for all information
+        For all information.
     """
-    def __init__(self, linewidth=6., **kw):
-        super().__init__(**kw)
+
+    def __init__(self, linewidth: float = 6., **kwargs) -> None:
+        """Initialise a new `HandlerLine2D`."""
+        super().__init__(**kwargs)
         self._linewidth = linewidth
 
-    def create_artists(self, *args, **kwargs):
+    def create_artists(
+        self,
+        legend: Legend,
+        orig_handle: Artist,
+        xdescent: float,
+        ydescent: float,
+        width: float,
+        height: float,
+        fontsize: float,
+        trans: Transform,
+    ) -> Sequence[Artist]:
+        """Create artists for this legend handler."""
         artists = super().create_artists(
-            *args,
-            **kwargs,
+            legend,
+            orig_handle,
+            xdescent,
+            ydescent,
+            width,
+            height,
+            fontsize,
+            trans,
         )
         artists[0].set_linewidth(self._linewidth)
         return artists
