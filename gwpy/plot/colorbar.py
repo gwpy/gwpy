@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2017)
-#               Cardiff University (2017-2025)
+# Copyright (c) 2017-2025 Cardiff University
+#               2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -354,7 +354,7 @@ def _colorbar_bounds(
     location = location.lower()
 
     # calculate default width and padding for the relevant orientation
-    orientation = "vertical" if location in ("left", "right") else "horizontal"
+    orientation = "vertical" if location in {"left", "right"} else "horizontal"
     if orientation == "vertical":
         size = _scale_width(.1, ax)
     elif orientation == "horizontal":
@@ -385,9 +385,9 @@ def _make_inset_axes(
 ) -> tuple[Axes, dict[str, Any]]:
     """Create a new `Axes` to support a colorbar using `Axes.inset_axes`."""
     # set default orientation
-    if location in ("left", "right"):
+    if location in {"left", "right"}:
         orientation = kwargs.setdefault("orientation", "vertical")
-    elif location in ("top", "bottom"):
+    elif location in {"top", "bottom"}:
         orientation = kwargs.setdefault("orientation", "horizontal")
     else:
         msg = f"inset Axes location '{location}' not recognised"
