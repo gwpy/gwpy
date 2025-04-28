@@ -98,6 +98,9 @@ LIVETIME = DataQualityFlag(
 )
 
 GWOSC_DATAFIND_SERVER = "datafind.gwosc.org"
+
+# Description of GW150914 for tests
+# This is used in various tests
 GWOSC_GW150914_IFO = "L1"
 GWOSC_GW150914_CHANNEL = "L1:GWOSC-16KHZ_R1_STRAIN"
 NDS2_GW150914_CHANNEL = "L1:DCS-CALIB_STRAIN_C02"
@@ -105,15 +108,19 @@ GWOSC_GW150914_FRAMETYPE = "L1_LOSC_16_V1"
 GWOSC_GW150914 = 1126259462
 GWOSC_GW150914_SEGMENT = Segment(GWOSC_GW150914-2, GWOSC_GW150914+2)
 GWOSC_GW150914_SEGMENT_32 = Segment(GWOSC_GW150914-16, GWOSC_GW150914+16)
+GWOSC_GW150914_DQ_NAME = {
+    "hdf5": "quality/simple",
+    "gwf": "L1:GWOSC-4KHZ_R1_DQMASK",
+}
 GWOSC_GW150914_DQ_BITS = {
     "hdf5": [
-        "data present",
-        "passes cbc CAT1 test",
-        "passes cbc CAT2 test",
-        "passes cbc CAT3 test",
-        "passes burst CAT1 test",
-        "passes burst CAT2 test",
-        "passes burst CAT3 test",
+        "Passes DATA test",
+        "Passes CBC_CAT1 test",
+        "Passes CBC_CAT2 test",
+        "Passes CBC_CAT3 test",
+        "Passes BURST_CAT1 test",
+        "Passes BURST_CAT2 test",
+        "Passes BURST_CAT3 test",
     ],
     "gwf": [
         "DATA",
@@ -125,6 +132,46 @@ GWOSC_GW150914_DQ_BITS = {
         "BURST_CAT3",
     ],
 }
+GWOSC_GW150914_INJ_NAME = {
+    "hdf5": "quality/injections",
+    "gwf": "L1:GWOSC-4KHZ_R1_INJMASK",
+}
+GWOSC_GW150914_INJ_BITS = {
+    "hdf5": [
+        "Passes NO_CBC_HW_INJ test",
+        "Passes NO_BURST_HW_INJ test",
+        "Passes NO_DETCHAR_HW_INJ test",
+        "Passes NO_CW_HW_INJ test",
+        "Passes NO_STOCH_HW_INJ test",
+    ],
+    "gwf": [
+        "NO_CBC_HW_INJ",
+        "NO_BURST_HW_INJ",
+        "NO_DETCHAR_HW_INJ",
+        "NO_CW_HW_INJ",
+        "NO_STOCH_HW_INJ",
+    ],
+}
+
+# Description of GW190814
+# This is used in various tests in particular to test GWOSC new file format
+# (but not for NDS and DataFind)
+GWOSC_GW190814_IFO = "L1"
+GWOSC_GW190814_CHANNEL = "L1:GWOSC-16KHZ_R1_STRAIN"
+GWOSC_GW190814 = 1249852257
+GWOSC_GW190814_SEGMENT = Segment(GWOSC_GW190814-2, GWOSC_GW190814+2)
+GWOSC_GW190814_SEGMENT_32 = Segment(GWOSC_GW190814-16, GWOSC_GW190814+16)
+GWOSC_GW190814_DQ_NAME =  {
+    "hdf5": "L1:GWOSC-4KHZ_R1_DQMASK",
+    "gwf": "L1:GWOSC-4KHZ_R1_DQMASK",
+}
+GWOSC_GW190814_DQ_BITS = GWOSC_GW150914_DQ_BITS
+GWOSC_GW190814_INJ_NAME = {
+    "hdf5": "L1:GWOSC-4KHZ_R1_INJMASK",
+    "gwf": "L1:GWOSC-4KHZ_R1_INJMASK",
+}
+GWOSC_GW190814_INJ_BITS = GWOSC_GW150914_INJ_BITS
+
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
