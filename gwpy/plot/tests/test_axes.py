@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2018-2022)
+# Copyright (c) 2018-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -15,39 +15,48 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.plot`."""
-
-import pytest
+"""Tests for :mod:`gwpy.plot`."""
 
 import numpy
-
-from matplotlib import (
-    rcParams,
-)
+import pytest
+from matplotlib import rcParams
 from matplotlib.collections import PolyCollection
 from matplotlib.lines import Line2D
-
+from numpy.random import default_rng
 from packaging.version import Version
 
-from ...time import to_gps
-from ...types import (Series, Array2D)
 from ...testing import utils
+from ...time import to_gps
+from ...types import (
+    Array2D,
+    Series,
+)
 from .. import Axes
 from ..axes import matplotlib_version
 from .utils import AxesTestBase
 
-numpy.random.seed(0)
+RNG = default_rng(seed=0)
+
+parametrize_sortbycolor = pytest.mark.parametrize("sortbycolor", [False, True])
 
 
 class TestAxes(AxesTestBase):
+    """Tests of `gwpy.plot.Axes`."""
+
     AXES_CLASS = Axes
 
     def test_plot(self, ax):
+        """Test `Axes.plot`."""
         series = Series(range(10), dx=.1)
         lines = ax.plot(
+            # line 1 (Series, no args)
             series,
-            series * 2, "k--",
+            # line 2 (Series, specific plotargs)
+            series * 2,
+            "k--",
+            # line 3 (arrays, specific plotargs)
             series.xindex, series, "b-",
+            # line 4 (lists, no args)
             [1, 2, 3], [4, 5, 6],
         )
 
@@ -79,48 +88,45 @@ class TestAxes(AxesTestBase):
         utils.assert_array_equal(linex, [1, 2, 3])
         utils.assert_array_equal(liney, [4, 5, 6])
 
-    @pytest.mark.parametrize("sortbycolor", (False, True))
+    @parametrize_sortbycolor
     def test_scatter(self, ax, sortbycolor):
+        """Test `Axes.scatter`."""
         x = numpy.arange(10)
         y = numpy.arange(10)
-        c = numpy.random.random(10)
+        c = RNG.random(size=10)
         coll = ax.scatter(x, y, c=c, sortbycolor=sortbycolor)
         if sortbycolor:  # sort the colours now
             c = c[numpy.argsort(c)]
         # check that the colour array is in the right order
         utils.assert_array_equal(coll.get_array(), c)
 
-    def test_scatter_c_sort(self, ax):
-        x = numpy.arange(10)
-        y = numpy.arange(10)
-        c = numpy.random.random(10)
-        with pytest.deprecated_call():
-            coll = ax.scatter(x, y, c=c, c_sort=True)
-        utils.assert_array_equal(coll.get_array(), c[numpy.argsort(c)])
-
-    @pytest.mark.parametrize("sortbycolor", (False, True))
+    @parametrize_sortbycolor
     def test_scatter_no_color(self, ax, sortbycolor):
+        """Test `Axes.scatter(... c=None)`."""
         # check that c=None works
         x = numpy.arange(10)
         y = numpy.arange(10)
         ax.scatter(x, y, c=None, sortbycolor=sortbycolor)
 
-    @pytest.mark.parametrize("sortbycolor", (False, True))
+    @parametrize_sortbycolor
     def test_scatter_non_array(self, ax, sortbycolor):
+        """Test `Axes.scatter` with non-array arguments."""
         # check that using non-array data works
         ax.scatter([1], [1], c=[1], sortbycolor=sortbycolor)
 
-    @pytest.mark.parametrize("sortbycolor", (False, True))
+    @parametrize_sortbycolor
     def test_scatter_positional(self, ax, sortbycolor):
+        """Test `Axes.scatter` with positional arguments."""
         # check that using positional arguments works
         x = numpy.arange(10)
         y = numpy.arange(10)
-        s = numpy.random.random(10)
-        c = numpy.random.random(10)
+        s = RNG.random(size=10)
+        c = RNG.random(size=10)
         ax.scatter(x, y, s, c, sortbycolor=sortbycolor)
 
-    @pytest.mark.parametrize("sortbycolor", (False, True))
+    @parametrize_sortbycolor
     def test_scatter_errors(self, ax, sortbycolor):
+        """Test `Axes.scatter` error handling."""
         # check that errors are handled properly
         x = 1
         y = "B"
@@ -133,8 +139,9 @@ class TestAxes(AxesTestBase):
             ax.scatter(x, y, c=c, sortbycolor=sortbycolor)
 
     def test_imshow(self, ax):
+        """Test `Axes.imshow`."""
         # standard imshow call
-        array = numpy.random.random((10, 10))
+        array = RNG.random(size=(10, 10))
         image2 = ax.imshow(array)
         utils.assert_array_equal(image2.get_array(), array)
         assert tuple(image2.get_extent()) == (
@@ -145,8 +152,9 @@ class TestAxes(AxesTestBase):
         )
 
     def test_imshow_array2d(self, ax):
+        """Test `Axes.imshow(<Array2D>)`."""
         # overloaded imshow call (Array2D)
-        array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
+        array = Array2D(RNG.random(size=(10, 10)), dx=.1, dy=.2)
         image = ax.imshow(array)
         utils.assert_array_equal(image.get_array(), array.value.T)
         assert tuple(image.get_extent()) == (
@@ -169,8 +177,9 @@ class TestAxes(AxesTestBase):
         )
 
     def test_pcolormesh(self, ax):
-        array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
-        ax.grid(True, which="both", axis="both")
+        """Test `Axes.pcolormesh`."""
+        array = Array2D(RNG.random(size=(10, 10)), dx=.1, dy=.2)
+        ax.grid(visible=True, which="both", axis="both")
         mesh = ax.pcolormesh(array)
         if matplotlib_version >= Version("3.8.0"):
             utils.assert_array_equal(mesh.get_array(), array.T)
@@ -180,14 +189,15 @@ class TestAxes(AxesTestBase):
                                  (array.xspan[1], array.yspan[1]))
         # check that axes were preserved
         assert all((
-            ax.xaxis._major_tick_kw["gridOn"],
-            ax.xaxis._minor_tick_kw["gridOn"],
-            ax.yaxis._major_tick_kw["gridOn"],
-            ax.yaxis._minor_tick_kw["gridOn"],
+            ax.xaxis._major_tick_kw["gridOn"],  # noqa: SLF001
+            ax.xaxis._minor_tick_kw["gridOn"],  # noqa: SLF001
+            ax.yaxis._major_tick_kw["gridOn"],  # noqa: SLF001
+            ax.yaxis._minor_tick_kw["gridOn"],  # noqa: SLF001
         ))
 
     def test_hist(self, ax):
-        x = numpy.random.random(100) + 1
+        """Test `Axes.hist`."""
+        x = RNG.random(size=100) + 1
         min_ = numpy.min(x)
         max_ = numpy.max(x)
         n, bins, patches = ax.hist(x, logbins=True, bins=10, weights=1.)
@@ -208,6 +218,7 @@ class TestAxes(AxesTestBase):
         ax.hist([], logbins=True, range=(1, 100))
 
     def test_tile(self, ax):
+        """Test `Axes.tile`."""
         x = numpy.arange(10)
         y = numpy.arange(x.size)
         w = numpy.ones_like(x) * .8
@@ -228,33 +239,25 @@ class TestAxes(AxesTestBase):
                 ]),
             )
 
-    @pytest.mark.parametrize("sortbycolor", (False, True))
+    @parametrize_sortbycolor
     def test_tile_sortbycolor(self, ax, sortbycolor):
+        """Test `Axes.tile` with ``sortbycolor``."""
         x = numpy.arange(10)
         y = numpy.arange(x.size)
         w = numpy.ones_like(x) * .8
         h = numpy.ones_like(x) * .8
 
         # check colour works with sorting (by default)
-        c = numpy.random.random(x.size)
+        c = RNG.random(size=x.size)
         coll2 = ax.tile(x, y, w, h, color=c, sortbycolor=sortbycolor)
         if sortbycolor:
             utils.assert_array_equal(coll2.get_array(), numpy.sort(c))
         else:
             utils.assert_array_equal(coll2.get_array(), c)
 
-    def test_tile_c_sort(self, ax):
-        x = numpy.arange(10)
-        y = numpy.arange(x.size)
-        w = numpy.ones_like(x) * .8
-        h = numpy.ones_like(x) * .8
-        c = numpy.random.random(x.size)
-        with pytest.deprecated_call():
-            coll2 = ax.tile(x, y, w, h, color=c, c_sort=True)
-        utils.assert_array_equal(coll2.get_array(), numpy.sort(c))
-
-    @pytest.mark.parametrize("anchor", ("lr", "ul", "ur", "center"))
+    @pytest.mark.parametrize("anchor", ["lr", "ul", "ur", "center"])
     def test_tile_anchors(self, ax, anchor):
+        """Test `Axes.tile` for various anchor values."""
         # check anchor parsing
         x = numpy.arange(10)
         y = numpy.arange(x.size)
@@ -263,11 +266,15 @@ class TestAxes(AxesTestBase):
         ax.tile(x, y, w, h, anchor=anchor)
 
     def test_tile_anchor_error(self, ax):
+        """Test `Axes.tile` with bad anchor value."""
         x = numpy.arange(10)
         y = numpy.arange(x.size)
         w = numpy.ones_like(x) * .8
         h = numpy.ones_like(x) * .8
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="unrecognised tile anchor 'blah'",
+        ):
             ax.tile(x, y, w, h, anchor="blah")
 
     @pytest.mark.parametrize("cb_kw", [
@@ -275,8 +282,9 @@ class TestAxes(AxesTestBase):
         {"fraction": 0.15},  # matplotlib default
     ])
     def test_colorbar(self, ax, cb_kw):
+        """Test `Axes.colorbar`."""
         pos = ax.get_position().bounds
-        array = Array2D(numpy.random.random((10, 10)), dx=.1, dy=.2)
+        array = Array2D(RNG.random(size=(10, 10)), dx=.1, dy=.2)
         mesh = ax.pcolormesh(array)
         cbar = ax.colorbar(vmin=2, vmax=4, **cb_kw)
         assert cbar.mappable is mesh
@@ -289,6 +297,7 @@ class TestAxes(AxesTestBase):
             assert ax.get_position().bounds != pos
 
     def test_legend(self, ax):
+        """Test `Axes.legend`."""
         ax.plot(numpy.arange(5), label="test")
         leg = ax.legend()
         lframe = leg.get_frame()
@@ -297,13 +306,15 @@ class TestAxes(AxesTestBase):
             assert line.get_linewidth() == 6.
 
     def test_legend_no_handler_map(self, ax):
+        """Test ``Axes.legend(handler_map=None)``."""
         ax.plot(numpy.arange(5), label="test")
         leg = ax.legend(handler_map=None)
         for line in leg.get_lines():
             assert line.get_linewidth() == rcParams["lines.linewidth"]
 
     def test_plot_mmm(self, ax):
-        mean_ = Series(numpy.random.random(10))
+        """Test `Axes.plot_mmm`."""
+        mean_ = Series(RNG.random(size=10))
         min_ = mean_ * .5
         max_ = mean_ * 1.5
 
@@ -315,6 +326,7 @@ class TestAxes(AxesTestBase):
         assert len(ax.collections) == 1
 
     def test_fmt_data(self, ax):
+        """Test `Axes.format_{x,y}data`."""
         value = 1234567890.123
         result = str(to_gps(value))
         assert ax.format_xdata(value) == (
@@ -326,6 +338,7 @@ class TestAxes(AxesTestBase):
         assert ax.format_ydata(value) == result
 
     def test_epoch(self, ax):
+        """Test `Axes.{get,set}_epoch()`."""
         ax.set_xscale("auto-gps")
         assert not ax.get_epoch()
         ax.set_epoch(12345)
