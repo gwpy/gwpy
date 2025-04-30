@@ -257,17 +257,17 @@ but is **not** backported to for use with :meth:`Table.read`.
 ``LIGO_LW`` XML
 ===============
 
-**Additional dependencies:** |python-ligo-lw|_
+**Additional dependencies:** |igwn-ligolw|_
 
 The LIGO Scientific Collaboration uses a custom scheme of XML in which to
 store tabular data, called ``LIGO_LW``.
-Complementing the scheme is a python library - |python-ligo-lw|_ - which
+Complementing the scheme is a python library - |igwn-ligolw|_ - which
 allows users to read and write all of the different types of tabular data
 produced by gravitational-wave searches.
 
 Reading and writing tables in ``LIGO_LW`` XML format is supported with
 ``format='ligolw', tablename=<tablename>'`` where ``<tablename>`` can be
-any of the supported LSC table names (see :mod:`ligo.lw.lsctables`).
+any of the supported LSC table names (see :mod:`igwn_ligolw.lsctables`).
 
 Reading
 -------
@@ -345,12 +345,12 @@ keyword argument:
    ...     columns=["peak_time", "peak_time_ns", "snr", "peak_frequency"],
    ... )
 
-Many LIGO_LW table objects (as defined in :mod:`ligo.lw.lsctables`) include
+Many LIGO_LW table objects (as defined in :mod:`igwn_ligolw.lsctables`) include
 utility functions to create new columns by combining others,
 e.g. to calculate the Q of a sine-Gaussian pulse from the duration and
 central frequency.
 These 'columns' can be requested directly, providing the
-:class:`ligo.lw.table.Table` representation of the data has a
+:class:`igwn_ligolw.table.Table` representation of the data has a
 :meth:`get_<name>` method for that name:
 
 .. code-block:: python
@@ -388,7 +388,7 @@ To force all columns to have real `numpy` data types, use the
 types to a standard `numpy.dtype`, e.g:
 
 .. code-block:: python
-   :name: gwpy-table-io-ligo-lw-use_numpy_dtypes
+   :name: gwpy-table-io-ligolw-use_numpy_dtypes
    :caption: Example of using ``use_numpy_dtypes=True`` when reading an `EventTable` from ``LIGO_LW`` XML.
 
    >>> t = EventTable.read(
@@ -438,7 +438,7 @@ preserving other tables, use *both* ``append=True`` and ``overwrite=True``:
 
 .. note::
 
-   The |python-ligo-lw| library reads and writes files using an updated
+   The |igwn-ligolw| library reads and writes files using an updated
    version of the ``LIGO_LW`` format compared to :mod:`glue.ligolw` used to.
    GWpy should support both format versions natively when _reading_, but
    only supports writing using the updated format.

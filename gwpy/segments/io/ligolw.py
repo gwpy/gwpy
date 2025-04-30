@@ -44,7 +44,7 @@ if typing.TYPE_CHECKING:
         TypeAlias,
     )
 
-    from ligo.lw.ligolw import (
+    from igwn_ligolw.ligolw import (
         Document,
         PartialContentHandler,
     )
@@ -56,8 +56,8 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 def segment_content_handler() -> PartialContentHandler:
     """Build a `~xml.sax.handlers.ContentHandler` to read segment XML tables."""
-    from ligo.lw.ligolw import PartialLIGOLWContentHandler
-    from ligo.lw.lsctables import (
+    from igwn_ligolw.ligolw import PartialLIGOLWContentHandler
+    from igwn_ligolw.lsctables import (
         SegmentDefTable,
         SegmentSumTable,
         SegmentTable,
@@ -84,7 +84,7 @@ def read_ligolw_dict(
 
     Parameters
     ----------
-    source : `file`, `str`, :class:`~ligo.lw.ligolw.Document`, `list`
+    source : `file`, `str`, :class:`~igwn_ligolw.ligolw.Document`, `list`
         One (or more) open files or file paths, or LIGO_LW `Document` objects.
 
     names : `list`, `None`, optional
@@ -151,7 +151,7 @@ def write_ligolw(flags, target, attrs=None, **kwargs):
     flags : `DataQualityFlag`, `DataQualityDict`
         `gwpy.segments` object to write
 
-    target : `str`, `file`, :class:`~ligo.lw.ligolw.Document`
+    target : `str`, `file`, :class:`~igwn_ligolw.ligolw.Document`
         the file or document to write into
 
     attrs : `dict`, optional

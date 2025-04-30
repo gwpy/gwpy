@@ -34,7 +34,7 @@ the performance of the LIGO detectors and downstream data analysis procedures.
 # %%
 # First, we import the `EventTable` object and read in a set of events from
 # a LIGO_LW-format XML file containing a
-# :class:`sngl_burst <ligo.lw.lsctables.SnglBurstTable>` table
+# :class:`sngl_burst <igwn_ligolw.lsctables.SnglBurstTable>` table
 from gwpy.table import EventTable
 events = EventTable.read(
     "H1-LDAS_STRAIN-968654552-10.xml.gz",

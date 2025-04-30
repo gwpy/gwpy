@@ -294,7 +294,7 @@ class TestFrequencySeries(_TestSeries):
         tmp.write_text(LIGO_LW_ARRAY)
         return tmp
 
-    @pytest.mark.requires("lal", "ligo.lw")
+    @pytest.mark.requires("lal", "igwn_ligolw")
     def test_read_ligolw(self, ligolw):
         array = FrequencySeries.read(ligolw, "PSD1")
         utils.assert_quantity_equal(
@@ -308,7 +308,7 @@ class TestFrequencySeries(_TestSeries):
         assert numpy.isclose(array.epoch.gps, 1000000000)  # precision gah!
         assert array.unit == units.Hz ** -1
 
-    @pytest.mark.requires("lal", "ligo.lw")
+    @pytest.mark.requires("lal", "igwn_ligolw")
     def test_read_ligolw_params(self, ligolw):
         array = FrequencySeries.read(
             ligolw,
@@ -317,7 +317,7 @@ class TestFrequencySeries(_TestSeries):
         assert list(array.value) == [10, 20, 30, 40, 50]
         assert array.epoch is None
 
-    @pytest.mark.requires("ligo.lw")
+    @pytest.mark.requires("igwn_ligolw")
     @pytest.mark.parametrize(("args", "match"), [
         # no name given, 'name' in error message
         ([], "read: 'channel', 'epoch', 'f0', 'name'$"),
@@ -332,12 +332,12 @@ class TestFrequencySeries(_TestSeries):
         ):  # multiple <Array> hits
             FrequencySeries.read(ligolw, *args)
 
-    @pytest.mark.requires("ligo.lw")
+    @pytest.mark.requires("igwn_ligolw")
     def test_read_ligolw_error_no_array(self, ligolw):
         with pytest.raises(ValueError, match="^no <Array> elements found"):
             FrequencySeries.read(ligolw, "blah")
 
-    @pytest.mark.requires("ligo.lw")
+    @pytest.mark.requires("igwn_ligolw")
     def test_read_ligolw_error_no_match(self, ligolw):
         with pytest.raises(ValueError):  # wrong epoch
             FrequencySeries.read(ligolw, epoch=0)
@@ -349,7 +349,7 @@ class TestFrequencySeries(_TestSeries):
                 f0=0,
             )
 
-    @pytest.mark.requires("ligo.lw")
+    @pytest.mark.requires("igwn_ligolw")
     def test_read_ligolw_error_no_param(self, ligolw):
         with pytest.raises(ValueError):  # no <Param>
             FrequencySeries.read(
@@ -358,7 +358,7 @@ class TestFrequencySeries(_TestSeries):
                 blah="blah",
             )
 
-    @pytest.mark.requires("ligo.lw")
+    @pytest.mark.requires("igwn_ligolw")
     def test_read_ligolw_error_dim(self, ligolw):
         with pytest.raises(ValueError):  # wrong dimensionality
             FrequencySeries.read(ligolw, epoch=1000000001)

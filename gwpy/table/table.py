@@ -202,7 +202,7 @@ class EventTable(Table):
         """Return the `Column` with the given name.
 
         This method is provided only for compatibility with the
-        :class:`ligo.lw.table.Table`.
+        :class:`igwn_ligolw.table.Table`.
 
         Parameters
         ----------

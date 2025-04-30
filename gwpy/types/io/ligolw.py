@@ -32,7 +32,7 @@ if typing.TYPE_CHECKING:
         Any,
     )
 
-    from ligo.lw import ligolw
+    from igwn_ligolw import ligolw
 
     from ...time import LIGOTimeGPS
     from ...typing import GpsLike
@@ -41,8 +41,8 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def series_contenthandler() -> ligolw.LIGOLwContentHandler:
-    """Build a `~ligo.lw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``."""
-    from ligo.lw import (
+    """Build a `~igwn_ligolw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``."""
+    from igwn_ligolw import (
         ligolw,
         array as ligolw_array,
         param as ligolw_param
@@ -51,7 +51,7 @@ def series_contenthandler() -> ligolw.LIGOLwContentHandler:
     @ligolw_array.use_in
     @ligolw_param.use_in
     class ArrayContentHandler(ligolw.LIGOLWContentHandler):
-        """`~ligo.lw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``."""
+        """`~igwn_ligolw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``."""
         pass
 
     return ArrayContentHandler
@@ -67,7 +67,7 @@ def _match_name(elem: ligolw.Element, name: str) -> bool:
 
 def _get_time(time: ligolw.Element) -> LIGOTimeGPS:
     """Return the Time element of a ``<LIGO_LW>``."""
-    from ligo.lw.ligolw import Time
+    from igwn_ligolw.ligolw import Time
     if not isinstance(time, Time):
         t, = time.getElementsByTagName(Time.tagName)
         return _get_time(t)
@@ -99,10 +99,9 @@ def _match_array(
 
     Raises ValueError if not exactly one match is found.
     """
-    from ligo.lw.ligolw import Array
-    from ligo.lw.param import (
+    from igwn_ligolw.ligolw import (
+        Array,
         Param,
-        get_param,
     )
 
     def _is_match(arr: ligolw.Array) -> bool:
@@ -115,7 +114,7 @@ def _match_array(
             return False
         for key, value in params.items():
             try:
-                if get_param(parent, key).pcdata != value:
+                if Param.get_param(parent, name=key).pcdata != value:
                     return False
             except ValueError:  # no Param with this Name
                 return False
@@ -163,8 +162,10 @@ def _update_metadata_from_ligolw(
     array: ligolw.Array,
     kwargs: dict[str, Any],
 ):
-    from ligo.lw.ligolw import Time
-    from ligo.lw.param import get_param
+    from igwn_ligolw.ligolw import (
+        Param,
+        Time,
+    )
 
     parent = array.parentNode
 
@@ -179,7 +180,7 @@ def _update_metadata_from_ligolw(
     # copy over certain other params, if they exist
     for key in ("channel",):
         try:
-            kwargs[key] = get_param(parent, key)
+            kwargs[key] = Param.get_param(parent, name=key)
         except ValueError:
             pass
 
@@ -197,7 +198,7 @@ def read_series(
 
     Parameters
     ----------
-    source : `file`, `str`, `~ligo.lw.ligolw.Document`
+    source : `file`, `str`, `~igwn_ligolw.ligolw.Document`
         File path or open ``LIGO_LW``-format XML file.
 
     name : `str`, optional
@@ -206,7 +207,7 @@ def read_series(
     epoch : `float`, `int`, optional
         GPS time epoch of ``<LIGO_LW>`` element to read.
 
-    contenthandler : `~ligo.lw.ligolw.ContentHandler`, optional
+    contenthandler : `~igwn_ligolw.ligolw.ContentHandler`, optional
         The content handler to use when parsing the document.
 
     params
@@ -218,7 +219,7 @@ def read_series(
     series : `~gwpy.types.Series`
         A series with metadata read from the ``<Array>``.
     """
-    from ligo.lw.ligolw import Dim
+    from igwn_ligolw.ligolw import Dim
 
     # read document and find relevant <Array> element
     xmldoc = read_ligolw(

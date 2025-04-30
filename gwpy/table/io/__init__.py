@@ -28,11 +28,11 @@ reg.wrap_unified_io_readers(EventTable)
 from . import (  # noqa: E402
     cwb,  # cWB ROOT and ASCII formats
     gravityspy,  # Gravity Spy Triggers
-    gstlal,  # GstLAL ligo.lw XML format
+    gstlal,  # GstLAL LIGO_LW XML format
     gwf,  # GWF FrEvents (e.g. MBTA)
     gwosc,  # GWOSC
     hacr,  # Hierarchichal Algorithm for Curves and Ridges
-    ligolw,  # ligo.lw XML format
+    ligolw,  # LIGO_LW XML format
     omega,  # Omega ASCII format
     omicron,  # Omicron ROOT format
     pycbc,  # PyCBC (Live) HDF5

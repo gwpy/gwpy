@@ -86,7 +86,7 @@ To replace an dataset in an existing file, while preserving other data, use *bot
 ``LIGO_LW`` XML
 ===============
 
-**Additional dependencies:** :mod:`python-ligo-lw`
+**Additional dependencies:** |igwn-ligolw|_
 
 Alongside storing :ref:`tabular data <gwpy-table-io-ligolw>`, the ``LIGO_LW``
 XML format allows storing array data.
@@ -97,7 +97,7 @@ for an array (name, GPS epoch, instrument, etc.), which contain an
 .. note::
 
    For more information on the format and the parsing library,
-   see :mod:`ligo.lw.array`.
+   see :mod:`igwn_ligolw.array`.
 
 Reading
 -------

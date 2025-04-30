@@ -52,7 +52,7 @@ def table():
 
 @pytest.fixture()
 def llwtable():
-    from ligo.lw.lsctables import (
+    from igwn_ligolw.lsctables import (
         New,
         SnglBurstTable,
     )
@@ -67,14 +67,14 @@ def llwtable():
 
 # -- conversions ---------------------
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_to_astropy_table(llwtable):
     tab = EventTable(llwtable)
     assert set(tab.colnames) == {"peak_frequency", "snr"}
     assert_array_equal(tab["snr"], llwtable.getColumnByName("snr"))
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_to_astropy_table_rename(llwtable):
     tab = EventTable(llwtable, rename={"peak_frequency": "frequency"})
     assert set(tab.colnames) == {"frequency", "snr"}
@@ -84,9 +84,9 @@ def test_to_astropy_table_rename(llwtable):
     )
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_to_astropy_table_empty():
-    from ligo.lw.lsctables import (
+    from igwn_ligolw.lsctables import (
         New,
         SnglBurstTable,
     )
@@ -104,7 +104,7 @@ def test_to_astropy_table_empty():
 
 @pytest.mark.parametrize("ext", ("xml", "xml.gz"))
 @pytest.mark.parametrize("table_class", (Table, EventTable))
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_write_ligolw(table, ext, table_class):
     utils.test_read_write(
         table,
@@ -122,7 +122,7 @@ def test_read_write_ligolw(table, ext, table_class):
 
 
 @pytest.mark.parametrize("use_numpy_dtypes", (False, True))
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_write_ligolw_types(use_numpy_dtypes):
     t2 = Table.read(
         TEST_XML_PATH,
@@ -134,11 +134,11 @@ def test_read_write_ligolw_types(use_numpy_dtypes):
     if use_numpy_dtypes:
         assert isinstance(peak, float)
     else:
-        from ligo.lw.lsctables import LIGOTimeGPS as LigolwGps
+        from igwn_ligolw.lsctables import LIGOTimeGPS as LigolwGps
         assert isinstance(peak, LigolwGps)
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_ligolw_multiple():
     """Test `Table.read(format='ligolw')` with multiple files."""
     t = EventTable.read(
@@ -152,7 +152,7 @@ def test_read_ligolw_multiple():
     utils.assert_table_equal(t2, vstack((t, t)))
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_write_ligolw_overwrite(table, tmp_path):
     # write the table once
     xml = tmp_path / "test.xml"
@@ -181,7 +181,7 @@ def test_write_ligolw_overwrite(table, tmp_path):
     )
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_write_ligolw_append(table, tmp_path):
     """Test `Table.write(format='ligolw', append=True)` extends a table."""
     # write the table once
@@ -197,7 +197,7 @@ def test_write_ligolw_append(table, tmp_path):
     )
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_write_ligolw_append_multiple_tables(table, tmp_path):
     """Test `Table.write(format='ligolw', append=True)` with different tables."""
     # write the first table
@@ -229,7 +229,7 @@ def test_write_ligolw_append_multiple_tables(table, tmp_path):
     )
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_write_ligolw_property_columns(tmp_path):
     """Test reading/writing LIGO_LW files handles property columns properlty.
 
@@ -284,13 +284,13 @@ def test_read_write_ligolw_property_columns(tmp_path):
     )
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_ligolw_get_as_exclude(tmp_path):
     """Test that reading LIGO_LW files handles columns whose names don't
     correspond to the `get_{name}` method on the parent table.
 
     E.g. the ``'time_slide'`` table has a column 'time_slide_id' and a
-    method `~ligo.lw.lsctables.TimeSlideTable.get_time_slide_id` that have
+    method `~igwn_ligolw.lsctables.TimeSlideTable.get_time_slide_id` that have
     nothing to do with each other.
     """
     # create a time_slide table with a 'time_slide_id' column
@@ -320,10 +320,10 @@ def test_read_ligolw_get_as_exclude(tmp_path):
     utils.assert_table_equal(t2, table)
 
 
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_process_table():
     """Regression test against gwpy/gwpy#1367."""
-    from ligo.lw.lsctables import (
+    from igwn_ligolw.lsctables import (
         New,
         ProcessTable,
     )
@@ -339,7 +339,7 @@ def test_read_process_table():
 
 
 @pytest_skip_network_error
-@pytest.mark.requires("ligo.lw.lsctables")
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_remote_file():
     """Test that we can read remote files over HTTP."""
     tab = EventTable.read(
