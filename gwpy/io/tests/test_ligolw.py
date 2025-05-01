@@ -65,10 +65,8 @@ OLD_FORMAT_LIGO_LW_XML = """
 @pytest.fixture(scope="function")
 def llwdoc():
     """Build an empty LIGO_LW Document."""
-    try:
-        from igwn_ligolw.ligolw import (Document, LIGO_LW)
-    except ImportError as exc:
-        pytest.skip(str(exc))
+    from igwn_ligolw.ligolw import (Document, LIGO_LW)
+
     xmldoc = Document()
     xmldoc.appendChild(LIGO_LW())
     return xmldoc
@@ -76,10 +74,7 @@ def llwdoc():
 
 def new_table(tablename, data=None, **new_kw):
     """Create a new LIGO_LW Table with data."""
-    try:
-        from igwn_ligolw import lsctables
-    except ImportError as exc:
-        pytest.skip(str(exc))
+    from igwn_ligolw import lsctables
     from igwn_ligolw.table import Table
 
     table = lsctables.New(
@@ -108,11 +103,13 @@ def llwdoc_with_tables(llwdoc):
 
 # -- tests --------------------------------------------------------------------
 
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_table(llwdoc_with_tables):
     tab = io_ligolw.read_table(llwdoc_with_tables, tablename="process")
     assert tab is llwdoc_with_tables.childNodes[0].childNodes[0]
 
 
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_table_empty(llwdoc):
     with pytest.raises(
         ValueError,
@@ -130,6 +127,7 @@ def test_read_table_ilwd(tmp_path):
     assert len(tab) == 3
 
 
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_table_multiple(llwdoc_with_tables):
     """Check that `gwpy.io.ligolw.read_table` correctly errors on ambiguity."""
     with pytest.raises(
@@ -139,6 +137,7 @@ def test_read_table_multiple(llwdoc_with_tables):
         io_ligolw.read_table(llwdoc_with_tables)
 
 
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_open_xmldoc(tmp_path, llwdoc_with_tables):
     tmp = tmp_path / "test.xml"
     # write a LIGO_LW file
@@ -154,6 +153,7 @@ def test_open_xmldoc(tmp_path, llwdoc_with_tables):
         )
 
 
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_open_xmldoc_new(tmp_path, llwdoc):
     from igwn_ligolw.ligolw import Document
     new = io_ligolw.open_xmldoc(tmp_path / "new.xml")
@@ -161,23 +161,27 @@ def test_open_xmldoc_new(tmp_path, llwdoc):
     assert not new.childNodes  # empty
 
 
+@pytest.mark.requires("igwn_ligolw")
 def test_get_ligolw_element(llwdoc):
     llw = llwdoc.childNodes[0]
     assert io_ligolw.get_ligolw_element(llw) is llw
     assert io_ligolw.get_ligolw_element(llwdoc) is llw
 
 
+@pytest.mark.requires("igwn_ligolw")
 def test_get_ligolw_element_error(llwdoc):
     # check that blank document raises an error
     with pytest.raises(ValueError):
         io_ligolw.get_ligolw_element(type(llwdoc)())
 
 
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_iter_tables(llwdoc_with_tables):
     expected = llwdoc_with_tables.childNodes[0].childNodes
     assert list(io_ligolw.iter_tables(llwdoc_with_tables)) == expected
 
 
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_list_tables(llwdoc_with_tables):
     names = [
         t.TableName(t.Name)
@@ -188,6 +192,7 @@ def test_list_tables(llwdoc_with_tables):
     assert io_ligolw.list_tables(llwdoc_with_tables) == names
 
 
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_list_tables_file(llwdoc_with_tables):
     # check that we can list from files
     names = [
@@ -214,6 +219,7 @@ def test_to_table_type(value, name, result):
     assert out == result
 
 
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_write_tables_to_document(llwdoc_with_tables):
     # create new table
     def _new():
@@ -245,6 +251,7 @@ def test_write_tables_to_document(llwdoc_with_tables):
     assert len(llw.childNodes[-1]) == 3
 
 
+@pytest.mark.requires("igwn_ligolw.lsctables")
 def test_write_tables(tmp_path):
     stab = new_table(
         "segment",
@@ -296,10 +303,12 @@ def test_is_ligolw_false():
     assert not io_ligolw.is_ligolw("read", None, None, 1)
 
 
+@pytest.mark.requires("igwn_ligolw")
 def test_is_ligolw_obj(llwdoc):
     assert io_ligolw.is_ligolw("read", None, None, llwdoc)
 
 
+@pytest.mark.requires("igwn_ligolw")
 def test_is_ligolw_file(llwdoc):
     with tempfile.TemporaryDirectory() as tmpdir:
         f = str(Path(tmpdir) / "test.xml")
