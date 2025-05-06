@@ -277,6 +277,7 @@ sphinx_gallery_conf = {
     "download_all_examples": False,
     "filename_pattern": r"/.*\.py",  # execute all examples
     "ignore_pattern": r"test_.*\.py",  # ignore example tests
+    "reset_modules": [],  # don't reset matplotlib (or seaborn)
     "write_computation_times": False,
     "within_subsection_order": "ExampleTitleSortKey",
     # FIXME: allow some examples to fail
