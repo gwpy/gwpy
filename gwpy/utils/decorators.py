@@ -22,7 +22,18 @@ from __future__ import annotations
 
 import warnings
 from functools import wraps
-from typing import Callable
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import (
+        ParamSpec,
+        TypeVar,
+    )
+
+    P = ParamSpec("P")
+    R = TypeVar("R")
+    ReturnType = TypeVar("ReturnType")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -34,27 +45,33 @@ DEPRECATED_FUNCTION_WARNING: str = (
 
 class deprecated_property(property):  # noqa: N801
     """Sub-class of `property` that invokes DeprecationWarning on every call."""
+
     def __init__(
         self,
         fget: Callable,
         fset: Callable | None = None,
         fdel: Callable | None = None,
         doc: str | None = None,
-    ):
+    ) -> None:
+        """Create a property that will issue a DeprecationWarning."""
         # get name  of property
         pname = fget.__name__
 
         # build a wrapper that will spawn a DeprecationWarning for all calls
-        def _warn(func):
+        def _warn(func: Callable[P, R]) -> Callable[P, R]:
+            """Wrap a function to issue a DeprecationWarning."""
             @wraps(func)
-            def _wrapped(self, *args, **kwargs):
+            def _wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
+                """Wrap a function to issue a DeprecationWarning."""
+                inst = args[0]
                 warnings.warn(
-                    f"the {type(self).__name__}.{pname} property is deprecated "
+                    f"the {type(inst).__name__}.{pname} property is deprecated "
                     "and will be removed in a future release, please stop "
                     "using it.",
-                    DeprecationWarning,
+                    category=DeprecationWarning,
+                    stacklevel=2,
                 )
-                return func(self, *args, **kwargs)
+                return func(*args, **kwargs)
 
             return _wrapped
 
@@ -73,7 +90,7 @@ def deprecated_function(
     func: Callable | None = None,
     message: str = DEPRECATED_FUNCTION_WARNING,
 ) -> Callable:
-    """Adds a `DeprecationWarning` to a function.
+    """Add a `DeprecationWarning` to a function.
 
     Parameters
     ----------
@@ -90,32 +107,38 @@ def deprecated_function(
     to the function itself.
     See the default message as an example.
     """
-    def _decorator(func):
+    def _decorator(func: Callable[P, R]) -> Callable[P, R]:
         @wraps(func)
-        def wrapped_func(*args, **kwargs):
+        def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> R:
             warnings.warn(
                 message.format(func),
                 category=DeprecationWarning,
                 stacklevel=2,
             )
             return func(*args, **kwargs)
+
         return wrapped_func
+
     if func:
         return _decorator(func)
     return _decorator
 
 
-def return_as(returntype: type) -> Callable:
-    """Decorator to cast return of function as the given type.
+def return_as(
+    returntype: Callable[[R], ReturnType],
+) -> Callable[[Callable[P, R]], Callable[P, ReturnType]]:
+    """Decorate a function to cast the return as the given type.
 
     Parameters
     ----------
     returntype : `type`
         the desired return type of the decorated function
     """
-    def decorator(func):
+    def decorator(func: Callable[P, R]) -> Callable[P, ReturnType]:
+        """Decorate a function to cast the return value as the given type."""
         @wraps(func)
-        def wrapped(*args, **kwargs):
+        def wrapped(*args: P.args, **kwargs: P.kwargs) -> ReturnType:
+            """Wrap a function to cast the return value as the given type."""
             result = func(*args, **kwargs)
             try:
                 return returntype(result)
@@ -125,6 +148,7 @@ def return_as(returntype: type) -> Callable:
                     f"{returntype.__name__}: {exc}",
                 )
                 raise
+
         return wrapped
 
     return decorator
