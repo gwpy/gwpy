@@ -18,23 +18,9 @@
 
 """Tests for :mod:`gwpy.utils.misc`."""
 
-import sys
-
 import pytest
 
 from .. import misc as utils_misc
-
-
-def test_gprint(capsys):
-    """Test for :func:`gwpy.utils.misc.gprint`."""
-    utils_misc.gprint("test")
-    assert capsys.readouterr().out == "test\n"
-    utils_misc.gprint("test", end=" ")
-    assert capsys.readouterr().out == "test "
-    utils_misc.gprint("test", end="x", file=sys.stderr)
-    cap = capsys.readouterr()
-    assert not cap.out
-    assert cap.err == "testx"
 
 
 def test_round_to_power():

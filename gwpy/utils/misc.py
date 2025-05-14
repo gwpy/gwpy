@@ -21,7 +21,6 @@
 from __future__ import annotations
 
 import math
-import sys
 import typing
 
 if typing.TYPE_CHECKING:
@@ -37,20 +36,6 @@ if typing.TYPE_CHECKING:
     T = TypeVar("T")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
-
-def gprint(
-    *values,
-    **kwargs,
-) -> None:
-    """Wrapper around `print` that flushes immediately."""
-    kwargs.setdefault("file", sys.stdout)
-    file_ = kwargs["file"]
-    print(*values, **kwargs)
-    file_.flush()
-
-
-gprint.__doc__ = print.__doc__
 
 
 def if_not_none(

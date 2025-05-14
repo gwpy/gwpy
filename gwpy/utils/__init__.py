@@ -19,7 +19,6 @@
 """Miscellaneous utilties for GWpy."""
 
 from .misc import (
-    gprint,
     if_not_none,
     round_to_power,
     unique,
