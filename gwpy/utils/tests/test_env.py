@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2018-)
+# Copyright (c) 2018-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -49,7 +49,7 @@ BOOL_ENV.update(BOOL_FALSE)
 
 @mock.patch.dict("os.environ", values=BOOL_ENV)
 @pytest.mark.parametrize(
-    "env, result",
+    ("env", "result"),
     [(k, True) for k in sorted(BOOL_TRUE)]
     + [(k, False) for k in sorted(BOOL_FALSE)],
 )
@@ -59,9 +59,9 @@ def test_bool_env(env, result):
 
 
 @mock.patch.dict("os.environ", values=BOOL_TRUE)
-@pytest.mark.parametrize("env, default, result", [
-    ("TEST_YES", False, True),
-    ("TEST_MISSING", True, True),
+@pytest.mark.parametrize(("env", "default", "result"), [
+    pytest.param("TEST_YES", False, True, id="ignore"),
+    pytest.param("TEST_MISSING", True, True, id="default"),
 ])
 def test_bool_env_default(env, default, result):
     """Test :meth:`gwpy.utils.env.bool_env` _with_ the `default` keyword."""
