@@ -18,10 +18,15 @@
 
 """Utilities for progress bars."""
 
+from __future__ import annotations
+
 import sys
-from typing import TextIO
+from typing import TYPE_CHECKING
 
 from tqdm import tqdm
+
+if TYPE_CHECKING:
+    from typing import TextIO
 
 TQDM_BAR_FORMAT: str = (
     "{desc}: |{bar}| "
