@@ -219,6 +219,8 @@ exclude_lines = [
   "pragma: no( |-)cover",
   # don't complain about typing blocks
   "if (typing\\.)?TYPE_CHECKING",
+  # don't complain about __main__ blocks
+  "if __name__ == '__main__'",
 ]
 omit = [
   # don't report coverage for _version.py
