@@ -28,20 +28,18 @@ if typing.TYPE_CHECKING:
         Callable,
         Iterable,
     )
-    from typing import (
-        Any,
-        TypeVar,
-    )
+    from typing import TypeVar
 
     T = TypeVar("T")
+    R = TypeVar("R")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def if_not_none(
-    func: Callable,
-    value: Any,
-) -> Any:
+    func: Callable[[T], R],
+    value: T,
+) -> R | None:
     """Apply func to value if value is not None.
 
     Examples
@@ -53,7 +51,7 @@ def if_not_none(
     None
     """
     if value is None:
-        return
+        return None
     return func(value)
 
 
@@ -100,11 +98,11 @@ def round_to_power(
         selector = math.floor
     elif which == "upper":
         selector = math.ceil
-    elif which is not None:
-        raise ValueError("'which' argument must be one of 'lower', "
-                         "'upper', or None")
-    else:
+    elif which is None:
         selector = round
+    else:
+        msg = "'which' argument must be one of 'lower', 'upper', or None"
+        raise ValueError(msg)
     return type(base)(base ** selector(math.log(x, base)))
 
 
