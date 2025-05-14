@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2019-)
+# Copyright (c) 2019-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -29,6 +29,8 @@ class _MyEnum(gwpy_enum.NumpyTypeEnum):
 
 
 class TestNumpyTypeEnum:
+    """Test `gwpy.utils.enum.NumpyTypeEnum`."""
+
     TEST_CLASS = _MyEnum
 
     def test_dtype(self):
@@ -56,7 +58,7 @@ class TestNumpyTypeEnum:
         the enum value (integer) for TEST_CLASS, and return just the enum
         """
         assert self.TEST_CLASS.find(
-            self.TEST_CLASS.INT16.value
+            self.TEST_CLASS.INT16.value,
         ) is self.TEST_CLASS.INT16
 
     def test_find_errors(self):
