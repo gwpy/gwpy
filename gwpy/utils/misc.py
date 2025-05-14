@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -22,10 +22,19 @@ from __future__ import annotations
 
 import math
 import sys
-from collections.abc import Callable
-from typing import (
-    Any,
-)
+import typing
+
+if typing.TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Iterable,
+    )
+    from typing import (
+        Any,
+        TypeVar,
+    )
+
+    T = TypeVar("T")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -115,8 +124,8 @@ def round_to_power(
 
 
 def unique(
-    list_: list[Any],
-) -> list[Any]:
+    list_: Iterable[T],
+) -> list[T]:
     """Return a version of ``list_`` with unique elements, preserving order.
 
     Examples
