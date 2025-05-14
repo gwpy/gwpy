@@ -18,15 +18,23 @@
 
 """Utilities for multi-processing."""
 
-from collections.abc import Callable
+from __future__ import annotations
+
 from multiprocessing import (
     Process,
     Queue,
 )
 from operator import itemgetter
-from typing import Any
+from typing import TYPE_CHECKING
 
 from .progress import progress_bar
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import TypeVar
+
+    T = TypeVar("T")
+    R = TypeVar("R")
 
 
 def _process_in_out_queues(
@@ -39,18 +47,18 @@ def _process_in_out_queues(
     Parameters
     ----------
     func : `callable`
-        any function that can take an element of the input `Queue` as
-        the only argument
+        Any function that can take an element of the input `Queue` as
+        the only argument.
 
     q_in : `multiprocessing.queue.Queue`
-        the input `Queue`
+        The input `Queue`.
 
     q_out : `multiprocessing.queue.Queue`
-        the output `Queue`
+        The output `Queue`.
 
     Notes
     -----
-    To close the input `Queue`, add ``(None, None)`` as the last item
+    To close the input `Queue`, add ``(None, None)`` as the last item.
     """
     while True:
         # pick item out of input queue
@@ -70,11 +78,12 @@ def _process_in_out_queues(
 
 def multiprocess_with_queues(
     nproc: int,
-    func: Callable,
-    inputs: list[Any],
+    func: Callable[[T], R],
+    inputs: list[T],
+    *,
     verbose: bool = False,
     **progress_kw,
-) -> list[Any]:
+) -> list[R]:
     """Map a function over a list of inputs using multiprocess.
 
     This essentially duplicates `multiprocess.map` but allows for
@@ -99,11 +108,15 @@ def multiprocess_with_queues(
         `str` to customise the heading for the progress bar, default: `False`,
         (default heading ``'Processing:'`` if ``verbose=True`)
 
+    progress_kw : `dict`, optional
+        Keyword arguments to pass to `gwpy.utils.progress.progress_bar`
+        for customising the progress bar, e.g. ``unit='events'``.
+
     Returns
     -------
     outputs : `list`
-        the `list` of results from calling ``func(x)`` for each element
-        of ``inputs``
+        The `list` of results from calling ``func(x)`` for each element
+        of ``inputs``.
     """
     # create progress bar for verbose output
     if bool(verbose):
@@ -119,7 +132,8 @@ def multiprocess_with_queues(
 
     # shortcut single process
     if nproc == 1:
-        def _inner(x):
+
+        def _inner(x: T) -> R:
             try:
                 return func(x)
             finally:
@@ -139,7 +153,8 @@ def multiprocess_with_queues(
         Process(
             target=_process_in_out_queues,
             args=(func, q_in, q_out),
-        ) for _ in range(nproc)
+        )
+        for _ in range(nproc)
     ]
 
     for proc in proclist:
@@ -147,18 +162,18 @@ def multiprocess_with_queues(
         proc.start()
 
     # populate queue (no need to block in serial put())
-    for x in enumerate(inputs):
-        q_in.put(x, block=False)
+    for item in enumerate(inputs):
+        q_in.put(item, block=False)
     for _ in range(nproc):  # add sentinel for each process
         q_in.put((None, None))
 
     # get results
-    res = []
+    out = []
     for _ in range(len(inputs)):
-        x = q_out.get()
+        x: tuple[int, R] = q_out.get()
         if pbar:
             pbar.update()
-        res.append(x)
+        out.append(x)
 
     # close processes and unwrap results
     for proc in proclist:
@@ -168,7 +183,7 @@ def multiprocess_with_queues(
         pbar.close()
 
     # unwrap results in order
-    results = [out for _, out in sorted(res, key=itemgetter(0))]
+    results = [res for _, res in sorted(out, key=itemgetter(0))]
 
     # raise exceptions here
     for res in results:

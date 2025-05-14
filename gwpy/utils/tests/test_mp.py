@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -31,6 +31,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 @pytest.mark.parametrize("verbose", [False, True, "Test"])
 @pytest.mark.parametrize("nproc", [1, 2])
 def test_multiprocess_with_queues(capsys, nproc, verbose):
+    """Test `multiprocess_with_queues`."""
     inputs = [1, 4, 9, 16, 25]
     out = utils_mp.multiprocess_with_queues(
         nproc,
