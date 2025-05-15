@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2025)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -24,15 +24,22 @@ import contextlib
 import re
 import typing
 
-from astropy import units
+from astropy import (
+    __version__ as astropy_version,
+    units,
+)
 from astropy.units import imperial as units_imperial
 from astropy.units.format.generic import Generic
+from packaging.version import Version
 
 if typing.TYPE_CHECKING:
     from astropy.units import UnitBase
     from astropy.units.format.base import LexToken
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+#: Is the current version of Astropy 7.1 or later?
+ASTROPY_71 = Version(astropy_version) >= Version("7.1.0a0")
 
 # container for new units (so that each one only gets created once)
 UNRECOGNIZED_UNITS: dict[str, units.UnrecognizedUnit] = {}
@@ -55,16 +62,14 @@ class GWpyFormat(Generic):
     name = "gwpy"
     re_closest_unit = re.compile(r"Did you mean (.*)\?\Z")
     re_closest_unit_delim = re.compile("(, | or )")
-    warn = True
 
     @classmethod
-    def _get_unit(cls, t: LexToken) -> UnitBase:
-        # match as normal
+    def _validate_unit(cls, unit: str, detailed_exception: bool = True) -> UnitBase:
+        """Validate a unit string."""
         try:
-            return cls._parse_unit(t.value)
+            return super()._validate_unit(unit, detailed_exception)
         except ValueError as exc:
-            name = t.value
-            singular = name[:-1] if name.endswith("s") else ""
+            singular = unit[:-1] if unit.endswith("s") else ""
 
             # parse alternative units from the error message
             # split 'A, B, or C' -> ['A', 'B', 'C']
@@ -75,9 +80,9 @@ class GWpyFormat(Generic):
 
             candidates = list(filter(None, (
                 # match uppercase to titled (e.g. MPC -> Mpc)
-                name.title(),
+                unit.title(),
                 # match titled unit to lower-case (e.g. Amp -> amp)
-                name.lower(),
+                unit.lower(),
                 # match plural to singular (e.g. meters -> meter)
                 singular,
                 singular.lower() if singular else None,
@@ -85,9 +90,42 @@ class GWpyFormat(Generic):
 
             for candidate in candidates:
                 if candidate in alts:
-                    return cls._parse_unit(candidate)
+                    return super()._validate_unit(candidate, detailed_exception)
 
             raise
+
+    if not ASTROPY_71:
+        @classmethod
+        def _get_unit(cls, t: LexToken) -> UnitBase:
+            # match as normal
+            try:
+                return cls._parse_unit(t.value)
+            except ValueError as exc:
+                name = t.value
+                singular = name[:-1] if name.endswith("s") else ""
+
+                # parse alternative units from the error message
+                # split 'A, B, or C' -> ['A', 'B', 'C']
+                if match := cls.re_closest_unit.search(str(exc)):
+                    alts = set(cls.re_closest_unit_delim.split(match.groups()[0])[::2])
+                else:
+                    alts = set()
+
+                candidates = list(filter(None, (
+                    # match uppercase to titled (e.g. MPC -> Mpc)
+                    name.title(),
+                    # match titled unit to lower-case (e.g. Amp -> amp)
+                    name.lower(),
+                    # match plural to singular (e.g. meters -> meter)
+                    singular,
+                    singular.lower() if singular else None,
+                )))
+
+                for candidate in candidates:
+                    if candidate in alts:
+                        return cls._parse_unit(candidate)
+
+                raise
 
 
 def parse_unit(
