@@ -230,6 +230,8 @@ conda_test_macos:
 
 # Windows
 conda_test_windows:
+  # allow windows a bit more time for provisioning
+  timeout: 90m
   extends:
     - .conda_test
     - .choco
