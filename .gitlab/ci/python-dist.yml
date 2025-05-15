@@ -16,7 +16,7 @@ build:
   rules: !reference [.rules_build, rules]
   needs: []
   stage: $[[ inputs.stage ]]
-  image: python
+  image: quay.io/lib/python
   variables:
     # get the full history for setuptools-scm
     GIT_DEPTH: 0

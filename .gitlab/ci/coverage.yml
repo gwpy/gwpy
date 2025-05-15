@@ -10,7 +10,7 @@ include:
 
 coverage:
   stage: .post
-  image: python
+  image: quay.io/lib/python
   rules: !reference [.rules_full_test, rules]
   script:
     # install coverage (with toml parsing extra)
