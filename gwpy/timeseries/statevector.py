@@ -711,7 +711,7 @@ class StateVector(TimeSeriesBase):
         -------
         DataQualityFlag list : `list`
             a list of `~gwpy.segments.flag.DataQualityFlag`
-            reprensentations for each bit in this `StateVector`
+            representations for each bit in this `StateVector`
 
         See also
         --------
