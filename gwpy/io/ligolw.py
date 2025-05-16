@@ -90,8 +90,11 @@ def strip_ilwdchar(_ContentHandler):
     This is adapted from :func:`ligo.skymap.utils.ilwd`, copyright
     Leo Singer (GPL-3.0-or-later).
     """
+    from igwn_ligolw.ligolw import (
+        Column,
+        Table,
+    )
     from igwn_ligolw.lsctables import TableByName
-    from igwn_ligolw.table import (Column, TableStream)
     from igwn_ligolw.types import FromPyType
 
     class IlwdMapContentHandler(_ContentHandler):
@@ -129,7 +132,7 @@ def strip_ilwdchar(_ContentHandler):
         @wraps(_ContentHandler.startStream)
         def startStream(self, parent, attrs):
             result = super().startStream(parent, attrs)
-            if isinstance(result, TableStream):
+            if isinstance(result, Table.Stream):
                 loadcolumns = set(parent.columnnames)
                 if parent.loadcolumns is not None:
                     loadcolumns &= set(parent.loadcolumns)
@@ -149,10 +152,8 @@ def strip_ilwdchar(_ContentHandler):
 
 
 def _wrap_content_handler(contenthandler):
-    from igwn_ligolw.lsctables import use_in
 
     @strip_ilwdchar
-    @use_in
     class ContentHandler(contenthandler):
         pass
 
@@ -187,8 +188,10 @@ def get_partial_contenthandler(element):
         a subclass of `~igwn_ligolw.ligolw.PartialLIGOLWContentHandler`
         to read only the given `element`
     """
-    from igwn_ligolw.ligolw import PartialLIGOLWContentHandler
-    from igwn_ligolw.table import Table
+    from igwn_ligolw.ligolw import (
+        PartialLIGOLWContentHandler,
+        Table,
+    )
 
     if issubclass(element, Table):
         def _element_filter(name, attrs):
@@ -214,8 +217,10 @@ def get_filtering_contenthandler(element):
         a subclass of `~igwn_ligolw.ligolw.FilteringLIGOLWContentHandler`
         to exclude an element and its children
     """
-    from igwn_ligolw.ligolw import FilteringLIGOLWContentHandler
-    from igwn_ligolw.table import Table
+    from igwn_ligolw.ligolw import (
+        FilteringLIGOLWContentHandler,
+        Table,
+    )
 
     if issubclass(element, Table):
         def _element_filter(name, attrs):
@@ -319,7 +324,7 @@ def read_table(
     contenthandler=None,
     **kwargs,
 ):
-    """Read a :class:`~igwn_ligolw.table.Table` from one or more LIGO_LW files.
+    """Read a :class:`~igwn_ligolw.ligolw.Table` from one or more LIGO_LW files.
 
     Parameters
     ----------
@@ -346,7 +351,7 @@ def read_table(
 
     Returns
     -------
-    table : :class:`~igwn_ligolw.table.Table`
+    table : :class:`~igwn_ligolw.ligolw.Table`
         `Table` of data
     """
     from igwn_ligolw.ligolw import Document
@@ -469,7 +474,7 @@ def write_tables_to_document(xmldoc, tables, overwrite=False):
     xmldoc : :class:`~igwn_ligolw.ligolw.Document`
         the document to write into
 
-    tables : `list` of :class:`~igwn_ligolw.table.Table`
+    tables : `list` of :class:`~igwn_ligolw.ligolw.Table`
         the set of tables to write
 
     overwrite : `bool`, optional, default: `False`
@@ -518,7 +523,7 @@ def write_tables(
     target : `str`, `file`, :class:`~igwn_ligolw.ligolw.Document`
         the file or document to write into
 
-    tables : `list`, `tuple` of :class:`~igwn_ligolw.table.Table`
+    tables : `list`, `tuple` of :class:`~igwn_ligolw.ligolw.Table`
         the tables to write
 
     append : `bool`, optional, default: `False`
@@ -592,7 +597,7 @@ def iter_tables(source):
 
     Yields
     ------
-    igwn_ligolw.table.Table
+    igwn_ligolw.ligolw.Table
         a table structure from the document(s)
     """
     from igwn_ligolw.ligolw import (Element, Stream, WalkChildren)
@@ -637,7 +642,7 @@ def to_table_type(val, cls, colname):
     val : `object`
         The input object to convert, of any type
 
-    cls : `type`, subclass of :class:`~igwn_ligolw.table.Table`
+    cls : `type`, subclass of :class:`~igwn_ligolw.ligolw.Table`
         the table class to map against
 
     colname : `str`

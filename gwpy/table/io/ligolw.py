@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read LIGO_LW documents into :class:`~igwn_ligolw.table.Table` objects."""
+"""Read LIGO_LW documents into :class:`~igwn_ligolw.ligolw.Table` objects."""
 
 from __future__ import annotations
 
@@ -185,14 +185,14 @@ def to_astropy_table(
     use_numpy_dtypes: bool = False,
     rename: dict[str, str] | None = None,
 ):
-    """Convert a `~igwn_ligolw.table.Table` to an `~astropy.tableTable`.
+    """Convert a `~igwn_ligolw.ligolw.Table` to an `~astropy.tableTable`.
 
     This method is designed as an internal method to be attached to
-    :class:`~igwn_ligolw.table.Table` objects as `__astropy_table__`.
+    :class:`~igwn_ligolw.ligolw.Table` objects as `__astropy_table__`.
 
     Parameters
     ----------
-    llwtable : `~igwn_ligolw.table.Table`
+    llwtable : `~igwn_ligolw.ligolw.Table`
         The LIGO_LW table to convert from.
 
     table_class : `type`
@@ -294,11 +294,11 @@ def to_astropy_column(
     use_numpy_dtype: bool = False,
     **kwargs,
 ) -> Column:
-    """Convert a :class:`~igwn_ligolw.table.Column` to `astropy.table.Column`.
+    """Convert a :class:`~igwn_ligolw.ligolw.Column` to `astropy.table.Column`.
 
     Parameters
     -----------
-    llwcol : `~igwn_ligolw.table.Column`, `numpy.ndarray`, iterable
+    llwcol : `~igwn_ligolw.ligolw.Column`, `numpy.ndarray`, iterable
         The ``LIGO_LW`` column to convert, or an iterable.
 
     cls : `~astropy.table.Column`
@@ -353,7 +353,7 @@ def _get_column_dtype(
 
     Parameters
     ----------
-    llwcol : `~igwn_ligolw.table.Column`, `numpy.ndarray`, iterable
+    llwcol : `~igwn_ligolw.ligolw.Column`, `numpy.ndarray`, iterable
         A ``LIGO_LW`` column, a numpy array, or an iterable.
 
     Returns
@@ -376,7 +376,7 @@ def _get_column_dtype(
             raise AttributeError  # goto below
         return dtype
     except AttributeError:
-        try:  # igwn_ligolw.table.Column
+        try:  # igwn_ligolw.ligolw.Column
             name = str(llwcol.getAttribute("Name"))
             if name.startswith(f"{llwcol.parentNode.Name}:"):
                 name = name.split(":", 1)[-1]
@@ -406,18 +406,18 @@ def table_to_ligolw(
     table: Table,
     tablename: str,
 ) -> ligolw.Table:
-    """Convert a `astropy.table.Table` to a `igwn_ligolw.table.Table`."""
+    """Convert a `astropy.table.Table` to a `igwn_ligolw.ligolw.Table`."""
     from igwn_ligolw import lsctables
 
     # -- work out columns for LIGO_LW table
     # this is overly complicated because of the way that we magically
-    # map properties of igwn_ligolw.table.Table objects to real columns in
+    # map properties of igwn_ligolw.ligolw.Table objects to real columns in
     # astropy.table.Table objects, but also because igwn_ligolw internally
     # combines table names and column names for some columns
     # (e.g. process:process_id)
     columns = table.columns.keys()
     cls = lsctables.TableByName[tablename]
-    inst = lsctables.New(cls)
+    inst = cls.new()
     try:
         columnnamesreal = dict(zip(inst.columnnames, inst.columnnamesreal, strict=False))
     except AttributeError:  # glue doesn't have these attributes
@@ -430,7 +430,7 @@ def table_to_ligolw(
             llwcolumns.insert(idx, name)
 
     # create new LIGO_LW table
-    llwtable = lsctables.New(cls, columns=llwcolumns)
+    llwtable = cls.new(columns=llwcolumns)
 
     # map rows across
     for row in table:

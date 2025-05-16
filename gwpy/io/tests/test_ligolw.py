@@ -75,12 +75,10 @@ def llwdoc():
 def new_table(tablename, data=None, **new_kw):
     """Create a new LIGO_LW Table with data."""
     from igwn_ligolw import lsctables
-    from igwn_ligolw.table import Table
+    from igwn_ligolw.ligolw import Table
 
-    table = lsctables.New(
-        lsctables.TableByName[Table.TableName(tablename)],
-        **new_kw,
-    )
+    table_class = lsctables.TableByName[Table.TableName(tablename)]
+    table = table_class.new(**new_kw)
     for dat in data or list():
         row = table.RowType()
         for key, val in dat.items():

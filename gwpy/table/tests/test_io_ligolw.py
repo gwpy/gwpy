@@ -52,11 +52,8 @@ def table():
 
 @pytest.fixture()
 def llwtable():
-    from igwn_ligolw.lsctables import (
-        New,
-        SnglBurstTable,
-    )
-    llwtab = New(SnglBurstTable, columns=["peak_frequency", "snr"])
+    from igwn_ligolw.lsctables import SnglBurstTable
+    llwtab = SnglBurstTable.new(columns=["peak_frequency", "snr"])
     for i in range(10):
         row = llwtab.RowType()
         row.peak_frequency = float(i)
@@ -86,12 +83,8 @@ def test_to_astropy_table_rename(llwtable):
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_to_astropy_table_empty():
-    from igwn_ligolw.lsctables import (
-        New,
-        SnglBurstTable,
-    )
-    llwtable = New(
-        SnglBurstTable,
+    from igwn_ligolw.lsctables import SnglBurstTable
+    llwtable = SnglBurstTable.new(
         columns=["peak_time", "peak_time_ns", "ifo"],
     )
     tab = EventTable(llwtable, columns=["peak", "ifo"])
@@ -323,12 +316,8 @@ def test_read_ligolw_get_as_exclude(tmp_path):
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_process_table():
     """Regression test against gwpy/gwpy#1367."""
-    from igwn_ligolw.lsctables import (
-        New,
-        ProcessTable,
-    )
-    llwtable = New(
-        ProcessTable,
+    from igwn_ligolw.lsctables import ProcessTable
+    llwtable = ProcessTable.new(
         columns=["ifos", "username"],
     )
     llwtable.appendRow(instruments=("G1", "H1"), username="testuser")
