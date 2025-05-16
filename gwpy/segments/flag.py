@@ -1352,9 +1352,9 @@ class DataQualityDict(dict):
         segdeftab_class = lsctables.SegmentDefTable
         segsumtab_class = lsctables.SegmentSumTable
         segtab_class = lsctables.SegmentTable
-        segdeftab = lsctables.New(segdeftab_class)
-        segsumtab = lsctables.New(segsumtab_class)
-        segtab = lsctables.New(segtab_class)
+        segdeftab = segdeftab_class.new()
+        segsumtab = segsumtab_class.new()
+        segtab = segtab_class.new()
 
         def _write_attrs(
             table: igwn_ligolw.ligolw.Table,

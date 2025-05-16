@@ -350,7 +350,7 @@ utility functions to create new columns by combining others,
 e.g. to calculate the Q of a sine-Gaussian pulse from the duration and
 central frequency.
 These 'columns' can be requested directly, providing the
-:class:`igwn_ligolw.table.Table` representation of the data has a
+:class:`igwn_ligolw.ligolw.Table` representation of the data has a
 :meth:`get_<name>` method for that name:
 
 .. code-block:: python
