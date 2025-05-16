@@ -53,12 +53,11 @@ def test_parse_unit_strict():
         parse_unit('metre', parse_strict='raise')
 
     # check that warnings get posted, and a custom NamedUnit gets returned
-    with pytest.warns(units.UnitsWarning) as exc:
+    with pytest.warns(
+        units.UnitsWarning,
+        match="'metre' did not parse as gwpy unit",
+    ) as exc:
         u = parse_unit('metre', parse_strict='warn')
-    assert str(exc[0].message) == ('metre is not a valid unit. Did you mean '
-                                   'meter? Mathematical operations using this '
-                                   'unit should work, but conversions to '
-                                   'other units will not.')
     assert isinstance(u, units.IrreducibleUnit)
     assert str(u) == 'metre'
 
