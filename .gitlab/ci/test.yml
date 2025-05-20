@@ -8,12 +8,14 @@ include:
   - local: .gitlab/ci/test-job.yml
     inputs:
       job_name: "basic_test"
+      pip_cmd: "uv pip"
       pytest_options: "--color yes --cov gwpy --numprocesses auto gwpy/"
       install_extra: "test"
 
   # full test template
   - local: .gitlab/ci/test-job.yml
     inputs:
+      pip_cmd: "uv pip"
       pytest_options: "--color yes --cov gwpy --durations 50 --numprocesses auto gwpy/ examples/"
       install_extra: "dev,test"
 
@@ -69,6 +71,51 @@ include:
     paths:
       - .cache/choco
 
+.uv_install: &uv_install
+  # install uv
+  - wget -qO- https://astral.sh/uv/install.sh | sh -s - -q
+  - source ${XDG_BIN_HOME:-$HOME/.local/bin}/env
+
+.uv_venv: &uv_venv
+  # configure a virtual environment for the right Python version
+  - uv venv --python ${PYTHON_VERSION}
+  - source .venv/bin/activate
+
+.uv_install_windows: &uv_install_windows
+  # install uv
+  - powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+  - $env:PATH = $env:USERPROFILE + "\.local\bin;$env:PATH"
+  - $env:PATH -split ';'
+
+.uv_venv_windows: &uv_venv_windows
+  # configure a virtual environment for the right Python version
+  - uv venv --python ${PYTHON_VERSION}
+  - .venv\Scripts\activate
+
+.uv:
+  image: "ghcr.io/astral-sh/uv:python$PYTHON_VERSION-bookworm"
+  variables:
+    # set the cache directory for uv
+    UV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/uv"
+  before_script:
+    - *uv_install
+    - *uv_venv
+  after_script:
+    - uv cache prune --ci
+  cache:
+    # cache uv packages
+    - key: "uv-${CI_JOB_NAME_SLUG}"
+      paths:
+        - $UV_CACHE_DIR
+
+.uv_windows:
+  extends:
+    - .uv
+    - .windows
+  before_script:
+    - *uv_install_windows
+    - *uv_venv_windows
+
 # -- basic tests for new branches without MRs
 #
 # This test matrix provides a sanity check for developers working
@@ -83,7 +130,8 @@ basic_test:
   extends:
     - .prod_test
     - .basic_test
-  image: quay.io/lib/python:${PYTHON_VERSION}
+    - .uv
+  image: "ghcr.io/astral-sh/uv:python$PYTHON_VERSION-bookworm"
   rules:
     - !reference [.rules_basic_test, rules]
 
@@ -101,17 +149,21 @@ basic_test:
 python_test_linux:
   extends:
     - .dev_test
+    - .uv
     - .linux
-  image: quay.io/lib/python:${PYTHON_VERSION}
   rules:
     - !reference [.linux, rules]
     - !reference [.rules_full_test, rules]
+  before_script:
+    # don't need to install uv, it comes with the image
+    - *uv_venv
 
 # macOS
 python_test_macos:
   extends:
     - .prod_test
-    - .brew
+    - .uv
+    - .macos
   rules:
     - !reference [.macos, rules]
     - !reference [.rules_full_test, rules]
@@ -121,43 +173,15 @@ python_test_macos:
           - "3.10"
           - "3.11"
           #- "3.12" <-- cannot build ligo-segments on macOS
-  before_script:
-    # install Python using Homebrew
-    - brew install python@${PYTHON_VERSION}
-    - PYTHON="$(brew --prefix)/opt/python@${PYTHON_VERSION}/libexec/bin/python"
-    # create a virtual environment to work in
-    - $PYTHON -m venv --system-site-packages venv
-    - . ./venv/bin/activate
-  cache:
-    # cache pip packages
-    - !reference [.test, cache]
-    # and homebrew packages
-    - !reference [.brew, cache]
 
 # Windows
 python_test_windows:
   extends:
     - .prod_test
-    - .choco
+    - .uv_windows
   rules:
     - !reference [.windows, rules]
     - !reference [.rules_full_test, rules]
-  before_script:
-    # install Python using Choco
-    - $PYTHON_VERSION_NODOTS = ${PYTHON_VERSION}.Replace('.', '')
-    - choco install
-        --cache $CHOCO_CACHE_DIR
-        --yes
-        python${PYTHON_VERSION_NODOTS}
-    - $chocoPath = "C:\Python" + ${PYTHON_VERSION_NODOTS}
-    - $env:PATH = $chocoPath + "\Scripts" + ";" + $chocoPath + ";" + $env:PATH
-    - $env:PATH -split ';'
-    - echo $PYTEST_ADDOPTS
-  cache:
-    # cache pip packages
-    - !reference [.test, cache]
-    # and choco packages
-    - !reference [.choco, cache]
 
 # -- conda tests
 #
@@ -171,12 +195,21 @@ python_test_windows:
 .conda_create_test_env:
   before_script:
     - conda info --all
-    - conda create --quiet --yes --name pip2conda pip2conda
-    - conda run -n pip2conda pip2conda
+    # create an (almost) empty environment
+    - conda create -n pip2conda
+        --yes
+        --quiet
+        python
+    - conda activate pip2conda
+    # and use uv to install pip2conda into it
+    - uv pip install pip2conda
+    # then use pip2conda to solve (sort of) the test environment
+    - python -m pip2conda
         --all
         --output environment.txt
         --python-version ${PYTHON_VERSION}
     - cat environment.txt
+    # create the test environment
     - conda create --quiet --yes --name test --file environment.txt
     - conda list --name test
     - conda activate test
@@ -184,11 +217,12 @@ python_test_windows:
 .conda_test:
   extends:
     - .prod_test
+    - .uv
   stage: conda
   variables:
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/.cache/conda/pkgs"
   cache:
-    - !reference [.test, cache]
+    - !reference [.uv, cache]
     - key: "conda-${CI_JOB_NAME_SLUG}"
       paths:
         - .cache/conda/pkgs/*.conda
@@ -203,9 +237,11 @@ conda_test_linux:
     - !reference [.rules_full_test, rules]
   image: quay.io/condaforge/miniforge3
   before_script:
+    # install uv
+    - *uv_install
     # init conda
     - . $(conda info --base)/etc/profile.d/conda.sh
-    # create test environment using pip2conda
+    # create the test environment using conda, uv, and pip2conda
     - !reference [.conda_create_test_env, before_script]
     # initialise credentials
     - bash -ex .gitlab/ci/init-creds.sh
@@ -224,7 +260,7 @@ conda_test_macos:
     # then do the same init as Linux
     - !reference [conda_test_linux, before_script]
   cache:
-    # cache conda packages
+    # cache uv/conda packages
     - !reference [.conda_test, cache]
     # and homebrew packages
     - !reference [.brew, cache]
@@ -236,10 +272,13 @@ conda_test_windows:
   extends:
     - .conda_test
     - .choco
+    - .uv_windows
   rules:
     - !reference [.windows, rules]
     - !reference [.rules_full_test, rules]
   before_script:
+    # install uv
+    - *uv_install_windows
     # install miniforge using choco
     - choco install
         --cache $CHOCO_CACHE_DIR
@@ -248,7 +287,7 @@ conda_test_windows:
     - $env:PATH += ";C:\tools\miniforge3\Scripts;C:\tools\miniforge3"
     - conda init powershell
     - . C:\tools\miniforge3\shell\condabin\conda-hook.ps1
-    # create the test environment using conda
+    # create the test environment using conda, uv, and pip2conda
     - !reference [.conda_create_test_env, before_script]
   cache:
     # cache conda packages
