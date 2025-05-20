@@ -18,6 +18,10 @@ spec:
       default: "test"
       description: "Name of the extra feature group(s) to install when installing <install_target>"
       type: string
+    pip_cmd:
+      default: "python -m pip"
+      description: "Command to use to install packages (default: python -m pip)"
+      type: string
     pip_options:
       default: ""
       description: "Extra options to pass to pip install"
@@ -58,10 +62,10 @@ include:
       (Path(os.getenv('XDG_CACHE_HOME')) / 'astropy').mkdir(parents=True, exist_ok=True)
       "
     # install pytest
-    - python -m pip install pytest pytest-cov $[[ inputs.pip_options ]]
-    - python -m pip install $[[ inputs.install_target ]][$[[ inputs.install_extra ]]] $[[ inputs.pip_options ]]
+    - $[[ inputs.pip_cmd ]] install pytest pytest-cov $[[ inputs.pip_options ]]
+    - $[[ inputs.pip_cmd ]] install $[[ inputs.install_target ]][$[[ inputs.install_extra ]]] $[[ inputs.pip_options ]]
     # list installed packages
-    - python -m pip list installed
+    - $[[ inputs.pip_cmd ]] list
 # run the tests
     - python -m pytest --junit-xml=junit.xml $[[ inputs.pytest_options ]]
     # run any extra tests
@@ -80,7 +84,7 @@ include:
       - .coverage*
   coverage: null
   cache:
-    # cache pip packages
+    # cache Pip downloads
     - !reference [.python_base, cache]
     # cache GWpy downloaded files
     - key: "gwpy-${CI_JOB_NAME_SLUG}"

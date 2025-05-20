@@ -65,7 +65,7 @@ compat_minimum:
   extends:
     - .compat_minimum
     - .compat_rules
-  image: quay.io/lib/python:$[[ inputs.minimum_python_version ]]
+  image: "ghcr.io/astral-sh/uv:python$[[ inputs.minimum_python_version ]]-bookworm"
   before_script:
     # replace the requirements as follows:
     #    >=X.Y.Z ---> X.Y.Z  (exact pin to minimum)
@@ -96,7 +96,7 @@ compat_experimental:
   extends:
     - .compat_experimental
     - .compat_rules
-  image: quay.io/lib/python:3.12
+  image: "ghcr.io/astral-sh/uv:python3.12-bookworm"
 
 # run dependency scanning against minimum specified requirements
 # (most likely to highlight issues)
