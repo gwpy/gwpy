@@ -33,10 +33,7 @@ build:
     # from the version to give something that test.pypi.org will accept
     - |
       if [ "${CI_COMMIT_TAG}" = "" ] && [ "${CI_PIPELINE_SOURCE}" = "push" ] && [ "${CI_COMMIT_REF_PROTECTED}" = "true" ]; then
-        uv pip install setuptools setuptools-scm
-        echo "Real version is '$(python -m setuptools_scm)'";
-        export SETUPTOOLS_SCM_PRETEND_VERSION=$(python -c "from setuptools import setup; setup(use_scm_version={'local_scheme': 'no-local-version'})" --version);
-        echo "Pretending version is '${SETUPTOOLS_SCM_PRETEND_VERSION}'";
+        export SETUPTOOLS_SCM_OVERRIDES_FOR_GWPY="{local_scheme='no-local-version'}";
       fi
     # generate the distributions
     - python -m build . -o .
