@@ -16,21 +16,24 @@ build:
   rules: !reference [.rules_build, rules]
   needs: []
   stage: $[[ inputs.stage ]]
-  image: quay.io/lib/python
+  image: ghcr.io/astral-sh/uv:alpine
   variables:
     # get the full history for setuptools-scm
     GIT_DEPTH: 0
   before_script:
-    - python -m pip install
-        build
+    # need git for setuptools-scm
+    - apk add --no-cache git
   script:
+    - uv venv
+    - uv pip install build
+    - source .venv/bin/activate
     # if running a default branch push pipeline, strip the +g<HASH> suffix
     # from the version to give something that test.pypi.org will accept
     - |
       if [ "${CI_COMMIT_TAG}" = "" ] && [ "${CI_PIPELINE_SOURCE}" = "push" ] && [ "${CI_COMMIT_REF_PROTECTED}" = "true" ]; then
-        python -m pip install -q setuptools setuptools-scm
-        echo "Real version is '$(python -m setuptools_scm)'";
-        export SETUPTOOLS_SCM_PRETEND_VERSION=$(python3 -c "from setuptools import setup; setup(use_scm_version={'local_scheme': 'no-local-version'})" --version);
+        uv pip install -q setuptools setuptools-scm
+        echo "Real version is '$(uv run -m setuptools_scm)'";
+        export SETUPTOOLS_SCM_PRETEND_VERSION=$(python -c "from setuptools import setup; setup(use_scm_version={'local_scheme': 'no-local-version'})" --version);
         echo "Pretending version is '${SETUPTOOLS_SCM_PRETEND_VERSION}'";
       fi
     # generate the distributions
