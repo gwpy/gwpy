@@ -2,8 +2,8 @@
 
 [build-system]
 requires = [
-  "setuptools>=61",
-  "setuptools_scm[toml]>=4.1.0",
+  "setuptools >=77.0.3",
+  "setuptools_scm[toml] >=8.3.1",
   "wheel",
 ]
 build-backend = "setuptools.build_meta"
@@ -15,11 +15,13 @@ readme = "README.md"
 authors = [
   { name = "Duncan Macleod", email = "duncan.macleod@ligo.org" },
 ]
-license = { text = "GPL-3.0-or-later" }
+license = "GPL-3.0-or-later"
+license-files = [
+  "LICENSE",
+]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
   "Natural Language :: English",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
@@ -189,9 +191,6 @@ gwpy-plot = "gwpy.cli.gwpy_plot:main"
 "Discussion Forum" = "https://gwpy.slack.com"
 "Documentation" = "https://gwpy.github.io/docs/"
 "Source Code" = "https://gitlab.com/gwpy/gwpy"
-
-[tool.setuptools]
-license-files = [ "LICENSE" ]
 
 [tool.setuptools.packages.find]
 # note: this is only required in CI, which otherwise fails because
