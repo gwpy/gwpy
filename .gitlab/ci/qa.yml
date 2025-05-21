@@ -39,6 +39,7 @@ include:
     rules:
       - if: '$GITLAB_FEATURES !~ /\bsast_advanced\b/'
   - local: .gitlab/ci/rules.yml
+  - local: .gitlab/ci/python-base.yml
 
 .qa:
   extends: .rules_qa_security
@@ -63,7 +64,7 @@ semgrep-sast:
 
 ruff:
   extends: .qa
-  image: python
+  image: quay.io/lib/python
   script:
     - python -m pip install
           ruff
@@ -84,7 +85,7 @@ ruff:
 
 mypy:
   extends: .qa
-  image: python
+  image: quay.io/lib/python
   script:
     - python -m pip install
           mypy
@@ -107,3 +108,16 @@ mypy:
   artifacts:
     reports:
       codequality: gl-mypy-code-quality.json
+
+rstcheck:
+  extends:
+    - .python_base
+    - .qa
+  image: quay.io/lib/python
+  script:
+    - python -m pip install rstcheck[sphinx]
+    - python .gitlab/ci/rstcheck.py > rstcheck.json
+    - python -m json.tool rstcheck.json
+  artifacts:
+    reports:
+      codequality: rstcheck.json

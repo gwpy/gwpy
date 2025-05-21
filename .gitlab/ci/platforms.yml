@@ -26,5 +26,7 @@ spec:
     # windows gitlab runners don't support symbolic links, so we can't
     # run the tests that rely upon them
     PYTEST_ADDOPTS: "-k 'not table\\\\rate and not table\\\\tiles'"
+    # pytest-xdist doesn't auto-detect the number of CPUs sometimes
+    PYTEST_XDIST_AUTO_NUM_WORKERS: "2"
   tags:
     - saas-windows-medium-amd64
