@@ -20,6 +20,8 @@ build:
   variables:
     # get the full history for setuptools-scm
     GIT_DEPTH: 0
+    # debug setuptools-scm
+    SETUPTOOLS_SCM_DEBUG: 1
   before_script:
     # need git for setuptools-scm
     - apk add --no-cache git
