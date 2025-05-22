@@ -25,6 +25,8 @@ import warnings
 
 import numpy
 import scipy.signal
+from packaging.version import Version
+from scipy import __version__ as scipy_version
 
 from ...frequencyseries import FrequencySeries
 from . import _registry as fft_registry
@@ -53,6 +55,18 @@ def _spectral_density(
     **kwargs,
 ) -> FrequencySeries:
     """Calculate a generic spectral density of this `TimeSeries`."""
+    if (
+        Version(scipy_version) >= Version("1.16.0a0")
+        and (other := kwargs.get("y")) is not None
+        and timeseries.size != other.size
+    ):
+        # manually zero-pad the shorter array, see
+        # https://github.com/scipy/scipy/issues/23036
+        if (a := timeseries.size) < (b := other.size):
+            timeseries = timeseries.pad((0, b - a), mode="constant")
+        else:
+            kwargs["y"] = numpy.pad(other, (0, a - b), mode="constant")
+
     # compute spectral density
     freqs, psd_ = sdfunc(
         timeseries.value,
