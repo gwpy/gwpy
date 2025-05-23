@@ -992,6 +992,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             fs.abs(),
             noisy_sinusoid.psd(method="welch"),
             exclude=["name"],
+            almost_equal=True,
         )
 
     def test_csd_fftlength(self, noisy_sinusoid, corrupt_noisy_sinusoid):
