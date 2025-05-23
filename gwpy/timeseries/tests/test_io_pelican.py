@@ -24,22 +24,25 @@ import pytest
 from ...testing.errors import pytest_skip_network_error
 from .. import TimeSeries
 
-ET_PELICAN_URL = (
-    "osdf:///et-gw/PUBLIC/MDC1/data/E0/E-E0_STRAIN_DATA-1000436224-2048.gwf"
+# O3b data for LIGO-Hanford
+PELICAN_URL = (
+    "osdf:///gwdata/O3b/strain.4k/hdf.v1/H1/1268776960/"
+    "H-H1_GWOSC_O3b_4KHZ_R1-1269358592-4096.hdf5",
 )
-ET_CHANNEL = "E0:STRAIN"
+READ_KWARGS = {
+    "cache": False,
+    "format": "hdf5.gwosc",
+}
 
 
 @pytest_skip_network_error
-@pytest.mark.requires("lalframe", "requests_pelican")
+@pytest.mark.requires("requests_pelican")
 def test_timeseries_read_pelican(tmp_path):
     """Check that `TimeSeries.read` can handle Pelican URLs."""
     # force astropy to use tmp_path as the temporary download directory
     with mock.patch("tempfile.gettempdir", return_value=str(tmp_path)):
         data = TimeSeries.read(
-            ET_PELICAN_URL,
-            ET_CHANNEL,
-            cache=False,
-            verbose=True,
+            PELICAN_URL,
+            **READ_KWARGS,
         )
-    assert data.mean().value == pytest.approx(5.778819180203806e-29)
+    assert data.mean().value == pytest.approx(2.768754379315686e-26, abs=1e-28)
