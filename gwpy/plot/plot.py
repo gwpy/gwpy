@@ -136,7 +136,6 @@ class Plot(figure.Figure):
         num = kwargs.pop('num', max(pyplot.get_fignums() or {0}) + 1)
         self._parse_subplotpars(kwargs)
         super().__init__(**kwargs)
-        self.number = num
 
         # add interactivity (scraped from pyplot.figure())
         backend_mod = get_backend_mod()
