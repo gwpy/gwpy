@@ -111,7 +111,7 @@ Union (``|``)
 
    >>> a | b
 
-returns the union of both the `~DataQualityFlag.known` and
+returns the intersection of both the `~DataQualityFlag.known` and
 `~DataQualityFlag.active` segment lists, e.g::
 
    >>> print(a | b)
