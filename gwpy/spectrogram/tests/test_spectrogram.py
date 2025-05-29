@@ -63,11 +63,13 @@ class TestSpectrogram(_TestArray2D):
     def test_epoch(self, array):
         assert array.epoch.gps == array.x0.value
 
-    def test_value_at(self, array):
-        super().test_value_at(array)
-        v = array.value_at(5000 * units.millisecond,
-                           2000 * units.milliHertz)
-        assert v == self.data[5][2] * array.unit
+    def test_value_at(self):
+        super().test_value_at()
+        array = self.create()
+        assert array.value_at(
+            5000 * units.millisecond,
+            2000 * units.milliHertz,
+        ) == self.data[5][2] * array.unit
 
     @pytest.mark.parametrize("ratio", ("mean", "median"))
     def test_ratio(self, array, ratio):
