@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Utilies for interacting with the LIGO Algorithm Library.
+"""Utilities for interacting with the LIGO Algorithm Library.
 
 This module requires lal >= 6.14.0.
 """
@@ -25,22 +25,26 @@ from __future__ import annotations
 
 import operator
 import re
-from collections.abc import Callable
 from fractions import Fraction
 from functools import reduce
-from types import ModuleType
+from typing import TYPE_CHECKING
 
 import lal
 import numpy
 from astropy import units
-from numpy.typing import DTypeLike
 
-# import gwpy.detector.units to register other units now
+# Import gwpy.detector.units to register other units now
 from ..detector import units as gwpy_units  # noqa: F401
 from ..time import (
     LIGOTimeGPS,
     to_gps,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from types import ModuleType
+
+    from numpy.typing import DTypeLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -76,24 +80,22 @@ LAL_TYPE_FROM_NUMPY: dict[type, int] = {
 }
 
 LAL_TYPE_STR_FROM_NUMPY: dict[type, str] = {
-    k: LAL_TYPE_STR[v] for (k, v) in LAL_TYPE_FROM_NUMPY.items()
+    k: LAL_TYPE_STR[v] for k, v in LAL_TYPE_FROM_NUMPY.items()
 }
 LAL_NUMPY_FROM_TYPE_STR: dict[str, type] = {
     v: k for k, v in LAL_TYPE_STR_FROM_NUMPY.items()
 }
 
-LAL_TYPE_REGEX: re.Pattern = re.compile(r"(U?INT|REAL|COMPLEX)\d+")
+LAL_TYPE_REGEX: re.Pattern[str] = re.compile(r"(U?INT|REAL|COMPLEX)\d+")
 
-# type alias for 'any' timeseries
+# Type alias for 'any' timeseries
 LALTimeSeriesType = reduce(
     operator.or_,
     (getattr(lal, f"{typ}TimeSeries") for typ in LAL_TYPE_STR.values()),
 )
 
 
-def to_lal_type_str(
-    pytype: type | DTypeLike | str | int,
-) -> str:
+def to_lal_type_str(pytype: type | DTypeLike | str | int) -> str:
     """Convert the input python type to a LAL type string.
 
     Examples
@@ -117,7 +119,7 @@ def to_lal_type_str(
 
     Raises
     ------
-    KeyError
+    ValueError
         If the input doesn't map to a LAL type string.
     """
     # noop
@@ -135,10 +137,9 @@ def to_lal_type_str(
     except (
         TypeError,  # failed to convert input to dtype
         KeyError,  # dtype didn't match
-    ):
-        raise ValueError(
-            f"Failed to map '{pytype}' to LAL type string",
-        )
+    ) as exc:
+        msg = f"Failed to map '{pytype}' to LAL type string"
+        raise ValueError(msg) from exc
 
 
 def find_typed_function(
@@ -147,23 +148,27 @@ def find_typed_function(
     suffix: str,
     module: ModuleType = lal,
 ) -> Callable:
-    """Returns the lal method for the correct type.
+    """Return the lal method for the correct type.
 
     Parameters
     ----------
     pytype : `type`, `numpy.dtype`
-        the python type, or dtype, to map
+        The python type, or dtype, to map.
 
     prefix : `str`
-        the function name prefix (before the type tag)
+        The function name prefix (before the type tag).
 
     suffix : `str`
-        the function name suffix (after the type tag)
+        The function name suffix (after the type tag).
+
+    module : `ModuleType`
+        The module in which to search for the function.
+        Default is `lal`.
 
     Raises
     ------
     AttributeError
-        if the function is not found
+        If the function is not found.
 
     Examples
     --------
@@ -209,7 +214,8 @@ def from_lal_type(laltype: type) -> type:
     name = laltype.__name__
     match = LAL_TYPE_REGEX.match(name)
     if not match or match[0] not in LAL_NUMPY_FROM_TYPE_STR:
-        raise ValueError(f"{name!r} has no known numpy type equivalent")
+        msg = f"{name!r} has no known numpy type equivalent"
+        raise ValueError(msg)
     return LAL_NUMPY_FROM_TYPE_STR[match[0]]
 
 
@@ -294,9 +300,7 @@ def to_lal_unit(
         try:  # try this base
             i = LAL_UNIT_INDEX.index(base)
         except ValueError as exc:
-            exc.args = (
-                f"LAL has no unit corresponding to '{base}'",
-            )
+            exc.args = (f"LAL has no unit corresponding to '{base}'",)
             raise
         frac = Fraction(power)
         lunit.unitNumerator[i] = frac.numerator

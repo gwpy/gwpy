@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2019-)
+# Copyright (c) 2019-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -19,36 +19,45 @@
 
 from __future__ import annotations
 
-import builtins
 from enum import Enum
+from typing import TYPE_CHECKING
 
 import numpy
+
+if TYPE_CHECKING:
+    import builtins
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class NumpyTypeEnum(Enum):
     """`~enum.Enum` of numpy types."""
+
     @property
     def dtype(self) -> numpy.dtype:
+        """The numpy dtype corresponding to this enumerated type."""
         return numpy.dtype(self.name.lower())
 
     @property
     def type(self) -> type:
+        """The python type corresponding to this enumerated type."""
         return self.dtype.type
 
     @classmethod
     def find(
         cls,
-        type_: builtins.type | str,
+        type_: builtins.type | str | int,
     ) -> Enum:
-        """Returns the enumerated type corresponding to the given python type."""
+        """Return the enumerated type corresponding to the given python type."""
         try:
             return cls(type_)
         except ValueError as exc:
             if isinstance(type_, str):
                 type_ = type_.lower()
             try:
-                return cls[numpy.dtype(type_).name.upper()]
-            except (KeyError, TypeError):
-                raise exc
+                return cls[numpy.dtype(type_).name.upper()]  # type: ignore[arg-type]
+            except (
+                KeyError,  # numpy dtype isn't support by this enum
+                TypeError,  # type isn't a valid numpy type
+            ):
+                raise exc from None

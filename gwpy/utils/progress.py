@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -18,10 +18,15 @@
 
 """Utilities for progress bars."""
 
+from __future__ import annotations
+
 import sys
-from typing import TextIO
+from typing import TYPE_CHECKING
 
 from tqdm import tqdm
+
+if TYPE_CHECKING:
+    from typing import TextIO
 
 TQDM_BAR_FORMAT: str = (
     "{desc}: |{bar}| "

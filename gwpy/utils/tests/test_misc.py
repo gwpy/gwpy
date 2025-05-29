@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -18,23 +18,9 @@
 
 """Tests for :mod:`gwpy.utils.misc`."""
 
-import sys
-
 import pytest
 
 from .. import misc as utils_misc
-
-
-def test_gprint(capsys):
-    """Test for :func:`gwpy.utils.misc.gprint`."""
-    utils_misc.gprint("test")
-    assert capsys.readouterr().out == "test\n"
-    utils_misc.gprint("test", end=" ")
-    assert capsys.readouterr().out == "test "
-    utils_misc.gprint("test", end="x", file=sys.stderr)
-    cap = capsys.readouterr()
-    assert not cap.out
-    assert cap.err == "testx"
 
 
 def test_round_to_power():
@@ -66,9 +52,9 @@ def test_unique():
     assert utils_misc.unique(a) == [1, 2, 4, 3, 5]
 
 
-@pytest.mark.parametrize("func, value, out", [
-    (str, None, None),
-    (str, 1, "1"),
+@pytest.mark.parametrize(("func", "value", "out"), [
+    pytest.param(str, None, None, id="None"),
+    pytest.param(str, 1, "1", id="str->int"),
 ])
 def test_if_not_none(func, value, out):
     """Test for :func:`gwpy.utils.misc.if_not_none`."""

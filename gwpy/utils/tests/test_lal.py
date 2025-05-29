@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -46,7 +46,10 @@ def test_to_lal_type_str(arg, result):
 ])
 def test_to_lal_type_str_error(arg):
     """Test :func:`gwpy.utils.lal.to_lal_type_str` error handling."""
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Failed to map",
+    ):
         utils_lal.to_lal_type_str(arg)
 
 
@@ -63,7 +66,8 @@ def test_find_typed_function():
 def test_find_typed_function_module():
     """Test :func:`gwpy.utils.lal.find_typed_function` with lalframe."""
     import lalframe
-    utils_lal.find_typed_function(
+
+    assert utils_lal.find_typed_function(
         "REAL4",
         "FrStreamRead",
         "TimeSeries",
@@ -94,7 +98,7 @@ def test_from_lal_type(dtype):
         None,
         None,
         0,
-        1.,
+        1.0,
         None,
         1,
     )
@@ -119,18 +123,20 @@ def test_from_lal_type_errors(name):
         utils_lal.from_lal_type(lal_type)
 
 
-@pytest.mark.parametrize(("in_", "out", "scale"), (
+@pytest.mark.parametrize(("in_", "out", "scale"), [
     ("m", "m", 1),
     ("Farad", "m^-2 kg^-1 s^4 A^2", 1),
     ("m**(1/2)", "m^1/2", 1),
     ("km", "10^3 m", 1),
     ("123 m", "m", 123),
-))
+])
 def test_to_lal_unit(in_, out, scale):
+    """Test `to_lal_unit`."""
     assert utils_lal.to_lal_unit(in_) == (lal.Unit(out), scale)
 
 
 def test_to_lal_unit_error():
+    """Test `to_lal_unit` error handling."""
     with pytest.raises(
         ValueError,
         match="^LAL has no unit corresponding to 'rad'$",
@@ -138,12 +144,12 @@ def test_to_lal_unit_error():
         utils_lal.to_lal_unit("rad/s")
 
 
-@pytest.mark.parametrize(("in_", "out"), (
+@pytest.mark.parametrize(("in_", "out"), [
     ("m s^-1", "m/s"),
     ("strain", "strain"),
     ("m^1/2", "m**(1/2.)"),
     ("10^3 m", "km"),
-))
+])
 def test_from_lal_unit(in_, out):
     """Test :func:`gwpy.utils.lal.from_lal_unit`."""
     assert utils_lal.from_lal_unit(

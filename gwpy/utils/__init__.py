@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -19,7 +19,6 @@
 """Miscellaneous utilties for GWpy."""
 
 from .misc import (
-    gprint,
     if_not_none,
     round_to_power,
     unique,

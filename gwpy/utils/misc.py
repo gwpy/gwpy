@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -21,33 +21,25 @@
 from __future__ import annotations
 
 import math
-import sys
-from collections.abc import Callable
-from typing import (
-    Any,
-)
+import typing
+
+if typing.TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Iterable,
+    )
+    from typing import TypeVar
+
+    T = TypeVar("T")
+    R = TypeVar("R")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def gprint(
-    *values,
-    **kwargs,
-) -> None:
-    """Wrapper around `print` that flushes immediately."""
-    kwargs.setdefault("file", sys.stdout)
-    file_ = kwargs["file"]
-    print(*values, **kwargs)
-    file_.flush()
-
-
-gprint.__doc__ = print.__doc__
-
-
 def if_not_none(
-    func: Callable,
-    value: Any,
-) -> Any:
+    func: Callable[[T], R],
+    value: T,
+) -> R | None:
     """Apply func to value if value is not None.
 
     Examples
@@ -59,7 +51,7 @@ def if_not_none(
     None
     """
     if value is None:
-        return
+        return None
     return func(value)
 
 
@@ -106,17 +98,17 @@ def round_to_power(
         selector = math.floor
     elif which == "upper":
         selector = math.ceil
-    elif which is not None:
-        raise ValueError("'which' argument must be one of 'lower', "
-                         "'upper', or None")
-    else:
+    elif which is None:
         selector = round
+    else:
+        msg = "'which' argument must be one of 'lower', 'upper', or None"
+        raise ValueError(msg)
     return type(base)(base ** selector(math.log(x, base)))
 
 
 def unique(
-    list_: list[Any],
-) -> list[Any]:
+    list_: Iterable[T],
+) -> list[T]:
     """Return a version of ``list_`` with unique elements, preserving order.
 
     Examples
