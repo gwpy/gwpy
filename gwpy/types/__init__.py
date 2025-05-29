@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -15,12 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides the core `Array` object and direct subclasses.
+"""The core `Array` object and direct subclasses.
 
 These objects form the basic 1-D and 2-D arrays with metadata from which
 we can build specific data representations like the `TimeSeries`.
 """
-
 
 from .array import Array
 from .array2d import Array2D
@@ -30,4 +30,9 @@ from .series import Series
 from . import io
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__all__ = ["Array", "Series", "Array2D", "Index"]
+__all__ = [
+    "Array",
+    "Array2D",
+    "Index",
+    "Series",
+]
