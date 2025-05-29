@@ -202,7 +202,7 @@ class StateTimeSeries(TimeSeriesBase):
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         out = super().__array_ufunc__(ufunc, method, *inputs, **kwargs)
         if out.ndim:
-            return out.view(bool)
+            return out.astype(bool)
         return out
 
     def diff(self, n=1, axis=-1):
