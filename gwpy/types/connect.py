@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2024-)
+# Copyright (c) 2024-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -28,13 +28,16 @@ from ..io.registry import (
 )
 
 if typing.TYPE_CHECKING:
+    from typing import Literal
+
+    from .array2d import Array2D
     from .series import Series
 
 
 def _combine_series(
     listofseries: list[Series],
     pad: float | None = None,
-    gap: str | None = None,
+    gap: Literal["raise", "ignore", "pad"] | None = None,
 ) -> Series:
     """Combine a list of `Series` objects into one `Series`.
 
@@ -47,6 +50,7 @@ def _combine_series(
 
 
 # -- Series --------------------------
+
 
 class SeriesRead(UnifiedRead):
     """Read data into a `Series`.
@@ -84,13 +88,15 @@ class SeriesRead(UnifiedRead):
 
     Notes
     -----"""
+
     def __call__(
         self,
         *args,
         pad: float | None = None,
-        gap: str | None = None,
+        gap: Literal["raise", "ignore", "pad"] | None = None,
         **kwargs,
-    ):
+    ) -> Series:
+        """Read data into a `Series`."""
         combiner = partial(_combine_series, pad=pad, gap=gap)
         return super().__call__(
             combiner,
@@ -157,13 +163,15 @@ class Array2DRead(UnifiedRead):
 
     Notes
     -----"""
+
     def __call__(
         self,
         *args,
         pad: float | None = None,
-        gap: str | None = None,
+        gap: Literal["raise", "ignore", "pad"] | None = None,
         **kwargs,
-    ):
+    ) -> Array2D:
+        """Read data into a `Array2D`."""
         combiner = partial(_combine_series, pad=pad, gap=gap)
         return super().__call__(
             combiner,
