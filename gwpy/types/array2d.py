@@ -313,9 +313,25 @@ class Array2D(Series):
 
     # -- Array2D methods ------------------------
 
-    def _is_compatible_gwpy(self, other):
-        self._compare_index(other, "y")
-        return super()._is_compatible_gwpy(other)
+    def _check_compatible_gwpy(
+        self,
+        other: Quantity,
+        *,
+        irregular_equal: bool = True,
+    ) -> None:
+        """Check whether this `Array2D` and another are compatible.
+
+        This method checks that the Index arrays are compatible.
+        """
+        self._check_compatible_index(
+            other,
+            axis="y",
+            irregular_equal=irregular_equal,
+        )
+        super()._check_compatible_gwpy(
+            other,
+            irregular_equal=irregular_equal,
+        )
 
     def value_at(self, x, y):
         """Return the value of this `Series` at the given `(x, y)` coordinates.
