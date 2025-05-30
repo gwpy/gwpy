@@ -24,7 +24,7 @@
    This example requires LIGO.ORG credentials for data access.
 
 Gravitational wave detectors are very sensitive astronomical instruments, but
-they are also susceptible to transient noise events called _glitches_. In
+they are also susceptible to transient noise events called *glitches*. In
 order to reliably detect gravitational waves and improve detector performance,
 we must distinguish glitches from astrophysical signals and, if possible,
 identify their cause.

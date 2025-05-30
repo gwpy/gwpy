@@ -26,7 +26,7 @@ can wash out transient noise (as is often desired).
 
 The `SpectralVariance` histogram provide by `gwpy.frequencyseries` allows
 us to look at the spectral sensitivity in a different manner, displaying
-which frequencies sit at which amplitude _most_ of the time, but also
+which frequencies sit at which amplitude *most* of the time, but also
 highlighting excursions from normal behaviour.
 """
 
@@ -34,7 +34,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __currentmodule__ = 'gwpy.frequencyseries'
 
 # To demonstate this, we can load some data from the LIGO Livingston
-# intereferometer around the time of the GW151226 gravitational wave detection:
+# interferometer around the time of the GW151226 gravitational wave detection:
 
 from gwpy.timeseries import TimeSeries
 llo = TimeSeries.fetch_open_data('L1', 1135136228, 1135140324, verbose=True)

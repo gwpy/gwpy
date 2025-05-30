@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Read and write HDF5 files in the LIGO Open Science Center format
+"""Read and write HDF5 files in GWOSC format
 
 For more details, see :ref:`gwpy-table-io`.
 """

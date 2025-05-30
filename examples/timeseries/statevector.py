@@ -53,6 +53,6 @@ plot.show()
 # This plot shows that for a short time exactly overlapping with GW170817
 # there was a data quality issue recorded that would negatively impact a
 # search for generic gravitational-wave transients (bursts).
-# For more details on this _glitch_, and on how it was excised, please see
+# For more details on this *glitch*, and on how it was excised, please see
 # the `Science Summary for GW170817
 # <https://www.ligo.org/science/Publication-GW170817BNS/>`__.
