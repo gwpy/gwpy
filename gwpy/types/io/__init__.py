@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -17,9 +18,9 @@
 
 """Input/Output routines for the Array and its sub-classes."""
 
-from . import (  # pylint: disable=unused-import
+from . import (
+    ascii,  # noqa: A004
     hdf5,
-    ascii,
 )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

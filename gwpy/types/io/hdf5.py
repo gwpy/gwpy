@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import pickle
 import typing
 from decimal import Decimal
@@ -66,6 +67,7 @@ ATTR_TYPE_MAP: dict[type, Callable] = {
 
 # -- read ----------------------------
 
+
 @io_hdf5.with_read_hdf5
 def read_hdf5_array(
     source: h5py.Group,
@@ -89,44 +91,39 @@ def read_hdf5_array(
     """
     dataset = io_hdf5.find_dataset(source, path=path)
     attrs = dict(dataset.attrs)
+
     # unpickle channel object
-    try:
+    with contextlib.suppress(KeyError):
         attrs["channel"] = _unpickle_channel(attrs["channel"])
-    except KeyError:  # no channel stored
-        pass
+
     # unpack byte strings for python3
-    for key in attrs:
-        if isinstance(attrs[key], bytes):
-            attrs[key] = attrs[key].decode("utf-8")
+    for key, attr in attrs.items():
+        if isinstance(attr, bytes):
+            attrs[key] = attr.decode("utf-8")
     return array_type(dataset[()], **attrs)
 
 
-def _unpickle_channel(raw, **kwargs) -> str:
+def _unpickle_channel(raw: str | bytes, **kwargs) -> str:
     """Try and unpickle a channel with sensible error handling."""
+    if isinstance(raw, str):
+        return raw
+
     try:
         return pickle.loads(raw, **kwargs)
     except (
         ValueError,
         pickle.UnpicklingError,
         EOFError,
-        TypeError,
         IndexError,
-    ) as exc:
-        # maybe not pickled
-        if isinstance(raw, bytes):
-            raw = raw.decode("utf-8")
-        try:  # test if this is a valid channel name
-            Channel.MATCH.match(raw)
-        except ValueError:
-            raise exc
-        return raw
+    ):
+        raw = raw.decode("utf-8")
+        return _unpickle_channel(raw)
 
 
 # -- write ---------------------------
 
 class IgnoredAttributeError(ValueError):
     """Internal exception to indicate an attribute to be ignored."""
-    pass
 
 
 def _format_metadata_attribute(value: Any) -> Any:
@@ -144,9 +141,9 @@ def _format_metadata_attribute(value: Any) -> Any:
 def write_array_metadata(
     dataset: h5py.Dataset,
     array: Array,
-):
+) -> None:
     """Write metadata for ``array`` into the `h5py.Dataset`."""
-    for attr in ("unit",) + array._metadata_slots:
+    for attr in ("unit", *array._metadata_slots):
         # format attribute
         try:
             value = _format_metadata_attribute(
@@ -158,7 +155,11 @@ def write_array_metadata(
         # store attribute
         try:
             dataset.attrs[attr] = value
-        except (TypeError, ValueError, RuntimeError) as exc:
+        except (
+            TypeError,
+            ValueError,
+            RuntimeError,
+        ) as exc:
             exc.args = (
                 f"Failed to store {attr} ({type(value).__name__}) "
                 f"for {type(array).__name__}: '{exc}'",
@@ -171,8 +172,9 @@ def write_hdf5_array(
     array: Array,
     h5g: h5py.Group,
     path: str | None = None,
+    *,
     attrs: dict[str, Any] | None = None,
-    append: bool = False,
+    append: bool = False,  # used by `with_write_hdf5`  # noqa: ARG001
     overwrite: bool = False,
     compression: str = "gzip",
     **kwargs,
@@ -218,7 +220,7 @@ def write_hdf5_array(
     datasets : `h5py.Dataset`
         The newly created dataset.
 
-    See also
+    See Also
     --------
     h5py.Group.create_dataset
         For documentation of other valid keyword arguments.
@@ -226,9 +228,12 @@ def write_hdf5_array(
     if path is None:
         path = array.name
     if path is None:
-        raise ValueError(
+        msg = (
             f"Cannot determine HDF5 path for {type(array).__name__}, "
-            "please set `name` attribute, or pass `path` keyword when writing",
+            "please set `name` attribute, or pass `path` keyword when writing"
+        )
+        raise ValueError(
+            msg,
         )
 
     # create dataset
@@ -238,7 +243,8 @@ def write_hdf5_array(
         overwrite=overwrite,
         data=array.value,
         compression=compression,
-        **kwargs)
+        **kwargs,
+    )
 
     # write default metadata
     write_array_metadata(dset, array)
@@ -260,7 +266,7 @@ def format_index_array_attrs(series: Series) -> dict[str, Any]:
     """
     attrs = {}
     # loop through named axes
-    for i, axis in zip(range(series.ndim), ("x", "y", "z"), strict=False):
+    for _, axis in zip(range(series.ndim), ("x", "y", "z"), strict=False):
         # find property names
         unit = f"{axis}unit"
         origin = f"{axis}0"
@@ -268,11 +274,13 @@ def format_index_array_attrs(series: Series) -> dict[str, Any]:
 
         # store attributes
         aunit = getattr(series, unit)
-        attrs.update({
-            unit: str(aunit),
-            origin: getattr(series, origin).to(aunit).value,
-            delta: getattr(series, delta).to(aunit).value,
-        })
+        attrs.update(
+            {
+                unit: str(aunit),
+                origin: getattr(series, origin).to(aunit).value,
+                delta: getattr(series, delta).to(aunit).value,
+            },
+        )
     return attrs
 
 
@@ -303,11 +311,12 @@ def write_hdf5_series(
 
 def register_hdf5_array_io(
     array_type: type[Array],
-    format: str = "hdf5",
+    format: str = "hdf5",  # noqa: A002
+    *,
     read: bool = True,
     write: bool = True,
     identify: bool = True,
-):
+) -> None:
     """Registry read() and write() methods for the HDF5 format."""
     if read:
         array_type.read.registry.register_reader(

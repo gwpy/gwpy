@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import typing
 
 from ...io.ligolw import read_ligolw
@@ -43,16 +44,15 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def series_contenthandler() -> ligolw.LIGOLwContentHandler:
     """Build a `~igwn_ligolw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``."""
     from igwn_ligolw import (
-        ligolw,
         array as ligolw_array,
-        param as ligolw_param
+        ligolw,
+        param as ligolw_param,
     )
 
     @ligolw_array.use_in
     @ligolw_param.use_in
     class ArrayContentHandler(ligolw.LIGOLWContentHandler):
         """`~igwn_ligolw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``."""
-        pass
 
     return ArrayContentHandler
 
@@ -68,8 +68,9 @@ def _match_name(elem: ligolw.Element, name: str) -> bool:
 def _get_time(time: ligolw.Element) -> LIGOTimeGPS:
     """Return the Time element of a ``<LIGO_LW>``."""
     from igwn_ligolw.ligolw import Time
+
     if not isinstance(time, Time):
-        t, = time.getElementsByTagName(Time.tagName)
+        (t,) = time.getElementsByTagName(Time.tagName)
         return _get_time(t)
     return to_gps(time.pcdata)
 
@@ -107,40 +108,42 @@ def _match_array(
     def _is_match(arr: ligolw.Array) -> bool:
         """Work out whether this `<Array>` element matches the request."""
         parent = arr.parentNode
-        if (
-            (name is not None and not _match_name(arr, name))
-            or (epoch is not None and not _match_time(parent, epoch))
+        if (name is not None and not _match_name(arr, name)) or (
+            epoch is not None and not _match_time(parent, epoch)
         ):
             return False
-        for key, value in params.items():
-            try:
+        try:
+            for key, value in params.items():
                 if Param.get_param(parent, name=key).pcdata != value:
                     return False
-            except ValueError:  # no Param with this Name
-                return False
+        except ValueError:  # at least one param didn't match
+            return False
         return True
 
-    def _get_filter_keys(arrays, **given):
-        """Returns the set of keyword arguments that can be used to filter.
+    def _get_filter_keys(arrays: list[ligolw.Array], **given) -> set[str]:
+        """Return the set of keyword arguments that can be used to filter.
 
         This is just to format a helpful error message for users to show them
         what params they could use to select the right array.
         """
         # return name and epoch if not given by the user
-        keys = set(k for k in ("name", "epoch") if given.pop(k, None) is None)
+        keys = {k for k in ("name", "epoch") if given.pop(k, None) is None}
         # add all of the params found in _any_ array
-        return (keys | set(
-            p.Name for arr in arrays for
-            p in arr.parentNode.getElementsByTagName(Param.tagName)
-        )) - set(given.keys())
+        return (keys | {
+            p.Name
+            for arr in arrays
+            for p in arr.parentNode.getElementsByTagName(Param.tagName)
+        }) - set(given.keys())
 
     # parse out correct element
-    matches = list(filter(
-        _is_match,
-        xmldoc.getElementsByTagName(Array.tagName),
-    ))
+    matches = list(
+        filter(
+            _is_match,
+            xmldoc.getElementsByTagName(Array.tagName),
+        ),
+    )
     try:
-        arr, = matches
+        (arr,) = matches
     except ValueError as exc:
         if not matches:  # no arrays found
             exc.args = ("no <Array> elements found matching request",)
@@ -161,7 +164,8 @@ def _match_array(
 def _update_metadata_from_ligolw(
     array: ligolw.Array,
     kwargs: dict[str, Any],
-):
+) -> dict[str, Any]:
+    """Update ``kwargs`` with attributes from the ``array``."""
     from igwn_ligolw.ligolw import (
         Param,
         Time,
@@ -171,7 +175,7 @@ def _update_metadata_from_ligolw(
 
     # pick out the epoch
     try:
-        time, = parent.getElementsByTagName(Time.tagName)
+        (time,) = parent.getElementsByTagName(Time.tagName)
     except ValueError:
         pass
     else:
@@ -179,10 +183,8 @@ def _update_metadata_from_ligolw(
 
     # copy over certain other params, if they exist
     for key in ("channel",):
-        try:
+        with contextlib.suppress(ValueError):
             kwargs[key] = Param.get_param(parent, name=key)
-        except ValueError:
-            pass
 
     return kwargs
 
@@ -235,9 +237,8 @@ def read_series(
     dx = xdim.Scale
     xunit = xdim.Unit
     if ydim.n > Series._ndim + 1:  # check that we can store these data
-        raise ValueError(
-            f"cannot parse LIGO_LW Array with {ydim.n} dimensions in a Series",
-        )
+        msg = f"cannot parse LIGO_LW Array with {ydim.n} dimensions in a Series"
+        raise ValueError(msg)
 
     # parse metadata
     array_kw = {
