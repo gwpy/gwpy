@@ -54,7 +54,7 @@ datasets made available at the same time as the relevant result publication
 and typically including ~1 hour of data around each published event detection,
 and *bulk* datasets with the entire observing run data available roughly
 18 months after the end of the run.
-The data is also available in a :ref:`HDF5 <gwpy-timeseries-io-hdf5-gwosc>` file
+The data are available in :ref:`HDF5 <gwpy-timeseries-io-hdf5-gwosc>` files
 with a specific format.
 
 In addition to strain data, GWOSC files also contains data quality flags
