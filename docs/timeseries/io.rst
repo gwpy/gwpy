@@ -347,7 +347,7 @@ For instance to read injections flags:
    ...     format="hdf5.gwosc",
    ...     path="quality/injections",
    ...     bits_dataset="Injmask",
-   ...     def_dataset="InjDescriptions"
+   ...     def_dataset="InjDescriptions",
    ... )
 
 As with regular HDF5, the ``start`` and ``end`` keyword arguments can be used

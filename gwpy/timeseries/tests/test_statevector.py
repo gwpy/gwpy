@@ -459,7 +459,7 @@ class TestStateVector(_TestTimeSeriesBase):
             *GWOSC_GW190814_SEGMENT,
             format=format,
             version=3,
-            **GWOSC_GW190814_INJ_KWARGS[format]
+            **GWOSC_GW190814_INJ_KWARGS[format],
         )
         # We know that the first bytes are equal to 23
         ref = StateVector(
