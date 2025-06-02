@@ -292,7 +292,7 @@ def read_gwosc_hdf5_state(
         create a fresh-memory copy of the underlying array
 
     bits_dataset : `str`
-        HDF5 dataset where to read the bits
+        HDF5 dataset where to read the statevector values
 
     def_dataset : `str`
         HDF5 dataset where to read the definition of each bits
