@@ -447,12 +447,12 @@ class TestStateVector(_TestTimeSeriesBase):
     ])
     @pytest_skip_flaky_network
     def test_fetch_open_data_injection_new_format(self, format):
-        """
-        This test checks that we are able to read and fetch the injection bits
-        from GWOSC files with new format (see #1811).
+        """Check that we can read and fetch GWOSC injection bits in the new format.
 
         To do so, we download the injection data from GWOSC and compare it to a
         known StateVector.
+
+        See (https://gitlab.com/gwpy/gwpy/-/issues/1811).
         """
         inj = self.TEST_CLASS.fetch_open_data(
             GWOSC_GW190814_IFO,
