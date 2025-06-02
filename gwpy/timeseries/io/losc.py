@@ -146,7 +146,7 @@ def _name_from_gwosc_hdf5(f, path):
     """
     try:
         # New files store the channel name in GWOSCmeta
-        meta_ds = io_hdf5.find_dataset(f, "%s/%s" % (path, "GWOSCmeta"))
+        meta_ds = io_hdf5.find_dataset(f, f"{path}/GWOSCmeta")
     except KeyError:
         # GWOSCmeta isn't stored in old files
         return path
@@ -155,7 +155,7 @@ def _name_from_gwosc_hdf5(f, path):
     # This is just the letter code, not the number so we assume 1
     ifo_ds = io_hdf5.find_dataset(f, "meta/Observatory")
     ifo = ifo_ds[()].decode("utf-8")
-    return "%s1:%s" % (ifo, channel)
+    return f"{ifo}1:{channel}"
 
 
 # -- remote data access (the main event) --------------------------------------
@@ -303,8 +303,8 @@ def read_gwosc_hdf5_state(
         a new `StateVector` containing the data read from disk
     """
     # find data
-    bits_ds = io_hdf5.find_dataset(f, "%s/%s" % (path, bits_dataset))
-    def_ds = io_hdf5.find_dataset(f, "%s/%s" % (path, def_dataset))
+    bits_ds = io_hdf5.find_dataset(f, f"{path}/{bits_dataset}")
+    def_ds = io_hdf5.find_dataset(f, f"{path}/{def_dataset}")
     # read data
     bits = bits_ds[()]
     bit_def = [bytes.decode(bytes(b), "utf-8") for b in def_ds[()]]
