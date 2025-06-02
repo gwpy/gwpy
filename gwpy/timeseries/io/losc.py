@@ -153,7 +153,7 @@ def _name_from_gwosc_hdf5(f, path):
     channel = meta_ds[()].decode("utf-8")
     # We can then find the observatory
     # This is just the letter code, not the number so we assume 1
-    ifo_ds = io_hdf5.find_dataset(f, 'meta/Observatory')
+    ifo_ds = io_hdf5.find_dataset(f, "meta/Observatory")
     ifo = ifo_ds[()].decode("utf-8")
     return "%s1:%s" % (ifo, channel)
 
