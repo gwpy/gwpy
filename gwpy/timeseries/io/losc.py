@@ -269,7 +269,7 @@ def read_gwosc_hdf5_state(
     start=None,
     end=None,
     copy=False,
-    bits_dataset="DQmask",
+    value_dataset="DQmask",
     def_dataset="DQDescriptions",
 ):
     """Read a `StateVector` from a GWOSC-format HDF file.
@@ -291,7 +291,7 @@ def read_gwosc_hdf5_state(
     copy : `bool`, default: `False`
         create a fresh-memory copy of the underlying array
 
-    bits_dataset : `str`
+    value_dataset : `str`
         HDF5 dataset where to read the statevector values
 
     def_dataset : `str`
@@ -303,7 +303,7 @@ def read_gwosc_hdf5_state(
         a new `StateVector` containing the data read from disk
     """
     # find data
-    bits_ds = io_hdf5.find_dataset(f, f"{path}/{bits_dataset}")
+    bits_ds = io_hdf5.find_dataset(f, f"{path}/{value_dataset}")
     def_ds = io_hdf5.find_dataset(f, f"{path}/{def_dataset}")
     # read data
     bits = bits_ds[()]

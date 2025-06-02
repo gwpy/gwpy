@@ -58,7 +58,7 @@ from .test_timeseries import (
 GWOSC_GW150914_INJ_KWARGS = {
     "hdf5": {
         "path": "quality/injections",
-        "bits_dataset": "Injmask",
+        "value_dataset": "Injmask",
         "def_dataset": "InjDescriptions",
     },
     "gwf": {
@@ -69,7 +69,7 @@ GWOSC_GW150914_INJ_KWARGS = {
 GWOSC_GW190814_INJ_KWARGS = {
     "hdf5": {
         "path": "quality/injections",
-        "bits_dataset": "Injmask",
+        "value_dataset": "Injmask",
         "def_dataset": "InjDescriptions",
     },
     "gwf": {

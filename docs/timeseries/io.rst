@@ -336,7 +336,7 @@ By default, :meth:`TimeSeries.read` will return the contents of the
 ``/strain/Strain`` dataset, while :meth:`StateVector.read` will return those
 of ``/quality/simple``.
 
-It's possible to change which datasets are read with the `path`, `bits_dataset`
+It's possible to change which datasets are read with the `path`, `value_dataset`
 and `def_dataset` keywords.
 For instance to read injections flags:
 
@@ -346,7 +346,7 @@ For instance to read injections flags:
    ...     "H-H1_GWOSC_16KHZ_R1-1187056280-4096.hdf5",
    ...     format="hdf5.gwosc",
    ...     path="quality/injections",
-   ...     bits_dataset="Injmask",
+   ...     value_dataset="Injmask",
    ...     def_dataset="InjDescriptions",
    ... )
 
