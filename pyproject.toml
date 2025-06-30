@@ -87,7 +87,7 @@ dev = [
   "psycopg2 ; sys_platform == 'linux'",
   "pycbc >=1.13.4 ; sys_platform != 'win32'",
   "pymysql",
-  "python-ligo-lw >=1.7.0 ; sys_platform != 'win32'",
+  "python-ligo-lw >=1.7.0,<2.0.0 ; sys_platform != 'win32'",
   "sqlalchemy",
   "uproot >=4.1.5",
 ]
