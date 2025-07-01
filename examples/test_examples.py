@@ -77,6 +77,9 @@ NDS2_SKIP = re.compile(
     re.I,
 )
 
+# stderr message for NDS2 data access failure
+NDS2_READ_ERROR_STDERR = re.compile("read_server_response: Wrong length read")
+
 
 def skip_nds_authentication_error(func):
     """Ignore NDS2 authentication errors
@@ -134,7 +137,7 @@ def skip_missing_optional_dependency(func):
 @pytest_skip_flaky_network  # if there are network errors, we don't care
 @skip_nds_authentication_error
 @skip_missing_optional_dependency
-def test_example(script):
+def test_example(capfd, script):
     # read example code from file
     code = compile(
         script.read_text(),
@@ -143,5 +146,11 @@ def test_example(script):
     )
 
     # in the directory of the script, run it
-    with cwd(script.parent):
-        exec(code, globals())
+    try:
+        with cwd(script.parent):
+            exec(code, globals())
+    except RuntimeError as exc:  # NDS2 failed
+        stderr = capfd.readouterr().err
+        if NDS2_READ_ERROR_STDERR.match(stderr):
+            pytest.skip(f"{exc} caused by '{NDS2_READ_ERROR_STDERR.pattern}'")
+        raise
