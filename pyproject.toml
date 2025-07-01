@@ -157,6 +157,7 @@ dev = [
   "psycopg2 ; sys_platform == 'linux'",
   "pycbc >=1.13.4 ; sys_platform != 'win32'",
   "pymysql",
+  "python-ligo-lw >=1.7.0,<2.0.0 ; sys_platform != 'win32'",
   "requests-scitokens",
   "scitokens >=1.8.0",
   "sqlalchemy",
