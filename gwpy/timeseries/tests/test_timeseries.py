@@ -20,6 +20,7 @@
 
 import logging
 import os.path
+import sys
 from contextlib import nullcontext
 from itertools import (chain, product)
 from pathlib import Path
@@ -665,21 +666,21 @@ class TestTimeSeries(_TestTimeSeriesBase):
     ])
     def test_fetch_pad(self, caplog, nds2_connection, protocol):
         """Test `TimeSeries.fetch(..., pad=...)`."""
-        caplog.set_level(logging.DEBUG, logger="gwpy.timeseries.io.nds2")
-
         # set protocol
         nds2_connection.get_protocol.return_value = protocol
 
         # get expected result
         expected = self.TEST_CLASS.from_nds2_buffer(nds2_connection._buffers[0])
 
-        # check padding works
-        ts = self.TEST_CLASS.fetch(
-            "X1:test",
-            *expected.span.protract(2),
-            pad=-100.,
-            connection=nds2_connection,
-        )
+        with caplog.at_level(logging.DEBUG, logger="gwpy.timeseries.io.nds2"):
+            # check padding works
+            ts = self.TEST_CLASS.fetch(
+                "X1:test",
+                *expected.span.protract(2),
+                pad=-100.,
+                connection=nds2_connection,
+            )
+
         assert ts.span == expected.span.protract(2)
         nptest.assert_array_equal(
             ts.value,
@@ -691,7 +692,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
         # check that the logger emitted warnings about the padding
-        if protocol == 2:
+        if protocol == 2 and sys.version_info >= (3, 12):
             for msg in (
                 "[nds.test.gwpy] Availability check complete, "
                 "found 1 viable segments of data with 66.67% coverage",
