@@ -55,7 +55,6 @@ data = TimeSeriesDict.get(
     [gndchannel, suschannel],
     start,
     end,
-    verbose=True,
     host="nds.gwosc.org",
 )
 gnd = data[gndchannel]
