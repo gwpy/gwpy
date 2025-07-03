@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -15,16 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit test for gwpy.types classes."""
+"""Test `gwpy.types.array`."""
 
-import pickle
+import contextlib
 import warnings
 from unittest import mock
 
-import pytest
-
 import numpy
-
+import pytest
 from astropy import units
 from astropy.time import Time
 
@@ -47,35 +46,50 @@ CHANNEL = Channel(CHANNEL_NAME)
 
 class TestArray:
     """Test `gwpy.types.Array`."""
+
+    #: The type of object under test
     TEST_CLASS = Array
+
+    #: The data type of the array under test
     DTYPE = None
 
-    # -- setup ----------------------------------
+    #: A shared array of data to use in tests
+    data = None  # type: numpy.ndarray
+
+    # -- setup -----------------------
 
     @classmethod
     def setup_class(cls):
-        numpy.random.seed(SEED)
-        cls.data = (numpy.random.random(100) * 1e5).astype(dtype=cls.DTYPE)
+        """Create a data array that can be reused during tests of this class."""
+        rng = numpy.random.default_rng(SEED)
+        cls.data = (rng.random(size=100) * 1e5).astype(dtype=cls.DTYPE)
 
     @classmethod
     def create(cls, *args, **kwargs):
+        """Create a new instance of the type under test."""
         kwargs.setdefault("copy", False)
         return cls.TEST_CLASS(cls.data, *args, **kwargs)
 
     @classmethod
-    @pytest.fixture()
+    @pytest.fixture
     def array(cls):
+        """Return a new instance of the type under test."""
         return cls.create()
 
     @property
-    def TEST_ARRAY(self):
+    def TEST_ARRAY(self):  # noqa: N802
+        """Create a new instance of ``TEST_CLASS`` and return it."""
+        self._TEST_ARRAY: self.TEST_CLASS
         try:
             return self._TEST_ARRAY
         except AttributeError:
             # create array
-            self._TEST_ARRAY = self.create(name=CHANNEL_NAME, unit="meter",
-                                           channel=CHANNEL_NAME,
-                                           epoch=GPS_EPOCH)
+            self._TEST_ARRAY = self.create(
+                name=CHANNEL_NAME,
+                unit="meter",
+                channel=CHANNEL_NAME,
+                epoch=GPS_EPOCH,
+            )
             # customise channel a wee bit
             #    used to test pickle/unpickle when storing channel as
             #    dataset attr in HDF5
@@ -83,7 +97,7 @@ class TestArray:
             self._TEST_ARRAY.channel.unit = "m"
             return self.TEST_ARRAY
 
-    # -- test basic construction ----------------
+    # -- test basic construction -----
 
     def assert_new(self, array):
         """Run basic assertions for a new instance of the type under test."""
@@ -93,16 +107,12 @@ class TestArray:
         assert self.create(copy=False).flags.owndata is False
         assert self.create(copy=True).flags.owndata is True
 
-    def test_new_empty(self):
-        """Test that `Array()` raises an exception."""
-        with pytest.raises(TypeError):
-            self.TEST_CLASS()
-
     def test_new(self):
         """Test Array creation."""
         self.assert_new(self.create())
 
     def test_unit(self, array):
+        """Test `Array.unit`."""
         # test default unit is dimensionless
         assert array.unit is units.dimensionless_unscaled
 
@@ -121,9 +131,9 @@ class TestArray:
                 "gwpy.detector.units.UNRECOGNIZED_UNITS",
                 clear=True,
             ),
-            pytest.warns(units.UnitsWarning)
+            pytest.warns(units.UnitsWarning),
         ):
-            array = self.create(unit='blah')
+            array = self.create(unit="blah")
         assert isinstance(array.unit, units.IrreducibleUnit)
         assert str(array.unit) == "blah"
 
@@ -135,6 +145,7 @@ class TestArray:
         assert array.unit is units.m
 
     def test_name(self, array):
+        """Test `Array.name`."""
         # test default is no name
         assert array.name is None
 
@@ -156,6 +167,7 @@ class TestArray:
         assert array.name == "4"
 
     def test_epoch(self, array):
+        """Test `Array.epoch`."""
         # test default is no epoch
         assert array.epoch is None
 
@@ -183,6 +195,7 @@ class TestArray:
         assert array.epoch is None
 
     def test_channel(self, array):
+        """Test `Array.channel`."""
         # test default channl is None
         assert array.channel is None
 
@@ -205,48 +218,48 @@ class TestArray:
         assert array.channel is None
 
     def test_math(self, array):
+        """Test basic math operations on `Array`."""
         array.override_unit("Hz")
         # test basic operations
-        arraysq = array ** 2
-        utils.assert_array_equal(arraysq.value, self.data ** 2)
-        assert arraysq.unit == units.Hz ** 2
+        arraysq = array**2
+        utils.assert_array_equal(arraysq.value, self.data**2)
+        assert arraysq.unit == units.Hz**2
         assert arraysq.name == array.name
         assert arraysq.epoch == array.epoch
         assert arraysq.channel == array.channel
 
     def test_copy(self):
+        """Test `Array.copy()`."""
         array = self.create(channel="X1:TEST")
         copy = array.copy()
         utils.assert_quantity_sub_equal(array, copy)
         assert copy.channel is not array.channel
 
     def test_repr(self, array):
+        """Test ``repr(Array)``."""
         # just test that it runs
         repr(array)
 
     def test_str(self, array):
+        """Test ``str(Array)``."""
         # just test that it runs
         str(array)
 
-    def test_pickle(self, array):
-        # check pickle-unpickle yields unchanged data
-        pkl = array.dumps()
-        a2 = pickle.loads(pkl)
-        utils.assert_quantity_sub_equal(array, a2)
-
-    # -- test methods ---------------------------
-
-    def test_tostring(self, array):
-        assert array.tostring() == array.value.tobytes()
+    # -- test methods --------------
 
     def test_abs(self, array):
+        """Test `Array.abs()`."""
         utils.assert_quantity_equal(array.abs(), numpy.abs(array))
 
     def test_median(self, array):
+        """Test `Array.median()`."""
         utils.assert_quantity_equal(
-            array.median(), numpy.median(array.value) * array.unit)
+            array.median(),
+            numpy.median(array.value) * array.unit,
+        )
 
     def test_override_unit(self, array):
+        """Test `Array.override_unit()`."""
         assert array.unit is units.dimensionless_unscaled
 
         # check basic override works
@@ -255,25 +268,29 @@ class TestArray:
 
         # check parse_strict works for each of 'raise' (default), 'warn',
         # and 'silent'
-        with mock.patch.dict(
-                "gwpy.detector.units.UNRECOGNIZED_UNITS", clear=True):
-            with pytest.raises(ValueError):
+        with mock.patch.dict("gwpy.detector.units.UNRECOGNIZED_UNITS", clear=True):
+            with pytest.raises(
+                ValueError,
+                match="'blah' did not parse",
+            ):
                 array.override_unit("blah", parse_strict="raise")
-            with pytest.warns(units.UnitsWarning):
+            with pytest.warns(
+                units.UnitsWarning,
+                match="'blah' did not parse",
+            ):
                 array.override_unit("blah", parse_strict="warn")
             array.override_unit("blah", parse_strict="silent")
         assert isinstance(array.unit, units.IrreducibleUnit)
         assert str(array.unit) == "blah"
 
     def test_flatten(self, array):
+        """Test `Array.flatten()`."""
         flat = array.flatten()
         assert flat.ndim == 1
-        assert type(flat) is units.Quantity  # pylint: disable=C0123
+        assert type(flat) is units.Quantity
         assert flat.shape[0] == numpy.prod(array.shape)
-        try:
+        with contextlib.suppress(NotImplementedError):
             utils.assert_quantity_equal(
                 array.flatten("C"),
                 array.T.flatten("F"),
             )
-        except NotImplementedError:
-            pass

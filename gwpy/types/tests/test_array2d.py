@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -15,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.types.array2d`."""
+"""Tests for :mod:`gwpy.types.array2d`."""
 
 import numpy
 import pytest
@@ -24,26 +25,29 @@ from numpy.testing import assert_array_equal
 
 from ...segments import Segment
 from ...testing import utils
-from .. import (Series, Array2D)
+from .. import Array2D, Series
 from .test_series import TestSeries as _TestSeries
 
 SEED = 1
 
 
 class TestArray2D(_TestSeries):
-    TEST_CLASS = Array2D
+    """Test `gwpy.types.Array2D`."""
+
+    TEST_CLASS: type[Array2D] = Array2D
 
     @classmethod
     def setup_class(cls, dtype=None):
-        numpy.random.seed(SEED)
-        cls.data = (numpy.random.random(100) * 1e5).astype(
-            dtype=dtype).reshape(
-            (20, 5))
-        cls.datasq = cls.data ** 2
+        """Create data with which to test this array."""
+        rng = numpy.random.default_rng(seed=SEED)
+        cls.data = (rng.random(size=100) * 1e5).astype(
+            dtype=dtype,
+        ).reshape((20, 5))
 
-    # -- test properties ------------------------
+    # -- test properties -------------
 
     def test_y0(self, array):
+        """Test `Array2D.y0`."""
         array.y0 = 5
         # test simple
         assert array.y0 == 5 * self.TEST_CLASS._default_yunit
@@ -58,6 +62,7 @@ class TestArray2D(_TestSeries):
         assert array.y0 == units.Quantity(5, "m")
 
     def test_dy(self, array):
+        """Test `Array2D.dy`."""
         array.dy = 5 * self.TEST_CLASS._default_yunit
         # test simple
         assert array.dy == units.Quantity(5, self.TEST_CLASS._default_yunit)
@@ -72,22 +77,30 @@ class TestArray2D(_TestSeries):
         assert array.dy == units.Quantity(5, "m")
 
     def test_yindex(self):
+        """Test `Array2D.yindex`."""
         y = numpy.linspace(0, 100, num=self.data.shape[1])
 
         # test simple
         series = self.create(yindex=y)
         utils.assert_quantity_equal(
-            series.yindex, units.Quantity(y, self.TEST_CLASS._default_yunit))
+            series.yindex,
+            units.Quantity(y, self.TEST_CLASS._default_yunit),
+        )
 
         # test deleter
         del series.yindex
         del series.yindex
         y1 = series.y0.value + series.shape[1] * series.dy.value
-        y_default = numpy.linspace(series.y0.value, y1, num=series.shape[1],
-                                   endpoint=False)
+        y_default = numpy.linspace(
+            series.y0.value,
+            y1,
+            num=series.shape[1],
+            endpoint=False,
+        )
         utils.assert_quantity_equal(
             series.yindex,
-            units.Quantity(y_default, self.TEST_CLASS._default_yunit))
+            units.Quantity(y_default, self.TEST_CLASS._default_yunit),
+        )
 
         # test setting of y0 and dy
         series = self.create(yindex=units.Quantity(y, "Farad"))
@@ -106,24 +119,26 @@ class TestArray2D(_TestSeries):
         y = numpy.logspace(0, 2, num=self.data.shape[0])
         series = self.create(yindex=units.Quantity(y, "Mpc"))
         with pytest.raises(AttributeError):
-            series.dy
+            series.dy  # noqa: B018
         assert series.y0 == units.Quantity(1, "Mpc")
         assert series.yspan == (y[0], y[-1] + y[-1] - y[-2])
 
     def test_yunit(self, unit=None):
+        """Test `Array2D.yunit`."""
         if unit is None:
             unit = self.TEST_CLASS._default_yunit
-        series = self.create(dy=4*unit)
+        series = self.create(dy=4 * unit)
         assert series.yunit == unit
-        assert series.y0 == 0*unit
-        assert series.dy == 4*unit
+        assert series.y0 == 0 * unit
+        assert series.dy == 4 * unit
         # for series only, test arbitrary yunit
         if self.TEST_CLASS in (Series, Array2D):
             series = self.create(dy=4, yunit=units.m)
-            assert series.y0 == 0*units.m
-            assert series.dy == 4*units.m
+            assert series.y0 == 0 * units.m
+            assert series.dy == 4 * units.m
 
     def test_yspan(self):
+        """Test `Array2D.yspan`."""
         # test normal
         series = self.create(y0=1, dy=1)
         assert series.yspan == (1, 1 + 1 * series.shape[1])
@@ -134,13 +149,14 @@ class TestArray2D(_TestSeries):
         assert series.yspan == (y[0], y[-1] + y[-1] - y[-2])
 
     def test_transpose(self, array):
+        """Test `Array2D.T`."""
         trans = array.T
         utils.assert_array_equal(trans.value, array.value.T)
         assert trans.unit is array.unit
         utils.assert_array_equal(trans.xindex, array.yindex)
         utils.assert_array_equal(trans.yindex, array.xindex)
 
-    # -- test methods ---------------------------
+    # -- test methods ----------------
 
     @pytest.mark.parametrize("create_kwargs", [
         {"x0": 0, "dx": 1, "y0": 100, "dy": 2},
@@ -149,6 +165,7 @@ class TestArray2D(_TestSeries):
         {"xindex": numpy.arange(20), "y0": 100, "dy": 2},
     ])
     def test_getitem(self, array, create_kwargs):
+        """Test item access and slicing on `Array2D`."""
         array = self.create(name="test_getitem", **create_kwargs)
 
         # test element returns as quantity
@@ -160,9 +177,18 @@ class TestArray2D(_TestSeries):
         # test column slice returns as _columnclass
         utils.assert_quantity_sub_equal(array[2], array[2, :])
         column = array[0, 0::2]
-        utils.assert_quantity_sub_equal(column, self.TEST_CLASS._columnclass(
-            array.value[0, 0::2], x0=array.y0, dx=array.dy*2, name=array.name,
-            channel=array.channel, unit=array.unit, epoch=array.epoch))
+        utils.assert_quantity_sub_equal(
+            column,
+            self.TEST_CLASS._columnclass(
+                array.value[0, 0::2],
+                x0=array.y0,
+                dx=array.dy * 2,
+                name=array.name,
+                channel=array.channel,
+                unit=array.unit,
+                epoch=array.epoch,
+            ),
+        )
 
         # test row slice returns as _rowclass
         row = array[1:10:3, 0]
@@ -171,8 +197,11 @@ class TestArray2D(_TestSeries):
             row,
             self.TEST_CLASS._rowclass(
                 array.value[1:10:3, 0],
-                x0=array.x0+array.dx, dx=array.dx*3,
-                name=array.name, channel=array.channel, unit=array.unit,
+                x0=array.x0 + array.dx,
+                dx=array.dx * 3,
+                name=array.name,
+                channel=array.channel,
+                unit=array.unit,
             ),
             exclude=["epoch"],
         )
@@ -183,9 +212,13 @@ class TestArray2D(_TestSeries):
             subarray,
             self.TEST_CLASS(
                 array.value[1:5:2, 1:5:2],
-                x0=array.x0+array.dx, dx=array.dx*2,
-                y0=array.y0+array.dy, dy=array.dy*2,
-                name=array.name, channel=array.channel, unit=array.unit,
+                x0=array.x0 + array.dx,
+                dx=array.dx * 2,
+                y0=array.y0 + array.dy,
+                dy=array.dy * 2,
+                name=array.name,
+                channel=array.channel,
+                unit=array.unit,
             ),
             exclude=["epoch"],
         )
@@ -199,8 +232,8 @@ class TestArray2D(_TestSeries):
         """
         # create an array with indices
         a = self.create()
-        a.xindex
-        a.yindex
+        a.xindex  # noqa: B018
+        a.yindex  # noqa: B018
 
         # select a slice of width 1 (as opposed to indexing a single column)
         b = a[0:1]
@@ -237,21 +270,28 @@ class TestArray2D(_TestSeries):
         with pytest.raises(ValueError, match="indexes do not match"):
             array.is_compatible(other)
 
-    def test_value_at(self, array):
+    def test_value_at(self):
+        """Test `Array2D.value_at()`."""
+        array = self.create()
         assert array.value_at(2, 3) == self.data[2][3] * array.unit
         assert array.value_at(5 * array.xunit, 2 * array.yunit) == (
-            self.data[5][2] * array.unit)
+            self.data[5][2] * array.unit
+        )
         with pytest.raises(IndexError):
             array.value_at(1.6, 4.8)
 
     def test_pad(self):
+        """Test `Array2D.pad()` - NOT IMPLEMENTED for Array2D."""
         pytest.skip("not implemented for >1D arrays")
 
     def test_pad_index(self):
+        """Test `Array2D.pad_index()` - NOT IMPLEMENTED for Array2D."""
         pytest.skip("not implemented for >1D arrays")
 
     def test_pad_asymmetric(self):
+        """Test `Array2D.pad_asymmetric()` - NOT IMPLEMENTED for Array2D."""
         pytest.skip("not implemented for >1D arrays")
 
-    def test_single_getitem_not_created(self):
+    def test_single_getitem_not_created(self, array):  # noqa: ARG002
+        """Not implemented for Array2D."""
         pytest.skip("not implemented for >1D arrays")
