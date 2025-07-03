@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (c) 2018-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -19,12 +19,14 @@
 
 import numpy
 from numpy import testing as nptest
-
+from numpy.random import default_rng
 from scipy import signal
 
 from ...frequencyseries import FrequencySeries
 from .. import BodePlot
 from .utils import FigureTestBase
+
+RNG = default_rng()
 
 # design ZPK for BodePlot test
 ZPK = [100], [1], 1e-2
@@ -32,9 +34,12 @@ FREQUENCIES, MAGNITUDE, PHASE = signal.bode(ZPK, n=100)
 
 
 class TestBodePlot(FigureTestBase):
+    """Tests for `gwpy.plot.BodePlot`."""
+
     FIGURE_CLASS = BodePlot
 
     def test_init(self, fig):
+        """Test `BodePlot` initialisation."""
         assert len(fig.axes) == 2
         maxes, paxes = fig.axes
         # test magnigtude axes
@@ -49,6 +54,7 @@ class TestBodePlot(FigureTestBase):
         assert paxes.get_ylabel() == "Phase [deg]"
 
     def test_add_filter(self, fig):
+        """Test `BodePlot.add_filter()`."""
         lm, lp = fig.add_filter(ZPK, analog=True)
         assert lm is fig.maxes.get_lines()[-1]
         assert lp is fig.paxes.get_lines()[-1]
@@ -58,6 +64,7 @@ class TestBodePlot(FigureTestBase):
         nptest.assert_array_almost_equal(lp.get_ydata(), PHASE)
 
     def test_init_with_filter(self):
+        """Test ``BodePlot(filter_)``."""
         fig = self.FIGURE_CLASS(ZPK, analog=True, title="ZPK")
         lm = fig.maxes.get_lines()[0]
         lp = fig.paxes.get_lines()[0]
@@ -69,17 +76,21 @@ class TestBodePlot(FigureTestBase):
         self.save_and_close(fig)
 
     def test_add_frequencyseries(self, fig):
-        fs = FrequencySeries(numpy.random.random(100).astype(complex))
+        """Test `BodePlot.add_frequencyseries()`."""
+        fs = FrequencySeries(RNG.random(size=100).astype(complex))
         fig.add_frequencyseries(fs)
         lm = fig.maxes.get_lines()[0]
         lp = fig.paxes.get_lines()[0]
         nptest.assert_array_equal(lm.get_xdata(), fs.xindex.value)
         nptest.assert_array_equal(
-            lm.get_ydata(), 20 * numpy.log10(numpy.absolute(fs.value)))
+            lm.get_ydata(),
+            20 * numpy.log10(numpy.absolute(fs.value)),
+        )
         nptest.assert_array_almost_equal(lp.get_ydata(), numpy.angle(fs.value))
 
     def test_init_with_frequencyseries(self):
-        fs = FrequencySeries(numpy.random.random(100).astype(complex))
+        """Test ``BodePlot(fs)``."""
+        fs = FrequencySeries(RNG.random(size=100).astype(complex))
         fig = self.FIGURE_CLASS(fs)
         lm = fig.maxes.get_lines()[0]
         nptest.assert_array_equal(lm.get_xdata(), fs.xindex.value)

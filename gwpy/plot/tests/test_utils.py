@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (c) 2018-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for `gwpy.plot.text`."""
+"""Tests for :mod:`gwpy.plot.utils`."""
 
 import itertools
 
@@ -27,30 +27,41 @@ from .. import utils as plot_utils
 
 
 def test_color_cycle():
+    """Test `gwpy.plot.utils.color_cycle`."""
     cyc = plot_utils.color_cycle()
     assert isinstance(cyc, itertools.cycle)
     assert next(cyc) == mpl_colors.to_hex("C0")
 
 
 def test_color_cycle_arg():
+    """Test `gwpy.plot.utils.color_cycle` with an argument."""
     cyc = plot_utils.color_cycle(["1", "2", "3"])
-    assert isinstance(cyc, itertools.cycle)
-    assert next(cyc) == "1"
-    assert next(cyc) == "2"
-    assert next(cyc) == "3"
-    assert next(cyc) == "1"
+    for ent in (
+        "1",
+        "2",
+        "3",
+        "1",
+        "2",
+    ):
+        assert next(cyc) == ent
 
 
 def test_marker_cycle():
+    """Test `gwpy.plot.utils.marker_cycle`."""
     cyc = plot_utils.marker_cycle()
     assert isinstance(cyc, itertools.cycle)
     assert next(cyc) == "o"
 
 
 def test_marker_cycle_arg():
-    cyc = plot_utils.marker_cycle(["1", "2", "3"])
+    """Test `gwpy.plot.utils.marker_cycle` with an argument."""
+    cyc = plot_utils.marker_cycle(["x", "y", "X"])
     assert isinstance(cyc, itertools.cycle)
-    assert next(cyc) == "1"
-    assert next(cyc) == "2"
-    assert next(cyc) == "3"
-    assert next(cyc) == "1"
+    for ent in (
+        "x",
+        "y",
+        "X",
+        "x",
+        "y",
+    ):
+        assert next(cyc) == ent

@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2018-2022)
+# Copyright (c) 2018-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -17,17 +17,19 @@
 
 """Extension of `~matplotlib.axes.Axes` for gwpy."""
 
-import warnings
+from __future__ import annotations
+
+import contextlib
+import typing
 from functools import wraps
 from math import log
 from numbers import Number
 
 import numpy
-
 from astropy.time import Time
-
 from matplotlib import (
-    __version__ as matplotlib_version,
+    __version__ as _matplotlib_version,
+    _docstring,
     rcParams,
 )
 from matplotlib.artist import allow_rasterization
@@ -36,91 +38,141 @@ from matplotlib.axes._base import _process_plot_var_args
 from matplotlib.collections import PolyCollection
 from matplotlib.lines import Line2D
 from matplotlib.projections import register_projection
-
 from packaging.version import Version
 
+from ..time import to_gps
 from .colorbar import colorbar
 from .colors import format_norm
 from .gps import GPS_SCALES
 from .legend import HandlerLine2D
-from ..time import to_gps
+
+if typing.TYPE_CHECKING:
+    from collections.abc import (
+        Iterator,
+        Sequence,
+    )
+    from typing import Literal
+
+    import PIL.Image
+    from matplotlib.artists import Artist
+    from matplotlib.backend_bases import RendererBase
+    from matplotlib.collections import (
+        Collection,
+        PathCollection,
+        QuadMesh,
+    )
+    from matplotlib.colorbar import Colorbar
+    from matplotlib.colors import (
+        Colormap,
+        Normalize,
+    )
+    from matplotlib.container import BarContainer
+    from matplotlib.figure import Figure
+    from matplotlib.image import AxesImage
+    from matplotlib.legend import Legend
+    from matplotlib.patches import Polygon
+    from matplotlib.transforms import Bbox
+    from matplotlib.typing import ColorType
+    from numpy.typing import ArrayLike
+
+    from gwpy.plot.gps import GPSTransform
+    from gwpy.types import (
+        Array2D,
+        Series,
+    )
+    from gwpy.typing import GpsLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-matplotlib_version = Version(matplotlib_version)
+matplotlib_version = Version(_matplotlib_version)
 
 
-def log_norm(func):
-    """Wrap ``func`` to handle custom gwpy keywords for a LogNorm colouring."""
-    @wraps(func)
-    def decorated_func(*args, **kwargs):
-        norm, kwargs = format_norm(kwargs)
-        kwargs["norm"] = norm
-        return func(*args, **kwargs)
-    return decorated_func
-
-
-def xlim_as_gps(func):
-    """Wrap ``func`` to handle pass limit inputs through `gwpy.time.to_gps`."""
-    @wraps(func)
-    def wrapped_func(self, left=None, right=None, **kw):
-        if right is None and numpy.iterable(left):
-            left, right = left
-        kw["left"] = left
-        kw["right"] = right
-        gpsscale = self.get_xscale() in GPS_SCALES
-        for key in ("left", "right"):
-            if gpsscale:
-                try:
-                    kw[key] = numpy.longdouble(str(to_gps(kw[key])))
-                except TypeError:
-                    pass
-        return func(self, **kw)
-    return wrapped_func
-
-
-def deprecate_c_sort(func):
-    """Wrap ``func`` to replace the deprecated ``c_sort`` keyword.
-
-    This was renamed ``sortbycolor``.
-    """
-    @wraps(func)
-    def wrapped(self, *args, **kwargs):
-        if "c_sort" in kwargs:
-            warnings.warn(
-                f"the `c_sort` keyword for {func.__name__} was "
-                "renamed `sortbycolor`, this warning will result "
-                "in an error in future versions of GWpy",
-                DeprecationWarning,
-            )
-            kwargs.setdefault(
-                "sortbycolor",
-                kwargs.pop("c_sort"),
-            )
-        return func(self, *args, **kwargs)
-    return wrapped
-
-
-def _sortby(sortby, *arrays):
+def _sortby(
+    sortby: ArrayLike,
+    *arrays: ArrayLike,
+) -> Iterator[numpy.ndarray]:
     """Sort a set of arrays by the first one (including the first one)."""
     # try and sort the colour array by value
     sortidx = numpy.asanyarray(sortby, dtype=float).argsort()
 
-    def _sort(arr):
+    def _sort(arr: ArrayLike) -> numpy.ndarray:
         if arr is None or isinstance(arr, Number):
             return arr
         return numpy.asarray(arr)[sortidx]
 
     # apply the sorting to each data array, and scatter
-    for arr in (sortby,) + arrays:
+    for arr in (sortby, *arrays):
         yield _sort(arr)
 
 
-# -- new Axes -----------------------------------------------------------------
+def _poly_ll(x: float, y: float, w: float, h: float) -> tuple[
+    tuple[float, float],
+    tuple[float, float],
+    tuple[float, float],
+    tuple[float, float],
+]:
+    """Return polygon vertices for a rectangle anchored at the lower-left point."""
+    return ((x, y), (x, y+h), (x+w, y+h), (x+w, y))
+
+
+def _poly_lr(x: float, y: float, w: float, h: float) -> tuple[
+    tuple[float, float],
+    tuple[float, float],
+    tuple[float, float],
+    tuple[float, float],
+]:
+    """Return polygon vertices for a rectangle anchored at the lower-right point."""
+    return ((x-w, y), (x-w, y+h), (x, y+h), (x, y))
+
+
+def _poly_ul(x: float, y: float, w: float, h: float) -> tuple[
+    tuple[float, float],
+    tuple[float, float],
+    tuple[float, float],
+    tuple[float, float],
+]:
+    """Return polygon vertices for a rectangle anchored at the upper-left point."""
+    return ((x, y-h), (x, y), (x+w, y), (x+w, y-h))
+
+
+def _poly_ur(x: float, y: float, w: float, h: float) -> tuple[
+    tuple[float, float],
+    tuple[float, float],
+    tuple[float, float],
+    tuple[float, float],
+]:
+    """Return polygon vertices for a rectangle anchored at the upper-right point."""
+    return ((x-w, y-h), (x-w, y), (x, y), (x, y-h))
+
+
+def _poly_center(x: float, y: float, w: float, h: float) -> tuple[
+    tuple[float, float],
+    tuple[float, float],
+    tuple[float, float],
+    tuple[float, float],
+]:
+    """Return polygon vertices for a rectangle anchored at the centre point."""
+    return (
+        (x-w/2., y-h/2.),
+        (x-w/2., y+h/2.),
+        (x+w/2., y+h/2.),
+        (x+w/2., y-h/2.),
+    )
+
+
+# -- new Axes ------------------------
 
 class Axes(_Axes):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    """GWpy customised `~matplotlib.axes.Axes`."""
+
+    def __init__(
+        self,
+        fig: Figure,
+        *args: tuple[float, float, float, float] | Bbox | int,
+        **kwargs,
+    ) -> None:
+        """Initialise a new `Axes`."""
+        super().__init__(fig, *args, **kwargs)
 
         # handle Series in `ax.plot()`
         if matplotlib_version >= Version("3.8.0"):
@@ -133,14 +185,16 @@ class Axes(_Axes):
         self.fmt_xdata = self._fmt_xdata
         self.fmt_ydata = self._fmt_ydata
 
+    @wraps(_Axes.draw)
     @allow_rasterization
-    def draw(self, *args, **kwargs):
+    def draw(self, renderer: RendererBase) -> None:
+        """Draw these `Axes` using the given renderer."""
+        # Set the default GPS labels for each axis
         labels = {}
-
         for ax in (self.xaxis, self.yaxis):
             if ax.get_scale() in GPS_SCALES and ax.isDefault_label:
                 labels[ax] = ax.get_label_text()
-                trans = ax.get_transform()
+                trans = typing.cast("GPSTransform", ax.get_transform())
                 epoch = float(trans.get_epoch())
                 unit = trans.get_unit_name()
                 iso = Time(epoch, format="gps", scale="utc").iso
@@ -148,26 +202,43 @@ class Axes(_Axes):
                 ax.set_label_text(f"Time [{unit}] from {utc} UTC ({epoch!r})")
 
         try:
-            super().draw(*args, **kwargs)
+            super().draw(renderer)
         finally:
             for ax in labels:  # reset labels
                 ax.isDefault_label = True
 
-    # -- auto-gps helpers -----------------------
+    # -- auto-gps helpers ------------
 
-    def _fmt_xdata(self, x):
+    def _fmt_xdata(self, x: float) -> str:
+        """Format a value for display on the X-Axis."""
         if self.get_xscale() in GPS_SCALES:
             return str(to_gps(x))
         return self.xaxis.get_major_formatter().format_data_short(x)
 
-    def _fmt_ydata(self, y):
+    def _fmt_ydata(self, y: float) -> str:
+        """Format a value for display on the Y-Axis."""
         if self.get_yscale() in GPS_SCALES:
             return str(to_gps(y))
         return self.yaxis.get_major_formatter().format_data_short(y)
 
-    set_xlim = xlim_as_gps(_Axes.set_xlim)
+    @wraps(_Axes.set_xlim)
+    def set_xlim(
+        self,
+        left: float | GpsLike | tuple[float | GpsLike, float | GpsLike] | None = None,
+        right: float | GpsLike | None = None,
+        **kwargs,
+    ) -> tuple[float, float]:
+        """Set the X-axis view limits."""
+        if right is None and numpy.iterable(left):
+            left, right = left
+        if self.get_xscale() in GPS_SCALES:
+            with contextlib.suppress(TypeError):
+                left = numpy.longdouble(str(to_gps(left)))
+            with contextlib.suppress(TypeError):
+                right = numpy.longdouble(str(to_gps(right)))
+        return super().set_xlim(left=left, right=right, **kwargs)
 
-    def set_epoch(self, epoch):
+    def set_epoch(self, epoch: GpsLike) -> None:
         """Set the epoch for the current GPS scale.
 
         This method will fail if the current X-axis scale isn't one of
@@ -182,18 +253,25 @@ class Axes(_Axes):
         scale = self.get_xscale()
         return self.set_xscale(scale, epoch=epoch)
 
-    def get_epoch(self):
+    def get_epoch(self) -> float | None:
         """Return the epoch for the current GPS scale/.
 
         This method will fail if the current X-axis scale isn't one of
         the GPS scales. See :ref:`gwpy-plot-gps` for more details.
         """
-        return self.get_xaxis().get_transform().get_epoch()
+        return self.get_xaxis().get_transform().get_epoch()  # type: ignore[attr-defined]
 
-    # -- overloaded plotting methods ------------
+    # -- overloaded plotting methods -
 
-    @deprecate_c_sort
-    def scatter(self, x, y, s=None, c=None, **kwargs):
+    def scatter(
+        self,
+        x: float | ArrayLike,
+        y: float | ArrayLike,
+        s: float | ArrayLike | None = None,
+        c: ArrayLike | Sequence[ColorType] | ColorType | None = None,
+        **kwargs,
+    ) -> PathCollection:
+        """Scatter ``y`` vs ``x`` with varying marker size and/or colour."""
         # This method overloads Axes.scatter to enable quick
         # sorting of data by the 'colour' array before scatter
         # plotting.
@@ -211,15 +289,21 @@ class Axes(_Axes):
 
         return super().scatter(x, y, s=s, c=c, **kwargs)
 
-    scatter.__doc__ = _Axes.scatter.__doc__.replace(
+    scatter.__doc__ = _Axes.scatter.__doc__.replace(  # type: ignore[union-attr]
         "marker :",
         "sortbycolor : `bool`, optional, default: False\n"
         "    Sort scatter points by `c` array value, if given.\n\n"
         "marker :",
     )
 
-    @log_norm
-    def imshow(self, array, *args, **kwargs):
+    @_docstring.interpd
+    def imshow(  # noqa: D417
+        self,
+        X: ArrayLike | PIL.Image.Image,  # noqa: N803
+        cmap: str | Colormap | None = None,
+        norm: str | Normalize | None = None,
+        **kwargs,
+    ) -> AxesImage:
         """Display an image, i.e. data on a 2D regular raster.
 
         If ``array`` is a :class:`~gwpy.types.Array2D` (e.g. a
@@ -236,27 +320,44 @@ class Axes(_Axes):
 
         Parameters
         ----------
-        array : array-like or PIL image
+        X : array-like or PIL image
             The image data.
+
+        %(cmap_doc)s
+
+        %(norm_doc)s
 
         *args, **kwargs
             All arguments and keywords are passed to the inherited
             :meth:`~matplotlib.axes.Axes.imshow` method.
 
-        See also
+        See Also
         --------
         matplotlib.axes.Axes.imshow
             for details of the image rendering
         """
-        if hasattr(array, "yspan"):  # Array2D
-            return self._imshow_array2d(array, *args, **kwargs)
+        from gwpy.types import Array2D
 
-        image = super().imshow(array, *args, **kwargs)
+        # handle log normalisation
+        norm, kwargs = format_norm(kwargs | {"norm": norm})
+
+        # handle Array2D as a special case
+        if isinstance(X, Array2D):
+            return self._imshow_array2d(X, cmap=cmap, norm=norm, **kwargs)
+
+        # otherwise call back to MPL's Axes.imshow
+        image = super().imshow(X, cmap=cmap, norm=norm, **kwargs)
         self.autoscale(enable=None, axis="both", tight=None)
         return image
 
-    def _imshow_array2d(self, array, origin="lower", interpolation="none",
-                        aspect="auto", **kwargs):
+    def _imshow_array2d(
+        self,
+        array: Array2D,
+        origin: Literal["upper", "lower"] | None = "lower",
+        interpolation: str | None = "none",
+        aspect: Literal["equal", "auto"] | float | None = "auto",
+        **kwargs,
+    ) -> AxesImage:
         """Render an `~gwpy.types.Array2D` using `Axes.imshow`."""
         # NOTE: If you change the defaults for this method, please update
         #       the docstring for `imshow` above.
@@ -269,11 +370,19 @@ class Axes(_Axes):
             extent = extent[:2] + (1e-300,) + extent[3:]
         kwargs.setdefault("extent", extent)
 
-        return self.imshow(array.value.T, origin=origin, aspect=aspect,
-                           interpolation=interpolation, **kwargs)
+        return self.imshow(
+            array.value.T,
+            origin=origin,
+            aspect=aspect,
+            interpolation=interpolation,
+            **kwargs,
+        )
 
-    @log_norm
-    def pcolormesh(self, *args, **kwargs):
+    def pcolormesh(
+        self,
+        *args: ArrayLike,
+        **kwargs,
+    ) -> QuadMesh:
         """Create a pseudocolor plot with a non-regular rectangular grid.
 
         When using GWpy, this method can be called with a single argument
@@ -288,35 +397,61 @@ class Axes(_Axes):
         Unlike the upstream :meth:`matplotlib.axes.Axes.pcolormesh`,
         this method respects the current grid settings.
 
-        See also
+        See Also
         --------
         matplotlib.axes.Axes.pcolormesh
         """
-        if len(args) == 1 and hasattr(args[0], "yindex"):  # Array2D
-            return self._pcolormesh_array2d(*args, **kwargs)
-        return super().pcolormesh(*args, **kwargs)
+        # handle log normalisation
+        norm, kwargs = format_norm(kwargs)
 
-    def _pcolormesh_array2d(self, array, *args, **kwargs):
+        # handle Array2D as a special case
+        if len(args) == 1 and hasattr(args[0], "yindex"):
+            array = typing.cast("Array2D", args[0])
+            return self._pcolormesh_array2d(array, norm=norm, **kwargs)
+
+        return super().pcolormesh(*args, norm=norm, **kwargs)
+
+    def _pcolormesh_array2d(
+        self,
+        array: Array2D,
+        **kwargs,
+    ) -> QuadMesh:
         """Render an `~gwpy.types.Array2D` using `Axes.pcolormesh`."""
         x = numpy.concatenate((array.xindex.value, array.xspan[-1:]))
         y = numpy.concatenate((array.yindex.value, array.yspan[-1:]))
         xcoord, ycoord = numpy.meshgrid(x, y, copy=False, sparse=True)
-        return self.pcolormesh(xcoord, ycoord, array.value.T, *args, **kwargs)
+        return self.pcolormesh(
+            xcoord,
+            ycoord,
+            array.value.T,
+            **kwargs,
+        )
 
-    def hist(self, x, *args, **kwargs):
+    def hist(
+        self,
+        x: ArrayLike | Sequence[ArrayLike],
+        bins: int | Sequence[float] | str | None = None,
+        **kwargs,
+    ) -> tuple[
+        numpy.ndarray | list[numpy.ndarray],
+        numpy.ndarray,
+        BarContainer | Polygon | list[BarContainer | Polygon],
+    ]:
+        """Draw a histogram of some data."""
         x = numpy.asarray(x)
 
         # re-format weights as array if given as float
-        weights = kwargs.get("weights", None)
+        weights = kwargs.get("weights")
         if isinstance(weights, Number):
             kwargs["weights"] = numpy.ones_like(x) * weights
 
         # calculate log-spaced bins on-the-fly
         if (
+            # note: this needs to be first to ensure pop()
             kwargs.pop("logbins", False)
-            and not numpy.iterable(kwargs.get("bins", None))
+            and isinstance(bins, int | None)
         ):
-            nbins = kwargs.get("bins", None) or rcParams.get("hist.bins", 30)
+            nbins = int(bins or rcParams.get("hist.bins", 30))
             # get range
             hrange = kwargs.pop("range", None)
             if hrange is None:
@@ -324,9 +459,10 @@ class Axes(_Axes):
                     hrange = numpy.min(x), numpy.max(x)
                 except ValueError as exc:
                     if str(exc).startswith("zero-size array"):  # no data
-                        exc.args = ("cannot generate log-spaced histogram "
-                                    "bins for zero-size array, "
-                                    "please pass `bins` or `range` manually",)
+                        exc.args = (
+                            "cannot generate log-spaced histogram bins for zero-"
+                            "size array, please pass `bins` or `range` manually",
+                        )
                     raise
             # log-scale the axis and extract the base
             if kwargs.get("orientation") == "horizontal":
@@ -336,22 +472,31 @@ class Axes(_Axes):
                 self.set_xscale("log", nonpositive="clip")
                 logbase = self.xaxis._scale.base
             # generate the bins
-            kwargs["bins"] = numpy.logspace(
-                log(hrange[0], logbase), log(hrange[1], logbase),
-                nbins+1, endpoint=True)
+            bins = numpy.logspace(
+                log(hrange[0], logbase),
+                log(hrange[1], logbase),
+                nbins + 1,
+                endpoint=True,
+            )
 
-        return super().hist(x, *args, **kwargs)
+        return super().hist(x, bins=bins, **kwargs)
 
-    hist.__doc__ = _Axes.hist.__doc__.replace(
+    hist.__doc__ = _Axes.hist.__doc__.replace(  # type: ignore[union-attr]
         "color :",
         "logbins : boolean, optional\n"
         "    If ``True``, use logarithmically-spaced histogram bins.\n\n"
         "    Default is ``False``\n\n"
         "color :")
 
-    # -- new plotting methods -------------------
+    # -- new plotting methods --------
 
-    def plot_mmm(self, data, lower=None, upper=None, **kwargs):
+    def plot_mmm(
+        self,
+        data: Series,
+        lower: Series | None = None,
+        upper: Series | None = None,
+        **kwargs,
+    ) -> list[Artist]:
         """Plot a `Series` as a line, with a shaded region around it.
 
         The ``data`` `Series` is drawn, while the ``lower`` and ``upper``
@@ -385,7 +530,7 @@ class Axes(_Axes):
             - `~matplotlib.lines.Line2D` for ``upper``, if given
             - `~matplitlib.collections.PolyCollection` for shading
 
-        See also
+        See Also
         --------
         matplotlib.axes.Axes.plot
             for a full description of acceptable ``*args`` and ``**kwargs``
@@ -394,7 +539,7 @@ class Axes(_Axes):
 
         # plot mean
         line, = self.plot(data, **kwargs)
-        out = [line]
+        out: list[Artist] = [line]
 
         # modify keywords for shading
         kwargs.update({
@@ -413,15 +558,26 @@ class Axes(_Axes):
 
         # fill between
         out.append(self.fill_between(
-            *fill, alpha=alpha, color=kwargs["color"],
-            rasterized=kwargs.get("rasterized", True)))
+            *fill,
+            alpha=alpha,
+            color=kwargs["color"],
+            rasterized=kwargs.get("rasterized", True),
+        ))
 
         return out
 
-    @deprecate_c_sort
-    def tile(self, x, y, w, h, color=None,
-             anchor="center", edgecolors="face", linewidth=0.8,
-             **kwargs):
+    def tile(
+        self,
+        x: ArrayLike,
+        y: ArrayLike,
+        w: ArrayLike,
+        h: ArrayLike,
+        color: ArrayLike | None = None,
+        anchor: Literal["center", "ll", "lr", "ul", "ur"] = "center",
+        edgecolors: ColorType | Sequence[ColorType] | None = "face",
+        linewidth: float | Sequence[float] | None = 0.8,
+        **kwargs,
+    ) -> PolyCollection:
         """Plot rectanguler tiles based onto these `Axes`.
 
         ``x`` and ``y`` give the anchor point for each tile, with
@@ -444,14 +600,22 @@ class Axes(_Axes):
             - ``'ul'`` - ``(x, y)`` defines upper-left corner of tile
             - ``'ur'`` - ``(x, y)`` defines upper-right corner of tile
 
+        edgecolors : colour or list of colors, optional
+            Edge colour for each tile.
+            Default is the special value ``"face"`` which matches the edgecolor
+            to the facecolor.
+
+        linewidth : `float`, array of `float`, optional
+            Line width for each tile.
+
         **kwargs
             Other keywords are passed to
-            :meth:`~matplotlib.collections.PolyCollection`
+            :meth:`~matplotlib.collections.PolyCollection`.
 
         Returns
         -------
         collection : `~matplotlib.collections.PolyCollection`
-            the collection of tiles drawn
+            The collection of tiles drawn.
 
         Examples
         --------
@@ -481,29 +645,23 @@ class Axes(_Axes):
                 raise
 
         # define how to make a polygon for each tile
-        if anchor == "ll":
-            def _poly(x, y, w, h):
-                return ((x, y), (x, y+h), (x+w, y+h), (x+w, y))
-        elif anchor == "lr":
-            def _poly(x, y, w, h):
-                return ((x-w, y), (x-w, y+h), (x, y+h), (x, y))
-        elif anchor == "ul":
-            def _poly(x, y, w, h):
-                return ((x, y-h), (x, y), (x+w, y), (x+w, y-h))
-        elif anchor == "ur":
-            def _poly(x, y, w, h):
-                return ((x-w, y-h), (x-w, y), (x, y), (x, y-h))
-        elif anchor == "center":
-            def _poly(x, y, w, h):
-                return ((x-w/2., y-h/2.), (x-w/2., y+h/2.),
-                        (x+w/2., y+h/2.), (x+w/2., y-h/2.))
-        else:
-            raise ValueError(f"Unrecognised tile anchor '{anchor}'")
+        try:
+            _poly = globals()[f"_poly_{anchor}"]
+        except KeyError:
+            msg = f"unrecognised tile anchor '{anchor}'"
+            raise ValueError(msg) from None
 
         # build collection
         cmap = kwargs.pop("cmap", rcParams["image.cmap"])
         coll = PolyCollection(
-            (_poly(*tile) for tile in zip(x, y, w, h, strict=True)),
+            numpy.fromiter(
+                (
+                    _poly(*tile) for tile in
+                    zip(x, y, w, h, strict=True)  # type: ignore[arg-type]
+                ),
+                dtype=(float, (4, 2)),
+                count=numpy.shape(x)[0],
+            ),
             edgecolors=edgecolors,
             linewidth=linewidth,
             **kwargs,
@@ -512,22 +670,31 @@ class Axes(_Axes):
             coll.set_array(color)
             coll.set_cmap(cmap)
 
-        out = self.add_collection(coll)
+        self.add_collection(coll)
         self.autoscale_view()
-        return out
+        return coll
 
-    # -- overloaded auxiliary methods -----------
+    # -- overloaded auxiliary methods
 
-    def legend(self, *args, **kwargs):
+    def legend(
+        self,
+        *args,  # noqa: ANN002
+        **kwargs,
+    ) -> Legend:
+        """Generate a `~matplotlib.legend.Legend` for these `Axes`.
+
+        This custom method just inserts our custom `HandlerLine2D` handler into the
+        default ``handler_map``.
+        """
         # build custom handler to render thick lines by default
-        handler_map = kwargs.setdefault("handler_map", dict())
+        handler_map = kwargs.setdefault("handler_map", {})
         if isinstance(handler_map, dict):
             handler_map.setdefault(Line2D, HandlerLine2D(6))
 
         # create legend
         return super().legend(*args, **kwargs)
 
-    legend.__doc__ = _Axes.legend.__doc__.replace(
+    legend.__doc__ = _Axes.legend.__doc__.replace(  # type: ignore[union-attr]
         "Call signatures",
         """.. note::
 
@@ -542,10 +709,10 @@ Call signatures""",
 
     def colorbar(
         self,
-        mappable=None,
-        fraction=0.,
+        mappable: AxesImage | Collection | None = None,
+        fraction: float = 0.,
         **kwargs,
-    ):
+    ) -> Colorbar:
         """Add a `~matplotlib.colorbar.Colorbar` to these `Axes`.
 
         Parameters
@@ -568,7 +735,7 @@ Call signatures""",
         cbar : `~matplotlib.colorbar.Colorbar`
             the newly added `Colorbar`
 
-        See also
+        See Also
         --------
         Plot.colorbar
         """
@@ -587,22 +754,31 @@ Call signatures""",
 register_projection(Axes)
 
 
-# -- overload Axes.plot() to handle Series ------------------------------------
+# -- overload Axes.plot() to handle Series
 
 class PlotArgsProcessor(_process_plot_var_args):
-    """This class controls how ax.plot() works."""
-    def __call__(self, *args, **kwargs):
+    """`Axes.plot()` argument processor."""
+
+    def __call__(
+        self,
+        *args: float | ArrayLike,
+        **kwargs,
+    ) -> list[Artist]:
         """Find `Series` data in `plot()` args and unwrap."""
-        newargs = []
+        from gwpy.types import Series
+
+        newargs: list[float | ArrayLike] = []
+
         # matplotlib 3.8.0 includes the Axes object up-front
         if args and isinstance(args[0], Axes):
             newargs.append(args[0])
             args = args[1:]
+
         while args:
             # strip first argument
             this, args = args[:1], args[1:]
             # it its a 1-D Series, then parse it as (xindex, value)
-            if hasattr(this[0], "xindex") and this[0].ndim == 1:
+            if isinstance(this[0], Series) and this[0].ndim == 1:
                 this = (this[0].xindex.value, this[0].value)
             # otherwise treat as normal (must be a second argument)
             else:
@@ -610,7 +786,7 @@ class PlotArgsProcessor(_process_plot_var_args):
                 args = args[1:]
             # allow colour specs
             if args and isinstance(args[0], str):
-                this += args[0],
+                this += (args[0],)
                 args = args[1:]
             newargs.extend(this)
 

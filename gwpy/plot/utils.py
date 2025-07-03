@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -17,33 +18,79 @@
 
 """Helper functions for plotting data with matplotlib and LAL."""
 
+from __future__ import annotations
+
 import itertools
+import typing
 
 from matplotlib import rcParams
+
+if typing.TYPE_CHECKING:
+    from collections.abs import (
+        Iterable,
+        Iterator,
+    )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # groups of input parameters (for passing to Plot())
-FIGURE_PARAMS = [
-    "figsize", "dpi",
+FIGURE_PARAMS: list[str] = [
+    "dpi",
+    "figsize",
 ]
-AXES_PARAMS = [
-    "projection", "title",  # standard options
-    "sharex", "xlim", "xlabel", "xscale",  # X-axis params
-    "sharey", "ylim", "ylabel", "yscale",  # Y-axis params
-    "epoch", "insetlabels",  # special GWpy extras
+AXES_PARAMS: list[str] = [
+    # standard options
+    "projection",
+    "title",
+    # X-axis params
+    "sharex",
+    "xlabel",
+    "xlim",
+    "xscale",
+    # Y-axis params
+    "sharey",
+    "ylabel",
+    "ylim",
+    "yscale",
+    # special GWpy extras
+    "epoch",
+    "insetlabels",
 ]
 
 
-def color_cycle(colors=None):
-    """An infinite iterator of the given (or default) colors."""
+def color_cycle(colors: Iterable[str] | None = None) -> Iterator[str]:
+    """Return an infinite iterator of the given (or default) colors.
+
+    Parameters
+    ----------
+    colors : `list` of `str`, optional
+        The colours to iterate.
+        Default is `None` to use Matplotlib's default set of colours.
+
+    Returns
+    -------
+    colors : iterator of `str`
+        The new iterator that yields colour strings infinitely.
+    """
     if colors:
         return itertools.cycle(colors)
     return itertools.cycle(p["color"] for p in rcParams["axes.prop_cycle"])
 
 
-def marker_cycle(markers=None):
-    """An infinite iterator of the given (or default) markers."""
+def marker_cycle(markers: Iterable[str] | None = None) -> Iterator[str]:
+    """Return an infinite iterator of the given (or default) markers.
+
+    Parameters
+    ----------
+    markers : `list` of `str`, optional
+        The markers to iterate.
+        Default is `None` to use a standard set of markers.
+
+    Returns
+    -------
+    markers : iterator of `str`
+        The new iterator that yields marker strings infinitely.
+    """
     if markers:
         return itertools.cycle(markers)
     return itertools.cycle(("o", "x", "+", "^", "D", "H", "1"))

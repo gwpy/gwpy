@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (c) 2018-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -19,42 +20,70 @@
 
 from decimal import Decimal
 
-import pytest
-
 import numpy
-
+import pytest
+from astropy.units import Unit
 from matplotlib import pyplot
 
-from astropy.units import Unit
-
-from .. import gps as plot_gps
 from ...time import LIGOTimeGPS
+from .. import gps as plot_gps
 
 
 class TestGPSMixin:
+    """Tests for `GPSMixin`."""
+
     TYPE = plot_gps.GPSMixin
 
     def test_init(self):
+        """Test `GPSMixin()`."""
         m = self.TYPE()
         assert m.unit is None
         assert m.epoch is None
+
+    def test_init_args(self):
+        """Test `GPSMixin()` with args."""
         m = self.TYPE(unit="second", epoch=100)
         assert m.unit is Unit("second")
         assert m.epoch == 100.
 
-    @pytest.mark.parametrize("in_, out", [
-        (None, None),
-        (1, 1.),
-        ("1", 1.),
-        (Decimal(12345), 12345.),
-        (numpy.float32(56789), 56789.),
-        (LIGOTimeGPS(1234567890, 123000000), 1234567890.123),
+    @pytest.mark.parametrize(("in_", "out"), [
+        pytest.param(
+            None,
+            None,
+            id="None",
+        ),
+        pytest.param(
+            1,
+            1.,
+            id="int",
+        ),
+        pytest.param(
+            "1",
+            1.,
+            id="str",
+        ),
+        pytest.param(
+            Decimal(12345),
+            12345.,
+            id="Decimal",
+        ),
+        pytest.param(
+            numpy.float32(56789),
+            56789.,
+            id="numpy.float",
+        ),
+        pytest.param(
+            LIGOTimeGPS(1234567890, 123000000),
+            1234567890.123,
+            id="LIGOTimeGPS",
+        ),
     ])
     def test_epoch(self, in_, out):
+        """Test `GPSMixin.epoch`."""
         mix = self.TYPE(epoch=in_)
         assert mix.epoch == out
 
-    @pytest.mark.parametrize("in_, out", [
+    @pytest.mark.parametrize(("in_", "out"), [
         (None, None),
         (Unit("second"), Unit("second")),
         (3600, Unit("hour")),
@@ -62,39 +91,60 @@ class TestGPSMixin:
         ("weeks", Unit("week")),
     ])
     def test_unit(self, in_, out):
+        """Test `GPSMixin.unit`."""
         mix = self.TYPE(unit=in_)
         assert mix.unit == out
 
-    @pytest.mark.parametrize("badunit", [
-        "blah",  # not a unit
-        "meter",  # not a time unit
-        "yoctoday",  # not a supported time unit
+    @pytest.mark.parametrize(("badunit", "match"), [
+        pytest.param(
+            "blah",
+            "'blah' did not parse as unit",
+            id="bad unit",
+        ),
+        pytest.param(
+            "meter",
+            "cannot set GPS unit to 'm'",
+            id="wrong type",
+        ),
+        pytest.param(
+            "yoctoday",
+            "unrecognised unit 'yoctoday'",
+            id="unsupported",
+        ),
     ])
-    def test_unit_error(self, badunit):
-        with pytest.raises(ValueError):
+    def test_unit_error(self, badunit, match):
+        """Test `GPSMixin.unit` error handling."""
+        with pytest.raises(
+            ValueError,
+            match=match,
+        ):
             self.TYPE(unit=badunit)
 
-    @pytest.mark.parametrize("unit, name", [
+    @pytest.mark.parametrize(("unit", "name"), [
         (None, None),
         ("second", "seconds"),
         (Unit("sday"), "sdays"),  # no long_name
     ])
     def test_get_unit_name(self, unit, name):
+        """Test `GPSMixin.get_unit_name()`."""
         mix = self.TYPE(unit=unit)
         assert mix.get_unit_name() == name
 
-    @pytest.mark.parametrize("unit, scale", [
+    @pytest.mark.parametrize(("unit", "scale"), [
         (None, 1),
         ("second", 1),
         ("minute", 60),
         ("hour", 3600),
     ])
     def test_scale(self, unit, scale):
+        """Test `GPSMixin.scale`."""
         mix = self.TYPE(unit=unit)
         assert mix.scale == scale
 
 
 class TestGpsTransform(TestGPSMixin):
+    """Tests for `GPSTransform`."""
+
     TRANSFORM = plot_gps.GPSTransform
     EPOCH = 100.0
     UNIT = "minutes"
@@ -105,10 +155,12 @@ class TestGpsTransform(TestGPSMixin):
     C = 1.5
 
     def test_init(self):
+        """Test `GPSTransform()`."""
         t = self.TRANSFORM()
         assert t.transform(1.0) == 1.0
 
     def test_epoch(self):
+        """Test `GPSTransform.epoch`."""
         transform = self.TRANSFORM(epoch=self.EPOCH)
         assert transform.get_epoch() == self.EPOCH
         assert transform.transform(self.X) == self.A
@@ -117,6 +169,7 @@ class TestGpsTransform(TestGPSMixin):
             self.X)
 
     def test_scale(self):
+        """Test `GPSTransform.scale`."""
         transform = self.TRANSFORM(unit=self.UNIT)
         assert transform.get_scale() == self.SCALE
         assert transform.transform(self.X) == self.B
@@ -124,15 +177,19 @@ class TestGpsTransform(TestGPSMixin):
             transform.inverted().transform(transform.transform(self.X)),
             self.X)
 
-    def test_epoch_and_scale(self):
+    def test_transform(self):
+        """Test `GPSTransform.transform`."""
         transform = self.TRANSFORM(epoch=self.EPOCH, unit=self.UNIT)
         assert transform.transform(self.X) == self.C
         assert numpy.isclose(
             transform.inverted().transform(transform.transform(self.X)),
-            self.X)
+            self.X,
+        )
 
 
 class TestInverseGpsTransform(TestGpsTransform):
+    """Tests for `InverseGPSTransform`."""
+
     TRANSFORM = plot_gps.InvertedGPSTransform
     A = 290.0
     B = 11400.0
@@ -144,6 +201,7 @@ class TestInverseGpsTransform(TestGpsTransform):
     sorted(filter(lambda x: x != "auto-gps", plot_gps.GPS_SCALES)),
 )
 def test_gps_scale(scale):
+    """Test `GPSScale` in action."""
     u = Unit(scale[:-1])
 
     fig = pyplot.figure()
@@ -159,7 +217,7 @@ def test_gps_scale(scale):
     pyplot.close(fig)
 
 
-@pytest.mark.parametrize("scale, unit", [
+@pytest.mark.parametrize(("scale", "unit"), [
     (1e-5, "ms"),
     (1e-4, "ms"),
     (1e-3, "s"),
@@ -175,6 +233,7 @@ def test_gps_scale(scale):
     (1e7, "yr"),
 ])
 def test_auto_gps_scale(scale, unit):
+    """Test ``auto-gps`` scale in action."""
     fig = pyplot.figure()
     ax = fig.add_subplot(xscale="auto-gps")
     ax.plot(numpy.arange(1e2) * scale, numpy.arange(1e2))
@@ -185,6 +244,7 @@ def test_auto_gps_scale(scale, unit):
 
 
 def test_gps_formatting():
+    """Test GPS time formatting."""
     fig = pyplot.figure()
     try:
         ax = fig.gca()

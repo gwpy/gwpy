@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2017-2020)
+# Copyright (c) 2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -17,26 +17,32 @@
 
 """Custom default figure configuration."""
 
+from __future__ import annotations
+
 import os
+import typing
 
 from matplotlib import (
-    rcParams,
-    rc_params,
     RcParams,
+    rc_params as mpl_rc_params,
+    rcParams,
 )
 
-from . import tex
 from ..utils.env import bool_env
+from . import tex
+
+if typing.TYPE_CHECKING:
+    from matplotlib.figure import SubplotParams
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # record matplotlib's original rcParams
-MPL_RCPARAMS = rc_params()
+MPL_RCPARAMS = mpl_rc_params()
 
 # record the LaTeX preamble
 PREAMBLE = rcParams.get("text.latex.preamble", "") + os.linesep.join(tex.MACROS)
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
-# -- custom rc ----------------------------------------------------------------
+# -- custom rc -----------------------
 
 # set default params
 GWPY_RCPARAMS = RcParams(**{
@@ -81,8 +87,8 @@ GWPY_TEX_RCPARAMS = RcParams(**{
 })
 
 
-def rc_params(usetex=None):
-    """Returns a new `matplotlib.RcParams` with updated GWpy parameters.
+def rc_params(*, usetex: bool | None = None) -> RcParams:
+    """Return a new `matplotlib.RcParams` with updated GWpy parameters.
 
     The updated parameters are globally stored as
     `gwpy.plot.rc.GWPY_RCPARAMS`, with the updated TeX parameters as
@@ -96,10 +102,16 @@ def rc_params(usetex=None):
     Parameters
     ----------
     usetex : `bool`, `None`
-        value to set for `text.usetex`; if `None` determine automatically
-        using the ``GWPY_USETEX`` environment variable, and whether `tex`
-        is available on the system. If `True` is given (or determined)
-        a number of other parameters are updated to improve TeX formatting.
+        Value to set for `text.usetex`; if `None` (default) determine
+        automatically using the ``GWPY_USETEX`` environment variable,
+        and whether `tex` is available on the system.
+        If `True` is given (or determined) a number of other parameters
+        are updated to improve TeX formatting.
+
+    Returns
+    -------
+    rcparams: `matplotlib.RcParams`
+        The new parameters set.
 
     Examples
     --------
@@ -113,7 +125,8 @@ def rc_params(usetex=None):
     if usetex is None:
         usetex = bool_env(
             "GWPY_USETEX",
-            default=rcParams["text.usetex"] or tex.has_tex())
+            default=rcParams["text.usetex"] or tex.has_tex(),
+        )
 
     # build RcParams from matplotlib.rcParams with GWpy extras
     rcp = GWPY_RCPARAMS.copy()
@@ -122,7 +135,7 @@ def rc_params(usetex=None):
     return rcp
 
 
-# -- dynamic subplot positioning ----------------------------------------------
+# -- dynamic subplot positioning -----
 
 SUBPLOT_WIDTH = {
     6.4: (.1875, .87),
@@ -139,22 +152,27 @@ SUBPLOT_HEIGHT = {
 }
 
 
-def get_subplot_params(figsize):
+def get_subplot_params(figsize: tuple[float, float]) -> SubplotParams:
     """Return sensible default `SubplotParams` for a figure of the given size.
 
     Parameters
     ----------
     figsize : `tuple` of `float`
-         the ``(width, height)`` figure size (inches)
+         The ``(width, height)`` figure size (inches).
 
     Returns
     -------
     params : `~matplotlib.figure.SubplotParams`
-        formatted set of subplot parameters
+        Formatted set of subplot parameters.
     """
     from matplotlib.figure import SubplotParams
 
-    width, height, = figsize
+    left: float | None
+    right: float | None
+    bottom: float | None
+    top: float | None
+
+    width, height = figsize
     try:
         left, right = SUBPLOT_WIDTH[width]
     except KeyError:
@@ -163,4 +181,9 @@ def get_subplot_params(figsize):
         bottom, top = SUBPLOT_HEIGHT[height]
     except KeyError:
         bottom = top = None
-    return SubplotParams(left=left, bottom=bottom, right=right, top=top)
+    return SubplotParams(
+        left=left,
+        right=right,
+        bottom=bottom,
+        top=top,
+    )

@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2022)
+# Copyright (C) 2014-2017 Louisiana State University
+#               2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -20,10 +20,14 @@
 
 from __future__ import annotations
 
-import itertools
+import contextlib
 import importlib
+import itertools
 import typing
-from collections.abc import (KeysView, ValuesView)
+from collections.abc import (
+    KeysView,
+    ValuesView,
+)
 from itertools import zip_longest
 
 import numpy
@@ -37,30 +41,47 @@ from matplotlib.artist import setp
 from matplotlib.gridspec import GridSpec
 from matplotlib.projections import get_projection_class
 
-from . import (colorbar as gcbar, utils)
+from . import (
+    colorbar as gcbar,
+    utils,
+)
 from .gps import GPS_SCALES
-from .rc import (rcParams, MPL_RCPARAMS, get_subplot_params)
+from .rc import (
+    MPL_RCPARAMS,
+    get_subplot_params,
+    rcParams,
+)
 
 if typing.TYPE_CHECKING:
+    from pathlib import Path
+    from types import ModuleType
+    from typing import (
+        BinaryIO,
+        Literal,
+    )
+
+    from astropy.units import UnitBase
     from matplotlib.axes import Axes
     from matplotlib.collections import Collection
     from matplotlib.colorbar import Colorbar
     from matplotlib.image import AxesImage
+    from numpy.typing import ArrayLike
+
+    from ..segments import DataQualityFlag
+    from .segments import SegmentAxes
 
 __all__ = ["Plot"]
 
 try:
-    __IPYTHON__
+    IPYTHON = __IPYTHON__
 except NameError:
     IPYTHON = False
-else:
-    IPYTHON = True
 
-iterable_types = (list, tuple, KeysView, ValuesView,)
+IterableType = list | tuple | dict | KeysView | ValuesView
 
 
-def interactive_backend():
-    """Returns `True` if the current backend is interactive."""
+def interactive_backend() -> bool:
+    """Return `True` if the current backend is interactive."""
     try:
         interactive_bk = backends.backend_registry.list_builtin(
             backends.BackendFilter.INTERACTIVE,
@@ -70,8 +91,8 @@ def interactive_backend():
     return get_backend() in interactive_bk
 
 
-def get_backend_mod(name=None):
-    """Returns the imported module for the given backend name.
+def get_backend_mod(name: str | None = None) -> ModuleType:
+    """Return the imported module for the given backend name.
 
     Parameters
     ----------
@@ -92,7 +113,8 @@ def get_backend_mod(name=None):
     if name is None:
         name = get_backend()
     backend_name = (
-        name[9:] if name.startswith("module://")
+        name[9:]
+        if name.startswith("module://")
         else f"matplotlib.backends.backend_{name.lower()}"
     )
     return importlib.import_module(backend_name)
@@ -105,30 +127,40 @@ class Plot(figure.Figure):
     figures from GWpy data objects, and modifying them on-the-fly in
     interactive mode.
     """
-    def __init__(self, *data, **kwargs):
 
+    def __init__(
+        self,
+        *data: ArrayLike | IterableType,
+        **kwargs,
+    ) -> None:
+        """Initialise a new `Plot`."""
         # get default x-axis scale if all axes have the same x-axis units
-        kwargs.setdefault("xscale", _parse_xscale(
-            _group_axes_data(data, flat=True)))
+        kwargs.setdefault(
+            "xscale",
+            _parse_xscale(_group_axes_data(data, flat=True)),
+        )
 
         # set default size for time-axis figures
         if (
-            kwargs.get("projection", None) == "segments"
+            kwargs.get("projection") == "segments"
             or kwargs.get("xscale") in GPS_SCALES
         ):
             kwargs.setdefault("figsize", (12, 6))
             kwargs.setdefault("xscale", "auto-gps")
 
         # initialise figure
-        figure_kw = {key: kwargs.pop(key) for key in utils.FIGURE_PARAMS if
-                     key in kwargs}
+        figure_kw = {
+            key: kwargs.pop(key)
+            for key in utils.FIGURE_PARAMS
+            if key in kwargs
+        }
         self._init_figure(**figure_kw)
 
         # initialise axes with data
         if data or kwargs.get("geometry"):
             self._init_axes(data, **kwargs)
 
-    def _init_figure(self, **kwargs):
+    def _init_figure(self, **kwargs) -> None:
         from matplotlib import pyplot
 
         # create Figure
@@ -142,18 +174,29 @@ class Plot(figure.Figure):
             manager = backend_mod.new_figure_manager_given_figure(num, self)
         except AttributeError:
             upstream_mod = importlib.import_module(
-                pyplot.new_figure_manager.__module__)
+                pyplot.new_figure_manager.__module__,
+            )
             canvas = upstream_mod.FigureCanvasBase(self)
             manager = upstream_mod.FigureManagerBase(canvas, 1)
         manager._cidgcf = manager.canvas.mpl_connect(
             "button_press_event",
-            lambda ev: _pylab_helpers.Gcf.set_active(manager))
+            lambda ev: _pylab_helpers.Gcf.set_active(manager),
+        )
         _pylab_helpers.Gcf.set_active(manager)
         pyplot.draw_if_interactive()
 
-    def _init_axes(self, data, method="plot",
-                   xscale=None, sharex=False, sharey=False,
-                   geometry=None, separate=None, **kwargs):
+    def _init_axes(
+        self,
+        data: ArrayLike | IterableType,
+        method: str = "plot",
+        *,
+        xscale: str | None = None,
+        sharex: str | bool = False,
+        sharey: str | bool = False,
+        geometry: tuple[int, int] | None = None,
+        separate: bool | None = None,
+        **kwargs,
+    ) -> list[Axes]:
         """Populate this figure with data, creating `Axes` as necessary."""
         if isinstance(sharex, bool):
             sharex = "all" if sharex else "none"
@@ -161,8 +204,11 @@ class Plot(figure.Figure):
             sharey = "all" if sharey else "none"
 
         # parse keywords
-        axes_kw = {key: kwargs.pop(key) for key in utils.AXES_PARAMS if
-                   key in kwargs}
+        axes_kw = {
+            key: kwargs.pop(key)
+            for key in utils.AXES_PARAMS
+            if key in kwargs
+        }
 
         # handle geometry and group axes
         if geometry is not None and geometry[0] * geometry[1] == len(data):
@@ -173,10 +219,11 @@ class Plot(figure.Figure):
         nrows, ncols = geometry
         if axes_groups and nrows * ncols != len(axes_groups):
             # mismatching data and geometry
-            raise ValueError(
+            msg = (
                 f"cannot group data into {len(axes_groups)} with "
                 f"a {nrows}x{ncols} grid"
             )
+            raise ValueError(msg)
 
         # create grid spec
         gs = GridSpec(nrows, ncols)
@@ -186,21 +233,27 @@ class Plot(figure.Figure):
         defxlabel = "xlabel" not in axes_kw
         defylabel = "ylabel" not in axes_kw
         flatdata = [s for group in axes_groups for s in group]
-        for axis in ("x", "y"):
-            unit = _common_axis_unit(flatdata, axis=axis)
+        for ax in ("x", "y"):
+            unit = _common_axis_unit(flatdata, axis=ax)
             if unit:
                 axes_kw.setdefault(
-                    f"{axis}label",
+                    f"{ax}label",
                     unit.to_string("latex_inline_dimensional"),
                 )
 
         # create axes for each group and draw each data object
         for group, (row, col) in zip_longest(
-                axes_groups, itertools.product(range(nrows), range(ncols)),
-                fillvalue=[]):
+            axes_groups,
+            itertools.product(range(nrows), range(ncols)),
+            fillvalue=[],
+        ):
             # create Axes
-            shared_with = {"none": None, "all": axarr[0, 0],
-                           "row": axarr[row, 0], "col": axarr[0, col]}
+            shared_with = {
+                "none": None,
+                "all": axarr[0, 0],
+                "row": axarr[row, 0],
+                "col": axarr[0, col],
+            }
             axes_kw["sharex"] = shared_with[sharex]
             axes_kw["sharey"] = shared_with[sharey]
             axes_kw["xscale"] = xscale if xscale else _parse_xscale(group)
@@ -216,8 +269,8 @@ class Plot(figure.Figure):
 
             # set default axis labels
             for axis, share, pos, n, def_ in (
-                    (ax.xaxis, sharex, row, nrows, defxlabel),
-                    (ax.yaxis, sharey, col, ncols, defylabel),
+                (ax.xaxis, sharex, row, nrows, defxlabel),
+                (ax.yaxis, sharey, col, ncols, defylabel),
             ):
                 # hide label if shared axis and not bottom left panel
                 if share == "all" and pos < n - 1:
@@ -229,29 +282,34 @@ class Plot(figure.Figure):
         return self.axes
 
     @staticmethod
-    def _parse_subplotpars(kwargs):
+    def _parse_subplotpars(kwargs: dict) -> None:
+        """Parse and set ``"subplotpars"`` from ``kwargs``."""
         # dynamically set the subplot positions based on the figure size
         # -- only if the user hasn't customised the subplot params
         figsize = kwargs.get("figsize") or rcParams["figure.figsize"]
         subplotpars = get_subplot_params(figsize)
         use_subplotpars = (
             "subplotpars" not in kwargs
-            and all([
+            and all(
                 rcParams[f"figure.subplot.{pos}"]
                 == MPL_RCPARAMS[f"figure.subplot.{pos}"]
                 for pos in ("left", "bottom", "right", "top")
-            ])
+            )
         )
         if use_subplotpars:
             kwargs["subplotpars"] = subplotpars
 
-    # -- Plot methods ---------------------------
+    # -- Plot methods ----------------
 
-    def refresh(self):
+    def refresh(self) -> None:
         """Refresh the current figure."""
         self.canvas.draw()
 
-    def show(self, block=None, warn=True):
+    def show(
+        self,
+        warn: bool = True,
+        block: bool | None = None,
+    ) -> None:
         """Display the current figure (if possible).
 
         If blocking, this method replicates the behaviour of
@@ -299,15 +357,15 @@ class Plot(figure.Figure):
             backend_mod = get_backend_mod()
             backend_mod.Show().mainloop()
 
-    def save(self, *args, **kwargs):
+    def save(self, fname: str | Path | BinaryIO, **kwargs) -> None:
         """Save the figure to disk.
 
         This method is an alias to :meth:`~matplotlib.figure.Figure.savefig`,
         all arguments are passed directory to that method.
         """
-        self.savefig(*args, **kwargs)
+        self.savefig(fname, **kwargs)
 
-    def close(self):
+    def close(self) -> None:
         """Close the plot and release its memory."""
         from matplotlib.pyplot import close
         for ax in self.axes[::-1]:
@@ -319,19 +377,20 @@ class Plot(figure.Figure):
         # close the figure
         close(self)
 
-    # -- axes manipulation ----------------------
+    # -- axes manipulation -----------
 
-    def get_axes(self, projection=None):
+    def get_axes(self, projection: str | None = None) -> list[Axes]:
         """Find all `Axes`, optionally matching the given projection.
 
         Parameters
         ----------
         projection : `str`
-            name of axes types to return
+            Name of axes types to return.
 
         Returns
         -------
         axlist : `list` of `~matplotlib.axes.Axes`
+            The `Axes` that match the given ``projection``.
         """
         if projection is None:
             return self.axes
@@ -425,13 +484,23 @@ class Plot(figure.Figure):
             mappable,
             cax=cax,
             fraction=fraction,
+            emit=emit,
             **kwargs,
         )
 
-    # -- extra methods --------------------------
+    # -- extra methods ---------------
 
-    def add_segments_bar(self, segments, ax=None, height=0.14, pad=0.1,
-                         sharex=True, location="bottom", **plotargs):
+    def add_segments_bar(
+        self,
+        segments: DataQualityFlag,
+        ax: Axes | None = None,
+        height: float = 0.14,
+        pad: float = 0.1,
+        *,
+        sharex: bool = True,
+        location: Literal["top", "bottom"] = "bottom",
+        **plotargs,
+    ) -> SegmentAxes:
         """Add a segment bar `Plot` indicating state information.
 
         By default, segments are displayed in a thin horizontal set of Axes
@@ -442,30 +511,30 @@ class Plot(figure.Figure):
         ----------
         segments : `~gwpy.segments.DataQualityFlag`
             A data-quality flag, or `SegmentList` denoting state segments
-            about this Plot
+            about this Plot.
 
         ax : `Axes`, optional
             Specific `Axes` relative to which to position new `Axes`,
-            defaults to :func:`~matplotlib.pyplot.gca()`
+            defaults to :func:`~matplotlib.pyplot.gca()`.
 
         height : `float, `optional
-            Height of the new axes, as a fraction of the anchor axes
+            Height of the new axes, as a fraction of the anchor axes.
 
         pad : `float`, optional
             Padding between the new axes and the anchor, as a fraction of
-            the anchor axes dimension
+            the anchor axes dimension.
 
         sharex : `True`, `~matplotlib.axes.Axes`, optional
             Either `True` to set ``sharex=ax`` for the new segment axes,
-            or an `Axes` to use directly
+            or an `Axes` to use directly.
 
         location : `str`, optional
             Location for new segment axes, defaults to ``'bottom'``,
             acceptable values are ``'top'`` or ``'bottom'``.
 
-        **plotargs
-            extra keyword arguments are passed to
-            :meth:`~gwpy.plot.SegmentAxes.plot`
+        plotargs
+            Other keyword arguments are passed to
+            :meth:`~gwpy.plot.SegmentAxes.plot`.
         """
         # get axes to anchor against
         if not ax:
@@ -483,10 +552,8 @@ class Plot(figure.Figure):
             axes_kw["xlim"] = ax.get_xlim()
 
         # if axes uses GPS scaling, copy the epoch as well
-        try:
+        with contextlib.suppress(AttributeError):
             axes_kw["epoch"] = ax.get_epoch()
-        except AttributeError:
-            pass
 
         # add new axes
         try:
@@ -496,9 +563,12 @@ class Plot(figure.Figure):
             # has been removed
             from mpl_toolkits.axes_grid1 import make_axes_locatable
             divider = make_axes_locatable(ax)
+
         if location not in {"top", "bottom"}:
-            raise ValueError("Segments can only be positoned at 'top' or "
-                             "'bottom'.")
+            msg = "segments can only be positoned at 'top' or 'bottom'"
+            raise ValueError(msg)
+
+        # create axes
         segax = divider.append_axes(location, height, **axes_kw)
 
         # update anchor axes
@@ -512,27 +582,36 @@ class Plot(figure.Figure):
 
         # plot segments
         segax.plot(segments, **plotargs)
-        segax.grid(False, which="both", axis="y")
+        segax.grid(
+            visible=False,
+            which="both",
+            axis="y",
+        )
         segax.autoscale(axis="y", tight=True)
 
         return segax
 
 
-# -- utilities ----------------------------------------------------------------
+# -- utilities -----------------------
 
-def _group_axes_data(inputs, separate=None, flat=False):
+def _group_axes_data(
+    inputs: IterableType,
+    *,
+    separate: bool | None = None,
+    flat: bool = False,
+) -> list[list[ArrayLike]]:
     """Determine the number of axes from the input args to this `Plot`.
 
     Parameters
     ----------
     inputs : `list` of array-like data sets
-        A list of data arrays, or a list of lists of data sets
+        A list of data arrays, or a list of lists of data sets.
 
-    sep : `bool`, optional
-        Plot each set of data on a separate `Axes`
+    separate : `bool`, optional
+        Plot each set of data on a separate `Axes`.
 
     flat : `bool`, optional
-        Return a flattened list of data objects
+        Return a flattened list of data objects.
 
     Returns
     -------
@@ -563,29 +642,32 @@ def _group_axes_data(inputs, separate=None, flat=False):
     """
     # determine auto-separation
     if separate is None and inputs:
-        # if given a nested list of data, multiple axes are required
-        if any(isinstance(x, iterable_types + (dict,)) for x in inputs):
-            separate = True
-        # if data are of different types, default to separate
-        elif not all(type(x) is type(inputs[0]) for x in inputs):  # noqa: E721
-            separate = True
+        separate = bool(
+            # if given a nested list of data, multiple axes are required
+            any(isinstance(x, IterableType) for x in inputs)
+            # if data are of different types, default to separate
+            or not all(type(x) is type(inputs[0]) for x in inputs),
+        )
 
     # build list of lists
     out = []
     for x in inputs:
         if isinstance(x, dict):  # unwrap dict
-            x = list(x.values())
+            x = list(x.values())  # noqa: PLW2901
 
         # new group from iterable, notes:
         #     the iterable is presumed to be a list of independent data
         #     structures, unless its a list of scalars in which case we
         #     should plot them all as one
         if (
-                isinstance(x, KeysView | ValuesView)
-                or isinstance(x, list | tuple) and (
+            isinstance(x, KeysView | ValuesView)
+            or (
+                isinstance(x, list | tuple)
+                and (
                     not x
                     or not numpy.isscalar(x[0])
                 )
+            )
         ):
             out.append(x)
 
@@ -603,7 +685,8 @@ def _group_axes_data(inputs, separate=None, flat=False):
     return out
 
 
-def _common_axis_unit(data, axis="x"):
+def _common_axis_unit(data: IterableType, axis: str = "x") -> UnitBase | None:
+    """Parse a common unit for the given ``axis`` for these ``data``."""
     units = set()
     uname = f"{axis}unit"
     for x in data:
@@ -613,9 +696,11 @@ def _common_axis_unit(data, axis="x"):
     return None
 
 
-def _parse_xscale(data):
+def _parse_xscale(data: IterableType) -> str | None:
+    """Parse the x-axis scale that should be applied to these ``data``."""
     unit = _common_axis_unit(data, axis="x")
     if unit is None:
         return None
     if unit.physical_type == "time":
         return "auto-gps"
+    return None
