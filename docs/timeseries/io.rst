@@ -337,7 +337,7 @@ By default, :meth:`TimeSeries.read` will return the contents of the
 of ``/quality/simple``.
 
 It's possible to change which datasets are read with the `path`, `value_dataset`
-and `def_dataset` keywords.
+and `bits_dataset` keywords.
 For instance to read injections flags:
 
 .. code-block:: python
@@ -347,7 +347,7 @@ For instance to read injections flags:
    ...     format="hdf5.gwosc",
    ...     path="quality/injections",
    ...     value_dataset="Injmask",
-   ...     def_dataset="InjDescriptions",
+   ...     bits_dataset="InjDescriptions",
    ... )
 
 As with regular HDF5, the ``start`` and ``end`` keyword arguments can be used

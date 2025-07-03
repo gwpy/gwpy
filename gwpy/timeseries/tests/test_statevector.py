@@ -59,7 +59,7 @@ GWOSC_GW150914_INJ_KWARGS = {
     "hdf5": {
         "path": "quality/injections",
         "value_dataset": "Injmask",
-        "def_dataset": "InjDescriptions",
+        "bits_dataset": "InjDescriptions",
     },
     "gwf": {
         "channel": GWOSC_GW150914_INJ_NAME["gwf"],
@@ -70,7 +70,7 @@ GWOSC_GW190814_INJ_KWARGS = {
     "hdf5": {
         "path": "quality/injections",
         "value_dataset": "Injmask",
-        "def_dataset": "InjDescriptions",
+        "bits_dataset": "InjDescriptions",
     },
     "gwf": {
         "channel": GWOSC_GW190814_INJ_NAME["gwf"],
