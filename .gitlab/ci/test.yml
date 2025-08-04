@@ -249,20 +249,20 @@ conda_test_linux:
 conda_test_macos:
   extends:
     - .conda_test
-    - .brew
+    - .macos
   rules:
     - !reference [.macos, rules]
     - !reference [.rules_full_test, rules]
   before_script:
-    # install miniforge using Homebrew
-    - brew install miniforge
+    # install miniforge
+    - curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+    - bash Miniforge3-$(uname)-$(uname -m).sh -b -p "$CI_PROJECT_DIR/miniforge3"
+    - . $CI_PROJECT_DIR/miniforge3/etc/profile.d/conda.sh
     # then do the same init as Linux
     - !reference [conda_test_linux, before_script]
   cache:
     # cache uv/conda packages
     - !reference [.conda_test, cache]
-    # and homebrew packages
-    - !reference [.brew, cache]
 
 # Windows
 conda_test_windows:
