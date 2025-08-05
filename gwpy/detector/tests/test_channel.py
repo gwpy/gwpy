@@ -553,8 +553,8 @@ class TestChannelList:
     )
     SAMPLE_RATES = (1, 4, 8)
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def instance(cls):
         """Create a new instance of the class under test."""
         return cls.TEST_CLASS([

@@ -93,8 +93,8 @@ class _TestCliProduct:
 
     # -- fixtures -------------------------------
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def args(cls):
         """Creates and parser arguments for a given `CliProduct`.
 
@@ -106,8 +106,8 @@ class _TestCliProduct:
         cls.TEST_CLASS.init_cli(parser)
         return parser.parse_args(map(str, cls.TEST_ARGS))
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def prod(cls, args):
         """Returns a `CliProduct`."""
         prod = cls.TEST_CLASS(args)
@@ -133,8 +133,8 @@ class _TestCliProduct:
                 i += 1
         return prod
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def dataprod(cls, prod):
         """Returns a `CliProduct` with data."""
         return cls._prod_add_data(prod)
@@ -144,8 +144,8 @@ class _TestCliProduct:
         prod.plot = pyplot.figure(FigureClass=Plot)
         return prod
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def plotprod(cls, dataprod):
         return cls._plotprod_init(dataprod)
 
@@ -274,8 +274,8 @@ class _TestCliProduct:
 class _TestImageProduct(_TestCliProduct):
     TEST_CLASS = cliproduct.ImageProduct
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def plotprod(cls, dataprod):
         cls._plotprod_init(dataprod)
         dataprod.plot.gca().pcolormesh(dataprod.result)
@@ -307,8 +307,8 @@ class _TestTimeDomainProduct(_TestCliProduct):
 
 
 class _TestFrequencyDomainProduct(_TestCliProduct):
-    @classmethod
     @pytest.fixture
+    @classmethod
     def dataprod(cls, prod):
         cls._prod_add_data(prod)
         fftlength = prod.args.secpfft
@@ -322,8 +322,8 @@ class _TestFrequencyDomainProduct(_TestCliProduct):
 
 
 class _TestTransferFunctionProduct(_TestCliProduct):
-    @classmethod
     @pytest.fixture
+    @classmethod
     def dataprod(cls, prod):
         cls._prod_add_data(prod)
         fftlength = prod.args.secpfft

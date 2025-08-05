@@ -62,8 +62,8 @@ class TestSegment:
 
     TEST_CLASS = Segment
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def segment(cls):
         """Create a test segment (fixture)."""
         return cls.TEST_CLASS(1, 2)
@@ -95,8 +95,8 @@ class TestSegmentList:
         """Create a test segment list."""
         return cls.TEST_CLASS([cls.ENTRY_CLASS(a, b) for a, b in segments])
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def segmentlist(cls):
         """Create a test segment list (fixture)."""
         return cls.create((1, 2), (3, 4), (4, 6), (8, 10))

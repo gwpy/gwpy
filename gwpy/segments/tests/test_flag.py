@@ -264,14 +264,14 @@ class TestDataQualityFlag:
         """Create a new `DataQualityFlag` for testing."""
         return cls.TEST_CLASS(name=name, known=known, active=active, **kwargs)
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def flag(cls):
         """Return a new `DataQualityFlag` for testing."""
         return cls.create()
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def empty(cls):
         """Return a new, empty `DataQualityFlag` for testing."""
         return cls.TEST_CLASS()
@@ -808,14 +808,14 @@ class TestDataQualityDict:
                                                  active=ACTIVE2, known=KNOWN2)
         return flgd
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def instance(cls):
         """Create a `DataQualityDict` (fixture)."""
         return cls.create()
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def reverse(cls):
         """Create a `DataQualityDict` that is the reverse of ``instance``."""
         inst = cls.create()
