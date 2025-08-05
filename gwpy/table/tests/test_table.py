@@ -108,18 +108,18 @@ class TestTable(object):
                 data.append((random.rand(n) * 1000).astype(dtp))
         return cls.TABLE(data, names=names)
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def table(cls):
         return cls.create(100, ['time', 'snr', 'frequency'])
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def emptytable(cls):
         return cls.create(0, ['time', 'snr', 'frequency'])
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def clustertable(cls):
         return cls.TABLE(data=[[11, 1, 1, 10, 1, 1, 9],
                                [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],

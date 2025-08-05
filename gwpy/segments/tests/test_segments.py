@@ -38,8 +38,8 @@ from .. import (Segment, SegmentList)
 class TestSegment(object):
     TEST_CLASS = Segment
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def segment(cls):
         return cls.TEST_CLASS(1, 2)
 
@@ -64,8 +64,8 @@ class TestSegmentList(object):
     def create(cls, *segments):
         return cls.TEST_CLASS([cls.ENTRY_CLASS(a, b) for a, b in segments])
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def segmentlist(cls):
         return cls.create((1, 2), (3, 4), (4, 6), (8, 10))
 

@@ -226,13 +226,13 @@ class TestDataQualityFlag(object):
     def create(cls, name=NAME, known=KNOWN, active=ACTIVE, **kwargs):
         return cls.TEST_CLASS(name=name, known=known, active=active, **kwargs)
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def flag(cls):
         return cls.create()
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def empty(cls):
         return cls.TEST_CLASS()
 
@@ -664,13 +664,13 @@ class TestDataQualityDict(object):
                                                  active=ACTIVE2, known=KNOWN2)
         return flgd
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def instance(cls):
         return cls.create()
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def reverse(cls):
         inst = cls.create()
         rev = type(inst)()

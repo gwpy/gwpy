@@ -30,8 +30,8 @@ class TestCliSpectrogram(_TestFFTMixin, _TestTimeDomainProduct,
     TEST_CLASS = cli.Spectrogram
     ACTION = 'spectrogram'
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def dataprod(cls, prod):
         cls._prod_add_data(prod)
         prod.result = prod.get_spectrogram()

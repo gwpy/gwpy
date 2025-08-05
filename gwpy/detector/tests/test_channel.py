@@ -411,8 +411,8 @@ class TestChannelList(object):
     NAMES = ['X1:GWPY-CHANNEL_1', 'X1:GWPY-CHANNEL_2', 'X1:GWPY-CHANNEL_3']
     SAMPLE_RATES = [1, 4, 8]
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def instance(cls):
         return cls.TEST_CLASS([cls.ENTRY_CLASS(n, sample_rate=s) for
                                n, s in zip(cls.NAMES, cls.SAMPLE_RATES)])

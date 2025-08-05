@@ -65,8 +65,8 @@ class TestArray(object):
         kwargs.setdefault('copy', False)
         return cls.TEST_CLASS(cls.data, *args, **kwargs)
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def array(cls):
         return cls.create()
 
