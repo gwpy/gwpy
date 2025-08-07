@@ -70,8 +70,8 @@ class TestArray:
         kwargs.setdefault("copy", False)
         return cls.TEST_CLASS(cls.data, *args, **kwargs)
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def array(cls):
         """Return a new instance of the type under test."""
         return cls.create()

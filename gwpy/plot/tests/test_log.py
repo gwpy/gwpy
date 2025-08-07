@@ -32,8 +32,8 @@ class TestLogFormatter:
 
     TEST_CLASS = plot_log.LogFormatter
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def formatter(cls):
         """Yield an instance of the formatter under test."""
         with mock.patch(

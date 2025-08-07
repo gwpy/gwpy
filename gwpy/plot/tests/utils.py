@@ -55,8 +55,8 @@ class FigureTestBase(_Base):
 
     FIGURE_CLASS: type[Plot] = Plot
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def fig(cls):
         """Yield a new instance of `.FIGURE_CLASS`.
 
@@ -73,8 +73,8 @@ class AxesTestBase(_Base):
 
     AXES_CLASS: type[Axes] = Axes
 
-    @classmethod
     @pytest.fixture
+    @classmethod
     def ax(cls):
         """Yield a new instance of `.AXES_CLASS`.
 

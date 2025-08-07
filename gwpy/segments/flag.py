@@ -511,7 +511,7 @@ class DataQualityFlag:
         return out
 
     # alias for compatibility
-    query = classmethod(query_dqsegdb)
+    query = query_dqsegdb
 
     @classmethod
     def fetch_open_data(
@@ -1119,7 +1119,7 @@ class DataQualityDict(dict):
         return out
 
     # alias for compatibility
-    query = classmethod(query_dqsegdb)
+    query = query_dqsegdb
 
     @classmethod
     def from_veto_definer_file(
