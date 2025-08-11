@@ -20,7 +20,7 @@
 
 from __future__ import annotations
 
-import typing
+from typing import TYPE_CHECKING
 
 from ...types.io.ascii import (
     read_ascii_series,
@@ -31,14 +31,15 @@ from .. import (
     TimeSeries,
 )
 
-if typing:
+if TYPE_CHECKING:
     from pathlib import Path
+    from typing import IO
 
     from ...typing import GpsLike
 
 
 def read_ascii(
-    input_: str | Path | typing.IO,
+    input_: str | Path | IO,
     array_type: type = TimeSeries,
     unpack: bool = True,
     start: GpsLike | None = None,
