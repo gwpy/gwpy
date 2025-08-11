@@ -89,9 +89,8 @@ class _TestCliProduct(object):
 
     # -- fixtures -------------------------------
 
-    @classmethod
     @pytest.fixture
-    def args(cls):
+    def args(self):
         """Creates and parser arguments for a given `CliProduct`
 
         Returns the `argparse.Namespace`
@@ -99,15 +98,14 @@ class _TestCliProduct(object):
         parser = ArgumentParser()
         parser.add_argument('--verbose', action='count', default=1)
         parser.add_argument('--silent', action='store_true')
-        cls.TEST_CLASS.init_cli(parser)
-        return parser.parse_args(map(str, cls.TEST_ARGS))
+        self.TEST_CLASS.init_cli(parser)
+        return parser.parse_args(map(str, self.TEST_ARGS))
 
-    @classmethod
     @pytest.fixture
-    def prod(cls, args):
+    def prod(self, args):
         """Returns a `CliProduct`
         """
-        prod = cls.TEST_CLASS(args)
+        prod = self.TEST_CLASS(args)
         yield prod
         if prod.plot:
             prod.plot.close()
@@ -130,22 +128,20 @@ class _TestCliProduct(object):
                 i += 1
         return prod
 
-    @classmethod
     @pytest.fixture
-    def dataprod(cls, prod):
+    def dataprod(self, prod):
         """Returns a `CliProduct` with data
         """
-        return cls._prod_add_data(prod)
+        return self._prod_add_data(prod)
 
     @staticmethod
     def _plotprod_init(prod):
         prod.plot = pyplot.figure(FigureClass=Plot)
         return prod
 
-    @classmethod
     @pytest.fixture
-    def plotprod(cls, dataprod):
-        return cls._plotprod_init(dataprod)
+    def plotprod(self, dataprod):
+        return self._plotprod_init(dataprod)
 
     # -- tests ----------------------------------
 
@@ -278,10 +274,9 @@ class _TestCliProduct(object):
 class _TestImageProduct(_TestCliProduct):
     TEST_CLASS = cliproduct.ImageProduct
 
-    @classmethod
     @pytest.fixture
-    def plotprod(cls, dataprod):
-        cls._plotprod_init(dataprod)
+    def plotprod(self, dataprod):
+        self._plotprod_init(dataprod)
         dataprod.plot.gca().pcolormesh(dataprod.result)
         return dataprod
 
@@ -309,10 +304,9 @@ class _TestTimeDomainProduct(_TestCliProduct):
 
 
 class _TestFrequencyDomainProduct(_TestCliProduct):
-    @classmethod
     @pytest.fixture
-    def dataprod(cls, prod):
-        cls._prod_add_data(prod)
+    def dataprod(self, prod):
+        self._prod_add_data(prod)
         fftlength = prod.args.secpfft
         for i, ts in enumerate(prod.timeseries):
             nsamp = int(fftlength * 512 / 2.) + 1
@@ -324,10 +318,9 @@ class _TestFrequencyDomainProduct(_TestCliProduct):
 
 
 class _TestTransferFunctionProduct(_TestCliProduct):
-    @classmethod
     @pytest.fixture
-    def dataprod(cls, prod):
-        cls._prod_add_data(prod)
+    def dataprod(self, prod):
+        self._prod_add_data(prod)
         fftlength = prod.args.secpfft
         for i, ts in enumerate(prod.timeseries):
             nsamp = int(fftlength * 512 / 2.) + 1

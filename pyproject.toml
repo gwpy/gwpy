@@ -103,10 +103,10 @@ docs = [
 
 # test suite
 test = [
-  "coverage[toml] >=5.0",
-  "pytest >=3.9.1",
+  "coverage[toml] >=5.2.1",
+  "pytest >=7.3.0",
   "pytest-freezer",
-  "pytest-cov >=2.4.0",
+  "pytest-cov >=4.1.0",
   "pytest-requires",
   "pytest-socket",
   "pytest-xdist",
