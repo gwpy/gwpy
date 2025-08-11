@@ -39,9 +39,8 @@ class TestSegment(object):
     TEST_CLASS = Segment
 
     @pytest.fixture
-    @classmethod
-    def segment(cls):
-        return cls.TEST_CLASS(1, 2)
+    def segment(self):
+        return self.TEST_CLASS(1, 2)
 
     def test_start_end(self, segment):
         assert segment.start == 1.
@@ -65,9 +64,8 @@ class TestSegmentList(object):
         return cls.TEST_CLASS([cls.ENTRY_CLASS(a, b) for a, b in segments])
 
     @pytest.fixture
-    @classmethod
-    def segmentlist(cls):
-        return cls.create((1, 2), (3, 4), (4, 6), (8, 10))
+    def segmentlist(self):
+        return self.create((1, 2), (3, 4), (4, 6), (8, 10))
 
     # -- test methods ---------------------------
 

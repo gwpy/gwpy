@@ -50,22 +50,20 @@ class FigureTestBase(_Base):
     FIGURE_CLASS = Plot
 
     @pytest.fixture
-    @classmethod
-    def fig(cls):
+    def fig(self):
         """Yield a new figure of type ``FIGURE_CLASS`` and check that
         it saves as png after the test function finishes
         """
-        fig = pyplot.figure(FigureClass=cls.FIGURE_CLASS)
+        fig = pyplot.figure(FigureClass=self.FIGURE_CLASS)
         yield fig
-        cls.save_and_close(fig)
+        self.save_and_close(fig)
 
 
 class AxesTestBase(_Base):
     AXES_CLASS = Plot
 
     @pytest.fixture
-    @classmethod
-    def ax(cls):
-        fig = pyplot.figure(FigureClass=getattr(cls, 'FIGURE_CLASS', Plot))
-        yield fig.add_subplot(projection=cls.AXES_CLASS.name)
-        cls.save_and_close(fig)
+    def ax(self):
+        fig = pyplot.figure(FigureClass=getattr(self, 'FIGURE_CLASS', Plot))
+        yield fig.add_subplot(projection=self.AXES_CLASS.name)
+        self.save_and_close(fig)

@@ -66,9 +66,8 @@ class TestArray(object):
         return cls.TEST_CLASS(cls.data, *args, **kwargs)
 
     @pytest.fixture
-    @classmethod
-    def array(cls):
-        return cls.create()
+    def array(self):
+        return self.create()
 
     @property
     def TEST_ARRAY(self):

@@ -412,10 +412,9 @@ class TestChannelList(object):
     SAMPLE_RATES = [1, 4, 8]
 
     @pytest.fixture
-    @classmethod
-    def instance(cls):
-        return cls.TEST_CLASS([cls.ENTRY_CLASS(n, sample_rate=s) for
-                               n, s in zip(cls.NAMES, cls.SAMPLE_RATES)])
+    def instance(self):
+        return self.TEST_CLASS([self.ENTRY_CLASS(n, sample_rate=s) for
+                               n, s in zip(self.NAMES, self.SAMPLE_RATES)])
 
     def test_from_names(self):
         cl = self.TEST_CLASS.from_names(*self.NAMES)

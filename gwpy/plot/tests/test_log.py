@@ -34,13 +34,12 @@ class TestLogFormatter(object):
     TEST_CLASS = plot_log.LogFormatter
 
     @pytest.fixture
-    @classmethod
-    def formatter(cls):
+    def formatter(self):
         with mock.patch(
             "gwpy.plot.log.LogFormatter._num_ticks",
             return_value=2,
         ):
-            yield cls.TEST_CLASS()
+            yield self.TEST_CLASS()
 
     @pytest.mark.parametrize('x, fmt, result, texresult', [
         pytest.param(
