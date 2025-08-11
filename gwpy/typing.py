@@ -39,7 +39,7 @@ from .time import (
 )
 
 # Gps types
-GpsLike = typing.Union[GpsType, GpsConvertible]
+GpsLike: typing.TypeAlias = GpsType | GpsConvertible
 
 # Unit types
 UnitLike = typing.Union[UnitBase, str, None]

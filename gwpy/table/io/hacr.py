@@ -60,13 +60,10 @@ if typing.TYPE_CHECKING:
     from typing import Any
 
     import sqlalchemy
-    from astropy.table import Table
 
-    from ...time import GpsType
-    from ...time._tconvert import GpsConvertible
+    from gwpy.typing import GpsLike
+
     from .sql import WhereExpression
-
-    GpsLike = GpsType | GpsConvertible
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
