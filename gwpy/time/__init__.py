@@ -27,19 +27,22 @@ object.
 """
 
 from importlib import import_module
+from typing import TYPE_CHECKING
 
 from astropy.time import Time
 
 from ._ligotimegps import (
     GPS_TYPES,
-    GpsType,
     LIGOTimeGPS,
 )
 from ._tconvert import (
-    GpsConvertible,
     from_gps,
     tconvert,
     to_gps,
 )
+
+if TYPE_CHECKING:
+    from ._ligotimegps import GpsType
+    from ._tconvert import GpsConvertible
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

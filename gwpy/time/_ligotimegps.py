@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 from importlib import import_module
-from typing import Union
+from typing import TYPE_CHECKING
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -33,7 +33,7 @@ except ImportError:
     from ligotimegps import LIGOTimeGPS  # noqa: F401
 
 
-def _gps_type_importable(
+def _import_ligotimegps(
     modname: str,
 ) -> type | None:
     """Return `True` if ``modname`` provides a usable ``LIGOTimeGPS``."""
@@ -42,13 +42,13 @@ def _gps_type_importable(
     except ImportError:  # library not installed
         return None
     try:
-        return getattr(mod, "LIGOTimeGPS")
+        return mod.LIGOTimeGPS
     except AttributeError:  # no LIGOTimeGPS available
         return None
 
 
 GPS_TYPES: tuple[type, ...] = tuple(filter(None, map(
-    _gps_type_importable,
+    _import_ligotimegps,
     (
         "lal",
         "ligotimegps",
@@ -56,4 +56,13 @@ GPS_TYPES: tuple[type, ...] = tuple(filter(None, map(
     ),
 )))
 
-GpsType = Union[GPS_TYPES]  # type: ignore[valid-type]
+if TYPE_CHECKING:
+    from glue.lal import LIGOTimeGPS as _Glue_LIGOTimeGPS
+    from lal import LIGOTimeGPS as _LAL_LIGOTimeGPS
+    from ligotimegps import LIGOTimeGPS as _Ligotimegps_LIGOTimeGPS
+
+    GpsType = (
+        _Ligotimegps_LIGOTimeGPS
+        | _Glue_LIGOTimeGPS
+        | _LAL_LIGOTimeGPS
+    )

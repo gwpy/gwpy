@@ -21,15 +21,15 @@
 from __future__ import annotations
 
 import struct
-import typing
 import wave
+from typing import TYPE_CHECKING
 
 import numpy
 from scipy.io import wavfile
 
 from .. import TimeSeries
 
-if typing:
+if TYPE_CHECKING:
     from pathlib import Path
     from typing import IO
 
@@ -122,7 +122,7 @@ def write(
 def _is_wav(
     origin: str,
     filepath: str,
-    fileobj: typing.IO,
+    fileobj: IO,
     *args,
     **kwargs,
 ) -> bool:
