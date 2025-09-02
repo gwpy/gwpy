@@ -1,4 +1,4 @@
-# -- build
+# -- build ---------------------------
 
 [build-system]
 requires = [
@@ -7,6 +7,8 @@ requires = [
   "wheel",
 ]
 build-backend = "setuptools.build_meta"
+
+# -- project -------------------------
 
 [project]
 name = "gwpy"
@@ -66,9 +68,16 @@ dynamic = [
   "version",
 ]
 
-[project.optional-dependencies]
-# -- optional features
+[project.scripts]
+gwpy-plot = "gwpy.cli.gwpy_plot:main"
 
+[project.urls]
+"Bug Tracker" = "https://gitlab.com/gwpy/gwpy/-/issues"
+"Discussion Forum" = "https://gwpy.slack.com"
+"Documentation" = "https://gwpy.github.io/docs/"
+"Source Code" = "https://gitlab.com/gwpy/gwpy"
+
+[project.optional-dependencies]
 # arrakis I/O
 arrakis = [
   "arrakis >=0.2.0",
@@ -131,8 +140,7 @@ sql = [
   "sqlalchemy",
 ]
 
-# -- build/dev
-
+[dependency-groups]
 # conda packages for development
 # NOTE: this isn't a valid extra to install with pip, but works with pip2conda
 conda = [
@@ -143,9 +151,11 @@ conda = [
 ]
 
 # development environments
-# NOTE: this should include everything in all of the above groups,
+# NOTE: this should include everything in all of the other groups,
 #       but may contain more
 dev = [
+  { "include-group" = "docs" },
+  { "include-group" = "test" },
   "arrakis >=0.2.0",
   "ciecplib",
   "gssapi >=1.9.0",
@@ -191,26 +201,7 @@ test = [
   "requests-mock",
 ]
 
-[project.scripts]
-gwpy-plot = "gwpy.cli.gwpy_plot:main"
-
-[project.urls]
-"Bug Tracker" = "https://gitlab.com/gwpy/gwpy/-/issues"
-"Discussion Forum" = "https://gwpy.slack.com"
-"Documentation" = "https://gwpy.github.io/docs/"
-"Source Code" = "https://gitlab.com/gwpy/gwpy"
-
-[tool.setuptools.packages.find]
-# note: this is only required in CI, which otherwise fails because
-#       GHA is creating a temporary directory that setuptools
-#       discovers as another top-level package
-include = [
-  "gwpy*",
-]
-
-[tool.setuptools_scm]
-write_to = "gwpy/_version.py"
-version_scheme = "release-branch-semver"
+# -- tools ---------------------------
 
 # -- coverage.py
 
@@ -268,6 +259,44 @@ filterwarnings = [
   "ignore:`trapz` is deprecated::inspiral_range",
 ]
 xfail_strict = true
+
+# -- rstcheck
+
+[tool.rstcheck]
+ignore_directives = [
+  # matplotlib
+  "plot",
+  # sphinx
+  "include",
+  # sphinx.ext.autosummary
+  "autoclass",
+  "autofunction",
+  "automethod",
+  "automodule",
+  "autosummary",
+  # sphinx.ext.ifconfig
+  "ifconfig",
+  # sphinx-automodapi
+  "automodsumm",
+  # sphinx-design
+  "tab-set",
+  # sphinx-panels
+  "tabbed",
+  # sphinxcontrib-programoutput
+  "command-output",
+]
+ignore_roles = [
+  # doxylink
+  "lal",
+  "lalframe",
+]
+# rstcheck doesn't known about our referenced.txt which is implicitly included
+# in all pages via Sphinx's epilog option
+ignore_messages = [
+  "Hyperlink target .* is not referenced",
+  "Unknown target name:.*",
+  "Undefined substitution referenced: .*",
+]
 
 # -- ruff
 
@@ -329,40 +358,16 @@ force-wrap-aliases = true
   "D414",  # section has no content ("Notes")
 ]
 
-# -- rstcheck
+# -- setuptools
 
-[tool.rstcheck]
-ignore_directives = [
-  # matplotlib
-  "plot",
-  # sphinx
-  "include",
-  # sphinx.ext.autosummary
-  "autoclass",
-  "autofunction",
-  "automethod",
-  "automodule",
-  "autosummary",
-  # sphinx.ext.ifconfig
-  "ifconfig",
-  # sphinx-automodapi
-  "automodsumm",
-  # sphinx-design
-  "tab-set",
-  # sphinx-panels
-  "tabbed",
-  # sphinxcontrib-programoutput
-  "command-output",
+[tool.setuptools.packages.find]
+# note: this is only required in CI, which otherwise fails because
+#       GHA is creating a temporary directory that setuptools
+#       discovers as another top-level package
+include = [
+  "gwpy*",
 ]
-ignore_roles = [
-  # doxylink
-  "lal",
-  "lalframe",
-]
-# rstcheck doesn't known about our referenced.txt which is implicitly included
-# in all pages via Sphinx's epilog option
-ignore_messages = [
-  "Hyperlink target .* is not referenced",
-  "Unknown target name:.*",
-  "Undefined substitution referenced: .*",
-]
+
+[tool.setuptools_scm]
+write_to = "gwpy/_version.py"
+version_scheme = "release-branch-semver"
