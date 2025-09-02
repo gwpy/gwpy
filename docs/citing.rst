@@ -84,12 +84,3 @@ publication, please acknowledge this by citing the
             YR 2021
             DO DOI: 10.1016/j.softx.2021.100657
             SN 2352-7110
-
-Also cite the DOI for the version of GWpy that you have used.
-Each of the DOIs below resolves a Zenodo record for that version.
-See the *Export* section on each page for formatted citations in a number
-of common styles.
-
-The list below includes only the 10 most recent releases of GWpy.
-For older versions, please
-`click here <https://zenodo.org//search?page=2&size=10&q=conceptrecid:"597016"&sort=-version&all_versions=True>`__.

@@ -28,10 +28,7 @@ from numpydoc import docscrape_sphinx
 from sphinx.util import logging
 
 import gwpy
-from gwpy.utils.sphinx import (
-    gallery as cli_gallery,
-    zenodo,
-)
+from gwpy.utils.sphinx import gallery as cli_gallery
 
 TODAY = date.today()
 
@@ -296,24 +293,10 @@ def render_cli_examples(app):
         filename_prefix="gwpy-plot-",
     )
 
-# -- create citation file
-
-def write_citing_rst(app):
-    """Render the ``citing.rst`` file using the Zenodo API
-    """
-    logger = logging.getLogger("zenodo")
-    citing = SPHINX_DIR / "citing.rst"
-    content = citing.with_suffix(".rst.in").read_text()
-    content += "\n" + zenodo.format_citations(597016)
-    citing.write_text(content)
-    logger.info(f"[zenodo] wrote {citing}")
-
 
 # -- setup sphinx -----------
 
 def setup(app):
-    # write the Citing file
-    app.connect("builder-inited", write_citing_rst)
     # render the CLI examples, with low priority number so that this occurs
     # before sphinx-gallery attempts to execute them
     app.connect("builder-inited", render_cli_examples, priority=10)
