@@ -8,20 +8,14 @@ build:
   tools:
     python: "mambaforge-latest"
   jobs:
+    install:
+      - pip install . --group dev
     post_install:
       # show what is installed in the build environment
       - conda list
 
 conda:
   environment: docs/environment.yaml
-
-python:
-  install:
-    - method: pip
-      path: .
-      extra_requirements:
-        - dev
-        - docs
 
 sphinx:
   builder: dirhtml

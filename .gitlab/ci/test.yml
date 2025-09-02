@@ -9,15 +9,15 @@ include:
     inputs:
       job_name: "basic_test"
       pip_cmd: "uv pip"
+      pip_options: "--group test"
       pytest_options: "--color yes --cov gwpy --numprocesses auto gwpy/"
-      install_extra: "test"
 
   # full test template
   - local: .gitlab/ci/test-job.yml
     inputs:
       pip_cmd: "uv pip"
+      pip_options: "--group dev"
       pytest_options: "--color yes --cov gwpy --durations 50 --numprocesses auto gwpy/ examples/"
-      install_extra: "dev,test"
 
   # compatibility test template (smaller test suite)
   - local: .gitlab/ci/compatibility.yml
@@ -203,10 +203,11 @@ python_test_windows:
         python
     - conda activate pip2conda
     # and use uv to install pip2conda into it
-    - uv pip install pip2conda
+    - uv pip install "pip2conda>=0.8.0"
     # then use pip2conda to solve (sort of) the test environment
     - python -m pip2conda
-        --all
+        --all-extras
+        --all-groups
         --output environment.txt
         --python-version ${PYTHON_VERSION}
     - cat environment.txt

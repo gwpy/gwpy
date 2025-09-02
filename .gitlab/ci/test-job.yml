@@ -15,7 +15,7 @@ spec:
       description: "Directory/distribution/package to install"
       type: string
     install_extra:
-      default: "test"
+      default: "' '"
       description: "Name of the extra feature group(s) to install when installing <install_target>"
       type: string
     pip_cmd:
@@ -55,6 +55,8 @@ include:
     - python --version
     - python -m site
     - python -m sysconfig
+    # update pip
+    - $[[ inputs.pip_cmd ]] install --upgrade "pip>=25.1"
     # create the cache directory (so that astropy will actually use it)
     # (this isn't just 'mkdir -p ...' because Windows)
     - python -c "import os;
@@ -63,6 +65,7 @@ include:
       "
     # install pytest
     - $[[ inputs.pip_cmd ]] install pytest pytest-cov $[[ inputs.pip_options ]]
+    # install project
     - $[[ inputs.pip_cmd ]] install $[[ inputs.install_target ]][$[[ inputs.install_extra ]]] $[[ inputs.pip_options ]]
     # list installed packages
     - $[[ inputs.pip_cmd ]] list
