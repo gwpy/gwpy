@@ -34,8 +34,7 @@ include:
       stage: $[[ inputs.stage ]]
       job_name: "compat_minimum"
       install_target: "."
-      install_extra: "test"
-      pip_options: "--upgrade-strategy=only-if-needed"
+      pip_options: "--group test --upgrade-strategy=only-if-needed"
       pytest_options: $[[ inputs.pytest_options ]]
 
   # configure experimental dependency compatibility job
@@ -44,8 +43,7 @@ include:
       stage: $[[ inputs.stage ]]
       job_name: "compat_experimental"
       install_target: "."
-      install_extra: "test,dev"
-      pip_options: "--upgrade --upgrade-strategy=eager --pre"
+      pip_options: "--group dev --upgrade --upgrade-strategy=eager --pre"
       pytest_options: $[[ inputs.pytest_options ]]
 
   # configure dependency scanning

@@ -155,6 +155,6 @@ all new or modified lines.
 You can run the test suite locally from the root of the repository via:
 
 ```bash
-python3 -m pip install .[dev,test]
+python3 -m pip install . --group dev
 python3 -m pytest gwpy/ examples/
 ```

@@ -7,7 +7,7 @@ spec:
       description: "Pipeline stage in which to add jobs"
       type: string
     image:
-      default: quay.io/lib/python
+      default: python
       description: "Container image to build in"
       type: string
     requirements:
