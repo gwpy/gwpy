@@ -235,8 +235,10 @@ check_untyped_defs = true
 exclude = [
   "^docs/",
   "^examples/",
+  "^worktrees/",
 ]
 ignore_missing_imports = true
+mypy_path = "typings"
 
 # -- pytest
 
