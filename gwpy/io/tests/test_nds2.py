@@ -17,7 +17,10 @@
 
 """Unit tests for :mod:`gwpy.io.nds2`."""
 
+from __future__ import annotations
+
 import os
+import warnings
 from unittest import mock
 
 import pytest
@@ -39,31 +42,31 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class _TestNds2Enum:
-    TEST_CLASS: io_nds2._Nds2Enum
+    TEST_CLASS: type[io_nds2._Nds2Enum] = io_nds2._Nds2Enum  # noqa: SLF001
 
     def test_any(self):
         assert self.TEST_CLASS.any() == 2 * max(self.TEST_CLASS).value - 1
 
     def test_find_unknown(self):
         """Test 'UNKNOWN' for :meth:`gwpy.io.nds2.Nds2ChannelType.find`."""
-        self.TEST_CLASS.find("blah") == "UNKNOWN"
+        assert self.TEST_CLASS.find("blah").name == "UNKNOWN"
 
 
 class TestNds2ChannelType(_TestNds2Enum):
     """Tests of :class:`gwpy.io.nds2.Nds2DataType`."""
-    TEST_CLASS = io_nds2.Nds2ChannelType
+
+    TEST_CLASS: type[io_nds2.Nds2ChannelType] = io_nds2.Nds2ChannelType
 
     def test_nds2name(self):
+        """Test the `nds2name` property."""
         assert self.TEST_CLASS.MTREND.nds2name == "m-trend"
 
     def test_nds2names(self):
-        expected = sorted(
-            io_nds2._NDS2_CHANNEL_TYPE[x.name][1]
-            for x in self.TEST_CLASS
-        )
+        """Test the `nds2names` method."""
+        expected = sorted(x.nds2name for x in self.TEST_CLASS)
         assert sorted(self.TEST_CLASS.nds2names()) == expected
 
-    @pytest.mark.parametrize(("input_", "expected"), (
+    @pytest.mark.parametrize(("input_", "expected"), [
         (TEST_CLASS.MTREND.value, TEST_CLASS.MTREND),
         (TEST_CLASS.MTREND.name, TEST_CLASS.MTREND),
         (TEST_CLASS.MTREND.nds2name, TEST_CLASS.MTREND),
@@ -72,7 +75,7 @@ class TestNds2ChannelType(_TestNds2Enum):
         ("RDS", TEST_CLASS.RDS),
         ("reduced", TEST_CLASS.RDS),
         ("REDUCED", TEST_CLASS.RDS),
-    ))
+    ])
     def test_find(self, input_, expected):
         """Test :meth:`gwpy.io.nds2.Nds2ChannelType.find`."""
         assert self.TEST_CLASS.find(input_) == expected
@@ -80,13 +83,15 @@ class TestNds2ChannelType(_TestNds2Enum):
 
 class TestNds2DataType(_TestNds2Enum, _TestNumpyTypeEnum):
     """Tests of :class:`gwpy.io.nds2.Nds2DataType`."""
-    TEST_CLASS = io_nds2.Nds2DataType
+
+    TEST_CLASS: type[io_nds2.Nds2DataType] = io_nds2.Nds2DataType
 
     def test_find_errors(self):
+        """Test errors from :meth:`gwpy.io.nds2.Nds2DataType.find`."""
         pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
 
 
-@pytest.mark.parametrize(("key", "value", "result"), (
+@pytest.mark.parametrize(("key", "value", "result"), [
     pytest.param(
         "NDSSERVER",
         "test1.ligo.org:80,test2.ligo.org:43",
@@ -105,7 +110,7 @@ class TestNds2DataType(_TestNds2Enum, _TestNumpyTypeEnum):
         [("test1.ligo.org", 80), ("test2.ligo.org", 43)],
         id="env-key",
     ),
-))
+])
 def test_parse_nds_env(key, value, result):
     """Test `gwpy.io.nds2.parse_nds_env`."""
     with mock.patch.dict(os.environ, {key: value}):
@@ -117,7 +122,7 @@ def test_parse_nds_env(key, value, result):
 
 
 @mock.patch.dict(os.environ, clear=True)
-@pytest.mark.parametrize(("ifo", "include_gwosc", "result"), (
+@pytest.mark.parametrize(("ifo", "include_gwosc", "result"), [
     pytest.param(
         None,
         True,
@@ -130,7 +135,7 @@ def test_parse_nds_env(key, value, result):
         [("nds.ligo-la.caltech.edu", None), ("nds.ligo.caltech.edu", None)],
         id="L1",
     ),
-))
+])
 def test_host_resolution_order(ifo, include_gwosc, result):
     """Test `gwpy.io.nds2.host_resolution_order` basic usage."""
     assert io_nds2.host_resolution_order(
@@ -143,7 +148,7 @@ def test_host_resolution_order(ifo, include_gwosc, result):
     os.environ,
     {"NDSSERVER": "test1.ligo.org:80,test2.ligo.org:43"},
 )
-@pytest.mark.parametrize(("ifo", "include_gwosc", "result"), (
+@pytest.mark.parametrize(("ifo", "include_gwosc", "result"), [
     pytest.param(
         None,
         False,
@@ -166,9 +171,9 @@ def test_host_resolution_order(ifo, include_gwosc, result):
         ],
         id="L1",
     ),
-))
+])
 def test_host_resolution_order_env(ifo, include_gwosc, result):
-    """Test `gwpy.io.nds2.host_resolution_order` environment parsing."""
+    """Test `host_resolution_order` environment parsing."""
     assert io_nds2.host_resolution_order(
         ifo,
         include_gwosc=include_gwosc,
@@ -180,9 +185,7 @@ def test_host_resolution_order_env(ifo, include_gwosc, result):
     {"TESTENV": "test1.ligo.org:80,test2.ligo.org:43"},
 )
 def test_host_resolution_order_named_env():
-    """Test `gwpy.io.nds2.host_resolution_order` environment parsing
-    with a named environment variable.
-    """
+    """Test `host_resolution_order` with a named environment variable."""
     hro = io_nds2.host_resolution_order(
         "V1",
         env="TESTENV",
@@ -199,7 +202,7 @@ def test_host_resolution_order_named_env():
     os.environ,
     {"TESTENV": "test1.ligo.org:80,test2.ligo.org:43"},
 )
-@pytest.mark.parametrize(("ifo", "epoch", "env", "result"), (
+@pytest.mark.parametrize(("ifo", "epoch", "env", "result"), [
     pytest.param(
         "L1",
         "Jan 1 2015",
@@ -222,7 +225,7 @@ def test_host_resolution_order_named_env():
         ],
         id="now",
     ),
-))
+])
 def test_host_resolution_order_epoch(ifo, epoch, env, result):
     """Test `gwpy.io.nds2.host_resolution_order` epoch parsing."""
     assert io_nds2.host_resolution_order(
@@ -240,28 +243,30 @@ def test_host_resolution_order_epoch(ifo, epoch, env, result):
 def test_host_resolution_order_warning():
     """Test `gwpy.io.nds2.host_resolution_order` warnings."""
     # test warnings for unknown IFO
-    with pytest.warns(UserWarning) as record:
+    with pytest.warns(
+        UserWarning,
+        match="no default host found for ifo 'X1'",
+    ):
         # should produce warning
         hro = io_nds2.host_resolution_order(
             "X1",
             env=None,
             include_gwosc=False,
         )
-        assert hro == [("nds.ligo.caltech.edu", None)]
+    assert hro == [("nds.ligo.caltech.edu", None)]
 
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
         # should _not_ produce warning
         hro = io_nds2.host_resolution_order("X1", env="TESTENV")
 
-    # make sure only one warning was emitted
-    assert len(record) == 1
-
 
 @pytest.mark.requires("nds2")
-@pytest.mark.parametrize(("host", "port", "callport"), (
+@pytest.mark.parametrize(("host", "port", "callport"), [
     pytest.param("nds.test.gwpy", None, None, id="None"),
     pytest.param("nds.test.gwpy", 31200, 31200, id="31200"),
     pytest.param("x1nds9", None, 8088, id="nds1"),
-))
+])
 @mock.patch("nds2.connection")
 def test_connect(connector, host, port, callport):
     """Test `gwpy.io.nds2.connect`."""
@@ -290,9 +295,7 @@ def test_auth_connect(connect):
     ),
 )
 def test_auth_connect_kinit(connect, kinit):
-    """Test `gwpy.io.nds2.auth_connect` with a callout to
-    `gwpy.io.kerberos.kinit`.
-    """
+    """Test `gwpy.io.nds2.auth_connect` with a callout to `gwpy.io.kerberos.kinit`."""
     with pytest.warns(io_nds2.NDSWarning):
         assert io_nds2.auth_connect("host", 0)
     kinit.assert_called_with()
@@ -322,7 +325,10 @@ def test_open_connection(auth_connect):
     def new_func(arg1, connection=None):
         return arg1, connection
 
-    with pytest.raises(TypeError):
+    with pytest.raises(
+        ValueError,
+        match="one of `connection` or `host` is required",
+    ):
         new_func(0)
 
     # call function and check that `connection` was injected
@@ -380,8 +386,8 @@ def test_find_channels_nds1(nds2_connection):
 def test_find_channels_online(nds2_connection):
     """Test handling of 'online' channels in `find_channels`."""
     # add an 'online' version of thee same channel
-    buff = nds2_connection._buffers[0]
-    nds2_connection._buffers.append(
+    buff = nds2_connection._buffers[0]  # noqa: SLF001
+    nds2_connection._buffers.append(  # noqa: SLF001
         mocks.nds2_buffer(
             buff.name,
             buff.data,
@@ -395,7 +401,7 @@ def test_find_channels_online(nds2_connection):
         ["X1:test"],
         host="test",
         unique=True,
-    ) == [nds2_connection._buffers[0].channel]
+    ) == [nds2_connection._buffers[0].channel]  # noqa: SLF001
 
 
 @pytest.mark.requires("nds2")
@@ -403,7 +409,7 @@ def test_find_channels_unique(nds2_connection):
     """Test handling of 'online' channels in `find_channels`."""
     # add a second copy of the same channel
     # so that find_channels returns two things
-    nds2_connection._buffers.append(nds2_connection._buffers[0])
+    nds2_connection._buffers.append(nds2_connection._buffers[0])  # noqa: SLF001
 
     with pytest.raises(
         ValueError,
@@ -441,6 +447,7 @@ def test_get_availability(nds2_connection):
 
 @pytest.mark.requires("nds2")
 def test_get_availability_real():
+    """Test `gwpy.io.nds2.get_availability` with real remote data."""
     try:
         segs = io_nds2.get_availability(
             ["L1:ISI-GND_STS_ITMY_Z_BLRMS_30M_100M"],
@@ -462,7 +469,7 @@ def test_get_availability_real():
     )
 
 
-@pytest.mark.parametrize(("start", "end", "out"), (
+@pytest.mark.parametrize(("start", "end", "out"), [
     pytest.param(
         0,
         60,
@@ -493,7 +500,7 @@ def test_get_availability_real():
         (1167264000, 1198800060),
         id="expand both GPS",
     ),
-))
+])
 def test_minute_trend_times(start, end, out):
     """Test `gwpy.io.nds2.minute_trend_times`."""
     assert io_nds2.minute_trend_times(start, end) == out
@@ -502,15 +509,15 @@ def test_minute_trend_times(start, end, out):
 @pytest.mark.requires("nds2")
 def test_get_nds2_name():
     """Test `gwpy.io.nds2._get_nds2_name`."""
-    # we can't use parametrize because mocks.nds2_channel requires
-    # the nds2-client and is executed _before_ the skip decorator is
-    # applied
+    # Note: we can't use parametrize because mocks.nds2_channel requires
+    #       the nds2-client and is executed _before_ the skip decorator is
+    #       applied
     for channel, name in [
         ("test", "test"),
         (Channel("X1:TEST", type="m-trend"), "X1:TEST,m-trend"),
         (mocks.nds2_channel("X1:TEST", 16, "NONE"), "X1:TEST,raw"),
     ]:
-        assert io_nds2._get_nds2_name(channel) == name
+        assert io_nds2._get_nds2_name(channel) == name  # type: ignore[arg-type]  # noqa: SLF001
 
 
 @pytest.mark.requires("nds2")
@@ -526,4 +533,4 @@ def test_get_nds2_names():
         "X1:TEST,m-trend",
         "X1:TEST,raw",
     ]
-    assert list(io_nds2._get_nds2_names(channels)) == list(names)
+    assert list(io_nds2._get_nds2_names(channels)) == names  # type: ignore[arg-type]  # noqa: SLF001
