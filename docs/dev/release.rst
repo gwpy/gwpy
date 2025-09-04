@@ -110,16 +110,6 @@ Step-by-step
    It should take ~5 minutes for the release documentation to actually
    appear on https://gwpy.github.io/docs/
 
-==============
-Linked updates
-==============
-
-Zenodo
-------
-
-Creating a new release on GitHub will automatically trigger a new DOI on
-https://zenodo.org.
-
 ====================================
 Distributing the new release package
 ====================================

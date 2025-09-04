@@ -31,9 +31,6 @@ with easy-to-follow tutorials at each step.
 .. image:: https://img.shields.io/pypi/v/gwpy
     :target: https://pypi.org/project/gwpy/
     :alt: GWpy PyPI version badge
-.. image:: https://zenodo.org/badge/9979119.svg
-    :target: https://zenodo.org/badge/latestdoi/9979119
-    :alt: GWpy DOI badge
 .. image:: https://img.shields.io/pypi/l/gwpy.svg
     :target: https://choosealicense.com/licenses/gpl-3.0/
     :alt: GWpy license badge
