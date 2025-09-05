@@ -192,7 +192,7 @@ def _update_metadata_from_ligolw(
 def read_series(
     source: str | Path | IO | ligolw.Document,
     name: str | None = None,
-    epoch: GpsLike = None,
+    epoch: GpsLike | None = None,
     contenthandler: ligolw.ContentHandler | None = None,
     **params,
 ) -> Series:
@@ -228,6 +228,8 @@ def read_series(
         source,
         contenthandler=contenthandler or series_contenthandler(),
     )
+    if epoch is not None:
+        epoch = to_gps(epoch)
     array = _match_array(xmldoc, name=name, epoch=epoch, **params)
 
     # parse dimensions

@@ -27,7 +27,10 @@ import operator
 import re
 from fractions import Fraction
 from functools import reduce
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    overload,
+)
 
 import lal
 import numpy
@@ -35,20 +38,20 @@ from astropy import units
 
 # Import gwpy.detector.units to register other units now
 from ..detector import units as gwpy_units  # noqa: F401
-from ..time import (
-    LIGOTimeGPS,
-    to_gps,
-)
+from ..time import to_gps
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
+    from typing import Literal
 
     from numpy.typing import DTypeLike
 
+    from ..typing import GpsLike
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-# -- type matching ------------------------------------------------------------
+# -- type matching -------------------
 
 # LAL type enum
 LAL_TYPE_STR: dict[int, str] = {
@@ -87,12 +90,6 @@ LAL_NUMPY_FROM_TYPE_STR: dict[str, type] = {
 }
 
 LAL_TYPE_REGEX: re.Pattern[str] = re.compile(r"(U?INT|REAL|COMPLEX)\d+")
-
-# Type alias for 'any' timeseries
-LALTimeSeriesType = reduce(
-    operator.or_,
-    (getattr(lal, f"{typ}TimeSeries") for typ in LAL_TYPE_STR.values()),
-)
 
 
 def to_lal_type_str(pytype: type | DTypeLike | str | int) -> str:
@@ -141,6 +138,121 @@ def to_lal_type_str(pytype: type | DTypeLike | str | int) -> str:
         msg = f"Failed to map '{pytype}' to LAL type string"
         raise ValueError(msg) from exc
 
+
+# Type aliases for common types
+LALFFTPlanType = (
+    lal.REAL4FFTPlan
+    | lal.REAL8FFTPlan
+    | lal.COMPLEX8FFTPlan
+    | lal.COMPLEX16FFTPlan
+)
+LALFrequencySeriesType = (
+    lal.INT2FrequencySeries
+    | lal.INT4FrequencySeries
+    | lal.INT8FrequencySeries
+    | lal.UINT2FrequencySeries
+    | lal.UINT4FrequencySeries
+    | lal.UINT8FrequencySeries
+    | lal.REAL4FrequencySeries
+    | lal.REAL8FrequencySeries
+    | lal.COMPLEX8FrequencySeries
+    | lal.COMPLEX16FrequencySeries
+)
+LALTimeSeriesType = (
+    lal.INT2TimeSeries
+    | lal.INT4TimeSeries
+    | lal.INT8TimeSeries
+    | lal.UINT2TimeSeries
+    | lal.UINT4TimeSeries
+    | lal.UINT8TimeSeries
+    | lal.REAL4TimeSeries
+    | lal.REAL8TimeSeries
+    | lal.COMPLEX8TimeSeries
+    | lal.COMPLEX16TimeSeries
+)
+LALVectorType = (
+    lal.INT2Vector
+    | lal.INT4Vector
+    | lal.INT8Vector
+    | lal.UINT2Vector
+    | lal.UINT4Vector
+    | lal.UINT8Vector
+    | lal.REAL4Vector
+    | lal.REAL8Vector
+    | lal.COMPLEX8Vector
+    | lal.COMPLEX16Vector
+)
+LALWindowType = lal.REAL4Window | lal.REAL8Window
+
+@overload
+def find_typed_function(
+    pytype: type | DTypeLike,
+    prefix: Literal[""],
+    suffix: Literal[
+        "AverageSpectrumMedian",
+        "AverageSpectrumMedianMean",
+        "AverageSpectrumWelch",
+    ],
+    module: ModuleType = lal,
+) -> Callable[
+    [LALFrequencySeriesType, LALTimeSeriesType, int, int,
+     LALWindowType, LALFFTPlanType],
+    int,
+]: ...
+
+@overload
+def find_typed_function(
+    pytype: type | DTypeLike,
+    prefix: Literal["Create"],
+    suffix: Literal["FFTPlan"],
+    module: ModuleType = lal,
+) -> Callable[[int, int, int], LALFFTPlanType]: ...
+
+@overload
+def find_typed_function(
+    pytype: type | DTypeLike,
+    prefix: Literal["Create"],
+    suffix: Literal["FrequencySeries"],
+    module: ModuleType = lal,
+) -> Callable[
+    [str, lal.LIGOTimeGPS, float, float, lal.Unit, int],
+    LALFrequencySeriesType,
+]: ...
+
+@overload
+def find_typed_function(
+    pytype: type | DTypeLike,
+    prefix: Literal["Create"],
+    suffix: Literal["Sequence"],
+    module: ModuleType = lal,
+) -> Callable[[int], LALVectorType]: ...
+
+@overload
+def find_typed_function(
+    pytype: type | DTypeLike,
+    prefix: Literal["Create"],
+    suffix: Literal["TimeSeries"],
+    module: ModuleType = lal,
+) -> Callable[
+    [str, lal.LIGOTimeGPS, float, float, lal.Unit, int],
+    LALTimeSeriesType,
+]: ...
+
+@overload
+def find_typed_function(
+    pytype: type | DTypeLike,
+    prefix: Literal["Create"],
+    suffix: Literal["WindowFromSequence"],
+    module: ModuleType = lal,
+) -> Callable[[LALVectorType], LALWindowType]: ...
+
+@overload
+def find_typed_function(
+    pytype: type | DTypeLike,
+    prefix: Literal["CreateNamed"],
+    suffix: Literal["Window"],
+    module: ModuleType = lal,
+) -> Callable[[str, float, int], LALWindowType]: ...
 
 def find_typed_function(
     pytype: type | DTypeLike,
@@ -219,7 +331,7 @@ def from_lal_type(laltype: type) -> type:
     return LAL_NUMPY_FROM_TYPE_STR[match[0]]
 
 
-# -- units --------------------------------------------------------------------
+# -- units ---------------------------
 
 LAL_UNIT_INDEX: list[units.Quantity] = [
     # the order corresponds to how LAL stores compound units
@@ -234,18 +346,18 @@ LAL_UNIT_INDEX: list[units.Quantity] = [
 
 
 def to_lal_unit(
-    aunit: units.Unit | str,
+    astropy_unit: units.Unit | str,
 ) -> tuple[lal.Unit, float]:
     """Convert the input unit into a `lal.Unit` and a scaling factor.
 
     Parameters
     ----------
-    aunit : `~astropy.units.Unit`, `str`
+    astropy_unit : `~astropy.units.Unit`, `str`
         The input unit.
 
     Returns
     -------
-    unit : `lal.Unit`
+    lal_unit : `lal.Unit`
         The LAL representation of the base unit.
 
     scale : `float`
@@ -282,9 +394,7 @@ def to_lal_unit(
         If LAL doesn't understand the base units for the input.
     """
     # format incoming unit
-    if isinstance(aunit, str):
-        aunit = units.Unit(aunit)
-    aunit = aunit.decompose()
+    aunit = units.Unit(astropy_unit).decompose()
 
     # handle scaled units
     pow10 = numpy.log10(aunit.scale)
@@ -346,7 +456,7 @@ def from_lal_unit(
 
 
 def to_lal_ligotimegps(
-    gps: LIGOTimeGPS | float | str,
+    gps: GpsLike,
 ) -> lal.LIGOTimeGPS:
     """Convert the given GPS time to a `lal.LIGOTimeGPS` object.
 
@@ -364,8 +474,9 @@ def to_lal_ligotimegps(
     return lal.LIGOTimeGPS(gps.gpsSeconds, gps.gpsNanoSeconds)
 
 
-# -- detectors ----------------------------------------------------------------
+# -- detectors -----------------------
 
 LAL_DETECTORS: dict[str, lal.FrDetector] = {
-    ifo.frDetector.prefix: ifo.frDetector for ifo in lal.CachedDetectors
+    ifo.frDetector.prefix: ifo.frDetector
+    for ifo in lal.CachedDetectors
 }

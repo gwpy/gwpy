@@ -251,7 +251,7 @@ class TimeSeriesBase(Series):
             self.t0 = epoch.gps
         else:
             try:
-                self.t0 = to_gps(epoch)
+                self.t0 = to_gps(epoch)  # type: ignore[assignment]
             except TypeError:
                 self.t0 = epoch
 

@@ -30,7 +30,7 @@ from decimal import Decimal
 from numbers import Number
 from typing import (
     SupportsFloat,
-    Union,
+    cast,
 )
 
 from astropy.time import Time
@@ -39,11 +39,7 @@ from dateparser import parse as dateparser_parse
 
 from . import LIGOTimeGPS
 
-GpsConvertible = Union[
-    SupportsFloat,
-    datetime.date,
-    str,
-]
+GpsConvertible = SupportsFloat | datetime.date | str
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
@@ -113,7 +109,7 @@ def tconvert(
         ValueError,
     ):
         return to_gps(gpsordate)
-    return from_gps(gpsordate)
+    return from_gps(cast("SupportsFloat", gpsordate))
 
 
 def to_gps(
@@ -194,13 +190,13 @@ def to_gps(
     if isinstance(t, Time):
         return _time_to_gps(t, *args, **kwargs)
     try:
-        return LIGOTimeGPS(t)
+        return LIGOTimeGPS(t)  # type: ignore[call-arg,call-overload]
     except (TypeError, ValueError):
         return LIGOTimeGPS(float(t))  # type: ignore[arg-type]
 
 
 def from_gps(
-    gps: LIGOTimeGPS | float,
+    gps: SupportsFloat,
 ) -> datetime.datetime:
     """Convert a GPS time into a `datetime.datetime`.
 
@@ -230,14 +226,14 @@ def from_gps(
     datetime.datetime(2015, 9, 14, 9, 50, 45, 391000)
     """
     try:
-        gps = LIGOTimeGPS(gps)
+        ltgps = LIGOTimeGPS(gps)  # type: ignore[call-arg,call-overload]
     except (
         ValueError,
         TypeError,
         RuntimeError,
     ):
-        gps = LIGOTimeGPS(float(gps))
-    sec, nano = gps.gpsSeconds, gps.gpsNanoSeconds
+        ltgps = LIGOTimeGPS(float(gps))
+    sec, nano = ltgps.gpsSeconds, ltgps.gpsNanoSeconds
     try:
         date = Time(sec, format="gps", scale="utc").datetime
     except ValueError as exc:

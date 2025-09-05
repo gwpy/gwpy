@@ -56,7 +56,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 # -- utilities -----------------------
 
 def open_data_source(
-    source: str | Path | IO | list[str | Path | IO],
+    source: str | Path | IO | lal.Cache | list[str | Path | IO],
 ) -> lalframe.FrStream:
     """Open a GWF file source into a `lalframe.XLALFrStream` object.
 
@@ -126,7 +126,7 @@ def get_stream_segment(stream: lalframe.FrStream) -> Segment:
         # rewind stream to the start
         lalframe.FrStreamRewind(stream)
         start = lal.LIGOTimeGPS(stream.epoch)
-        end = 0
+        end = 0.
         # loop over each file in the stream cache and query its duration
         for _ in range(stream.cache.length):
             for j in range(lalframe.FrFileQueryNFrame(stream.file)):
