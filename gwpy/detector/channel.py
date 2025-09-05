@@ -517,7 +517,7 @@ class Channel:
     @classmethod
     def from_nds2(
         cls,
-        nds2channel: nds2.Channel,
+        nds2channel: nds2.channel,
     ) -> Self:
         """Generate a new channel using an existing nds2.channel object."""
         return cls(
