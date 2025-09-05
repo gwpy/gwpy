@@ -19,7 +19,7 @@ twine:
       when: never
     - !reference [.rules_deploy, rules]
   stage: $[[ inputs.stage ]]
-  image: quay.io/lib/python
+  image: python
   environment:
     name: $PYPI_REPOSITORY
     url: https://$PYPI_HOSTNAME/project/$CI_PROJECT_NAME
