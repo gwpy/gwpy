@@ -72,7 +72,8 @@ def open_gwf(
         return lalframe.FrameUFrFileOpen(path, mode)
     except RuntimeError as exc:
         if str(exc) == "I/O error":
-            raise OSError(f"failed to open '{path}'") from exc
+            msg = f"failed to open '{path}'"
+            raise OSError(msg) from exc
         raise
 
 
@@ -82,6 +83,7 @@ def open_gwf(
 def _iter_toc(
     gwf: str | Path | IO | lalframe.FrameUFrFile,
     type: str | None,
+    *,
     count: Literal[True],
 ) -> Iterator[int]:
     ...
@@ -91,6 +93,7 @@ def _iter_toc(
 def _iter_toc(
     gwf: str | Path | IO | lalframe.FrameUFrFile,
     type: str | None,
+    *,
     count: Literal[False],
 ) -> Iterator[tuple[str, str]]:
     ...
@@ -98,7 +101,8 @@ def _iter_toc(
 
 def _iter_toc(
     gwf: str | Path | IO | lalframe.FrameUFrFile,
-    type: str | None = None,
+    type: str | None = None,  # noqa: A002
+    *,
     count: bool = False,
 ) -> Iterator[tuple[str, str] | int]:
     """Yield the names and types of channels listed in the TOC for a GWF file.
@@ -107,6 +111,14 @@ def _iter_toc(
     ----------
     gwf : `str`, `pathlib.Path`, `file`, `lalframe.FrameUFrFile`
         Path of GWF file, or open file stream, to read.
+
+    type : `str`, optional
+        The type of channel to yield, one of ``"sim"``, ``"proc"`,
+        or ``"adc"``. If `None` (default) yield all types.
+
+    count : `bool`, optional
+        If `True` yield the number of channels of each type, rather than
+        their names.
 
     Yields
     ------
@@ -145,6 +157,10 @@ def _count_toc(
     gwf : `str`, `pathlib.Path`, `file`, `lalframe.FrameUFrFile`
         Path of GWF file, or open file stream, to read.
 
+    type : `str`, optional
+        The type of channel to yield, one of ``"sim"``, ``"proc"`,
+        or ``"adc"``. If `None` (default) yield all types.
+
     Yields
     ------
     name : `str`
@@ -179,9 +195,10 @@ def _channel_exists(
 def _channel_segments(
     gwf: str | Path | IO | lalframe.FrameUFrFile,
     name: str,
+    *,
     warn: bool = True,
 ) -> Iterator[Segment]:
-    """Yields the segments containing data for ``name`` in this GWF path.
+    """Yield the segments containing data for ``name`` in this GWF path.
 
     Parameters
     ----------
@@ -212,6 +229,7 @@ def _channel_segments(
             if str(exc) == "Wrong name" and warn:
                 warnings.warn(
                     f"'{name}' not found in frame {i} of {gwf}",
+                    stacklevel=2,
                 )
                 continue
             raise

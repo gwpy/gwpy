@@ -66,7 +66,7 @@ LOGGER = get_logger(__name__)
 def log_nds2(
     connection: nds2.connection | str,
     message: str,
-    *args: str | float,
+    *args: object,
     level: int = logging.DEBUG,
     **kwargs,
 ) -> None:
@@ -130,7 +130,7 @@ def _get_connection_kw(
     channels: Iterable[str | Channel],
     start: GpsLike | None,
     allow_tape: bool | None,
-) -> Iterator[dict[str, str | int | bool | nds2.connection]]:
+) -> Iterator[dict[str, str | int | bool | nds2.connection | None]]:
     """Yield a dict of connection keywords for each endpoint candidate."""
     if connection is not None or host is not None:
         yield {
@@ -529,8 +529,8 @@ def _create_series(
 
 def _get_data_segments(
     channels: list[nds2.channel],
-    start: LIGOTimeGPS,
-    end: LIGOTimeGPS,
+    start: int,
+    end: int,
     connection: nds2.connection,
 ) -> SegmentList:
     """Get available data segments for the given channels."""

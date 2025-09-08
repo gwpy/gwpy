@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -32,8 +33,8 @@ import numpy
 from ...frequencyseries import FrequencySeries
 from ...time import to_gps
 from ..window import canonical_name
-from ._utils import scale_timeseries_unit
 from . import _registry as fft_registry
+from ._utils import scale_timeseries_unit
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -135,7 +136,7 @@ def generate_window(length, window=None, dtype="float64"):
 
 def window_from_array(array, dtype=None):
     """Convert a `numpy.ndarray` into a LAL `Window` object."""
-    from ...utils.lal import (find_typed_function)
+    from ...utils.lal import find_typed_function
 
     if dtype is None:
         dtype = array.dtype
@@ -227,8 +228,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method="welch",
 
     # find LAL method (e.g. median-mean -> lal.REAL8AverageSpectrumMedianMean)
     methodname = "".join(map(str.title, re.split("[-_]", method)))
-    spec_func = find_typed_function(timeseries.dtype, "",
-                                    "AverageSpectrum{}".format(methodname))
+    spec_func = find_typed_function(timeseries.dtype, "", f"AverageSpectrum{methodname}")
 
     # calculate spectrum
     spec_func(lalfs, timeseries.to_lal(), segmentlength, stride, window, plan)
@@ -267,7 +267,7 @@ def welch(timeseries, segmentlength, noverlap=None, window=None, plan=None):
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
 
-    See also
+    See Also
     --------
     lal.REAL8AverageSpectrumWelch
     """
@@ -301,7 +301,7 @@ def bartlett(timeseries, segmentlength, noverlap=None, window=None, plan=None):
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
 
-    See also
+    See Also
     --------
     lal.REAL8AverageSpectrumWelch
     """
@@ -337,7 +337,7 @@ def median(timeseries, segmentlength, noverlap=None, window=None, plan=None):
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
 
-    See also
+    See Also
     --------
     lal.REAL8AverageSpectrumMedian
     """
@@ -376,7 +376,7 @@ def median_mean(timeseries, segmentlength, noverlap=None,
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
 
-    See also
+    See Also
     --------
     lal.REAL8AverageSpectrumMedianMean
     """
@@ -385,9 +385,9 @@ def median_mean(timeseries, segmentlength, noverlap=None,
 
 
 # register LAL methods without overriding scipy method
-for func in (welch, bartlett, median, median_mean,):
+for func in (welch, bartlett, median, median_mean):
     fft_registry.register_method(
         func,
-        name="lal-{}".format(func.__name__),
+        name=f"lal-{func.__name__}",
         deprecated=True,
     )

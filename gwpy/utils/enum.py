@@ -27,6 +27,8 @@ import numpy
 if TYPE_CHECKING:
     import builtins
 
+    from ..typing import Self
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
@@ -39,7 +41,7 @@ class NumpyTypeEnum(Enum):
         return numpy.dtype(self.name.lower())
 
     @property
-    def type(self) -> type:
+    def type(self) -> builtins.type:
         """The python type corresponding to this enumerated type."""
         return self.dtype.type
 
@@ -47,7 +49,7 @@ class NumpyTypeEnum(Enum):
     def find(
         cls,
         type_: builtins.type | str | int,
-    ) -> Enum:
+    ) -> Self:
         """Return the enumerated type corresponding to the given python type."""
         try:
             return cls(type_)

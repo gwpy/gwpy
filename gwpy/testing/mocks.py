@@ -21,19 +21,17 @@
 from __future__ import annotations
 
 import inspect
-import typing
+from typing import TYPE_CHECKING
 from unittest import mock
 
 from ..detector import Channel
 from ..time import LIGOTimeGPS
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import (
-        Any,
-        TypeAlias,
-    )
+    from typing import TypeAlias
 
+    import nds2
     from astropy.units import UnitBase
     from numpy.typing import NDArray
 
@@ -52,15 +50,15 @@ def nds2_buffer(
     data: list | NDArray,
     epoch: LIGOTimeGPS,
     sample_rate: float,
-    unit: UnitBase,
+    unit: str | UnitBase,
     name: str | None = None,
     slope: float = 1,
     offset: float = 0,
     channel_type: int = 2,
     data_type: int = 8,
-) -> mock.MagicMock:
+) -> nds2.buffer:
     """Create a mocked `nds2.buffer`."""
-    import nds2
+    import nds2  # noqa: PLC0415
     epoch = LIGOTimeGPS(epoch)
     ndsbuffer = mock.create_autospec(nds2.buffer)
     ndsbuffer.length = len(data)
@@ -83,10 +81,10 @@ def nds2_buffer(
 
 def nds2_buffer_from_timeseries(
     ts: TimeSeries,
-) -> mock.MagicMock:
+) -> nds2.buffer:
     """Create a mocked `nds2.buffer` from a :class:`TimeSeries`."""
     return nds2_buffer(
-        ts.name,
+        ts.name or "",
         ts.value,
         ts.x0.value,
         ts.sample_rate.value,
@@ -97,16 +95,16 @@ def nds2_buffer_from_timeseries(
 def nds2_channel(
     name: str,
     sample_rate: float,
-    unit: UnitBase,
+    unit: str | UnitBase,
     channel_type: int = 2,
     data_type: int = 8,
-) -> mock.MagicMock:
+) -> nds2.channel:
     """Create a mocked `nds2.channel`."""
-    import nds2
+    import nds2  # noqa: PLC0415
     channel = mock.create_autospec(nds2.channel)
     channel.name = name
     channel.sample_rate = sample_rate
-    channel.signal_units = unit
+    channel.signal_units = str(unit)
     channel.channel_type = channel_type
     channel.channel_type_to_string = nds2.channel.channel_type_to_string
     channel.data_type = data_type
@@ -121,11 +119,11 @@ def nds2_channel(
 def nds2_connection(
     host: str = "nds.test.gwpy",
     port: int = 31200,
-    buffers: Iterable[Any] = [],
+    buffers: Iterable[nds2.buffer] = [],
     protocol: int = 2,
-) -> mock.MagicMock:
+) -> nds2.connection:
     """Create a mock an `nds2.connection` that returns the given buffers."""
-    import nds2
+    import nds2  # noqa: PLC0415
     NdsConnection = mock.create_autospec(nds2.connection)  # noqa: N806
     NdsConnection.get_parameter.return_value = False
     NdsConnection.get_host.return_value = host
@@ -133,17 +131,17 @@ def nds2_connection(
     NdsConnection.get_protocol.return_value = int(protocol)
 
     # store buffers internally
-    NdsConnection._buffers = list(buffers)
+    NdsConnection._buffers = list(buffers)  # noqa: SLF001
 
     def iterate(
-        start: float,
-        end: float,
+        start: float,  # noqa: ARG001
+        end: float,  # noqa: ARG001
         names: list[str],
-    ):
-        if not NdsConnection._buffers:
+    ) -> list[list[nds2.buffer]]:
+        if not NdsConnection._buffers:  # noqa: SLF001
             return []
         return [[
-            b for b in NdsConnection._buffers
+            b for b in NdsConnection._buffers  # noqa: SLF001
             if Channel.from_nds2(b.channel).ndsname in names
         ]]
 
@@ -157,12 +155,14 @@ def nds2_connection(
         max_sample_rate: float = nds2.channel.MAX_SAMPLE_RATE,
     ) -> list[nds2.channel]:
         out = []
-        for b in NdsConnection._buffers:
+        for b in NdsConnection._buffers:  # noqa: SLF001
             chan = b.channel
             if (
                 chan.name == channel_glob
                 and chan.sample_rate >= min_sample_rate
                 and chan.sample_rate <= max_sample_rate
+                and chan.channel_type & channel_type_mask
+                and chan.data_type & data_type_mask
             ):
                 out.append(chan)
         return out
@@ -171,10 +171,10 @@ def nds2_connection(
 
     def get_availability(
         names: list[str],
-    ) -> nds2.availability_list_type:
+    ) -> list[nds2.availability]:
         out = []
         match = set()
-        for buff in NdsConnection._buffers:
+        for buff in NdsConnection._buffers:  # noqa: SLF001
             name = "{0.name},{0.type}".format(Channel.from_nds2(buff.channel))
             if name not in names:
                 continue
@@ -184,7 +184,7 @@ def nds2_connection(
             out.append(nds2_availability(name, segs))
             match.add(name)
         if missing := match.symmetric_difference(names):
-            msg = "bad channel: {missing.pop()}"
+            msg = f"bad channel: {missing.pop()}"
             raise RuntimeError(msg)
         return out
 
@@ -196,21 +196,23 @@ def nds2_connection(
 def nds2_availability(
     name: str,
     segments: SegmentListLike,
-) -> mock.MagicMock:
+) -> nds2.availability:
     """Create a mock `nds2.availability` object."""
-    import nds2
+    import nds2  # noqa: PLC0415
+    segs = list(map(nds2_segment, segments))
     availability = mock.create_autospec(nds2.availability)
     availability.name = name
-    availability.simple_list.return_value = list(map(nds2_segment, segments))
+    availability.data = segs
+    availability.simple_list.return_value = segs
     return availability
 
 
 def nds2_segment(
     segment: SegmentLike,
-) -> mock.MagicMock:
+) -> nds2.segment:
     """Create a mock `nds2.simple_segment`."""
-    import nds2
-    nds2seg = mock.create_autospec(nds2.simple_segment)
+    import nds2  # noqa: PLC0415
+    nds2seg = mock.create_autospec(nds2.segment)
     nds2seg.gps_start = segment[0]
     nds2seg.gps_stop = segment[1]
     return nds2seg
