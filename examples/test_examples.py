@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2019-2020)
+# Copyright (c) 2019-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Test suite for all examples
-"""
+"""Test suite for all examples."""
 
 import os
 import re
@@ -26,7 +25,6 @@ from functools import wraps
 from pathlib import Path
 
 import pytest
-
 from matplotlib import use
 
 from gwpy.io.nds2 import NDSWarning
@@ -47,6 +45,7 @@ EXAMPLES = sorted([
 
 @contextmanager
 def cwd(path):
+    """Context manager to change to a given directory and back again."""
     oldpwd = Path.cwd()
     os.chdir(str(path))
     try:
@@ -59,7 +58,8 @@ def cwd(path):
 
 @pytest.fixture(autouse=True)
 def close_figures():
-    from matplotlib import pyplot
+    """Fixture to close all matplotlib figures after each test."""
+    from matplotlib import pyplot  # noqa: PLC0415
     try:
         yield
     finally:
@@ -74,16 +74,15 @@ NDS2_AUTH_FAILURES = [
 ]
 NDS2_SKIP = re.compile(
     "({})".format("|".join(NDS2_AUTH_FAILURES)),
-    re.I,
+    re.IGNORECASE,
 )
 
 # stderr message for NDS2 data access failure
-NDS2_READ_ERROR_STDERR = re.compile("read_server_response: Wrong length read")
+NDS2_READ_ERROR_STDERR = re.compile(r"read_server_response: Wrong length read")
 
 
 def skip_nds_authentication_error(func):
-    """Ignore NDS2 authentication errors
-    """
+    """Ignore NDS2 authentication errors."""
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -105,8 +104,7 @@ def skip_nds_authentication_error(func):
 
 
 def skip_missing_optional_dependency(func):
-    """Ignore missing optional dependencies (mainly in `TimeSeries.get`).
-    """
+    """Ignore missing optional dependencies (mainly in `TimeSeries.get`)."""
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -116,9 +114,10 @@ def skip_missing_optional_dependency(func):
             RuntimeError,  # chained error
         ) as exc:
             msg = str(exc)
-            while exc.__cause__:  # walk up the error chain
-                exc = exc.__cause__
-                msg += f" caused by '{exc}'"
+            cause = exc.__cause__
+            while cause:  # walk up the error chain
+                msg += f" caused by '{cause}'"
+                cause = cause.__cause__
             # needs an optional dependency
             if not isinstance(exc, ImportError):
                 raise
@@ -138,6 +137,7 @@ def skip_missing_optional_dependency(func):
 @skip_nds_authentication_error
 @skip_missing_optional_dependency
 def test_example(capfd, script):
+    """Test an example script runs without error."""
     # read example code from file
     code = compile(
         script.read_text(),
