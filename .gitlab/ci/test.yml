@@ -17,7 +17,15 @@ include:
     inputs:
       pip_cmd: "uv pip"
       pip_options: "--group dev"
-      pytest_options: "--color yes --cov gwpy --durations 50 --numprocesses auto gwpy/ examples/"
+      pytest_options: "--color yes --cov gwpy --durations 50 --numprocesses auto gwpy/"
+
+  # examples tests
+  - local: .gitlab/ci/test-job.yml
+    inputs:
+      job_name: "examples_test"
+      pip_cmd: "uv pip"
+      pip_options: "--group dev"
+      pytest_options: "--color yes --cov gwpy --durations 50 --numprocesses auto examples/"
 
   # compatibility test template (smaller test suite)
   - local: .gitlab/ci/compatibility.yml
@@ -296,3 +304,34 @@ conda_test_windows:
     - !reference [.conda_test, cache]
     # and choco packages
     - !reference [.choco, cache]
+
+# -- examples tests
+#
+# Full development environment running the examples/ scripts
+#
+# These are allowed to fail, as they are not critical, and failures are
+# often due to transient network issues downloading data, or issues with
+# third-party services.
+#
+# However, they are used in the documentation, so we want to keep an eye
+# on them.
+#
+
+.examples:
+  script: !reference [.examples_test, script]
+  allow_failure: true
+
+examples_test_linux:
+  extends:
+    - conda_test_linux
+    - .examples
+
+examples_test_macos:
+  extends:
+    - conda_test_macos
+    - .examples
+
+examples_test_windows:
+  extends:
+    - conda_test_windows
+    - .examples
