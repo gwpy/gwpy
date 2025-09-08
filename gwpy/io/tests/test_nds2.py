@@ -450,6 +450,8 @@ def test_get_availability_real():
         )
     except RuntimeError as exc:  # something went wrong with NDS2
         pytest.skip(str(exc))
+    if sum(len(seglist) for seglist in segs.values()) == 0:  # EMPTY response
+        pytest.skip("no data received from nds.gwosc.org")
     utils.assert_dict_equal(
         segs,
         {"L1:ISI-GND_STS_ITMY_Z_BLRMS_30M_100M": SegmentList([
