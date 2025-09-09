@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2025-)
+# Copyright (c) 2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from ..io import cache as io_cache
@@ -28,73 +29,35 @@ from ..io.registry import (
 from ..types.connect import SeriesWrite
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        Callable,
-        Sequence,
+    from collections.abc import Sequence
+    from typing import (
+        Literal,
+        TypeVar,
     )
 
-    from ..time._tconvert import GpsConvertible
+    from ..io.utils import NamedReadable
+    from ..time import GpsConvertible
     from ..types import Series
+    from . import (
+        TimeSeriesBase,
+        TimeSeriesBaseDict,
+    )
+
+    T = TypeVar("T", bound=TimeSeriesBase | TimeSeriesBaseDict)
+    TimeSeriesType = TypeVar("TimeSeriesType", bound=TimeSeriesBase)
+    TimeSeriesDictType = TypeVar("TimeSeriesDictType", bound=TimeSeriesBaseDict)
 
 
 # -- utilities -----------------------
-
-def _join_factory(
-    cls: type,
-    gap: str | None,
-    pad: float | None,
-    start: GpsConvertible | None = None,
-    end: GpsConvertible | None = None,
-) -> Callable[[Sequence[Series]], Series]:
-    """Build a joiner for the given cls, and the given padding options."""
-    from . import TimeSeriesBaseDict
-
-    if issubclass(cls, TimeSeriesBaseDict):
-        def _join(data):
-            out = cls()
-            data = list(data)
-            while data:
-                tsd = data.pop(0)
-                out.append(tsd, gap=gap, pad=pad)
-                del tsd
-            if gap in ("pad", "raise"):
-                for key in out:
-                    out[key] = _pad_series(
-                        out[key],
-                        pad,
-                        start,
-                        end,
-                        error=(gap == "raise"),
-                    )
-            return out
-    else:
-        from . import TimeSeriesBaseList
-
-        def _join(arrays):
-            if len(arrays) == 1:  # don't copy a single array
-                joined = arrays[0]
-            else:
-                list_ = TimeSeriesBaseList(*arrays)
-                joined = list_.join(pad=pad, gap=gap)
-            if gap in ("pad", "raise"):
-                return _pad_series(
-                    joined,
-                    pad,
-                    start,
-                    end,
-                    error=(gap == "raise"),
-                )
-            return joined
-    return _join
-
 
 def _pad_series(
     ts: Series,
     pad: float | None,
     start: GpsConvertible | None = None,
     end: GpsConvertible | None = None,
+    *,
     error: bool = False,
-):
+) -> Series:
     """Pad a timeseries to match the specified [start, end) limits.
 
     To cover a gap in data returned from a data source.
@@ -143,7 +106,7 @@ def _pad_series(
     if error:  # if error, bail out now
         msg = (
             f"{type(ts).__name__} with span {span} does not cover "
-            "requested interval {type(span)(start, end)}"
+            f"requested interval {type(span)(start, end)}"
         )
         raise ValueError(msg)
     # otherwise applying the padding
@@ -160,35 +123,33 @@ class _TimeSeriesRead(UnifiedRead):
     `Klass.read.help()`.
     """
 
+    @abstractmethod
     def merge(  # type: ignore[override]
         self,
-        items: Sequence[Series],
+        items: Sequence[T],
         pad: float | None = None,
-        gap: str | None = None,
-    ) -> Series:
-        """Combine a list of `Series` objects into one `Series`.
+        gap: Literal["raise", "ignore", "pad"] | None = None,
+        start: GpsConvertible | None = None,
+        end: GpsConvertible | None = None,
+    ) -> T:
+        """Combine a list of `TimeSeries` or `TimeSeriesDict` into one.
 
-        Must be given at least one series.
+        Must be given at least one item.
         """
-        from . import TimeSeriesBaseList
-        if len(items) == 1:  # don't copy a single array
-            return items[0]
-        list_ = TimeSeriesBaseList(*items)
-        return list_.join(pad=pad, gap=gap)
 
     def __call__(  # type: ignore[override]
         self,
-        source,
+        source: NamedReadable | list[NamedReadable],
         *args,
         start: GpsConvertible | None = None,
         end: GpsConvertible | None = None,
         pad: float | None = None,
-        gap: str | None = None,
+        gap: Literal["raise", "ignore", "pad"] | None = None,
         **kwargs,
-    ):
+    ) -> TimeSeriesBase:
         # if reading a cache, read it now and sieve
         if io_cache.is_cache(source):
-            from .io.cache import preformat_cache
+            from .io.cache import preformat_cache  # noqa: PLC0415
             source = preformat_cache(
                 source,
                 start=start,
@@ -196,15 +157,18 @@ class _TimeSeriesRead(UnifiedRead):
             )
 
         # construct parametrised merge function
+        # (this allows pad, gap, start, end to be passed into
+        #  the underlying read function)
         if gap is None:
             gap = "raise" if pad is None else "pad"
-        merge = _join_factory(
-            self._cls,
-            gap,
-            pad,
-            start=start,
-            end=end,
-        )
+        def merge(items: Sequence[T]) -> T:
+            return self.merge(
+                items,
+                pad=pad,
+                gap=gap,
+                start=start,
+                end=end,
+            )
 
         # read
         return super().__call__(
@@ -220,11 +184,39 @@ class _TimeSeriesRead(UnifiedRead):
 # -- TimeSeriesBase -----------------
 
 class TimeSeriesBaseRead(_TimeSeriesRead):
-    pass
+    """Read data into a `TimeSeriesBase`."""
+
+    def merge(  # type: ignore[override]
+        self,
+        items: Sequence[TimeSeriesBase],
+        pad: float | None = None,
+        gap: Literal["raise", "ignore", "pad"] | None = None,
+        start: GpsConvertible | None = None,
+        end: GpsConvertible | None = None,
+    ) -> TimeSeriesBase:
+        """Combine a list of `TimeSeriesBase` objects into one `Series`."""
+        from . import TimeSeriesBaseList  # noqa: PLC0415
+        if len(items) == 1:  # don't copy a single array
+            joined = items[0]
+        else:
+            list_ = TimeSeriesBaseList(*items)
+            joined = list_.join(pad=pad, gap=gap)
+        if gap in ("pad", "raise"):
+            return _pad_series(
+                joined,
+                pad,
+                start,
+                end,
+                error=(gap == "raise"),
+            )
+        if not isinstance(joined, self._cls):
+            joined = self._cls(joined)
+        return joined
+
 
 
 class TimeSeriesBaseWrite(SeriesWrite):
-   pass
+    """Write data from a `TimeSeriesBase`."""
 
 
 # -- TimeSeries ---------------------
@@ -375,11 +367,35 @@ class StateVectorWrite(SeriesWrite):
 # -- TimeSeriesBaseDict -------------
 
 class TimeSeriesBaseDictRead(_TimeSeriesRead):
-    pass
+    """Read data into a `TimeSeriesBaseDict`."""
+
+    def merge(  # type: ignore[override]
+        self,
+        items: Sequence[TimeSeriesBaseDict],
+        pad: float | None = None,
+        gap: Literal["raise", "ignore", "pad"] | None = None,
+        start: GpsConvertible | None = None,
+        end: GpsConvertible | None = None,
+    ) -> TimeSeriesBaseDict:
+        """Combine a list of `TimeSeriesBaseDict` objects into one `Series`."""
+        out = self._cls()
+        for tsd in iter(items):
+            out.append(tsd, gap=gap, pad=pad)
+            del tsd
+        if gap in ("pad", "raise"):
+            for key in out:
+                out[key] = _pad_series(
+                    out[key],
+                    pad,
+                    start,
+                    end,
+                    error=(gap == "raise"),
+                )
+        return out
 
 
 class TimeSeriesBaseDictWrite(SeriesWrite):
-    pass
+    """Write data from a `TimeSeriesBaseDict`."""
 
 
 # -- TimeSeriesDict -----------------

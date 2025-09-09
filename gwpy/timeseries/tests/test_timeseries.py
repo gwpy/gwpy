@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2014-2017 Louisiana State University
+#               2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -18,44 +18,56 @@
 
 """Unit test for timeseries module."""
 
+from __future__ import annotations
+
 import logging
 import os.path
 import sys
 from contextlib import nullcontext
-from itertools import (chain, product)
+from itertools import (
+    chain,
+    product,
+)
 from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    TypeVar,
+)
 from unittest import mock
 
-import pytest
-
 import numpy
+import pytest
+from astropy import units
 from numpy import testing as nptest
-
 from requests.exceptions import HTTPError
-
 from scipy import signal
 
-from astropy import units
-
-from ...frequencyseries import (FrequencySeries, SpectralVariance)
+from ...frequencyseries import FrequencySeries, SpectralVariance
 from ...io.gwf import get_backend as get_gwf_backend
-from ...segments import (Segment, SegmentList, DataQualityFlag)
+from ...segments import DataQualityFlag, Segment, SegmentList
 from ...signal import filter_design
 from ...signal.window import planck
 from ...spectrogram import Spectrogram
 from ...table import EventTable
-from ...testing import (mocks, utils)
+from ...testing import mocks, utils
 from ...testing.errors import (
     pytest_skip_cvmfs_read_error,
     pytest_skip_flaky_network,
 )
-from ...types import Index
 from ...time import LIGOTimeGPS
-from .. import (TimeSeries, TimeSeriesDict, TimeSeriesList, StateTimeSeries)
+from ...types import Index
+from .. import StateTimeSeries, TimeSeries, TimeSeriesDict, TimeSeriesList
 from ..io import gwf as tsio_gwf
-from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
-                        TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
-                        TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
+from .test_core import (
+    TestTimeSeriesBase as _TestTimeSeriesBase,
+    TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
+    TestTimeSeriesBaseList as _TestTimeSeriesBaseList,
+)
+
+if TYPE_CHECKING:
+    from typing import ClassVar
+
+TimeSeriesType = TypeVar("TimeSeriesType", bound=TimeSeries)
 
 try:
     get_gwf_backend(
@@ -67,6 +79,8 @@ except ImportError:
 else:
     HAVE_GWF_BACKEND = True
 
+RNG = numpy.random.default_rng(0)
+
 # remote URL for test .gwf file
 TEST_HDF5_URL = (
     "https://gitlab.com/gwpy/gwpy/-/raw/v3.0.10/"
@@ -74,7 +88,6 @@ TEST_HDF5_URL = (
         utils.TEST_DATA_PATH.parent.parent.parent,
     ).as_posix()
 )
-
 
 GWF_BACKENDS = [
     pytest.param(
@@ -85,7 +98,6 @@ GWF_BACKENDS = [
     pytest.param("framecpp", marks=pytest.mark.requires("LDAStools.frameCPP")),
     pytest.param("framel", marks=pytest.mark.requires("framel")),
 ]
-
 
 LIVETIME = DataQualityFlag(
     name="X1:TEST-FLAG:1",
@@ -106,8 +118,11 @@ GWOSC_GW150914_CHANNEL = "L1:GWOSC-16KHZ_R1_STRAIN"
 NDS2_GW150914_CHANNEL = "L1:DCS-CALIB_STRAIN_C02"
 GWOSC_GW150914_FRAMETYPE = "L1_LOSC_16_V1"
 GWOSC_GW150914 = 1126259462
-GWOSC_GW150914_SEGMENT = Segment(GWOSC_GW150914-2, GWOSC_GW150914+2)
-GWOSC_GW150914_SEGMENT_32 = Segment(GWOSC_GW150914-16, GWOSC_GW150914+16)
+GWOSC_GW150914_SEGMENT: Segment[float] = Segment(GWOSC_GW150914 - 2, GWOSC_GW150914 + 2)
+GWOSC_GW150914_SEGMENT_32: Segment[float] = Segment(
+    GWOSC_GW150914 - 16,
+    GWOSC_GW150914 + 16,
+)
 GWOSC_GW150914_DQ_NAME = {
     "hdf5": "quality/simple",
     "gwf": "L1:GWOSC-4KHZ_R1_DQMASK",
@@ -159,8 +174,11 @@ GWOSC_GW150914_INJ_BITS = {
 GWOSC_GW190814_IFO = "L1"
 GWOSC_GW190814_CHANNEL = "L1:GWOSC-16KHZ_R1_STRAIN"
 GWOSC_GW190814 = 1249852257
-GWOSC_GW190814_SEGMENT = Segment(GWOSC_GW190814-2, GWOSC_GW190814+2)
-GWOSC_GW190814_SEGMENT_32 = Segment(GWOSC_GW190814-16, GWOSC_GW190814+16)
+GWOSC_GW190814_SEGMENT: Segment[float] = Segment(GWOSC_GW190814 - 2, GWOSC_GW190814 + 2)
+GWOSC_GW190814_SEGMENT_32: Segment[float] = Segment(
+    GWOSC_GW190814 - 16,
+    GWOSC_GW190814 + 16,
+)
 GWOSC_GW190814_DQ_NAME =  {
     "hdf5": "L1:GWOSC-4KHZ_R1_DQMASK",
     "gwf": "L1:GWOSC-4KHZ_R1_DQMASK",
@@ -191,44 +209,52 @@ def _gwosc_cvmfs(func):
     return func
 
 
-class TestTimeSeries(_TestTimeSeriesBase):
-    TEST_CLASS = TimeSeries
+class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
+    """Test `TimeSeries`."""
 
-    # -- fixtures -------------------------------
+    TEST_CLASS: type[TimeSeriesType] = TimeSeries
+
+    # -- fixtures --------------------
 
     @pytest.fixture(scope="class")
     @pytest_skip_flaky_network
-    def gw150914(self):
+    def gw150914(self) -> TimeSeriesType:
+        """TimeSeries containing GW150914 data from GWOSC."""
         return self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
             *GWOSC_GW150914_SEGMENT,
         )
 
     @pytest.fixture(scope="class")
-    def gw150914_16384(self):
+    def gw150914_16384(self) -> TimeSeriesType:
+        """TimeSeries containing GW150914 data from GWOSC at 16384 Hz."""
         return self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
-            *GWOSC_GW150914_SEGMENT,
+            GWOSC_GW150914_SEGMENT.start,
+            GWOSC_GW150914_SEGMENT.end,
             sample_rate=16384,
         )
 
     @pytest.fixture(scope="class")
-    def gw150914_h1_32(self):
+    def gw150914_h1_32(self) -> TimeSeriesType:
+        """TimeSeries containing 32-seconds of H1 GW150914 data from GWOSC."""
         return self.TEST_CLASS.fetch_open_data(
             "H1",
             *GWOSC_GW150914_SEGMENT_32,
         )
 
     @pytest.fixture(scope="class")
-    def gw150914_l1_32(self):
+    def gw150914_l1_32(self) -> TimeSeriesType:
+        """TimeSeries containing 32-seconds of L1 GW150914 data from GWOSC."""
         return self.TEST_CLASS.fetch_open_data(
             "L1",
             *GWOSC_GW150914_SEGMENT_32,
         )
 
-    # -- test class functionality ---------------
+    # -- test class functionality ----
 
     def test_ligotimegps(self):
+        """Test that TimeSeries.t0 and x0 can be set with LIGOTimeGPS."""
         # test that LIGOTimeGPS works
         array = self.create(t0=LIGOTimeGPS(0))
         assert array.t0.value == 0
@@ -241,11 +267,12 @@ class TestTimeSeries(_TestTimeSeriesBase):
         array.epoch = LIGOTimeGPS(10)
         assert array.t0.value == 10
 
-    def test_epoch(self):
+    def test_epoch(self):  # type: ignore[override]
+        """Test `TimeSeries.epoch`."""
         array = self.create()
-        assert array.epoch.gps == array.x0.value
+        assert array.epoch.gps == array.x0.value  # type: ignore[union-attr]
 
-    # -- test I/O -------------------------------
+    # -- test I/O --------------------
 
     def test_read_cache(self, tmp_path):
         """Test that `TimeSeries.read` handles caches well."""
@@ -271,12 +298,15 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
         utils.assert_quantity_sub_equal(array, data)
 
-    @pytest.mark.parametrize("format", ["txt", "csv"])
-    def test_read_write_ascii(self, array, format):
+    @pytest.mark.parametrize("fmt", ["txt", "csv"])
+    def test_read_write_ascii(self, array, fmt):
+        """Test reading and writing ASCII files."""
         utils.test_read_write(
-            array, format,
+            array,
+            fmt,
             assert_equal=utils.assert_quantity_sub_equal,
-            assert_kw={"exclude": ["name", "channel", "unit"]})
+            assert_kw={"exclude": ["name", "channel", "unit"]},
+        )
 
     def test_read_ascii_header(self, tmpdir):
         """Check that ASCII files with headers are read without extra options.
@@ -294,6 +324,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.mark.parametrize("backend", GWF_BACKENDS)
     def test_read_write_gwf(self, tmp_path, backend):
+        """Test reading and writing GWF files."""
         array = self.create(name="TEST")
 
         # test basic write/read
@@ -335,7 +366,8 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # test start only
         t = read_(start=start)
-        utils.assert_quantity_sub_equal(t,
+        utils.assert_quantity_sub_equal(
+            t,
             array.crop(start=start),
             exclude=["channel"],
         )
@@ -351,7 +383,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @pytest.mark.parametrize("backend", GWF_BACKENDS)
     def test_read_gwf_end_error(self, backend):
         """Test that reading past the end of available data fails."""
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match=r"(cannot read data|failed to read)",
+        ):
             self.TEST_CLASS.read(
                 utils.TEST_GWF_FILE,
                 "L1:LDAS-STRAIN",
@@ -363,7 +398,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @pytest.mark.parametrize("backend", GWF_BACKENDS)
     def test_read_gwf_negative_duration_error(self, backend):
         """Test that reading a negative duration fails."""
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match=r"(cannot read data|failed to read)",
+        ):
             self.TEST_CLASS.read(
                 utils.TEST_GWF_FILE,
                 "L1:LDAS-STRAIN",
@@ -373,7 +411,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             )
 
     @pytest.mark.parametrize("backend", GWF_BACKENDS)
-    @pytest.mark.parametrize("parallel", (1, 2))
+    @pytest.mark.parametrize("parallel", [1, 2])
     def test_read_write_gwf_multiple(self, tmp_path, backend, parallel):
         """Check that each GWF backend can read a series of files.
 
@@ -412,7 +450,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # wrong channel (framel on windows gives a slightly different error)
         with pytest.raises(
             ValueError,
-            match="({})".format("|".join((
+            match="({})".format("|".join((  # noqa: FLY002
                 "^channel 'another channel' not found",
                 "vector not found: another channel",
             ))),
@@ -426,11 +464,15 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.mark.parametrize("backend", GWF_BACKENDS)
     def test_read_write_gwf_interval_error(self, tmp_path, backend, gw150914):
+        """Test that reading GWF handles out-of-bounds times."""
         tmp = tmp_path / "test.gwf"
         gw150914.write(tmp, format="gwf", backend=backend)
 
         # wrong times (error message is different for each backend)
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match=r"(cannot read data|failed to read)",
+        ):
             self.TEST_CLASS.read(
                 tmp,
                 gw150914.name,
@@ -441,7 +483,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             )
 
     @pytest.mark.requires("lalframe")  # for get_channel_type
-    @pytest.mark.parametrize("ctype", ("adc", "proc", "sim", None))
+    @pytest.mark.parametrize("ctype", ["adc", "proc", "sim", None])
     @pytest.mark.parametrize("backend", GWF_BACKENDS)
     def test_write_gwf_type(self, gw150914, tmp_path, backend, ctype):
         """Test writing GWF for each FrData type."""
@@ -473,9 +515,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.mark.parametrize("backend", GWF_BACKENDS)
     def test_write_gwf_channel_name(self, tmp_path, backend):
-        """Test that writing GWF when `channel` is set but `name` is not
-        uses the `channel` name.
-        """
+        """Test that writing GWF uses `channel` when `name` is missing."""
         # create data
         array = self.create(channel="data")
         assert not array.name
@@ -493,21 +533,22 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=("name", "channel"),
         )
 
-    @pytest.mark.parametrize("ext", ("hdf5", "h5"))
+    @pytest.mark.parametrize("ext", ["hdf5", "h5"])
     @pytest.mark.parametrize("channel", [
         None,
         "test",
         "X1:TEST-CHANNEL",
     ])
     def test_read_write_hdf5(self, tmp_path, ext, channel):
+        """Test reading and writing HDF5 files."""
         array = self.create()
         array.channel = channel
 
-        tmp = tmp_path / "test.{}".format(ext)
+        tmp = tmp_path / f"test.{ext}"
         # check array with no name fails
         with pytest.raises(
             ValueError,
-            match="^Cannot determine HDF5 path",
+            match=r"^Cannot determine HDF5 path",
         ):
             array.write(tmp, overwrite=True)
         array.name = "TEST"
@@ -522,7 +563,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_quantity_sub_equal(array, ts)
 
         # check that we can't then write the same data again
-        with pytest.raises(IOError):
+        with pytest.raises(
+            OSError,
+            match="File exists",
+        ):
             array.write(tmp)
         with pytest.raises((IOError, OSError, RuntimeError, ValueError)):
             array.write(tmp, append=True)
@@ -533,13 +577,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_quantity_sub_equal(t, array.crop(start, end))
 
     def test_read_write_wav(self):
+        """Test reading and writing WAV files."""
         array = self.create(dtype="float32")
         utils.test_read_write(
             array, "wav", read_kw={"mmap": True}, write_kw={"scale": 1},
             assert_equal=utils.assert_quantity_sub_equal,
             assert_kw={"exclude": ["unit", "name", "channel", "x0"]})
 
-    @pytest.mark.parametrize("pre, post", [
+    @pytest.mark.parametrize(("pre", "post"), [
         pytest.param(None, None, id="none"),
         pytest.param(0, 0, id="zero"),
         pytest.param(None, 1, id="right"),
@@ -547,6 +592,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         pytest.param(1, 1, id="both"),
     ])
     def test_read_pad(self, pre, post):
+        """Check that `TimeSeries.read` with `pad` works as expected."""
         a = self.TEST_CLASS.read(
             utils.TEST_HDF5_FILE,
             "H1:LDAS-STRAIN",
@@ -572,14 +618,16 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     def test_read_pad_raise(self):
-        """Check that `TimeSeries.read` with `gap='raise'` actually
-        raises appropriately.
+        """Check that `TimeSeries.read` with `gap='raise'` raises appropriately.
 
         [regression: https://gitlab.com/gwpy/gwpy/-/issues/1211]
         """
         from gwpy.io.cache import file_segment
         span = file_segment(utils.TEST_HDF5_FILE)
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="does not cover requested interval",
+        ):
             self.TEST_CLASS.read(
                 utils.TEST_HDF5_FILE,
                 "H1:LDAS-STRAIN",
@@ -605,6 +653,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.mark.requires("nds2")
     def test_from_nds2_buffer_dynamic_scaled(self):
+        """Test `TimeSeries.from_nds2_buffer` with scaled data."""
         # build fake buffer for LIGO channel
         nds_buffer = mocks.nds2_buffer(
             "H1:TEST",
@@ -631,29 +680,35 @@ class TestTimeSeries(_TestTimeSeriesBase):
             nds_buffer.data * 2 + 1,
         )
 
-    # -- test remote data access ----------------
+    # -- test remote data access -----
 
-    @pytest.mark.parametrize("format", [
+    @pytest.mark.parametrize("fmt", [
         "hdf5",
         pytest.param("gwf", marks=pytest.mark.requires("lalframe")),
     ])
     @pytest_skip_flaky_network
-    def test_fetch_open_data(self, gw150914, format):
+    def test_fetch_open_data(self, gw150914, fmt):
+        """Test `TimeSeries.fetch_open_data`."""
         ts = self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
-            *GWOSC_GW150914_SEGMENT,
-            format=format,
+            GWOSC_GW150914_SEGMENT.start,
+            GWOSC_GW150914_SEGMENT.end,
+            format=fmt,
             verbose=True,
             timeout=60,
         )
-        utils.assert_quantity_sub_equal(ts, gw150914,
-                                        exclude=["name", "unit", "channel"])
+        utils.assert_quantity_sub_equal(
+            ts,
+            gw150914,
+            exclude=["name", "unit", "channel"],
+        )
 
         # try again with 16384 Hz data
         ts = self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
-            *GWOSC_GW150914_SEGMENT,
-            format=format,
+            GWOSC_GW150914_SEGMENT.start,
+            GWOSC_GW150914_SEGMENT.end,
+            format=fmt,
             sample_rate=16384,
             timeout=60,
         )
@@ -661,10 +716,11 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest_skip_flaky_network
     def test_fetch_open_data_error(self):
-        """Test that TimeSeries.fetch_open_data raises errors it receives
-        from the `gwosc` module.
-        """
-        with pytest.raises(ValueError):
+        """Test that TimeSeries.fetch_open_data propagates errors."""
+        with pytest.raises(
+            ValueError,
+            match="Cannot find a GWOSC dataset",
+        ):
             self.TEST_CLASS.fetch_open_data(
                 GWOSC_GW150914_IFO,
                 0,
@@ -756,7 +812,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         """Test `TimeSeries.fetch()` handling of no data."""
         # patch find_channels() to return the channel, even though
         # iterate() won't return any data
-        def find_channels(name, *args, **kwargs):
+        def find_channels(name, *args, **kwargs):  # noqa: ARG001
             return [mocks.nds2_channel(name, 128, "")]
 
         nds2_connection.find_channels = find_channels
@@ -774,7 +830,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         "gwpy.io.nds2.host_resolution_order",
         return_value=(["nds.example.com", 31200],),
     )
-    def test_fetch_warning_message(self, _, caplog):
+    def test_fetch_warning_message(self, mock_hro, caplog):
         """Test that TimeSeries.fetch emits a useful warning on NDS2 issues."""
         with pytest.raises(
             RuntimeError,
@@ -841,6 +897,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             )
 
     def test_find_observatory_error(self):
+        """Test that `find()` raises ValueError on inconsistent observatory."""
         with pytest.raises(
             ValueError,
             match="Cannot parse list of IFOs from channel names",
@@ -859,9 +916,11 @@ class TestTimeSeries(_TestTimeSeriesBase):
         {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_find_best_frametype_in_find(self, gw150914_16384):
+        """Test that `TimeSeries.find()` best frametype selection works."""
         ts = self.TEST_CLASS.find(
             GWOSC_GW150914_CHANNEL,
-            *GWOSC_GW150914_SEGMENT,
+            GWOSC_GW150914_SEGMENT.start,
+            GWOSC_GW150914_SEGMENT.end,
         )
         utils.assert_quantity_sub_equal(
             ts,
@@ -882,10 +941,12 @@ class TestTimeSeries(_TestTimeSeriesBase):
         {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_get_datafind(self, gw150914_16384):
+        """Test that `TimeSeries.get(..., source='datafind')` works."""
         try:
             ts = self.TEST_CLASS.get(
                 GWOSC_GW150914_CHANNEL,
-                *GWOSC_GW150914_SEGMENT,
+                GWOSC_GW150914_SEGMENT.start,
+                GWOSC_GW150914_SEGMENT.end,
                 source="files",
                 frametype_match=r"V1\Z",
             )
@@ -901,6 +962,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
     @pytest.mark.requires("nds2")
     @utils.skip_kerberos_credential
     def test_get_nds2(self, gw150914_16384):
+        """Test that `TimeSeries.get(..., source="nds2")` works."""
         # get using NDS2 (if datafind could have been used to start with)
         with mock.patch("gwpy.timeseries.TimeSeries.fetch") as mock_fetch:
             ts = self.TEST_CLASS.get(
@@ -915,9 +977,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
             exclude=["name", "channel", "unit"],
         )
 
-    # -- signal processing methods --------------
+    # -- signal processing methods ---
 
     def test_fft(self, gw150914):
+        """Test `TimeSeries.fft`."""
         fs = gw150914.fft()
         assert isinstance(fs, FrequencySeries)
         assert fs.size == gw150914.size // 2 + 1
@@ -936,9 +999,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
         [1., 0., -1., 0.],
         [1., 2., 3., 2., 1., 0.],
         numpy.arange(10),
-        numpy.random.random(100),
+        RNG.random(size=100),
     ])
     def test_fft_ifft(self, data):
+        """Test that `TimeSeries.fft().ifft()` returns the original data."""
         a = self.TEST_CLASS(data)
         utils.assert_quantity_sub_equal(
             a,
@@ -949,6 +1013,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     def test_average_fft(self, gw150914):
+        """Test `TimeSeries.average_fft()`."""
         # test all defaults
         fs = gw150914.average_fft()
         utils.assert_quantity_sub_equal(fs, gw150914.detrend().fft())
@@ -961,6 +1026,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         fs = gw150914.average_fft(fftlength=0.4, overlap=0.2)
 
     def test_psd_default_overlap(self, gw150914):
+        """Test that `TimeSeries.psd()` default overlap is half fftlength."""
         utils.assert_quantity_sub_equal(
             gw150914.psd(.5, method="median", window="hann"),
             gw150914.psd(.5, .25, method="median", window="hann"),
@@ -968,19 +1034,27 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest.mark.requires("lal")
     def test_psd_lal_median_mean(self, gw150914):
+        """Test `TimeSeries.psd(method='lal_median_mean')`."""
         # check that warnings and errors get raised in the right place
         # for a median-mean PSD with the wrong data size or parameters
 
         # single segment should raise error
-        with pytest.raises(ValueError), pytest.deprecated_call():
+        with (
+            pytest.raises(ValueError, match="Cannot calculate median-mean spectrum"),
+            pytest.deprecated_call(),
+        ):
             gw150914.psd(abs(gw150914.span), method="lal_median_mean")
 
         # odd number of segments should warn
-        with pytest.warns(UserWarning), pytest.deprecated_call():
+        with (
+            pytest.warns(UserWarning, match="Data array is the wrong size"),
+            pytest.deprecated_call(),
+        ):
             gw150914.psd(1, .5, method="lal_median_mean")
 
-    @pytest.mark.parametrize("method", ("welch", "bartlett", "median"))
+    @pytest.mark.parametrize("method", ["welch", "bartlett", "median"])
     def test_psd(self, noisy_sinusoid, method):
+        """Test `TimeSeries.psd()`."""
         fftlength = .5
         overlap = .25
         fs = noisy_sinusoid.psd(
@@ -996,7 +1070,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert fs.name == noisy_sinusoid.name
         assert fs.channel is noisy_sinusoid.channel
 
-    @pytest.mark.parametrize("library, method", chain(
+    @pytest.mark.parametrize(("library", "method"), chain(
         product(["pycbc.psd"], ["welch", "bartlett", "median", "median_mean"]),
         product(["lal"], ["welch", "bartlett", "median", "median_mean"]),
     ))
@@ -1017,14 +1091,18 @@ class TestTimeSeries(_TestTimeSeriesBase):
         library = library.split(".", 1)[0]
 
         with pytest.deprecated_call():
-            psd = noisy_sinusoid.psd(fftlength=fftlength, overlap=overlap,
-                                     method="{0}-{1}".format(library, method))
+            psd = noisy_sinusoid.psd(
+                fftlength=fftlength,
+                overlap=overlap,
+                method=f"{library}-{method}",
+            )
 
         assert isinstance(psd, FrequencySeries)
         assert psd.unit == noisy_sinusoid.unit ** 2 / "Hz"
         assert psd.max() == psd.value_at(500)
 
     def test_asd(self, gw150914):
+        """Test that `TimeSeries.asd()` is the sqrt of `psd()`."""
         kw = {
             "method": "median",
         }
@@ -1079,17 +1157,16 @@ class TestTimeSeries(_TestTimeSeriesBase):
         ),
         pytest.param("pycbc-median", marks=pytest.mark.requires("pycbc.psd")),
     ])
-    @pytest.mark.parametrize(
-        "window", (None, "hann", ("kaiser", 24), "array"),
-    )
+    @pytest.mark.parametrize("window", [None, "hann", ("kaiser", 24), "array"])
     def test_spectrogram(self, gw150914, method, window):
+        """Test `TimeSeries.spectrogram()`."""
         # generate window for 'array'
         win = self._window_helper(gw150914, 1) if window == "array" else window
 
         if method.startswith(("lal", "pycbc")):
-            ctx = pytest.deprecated_call
+            ctx = pytest.deprecated_call  # ignore: type[assignment]
         else:
-            ctx = nullcontext
+            ctx = nullcontext  # ignore: type[assignment]
 
         # generate spectrogram
         with ctx():
@@ -1097,8 +1174,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # validate
         assert isinstance(sg, Spectrogram)
-        assert sg.shape == (abs(gw150914.span),
-                            gw150914.sample_rate.value // 2 + 1)
+        assert sg.shape == (
+            abs(gw150914.span),
+            gw150914.sample_rate.value // 2 + 1,
+        )
         assert sg.f0 == 0 * units.Hz
         assert sg.df == 1 * units.Hz
         assert sg.channel is gw150914.channel
@@ -1109,21 +1188,29 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # check the first time-bin is the same result as .psd()
         n = int(gw150914.sample_rate.value)
         if window == "hann" and not method.endswith("bartlett"):
-            n *= 1.5  # default is 50% overlap
+            n = int(n * 1.5)  # default is 50% overlap
         with ctx():
-            psd = gw150914[:int(n)].psd(fftlength=1, method=method, window=win)
+            psd = gw150914[:n].psd(fftlength=1, method=method, window=win)
         # FIXME: epoch should not be excluded here (probably)
-        utils.assert_quantity_sub_equal(sg[0], psd, exclude=["epoch"],
-                                        almost_equal=True)
+        utils.assert_quantity_sub_equal(
+            sg[0],
+            psd,
+            exclude=["epoch"],
+            almost_equal=True,
+        )
 
     def test_spectrogram_fftlength(self, gw150914):
+        """Test `TimeSeries.spectrogram()` uses the ``fftlength`` keyword properly."""
         sg = gw150914.spectrogram(1, fftlength=0.5, method="median")
-        assert sg.shape == (abs(gw150914.span),
-                            0.5 * gw150914.sample_rate.value // 2 + 1)
+        assert sg.shape == (
+            abs(gw150914.span),
+            0.5 * gw150914.sample_rate.value // 2 + 1,
+        )
         assert sg.df == 2 * units.Hertz
         assert sg.dt == 1 * units.second
 
     def test_spectrogram_overlap(self, gw150914):
+        """Test `TimeSeries.spectrogram()` uses the ``overlap`` keyword properly."""
         kw = {
             "fftlength": 0.5,
             "window": "hann",
@@ -1134,6 +1221,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_quantity_sub_equal(sg, sg2, almost_equal=True)
 
     def test_spectrogram_multiprocessing(self, gw150914):
+        """Test `TimeSeries.spectrogram()` with multiprocessing."""
         kw = {
             "fftlength": 0.5,
             "window": "hann",
@@ -1148,14 +1236,18 @@ class TestTimeSeries(_TestTimeSeriesBase):
         pytest.param("pycbc", marks=pytest.mark.requires("pycbc.psd")),
     ])
     def test_spectrogram_median_mean(self, gw150914, library):
+        """Test `TimeSeries.spectrogram()` with (deprecated) median-mean."""
         method = f"{library}-median-mean"
 
         # the LAL implementation of median-mean warns if not given the
         # correct amount of data for an even number of FFTs.
         if library == "lal":
-            lal_warn_ctx = pytest.warns(UserWarning)
+            lal_warn_ctx = pytest.warns(
+                UserWarning,
+                match="Data array is the wrong size",
+            )
         else:
-            lal_warn_ctx = nullcontext()
+            lal_warn_ctx = nullcontext()  # ignore: type[assignment]
 
         with pytest.deprecated_call(), lal_warn_ctx:
             sg = gw150914.spectrogram(
@@ -1169,6 +1261,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert sg.df == 2 * units.Hertz
 
     def test_spectrogram2(self, gw150914):
+        """Test `TimeSeries.spectrogram2()`."""
         # test defaults
         sg = gw150914.spectrogram2(1, overlap=0)
         utils.assert_quantity_sub_equal(
@@ -1195,6 +1288,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert sg.dt == 0.010009765625 * units.second
 
     def test_fftgram(self, gw150914):
+        """Test `TimeSeries.fftgram()`."""
         fgram = gw150914.fftgram(1)
         fs = int(gw150914.sample_rate.value)
         f, t, sxx = signal.spectrogram(
@@ -1209,6 +1303,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_array_equal(sxx.T, fgram.value)
 
     def test_fftgram_overlap(self, gw150914):
+        """Test `TimeSeries.fftgram()` with overlap."""
         fgram = gw150914.fftgram(1, overlap=0.5)
         fs = int(gw150914.sample_rate.value)
         f, t, sxx = signal.spectrogram(
@@ -1224,6 +1319,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_array_equal(sxx.T, fgram.value)
 
     def test_spectral_variance(self, gw150914):
+        """Test `TimeSeries.spectral_variance()`."""
         variance = gw150914.spectral_variance(.5, method="median")
         assert isinstance(variance, SpectralVariance)
         assert variance.x0 == 0 * units.Hz
@@ -1231,11 +1327,12 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert variance.max() == 8
 
     def test_rayleigh_spectrum(self, gw150914):
+        """Test `TimeSeries.rayleigh_spectrum()`."""
         # assert single FFT creates Rayleigh of 0
         ray = gw150914.rayleigh_spectrum()
         assert isinstance(ray, FrequencySeries)
         assert ray.unit is units.Unit("")
-        assert ray.name == "Rayleigh spectrum of %s" % gw150914.name
+        assert ray.name == f"Rayleigh spectrum of {gw150914.name}"
         assert ray.epoch == gw150914.epoch
         assert ray.channel is gw150914.channel
         assert ray.f0 == 0 * units.Hz
@@ -1253,6 +1350,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert ray.frequencies[ray.argmax()] == 136 * units.Hz
 
     def test_csd_spectrogram(self, gw150914):
+        """Test `TimeSeries.csd_spectrogram()`."""
         # test defaults
         sg = gw150914.csd_spectrogram(gw150914, 1)
         assert isinstance(sg, Spectrogram)
@@ -1314,18 +1412,23 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert numpy.allclose(gw150914.value[::2], downsamp.value)
 
     def test_resample_noop(self):
+        """Test that resampling to the same rate returns self with a warning."""
         data = self.TEST_CLASS([1, 2, 3, 4, 5])
-        with pytest.warns(UserWarning):
+        with pytest.warns(
+            UserWarning,
+            match=r"resample\(\) rate matches current sample_rate",
+        ):
             new = data.resample(data.sample_rate)
-            assert data is new
+        assert data is new
 
     def test_rms(self, gw150914):
+        """Test `TimeSeries.rms()`."""
         rms = gw150914.rms(1.)
         assert rms.sample_rate == 1 * units.Hz
 
-    @mock.patch("gwpy.segments.DataQualityFlag.query",
-                return_value=LIVETIME)
-    def test_mask(self, dqflag):
+    @mock.patch("gwpy.segments.DataQualityFlag.query", return_value=LIVETIME)
+    def test_mask(self, mock_query):
+        """Test `TimeSeries.mask()`."""
         # craft a timeseries of ones that can be easily tested against
         # a few interesting corner cases
         data = TimeSeries(numpy.ones(8192), sample_rate=128)
@@ -1344,10 +1447,13 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert numpy.all(numpy.isnan(masked.value[dead]))
         utils.assert_allclose(masked.value[:4032], numpy.ones(4032))
         utils.assert_allclose(masked.value[4032:4096], window[-64:])
-        utils.assert_allclose(masked.value[4352:4416],
-                              window[:64] * window[-64:])
+        utils.assert_allclose(
+            masked.value[4352:4416],
+            window[:64] * window[-64:],
+        )
 
     def test_demodulate(self):
+        """Test `TimeSeries.demodulate()`."""
         # create a timeseries that is simply one loud sinusoidal oscillation
         # at a particular frequency, then demodulate at that frequency and
         # recover the amplitude and phase
@@ -1378,22 +1484,19 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_allclose(ph.value, phase, rtol=1e-5)
 
     def test_heterodyne(self):
+        """Test `TimeSeries.heterodyne()`."""
         # create a timeseries that is simply one loud sinusoidal oscillation,
         # with a frequency and frequency derivative, then heterodyne using the
         # phase evolution to recover the amplitude and phase
         amp, phase, f, fdot = 1., numpy.pi/4, 30, 1e-4
         duration, sample_rate, stride = 600, 4096, 60
         t = numpy.linspace(0, duration, duration*sample_rate)
-        phases = 2*numpy.pi*(f*t + 0.5*fdot*t**2)
-        data = TimeSeries(amp * numpy.cos(phases + phase),
-                          unit="", times=t)
-
-        # test exceptions
-        with pytest.raises(TypeError):
-            data.heterodyne(1.0)
-
-        with pytest.raises(ValueError):
-            data.heterodyne(phases[0:len(phases) // 2])
+        phases = 2 * numpy.pi * (f * t + 0.5 * fdot * t ** 2)
+        data = TimeSeries(
+            amp * numpy.cos(phases + phase),
+            unit="",
+            times=t,
+        )
 
         # test with default settings
         het = data.heterodyne(phases, stride=stride)
@@ -1404,12 +1507,30 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
         # test with singlesided=True
         het = data.heterodyne(
-            phases, stride=stride, singlesided=True
+            phases,
+            stride=stride,
+            singlesided=True,
         )
         assert het.unit == data.unit
         assert het.size == duration // stride
         utils.assert_allclose(numpy.abs(het.value), amp, rtol=1e-4)
         utils.assert_allclose(numpy.angle(het.value), phase, rtol=2e-4)
+
+    def test_heterodyne_scalar_phase_error(self, array):
+        """Test `TimeSeries.heterodyne()` scalar phase error."""
+        with pytest.raises(
+            ValueError,
+            match="Phase is not array_like",
+        ):
+            array.heterodyne(1.0)
+
+    def test_heterodyne_phase_length_error(self, array):
+        """Test `TimeSeries.heterodyne()` handling of a bad phase array."""
+        with pytest.raises(
+            ValueError,
+            match="Phase array must be the same length",
+        ):
+            array.heterodyne(array[0:len(array) // 2])
 
     def test_taper(self):
         # create a flat timeseries, then taper it
@@ -1463,12 +1584,17 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     def test_gate(self):
         # generate Gaussian noise with std = 0.5
-        noise = self.TEST_CLASS(numpy.random.normal(scale=0.5, size=16384*64),
-                                sample_rate=16384, epoch=-32)
+        noise = self.TEST_CLASS(
+            numpy.random.normal(scale=0.5, size=16384*64),
+            sample_rate=16384,
+            epoch=-32,
+        )
         # generate a glitch with amplitude 20 at 1000 Hz
         glitchtime = 0.0
-        glitch = signal.gausspulse(noise.times.value - glitchtime,
-                                   bw=100) * 20
+        glitch = signal.gausspulse(
+            noise.times.value - glitchtime,
+            bw=100,
+        ) * 20
         data = noise + glitch
 
         # check that the glitch is at glitchtime as expected
@@ -1495,10 +1621,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
         # create noise with a glitch in it at 1000 Hz
         noise = self.TEST_CLASS(
             numpy.random.normal(loc=1, scale=.5, size=16384 * 64),
-            sample_rate=16384, epoch=-32).zpk([], [0], 1)
+            sample_rate=16384,
+            epoch=-32,
+        ).zpk([], [0], 1)
         glitchtime = 0.5
-        glitch = signal.gausspulse(noise.times.value - glitchtime,
-                                   bw=100) * 1e-4
+        glitch = signal.gausspulse(
+            noise.times.value - glitchtime,
+            bw=100,
+        ) * 1e-4
         data = noise + glitch
 
         # when the input is stationary Gaussian noise, the output should have
@@ -1539,7 +1669,10 @@ class TestTimeSeries(_TestTimeSeriesBase):
         ).zpk([], [1], 1)
         glitchtime = -16.5
         glitch = self.TEST_CLASS(
-            signal.gausspulse(numpy.arange(-1, 1, 1./16384), bw=100),
+            signal.gausspulse(
+                numpy.arange(-1, 1, 1./16384),
+                bw=100,
+            ),
             sample_rate=16384,
             epoch=glitchtime-1,
         )
@@ -1685,15 +1818,14 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     def test_bandpass_happy_path(self, gw150914):
         """Check that passband val are approx equal, stopband are not."""
-
         asd = gw150914.asd()
         bp_asd = gw150914.bandpass(100, 1000).asd()
 
         eqinds = numpy.where(
             numpy.logical_and(
                 bp_asd.frequencies.value > 100,
-                bp_asd.frequencies.value < 1000
-            )
+                bp_asd.frequencies.value < 1000,
+            ),
         )[0]
 
         eqind0 = eqinds[0]
@@ -1727,6 +1859,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         )
 
     def test_notch(self, gw150914):
+        """Test `TimeSeries.notch()`."""
         # test notch runs end-to-end
         gw150914.notch(60)
 
@@ -1735,7 +1868,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
             gw150914.notch(10, type="fir")
 
     def test_q_gram(self, gw150914):
-        # test simple q-transform
+        """Test `TimeSeries.q_gram()`."""
         qgram = gw150914.q_gram()
         assert isinstance(qgram, EventTable)
         assert qgram.meta["q"] == 45.25483399593904
@@ -1743,7 +1876,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
         nptest.assert_almost_equal(qgram["energy"].max(), 10559.25, decimal=2)
 
     def test_q_transform(self, gw150914):
-        # test simple q-transform
+        """Test `TimeSeries.q_transform()`."""
         qspecgram = gw150914.q_transform(method="scipy-welch", fftlength=2)
         assert isinstance(qspecgram, Spectrogram)
         assert qspecgram.shape == (1000, 2403)
@@ -1770,27 +1903,33 @@ class TestTimeSeries(_TestTimeSeriesBase):
         utils.assert_quantity_sub_equal(qsg2, qsg3, almost_equal=True)
 
         # make sure frequency too high presents warning
-        with pytest.warns(UserWarning):
+        with pytest.warns(
+            UserWarning,
+            match="upper frequency of 10000.0 Hz is too high",
+        ):
             qspecgram = gw150914.q_transform(
                 method="scipy-welch",
                 frange=(0, 10000),
             )
-            nptest.assert_almost_equal(
-                qspecgram.yspan[1],
-                1291.5316,
-                decimal=4,
-            )
+        nptest.assert_almost_equal(
+            qspecgram.yspan[1],
+            1291.5316,
+            decimal=4,
+        )
 
         # test other normalisations work (or don't)
         q2 = gw150914.q_transform(method="scipy-welch", norm="median")
         utils.assert_quantity_sub_equal(qspecgram, q2, almost_equal=True)
         gw150914.q_transform(method="scipy-welch", norm="mean")
         gw150914.q_transform(method="scipy-welch", norm=False)
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match=r"^invalid normalisation 'blah'$",
+        ):
             gw150914.q_transform(method="scipy-welch", norm="blah")
 
     def test_q_transform_logf(self, gw150914):
-        # test q-transform with log frequency spacing
+        """Test `TimeSeries.q_transform()` with log frequency spacing."""
         qspecgram = gw150914.q_transform(
             method="scipy-welch",
             fftlength=2,
@@ -1802,22 +1941,25 @@ class TestTimeSeries(_TestTimeSeriesBase):
         nptest.assert_almost_equal(qspecgram.value.max(), 155.93774, decimal=5)
 
     def test_q_transform_nan(self):
+        """Test that `TimeSeries.q_transform()` raises for NaN input."""
         data = TimeSeries(numpy.empty(256*10) * numpy.nan, sample_rate=256)
         with pytest.raises(
             ValueError,
-            match="^Input signal contains non-numerical values$",
+            match=r"^Input signal contains non-numerical values$",
         ):
             data.q_transform(method="median")
 
     def test_boolean_statetimeseries(self, array):
+        """Test comparisons of `TimeSeries` returning `StateTimeSeries`."""
         comp = array >= 2 * array.unit
         assert isinstance(comp, StateTimeSeries)
         assert comp.unit is units.Unit("")
-        assert comp.name == "%s >= 2.0" % (array.name)
-        assert (array == array).name == "{0} == {0}".format(array.name)
+        assert comp.name == f"{array.name} >= 2.0"
+        assert (array == array).name == f"{array.name} == {array.name}"  # noqa: PLR0124
 
     @pytest_skip_flaky_network
     def test_transfer_function(self, gw150914_h1_32, gw150914_l1_32):
+        """Test `TimeSeries.transfer_function()`."""
         tf = gw150914_h1_32.transfer_function(
             gw150914_l1_32,
             fftlength=1.0,
@@ -1828,6 +1970,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest_skip_flaky_network
     def test_coherence(self, gw150914_h1_32, gw150914_l1_32):
+        """Test `TimeSeries.coherence()`."""
         coh = gw150914_h1_32.coherence(
             gw150914_l1_32,
             fftlength=1.0,
@@ -1837,6 +1980,7 @@ class TestTimeSeries(_TestTimeSeriesBase):
 
     @pytest_skip_flaky_network
     def test_coherence_spectrogram(self, gw150914_h1_32, gw150914_l1_32):
+        """Test `TimeSeries.coherence_spectrogram()`."""
         cohsg = gw150914_h1_32.coherence_spectrogram(
             gw150914_l1_32,
             4,
@@ -1845,19 +1989,22 @@ class TestTimeSeries(_TestTimeSeriesBase):
         assert cohsg.t0 == gw150914_h1_32.t0
         assert cohsg.dt == 4 * units.second
         assert cohsg.df == 1 * units.Hz
-        tmax, fmax = numpy.unravel_index(cohsg.argmax(), cohsg.shape)
+        _, fmax = numpy.unravel_index(cohsg.argmax(), cohsg.shape)
         assert cohsg.frequencies[fmax] == 60 * units.Hz
 
 
-# -- TimeSeriesDict -----------------------------------------------------------
+# -- TimeSeriesDict ------------------
 
-class TestTimeSeriesDict(_TestTimeSeriesBaseDict):
-    channels = ["H1:LDAS-STRAIN", "L1:LDAS-STRAIN"]
+class TestTimeSeriesDict(_TestTimeSeriesBaseDict[TimeSeriesDict, TimeSeries]):
+    """Tests for `gwpy.timeseries.TimeSeriesDict`."""
+
+    channels: ClassVar[list[str]] = ["H1:LDAS-STRAIN", "L1:LDAS-STRAIN"]
     TEST_CLASS = TimeSeriesDict
     ENTRY_CLASS = TimeSeries
 
     @pytest.mark.requires("framel")
     def test_read_write_gwf(self, instance, tmp_path):
+        """Test reading and writing GWF files."""
         tmp = tmp_path / "test.gwf"
         instance.write(tmp)
         new = self.TEST_CLASS.read(tmp, instance.keys())
@@ -1866,6 +2013,7 @@ class TestTimeSeriesDict(_TestTimeSeriesBaseDict):
                                             exclude=["channel"])
 
     def test_read_write_hdf5(self, instance, tmp_path):
+        """Test reading and writing HDF5 files."""
         tmp = tmp_path / "test.h5"
         instance.write(tmp, overwrite=True)
         new = self.TEST_CLASS.read(tmp, instance.keys())
@@ -1877,8 +2025,10 @@ class TestTimeSeriesDict(_TestTimeSeriesBaseDict):
             utils.assert_quantity_sub_equal(new[key], instance[key])
 
 
-# -- TimeSeriesList -----------------------------------------------------------
+# -- TimeSeriesList ------------------
 
-class TestTimeSeriesList(_TestTimeSeriesBaseList):
+class TestTimeSeriesList(_TestTimeSeriesBaseList[TimeSeriesList, TimeSeries]):
+    """Tests for :class:`gwpy.timeseries.TimeSeriesList`."""
+
     TEST_CLASS = TimeSeriesList
     ENTRY_CLASS = TimeSeries

@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2020-)
+# Copyright (c) 2020-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -138,14 +138,19 @@ def _read_gwf(
             -1,  # read all data
             series_class,
         )
-        if (keep := new.crop(*(new.span & span))).size:
+        try:
+            overlap = new.span & span
+        except ValueError:
+            # this channel doesn't overlap with the requested span
+            continue
+        if (keep := new.crop(*overlap)).size:
             yield keep
             _record(keep.name)
 
     # if any channels weren't read, something went wrong
     for channel in channels:
         if (name := str(channel)) not in record:
-            msg = f"failed to read '{name}' from '{filename}' in interval {span}"
+            msg = f"cannot read data for '{name}' from '{filename}' in interval {span}"
             raise ValueError(msg)
 
 

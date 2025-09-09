@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2014-2017 Louisiana State University
+#               2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -41,11 +41,12 @@ if TYPE_CHECKING:
 def read_ascii(
     input_: str | Path | IO,
     array_type: type = TimeSeries,
+    *,
     unpack: bool = True,
     start: GpsLike | None = None,
     end: GpsLike | None = None,
     **kwargs,
-):
+) -> TimeSeries:
     """Read a `TimeSeries` from an ASCII file.
 
     Parameters

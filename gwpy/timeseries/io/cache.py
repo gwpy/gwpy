@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2014-2017 Louisiana State University
+#               2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -34,10 +34,12 @@ from ...io.utils import Readable
 from ...segments import Segment
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable
-    from pathlib import Path
-    from typing import IO
+    from collections.abc import (
+        Callable,
+        Iterable,
+    )
 
+    from ...io.utils import FileSystemPath
     from ...typing import GpsLike
 
 inf = infinity()
@@ -46,7 +48,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def preformat_cache(
-    cache: list | str | Path | IO,
+    cache: Readable | Iterable[FileSystemPath],
     start: GpsLike | None = None,
     end: GpsLike | None = None,
     sort: Callable = file_segment,
@@ -80,7 +82,7 @@ def preformat_cache(
     modcache : `list`
         A parsed, sieved list of paths based on the input arguments.
 
-    See also
+    See Also
     --------
     gwpy.io.cache.read_cache
         For details of how the sorting and sieving is implemented

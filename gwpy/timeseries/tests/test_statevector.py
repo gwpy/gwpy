@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2014-2017 Louisiana State University
+#               2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -17,41 +18,48 @@
 
 """Unit test for timeseries module."""
 
+import os
 from io import BytesIO
 
-import pytest
-
 import numpy
-
+import pytest
+from astropy import units
 from matplotlib import rc_context
 
-from astropy import units
-
 from ...detector import Channel
-from ...time import (Time, LIGOTimeGPS)
-from ...testing import (mocks, utils)
+from ...segments import Segment
+from ...testing import mocks, utils
 from ...testing.errors import pytest_skip_flaky_network
+from ...time import LIGOTimeGPS, Time
 from ...types import Array2D
-from .. import (StateVector, StateVectorDict, StateVectorList,
-                StateTimeSeries, StateTimeSeriesDict, Bits)
-from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
-                        TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
-                        TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
+from .. import (
+    Bits,
+    StateTimeSeries,
+    StateTimeSeriesDict,
+    StateVector,
+    StateVectorDict,
+    StateVectorList,
+)
+from .test_core import (
+    TestTimeSeriesBase as _TestTimeSeriesBase,
+    TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
+    TestTimeSeriesBaseList as _TestTimeSeriesBaseList,
+)
 from .test_timeseries import (
+    GWOSC_GW150914_DQ_BITS,
+    GWOSC_GW150914_DQ_NAME,
     # Description of GW150914
     GWOSC_GW150914_IFO,
-    GWOSC_GW150914_SEGMENT,
-    GWOSC_GW150914_DQ_NAME,
-    GWOSC_GW150914_DQ_BITS,
-    GWOSC_GW150914_INJ_NAME,
     GWOSC_GW150914_INJ_BITS,
+    GWOSC_GW150914_INJ_NAME,
+    GWOSC_GW150914_SEGMENT,
+    GWOSC_GW190814_DQ_BITS,
+    GWOSC_GW190814_DQ_NAME,
     # Description of GW190814
     GWOSC_GW190814_IFO,
-    GWOSC_GW190814_SEGMENT,
-    GWOSC_GW190814_DQ_NAME,
-    GWOSC_GW190814_DQ_BITS,
-    GWOSC_GW190814_INJ_NAME,
     GWOSC_GW190814_INJ_BITS,
+    GWOSC_GW190814_INJ_NAME,
+    GWOSC_GW190814_SEGMENT,
 )
 
 # This is used to test reading of injections
@@ -87,9 +95,10 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
 
     @classmethod
     def setup_class(cls):
-        cls.data = numpy.asarray([0, 1, 1, 1, 0, 0, 0, 1, 0, 0,
-                                  1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
-                                 dtype=bool)
+        cls.data = numpy.asarray(
+            [0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+            dtype=bool,
+        )
 
     def test_new(self):
         sts = self.create()
@@ -134,18 +143,25 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
     def test_to_dqflag(self, array):
         flag = array.to_dqflag()
         utils.assert_segmentlist_equal(
-            flag.active, [(1, 4), (7, 8), (10, 13), (14, 15), (16, 20)],
+            flag.active,
+            map(Segment, ((1, 4), (7, 8), (10, 13), (14, 15), (16, 20))),
         )
         utils.assert_segmentlist_equal(flag.known, [array.span])
         assert flag.name == array.name
         assert flag.label == array.name
         assert flag.description is None
 
-        flag = array.to_dqflag(minlen=2, dtype=LIGOTimeGPS, name="Test flag",
-                               round=True, label="Label",
-                               description="Description")
+        flag = array.to_dqflag(
+            minlen=2,
+            dtype=LIGOTimeGPS,
+            name="Test flag",
+            round=True,
+            label="Label",
+            description="Description",
+        )
         utils.assert_segmentlist_equal(
-            flag.active, [(1, 4), (10, 13), (16, 20)],
+            flag.active,
+            map(Segment, ((1, 4), (10, 13), (16, 20))),
         )
         assert isinstance(flag.active[0][0], LIGOTimeGPS)
         assert flag.name == "Test flag"
@@ -156,7 +172,7 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
         with pytest.raises(NotImplementedError):
             super().test_override_unit(array)
 
-    def test_is_compatible_error_unit(self):
+    def test_is_compatible_error_unit(self, array):
         pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
 
     def test_to_from_pycbc(self):
@@ -203,45 +219,56 @@ class TestStateTimeSeriesDict(_TestTimeSeriesBaseDict):
 class TestBits:
     TEST_CLASS = Bits
 
-    @pytest.mark.parametrize("in_, out", [
+    @pytest.mark.parametrize(("in_", "out"), [
         # list
-        (["bit 0", "bit 1", "bit 2", None, "bit 3", ""],
-         ["bit 0", "bit 1", "bit 2", None, "bit 3", None]),
+        pytest.param(
+            ["bit 0", "bit 1", "bit 2", None, "bit 3", ""],
+            ["bit 0", "bit 1", "bit 2", None, "bit 3", None],
+            id="list",
+        ),
         # dict
-        ({1: "bit 1", 4: "bit 4", "6": "bit 6"},
-         [None, "bit 1", None, None, "bit 4", None, "bit 6"]),
+        pytest.param(
+            {1: "bit 1", 4: "bit 4", "6": "bit 6"},
+            [None, "bit 1", None, None, "bit 4", None, "bit 6"],
+            id="dict",
+        ),
     ])
     def test_init(self, in_, out):
+        """Test initialising `Bits`."""
         bits = self.TEST_CLASS(in_)
         assert bits == out
         assert bits.channel is None
         assert bits.epoch is None
-        assert bits.description == {bit: None for bit in bits if
-                                    bit is not None}
+        assert bits.description == {bit: None for bit in bits if bit is not None}
 
         bits = self.TEST_CLASS(in_, channel="L1:Test", epoch=0)
         assert bits.epoch == Time(0, format="gps")
         assert bits.channel == Channel("L1:Test")
 
     def test_str(self):
+        """Test ``str(Bits)``."""
         bits = self.TEST_CLASS(["a", "b", None, "c"])
-        assert str(bits) == (
-            "Bits(0: a\n"
-            "     1: b\n"
-            "     3: c,\n"
-            "     channel=None,\n"
-            "     epoch=None)")
+        assert str(bits) == os.linesep.join([
+            "Bits(0: a",
+            "     1: b",
+            "     3: c,",
+            "     channel=None,",
+            "     epoch=None)",
+        ])
 
     def test_repr(self):
+        """Test ``repr(Bits)``."""
         bits = self.TEST_CLASS(["a", "b", None, "c"])
-        assert repr(bits) == (
-            "<Bits(0: 'a'\n"
-            "      1: 'b'\n"
-            "      3: 'c',\n"
-            "      channel=None,\n"
-            "      epoch=None)>")
+        assert repr(bits) == os.linesep.join([
+            "<Bits(0: 'a'",
+            "      1: 'b'",
+            "      3: 'c',",
+            "      channel=None,",
+            "      epoch=None)>",
+        ])
 
     def test_array(self):
+        """Test converting `Bits` to an array."""
         bits = self.TEST_CLASS(["a", "b", None, "c"])
         utils.assert_array_equal(
             numpy.asarray(bits),
@@ -259,7 +286,9 @@ class TestStateVector(_TestTimeSeriesBase):
     def setup_class(cls):
         numpy.random.seed(0)
         cls.data = numpy.random.randint(
-            2**4+1, size=100).astype(cls.DTYPE, copy=False)
+            2**4+1,
+            size=100,
+        ).astype(cls.DTYPE, copy=False)
 
     def test_bits(self, array):
         assert isinstance(array.bits, Bits)
@@ -286,7 +315,7 @@ class TestStateVector(_TestTimeSeriesBase):
         assert isinstance(b, Array2D)
         assert b.shape == (array.size, len(array.bits))
         # array[0] == 12, check boolean equivalent
-        utils.assert_array_equal(b[0], [int(12) >> j & 1 for j in range(32)])
+        utils.assert_array_equal(b[0], [12 >> j & 1 for j in range(32)])
 
     def test_get_bit_series(self, array):
         # test default
@@ -330,8 +359,10 @@ class TestStateVector(_TestTimeSeriesBase):
         a2 = array.resample(array.sample_rate / 2.)
         assert a2.sample_rate == array.sample_rate / 2.
         assert a2.bits is array.bits
-        utils.assert_array_equal(a2.value[:10],
-                                 [12, 0, 3, 0, 4, 0, 6, 5, 8, 0])
+        utils.assert_array_equal(
+            a2.value[:10],
+            [12, 0, 3, 0, 4, 0, 6, 5, 8, 0],
+        )
 
         # check upsampling raises NotImplementedError
         with pytest.raises(NotImplementedError):
@@ -361,7 +392,8 @@ class TestStateVector(_TestTimeSeriesBase):
     def test_fetch_open_data(self, format):
         sv = self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
-            *GWOSC_GW150914_SEGMENT,
+            GWOSC_GW150914_SEGMENT[0],
+            GWOSC_GW150914_SEGMENT[1],
             format=format,
             version=3,
         )
@@ -387,7 +419,8 @@ class TestStateVector(_TestTimeSeriesBase):
     def test_fetch_open_data_new_format(self, format):
         sv = self.TEST_CLASS.fetch_open_data(
             GWOSC_GW190814_IFO,
-            *GWOSC_GW190814_SEGMENT,
+            GWOSC_GW190814_SEGMENT[0],
+            GWOSC_GW190814_SEGMENT[1],
             format=format,
             version=3,
         )
@@ -412,8 +445,7 @@ class TestStateVector(_TestTimeSeriesBase):
     ])
     @pytest_skip_flaky_network
     def test_fetch_open_data_injection(self, format):
-        """
-        This test checks that we are able to read and fetch the injection bits
+        """This test checks that we are able to read and fetch the injection bits
         from GWOSC files (see #1811).
 
         To do so, we download the injection data from GWOSC and compare it to a
@@ -421,10 +453,11 @@ class TestStateVector(_TestTimeSeriesBase):
         """
         inj = self.TEST_CLASS.fetch_open_data(
             GWOSC_GW150914_IFO,
-            *GWOSC_GW150914_SEGMENT,
+            GWOSC_GW150914_SEGMENT[0],
+            GWOSC_GW150914_SEGMENT[1],
             format=format,
             version=3,
-            **GWOSC_GW150914_INJ_KWARGS[format]
+            **GWOSC_GW150914_INJ_KWARGS[format],
         )
         # We know that the first bytes are equal to 23
         ref = StateVector(
@@ -456,7 +489,8 @@ class TestStateVector(_TestTimeSeriesBase):
         """
         inj = self.TEST_CLASS.fetch_open_data(
             GWOSC_GW190814_IFO,
-            *GWOSC_GW190814_SEGMENT,
+            GWOSC_GW190814_SEGMENT[0],
+            GWOSC_GW190814_SEGMENT[1],
             format=format,
             version=3,
             **GWOSC_GW190814_INJ_KWARGS[format],
@@ -493,7 +527,7 @@ class TestStateVector(_TestTimeSeriesBase):
         array.bits = ["a", "b", "c", "d"]
         array.name = "test"
 
-        tmp = tmp_path / "test.{}".format(ext)
+        tmp = tmp_path / f"test.{ext}"
 
         # write array (with auto-identify)
         array.write(tmp, overwrite=True)
