@@ -574,7 +574,18 @@ class Array(Quantity):
         return super().flatten(order=order).view(Quantity)
 
     def copy(self, order: Literal["C", "F", "A", "K"] = "C") -> Self:
-        """Return a copy of this `Array`."""
+        """Return a copy of this `Array`.
+
+        Parameters
+        ----------
+        order : {'C', 'F', 'A', 'K'}, optional
+            The desired memory layout order for the copy.
+
+        See Also
+        --------
+        numpy.ndarray.copy
+            For details of the copy operation.
+        """
         out = super().copy(order=order)
         for slot in self._metadata_slots:
             old = getattr(self, f"_{slot}", None)

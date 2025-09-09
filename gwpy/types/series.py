@@ -603,7 +603,18 @@ class Series(Array):
         return self[idx]
 
     def copy(self, order: Literal["C", "F", "A", "K"] = "C") -> Self:
-        """Return a copy of this `Series`."""
+        """Return a copy of this `Series`.
+
+        Parameters
+        ----------
+        order : {'C', 'F', 'A', 'K'}, optional
+            The desired memory layout order for the copy.
+
+        See Also
+        --------
+        numpy.ndarray.copy
+            For details of the copy operation.
+        """
         new = super().copy(order=order)
         with contextlib.suppress(AttributeError):
             new._xindex = self._xindex.copy()
