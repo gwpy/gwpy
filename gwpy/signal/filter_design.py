@@ -21,11 +21,14 @@
 from __future__ import annotations
 
 import operator
-import typing
 from functools import reduce
 from math import (
     log10,
     pi,
+)
+from typing import (
+    TYPE_CHECKING,
+    overload,
 )
 
 import numpy
@@ -39,10 +42,11 @@ from .window import (
 )
 
 # filter type definitions
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import (
         Any,
+        Literal,
         SupportsFloat,
         TypeAlias,
     )
@@ -52,26 +56,28 @@ if typing.TYPE_CHECKING:
         ArrayLike,
         NDArray,
     )
+    from scipy.signal import lti
 
     from .window import WindowLike
 
     # FIR
     TapsType: TypeAlias = NDArray
     # IIR
+    FilterTypeName: TypeAlias = Literal["butter", "cheby1", "cheby2", "ellip"]
     SosType: TypeAlias = NDArray
     ZpkType: TypeAlias = tuple[NDArray, NDArray, float]
     BAType: TypeAlias = tuple[NDArray, NDArray]
-    IirFilterType: TypeAlias = signal.lti | ZpkType | BAType
+    IirFilterType: TypeAlias = SosType | ZpkType | BAType
     # generic
-    FilterType: TypeAlias = TapsType | IirFilterType
+    FilterType = TapsType | IirFilterType
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
-    "lowpass",
-    "highpass",
     "bandpass",
-    "notch",
     "concatenate_zpks",
+    "highpass",
+    "lowpass",
+    "notch",
 ]
 
 
@@ -79,6 +85,7 @@ def _as_float(
     x: QuantityLike,
     unit: str = "Hz",
 ) -> float:
+    """Convert input to a float in the given units."""
     return Quantity(x, unit).value
 
 
@@ -87,15 +94,55 @@ TWO_PI: float = 2 * pi
 
 # -- core filter design utilities ----
 
+@overload
 def _design_iir(
-    wp: float | ArrayLike,
-    ws: float | ArrayLike,
+    wp: ArrayLike,
+    ws: ArrayLike,
     sample_rate: float,
     gpass: float,
     gstop: float,
+    *,
+    analog: bool,
+    ftype: FilterTypeName,
+    output: Literal["zpk"],
+) -> ZpkType: ...
+
+@overload
+def _design_iir(
+    wp: ArrayLike,
+    ws: ArrayLike,
+    sample_rate: float,
+    gpass: float,
+    gstop: float,
+    *,
+    analog: bool,
+    ftype: FilterTypeName,
+    output: Literal["ba"],
+) -> BAType: ...
+
+@overload
+def _design_iir(
+    wp: ArrayLike,
+    ws: ArrayLike,
+    sample_rate: float,
+    gpass: float,
+    gstop: float,
+    *,
+    analog: bool,
+    ftype: FilterTypeName,
+    output: Literal["sos"],
+) -> SosType: ...
+
+def _design_iir(
+    wp: ArrayLike,
+    ws: ArrayLike,
+    sample_rate: float,
+    gpass: float,
+    gstop: float,
+    *,
     analog: bool = False,
-    ftype: str = "cheby1",
-    output: str = "zpk",
+    ftype: FilterTypeName = "cheby1",
+    output: Literal["zpk", "ba", "sos"] = "zpk",
 ) -> IirFilterType:
     """Design an IIR filter using `scipy.signal.iirdesign`."""
     nyq = sample_rate / 2.
@@ -109,7 +156,8 @@ def _design_iir(
         ws /= nyq
     z, p, k = signal.iirdesign(
         wp,
-        ws, gpass,
+        ws,
+        gpass,
         gstop,
         analog=analog,
         ftype=ftype,
@@ -125,7 +173,8 @@ def _design_iir(
         return signal.zpk2tf(z, p, k)
     if output == "sos":
         return signal.zpk2sos(z, p, k)
-    raise ValueError(f"'{output}' is not a valid output form")
+    msg = f"'{output}' is not a valid output form"
+    raise ValueError(msg)
 
 
 def _design_fir(
@@ -408,10 +457,20 @@ def convert_zpk_units(
     return zeros, poles, gain
 
 
+@overload
 def convert_to_digital(
-    filter,
+    args: TapsType | BAType | tuple[TapsType | BAType],
+) -> tuple[Literal["ba"], BAType]: ...
+
+@overload
+def convert_to_digital(
+    args: SosType | ZpkType | lti | tuple[SosType | ZpkType | lti],
+) -> tuple[Literal["zpk"], ZpkType]: ...
+
+def convert_to_digital(
+    filter: FilterType | lti | tuple[FilterType | lti],
     sample_rate: float,
-) -> tuple[str, IirFilterType]:
+) -> tuple[Literal["ba", "zpk"], IirFilterType]:
     """Convert an analog filter to digital via bilinear functions.
 
     Parameters
@@ -444,12 +503,23 @@ def convert_to_digital(
     if form == "zpk":
         return form, signal.bilinear_zpk(*filter, fs=sample_rate)
 
-    raise ValueError(f"Cannot convert '{form}', only 'zpk' or 'ba'")
+    msg = f"cannot convert '{form}', only 'zpk' or 'ba'"
+    raise ValueError(msg)
 
+
+@overload
+def parse_filter(
+    args: TapsType | BAType | tuple[TapsType | BAType],
+) -> tuple[Literal["ba"], BAType]: ...
+
+@overload
+def parse_filter(
+    args: SosType | ZpkType | lti | tuple[SosType | ZpkType | lti],
+) -> tuple[Literal["zpk"], ZpkType]: ...
 
 def parse_filter(
-    args: FilterType,
-) -> tuple[str, BAType | ZpkType]:
+    args: FilterType | lti | tuple[FilterType | lti],
+) -> tuple[Literal["ba", "zpk"], BAType | ZpkType]:
     """Parse arbitrary input args into a TF or ZPK filter definition.
 
     Parameters
@@ -497,9 +567,9 @@ def parse_filter(
 # -- user methods --------------------
 
 def lowpass(
-    frequency: SupportsFloat,
-    sample_rate: SupportsFloat,
-    fstop: float | None = None,
+    frequency: QuantityLike,
+    sample_rate: QuantityLike,
+    fstop: QuantityLike | None = None,
     gpass: float = 2,
     gstop: float = 30,
     type: str = "iir",
@@ -560,6 +630,7 @@ def lowpass(
     frequency = _as_float(frequency)
     if fstop is None:
         fstop = min(frequency * 1.5, sample_rate / 2.)
+    fstop = _as_float(fstop)
     return _design(
         type,
         frequency,
@@ -733,10 +804,10 @@ def bandpass(
 
 
 def notch(
-    frequency: SupportsFloat,
-    sample_rate: SupportsFloat,
-    type: str = "iir",
-    output: str = "zpk",
+    frequency: QuantityLike,
+    sample_rate: QuantityLike,
+    type: Literal["iir"] = "iir",
+    output: Literal["zpk", "ba", "sos"] = "zpk",
     **kwargs,
 ) -> IirFilterType:
     """Design a ZPK notch filter for the given frequency and sampling rate.
@@ -808,9 +879,8 @@ def notch(
             output=output,
             **kwargs,
         )
-    raise NotImplementedError(
-        f"Generating {type} notch filters has not been implemented yet",
-    )
+    msg = f"Generating {type} notch filters has not been implemented yet"
+    raise NotImplementedError(msg)
 
 
 def concatenate_zpks(*zpks: ZpkType) -> ZpkType:
