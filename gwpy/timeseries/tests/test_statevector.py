@@ -38,33 +38,43 @@ from .test_core import (TestTimeSeriesBase as _TestTimeSeriesBase,
                         TestTimeSeriesBaseDict as _TestTimeSeriesBaseDict,
                         TestTimeSeriesBaseList as _TestTimeSeriesBaseList)
 from .test_timeseries import (
+    # Description of GW150914
     GWOSC_GW150914_IFO,
     GWOSC_GW150914_SEGMENT,
+    GWOSC_GW150914_DQ_NAME,
+    GWOSC_GW150914_DQ_BITS,
+    GWOSC_GW150914_INJ_NAME,
+    GWOSC_GW150914_INJ_BITS,
+    # Description of GW190814
+    GWOSC_GW190814_IFO,
+    GWOSC_GW190814_SEGMENT,
+    GWOSC_GW190814_DQ_NAME,
+    GWOSC_GW190814_DQ_BITS,
+    GWOSC_GW190814_INJ_NAME,
+    GWOSC_GW190814_INJ_BITS,
 )
 
-GWOSC_GW150914_DQ_NAME = {
-    "hdf5": "Data quality",
-    "gwf": "L1:GWOSC-4KHZ_R1_DQMASK",
+# This is used to test reading of injections
+GWOSC_GW150914_INJ_KWARGS = {
+    "hdf5": {
+        "path": "quality/injections",
+        "value_dataset": "Injmask",
+        "bits_dataset": "InjDescriptions",
+    },
+    "gwf": {
+        "channel": GWOSC_GW150914_INJ_NAME["gwf"],
+    },
 }
-GWOSC_GW150914_DQ_BITS = {
-    "hdf5": [
-        "Passes DATA test",
-        "Passes CBC_CAT1 test",
-        "Passes CBC_CAT2 test",
-        "Passes CBC_CAT3 test",
-        "Passes BURST_CAT1 test",
-        "Passes BURST_CAT2 test",
-        "Passes BURST_CAT3 test",
-    ],
-    "gwf": [
-        "DATA",
-        "CBC_CAT1",
-        "CBC_CAT2",
-        "CBC_CAT3",
-        "BURST_CAT1",
-        "BURST_CAT2",
-        "BURST_CAT3",
-    ],
+
+GWOSC_GW190814_INJ_KWARGS = {
+    "hdf5": {
+        "path": "quality/injections",
+        "value_dataset": "Injmask",
+        "bits_dataset": "InjDescriptions",
+    },
+    "gwf": {
+        "channel": GWOSC_GW190814_INJ_NAME["gwf"],
+    },
 }
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -365,6 +375,104 @@ class TestStateVector(_TestTimeSeriesBase):
         )
         utils.assert_quantity_sub_equal(sv, ref, exclude=["channel", "bits"])
         assert sorted(map(str, sv.bits)) == sorted(map(str, ref.bits))
+
+    @pytest.mark.parametrize("format", [
+        "hdf5",
+        pytest.param(  # only frameCPP actually reads units properly
+            "gwf",
+            marks=pytest.mark.requires("LDAStools.frameCPP"),
+        ),
+    ])
+    @pytest_skip_flaky_network
+    def test_fetch_open_data_new_format(self, format):
+        sv = self.TEST_CLASS.fetch_open_data(
+            GWOSC_GW190814_IFO,
+            *GWOSC_GW190814_SEGMENT,
+            format=format,
+            version=3,
+        )
+        ref = StateVector(
+            [127, 127, 127, 127],
+            unit="",
+            t0=GWOSC_GW190814_SEGMENT[0],
+            dt=1,
+            name=GWOSC_GW190814_DQ_NAME[format],
+            bits=GWOSC_GW190814_DQ_BITS[format],
+        )
+        utils.assert_quantity_sub_equal(sv, ref, exclude=["channel", "bits"])
+        assert sorted(map(str, sv.bits)) == sorted(map(str, ref.bits))
+
+
+    @pytest.mark.parametrize("format", [
+        "hdf5",
+        pytest.param(  # only frameCPP actually reads units properly
+            "gwf",
+            marks=pytest.mark.requires("LDAStools.frameCPP"),
+        ),
+    ])
+    @pytest_skip_flaky_network
+    def test_fetch_open_data_injection(self, format):
+        """
+        This test checks that we are able to read and fetch the injection bits
+        from GWOSC files (see #1811).
+
+        To do so, we download the injection data from GWOSC and compare it to a
+        known StateVector.
+        """
+        inj = self.TEST_CLASS.fetch_open_data(
+            GWOSC_GW150914_IFO,
+            *GWOSC_GW150914_SEGMENT,
+            format=format,
+            version=3,
+            **GWOSC_GW150914_INJ_KWARGS[format]
+        )
+        # We know that the first bytes are equal to 23
+        ref = StateVector(
+            [23, 23, 23, 23],
+            unit="",
+            t0=GWOSC_GW150914_SEGMENT[0],
+            dt=1,
+            name=GWOSC_GW150914_INJ_NAME[format],
+            bits=GWOSC_GW150914_INJ_BITS[format],
+        )
+        utils.assert_quantity_sub_equal(inj, ref, exclude=["channel", "bits"])
+        assert sorted(map(str, inj.bits)) == sorted(map(str, ref.bits))
+
+    @pytest.mark.parametrize("format", [
+        "hdf5",
+        pytest.param(  # only frameCPP actually reads units properly
+            "gwf",
+            marks=pytest.mark.requires("LDAStools.frameCPP"),
+        ),
+    ])
+    @pytest_skip_flaky_network
+    def test_fetch_open_data_injection_new_format(self, format):
+        """Check that we can read and fetch GWOSC injection bits in the new format.
+
+        To do so, we download the injection data from GWOSC and compare it to a
+        known StateVector.
+
+        See (https://gitlab.com/gwpy/gwpy/-/issues/1811).
+        """
+        inj = self.TEST_CLASS.fetch_open_data(
+            GWOSC_GW190814_IFO,
+            *GWOSC_GW190814_SEGMENT,
+            format=format,
+            version=3,
+            **GWOSC_GW190814_INJ_KWARGS[format],
+        )
+        # We know that the first bytes are equal to 23
+        ref = StateVector(
+            [23, 23, 23, 23],
+            unit="",
+            t0=GWOSC_GW190814_SEGMENT[0],
+            dt=1,
+            name=GWOSC_GW190814_INJ_NAME[format],
+            bits=GWOSC_GW190814_INJ_BITS[format],
+        )
+        utils.assert_quantity_sub_equal(inj, ref, exclude=["channel", "bits"])
+        assert sorted(map(str, inj.bits)) == sorted(map(str, ref.bits))
+
 
     @pytest.mark.requires("nds2")
     def test_from_nds2_buffer(self):

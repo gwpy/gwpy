@@ -139,7 +139,7 @@ binary system:
                unit: dimensionless,
                t0: 1262275684.0 s,
                dt: 1.0 s,
-               name: Data quality,
+               name: L1:GWOSC-4KHZ_R1_DQMASK,
                channel: None,
                bits: Bits(0: Passes DATA test
                            1: Passes CBC_CAT1 test

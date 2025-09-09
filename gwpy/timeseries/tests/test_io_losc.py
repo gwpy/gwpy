@@ -67,5 +67,5 @@ def test_read_hdf5_gwosc_state(gw150914_hdf5):
         gw150914_hdf5,
         format="hdf5.gwosc",
     )
-    assert state.name == "Data quality"
+    assert state.name == "quality/simple"
     assert state.max().value == 127

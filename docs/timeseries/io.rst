@@ -54,6 +54,14 @@ datasets made available at the same time as the relevant result publication
 and typically including ~1 hour of data around each published event detection,
 and *bulk* datasets with the entire observing run data available roughly
 18 months after the end of the run.
+The data are available in :ref:`HDF5 <gwpy-timeseries-io-hdf5-gwosc>` files
+with a specific format.
+
+In addition to strain data, GWOSC files also contains data quality flags
+and information about injections.
+This information is very important to understand the data at hand.
+Such information is often represented by a :class:`StateVector`.
+The following methods are able to read these data.
 
 GWOSC also hosts the |GWOSC_AUX_RELEASE|_, providing public access to
 environmental sensor data around |GW170814|_.
@@ -145,6 +153,13 @@ Reading a `StateVector` uses the same syntax:
 .. code-block:: python
 
    >>> data = StateVector.read('my-state-data.gwf', 'L1:GWO-STATE_VECTOR')
+
+For instance, to read injections flags from a GWOSC GWF file,
+you can use the `LOSC-INJMASK` channel:
+
+.. code-block:: python
+
+   >>> injections = StateVector.read('my-state-data.gwf', 'L1:LOSC-INJMASK')
 
 Multiple files can be read by passing a list of files:
 
@@ -320,6 +335,20 @@ keyword:
 By default, :meth:`TimeSeries.read` will return the contents of the
 ``/strain/Strain`` dataset, while :meth:`StateVector.read` will return those
 of ``/quality/simple``.
+
+It's possible to change which datasets are read with the `path`, `value_dataset`
+and `bits_dataset` keywords.
+For instance to read injections flags:
+
+.. code-block:: python
+
+   >>> injections = StateVector.read(
+   ...     "H-H1_GWOSC_16KHZ_R1-1187056280-4096.hdf5",
+   ...     format="hdf5.gwosc",
+   ...     path="quality/injections",
+   ...     value_dataset="Injmask",
+   ...     bits_dataset="InjDescriptions",
+   ... )
 
 As with regular HDF5, the ``start`` and ``end`` keyword arguments can be used
 to downselect data to a specific ``[start, end)`` time segment when reading.

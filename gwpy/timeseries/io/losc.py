@@ -132,6 +132,32 @@ def _overlapping(files):
     return False
 
 
+def _name_from_gwosc_hdf5(f, path):
+    """Forge a name from a path in a GWOSC HDF5 file.
+
+    We want to be as close as possible to the GWF channel name.
+
+    New files (starting at O2 circa 2016-2017) contain a dataset called
+    GWOSCmeta (in the path) that stores the GWF channel (without the ifo name)
+    so we use this to reconstruct the GWF channel.
+    It works for strain, DQ and injections.
+
+    For old files, we return the path.
+    """
+    try:
+        # New files store the channel name in GWOSCmeta
+        meta_ds = io_hdf5.find_dataset(f, f"{path}/GWOSCmeta")
+    except KeyError:
+        # GWOSCmeta isn't stored in old files
+        return path
+    channel = meta_ds[()].decode("utf-8")
+    # We can then find the observatory
+    # This is just the letter code, not the number so we assume 1
+    ifo_ds = io_hdf5.find_dataset(f, "meta/Observatory")
+    ifo = ifo_ds[()].decode("utf-8")
+    return f"{ifo}1:{channel}"
+
+
 # -- remote data access (the main event) --------------------------------------
 
 def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
@@ -243,6 +269,8 @@ def read_gwosc_hdf5_state(
     start=None,
     end=None,
     copy=False,
+    value_dataset="DQmask",
+    bits_dataset="DQDescriptions",
 ):
     """Read a `StateVector` from a GWOSC-format HDF file.
 
@@ -252,7 +280,7 @@ def read_gwosc_hdf5_state(
         path of HDF5 file, or open `H5File`
 
     path : `str`
-        path of HDF5 dataset to read.
+        path of HDF5 datasets to read (will be used as name of the dataset).
 
     start : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
         start GPS time of desired data
@@ -263,27 +291,35 @@ def read_gwosc_hdf5_state(
     copy : `bool`, default: `False`
         create a fresh-memory copy of the underlying array
 
+    value_dataset : `str`
+        HDF5 dataset where to read the statevector values
+
+    bits_dataset : `str`
+        HDF5 dataset where to read the definition of each bits
+
     Returns
     -------
-    data : `~gwpy.timeseries.TimeSeries`
-        a new `TimeSeries` containing the data read from disk
+    data : `~gwpy.timeseries.StateVector`
+        a new `StateVector` containing the data read from disk
     """
     # find data
-    dataset = io_hdf5.find_dataset(f, "%s/DQmask" % path)
-    maskset = io_hdf5.find_dataset(f, "%s/DQDescriptions" % path)
+    bits_ds = io_hdf5.find_dataset(f, f"{path}/{value_dataset}")
+    def_ds = io_hdf5.find_dataset(f, f"{path}/{bits_dataset}")
     # read data
-    nddata = dataset[()]
-    bits = [bytes.decode(bytes(b), "utf-8") for b in maskset[()]]
+    bits = bits_ds[()]
+    bit_def = [bytes.decode(bytes(b), "utf-8") for b in def_ds[()]]
     # read metadata
-    epoch = dataset.attrs["Xstart"]
+    epoch = bits_ds.attrs["Xstart"]
     try:
-        dt = dataset.attrs["Xspacing"]
+        dt = bits_ds.attrs["Xspacing"]
     except KeyError:
         dt = Quantity(1, "s")
     else:
-        xunit = parse_unit(dataset.attrs["Xunits"])
+        xunit = parse_unit(bits_ds.attrs["Xunits"])
         dt = Quantity(dt, xunit)
-    return StateVector(nddata, bits=bits, t0=epoch, name="Data quality",
+    # Name
+    name = _name_from_gwosc_hdf5(f, path)
+    return StateVector(bits, bits=bit_def, t0=epoch, name=name,
                        dx=dt, copy=copy).crop(start=start, end=end)
 
 
