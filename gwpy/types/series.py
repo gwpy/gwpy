@@ -21,9 +21,11 @@
 from __future__ import annotations
 
 import contextlib
-import typing
-from functools import wraps
 from math import floor
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 from warnings import warn
 
 import numpy
@@ -42,11 +44,8 @@ from .connect import (
 )
 from .index import Index
 
-if typing.TYPE_CHECKING:
-    from typing import (
-        Any,
-        Literal,
-    )
+if TYPE_CHECKING:
+    from typing import Literal
 
     from astropy.units import UnitBase
     from astropy.units.typing import QuantityLike
@@ -229,7 +228,7 @@ class Series(Array):
         self,
         axis: str,
         attr: str,
-        value: Any,
+        value: QuantityLike,
     ) -> None:
         """Update the current axis index based on a given attr or value.
 
@@ -445,7 +444,7 @@ class Series(Array):
         self._set_index("x", index)
 
     @xindex.deleter
-    def xindex(self):
+    def xindex(self) -> None:
         with contextlib.suppress(AttributeError):
             del self._xindex
 
@@ -603,12 +602,14 @@ class Series(Array):
             raise
         return self[idx]
 
-    @wraps(Array.copy)
-    def copy(self, order: str = "C") -> str:
+    def copy(self, order: Literal["C", "F", "A", "K"] = "C") -> Self:
+        """Return a copy of this `Series`."""
         new = super().copy(order=order)
         with contextlib.suppress(AttributeError):
             new._xindex = self._xindex.copy()
         return new
+
+    copy.__doc__ = Array.copy.__doc__
 
     def zip(self) -> numpy.ndarray:
         """Zip the `xindex` and `value` arrays of this `Series`.
@@ -994,9 +995,9 @@ class Series(Array):
             self = self.copy()
         # fill gap
         if self.is_contiguous(other) != 1:
-            other = typing.cast("Self", other)
+            other = cast("Self", other)
             if gap == "pad":
-                pad = typing.cast("float", pad)
+                pad = cast("float", pad)
                 ngap = floor((other.xspan[0] - self.xspan[1]) / self.dx.value + 0.5)
                 if ngap < 1:
                     msg = (
@@ -1090,7 +1091,7 @@ class Series(Array):
             else:
                 self.xindex[: -other.shape[0]] = self.xindex[other.shape[0] :]
             try:
-                self.xindex[-other.shape[0] :] = other._xindex
+                self.xindex[-other.shape[0] :] = other._xindex  # type: ignore[union-attr]  # noqa: SLF001
             except AttributeError:
                 del self.xindex
                 if not resize:
@@ -1352,9 +1353,9 @@ class Series(Array):
         # format arguments
         kwargs.setdefault("mode", "constant")
         if isinstance(pad_width, int):
-            pad_width = (pad_width,)
+            pad_width = cast("tuple[int, int]", (pad_width,))
         # form pad and view to this type
-        new: Self = numpy.pad(self.value, pad_width, **kwargs).view(type(self))
+        new = cast("Self", numpy.pad(self.value, pad_width, **kwargs).view(type(self)))
         # numpy.pad has stripped all metadata, so copy it over
         new.__metadata_finalize__(self)
         new._unit = self.unit

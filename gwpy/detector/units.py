@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import contextlib
 import re
-import typing
+from typing import TYPE_CHECKING
 
 from astropy import (
     __version__ as astropy_version,
@@ -32,7 +32,9 @@ from astropy.units import imperial as units_imperial
 from astropy.units.format.generic import Generic
 from packaging.version import Version
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
+    from typing import Literal
+
     from astropy.units import UnitBase
     from astropy.units.format.base import LexToken
 
@@ -64,7 +66,11 @@ class GWpyFormat(Generic):
     re_closest_unit_delim = re.compile("(, | or )")
 
     @classmethod
-    def _validate_unit(cls, unit: str, detailed_exception: bool = True) -> UnitBase:
+    def _validate_unit(
+        cls,
+        unit: str,
+        detailed_exception: bool = True,  # noqa: FBT001,FBT002
+    ) -> UnitBase:
         """Validate a unit string."""
         try:
             return super()._validate_unit(unit, detailed_exception)
@@ -129,9 +135,9 @@ class GWpyFormat(Generic):
 
 
 def parse_unit(
-    name: str,
-    parse_strict: str = "warn",
-    format: str = "gwpy",
+    name: str | UnitBase | None,
+    parse_strict: Literal["raise", "warn", "silent"] = "warn",
+    format: str = "gwpy",  # noqa: A002
 ) -> UnitBase:
     """Attempt to intelligently parse a `str` as a `~astropy.units.Unit`.
 

@@ -18,7 +18,14 @@
 
 """Unit tests for gwpy.types.series."""
 
+from __future__ import annotations
+
 import warnings
+from typing import (
+    Generic,
+    TypeVar,
+    cast,
+)
 
 import numpy
 import pytest
@@ -30,13 +37,15 @@ from ...testing import utils
 from .. import Array2D, Index, Series
 from .test_array import TestArray as _TestArray
 
+SeriesType = TypeVar("SeriesType", bound=Series)
 
-class TestSeries(_TestArray):
+
+class TestSeries(_TestArray[SeriesType], Generic[SeriesType]):
     """Test the `Series` class."""
 
-    TEST_CLASS = Series
+    TEST_CLASS: type[SeriesType] = Series
 
-    def assert_new(self, array):
+    def assert_new(self, array: SeriesType):
         """Assert properties of a new `Series`."""
         super().assert_new(array)
         assert array.x0 == units.Quantity(0, self.TEST_CLASS._default_xunit)
@@ -44,7 +53,7 @@ class TestSeries(_TestArray):
 
     # -- test properties -------------
 
-    def test_x0(self, array):
+    def test_x0(self, array: SeriesType):
         """Test `Series.x0`."""
         array.x0 = 5
         # test simple
@@ -59,7 +68,7 @@ class TestSeries(_TestArray):
         array.x0 = 5 * units.m
         assert array.x0 == units.Quantity(5, "m")
 
-    def test_dx(self, array):
+    def test_dx(self, array: SeriesType):
         """Test `Series.dx`."""
         array.dx = 5 * self.TEST_CLASS._default_xunit
         # test simple
@@ -108,9 +117,15 @@ class TestSeries(_TestArray):
         assert series.xspan == (x[0], x[-1] + x[1] - x[0])
 
         # test that setting xindex warns about ignoring dx or x0
-        with pytest.warns(UserWarning):
+        with pytest.warns(
+            UserWarning,
+            match="xindex was given",
+        ):
             series = self.create(xindex=units.Quantity(x, "Farad"), dx=1)
-        with pytest.warns(UserWarning):
+        with pytest.warns(
+            UserWarning,
+            match="xindex was given",
+        ):
             series = self.create(xindex=units.Quantity(x, "Farad"), x0=0)
 
         # test non-regular xindex
@@ -136,10 +151,9 @@ class TestSeries(_TestArray):
         series = self.create(x0=x0, dx=dx)
         assert series.xindex.dtype is x0.dtype
 
-    def test_xunit(self, unit=None):
+    def test_xunit(self):
         """Test `Series.xunit`."""
-        if unit is None:
-            unit = self.TEST_CLASS._default_xunit
+        unit = self.TEST_CLASS._default_xunit
         series = self.create(dx=4 * unit)
         assert series.xunit == unit
         assert series.x0 == 0 * unit
@@ -163,7 +177,7 @@ class TestSeries(_TestArray):
 
     # -- test i/o --------------------
 
-    def test_read_write_csv(self, array):
+    def test_read_write_csv(self, array: SeriesType):
         """Test reading and writing a `Series` to CSV."""
         utils.test_read_write(
             array,
@@ -180,7 +194,7 @@ class TestSeries(_TestArray):
 
     # -- test methods ----------------
 
-    def test_getitem(self, array):
+    def test_getitem(self, array: SeriesType):
         """Test `Series[...]` item access."""
         # item access
         utils.assert_quantity_equal(
@@ -220,7 +234,7 @@ class TestSeries(_TestArray):
                 ),
             )
 
-    def test_getitem_index(self, array):
+    def test_getitem_index(self, array: SeriesType):
         """Test that __getitem__ also applies to an xindex.
 
         When subsetting a Series with an iterable of integer indices,
@@ -235,13 +249,13 @@ class TestSeries(_TestArray):
         assert len(newarray) == len(newarray.value)
         assert len(newarray.value) == len(newarray.xindex)
 
-    def test_getitem_list_index(self, array):
+    def test_getitem_list_index(self, array: SeriesType):
         """Test that __getitem__ works with list and numpy.array."""
         indices = numpy.array([0, 1, len(array) - 1])
         lindices = [0, 1, len(array) - 1]
         utils.assert_quantity_sub_equal(array[indices], array[lindices])
 
-    def test_single_getitem_not_created(self, array):
+    def test_single_getitem_not_created(self, array: SeriesType):
         """Test that array[i] does not return an object with a new _xindex."""
         # check that there is no xindex when a single value is accessed
         with pytest.raises(
@@ -257,7 +271,7 @@ class TestSeries(_TestArray):
         ):
             array[0]._xindex  # noqa: B018
 
-    def test_empty_slice(self, array):
+    def test_empty_slice(self, array: SeriesType):
         """Check that we can slice a `Series` into nothing.
 
         This tests against a bug in sliceutils.py.
@@ -273,7 +287,7 @@ class TestSeries(_TestArray):
         a4 = array[idx[:0]]  # empty slice array
         utils.assert_quantity_sub_equal(a2, a4)
 
-    def test_zip(self, array):
+    def test_zip(self, array: SeriesType):
         """Test `Series.zip`."""
         z = array.zip()
         assert_array_equal(
@@ -281,7 +295,7 @@ class TestSeries(_TestArray):
             numpy.column_stack((array.xindex.value, array.value)),
         )
 
-    def test_crop(self, array):
+    def test_crop(self, array: SeriesType):
         """Test basic functionality of `Series.crop`."""
         # all defaults
         utils.assert_quantity_equal(array, array.crop())
@@ -290,11 +304,17 @@ class TestSeries(_TestArray):
         a2 = array.crop(10, 20)
         utils.assert_quantity_equal(array[10:20], a2)
 
-    def test_crop_warnings(self, array):
+    def test_crop_warnings(self, array: SeriesType):
         """Test that `Series.crop` emits warnings when it is supposed to."""
-        with pytest.warns(UserWarning):
+        with pytest.warns(
+            UserWarning,
+            match="crop given start",
+        ):
             array.crop(array.xspan[0] - 1, array.xspan[1])
-        with pytest.warns(UserWarning):
+        with pytest.warns(
+            UserWarning,
+            match="crop given end",
+        ):
             array.crop(array.xspan[0], array.xspan[1] + 1)
 
     def test_crop_irregular(self):
@@ -385,18 +405,18 @@ class TestSeries(_TestArray):
         expected = series.xindex[0]
         assert series.crop(start=xmin).xindex[0] == expected
 
-    def test_is_compatible(self, array):
+    def test_is_compatible(self, array: SeriesType):
         """Test the `Series.is_compatible` method."""
         other = self.create(name="TEST CASE 2")
         assert array.is_compatible(other)
 
-    def test_is_compatible_error_dx(self, array):
+    def test_is_compatible_error_dx(self, array: SeriesType):
         """Check that `Series.is_compatible` errors with mismatching ``dx``."""
         other = self.create(dx=2)
         with pytest.raises(ValueError, match="sample sizes do not match"):
             array.is_compatible(other)
 
-    def test_is_compatible_error_unit(self, array):
+    def test_is_compatible_error_unit(self, array: SeriesType):
         """Check that `Series.is_compatible` errors with mismatching ``unit``."""
         other = self.create(unit="m")
         with pytest.raises(ValueError, match="units do not match"):
@@ -409,14 +429,14 @@ class TestSeries(_TestArray):
         b = self.create(xindex=x)
         assert a.is_compatible(b)
 
-    def test_is_compatible_error_xindex(self, array):
+    def test_is_compatible_error_xindex(self, array: SeriesType):
         """Check that `Series.is_compatible` errors with mismatching indexes."""
         x = numpy.logspace(0, 2, num=self.data.shape[0])
         other = self.create(xindex=x)
         with pytest.raises(ValueError, match="indexes do not match"):
             array.is_compatible(other)
 
-    def test_is_contiguous(self, array):
+    def test_is_contiguous(self, array: SeriesType):
         """Test `Series.is_contiguous`."""
         a2 = self.create(x0=array.xspan[1])
         assert array.is_contiguous(a2) == 1
@@ -428,7 +448,7 @@ class TestSeries(_TestArray):
         ts4 = self.create(x0=-array.xspan[1])
         assert array.is_contiguous(ts4) == -1
 
-    def test_append(self, array):
+    def test_append(self, array: SeriesType):
         """Test `Series.append`."""
         a2 = self.create(x0=array.xspan[1])
 
@@ -486,15 +506,15 @@ class TestSeries(_TestArray):
         ts4 = array.copy()
         ts4.append(a3, gap="pad", pad=0)
         assert ts4.shape[0] == array.shape[0] + 1 + a3.shape[0]
-        z = numpy.zeros((1,) + array.shape[1:])
+        z = numpy.zeros((1, *array.shape[1:]))
         assert_array_equal(
             ts4.value,
             numpy.concatenate((array.value, z, a3.value)),
         )
 
-    def test_prepend(self, array):
+    def test_prepend(self, array: SeriesType):
         """Test `Series.prepend`."""
-        a2 = self.create(x0=array.xspan[1]) * 2
+        a2 = cast("SeriesType", self.create(x0=array.xspan[1]) * 2)
         a3 = a2.prepend(array, inplace=False)
         assert a3.x0 == array.x0
         assert a3.size == array.size + a2.size
@@ -560,7 +580,7 @@ class TestSeries(_TestArray):
         )
         assert ts2.x0 == ts1.x0 - 20 * ts1.x0.unit
 
-    def test_diff(self, array):
+    def test_diff(self, array: SeriesType):
         """Test `Series.diff`."""
         """Test the `Series.diff` method.
 

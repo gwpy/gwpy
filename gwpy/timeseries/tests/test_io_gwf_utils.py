@@ -63,7 +63,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 ])
 def test_channel_dict_kwarg(value, channels, expected_type, result):
     """Test `_channel_dict_kwarg()`."""
-    assert io_gwf_utils._channel_dict_kwarg(  # noqa: SLF001
+    assert io_gwf_utils._channel_dict_kwarg(
         value,
         channels,
         expected_type=expected_type,
@@ -76,7 +76,7 @@ def test_channel_dict_kwarg_error():
         ValueError,
         match="TEST is shorter than channels list",
     ):
-        io_gwf_utils._channel_dict_kwarg(  # noqa: SLF001
+        io_gwf_utils._channel_dict_kwarg(
             [1, 2, 3],
             ["A", "B", "C", "D"],
             varname="TEST",

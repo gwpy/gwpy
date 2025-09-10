@@ -18,8 +18,16 @@
 
 """Test `gwpy.types.array`."""
 
+from __future__ import annotations
+
 import contextlib
 import warnings
+from typing import (
+    TYPE_CHECKING,
+    Generic,
+    TypeVar,
+    cast,
+)
 from unittest import mock
 
 import numpy
@@ -32,10 +40,15 @@ from ...testing import utils
 from ...time import LIGOTimeGPS
 from .. import Array
 
+if TYPE_CHECKING:
+    from numpy.typing import DType
+
 warnings.filterwarnings("always", category=units.UnitsWarning)
 warnings.filterwarnings("always", category=UserWarning)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+ArrayType = TypeVar("ArrayType", bound=Array)
 
 SEED = 1
 GPS_EPOCH = 12345
@@ -44,17 +57,17 @@ CHANNEL_NAME = "G1:TEST-CHANNEL"
 CHANNEL = Channel(CHANNEL_NAME)
 
 
-class TestArray:
+class TestArray(Generic[ArrayType]):
     """Test `gwpy.types.Array`."""
 
     #: The type of object under test
-    TEST_CLASS = Array
+    TEST_CLASS: type[ArrayType] = Array
 
     #: The data type of the array under test
-    DTYPE = None
+    DTYPE: type[DType] | None = None
 
     #: A shared array of data to use in tests
-    data = None  # type: numpy.ndarray
+    data: numpy.ndarray
 
     # -- setup -----------------------
 
@@ -65,41 +78,39 @@ class TestArray:
         cls.data = (rng.random(size=100) * 1e5).astype(dtype=cls.DTYPE)
 
     @classmethod
-    def create(cls, *args, **kwargs):
+    def create(cls, *args, **kwargs) -> ArrayType:
         """Create a new instance of the type under test."""
         kwargs.setdefault("copy", False)
         return cls.TEST_CLASS(cls.data, *args, **kwargs)
 
     @pytest.fixture
     @classmethod
-    def array(cls):
+    def array(cls) -> ArrayType:
         """Return a new instance of the type under test."""
         return cls.create()
 
     @property
-    def TEST_ARRAY(self):  # noqa: N802
+    def TEST_ARRAY(self) -> ArrayType:  # noqa: N802
         """Create a new instance of ``TEST_CLASS`` and return it."""
-        self._TEST_ARRAY: self.TEST_CLASS
         try:
-            return self._TEST_ARRAY
+            return self._TEST_ARRAY  # type: ignore[attr-defined]
         except AttributeError:
+            channel = Channel(
+                CHANNEL_NAME,
+                sample_rate=128,
+                unit="m",
+            )
             # create array
-            self._TEST_ARRAY = self.create(
+            return self.create(
                 name=CHANNEL_NAME,
                 unit="meter",
-                channel=CHANNEL_NAME,
+                channel=channel,
                 epoch=GPS_EPOCH,
             )
-            # customise channel a wee bit
-            #    used to test pickle/unpickle when storing channel as
-            #    dataset attr in HDF5
-            self._TEST_ARRAY.channel.sample_rate = 128
-            self._TEST_ARRAY.channel.unit = "m"
-            return self.TEST_ARRAY
 
     # -- test basic construction -----
 
-    def assert_new(self, array):
+    def assert_new(self, array: ArrayType):
         """Run basic assertions for a new instance of the type under test."""
         utils.assert_array_equal(array.value, self.data)
 
@@ -111,7 +122,7 @@ class TestArray:
         """Test Array creation."""
         self.assert_new(self.create())
 
-    def test_unit(self, array):
+    def test_unit(self, array: ArrayType):
         """Test `Array.unit`."""
         # test default unit is dimensionless
         assert array.unit is units.dimensionless_unscaled
@@ -144,7 +155,7 @@ class TestArray:
         array.unit = "m"
         assert array.unit is units.m
 
-    def test_name(self, array):
+    def test_name(self, array: ArrayType):
         """Test `Array.name`."""
         # test default is no name
         assert array.name is None
@@ -163,10 +174,10 @@ class TestArray:
         assert array.name is None
 
         # but everything else gets str()
-        array.name = 4
+        array.name = 4  # type: ignore[assignment]
         assert array.name == "4"
 
-    def test_epoch(self, array):
+    def test_epoch(self, array: ArrayType):
         """Test `Array.epoch`."""
         # test default is no epoch
         assert array.epoch is None
@@ -188,13 +199,13 @@ class TestArray:
         # test precision at high GPS times (to millisecond)
         gps = LIGOTimeGPS(1234567890, 123456000)
         array = self.create(epoch=gps)
-        assert array.epoch.gps == float(gps)
+        assert array.epoch.gps == float(gps)  # type: ignore[union-attr]
 
         # test None gets preserved
         array.epoch = None
         assert array.epoch is None
 
-    def test_channel(self, array):
+    def test_channel(self, array: ArrayType):
         """Test `Array.channel`."""
         # test default channl is None
         assert array.channel is None
@@ -217,7 +228,7 @@ class TestArray:
         array.channel = None
         assert array.channel is None
 
-    def test_math(self, array):
+    def test_math(self, array: ArrayType):
         """Test basic math operations on `Array`."""
         array.override_unit("Hz")
         # test basic operations
@@ -235,30 +246,33 @@ class TestArray:
         utils.assert_quantity_sub_equal(array, copy)
         assert copy.channel is not array.channel
 
-    def test_repr(self, array):
+    def test_repr(self, array: ArrayType):
         """Test ``repr(Array)``."""
         # just test that it runs
         repr(array)
 
-    def test_str(self, array):
+    def test_str(self, array: ArrayType):
         """Test ``str(Array)``."""
         # just test that it runs
         str(array)
 
     # -- test methods --------------
 
-    def test_abs(self, array):
+    def test_abs(self, array: ArrayType):
         """Test `Array.abs()`."""
-        utils.assert_quantity_equal(array.abs(), numpy.abs(array))
-
-    def test_median(self, array):
-        """Test `Array.median()`."""
         utils.assert_quantity_equal(
-            array.median(),
-            numpy.median(array.value) * array.unit,
+            array.abs(),  # type: ignore[call-arg]
+            numpy.abs(array),
         )
 
-    def test_override_unit(self, array):
+    def test_median(self, array: ArrayType):
+        """Test `Array.median()`."""
+        utils.assert_quantity_equal(
+            array.median(),  # type: ignore[call-arg]
+            numpy.median(array.value) * cast("units.UnitBase", array.unit),
+        )
+
+    def test_override_unit(self, array: ArrayType):
         """Test `Array.override_unit()`."""
         assert array.unit is units.dimensionless_unscaled
 
@@ -283,7 +297,7 @@ class TestArray:
         assert isinstance(array.unit, units.IrreducibleUnit)
         assert str(array.unit) == "blah"
 
-    def test_flatten(self, array):
+    def test_flatten(self, array: ArrayType):
         """Test `Array.flatten()`."""
         flat = array.flatten()
         assert flat.ndim == 1

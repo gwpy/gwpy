@@ -18,6 +18,13 @@
 
 """Tests for :mod:`gwpy.types.array2d`."""
 
+from __future__ import annotations
+
+from typing import (
+    Generic,
+    TypeVar,
+)
+
 import numpy
 import pytest
 from astropy import units
@@ -30,11 +37,13 @@ from .test_series import TestSeries as _TestSeries
 
 SEED = 1
 
+Array2DType = TypeVar("Array2DType", bound=Array2D)
 
-class TestArray2D(_TestSeries):
+
+class TestArray2D(_TestSeries[Array2D], Generic[Array2DType]):
     """Test `gwpy.types.Array2D`."""
 
-    TEST_CLASS: type[Array2D] = Array2D
+    TEST_CLASS: type[Array2DType] = Array2D
 
     @classmethod
     def setup_class(cls, dtype=None):
@@ -46,7 +55,7 @@ class TestArray2D(_TestSeries):
 
     # -- test properties -------------
 
-    def test_y0(self, array):
+    def test_y0(self, array: Array2DType):
         """Test `Array2D.y0`."""
         array.y0 = 5
         # test simple
@@ -61,7 +70,7 @@ class TestArray2D(_TestSeries):
         array.y0 = 5 * units.m
         assert array.y0 == units.Quantity(5, "m")
 
-    def test_dy(self, array):
+    def test_dy(self, array: Array2DType):
         """Test `Array2D.dy`."""
         array.dy = 5 * self.TEST_CLASS._default_yunit
         # test simple
@@ -110,9 +119,15 @@ class TestArray2D(_TestSeries):
         assert series.yspan == (y[0], y[-1] + y[1] - y[0])
 
         # test that setting yindex warns about ignoring dy or y0
-        with pytest.warns(UserWarning):
+        with pytest.warns(
+            UserWarning,
+            match="yindex was given .* dy will be ignored",
+        ):
             series = self.create(yindex=units.Quantity(y, "Farad"), dy=1)
-        with pytest.warns(UserWarning):
+        with pytest.warns(
+            UserWarning,
+            match="yindex was given .* y0 will be ignored",
+        ):
             series = self.create(yindex=units.Quantity(y, "Farad"), y0=0)
 
         # test non-regular yindex
@@ -123,10 +138,9 @@ class TestArray2D(_TestSeries):
         assert series.y0 == units.Quantity(1, "Mpc")
         assert series.yspan == (y[0], y[-1] + y[-1] - y[-2])
 
-    def test_yunit(self, unit=None):
+    def test_yunit(self):
         """Test `Array2D.yunit`."""
-        if unit is None:
-            unit = self.TEST_CLASS._default_yunit
+        unit = self.TEST_CLASS._default_yunit
         series = self.create(dy=4 * unit)
         assert series.yunit == unit
         assert series.y0 == 0 * unit
@@ -148,7 +162,7 @@ class TestArray2D(_TestSeries):
         series = self.create(yindex=y)
         assert series.yspan == (y[0], y[-1] + y[-1] - y[-2])
 
-    def test_transpose(self, array):
+    def test_transpose(self, array: Array2DType):
         """Test `Array2D.T`."""
         trans = array.T
         utils.assert_array_equal(trans.value, array.value.T)
@@ -164,7 +178,7 @@ class TestArray2D(_TestSeries):
         {"x0": 0, "dx": 1, "yindex": numpy.linspace(0, 100, 5)},
         {"xindex": numpy.arange(20), "y0": 100, "dy": 2},
     ])
-    def test_getitem(self, array, create_kwargs):
+    def test_getitem(self, array: Array2DType, create_kwargs):
         """Test item access and slicing on `Array2D`."""
         array = self.create(name="test_getitem", **create_kwargs)
 
@@ -263,7 +277,7 @@ class TestArray2D(_TestSeries):
         b = self.create(yindex=y)
         assert a.is_compatible(b)
 
-    def test_is_compatible_error_yindex(self, array):
+    def test_is_compatible_error_yindex(self, array: Array2DType):
         """Check that `Array2D.is_compatible` errors with mismatching indexes."""
         y = numpy.logspace(0, 2, num=self.data.shape[1])
         other = self.create(yindex=y)
@@ -292,6 +306,6 @@ class TestArray2D(_TestSeries):
         """Test `Array2D.pad_asymmetric()` - NOT IMPLEMENTED for Array2D."""
         pytest.skip("not implemented for >1D arrays")
 
-    def test_single_getitem_not_created(self, array):  # noqa: ARG002
+    def test_single_getitem_not_created(self, array: Array2DType):  # noqa: ARG002
         """Not implemented for Array2D."""
         pytest.skip("not implemented for >1D arrays")
