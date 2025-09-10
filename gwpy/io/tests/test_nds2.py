@@ -42,7 +42,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class _TestNds2Enum:
-    TEST_CLASS: type[io_nds2._Nds2Enum] = io_nds2._Nds2Enum  # noqa: SLF001
+    TEST_CLASS: type[io_nds2._Nds2Enum] = io_nds2._Nds2Enum
 
     def test_any(self):
         assert self.TEST_CLASS.any() == 2 * max(self.TEST_CLASS).value - 1
@@ -386,8 +386,8 @@ def test_find_channels_nds1(nds2_connection):
 def test_find_channels_online(nds2_connection):
     """Test handling of 'online' channels in `find_channels`."""
     # add an 'online' version of thee same channel
-    buff = nds2_connection._buffers[0]  # noqa: SLF001
-    nds2_connection._buffers.append(  # noqa: SLF001
+    buff = nds2_connection._buffers[0]
+    nds2_connection._buffers.append(
         mocks.nds2_buffer(
             buff.name,
             buff.data,
@@ -401,7 +401,7 @@ def test_find_channels_online(nds2_connection):
         ["X1:test"],
         host="test",
         unique=True,
-    ) == [nds2_connection._buffers[0].channel]  # noqa: SLF001
+    ) == [nds2_connection._buffers[0].channel]
 
 
 @pytest.mark.requires("nds2")
@@ -409,7 +409,7 @@ def test_find_channels_unique(nds2_connection):
     """Test handling of 'online' channels in `find_channels`."""
     # add a second copy of the same channel
     # so that find_channels returns two things
-    nds2_connection._buffers.append(nds2_connection._buffers[0])  # noqa: SLF001
+    nds2_connection._buffers.append(nds2_connection._buffers[0])
 
     with pytest.raises(
         ValueError,
@@ -517,7 +517,7 @@ def test_get_nds2_name():
         (Channel("X1:TEST", type="m-trend"), "X1:TEST,m-trend"),
         (mocks.nds2_channel("X1:TEST", 16, "NONE"), "X1:TEST,raw"),
     ]:
-        assert io_nds2._get_nds2_name(channel) == name  # type: ignore[arg-type]  # noqa: SLF001
+        assert io_nds2._get_nds2_name(channel) == name  # type: ignore[arg-type]
 
 
 @pytest.mark.requires("nds2")
@@ -533,4 +533,4 @@ def test_get_nds2_names():
         "X1:TEST,m-trend",
         "X1:TEST,raw",
     ]
-    assert list(io_nds2._get_nds2_names(channels)) == names  # type: ignore[arg-type]  # noqa: SLF001
+    assert list(io_nds2._get_nds2_names(channels)) == names  # type: ignore[arg-type]

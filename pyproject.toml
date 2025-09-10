@@ -346,6 +346,7 @@ force-wrap-aliases = true
   "EM101",  # string literal in exception
   "PLR2004",  # magic value used in comparison
   "S101",  # assert
+  "SLF001",  # private member accessed
 ]
 "docs/*" = [
   "A",  # builtins

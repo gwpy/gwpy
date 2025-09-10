@@ -189,10 +189,10 @@ class TestAxes(AxesTestBase):
                                  (array.xspan[1], array.yspan[1]))
         # check that axes were preserved
         assert all((
-            ax.xaxis._major_tick_kw["gridOn"],  # noqa: SLF001
-            ax.xaxis._minor_tick_kw["gridOn"],  # noqa: SLF001
-            ax.yaxis._major_tick_kw["gridOn"],  # noqa: SLF001
-            ax.yaxis._minor_tick_kw["gridOn"],  # noqa: SLF001
+            ax.xaxis._major_tick_kw["gridOn"],
+            ax.xaxis._minor_tick_kw["gridOn"],
+            ax.yaxis._major_tick_kw["gridOn"],
+            ax.yaxis._minor_tick_kw["gridOn"],
         ))
 
     def test_hist(self, ax):
