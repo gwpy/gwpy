@@ -34,7 +34,6 @@ import copy
 import os
 import textwrap
 from decimal import Decimal
-from functools import wraps
 from math import modf
 from typing import TYPE_CHECKING
 
@@ -195,7 +194,7 @@ class Array(Quantity):
     def _wrap_function(
         self,
         function: Callable,
-        *args,
+        *args,  # noqa: ANN002
         **kwargs,
     ) -> Self | Quantity:
         # if the output of the function is a scalar, return it as a Quantity
@@ -443,14 +442,14 @@ class Array(Quantity):
 
     # -- array methods ---------------
 
-    @wraps(Quantity.__array_ufunc__)
     def __array_ufunc__(
         self,
         function: Callable,
         method: str,
-        *inputs,
+        *inputs,  # noqa: ANN002
         **kwargs,
     ) -> Self | Quantity:
+        """Wrap a ufunc, handling units, and scalar outputs."""
         out = super().__array_ufunc__(function, method, *inputs, **kwargs)
         # if a ufunc returns a scalar, return a Quantity
         if not out.ndim:
@@ -458,33 +457,42 @@ class Array(Quantity):
         # otherwise return an array
         return out
 
-    @wraps(numpy.abs)
     def abs(
         self,
-        *args,
         **kwargs,
     ) -> Self | Quantity:
-        """Return the absolute value of the data in this `Array`."""
+        """Return the absolute value of the data in this `Array`.
+
+        See Also
+        --------
+        numpy.absolute
+            For details of all available positional and keyword arguments,
+            and for details of the return value.
+        """
         return self._wrap_function(
-            numpy.abs,
-            *args,
+            numpy.absolute,
             **kwargs,
         )
 
-    @wraps(numpy.median)
     def median(
         self,
         axis: int | Iterable[int] | None = None,
         **kwargs,
     ) -> Self | Quantity:
-        """Return the median of the data in this `Array`."""
+        """Return the median of the data in this `Array`.
+
+        See Also
+        --------
+        numpy.median
+            For details of all available positional and keyword arguments,
+            and for details of the return value.
+        """
         return self._wrap_function(
             numpy.median,
             axis=axis,
             **kwargs,
         )
 
-    @wraps(Quantity._to_own_unit)  # noqa: SLF001
     def _to_own_unit(
         self,
         value: QuantityLike,
@@ -500,10 +508,12 @@ class Array(Quantity):
             unit=unit,
         )
 
+    _to_own_unit.__doc__ = Quantity._to_own_unit.__doc__  # noqa: SLF001
+
     def override_unit(
         self,
         unit: UnitLike,
-        parse_strict: str = "raise",
+        parse_strict: Literal["raise", "warn", "silent"] = "raise",
     ) -> None:
         """Reset the unit of these data.
 
@@ -563,8 +573,7 @@ class Array(Quantity):
         """
         return super().flatten(order=order).view(Quantity)
 
-    @wraps(Quantity.copy)
-    def copy(self, order: str = "C") -> Self:
+    def copy(self, order: Literal["C", "F", "A", "K"] = "C") -> Self:
         """Return a copy of this `Array`."""
         out = super().copy(order=order)
         for slot in self._metadata_slots:
@@ -572,3 +581,5 @@ class Array(Quantity):
             if old is not None:
                 setattr(out, slot, copy.copy(old))
         return out
+
+    copy.__doc__ = Quantity.copy.__doc__
