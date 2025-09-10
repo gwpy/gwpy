@@ -24,6 +24,7 @@ import warnings
 from typing import (
     Generic,
     TypeVar,
+    cast,
 )
 
 import numpy
@@ -513,7 +514,7 @@ class TestSeries(_TestArray[SeriesType], Generic[SeriesType]):
 
     def test_prepend(self, array: SeriesType):
         """Test `Series.prepend`."""
-        a2 = self.create(x0=array.xspan[1]) * 2
+        a2 = cast("SeriesType", self.create(x0=array.xspan[1]) * 2)
         a3 = a2.prepend(array, inplace=False)
         assert a3.x0 == array.x0
         assert a3.size == array.size + a2.size
