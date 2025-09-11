@@ -160,7 +160,7 @@ def open_gwf(
 
 def open_gwf(
     gwf: str | Path | IO | frameCPP.IFrameFStream | frameCPP.OFrameFStream,
-    mode: str = "r",
+    mode: Literal["r", "w"] = "r",
 ) -> frameCPP.IFrameFStream | frameCPP.OFrameFStream:
     """Open a stream for reading or writing GWF format data.
 
@@ -346,7 +346,7 @@ def create_fradcdata(
         channelgroup,
         channelid,
         nbits,
-        (1 / series.dx.to("s")).value
+        (1 / series.dx.to("s")).value,
     )
     frdata.SetTimeOffset(
         float(to_gps(series.x0.value) - to_gps(frame_epoch)),
@@ -363,7 +363,7 @@ def _get_series_trange(series: Series) -> float:
 def _get_series_frange(series: Series) -> float:
     if series.xunit.is_equivalent("Hz"):  # FrequencySeries
         return abs(series.xspan)
-    elif series.ndim == 2 and series.yunit.is_equivalent("Hz"):  # Spectrogram
+    if series.ndim == 2 and series.yunit.is_equivalent("Hz"):  # Spectrogram
         return abs(series.yspan)
     return 0
 

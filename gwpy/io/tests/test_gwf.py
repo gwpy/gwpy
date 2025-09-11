@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -17,6 +17,9 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Tests for :mod:`gwpy.io.gwf`."""
+
+from pathlib import Path
+from types import GeneratorType
 
 import pytest
 
@@ -61,14 +64,15 @@ parametrize_gwf_backends = pytest.mark.parametrize(
             marks=pytest.mark.requires("lalframe"),
             id="any",
         ),
-    ] + list(map(_backend_param, io_gwf.BACKENDS)),
+        *map(_backend_param, io_gwf.BACKENDS),
+    ],
 )
 
 
 def test_identify_gwf():
     """Test :func:`gwpy.io.gwf.identify_gwf`."""
     assert io_gwf.identify_gwf("read", TEST_GWF_FILE, None) is True
-    with open(TEST_GWF_FILE, "rb") as gwff:
+    with Path(TEST_GWF_FILE).open("rb") as gwff:
         assert io_gwf.identify_gwf("read", None, gwff) is True
     assert not io_gwf.identify_gwf("read", None, None)
 
@@ -76,8 +80,6 @@ def test_identify_gwf():
 @parametrize_gwf_backends
 def test_iter_channel_names(backend):
     """Test :func:`gwpy.io.gwf.iter_channel_names`."""
-    # maybe need something better?
-    from types import GeneratorType
     names = io_gwf.iter_channel_names(
         TEST_GWF_FILE,
         backend=backend,
@@ -156,7 +158,10 @@ def test_data_segments(backend):
 @parametrize_gwf_backends
 def test_data_segments_missing(backend):
     """Test :func:`gwpy.io.gwf.data_segments` with a bad channel name."""
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning,
+        match="'X1:BAD-NAME' not found in frame",
+    ):
         assert_segmentlist_equal(
             io_gwf.data_segments(
                 [TEST_GWF_FILE],

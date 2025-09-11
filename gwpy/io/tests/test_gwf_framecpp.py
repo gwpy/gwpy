@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -25,42 +26,47 @@ from .. import gwf as io_gwf
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-@pytest.mark.requires("LDAStools.frameCPP")
-def test_open_gwf_r(tmp_path):
-    from LDAStools import frameCPP
+def test_open_gwf_r():
+    """Test `open_gwf()` for reading."""
+    mod_framecpp = pytest.importorskip("LDAStools.frameCPP")
     open_gwf = io_gwf.get_backend_function("open_gwf", backend="frameCPP")
-    assert isinstance(open_gwf(TEST_GWF_FILE), frameCPP.IFrameFStream)
+    assert isinstance(open_gwf(TEST_GWF_FILE), mod_framecpp.IFrameFStream)
 
 
-@pytest.mark.requires("LDAStools.frameCPP")
 def test_open_gwf_w(tmp_path):
-    from LDAStools import frameCPP
+    """Test `open_gwf()` for writing."""
+    mod_framecpp = pytest.importorskip("LDAStools.frameCPP")
     open_gwf = io_gwf.get_backend_function("open_gwf", backend="frameCPP")
     tmp = tmp_path / "test.gwf"
-    assert isinstance(open_gwf(tmp, mode="w"), frameCPP.OFrameFStream)
+    assert isinstance(open_gwf(tmp, mode="w"), mod_framecpp.OFrameFStream)
 
 
-@pytest.mark.requires("LDAStools.frameCPP")
 def test_open_gwf_w_file_url(tmp_path):
-    from LDAStools import frameCPP
+    """Test `open_gwf()` for writing with a file:// URL."""
+    mod_framecpp = pytest.importorskip("LDAStools.frameCPP")
     open_gwf = io_gwf.get_backend_function("open_gwf", backend="frameCPP")
     # check that we can use a file:// URL as well
     tmp = tmp_path / "test.gwf"
     assert isinstance(
         open_gwf(tmp.as_uri(), mode="w"),
-        frameCPP.OFrameFStream,
+        mod_framecpp.OFrameFStream,
     )
 
 
 @pytest.mark.requires("LDAStools.frameCPP")
 def test_open_gwf_a_error():
+    """Test that `open_gwf()` raises an error for append mode."""
     open_gwf = io_gwf.get_backend_function("open_gwf", backend="frameCPP")
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="mode must be either 'r' or 'w'",
+    ):
         open_gwf("test", mode="a")
 
 
 @pytest.mark.requires("LDAStools.frameCPP")
 def test_create_frvect(noisy_sinusoid):
+    """Test `create_frvect()`."""
     create_frvect = io_gwf.get_backend_function(
         "create_frvect",
         backend="frameCPP",

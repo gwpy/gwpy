@@ -19,17 +19,25 @@
 
 from __future__ import annotations
 
-import typing
+import os
+from typing import TYPE_CHECKING
 
 from ...segments import SegmentList
 from ..cache import read_cache
 from .backend import get_backend_function
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pathlib import Path
-    from typing import IO
+    from typing import (
+        IO,
+        Literal,
+    )
 
     from ...detector import Channel
+    from ...io.utils import (
+        FileLike,
+        FileSystemPath,
+    )
     from ...types import Series
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -47,9 +55,9 @@ FRDATA_TYPES: tuple[str, ...] = (
 # -- i/o -----------------------------
 
 def identify_gwf(
-    origin: str,
-    filepath: str | None,
-    fileobj: IO | None,
+    origin: Literal["read", "write"],
+    filepath: FileSystemPath | None,
+    fileobj: FileLike | None,
     *args,
     **kwargs,
 ) -> bool:
@@ -70,6 +78,7 @@ def identify_gwf(
 
     # otherwise read file extension
     if filepath is not None:
+        filepath = os.fspath(filepath)
         if filepath.endswith(".gwf"):
             return True
         if filepath.endswith((".lcf", ".cache")):
@@ -78,7 +87,7 @@ def identify_gwf(
             except OSError:
                 return False
             else:
-                return cache[0].path.endswith(".gwf")
+                return os.fspath(cache[0]).endswith(".gwf")
 
     return False
 
