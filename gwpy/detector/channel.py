@@ -959,14 +959,15 @@ class ChannelList(list):
         return cls(map(Channel.from_nds2, ndschannels))
 
     @classmethod
-    @io_nds2.open_connection
     def query_nds2_availability(
         cls,
         channels: list[str | Channel],
         start: GpsLike,
         end: GpsLike,
         ctype: int | str = io_nds2.Nds2ChannelType.any().value,
-        **nds2_connection_kw,
+        connection: nds2.connection | None = None,
+        host: str | None = None,
+        port: int | None = None,
     ) -> SegmentListDict:
         """Query for when data are available for these channels in NDS2.
 
@@ -1003,19 +1004,20 @@ class ChannelList(list):
         """
         start = int(to_gps(start))
         end = int(ceil(to_gps(end)))
-        chans = io_nds2.find_channels(
-            channels,
-            unique=True,
-            epoch=(start, end),
-            type=ctype,
-            **nds2_connection_kw,
-        )
-        availability = io_nds2.get_availability(
-            chans,
-            start,
-            end,
-            **nds2_connection_kw,
-        )
+        with io_nds2._connection(connection=connection, host=host, port=port) as conn:
+            chans = io_nds2.find_channels(
+                channels,
+                unique=True,
+                epoch=(start, end),
+                type=ctype,
+                connection=conn,
+            )
+            availability = io_nds2.get_availability(
+                chans,
+                start,
+                end,
+                connection=conn,
+            )
         return type(availability)(zip(
             channels,
             availability.values(),

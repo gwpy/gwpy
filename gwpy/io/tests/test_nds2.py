@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -21,6 +22,10 @@ from __future__ import annotations
 
 import os
 import warnings
+from typing import (
+    Generic,
+    TypeVar,
+)
 from unittest import mock
 
 import pytest
@@ -40,9 +45,13 @@ from .. import nds2 as io_nds2
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+EnumType = TypeVar("EnumType", bound=io_nds2._Nds2Enum)
 
-class _TestNds2Enum:
-    TEST_CLASS: type[io_nds2._Nds2Enum] = io_nds2._Nds2Enum
+
+class _TestNds2Enum(Generic[EnumType]):
+    """Base class for tests of :class:`gwpy.io.nds2._Nds2Enum`."""
+
+    TEST_CLASS: type[EnumType]
 
     def test_any(self):
         assert self.TEST_CLASS.any() == 2 * max(self.TEST_CLASS).value - 1
@@ -52,7 +61,7 @@ class _TestNds2Enum:
         assert self.TEST_CLASS.find("blah").name == "UNKNOWN"
 
 
-class TestNds2ChannelType(_TestNds2Enum):
+class TestNds2ChannelType(_TestNds2Enum[io_nds2.Nds2ChannelType]):
     """Tests of :class:`gwpy.io.nds2.Nds2DataType`."""
 
     TEST_CLASS: type[io_nds2.Nds2ChannelType] = io_nds2.Nds2ChannelType
@@ -81,10 +90,13 @@ class TestNds2ChannelType(_TestNds2Enum):
         assert self.TEST_CLASS.find(input_) == expected
 
 
-class TestNds2DataType(_TestNds2Enum, _TestNumpyTypeEnum):
+class TestNds2DataType(
+    _TestNds2Enum[io_nds2.Nds2DataType],
+    _TestNumpyTypeEnum,
+):
     """Tests of :class:`gwpy.io.nds2.Nds2DataType`."""
 
-    TEST_CLASS: type[io_nds2.Nds2DataType] = io_nds2.Nds2DataType
+    TEST_CLASS = io_nds2.Nds2DataType  # type: ignore[assignment]
 
     def test_find_errors(self):
         """Test errors from :meth:`gwpy.io.nds2.Nds2DataType.find`."""
@@ -318,26 +330,6 @@ def test_auth_connect_error(connect):
     connect.assert_called_once_with("host", 0)
 
 
-@mock.patch("gwpy.io.nds2.auth_connect", return_value=1)
-def test_open_connection(auth_connect):
-    """Test the `gwpy.io.nds2.open_connection` decorator."""
-    @io_nds2.open_connection
-    def new_func(arg1, connection=None):
-        return arg1, connection
-
-    with pytest.raises(
-        ValueError,
-        match="one of `connection` or `host` is required",
-    ):
-        new_func(0)
-
-    # call function and check that `connection` was injected
-    assert new_func(0, host="test") == (0, 1)
-
-    # check that auth_connect was called with the right arguments
-    auth_connect.assert_called_once_with("test", None)
-
-
 @pytest.mark.requires("nds2")
 def test_find_channels(nds2_connection):
     """Test `gwpy.io.nds2.find_channels`."""
@@ -413,7 +405,7 @@ def test_find_channels_unique(nds2_connection):
 
     with pytest.raises(
         ValueError,
-        match="^unique NDS2 channel match not found for 'X1:test'$",
+        match=r"^unique NDS2 channel match not found for 'X1:test'$",
     ):
         io_nds2.find_channels(["X1:test"], host="test", unique=True)
 

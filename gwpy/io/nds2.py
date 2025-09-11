@@ -25,6 +25,7 @@ import operator
 import os
 import re
 import warnings
+from contextlib import contextmanager
 from functools import (
     reduce,
     wraps,
@@ -43,9 +44,15 @@ if TYPE_CHECKING:
         Callable,
         Iterable,
         Iterator,
+        Sequence,
+    )
+    from typing import (
+        ParamSpec,
+        TypeVar,
     )
 
     import nds2
+    from numpy.typing import DTypeLike
 
     from ..detector import Channel
     from ..segments import SegmentListDict
@@ -53,6 +60,10 @@ if TYPE_CHECKING:
         GpsLike,
         Self,
     )
+
+    # Type variables for function decorators
+    P = ParamSpec("P")
+    T = TypeVar("T")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -142,6 +153,8 @@ class Nds2ChannelType(_Nds2Enum):
     TEST_POINT = (32, "test-pt")
     STATIC = (64, "static")
 
+NDS2_CHANNEL_TYPE_ANY = Nds2ChannelType.any().value
+
 
 class Nds2DataType(NumpyTypeEnum, _Nds2Enum):
     """NDS2 data type with descriptive name."""
@@ -163,6 +176,8 @@ class Nds2DataType(NumpyTypeEnum, _Nds2Enum):
     FLOAT64 = (16, "real_4")
     COMPLEX32 = (32, "complex_8")
     UINT32 = (64, "uint_4")
+
+NDS2_DATA_TYPE_ANY = Nds2DataType.any().value
 
 
 # -- warning suppression -------------
@@ -404,73 +419,69 @@ def auth_connect(
     return connect(host, port)
 
 
-def open_connection(func: Callable) -> Callable:
-    """Decorate a function to create a `nds2.connection` if required."""
-    @wraps(func)
-    def wrapped_func(*args, **kwargs):
-        if kwargs.get("connection") is None:
-            try:
-                host = kwargs.pop("host")
-            except KeyError:
-                msg = "one of `connection` or `host` is required to query NDS2 server"
-                raise ValueError(msg) from None
-            kwargs["connection"] = auth_connect(
-                host,
-                kwargs.pop("port", None),
-            )
-        return func(*args, **kwargs)
-    return wrapped_func
+@contextmanager
+def _connection(
+    connection: nds2.connection | None = None,
+    host: str | None = None,
+    port: int | None = None,
+) -> Iterator[nds2.connection]:
+    """Yield an `nds2.connection`, opening a new one as required.
+
+    The function is a context manager designed to be used with the `with` statement.
+
+    If a connection is given, it will **not** be closed automatically;
+    if one is created by this function, it will be closed.
+    """
+    if connection is None:
+        # Open a new connection
+        if host is None:
+            msg = "one of `connection` or `host` is required to query NDS2 server"
+            raise ValueError(msg)
+        conn = auth_connect(host, port)
+        epoch = None
+    else:
+        conn = connection
+        epoch = conn.current_epoch()
+
+    yield conn
+
+    if connection is None:
+        # Close connections we opened
+        conn.close()
+    if epoch is not None:
+        # Otherwise reset the epoch to what it was before we started
+        conn.set_epoch(epoch.gps_start, epoch.gps_stop)
 
 
-def parse_nds2_enums(func: Callable) -> Callable:
+def parse_nds2_enums(func: Callable[P, T]) -> Callable[P, T]:
     """Decorate a function to translate a type string into an integer."""
     @wraps(func)
-    def wrapped_func(*args, **kwargs):
+    def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> T:
         for kwd, enum_ in (
             ("type", Nds2ChannelType),
             ("dtype", Nds2DataType),
         ):
-            if kwargs.get(kwd) is None:
+            val = cast("str | int | None", kwargs.get(kwd))
+            if val is None:
                 kwargs[kwd] = enum_.any()
-            elif not isinstance(kwargs[kwd], int):
-                kwargs[kwd] = enum_.find(kwargs[kwd]).value
+            elif not isinstance(val, int):
+                kwargs[kwd] = enum_.find(val).value
         return func(*args, **kwargs)
-    return wrapped_func
-
-
-def reset_epoch(func: Callable) -> Callable:
-    """Wrap a function to reset the epoch when finished.
-
-    This is useful for functions that wish to use `connection.set_epoch`.
-    """
-    @wraps(func)
-    def wrapped_func(*args, **kwargs):
-        if (connection := kwargs.get("connection")) is not None:
-            connection = cast("nds2.connection", connection)
-            epoch = connection.current_epoch()
-        else:
-            epoch = None
-        try:
-            return func(*args, **kwargs)
-        finally:
-            if connection is not None and epoch is not None:
-                connection.set_epoch(epoch.gps_start, epoch.gps_stop)
     return wrapped_func
 
 
 # -- query methods -------------------
 
-@open_connection
-@reset_epoch
 @parse_nds2_enums
 def find_channels(
-    channels: list[str],
+    channels: Sequence[str | Channel | nds2.channel],
     connection: nds2.connection | None = None,
     host: str | None = None,
     port: int | None = None,
     sample_rate: float | tuple[float, float] | None = None,
-    type: int = Nds2ChannelType.any(),
-    dtype: int = Nds2DataType.any(),
+    type: int | str | None = NDS2_CHANNEL_TYPE_ANY,  # noqa: A002
+    dtype: int | str | DTypeLike = NDS2_DATA_TYPE_ANY,
+    *,
     unique: bool = False,
     epoch: str | tuple[int, int] = "ALL",
 ) -> list[nds2.channel]:
@@ -524,35 +535,38 @@ def find_channels(
     >>> find_channels(['G1:DER_DATA_H'], host='nds.ligo.caltech.edu')
     [<G1:DER_DATA_H (16384Hz, RDS, FLOAT64)>]
     """
-    # tell mypy that connection is populated by now
-    connection = cast("nds2.connection", connection)
+    # by the time we get here, the decorator will have converted
+    # type and dtype to integers
+    type = cast("int", type)  # noqa: A001
+    dtype = cast("int", dtype)
 
-    # set epoch
-    if isinstance(epoch, tuple):
-        connection.set_epoch(*epoch)
-    else:
-        connection.set_epoch(epoch or "ALL")
+    with _connection(connection, host, port) as conn:
+        # set epoch
+        if isinstance(epoch, tuple):
+            conn.set_epoch(*epoch)
+        else:
+            conn.set_epoch(epoch or "ALL")
 
-    # format {min,max}_sample_rate options
-    kwargs = {}
-    if isinstance(sample_rate, int | float):
-        kwargs["min_sample_rate"] = sample_rate
-        kwargs["max_sample_rate"] = sample_rate
-    elif sample_rate is not None:
-        kwargs["min_sample_rate"], kwargs["max_sample_rate"] = sample_rate
+        # format {min,max}_sample_rate options
+        kwargs = {}
+        if isinstance(sample_rate, int | float):
+            kwargs["min_sample_rate"] = sample_rate
+            kwargs["max_sample_rate"] = sample_rate
+        elif sample_rate is not None:
+            kwargs["min_sample_rate"], kwargs["max_sample_rate"] = sample_rate
 
-    # query for channels
-    out = []
-    for name in _get_nds2_names(channels):
-        out.extend(_find_channel(
-            connection,
-            channel_glob=name,
-            channel_type_mask=type,
-            data_type_mask=dtype,
-            unique=unique,
-            **kwargs,
-        ))
-    return out
+        # query for channels
+        out = []
+        for name in _get_nds2_names(channels):
+            out.extend(_find_channel(
+                conn,
+                channel_glob=name,
+                channel_type_mask=type,
+                data_type_mask=dtype,
+                unique=unique,
+                **kwargs,
+            ))
+        return out
 
 
 def _find_channel(
@@ -562,6 +576,7 @@ def _find_channel(
     data_type_mask: int = Nds2DataType.any().value,
     min_sample_rate: float = MIN_SAMPLE_RATE,
     max_sample_rate: float = MAX_SAMPLE_RATE,
+    *,
     unique: bool = False,
 ) -> list[nds2.channel]:
     """Find a single channel.
@@ -628,7 +643,7 @@ def _find_channel(
 
     # if two results, remove 'online' copy (if present)
     #    (if no online channels present, this does nothing)
-    if len(found) == 2:
+    if len(found) == 2:  # noqa: PLR2004
         online = Nds2ChannelType.ONLINE.value  # type: ignore[attr-defined]
         found = [c for c in found if c.channel_type != online]
 
@@ -668,14 +683,13 @@ def _strip_ctype(
     return name, ctype
 
 
-@open_connection
-@reset_epoch
 def get_availability(
-    channels: list[str],
+    channels: Sequence[str | Channel | nds2.channel],
     start: int,
     end: int,
     connection: nds2.connection | None = None,
-    **kwargs,
+    host: str | None = None,
+    port: int | None = None,
 ) -> SegmentListDict:
     """Query an NDS2 server for data availability.
 
@@ -723,19 +737,19 @@ def get_availability(
         SegmentListDict,
     )
 
-    connection = cast("nds2.connection", connection)
-    connection.set_epoch(start, end)
+    with _connection(connection, host, port) as conn:
+        conn.set_epoch(start, end)
 
-    # map user-given real names to NDS names
-    names = list(map(_get_nds2_name, find_channels(
-        channels,
-        epoch=(start, end),
-        connection=connection,
-        unique=True,
-    )))
+        # map user-given real names to NDS names
+        names = list(map(_get_nds2_name, find_channels(
+            channels,
+            epoch=(start, end),
+            connection=conn,
+            unique=True,
+        )))
 
-    # query for availability
-    result = connection.get_availability(names)
+        # query for availability
+        result = conn.get_availability(names)
 
     # map to segment types
     out = SegmentListDict()
