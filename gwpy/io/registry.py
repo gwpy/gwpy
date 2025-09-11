@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2021)
+# Copyright (c) 2017-2021 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -22,131 +22,156 @@ This module imports a subset of the useful functions from
 :mod:`astropy.io.registry` for convenience.
 """
 
-import sys
+from __future__ import annotations
+
+import contextlib
 import warnings
 from concurrent.futures import (
     ThreadPoolExecutor,
     as_completed,
 )
 from contextlib import nullcontext
-from functools import wraps
+from typing import (
+    TYPE_CHECKING,
+    Generic,
+    Protocol,
+    TypeVar,
+    cast,
+)
 
 from astropy.io import registry as astropy_registry
 from astropy.io.registry import (
     UnifiedReadWriteMethod,  # noqa: F401
-    compat,
 )
-from astropy.utils.data import get_readable_fileobj
 
 from ..utils.env import bool_env
 from ..utils.progress import progress_bar
 from .remote import open_remote_file
 from .utils import (
-    FILE_LIKE,
     file_list,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Sequence,
+    )
+    from contextlib import AbstractContextManager
+    from typing import (
+        BinaryIO,
+        Literal,
+    )
+
+    from .utils import (
+        FileLike,
+        FileSystemPath,
+        NamedReadable,
+    )
+
+# Type variable for Generic classes
+T = TypeVar("T")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-# -- utilities -----------------------
+# -- Identify utilities --------------
+
+class IdentifyProtocol(Protocol):
+    """Typing protocol for Astropy I/O identify functions."""
+
+    def __call__(
+        self,
+        origin: Literal["read", "write"],
+        filepath: FileSystemPath | None,
+        fileobj: FileLike | None,
+        *args,  # noqa: ANN002
+        **kwargs,
+    ) -> bool:
+        """Identify the given extensions in a file object/path."""
+
+
+def identify_factory(*extensions: str) -> IdentifyProtocol:
+    """Return an Astropy Unified I/O identify function for a set of extensions.
+
+    The returned function is designed for use in the unified I/O registry
+    via the `astropy.io.registry.register_identifier` hook.
+
+    Parameters
+    ----------
+    extensions : `str`
+        one or more file extension strings
+
+    Returns
+    -------
+    identifier : `callable`
+        an identifier function that tests whether an incoming file path
+        carries any of the given file extensions (using `str.endswith`)
+    """
+    def identify(
+        origin: Literal["read", "write"],  # noqa: ARG001
+        filepath: FileSystemPath | None,
+        fileobj: FileLike | None,  # noqa: ARG001
+        *args,  # noqa: ANN002, ARG001
+        **kwargs,  # noqa: ARG001
+    ) -> bool:
+        """Identify the given extensions in a file object/path."""
+        return (
+            filepath is not None
+            and str(filepath).endswith(extensions)
+        )
+    return identify
+
 
 def list_identifier(
-    identifier,
-):
+    identifier: IdentifyProtocol,
+) -> IdentifyProtocol:
     """Decorate an I/O identifier to handle a list of files as input.
 
     This function tries to resolve a single file path as a `str` from any
     one or more file-like objects in the ``filepath`` or ``args`` inputs
     to pass to the underlying identifier for comparison.
     """
-    @wraps(identifier)
-    def decorated_func(origin, filepath, fileobj, *args, **kwargs):
+    def decorated_func(
+        origin: Literal["read", "write"],
+        filepath: FileSystemPath | None,
+        fileobj: FileLike | None,
+        *args,  # noqa: ANN002
+        **kwargs,
+    ) -> bool:
         target = filepath  # thing to search
         if target is None and args:
             target = args[0]
-        try:
-            filepath = file_list(target)[0]
-        except (
+        with contextlib.suppress(
             IndexError,  # empty list
             ValueError,  # target can't be resolved as a list of file-like
         ):
-            pass
+            filepath = file_list(target)[0]  # type: ignore[arg-type]
         return identifier(origin, filepath, fileobj, *args, **kwargs)
+
     return decorated_func
-
-
-# -- legacy format -------------------
-
-@wraps(compat.default_registry.register_identifier)
-def legacy_register_identifier(
-    data_format,
-    data_class,
-    identifier,
-    force=False,
-):
-    # pylint: disable=missing-docstring
-    return compat.default_registry.register_identifier(
-        data_format,
-        data_class,
-        list_identifier(identifier),
-        force=force,
-    )
-
-
-compat.register_identifier = legacy_register_identifier
-
-
-def get_read_format(cls, source, args, kwargs):
-    """Determine the read format for a given input source."""
-    ctx = None
-    if isinstance(source, FILE_LIKE):
-        fileobj = source
-        filepath = source.name if hasattr(source, "name") else None
-    else:
-        filepath = source
-        try:
-            ctx = get_readable_fileobj(filepath, encoding="binary")
-            fileobj = ctx.__enter__()  # pylint: disable=no-member
-        except OSError:
-            raise
-        except Exception:  # pylint: disable=broad-except
-            fileobj = None
-    try:
-        return compat.default_registry._get_valid_format(
-            "read",
-            cls,
-            filepath,
-            fileobj,
-            args,
-            kwargs,
-        )
-    finally:
-        if ctx is not None:
-            ctx.__exit__(*sys.exc_info())  # pylint: disable=no-member
 
 
 # -- Unified I/O format --------------
 
 class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
     """UnifiedIORegistry that can handle reading files in parallel."""
+
     def identify_format(
         self,
-        origin,
-        data_class_required,
-        path,
-        fileobj,
-        args,
-        kwargs,
-    ):
+        origin: Literal["read", "write"],
+        data_class_required: type,
+        path: FileSystemPath | None,
+        fileobj: FileLike | None,
+        args: tuple,
+        kwargs: dict,
+    ) -> list[str]:
+        """Identify the format of a file, handling lists of files."""
         if fileobj is None:
-            try:
-                path = file_list(path)[0]
-            except (
+            with contextlib.suppress(
                 IndexError,  # list is empty
                 ValueError,  # failed to parse as list-like
             ):
-                pass
+                path = file_list(path)[0]  # type: ignore[arg-type]
         return super().identify_format(
             origin,
             data_class_required,
@@ -156,13 +181,18 @@ class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
             kwargs,
         )
 
+    identify_format.__doc__ = (
+        astropy_registry.UnifiedIORegistry.identify_format.__doc__
+    )
+
     def register_identifier(
         self,
-        data_format,
-        data_class,
-        identifier,
-        force=False,
-    ):
+        data_format: str,
+        data_class: type,
+        identifier: IdentifyProtocol,
+        force: bool = False,  # noqa: FBT001,FBT002
+    ) -> None:
+        """Register an identifier function that can handle lists of files."""
         return super().register_identifier(
             data_format,
             data_class,
@@ -178,14 +208,16 @@ class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
 default_registry = UnifiedIORegistry()
 
 
-class UnifiedRead(astropy_registry.UnifiedReadWrite):
+class UnifiedRead(astropy_registry.UnifiedReadWrite, Generic[T]):
     """Base ``Class.read()`` implementation that handles parallel reads."""
+
     def __init__(
         self,
-        instance,
-        cls,
-        registry=default_registry,
-    ):
+        instance: object,
+        cls: type[T],
+        registry: UnifiedIORegistry = default_registry,
+    ) -> None:
+        """Initialise a new `UnifiedRead` instance."""
         super().__init__(
             instance,
             cls,
@@ -195,31 +227,34 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
 
     def _read_single_file(
         self,
-        *args,
+        *args,  # noqa: ANN002
         **kwargs,
-    ):
+    ) -> T:
+        """Execute ``cls.read()`` for a single file."""
         return self.registry.read(self._cls, *args, **kwargs)
 
     @staticmethod
-    def _format_input_list(source):
+    def _format_input_list(
+        source: NamedReadable | list[NamedReadable],
+    ) -> Sequence[NamedReadable]:
         """Format the input arguments to include a list of files."""
         # parse input as a list of files
         try:  # try and map to a list of file-like objects
             return file_list(source)
         except ValueError:  # otherwise treat as single file
-            return [source]
+            return [cast("NamedReadable", source)]
 
     def __call__(
         self,
-        merge_function,
-        source,
-        *args,
-        format=None,
-        cache=None,
-        parallel=1,
-        verbose=False,
+        merge_function: Callable[[list[T]], T],
+        source: NamedReadable | list[NamedReadable],
+        *args,  # noqa: ANN002
+        format: str | None = None,  # noqa: A002
+        cache: bool | None = None,
+        parallel: int = 1,
+        verbose: str | bool = False,
         **kwargs,
-    ):
+    ) -> T:
         """Execute ``cls.read()``.
 
         This method generalises parallel reading of lists of files for
@@ -242,18 +277,19 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
                 f"the 'nproc' keyword to {cls.__name__}.read was renamed "
                 "parallel; this warning will be an error in the future.",
                 DeprecationWarning,
+                stacklevel=2,
             )
             parallel = nproc
 
         # set default cache based on environment
         if cache is None:
-            cache = bool_env("GWPY_CACHE", False)
+            cache = bool_env("GWPY_CACHE", default=False)
 
         # get the input as a list of inputs
         sources = self._format_input_list(source)
 
         # handle progress based on the number of inputs
-        show_progress = False  # single file download progress
+        show_progress: str | bool = False  # single file download progress
         if len(sources) == 1:
             show_progress = verbose
             verbose = False
@@ -279,7 +315,8 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
         }
 
         # single file reader
-        def _read(arg):
+        def _read(arg: NamedReadable) -> T:
+            ctx: AbstractContextManager[NamedReadable | BinaryIO]
             # if arg is a str, presume it represents a URI, so try and open it
             if isinstance(arg, str):
                 ctx = open_remote_file(
@@ -303,7 +340,7 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
                 )
 
         # read all files in parallel threads
-        outputs = []
+        outputs: list[T] = []
         with ThreadPoolExecutor(
             max_workers=parallel,
         ) as pool:
@@ -316,14 +353,16 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite):
         return merge_function(outputs)
 
 
-class UnifiedWrite(astropy_registry.UnifiedReadWrite):
+class UnifiedWrite(astropy_registry.UnifiedReadWrite, Generic[T]):
     """Base ``Class.write()`` implementation."""
+
     def __init__(
         self,
-        instance,
-        cls,
-        registry=default_registry,
-    ):
+        instance: T,
+        cls: type[T],
+        registry: UnifiedIORegistry = default_registry,
+    ) -> None:
+        """Initialise a new `UnifiedWrite` instance."""
         super().__init__(
             instance,
             cls,
@@ -333,9 +372,9 @@ class UnifiedWrite(astropy_registry.UnifiedReadWrite):
 
     def __call__(
         self,
-        *args,
+        *args,  # noqa: ANN002
         **kwargs,
-    ):
+    ) -> None:
         """Execute ``instance.write()``."""
         instance = self._instance
         return self.registry.write(instance, *args, **kwargs)
@@ -343,9 +382,8 @@ class UnifiedWrite(astropy_registry.UnifiedReadWrite):
 
 # -- utilities -----------------------
 
-def inherit_unified_io(klass):
-    """Re-register all Unified I/O readers/writes/identifiers from a parent
-    class to a child.
+def inherit_unified_io(klass: type) -> type:
+    """Re-register all Unified I/O readers/writers/identifiers from a parent to a child.
 
     Only works with the first parent in the inheritance tree.
 
@@ -353,8 +391,8 @@ def inherit_unified_io(klass):
     modified independently of the parent.
     """
     parent = klass.__mro__[1]
-    parent_registry = parent.read.registry
-    child_registry = klass.read.registry
+    parent_registry = parent.read.registry  # type: ignore[attr-defined]
+    child_registry = klass.read.registry  # type: ignore[attr-defined]
     for row in parent_registry.get_formats(data_class=parent):
         name = row["Format"]
 
