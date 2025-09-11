@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2025-)
+# Copyright (c) 2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -84,7 +84,7 @@ def find_token(
     gwpy.io.scitoken.get_scitoken
         To acquire a new token from the token issuer.
     """
-    from igwn_auth_utils import find_scitoken
+    from igwn_auth_utils import find_scitoken  # noqa: PLC0415
     return find_scitoken(
         audience,
         scope,
@@ -143,8 +143,8 @@ def get_scitoken(
     --------
     `htgettoken`
     """
-    import htgettoken
-    from scitokens import SciToken
+    import htgettoken  # noqa: PLC0415
+    from scitokens import SciToken  # noqa: PLC0415
 
     if not sys.stdout.isatty():
         # don't prompt if we can't get a response
@@ -243,7 +243,7 @@ def add_http_authorization_header(
     )
 
     try:
-        from requests_scitokens import HTTPSciTokenAuth
+        from requests_scitokens import HTTPSciTokenAuth  # noqa: PLC0415
     except ImportError:
         if error:
             raise
