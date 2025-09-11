@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -17,87 +18,130 @@
 
 """Utilities for unified input/output."""
 
+from __future__ import annotations
+
 import gzip
 import os
 import tempfile
+import warnings
 from functools import wraps
+from io import IOBase
+from typing import (
+    TYPE_CHECKING,
+    Protocol,
+    TypeVar,
+    cast,
+    overload,
+    runtime_checkable,
+)
 from urllib.parse import urlparse
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import (
+        ParamSpec,
+        TypeAlias,
+    )
+
+    from lal.utils import CacheEntry
+
+    # Type variables for decorator typing
+    P = ParamSpec("P")
+    T = TypeVar("T")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-# build list of file-like types
-from io import IOBase
+
+# -- IO type hints -------------------
+
+AnyStr = TypeVar("AnyStr", str, bytes)
+
+@runtime_checkable
+class NamedIO(Protocol[AnyStr]):
+    """Typing protocol for file-like objects with a name."""
+
+    name: str
+
+    # Core IO methods from typing.IO[str]
+    def close(self) -> None:
+        """Close the file."""
+    def flush(self) -> None:
+        """Flush the file."""
+    def isatty(self) -> bool:
+        """Return True if the file is connected to a terminal."""
+    def read(self, n: int = -1) -> AnyStr:
+        """Read n bytes from the file."""
+    def readable(self) -> bool:
+        """Return True if the file is readable."""
+    def readline(self, limit: int = -1) -> AnyStr:
+        """Read a single line from the file."""
+    def readlines(self, hint: int = -1) -> list[AnyStr]:
+        """Read all lines from the file."""
+    def seek(self, offset: int, whence: int = 0) -> int:
+        """Seek to a position in the file."""
+    def seekable(self) -> bool:
+        """Return True if the file supports seeking."""
+    def tell(self) -> int:
+        """Return the current position in the file."""
+    def truncate(self, size: int | None = None) -> int:
+        """Truncate the file to a given size."""
+    def writable(self) -> bool:
+        """Return True if the file is writable."""
+    def write(self, s: AnyStr) -> int:
+        """Write data to the file."""
+    def writelines(self, lines: list[AnyStr]) -> None:
+        """Write a list of lines to the file."""
+
+    # Context manager
+    def __enter__(self) -> NamedIO[AnyStr]:
+        """Enter the runtime context related to this object."""
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # noqa: ANN001
+        """Exit the runtime context related to this object."""
+
+    # Iterator protocol
+    def __iter__(self) -> NamedIO[AnyStr]:
+        """Return an iterator over the lines of the file."""
+    def __next__(self) -> AnyStr:
+        """Return the next line from the file."""
+
+
+FileLike: TypeAlias = IOBase | gzip.GzipFile | tempfile._TemporaryFileWrapper  # noqa: SLF001
+NamedFileLike: TypeAlias = NamedIO | gzip.GzipFile | tempfile._TemporaryFileWrapper  # noqa: SLF001
+FileSystemPath: TypeAlias = str | os.PathLike
+Readable: TypeAlias = FileSystemPath | FileLike
+Writable = Readable
+NamedReadable: TypeAlias = FileSystemPath | NamedFileLike
+NamedWritable = NamedReadable
+
+# legacy name, use FileLike instead
 FILE_LIKE = (
-    IOBase, gzip.GzipFile,
-    tempfile._TemporaryFileWrapper,  # pylint: disable=protected-access
+    IOBase,
+    gzip.GzipFile,
+    tempfile._TemporaryFileWrapper,  # noqa: SLF001
 )
 
-GZIP_SIGNATURE = b"\x1f\x8b\x08"
 
+# -- File open utilities -------------
 
-def identify_factory(*extensions):
-    """Factory function to create I/O identifiers for a set of extensions.
+@overload
+def with_open(
+    func: Callable[P, T],
+    mode: str = "r",
+    pos: int = 0,
+) -> Callable[P, T]: ...
 
-    The returned function is designed for use in the unified I/O registry
-    via the `astropy.io.registry.register_identifier` hool.
+@overload
+def with_open(
+    func: None = None,
+    mode: str = "r",
+    pos: int = 0,
+) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
-    Parameters
-    ----------
-    extensions : `str`
-        one or more file extension strings
-
-    Returns
-    -------
-    identifier : `callable`
-        an identifier function that tests whether an incoming file path
-        carries any of the given file extensions (using `str.endswith`)
-    """
-    def identify(origin, filepath, fileobj, *args, **kwargs):
-        """Identify the given extensions in a file object/path."""
-        # pylint: disable=unused-argument
-        return (
-            isinstance(filepath, str)
-            and filepath.endswith(extensions)
-        )
-    return identify
-
-
-def gopen(name, *args, **kwargs):
-    """Open a file handling optional gzipping.
-
-    If ``name`` ends with ``'.gz'``, or if the GZIP file signature is
-    found at the beginning of the file, the file will be opened with
-    `gzip.open`, otherwise a regular file will be returned from `open`.
-
-    Parameters
-    ----------
-    name : `str`, `pathlib.Path`
-        path or name of file to open.
-
-    *args, **kwargs
-        other arguments to pass to either `open` for regular files, or
-        `gzip.open` for gzipped files.
-
-    Returns
-    -------
-    file : `io.TextIoBase`, `file`, `gzip.GzipFile`
-        the open file object
-    """
-    # filename declares gzip
-    if str(name).endswith(".gz"):
-        return gzip.open(name, *args, **kwargs)
-
-    # open regular file
-    fobj = open(name, *args, **kwargs)
-    sig = fobj.read(3)
-    fobj.seek(0)
-    if sig == GZIP_SIGNATURE:  # file signature declares gzip
-        fobj.close()  # GzipFile won't close orig file when it closes
-        return gzip.open(name, *args, **kwargs)
-    return fobj
-
-
-def with_open(func=None, mode="r", pos=0):
+def with_open(
+    func: Callable[P, T] | None = None,
+    mode: str = "r",
+    pos: int = 0,
+) -> Callable[P, T] | Callable[[Callable[P, T]], Callable[P, T]]:
     """Decorate a function to ensure the chosen argument is an open file.
 
     Parameters
@@ -126,17 +170,19 @@ def with_open(func=None, mode="r", pos=0):
     >>> def my_func(stuff, pathorfile, *args, **kwargs)
     >>>     stuff.write_to(pathorfile, *args, **kwargs)
     """
-    def _decorator(func):
+    def _decorator(func: Callable[P, T]) -> Callable[P, T]:
         @wraps(func)
-        def wrapped_func(*args, **kwargs):
+        def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> T:
             # if the relevant positional argument isn't an open
             # file, or something that looks like one, ...
-            if not isinstance(args[pos], FILE_LIKE):
+            source = args[pos]
+            if not isinstance(source, FileLike):
+                source = cast("FileSystemPath", source)
                 # open the file, ...
-                with open(args[pos], mode=mode) as fobj:
+                with open(source, mode=mode) as fobj:  # noqa: PTH123
                     # replace the argument with the open file, ...
-                    args = list(args)
-                    args[pos] = fobj
+                    args = list(args)  # type: ignore[assignment]
+                    args[pos] = fobj  # type: ignore[index]
                     # and re-execute the function call
                     return func(*args, **kwargs)
             return func(*args, **kwargs)
@@ -146,15 +192,17 @@ def with_open(func=None, mode="r", pos=0):
     return _decorator
 
 
-# -- file list utilities ------------------------------------------------------
+# -- file list utilities -------------
 
-def file_list(flist):
+def file_list(
+    flist: NamedReadable | list[NamedReadable] | tuple[NamedReadable, ...],
+) -> list[str]:
     """Parse a number of possible input types into a list of filepaths.
 
     Parameters
     ----------
     flist : `file-like` or `list-like` iterable
-        the input data container, normally just a single file path, or a list
+        The input data container, normally just a single file path, or a list
         of paths, but can generally be any of the following
 
         - `str` representing a single file path (or comma-separated collection)
@@ -178,7 +226,7 @@ def file_list(flist):
         isinstance(flist, str)
         and flist.endswith((".cache", ".lcf", ".ffl"))
     ):
-        from .cache import read_cache
+        from .cache import read_cache  # noqa: PLC0415
         return read_cache(flist)
 
     # separate comma-separate list of names
@@ -200,7 +248,7 @@ def file_list(flist):
         raise
 
 
-def file_path(fobj):
+def file_path(fobj: NamedReadable | bytes | CacheEntry) -> str:
     """Determine the path of a file.
 
     This doesn't do any sanity checking to check that the file
@@ -208,18 +256,18 @@ def file_path(fobj):
 
     Parameters
     ----------
-    fobj : `file`, `str`, `CacheEntry`, ...
-        the file object or path to parse
+    fobj : `file`, `str`, `os.PathLike`, `bytes`, `CacheEntry`, ...
+        The file object or path to parse.
 
     Returns
     -------
     path : `str`
-        the path of the underlying file
+        The path of the underlying file, always as a `str`.
 
     Raises
     ------
     ValueError
-        if a file path cannnot be determined
+        If a file path cannnot be determined.
 
     Examples
     --------
@@ -234,13 +282,66 @@ def file_path(fobj):
     >>> file_path("file:///home/user/test.txt")
     '/home/user/test.txt'
     """
+    if isinstance(fobj, bytes):
+        fobj = fobj.decode("utf-8")
+    # file:// URL
     if isinstance(fobj, str) and fobj.startswith("file:"):
         return urlparse(fobj).path
-    if isinstance(fobj, str | os.PathLike):
-        return str(fobj)
-    if (isinstance(fobj, FILE_LIKE) and hasattr(fobj, "name")):
+    # Path-like object
+    if isinstance(fobj, FileSystemPath):
+        return os.fspath(fobj)
+    # Named file-like object
+    if isinstance(fobj, FileLike) and hasattr(fobj, "name"):
         return fobj.name
-    try:
-        return fobj.path
-    except AttributeError:
-        raise ValueError(f"Cannot parse file name for {fobj!r}")
+    # CacheEntry (or any other object with a .path attribute)
+    if hasattr(fobj, "path"):
+        return os.fspath(fobj.path)
+    # Cannot parse
+    msg = f"cannot parse file name for {fobj!r}"
+    raise ValueError(msg)
+
+
+# -- deprecated Gzip support ---------
+
+GZIP_SIGNATURE = b"\x1f\x8b\x08"
+
+
+def gopen(name, *args, **kwargs):
+    """Open a file handling optional gzipping.
+
+    If ``name`` ends with ``'.gz'``, or if the GZIP file signature is
+    found at the beginning of the file, the file will be opened with
+    `gzip.open`, otherwise a regular file will be returned from `open`.
+
+    Parameters
+    ----------
+    name : `str`, `pathlib.Path`
+        path or name of file to open.
+
+    *args, **kwargs
+        other arguments to pass to either `open` for regular files, or
+        `gzip.open` for gzipped files.
+
+    Returns
+    -------
+    file : `io.TextIoBase`, `file`, `gzip.GzipFile`
+        the open file object
+    """
+    warnings.warn(
+        "gwpy.io.utils.gopen is deprecated and will be removed in a future release.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    # filename declares gzip
+    if str(name).endswith(".gz"):
+        return gzip.open(name, *args, **kwargs)
+
+    # open regular file
+    fobj = open(name, *args, **kwargs)
+    sig = fobj.read(3)
+    fobj.seek(0)
+    if sig == GZIP_SIGNATURE:  # file signature declares gzip
+        fobj.close()  # GzipFile won't close orig file when it closes
+        return gzip.open(name, *args, **kwargs)
+    return fobj

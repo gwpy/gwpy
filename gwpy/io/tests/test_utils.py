@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -27,52 +28,49 @@ from .. import (
     cache as io_cache,
     utils as io_utils,
 )
-
 from .test_cache import cache  # noqa: F401
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def test_gopen(tmp_path):
+    """Test `gopen` with a normal file."""
     tmp = tmp_path / "test.tmp"
     # test simple use
     with tmp.open("w") as f:
         f.write("blah blah blah")
-    with io_utils.gopen(tmp) as f2:
-        assert f2.read() == "blah blah blah"
+    with pytest.deprecated_call():  # noqa: SIM117
+        with io_utils.gopen(tmp) as f2:
+            assert f2.read() == "blah blah blah"
 
 
-@pytest.mark.parametrize("suffix", (".txt.gz", ""))
+@pytest.mark.parametrize("suffix", [".txt.gz", ""])
 def test_gopen_gzip(tmp_path, suffix):
+    """Test `gopen` with a gzip file."""
     tmp = tmp_path / f"test{suffix}"
     text = b"blah blah blah"
     with gzip.open(tmp, "wb") as fobj:
         fobj.write(text)
-    with io_utils.gopen(tmp, mode="rb") as fobj2:
+    with (
+        pytest.deprecated_call(),
+        io_utils.gopen(tmp, mode="rb") as fobj2,
+    ):
         assert isinstance(fobj2, gzip.GzipFile)
         assert fobj2.read() == text
 
 
-def test_identify_factory():
-    id_func = io_utils.identify_factory(".blah", ".blah2")
-    assert id_func(None, None, None) is False
-    assert id_func(None, "test.txt", None) is False
-    assert id_func(None, "test.blah", None) is True
-    assert id_func(None, "test.blah2", None) is True
-    assert id_func(None, "test.blah2x", None) is False
-
-
-def test_file_list_file(cache):  # noqa: F811
+def test_file_list_file():
+    """Test `file_list` with different file-like objects."""
     # test file -> [file.name]
     with tempfile.NamedTemporaryFile() as f:
         assert io_utils.file_list(f) == [f.name]
 
 
-@pytest.mark.requires("lal")
 def test_file_list_cache(cache):  # noqa: F811
-    from lal.utils import CacheEntry
+    """Test `file_list` with `lal.CacheEntry` objects."""
+    lal_utils = pytest.importorskip("lal.utils")
     # test CacheEntry -> [CacheEntry.path]
-    lcache = list(map(CacheEntry.from_T050017, cache))
+    lcache = list(map(lal_utils.CacheEntry.from_T050017, cache))
     assert io_utils.file_list(lcache[0]) == [cache[0]]
 
     # test cache object -> pfnlist
@@ -85,25 +83,31 @@ def test_file_list_cache(cache):  # noqa: F811
         assert io_utils.file_list(f.name) == cache
 
 
-def test_file_list_str():
-    # test comma-separated list -> list
-    assert io_utils.file_list("A,B,C,D") == ["A", "B", "C", "D"]
-
-    # test list -> list
-    assert io_utils.file_list(["A", "B", "C", "D"]) == ["A", "B", "C", "D"]
+@pytest.mark.parametrize("arg", [
+    pytest.param("A,B,C,D", id="comma-separated"),
+    pytest.param(["A", "B", "C", "D"], id="list"),
+])
+def test_file_list_str(arg):
+    """Test `file_list` with different string inputs."""
+    assert io_utils.file_list(arg) == ["A", "B", "C", "D"]
 
 
 def test_file_list_error():
-    with pytest.raises(ValueError):
-        io_utils.file_list(1)
+    """Test `file_list` with a bad input."""
+    with pytest.raises(
+        ValueError,
+        match=r"^Could not parse input 1 as one or more file-like objects$",
+    ):
+        io_utils.file_list(1)  # type: ignore[arg-type]
 
 
-@pytest.mark.parametrize(("input_", "expected"), (
+@pytest.mark.parametrize(("input_", "expected"), [
     ("test.txt", "test.txt"),
     ("file:///test/path.txt", "/test/path.txt"),
     (Path("test.txt"), "test.txt"),
-))
+])
 def test_file_path(input_, expected):
+    """Test `file_path()`."""
     assert io_utils.file_path(input_) == expected
 
 
@@ -113,21 +117,21 @@ def test_file_path_file():
         assert io_utils.file_path(f) == f.name
 
 
-@pytest.mark.parametrize("badthing", (
+@pytest.mark.parametrize("badthing", [
     1,
     ["test.txt"],
-))
+])
 def test_file_path_errors(badthing):
     """Check that :func:`gwpy.io.utils.file_path` fails when expected."""
     with pytest.raises(
         ValueError,
-        match="^Cannot parse file name for ",
+        match=r"^cannot parse file name for ",
     ):
         io_utils.file_path(badthing)
 
 
-@pytest.mark.requires("lal")
 def test_file_path_cacheentry():
-    from lal.utils import CacheEntry
+    """Check that :func:`gwpy.io.utils.file_path` can handle `CacheEntry`."""
+    lal_utils = pytest.importorskip("lal.utils")
     path = "/path/to/A-B-0-1.txt"
-    assert io_utils.file_path(CacheEntry.from_T050017(path)) == path
+    assert io_utils.file_path(lal_utils.CacheEntry.from_T050017(path)) == path
