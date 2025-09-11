@@ -27,7 +27,6 @@ from functools import reduce
 from ...io.ligolw import (
     build_content_handler,
     is_ligolw,
-    patch_ligotimegps,
     read_ligolw,
     read_table,
     write_tables,
@@ -111,14 +110,13 @@ def read_ligolw_dict(
     seg = read_table(xmldoc, "segment")
 
     # parse tables
-    with patch_ligotimegps(type(xmldoc.childNodes[0]).__module__):
-        out = DataQualityDict.from_ligolw_tables(
-            segdef,
-            segsum,
-            seg,
-            names=names,
-            **kwargs,
-        )
+    out = DataQualityDict.from_ligolw_tables(
+        segdef,
+        segsum,
+        seg,
+        names=names,
+        **kwargs,
+    )
 
     # coalesce
     if coalesce:
