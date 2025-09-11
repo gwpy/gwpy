@@ -22,16 +22,15 @@ from __future__ import annotations
 
 import typing
 from io import BytesIO
-from os import PathLike
 
 from igwn_segments import infinity
 
 from ...io.cache import (
-    FILE_LIKE,
     file_segment,
     read_cache,
     write_cache,
 )
+from ...io.utils import Readable
 from ...segments import Segment
 
 if typing.TYPE_CHECKING:
@@ -88,7 +87,7 @@ def preformat_cache(
     """
     # if given a list of paths, write it to a file-like structure
     # so that we can use read_cache to do all the work
-    if not isinstance(cache, (str, PathLike) + FILE_LIKE):
+    if not isinstance(cache, Readable):
         cachef = BytesIO()
         write_cache(cache, cachef)
         cachef.seek(0)
