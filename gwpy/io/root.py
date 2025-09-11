@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2025-)
+# Copyright (c) 2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -19,17 +19,26 @@
 
 from __future__ import annotations
 
-from typing import IO
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Literal
+
+    from .utils import (
+        FileLike,
+        FileSystemPath,
+    )
 
 ROOT_SIGNATURE = b"root"
+ROOT_SIGNATURE_T = ROOT_SIGNATURE.decode("utf-8")
 
 
 def identify_root(
-    origin: str,
-    filepath: str | None,
-    fileobj: IO | None,
-    *args,
-    **kwargs,
+    origin: Literal["read", "write"],  # noqa: ARG001
+    filepath: FileSystemPath | None,
+    fileobj: FileLike | None,
+    *args,  # noqa: ANN002
+    **kwargs,  # noqa: ARG001
 ) -> bool:
     """Identify a filename or file object as ROOT.
 
@@ -44,14 +53,13 @@ def identify_root(
             signature = fileobj.read(4)
         finally:
             fileobj.seek(loc)
-        return signature == ROOT_SIGNATURE
+        return signature in (ROOT_SIGNATURE, ROOT_SIGNATURE_T)
     # otherwise guess from file name
     if filepath is not None:
-        return filepath.endswith(".root")
+        return str(filepath).endswith(".root")
     # or finally introspect an object from uproot
     try:
-        import uproot
+        import uproot  # noqa: PLC0415
     except ImportError:
         return False
-    else:
-        return isinstance(args[0], uproot.ReadOnlyFile | uproot.ReadOnlyDirectory)
+    return isinstance(args[0], uproot.ReadOnlyFile | uproot.ReadOnlyDirectory)

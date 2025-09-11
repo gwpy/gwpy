@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2025-)
+# Copyright (c) 2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -27,7 +27,6 @@ uproot = pytest.importorskip("uproot")
 @pytest.fixture
 def rootfile(tmp_path):
     """Create an empty ROOT file using `uproot.create`."""
-    import uproot
     path = tmp_path / "test.root"
     with uproot.create(path):
         pass
@@ -55,7 +54,6 @@ def test_identify_root_filepath(rootfile):
 
 def test_identify_root_uproot(rootfile):
     """Test that `gwpy.io.root.identify_root` works with `uproot` objects."""
-    import uproot
     with uproot.open(rootfile) as rootf:
         assert io_root.identify_root(
             "read",
