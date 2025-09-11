@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -17,50 +18,108 @@
 
 """Write GWpy objects to HDF5 files."""
 
-import os.path
-from functools import wraps
+from __future__ import annotations
 
-# pylint: disable=unused-import
-from astropy.io.misc.hdf5 import is_hdf5 as identify_hdf5  # noqa: F401
+from functools import wraps
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import h5py
+from astropy.io.misc.hdf5 import is_hdf5 as identify_hdf5  # noqa: F401
 
-from .cache import FILE_LIKE
+from .utils import FileSystemPath
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import (
+        Concatenate,
+        ParamSpec,
+        TypeVar,
+    )
+
+    from .utils import (
+        FileLike,
+        Readable,
+        Writable,
+    )
+
+    P = ParamSpec("P")
+    R = TypeVar("R")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def open_hdf5(filename, mode="r"):
-    """Wrapper to open a :class:`h5py.File` from disk, gracefully
-    handling a few corner cases.
+def open_hdf5(
+    source: FileLike | h5py.HLObject,
+    mode: str = "r",
+    **kwargs,
+) -> h5py.HLObject:
+    """Open a :class:`h5py.File` from disk, gracefully handling corner cases.
+
+    If ``source`` is already an HDF5 object, it is simply returned.
+    Otherwise, it is opened as an HDF5 file in the given mode.
+
+    Parameters
+    ----------
+    source : file-like, `h5py.Group`, `h5py.Dataset`
+        The file path or file-like object to open, or an existing
+        HDF5 object to return as-is.
+
+    mode : `str`
+        The mode in which to open the file, default: ``'r'``.
+
+    kwargs
+        Any additional keyword arguments are passed directly to
+        :class:`h5py.File`.
+
+    Returns
+    -------
+    h5obj : `h5py.File`, `h5py.Group`, `h5py.Dataset`
+        The opened HDF5 file object, or the original object if it was
+        already an HDF5 object.
     """
-    if isinstance(filename, h5py.Group | h5py.Dataset):
-        return filename
-    if isinstance(filename, FILE_LIKE):
-        return h5py.File(filename.name, mode)
-    return h5py.File(filename, mode)
+    if isinstance(source, h5py.HLObject):
+        return source
+    return h5py.File(source, mode=mode, **kwargs)
 
 
-def with_read_hdf5(func):
+def with_read_hdf5(
+    func: Callable[Concatenate[Readable | h5py.HLObject, P], R],
+) -> Callable[Concatenate[h5py.HLObject, P], R]:
     """Decorate an HDF5-reading function to open a filepath if needed.
 
-    ``func`` should be written to presume an `h5py.Group` as the first
-    positional argument.
+    The decorated function will accept file paths or readable objects,
+    but will always pass an h5py.Group as the first argument to the
+    original function.
+
+    Parameters
+    ----------
+    func : callable
+        Function that expects an h5py.Group as its first argument
+
+    Returns
+    -------
+    callable
+        Decorated function that accepts file paths/readable objects
     """
     @wraps(func)
-    def decorated_func(fobj, *args, **kwargs):
-        # pylint: disable=missing-docstring
-        if not isinstance(fobj, h5py.HLObject):
-            if isinstance(fobj, FILE_LIKE):
-                fobj = fobj.name
-            with h5py.File(fobj, "r") as h5f:
-                return func(h5f, *args, **kwargs)
-        return func(fobj, *args, **kwargs)
+    def decorated_func(
+        fobj: Readable,
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> R:
+        if isinstance(fobj, h5py.HLObject):
+            return func(fobj, *args, **kwargs)
+        with h5py.File(fobj, "r") as h5f:
+            return func(h5f, *args, **kwargs)
 
     return decorated_func
 
 
-def find_dataset(h5o, path=None):
+def find_dataset(
+    h5o: h5py.File | h5py.Group | h5py.Dataset,
+    path: str | None = None,
+) -> h5py.Dataset:
     """Find and return the relevant dataset inside the given H5 object.
 
     If ``path=None`` is given, and ``h5o`` contains a single dataset, that
@@ -89,17 +148,17 @@ def find_dataset(h5o, path=None):
     # find dataset
     if isinstance(h5o, h5py.Dataset):
         return h5o
-    elif path is None and len(h5o) == 1:
-        path = list(h5o.keys())[0]
+    if path is None and len(h5o) == 1:
+        path = next(iter(h5o.keys()))
     elif path is None:
-        raise ValueError("Please specify the HDF5 path via the "
-                         "``path=`` keyword argument")
+        msg = "Please specify the HDF5 path via the ``path=`` keyword argument"
+        raise ValueError(msg)
     return h5o[path]
 
 
-# -- writing utilities --------------------------------------------------------
+# -- writing utilities ---------------
 
-def with_write_hdf5(func):
+def with_write_hdf5(func: Callable[..., object]) -> Callable[..., object]:
     """Decorate an HDF5-writing function to open a filepath if needed.
 
     ``func`` should be written to take the object to be written as the
@@ -113,13 +172,23 @@ def with_write_hdf5(func):
     - ``append=False, overwrite=True``: open in mode ``w``
     """
     @wraps(func)
-    def decorated_func(obj, fobj, *args, **kwargs):
-        # pylint: disable=missing-docstring
+    def decorated_func(
+        obj: object,
+        fobj: Writable | h5py.HLObject,
+        *args: object,
+        **kwargs: object,
+    ) -> object:
         if not isinstance(fobj, h5py.HLObject):
             append = kwargs.get("append", False)
             overwrite = kwargs.get("overwrite", False)
-            if os.path.exists(fobj) and not (overwrite or append):
-                raise OSError(f"File exists: {fobj}")
+            # Check if file exists (only for path-like objects)
+            if (
+                isinstance(fobj, FileSystemPath)
+                and Path(fobj).exists()
+                and not (overwrite or append)
+            ):
+                msg = f"File exists: {fobj}"
+                raise OSError(msg)
             with h5py.File(fobj, "a" if append else "w") as h5f:
                 return func(obj, h5f, *args, **kwargs)
         return func(obj, fobj, *args, **kwargs)
@@ -127,7 +196,13 @@ def with_write_hdf5(func):
     return decorated_func
 
 
-def create_dataset(parent, path, overwrite=False, **kwargs):
+def create_dataset(
+    parent: h5py.Group | h5py.File,
+    path: str,
+    *,
+    overwrite: bool = False,
+    **kwargs: object,
+) -> h5py.Dataset:
     """Create a new dataset inside the parent HDF5 object.
 
     Parameters
@@ -160,8 +235,9 @@ def create_dataset(parent, path, overwrite=False, **kwargs):
         return parent.create_dataset(path, **kwargs)
     except RuntimeError as exc:
         if str(exc) == "Unable to create link (Name already exists)":
-            exc.args = (
+            msg = (
                 f"{exc}: '{path}', pass overwrite=True to ignore "
-                f"existing datasets",
+                f"existing datasets"
             )
+            exc.args = (msg,)
         raise
