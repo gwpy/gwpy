@@ -130,7 +130,7 @@ class Channel:
             ``(key, value)`` pairs for attributes of new channel.
         """
         # init properties
-        self._name: str | None = None
+        self._name: str  # set in _init_name()
         self._ifo: str | None = None
         self._system: str | None = None
         self._subsystem: str | None = None
@@ -180,7 +180,7 @@ class Channel:
     # -- properties -----------------------------
 
     @property
-    def name(self) -> str | None:
+    def name(self) -> str:
         """Name of this channel.
 
         This should follow the naming convention, with the following
@@ -189,12 +189,8 @@ class Channel:
         return self._name
 
     @name.setter
-    def name(self, name: str | None) -> None:
-        self._name = name
-
-    @name.deleter
-    def name(self) -> None:
-        self._name = None
+    def name(self, name: str) -> None:
+        self._name = str(name)
 
     @property
     def sample_rate(self) -> Quantity | None:
