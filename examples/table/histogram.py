@@ -37,7 +37,7 @@ events = EventTable.fetch_open_data(
 )
 events.add_column(
     events["mass_1_source"] + events["mass_2_source"],
-    name="mtotal"
+    name="mtotal",
 )
 
 # %%

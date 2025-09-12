@@ -38,7 +38,8 @@ noise, then inject a simulation of GW150914 into it at a known time.
 
 from numpy import random
 from gwpy.timeseries import TimeSeries
-noise = TimeSeries(random.normal(scale=.1, size=16384), sample_rate=16384)
+rng = random.default_rng(0)
+noise = TimeSeries(rng.normal(scale=.1, size=16384), sample_rate=16384)
 
 # %%
 # Then we can download a simulation of the GW150914 signal from GWOSC:

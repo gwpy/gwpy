@@ -61,7 +61,7 @@ ax.set_xscale("seconds")
 ax.set_yscale("log")
 ax.set_ylim(20, 500)
 ax.set_ylabel("Frequency [Hz]")
-ax.grid(True, axis="y", which="both")
+ax.grid(visible=True, axis="y", which="both")
 ax.colorbar(cmap="viridis", label="Normalized energy")
 plot.show()
 

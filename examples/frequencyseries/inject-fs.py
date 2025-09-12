@@ -41,7 +41,9 @@ frequency domain because it is much easier to model a sinusoid there.
 # `numpy.random.Generator.normal`:
 
 from numpy.random import default_rng
+
 from gwpy.timeseries import TimeSeries
+
 rng = default_rng()
 noise = TimeSeries(rng.normal(scale=.1, size=1024), sample_rate=1024)
 
@@ -58,7 +60,9 @@ noisefd = noise.fft()
 # :meth:`~gwpy.frequencyseries.FrequencySeries.inject`:
 
 import numpy
+
 from gwpy.frequencyseries import FrequencySeries
+
 signal = FrequencySeries(numpy.array([1.]), f0=30, df=noisefd.df)
 injfd = noisefd.inject(signal)
 
@@ -69,6 +73,7 @@ injfd = noisefd.inject(signal)
 # domain:
 
 from gwpy.plot import Plot
+
 plot = Plot(
     numpy.abs(noisefd),
     numpy.abs(injfd),
