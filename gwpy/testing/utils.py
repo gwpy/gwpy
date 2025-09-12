@@ -39,6 +39,7 @@ from ..io.cache import file_segment
 if typing.TYPE_CHECKING:
     from collections.abc import (
         Callable,
+        Container,
         Iterable,
     )
     from typing import Any
@@ -134,7 +135,7 @@ def assert_quantity_sub_equal(
     b: Array,
     *attrs: str,
     almost_equal: bool = False,
-    exclude: list[str] | None = None,
+    exclude: Container[str] | None = None,
     **kwargs,
 ):
     """Assert that two `~gwpy.types.Array` objects are the same (or almost).
