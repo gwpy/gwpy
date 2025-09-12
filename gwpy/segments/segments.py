@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import os
 import typing
-from functools import wraps
 from typing import (
     Generic,
     TypeVar,
@@ -165,13 +164,14 @@ class SegmentList(segmentlist):
 
     extent = return_as(Segment)(segmentlist.extent)
 
-    @wraps(segmentlist.coalesce)
     def coalesce(self) -> Self:
         """Coalesce this `SegmentList` by joining connected segments."""
         super().coalesce()
         for i, seg in enumerate(self):
             self[i] = Segment(seg[0], seg[1])
         return self
+
+    coalesce.__doc__ = segmentlist.coalesce.__doc__
 
     def to_table(self) -> Table:
         """Convert this `SegmentList` to a `~astropy.table.Table`.
