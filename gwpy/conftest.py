@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (c) 2018-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -17,25 +17,28 @@
 
 """Test setup for gwpy."""
 
-import warnings
+from __future__ import annotations
 
-import numpy
+import contextlib
+import warnings
+from typing import TYPE_CHECKING
+
 from matplotlib import (
     rcParams,
     use,
 )
 
+if TYPE_CHECKING:
+    import pytest
+
 # force Agg for all tests
 use("agg", force=True)
 
 # register custom fixtures for all test modules
-from .testing.fixtures import *  # noqa: E402,F401,F403
+from .testing.fixtures import *  # noqa: F403
 
 # define marks (registered below)
-from .testing.marks import _register_marks  # noqa: E402
-
-# set random seed to 1 for reproducability
-numpy.random.seed(1)
+from .testing.marks import _register_marks
 
 # -- plotting options
 
@@ -55,13 +58,12 @@ rcParams.update({
 # pytest run using xdist where the multiple workers try and download
 # the leap seconds file at the same time, and then fall over each other
 
-try:
+with contextlib.suppress(ImportError):
     import gpstime  # noqa: F401
-except ImportError:  # not installed
-    pass
 
 
 # -- pytest configuration
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
+    """Configure pytest with custom marks."""
     _register_marks(config)
