@@ -39,7 +39,7 @@ from ...segments import (
 
 if typing.TYPE_CHECKING:
     from typing import (
-        IO,
+        Any,
         TypeAlias,
     )
 
@@ -48,7 +48,12 @@ if typing.TYPE_CHECKING:
         PartialContentHandler,
     )
 
-    LigolwInput: TypeAlias = IO | str | Document | list[str]
+    from ...io.utils import (
+        NamedReadable,
+        Writable,
+    )
+
+    LigolwInput: TypeAlias = NamedReadable | list[NamedReadable]
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -83,8 +88,8 @@ def read_ligolw_dict(
 
     Parameters
     ----------
-    source : `file`, `str`, :class:`~igwn_ligolw.ligolw.Document`, `list`
-        One (or more) open files or file paths, or LIGO_LW `Document` objects.
+    source : `file`, `str`, `list`
+        One (or more) open files or file paths.
 
     names : `list`, `None`, optional
         List of names to read or `None` to read all into a single
@@ -132,16 +137,21 @@ def read_ligolw_flag(
     **kwargs,
 ) -> DataQualityFlag:
     """Read a single `DataQualityFlag` from a LIGO_LW XML file."""
-    return list(read_ligolw_dict(
+    return next(iter(read_ligolw_dict(
         source,
         names=[name] if name is not None else None,
         **kwargs,
-    ).values())[0]
+    ).values()))
 
 
 # -- write --------------------------------------------------------------------
 
-def write_ligolw(flags, target, attrs=None, **kwargs):
+def write_ligolw(
+    flags: DataQualityFlag | DataQualityDict,
+    target: Writable | Document,
+    attrs: dict[str, Any] | None = None,
+    **kwargs,
+) -> None:
     """Write this `DataQualityFlag` to the given LIGO_LW Document.
 
     Parameters
@@ -167,8 +177,8 @@ def write_ligolw(flags, target, attrs=None, **kwargs):
         flags = DataQualityDict({flags.name: flags})
     return write_tables(
         target,
-        flags.to_ligolw_tables(**attrs or dict()),
-        **kwargs
+        flags.to_ligolw_tables(**attrs or {}),
+        **kwargs,
     )
 
 
