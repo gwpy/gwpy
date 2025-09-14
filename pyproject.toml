@@ -356,7 +356,11 @@ force-wrap-aliases = true
 ]
 "examples/**.py" = [
   "ANN",  # type annotations
+  "D",  # docstrings
   "E402",  # import location
+  "I001",  # import order
+  "N999",  # invalid module name
+  "T201",  # print()
 ]
 # ignore unused imoports in typing.py helper module
 "gwpy/typing.py" = [

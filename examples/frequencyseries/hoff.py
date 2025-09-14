@@ -41,6 +41,7 @@ The ASD can be estimated directly from a `TimeSeries` using the
 # We can use the |gwosc-mod| Python package to query for the relevant GPS time:
 
 from gwosc.datasets import event_gps
+
 gps = event_gps("GW200115")
 
 # %%
@@ -50,6 +51,7 @@ gps = event_gps("GW200115")
 # records:
 
 from gwpy.timeseries import TimeSeries
+
 lho = TimeSeries.fetch_open_data("H1", gps - 16, gps + 16)
 llo = TimeSeries.fetch_open_data("L1", gps - 16, gps + 16)
 
