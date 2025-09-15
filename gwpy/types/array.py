@@ -50,14 +50,14 @@ if TYPE_CHECKING:
         Callable,
         Iterable,
     )
-    from typing import Literal
+    from typing import (
+        Literal,
+        SupportsIndex,
+    )
 
     from astropy.units import UnitBase
     from astropy.units.typing import QuantityLike
-    from numpy.typing import (
-        ArrayLike,
-        DTypeLike,
-    )
+    from numpy.typing import DTypeLike
 
     from ..typing import (
         GpsLike,
@@ -258,7 +258,7 @@ class Array(Quantity):
 
     def __getitem__(
         self,
-        item: slice | int | bool | ArrayLike,
+        item: SupportsIndex | slice,
     ) -> Self | Quantity:
         """Get an item from this `Array`.
 
@@ -594,3 +594,19 @@ class Array(Quantity):
         return out
 
     copy.__doc__ = Quantity.copy.__doc__
+
+    # -- type helpers ----------------
+
+    def __mul__(
+        self,
+        other: QuantityLike,
+    ) -> Self:
+        """Multiply this `Array` by another quantity."""
+        return super().__mul__(other)
+
+    def __pow__(
+        self,
+        power: QuantityLike,
+    ) -> Self:
+        """Raise this `Array` to a power."""
+        return super().__pow__(power)
