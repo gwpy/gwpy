@@ -336,6 +336,12 @@ future-annotations = true
 [tool.ruff.lint.isort]
 combine-as-imports = true
 force-wrap-aliases = true
+# packages that we provide typings for:
+known-third-party = [
+  "lal",
+  "lalframe",
+  "nds2",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = [
