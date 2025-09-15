@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2025-)
+# Copyright (c) 2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -27,9 +27,7 @@ from ..io.registry import (
 )
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable
-    from pathlib import Path
-    from typing import IO
+    from collections.abc import Sequence
 
     from . import ChannelList
 
@@ -48,7 +46,9 @@ class ChannelListRead(UnifiedRead):
         formats.
 
     kwargs
-        Other keyword arguments depend on the format.
+        Other keyword arguments depend on the format,
+        See `ChannelList.read.help(format=<format>)` for details, or
+        call `ChannelList.read.help()` to see all available formats.
 
     Returns
     -------
@@ -58,21 +58,12 @@ class ChannelListRead(UnifiedRead):
     Notes
     -----"""
 
-    def __call__(
+    def merge(  # type: ignore[override]
         self,
-        source: str | Path | IO | Iterable[str | Path | IO],
-        **kwargs,
+        items: Sequence[ChannelList],
     ) -> ChannelList:
-        """Read a `ChannelList`."""
-        def combiner(listoflists: list[ChannelList]) -> ChannelList:
-            """Combine the `ChannelList`` from each file into a single object."""
-            return self._cls(c for clist in listoflists for c in clist)
-
-        return super().__call__(
-            combiner,
-            source,
-            **kwargs,
-        )
+        """Combine the `ChannelList` from each file into a single object."""
+        return self._cls(c for clist in items for c in clist)
 
 
 class ChannelListWrite(UnifiedWrite):
