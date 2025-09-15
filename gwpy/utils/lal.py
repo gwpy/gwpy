@@ -234,7 +234,7 @@ def find_typed_function(
     suffix: Literal["TimeSeries"],
     module: ModuleType = lal,
 ) -> Callable[
-    [str, lal.LIGOTimeGPS, float, float, lal.Unit, int],
+    [str | None, lal.LIGOTimeGPS, float, float, lal.Unit, int],
     LALTimeSeriesType,
 ]: ...
 
