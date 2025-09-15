@@ -19,7 +19,9 @@
 
 from __future__ import annotations
 
-import typing
+from typing import (
+    TypeAlias,
+)
 
 try:
     from typing import Self
@@ -39,7 +41,7 @@ from .time import (
 )
 
 # Gps types
-GpsLike: typing.TypeAlias = GpsType | GpsConvertible
+GpsLike: TypeAlias = GpsType | GpsConvertible
 
 # Unit types
-UnitLike = typing.Union[UnitBase, str, None]
+UnitLike: TypeAlias = UnitBase | str | None

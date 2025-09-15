@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017),
-#               Cardiff University (2017-2025)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -19,7 +19,8 @@
 import os.path
 import re
 import warnings
-from datetime import date
+from datetime import datetime
+from datetime.timezone import UTC
 from pathlib import Path
 
 import matplotlib
@@ -30,7 +31,7 @@ from sphinx.util import logging
 import gwpy
 from gwpy.utils.sphinx import gallery as cli_gallery
 
-TODAY = date.today()
+TODAY = datetime.now(tz=UTC).date()
 
 SPHINX_DIR = Path(__file__).parent.absolute()
 STATIC_DIRNAME = "_static"
@@ -97,7 +98,6 @@ extensions = [
     "sphinxcontrib.programoutput",
     "numpydoc",
     "matplotlib.sphinxext.plot_directive",
-    #'sphinxcontrib.doxylink',  # noqa: E265
 ]
 
 # content management
@@ -167,7 +167,7 @@ autosummary_generate = True
 
 # -- copybutton
 
-copybutton_prompt_text = " |".join((
+copybutton_prompt_text = " |".join((  # noqa: FLY002
     ">>>",
     r"\.\.\.",
     r"\$"
@@ -208,16 +208,7 @@ docscrape_sphinx.IMPORT_MATPLOTLIB_RE = r"\b({})\b".format("|".join(parts))
 # -- inhertiance_diagram
 
 # configure inheritance diagram
-inheritance_graph_attrs = dict(rankdir="TB")
-
-# -- doxylink
-
-LALSUITE_DOCS = "https://lscsoft.docs.ligo.org/lalsuite"
-
-doxylink = {
-    "lal": ("lal.tag", f"{LALSUITE_DOCS}/lal/"),
-    "lalframe": ("lalframe.tag", f"{LALSUITE_DOCS}/lalframe/"),
-}
+inheritance_graph_attrs = {"rankdir": "TB"}
 
 # -- intersphinx
 
@@ -277,7 +268,7 @@ sphinx_gallery_conf = {
     "reset_modules": [],  # don't reset matplotlib (or seaborn)
     "write_computation_times": False,
     "within_subsection_order": "ExampleTitleSortKey",
-    # FIXME: allow some examples to fail
+    # allow some examples to fail
     "only_warn_on_example_error": True,
 }
 
