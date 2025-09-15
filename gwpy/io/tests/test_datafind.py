@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -18,18 +19,14 @@
 """Unit tests for :mod:`gwpy.io.datafind`."""
 
 import os
+from pathlib import Path
 from unittest import mock
 
+import gwdatafind
 import pytest
 
-import gwdatafind
-
-from ...testing.errors import (
-    pytest_skip_flaky_network,
-)
-from ...testing.utils import (
-    TEST_GWF_FILE,
-)
+from ...testing.errors import pytest_skip_flaky_network
+from ...testing.utils import TEST_GWF_FILE
 from .. import datafind as io_datafind
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -47,8 +44,8 @@ def _mock_gwdatafind(func):
     @mock.patch(
         f"{GWDATAFIND_PATH}.find_types",
         mock.MagicMock(
-            return_value=[os.path.basename(TEST_GWF_FILE).split("-")[1]],
-        )
+            return_value=[Path(TEST_GWF_FILE).name.split("-")[1]],
+        ),
     )
     @mock.patch(
         f"{GWDATAFIND_PATH}.find_urls",
@@ -72,25 +69,23 @@ def _mock_gwdatafind(func):
     return wrapper
 
 
-# -- tests --------------------------------------------------------------------
+# -- tests ---------------------------
 
 @mock.patch.dict("os.environ", clear=True)
 def test_gwdatafind_module_error():
-    """Test that _gwdatafind_module() will propagate an exception if
-    it can't work out how to find data.
-    """
+    """Test `_gwdatafind_module()` error propagation."""
     with pytest.raises(
         RuntimeError,
-        match="^unknown datafind configuration",
+        match=r"^unknown datafind configuration",
     ):
-        io_datafind.find_frametype("TEST")
+        io_datafind.find_frametype("X1:TEST")
 
 
 # -- find_frametype
 
 @_mock_gwdatafind
 def test_find_frametype():
-    """Test that `find_frametype` works with basic input."""
+    """Test `find_frametype()`."""
     assert io_datafind.find_frametype(
         "L1:LDAS-STRAIN",
         allow_tape=True,
@@ -99,7 +94,7 @@ def test_find_frametype():
 
 @_mock_gwdatafind
 def test_find_frametype_return_all():
-    """Test that the ``return_all` keyword for `find_frametype` returns a list."""
+    """Test `find_frametype(..., return_all=True)`."""
     assert io_datafind.find_frametype(
         "L1:LDAS-STRAIN",
         return_all=True,
@@ -108,7 +103,7 @@ def test_find_frametype_return_all():
 
 @_mock_gwdatafind
 def test_find_frametype_multiple():
-    """Test that `find_frametype` can handle channels as MIMO."""
+    """Test `find_frametype()` with list inputs."""
     assert io_datafind.find_frametype(
         ["H1:LDAS-STRAIN", "L1:LDAS-STRAIN"],
         allow_tape=True,
@@ -120,23 +115,20 @@ def test_find_frametype_multiple():
 
 @_mock_gwdatafind
 def test_find_frametype_error_not_found():
-    """Test that `find_frametype` raises the right error for a missing channel."""
-    # test missing channel raises sensible error
+    """Test `find_frametype()` error handing for missing channels."""
     with pytest.raises(
         ValueError,
         match=(
             r"^Cannot locate the following channel\(s\) "
             "in any known frametype:\n    X1:TEST$"
-        )
+        ),
     ):
         io_datafind.find_frametype("X1:TEST", allow_tape=True)
 
 
 @_mock_gwdatafind
 def test_find_frametype_error_bad_channel():
-    """Test that `find_frametype` raises the right error when the channel
-    name isn't parsable.
-    """
+    """Test `find_frametype()` error handling for bad channel names."""
     with pytest.raises(
         ValueError,
         match=(
@@ -149,10 +141,7 @@ def test_find_frametype_error_bad_channel():
 
 @_mock_gwdatafind
 def test_find_frametype_error_files_on_tape():
-    """Test that `find_frametype` raises the right error when the only
-    discovered data are on tape, and we asked for not on tape.
-    """
-    # check that allow_tape errors get handled properly
+    """Test `find_frametype()` error handling for ``allow_tape=False``."""
     patch = mock.patch("gwpy.io.datafind.on_tape", return_value=True)
     raises = pytest.raises(
         ValueError,
@@ -180,7 +169,7 @@ def test_find_best_frametype():
     "GWDATAFIND_SERVER" not in os.environ,
     reason="No GWDataFind server configured on this host",
 )
-@pytest.mark.parametrize("channel, expected", [
+@pytest.mark.parametrize(("channel", "expected"), [
     ("H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,s-trend", "H1_T"),
     ("H1:ISI-GND_STS_ITMY_X_BLRMS_30M_100M.mean,m-trend", "H1_M"),
 ])
@@ -212,6 +201,7 @@ def test_find_best_frametype_ligo_trend(channel, expected):
 
 @_mock_gwdatafind
 def test_find_latest():
+    """Test `find_latest()`."""
     assert io_datafind.find_latest(
         "HLV",
         "HW100916",
@@ -224,7 +214,11 @@ def test_find_latest():
 )
 @_mock_gwdatafind
 def test_find_latest_error():
-    with pytest.raises(RuntimeError, match="^no files found for X-MISSING$"):
+    """Test `find_latest()` error handling."""
+    with pytest.raises(
+        RuntimeError,
+        match=r"^no files found for X-MISSING$",
+    ):
         io_datafind.find_latest("X1", "MISSING")
 
 
@@ -258,38 +252,42 @@ def test_on_tape_false():
     assert io_datafind.on_tape(TEST_GWF_FILE) is False
 
 
-def test_on_tape_true():
+@mock.patch("pathlib.Path.stat")
+def test_on_tape_true(stat):
     """Test that `on_tape` returns `True` for a file with zero blocks."""
-    with mock.patch("os.stat") as os_stat:
-        os_stat.return_value.st_blocks = 0
-        assert io_datafind.on_tape(TEST_GWF_FILE) is True
+    stat.return_value.st_blocks = 0
+    assert io_datafind.on_tape(TEST_GWF_FILE) is True
 
 
-def test_on_tape_windows():
-    """Test that `on_tape` always returns `False` on Windows."""
-    class _Stat():
-        def __init__(self, path):
-            pass
-
-        @property
-        def st_blocks(self):
-            raise AttributeError("st_blocks")
-
-    with mock.patch("os.stat", _Stat):
-        assert io_datafind.on_tape(TEST_GWF_FILE) is False
-
-
-@pytest.mark.parametrize("ifo, ftype, trend, priority", [
-    ("L1", "L1_HOFT_C00", None, 1),  # hoft
-    ("H1", "H1_HOFT_C02_T1700406_v3", None, 1),  # cleaned hoft
-    ("H1", "H1_M", "m-trend", 0),  # minute trends
-    ("K1", "K1_T", "s-trend", 0),  # second trends
-    ("K1", "K1_R", "s-trend", 5),  # raw type when looking for second trend
-    ("K1", "K1_M", None, 10),  # trend type, but not looking for trend channel
-    ("K1", "K1_C", None, 6),  # commissioning type
-    ("X1", "SOMETHING_GRB051103", None, 10),  # low priority type
-    ("X1", "something else", None, 5),  # other
+@pytest.mark.parametrize(("ftype", "trend", "priority"), [
+    pytest.param("L1_HOFT_C00", None, 1, id="hoft"),
+    pytest.param("H1_HOFT_C02_T1700406_v3", None, 1, id="cleaned"),
+    pytest.param("H1_M", "m-trend", 0, id="m-trend"),
+    pytest.param("K1_T", "s-trend", 0, id="s-trend"),
+    pytest.param("K1_R", "s-trend", 5, id="raw@s-trend"),
+    pytest.param("K1_M", None, 10, id="m-trend@raw"),
+    pytest.param("K1_C", None, 6, id="commissioning"),
+    pytest.param("SOMETHING_GRB051103", None, 10, id="lowpriority"),
+    pytest.param("something else", None, 5, id="other"),
 ])
-def test_type_priority(ifo, ftype, trend, priority):
+def test_type_priority(ftype, trend, priority):
     """Test that `_type_priority` works for various cases."""
-    assert io_datafind._type_priority(ifo, ftype, trend=trend)[0] == priority
+    assert io_datafind._type_priority(
+        ftype,
+        trend=trend,
+    )[0] == priority
+
+
+# -- end-to-end tests with real data -
+
+@pytest_skip_flaky_network
+@pytest.mark.requires("lalframe", "requests_pelican")
+def test_find_frametype_gwosc_osdf():
+    """Test `find_frametype` with GWOSC data over OSDF."""
+    assert io_datafind.find_frametype(
+        "H1:GWOSC-4KHZ_R1_STRAIN",
+        host="datafind.gwosc.org",
+        urltype="osdf",
+        gpstime=1269362688,
+        frametype_match="_4KHZ_",
+    ) == "H1_GWOSC_O3b_4KHZ_R1"

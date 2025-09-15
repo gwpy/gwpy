@@ -31,7 +31,7 @@ from numpy import (
     savetxt,
 )
 
-from ...io.utils import identify_factory
+from ...io.registry import identify_factory
 from .. import (
     Array2D,
     Series,

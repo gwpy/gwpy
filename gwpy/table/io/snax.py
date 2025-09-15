@@ -1,5 +1,5 @@
-# Copyright (C) Patrick Godwin (2019-2020)
-#               Cardiff University (2020-)
+# Copyright (c) 2020 Cardiff University
+#               2019-2020 Patrick Godwin
 #
 # This file is part of GWpy.
 #
@@ -20,14 +20,11 @@
 
 from __future__ import annotations
 
-import typing
 import warnings
+from typing import TYPE_CHECKING
 
 from astropy.io.misc.hdf5 import read_table_hdf5
-from astropy.table import (
-    Table,
-    vstack,
-)
+from astropy.table import vstack
 
 from ...io.hdf5 import with_read_hdf5
 from .. import EventTable
@@ -36,10 +33,12 @@ from .utils import (
     read_with_where,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Iterable
+    from typing import Literal
 
     import h5py
+    from astropy.table import Table
 
 __author__ = "Patrick Godwin <patrick.godwin@ligo.org>"
 
@@ -50,7 +49,8 @@ __author__ = "Patrick Godwin <patrick.godwin@ligo.org>"
 def table_from_file(
     source: h5py.Group,
     channels: Iterable[str] | None = None,
-    on_missing: str = "error",
+    on_missing: Literal["error", "warn", "ignore"] = "error",
+    *,
     compact: bool = False,
 ) -> Table:
     """Read an `EventTable` from a SNAX HDF5 file.
@@ -105,12 +105,11 @@ def table_from_file(
             )
             if on_missing == "error":
                 raise ValueError(msg)
-            elif on_missing == "warn":
-                warnings.warn(msg)
+            if on_missing == "warn":
+                warnings.warn(msg, stacklevel=2)
             else:
-                raise ValueError(
-                    "on_missing argument must be one of 'warn' or 'error'",
-                )
+                msg = "on_missing argument must be one of 'warn' or 'error'"
+                raise ValueError(msg)
         channels = channels & found
 
     # read data, adding in 'channel' column

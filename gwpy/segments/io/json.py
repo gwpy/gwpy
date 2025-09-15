@@ -21,9 +21,11 @@
 import json
 from typing import IO
 
-from ...io.registry import default_registry
-from ...io.utils import (
+from ...io.registry import (
+    default_registry,
     identify_factory,
+)
+from ...io.utils import (
     with_open,
 )
 from .. import DataQualityFlag

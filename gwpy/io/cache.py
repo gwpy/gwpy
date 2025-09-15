@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -22,17 +23,47 @@ and associated metadata for those files, designed to make identifying
 relevant data, and sieving large file lists, easier for the user.
 """
 
+from __future__ import annotations
+
 import contextlib
 import os
 import warnings
-from collections import (namedtuple, OrderedDict)
+from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    NamedTuple,
+    cast,
+)
 
+from ..segments import (
+    Segment,
+    SegmentList,
+)
 from ..time import LIGOTimeGPS
 from .utils import (
-    FILE_LIKE,
+    Readable,
     file_path,
     with_open,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Iterable,
+        Iterator,
+    )
+    from typing import (
+        IO,
+        Any,
+        Literal,
+        TypeVar,
+    )
+
+    from ..time import GpsType
+    from .utils import FileSystemPath
+
+    T = TypeVar("T")
+
 
 try:
     from lal.utils import CacheEntry
@@ -52,10 +83,10 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 @contextlib.contextmanager
-def _silence_lal_debug_warnings():
+def _silence_lal_debug_warnings() -> Iterator[None]:
     """Temporarily silence debug warnings from LAL."""
     try:
-        import lal
+        import lal  # noqa: PLC0415
     except ImportError:
         yield
         return
@@ -71,7 +102,7 @@ def _silence_lal_debug_warnings():
         lal.ClobberDebugLevel(debuglevel)
 
 
-def _preformat_entry(entry):
+def _preformat_entry(entry: FileSystemPath) -> tuple[str, str, str, Segment]:
     path = file_path(entry)
     obs, tag, seg = filename_metadata(path)
     start, end = seg
@@ -82,48 +113,76 @@ def _preformat_entry(entry):
     return path, obs, tag, type(seg)(start, end)
 
 
-def _format_entry_lal(entry):
+def _format_entry_lal(entry: FileSystemPath) -> str:
     path, obs, tag, seg = _preformat_entry(entry)
     return f"{obs} {tag} {seg[0]} {abs(seg)} {path}"
 
 
-def _parse_entry_lal(line, gpstype=LIGOTimeGPS):
-    from ..segments import Segment
+def _parse_entry_lal(
+    line: list[str],
+    gpstype: type[GpsType | float] = LIGOTimeGPS,
+) -> _CacheEntry:
     obs, desc, start, dur, path = line
-    start = gpstype(start)
-    end = start + float(dur)
-    return _CacheEntry(obs, desc, Segment(start, end), path)
+    gpsstart = gpstype(start)
+    end = gpsstart + float(dur)
+    return _CacheEntry(obs, desc, Segment(gpsstart, end), path)
 
 
-def _format_entry_ffl(entry):
-    path, obs, tag, seg = _preformat_entry(entry)
+def _format_entry_ffl(entry: FileSystemPath) -> str:
+    path, _, _, seg = _preformat_entry(entry)
     return f"{path} {seg[0]} {abs(seg)} 0 0"
 
 
-def _parse_entry_ffl(line, gpstype=LIGOTimeGPS):
-    from ..segments import Segment
+def _parse_entry_ffl(
+    line: list[str],
+    gpstype: type[GpsType | float] = LIGOTimeGPS,
+) -> _CacheEntry:
     path, start, dur, _, _ = line
     with _silence_lal_debug_warnings():
-        start = gpstype(start)
-    end = start + float(dur)
+        gpsstart = gpstype(start)
+    gpsend = gpsstart + float(dur)
     try:
         observatory, description = os.path.basename(path).split("-", 2)[:2]
     except ValueError:
-        return _CacheEntry(None, None, Segment(start, end), path)
-    return _CacheEntry(observatory, description, Segment(start, end), path)
+        return _CacheEntry(None, None, Segment(gpsstart, gpsend), path)
+    return _CacheEntry(observatory, description, Segment(gpsstart, gpsend), path)
 
 
-class _CacheEntry(namedtuple(
-        "_CacheEntry", ["observatory", "description", "segment", "path"])):
+class _CacheEntry(NamedTuple):
     """Quick version of lal.utils.CacheEntry for internal purposes only.
 
     Just to allow metadata handling for files that don't follow LIGO-T050017.
     """
-    def __str__(self):
+
+    observatory: str | None
+    description: str | None
+    segment: Segment
+    path: str
+
+    def __str__(self) -> str:
         return self.path
 
+    def __fspath__(self) -> str:
+        """Return the path component of the URL."""
+        path = self.path
+        if "://" in path:
+            scheme, path = path.split("://", 1)
+        else:
+            scheme = None
+        if scheme and scheme != "file":
+            msg = (
+                f"cannot use {type(self).__name__} as path-like object with "
+                f"scheme='{scheme}'"
+            )
+            raise ValueError(msg)
+        return path
+
     @classmethod
-    def parse(cls, line, gpstype=LIGOTimeGPS):
+    def parse(
+        cls,
+        line: str | bytes,
+        gpstype: type[GpsType | float] = LIGOTimeGPS,
+    ) -> _CacheEntry:
 
         # format line string
         if isinstance(line, bytes):
@@ -133,7 +192,7 @@ class _CacheEntry(namedtuple(
         # if single entry, parse filename
         if len(parts) == 1:
             path = parts[0]
-            return cls(*filename_metadata(path) + (path,))
+            return cls(*filename_metadata(path), path)
 
         try:
             return _parse_entry_ffl(parts, gpstype=gpstype)
@@ -148,25 +207,28 @@ class _CacheEntry(namedtuple(
             raise
 
 
-# -- cache I/O ----------------------------------------------------------------
+# -- cache I/O -----------------------
 
-def _iter_cache(cachefile, gpstype=LIGOTimeGPS):
-    """Internal method that yields a `_CacheEntry` for each line in the file.
+def _iter_cache(
+    cachefile: IO,
+    gpstype: type[GpsType | float] = LIGOTimeGPS,
+) -> Iterator[_CacheEntry]:
+    """Yield a `_CacheEntry` for each line in the file.
 
     This method supports reading LAL- and (nested) FFL-format cache files.
     """
     try:
-        path = os.path.abspath(cachefile.name)
+        path = Path(cachefile.name).resolve()  # type: ignore[union-attr]
     except AttributeError:
         path = None
     for line in cachefile:
         try:
             yield _CacheEntry.parse(line, gpstype=gpstype)
-        except ValueError:
+        except ValueError:  # noqa: PERF203
             # virgo FFL format (seemingly) supports nested FFL files
             parts = line.split()
-            if len(parts) == 3 and os.path.abspath(parts[0]) != path:
-                with open(parts[0], "r") as cache2:
+            if len(parts) == 3 and Path(parts[0]).resolve() != path:
+                with Path(parts[0]).open() as cache2:
                     yield from _iter_cache(cache2, gpstype=gpstype)
             else:
                 raise
@@ -174,12 +236,13 @@ def _iter_cache(cachefile, gpstype=LIGOTimeGPS):
 
 @with_open
 def read_cache(
-    cachefile,
-    coltype=LIGOTimeGPS,
-    sort=None,
-    segment=None,
-    strict=False,
-):
+    cachefile: Readable,
+    coltype: type[GpsType | float] = LIGOTimeGPS,
+    sort: Callable[[str], Any] | None = None,
+    segment: Segment | None = None,
+    *,
+    strict: bool = False,
+) -> list[str]:
     """Read a LAL- or FFL-format cache file as a list of file paths.
 
     Parameters
@@ -208,7 +271,7 @@ def read_cache(
         A list of file paths as read from the cache file.
     """
     # read file
-    cache = [x.path for x in _iter_cache(cachefile, gpstype=coltype)]
+    cache = [x.path for x in _iter_cache(cast("IO", cachefile), gpstype=coltype)]
 
     # sieve and sort
     if segment:
@@ -220,7 +283,10 @@ def read_cache(
     return cache
 
 
-def read_cache_entry(line, gpstype=LIGOTimeGPS):
+def read_cache_entry(
+    line: str | bytes,
+    gpstype: type[GpsType | float] = LIGOTimeGPS,
+) -> str:
     """Read a file path from a line in a cache file.
 
     Parameters
@@ -244,15 +310,13 @@ def read_cache_entry(line, gpstype=LIGOTimeGPS):
     return _CacheEntry.parse(line, gpstype=gpstype).path
 
 
-def open_cache(*args, **kwargs):  # pragma: no cover
-    # pylint: disable=missing-docstring
-    warnings.warn("gwpy.io.cache.open_cache was renamed read_cache",
-                  DeprecationWarning)
-    return read_cache(*args, **kwargs)
-
-
 @with_open(mode="w", pos=1)
-def write_cache(cache, fobj, format=None):
+def write_cache(
+    cache: list[str],
+    fobj: IO,
+    *,
+    format: Literal["lal", "ffl"] | None = None,  # noqa: A002
+) -> None:
     """Write a `list` of cache entries to a file.
 
     Parameters
@@ -270,6 +334,7 @@ def write_cache(cache, fobj, format=None):
         - ``'lal'`` : write a LAL-format cache
         - ``'ffl'`` : write an FFL-format cache
     """
+    formatter: Callable[[FileSystemPath], str]
     if format is None:
         formatter = str
     elif format.lower() == "lal":
@@ -277,18 +342,19 @@ def write_cache(cache, fobj, format=None):
     elif format.lower() == "ffl":
         formatter = _format_entry_ffl
     else:
-        raise ValueError(f"Unrecognised cache format {format!r}")
+        msg = f"Unrecognised cache format {format!r}"
+        raise ValueError(msg)
 
     # write file
     for line in map(formatter, cache):
         try:
             print(line, file=fobj)
-        except TypeError:  # bytes-mode
-            fobj.write(f"{line}\n".encode("utf-8"))
+        except TypeError:  # bytes-mode  # noqa: PERF203
+            fobj.write(f"{line}\n".encode())
 
 
-def is_cache(cache):
-    """Returns `True` if ``cache`` is a readable cache file or object.
+def is_cache(cache: Readable | list[str]) -> bool:
+    """Return `True` if ``cache`` is a readable cache file or object.
 
     Parameters
     ----------
@@ -301,10 +367,10 @@ def is_cache(cache):
         `True` if the input object is a cache, or a file in LAL cache format,
         otherwise `False`
     """
-    if isinstance(cache, (str, os.PathLike) + FILE_LIKE):
+    if isinstance(cache, Readable):
         try:
             return bool(len(read_cache(cache, coltype=float)))
-        except Exception:
+        except Exception:  # noqa: BLE001
             # if parsing the file as a cache fails for _any reason_
             # presume it isn't a cache file
             return False
@@ -313,12 +379,12 @@ def is_cache(cache):
     return bool(
         isinstance(cache, list | tuple)
         and cache
-        and all(map(is_cache_entry, cache))
+        and all(map(is_cache_entry, cache)),
     )
 
 
-def is_cache_entry(path):
-    """Returns `True` if ``path`` can be represented as a cache entry.
+def is_cache_entry(path: str | CacheEntry) -> bool:
+    """Return `True` if ``path`` can be represented as a cache entry.
 
     In practice this just tests whether the input is |LIGO-T050017|_ compliant.
 
@@ -342,9 +408,9 @@ def is_cache_entry(path):
     return True
 
 
-# -- cache manipulation -------------------------------------------------------
+# -- cache manipulation --------------
 
-def filename_metadata(filename):
+def filename_metadata(filename: str) -> tuple[str, str, Segment]:
     """Return metadata parsed from a filename following LIGO-T050017.
 
     This method is lenient with regards to integers in the GPS start time of
@@ -381,34 +447,33 @@ def filename_metadata(filename):
     >>> filename_metadata("A-B-0.456-1.345.txt")
     ("A", "B", Segment(0.456, 1.801))
     """
-    from ..segments import Segment
     name = os.path.basename(filename)
     try:
-        obs, desc, start, dur = name.split("-")
+        obs, desc, start, stub = name.split("-")
     except ValueError as exc:
         exc.args = (
             f"Failed to parse {name!r} as a LIGO-T050017-compatible filename",
         )
         raise
-    start = float(start)
-    dur = dur.rsplit(".", 1)[0]
+    gpsstart = float(start)
+    dur: str = stub.rsplit(".", 1)[0]
     while True:  # recursively remove extension components
         try:
-            dur = float(dur)
-        except ValueError:
+            fdur = float(dur)
+        except ValueError:  # noqa: PERF203
             if "." not in dur:
                 raise
             dur = dur.rsplit(".", 1)[0]
         else:
             break
-    return obs, desc, Segment(start, start+dur)
+    return obs, desc, Segment(gpsstart, gpsstart + fdur)
 
 
-def file_segment(filename):
+def file_segment(filename: str | CacheEntry) -> Segment:
     """Return the data segment for a filename following T050017.
 
     Parameters
-    ---------
+    ----------
     filename : `str`, :class:`~lal.utils.CacheEntry`
         the path name of a file
 
@@ -423,42 +488,38 @@ def file_segment(filename):
     documenting the GPS start integer and integer duration of a file,
     see that document for more details.
     """
-    from ..segments import Segment
     try:  # CacheEntry
-        return Segment(filename.segment)
+        return Segment(filename.segment)  # type: ignore[union-attr]
     except AttributeError:  # file path (str)
         return filename_metadata(filename)[2]
 
 
-def cache_segments(*caches):
-    """Returns the segments of data covered by entries in the cache(s).
+def cache_segments(*caches: Iterable[str | CacheEntry]) -> SegmentList:
+    """Return the segments of data covered by entries in the cache(s).
 
     Parameters
     ----------
-    *caches : `list`
-        One or more lists of file paths
-        (`str` or :class:`~lal.utils.CacheEntry`).
+    caches : `list`
+        One or more lists of file paths (`str` or :class:`~lal.utils.CacheEntry`).
 
     Returns
     -------
     segments : `~gwpy.segments.SegmentList`
-        A list of segments for when data should be available
+        A list of segments for when data should be available.
     """
-    from ..segments import SegmentList
     out = SegmentList()
     for cache in caches:
         out.extend(file_segment(e) for e in cache)
     return out.coalesce()
 
 
-def flatten(*caches):
+def flatten(*caches: list[str | CacheEntry]) -> list[str | CacheEntry]:
     """Flatten a nested list of cache entries.
 
     Parameters
     ----------
-    *caches : `list`
-        One or more lists of file paths
-        (`str` or :class:`~lal.utils.CacheEntry`).
+    caches : `list`
+        One or more lists of file paths (`str` or :class:`~lal.utils.CacheEntry`).
 
     Returns
     -------
@@ -466,29 +527,35 @@ def flatten(*caches):
         A flat `list` containing the unique set of entries across
         each input.
     """
-    return list(OrderedDict.fromkeys(e for c in caches for e in c))
+    return list(dict.fromkeys(e for c in caches for e in c))
 
 
-def find_contiguous(*caches):
+def find_contiguous(
+    *caches: list[str | CacheEntry],
+) -> Iterator[list[str | CacheEntry]]:
     """Separate one or more cache entry lists into time-contiguous sub-lists.
 
     Parameters
     ----------
-    *caches : `list`
-        One or more lists of file paths
-        (`str` or :class:`~lal.utils.CacheEntry`).
+    caches : `list`
+        One or more lists of file paths (`str` or :class:`~lal.utils.CacheEntry`).
 
     Returns
     -------
     caches : `iter` of `list`
-        an interable yielding each contiguous cache
+        An interable yielding each contiguous cache.
     """
     flat = flatten(*caches)
     for segment in cache_segments(flat):
         yield sieve(flat, segment=segment)
 
 
-def sieve(cache, segment=None, strict=True):
+def sieve(
+    cache: list[str | CacheEntry],
+    segment: Segment,
+    *,
+    strict: bool = True,
+) -> list[str | CacheEntry]:
     """Filter the cache to find those entries that overlap ``segment``.
 
     Parameters
@@ -519,24 +586,8 @@ def sieve(cache, segment=None, strict=True):
             if strict:
                 raise
             # otherwise warn and ignore
-            warnings.warn(str(exc))
+            warnings.warn(str(exc), stacklevel=2)
             continue
         if segment.intersects(seg):  # if overlaps, keep it
             out.append(e)
     return out
-
-
-# -- moved functions ----------------------------------------------------------
-
-def file_name(*args, **kwargs):
-    from .utils import file_path
-    warnings.warn("this function has been moved to gwpy.io.utils.file_path",
-                  DeprecationWarning)
-    return file_path(*args, **kwargs)
-
-
-def file_list(*args, **kwargs):
-    from .utils import file_list
-    warnings.warn("this function has been moved to gwpy.io.utils.file_list",
-                  DeprecationWarning)
-    return file_list(*args, **kwargs)

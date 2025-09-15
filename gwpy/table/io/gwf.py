@@ -25,7 +25,7 @@ import typing
 from astropy.table import Table
 
 from ...io import gwf as io_gwf
-from ...io.cache import FILE_LIKE
+from ...io.utils import FileLike
 from ...time import LIGOTimeGPS
 from .. import EventTable
 from ..filter import parse_column_filters
@@ -118,7 +118,7 @@ def table_from_gwf(
     gwf_framecpp = io_gwf.import_backend("frameCPP")
 
     # open frame file
-    if isinstance(filename, FILE_LIKE):
+    if isinstance(filename, FileLike):
         filename = filename.name
     stream = gwf_framecpp.open_gwf(filename)
 

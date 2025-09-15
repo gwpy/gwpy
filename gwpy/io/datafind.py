@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -34,49 +35,92 @@ variable to point to the directory containing FFL files, **or** the
 ``ffl` subdirectory, which contains FFL files.
 """
 
+from __future__ import annotations
+
+import logging
 import os
-import os.path
 import re
-import warnings
+import typing
 from collections import defaultdict
-from functools import wraps
+from functools import (
+    partial,
+    wraps,
+)
+from math import ceil
+from pathlib import Path
 from unittest import mock
 
 import gwdatafind
+from igwn_segments import segment as LigoSegment  # noqa: N812
+from urllib3.util import parse_url
 
-from igwn_segments import segment as LigoSegment
-
+from ..detector import Channel
+from ..testing.errors import NETWORK_ERROR
 from ..time import to_gps
 from . import ffldatafind
 from .cache import cache_segments
-from .gwf import (num_channels, iter_channel_names)
-from .utils import file_path
+from .gwf import (
+    iter_channel_names,
+    num_channels,
+)
+from .remote import (
+    download_file,
+    is_remote,
+)
+
+if typing.TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Iterable,
+        Mapping,
+    )
+    from types import ModuleType
+    from typing import (
+        Literal,
+        ParamSpec,
+        SupportsFloat,
+        TypeVar,
+    )
+
+    from ..segments import Segment
+    from ..typing import GpsLike
+
+    P = ParamSpec("P")
+    T = TypeVar("T")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+log = logging.getLogger(__name__)
+
 SINGLE_IFO_OBSERVATORY = re.compile("^[A-Z][0-9]$")
+
+GPS_END_S5 = 875232014
 
 # special-case frame types
 LIGO_SECOND_TREND_TYPE = re.compile(r"\A(.*_)?T\Z")  # T or *_T
 LIGO_MINUTE_TREND_TYPE = re.compile(r"\A(.*_)?M\Z")  # M or *_M
 VIRGO_SECOND_TREND_TYPE = re.compile(r"\A(.*_)?[Tt]rend\Z")  # trend or *_trend
-GRB_TYPE = re.compile(r"^(?!.*_GRB\d{6}([A-Z])?$)")  # *_GRBYYMMDD{A}
-HIGH_PRIORITY_TYPE = re.compile("({})".format("|".join((
+NOT_GRB_TYPE = re.compile(r"^(?!.*_GRB\d{6}([A-Z])?$)")  # *_GRBYYMMDD{A}
+HIGH_PRIORITY_TYPE = re.compile("({})".format("|".join((  # noqa: FLY002
+    r"\A[A-Z]\d_GWOSC_O([0-9]+)([a-z])?_[0-9]+KHZ_R[0-9]+",  # X1_GWOSC_OX_NKHZ_RX
     r"\A[A-Z]\d_HOFT_C\d\d(_T\d{7}_v\d)?\Z",  # X1_HOFT_CXY
     r"\AV1Online\Z",
     r"\AHoftOnline\Z",
     r"\AV1O[0-9]+([A-Z]+)?Repro[0-9]+[A-Z]+\Z",  # V1OXReproXY
 ))))
-LOW_PRIORITY_TYPE = re.compile("({})".format("|".join((
+LOW_PRIORITY_TYPE = re.compile("({})".format("|".join((  # noqa: FLY002
     r"_GRB\d{6}([A-Z])?\Z",  # endswith _GRBYYMMDD{A}
     r"_bck\Z",  # endswith _bck
     r"\AT1200307_V4_EARLY_RECOLORED_V2\Z",  # annoying recoloured HOFT type
 ))))
 
 
-# -- utilities ----------------------------------------------------------------
+# -- utilities -----------------------
 
-def _type_priority(ifo, ftype, trend=None):
+def _type_priority(
+    ftype: str,
+    trend: str | None = None,
+) -> tuple[int, int]:
     """Prioritise the given GWF type based on its name or trend status.
 
     This is essentially an ad-hoc ordering function based on internal knowledge
@@ -84,21 +128,21 @@ def _type_priority(ifo, ftype, trend=None):
     """
     # if looking for a trend channel, prioritise the matching type
     for trendname, trend_regex in [
-            ("m-trend", LIGO_MINUTE_TREND_TYPE),
-            ("s-trend", LIGO_SECOND_TREND_TYPE),
-            ("s-trend", VIRGO_SECOND_TREND_TYPE),
+        ("m-trend", LIGO_MINUTE_TREND_TYPE),
+        ("s-trend", LIGO_SECOND_TREND_TYPE),
+        ("s-trend", VIRGO_SECOND_TREND_TYPE),
     ]:
         if trend == trendname and trend_regex.match(ftype):
             return 0, len(ftype)
 
     # otherwise rank this type according to priority
     for reg, prio in {
-            HIGH_PRIORITY_TYPE: 1,
-            re.compile(r"[A-Z]\d_C"): 6,
-            LOW_PRIORITY_TYPE: 10,
-            LIGO_MINUTE_TREND_TYPE: 10,
-            LIGO_SECOND_TREND_TYPE: 10,
-            VIRGO_SECOND_TREND_TYPE: 10,
+        HIGH_PRIORITY_TYPE: 1,
+        re.compile(r"[A-Z]\d_C"): 6,
+        LOW_PRIORITY_TYPE: 10,
+        LIGO_MINUTE_TREND_TYPE: 10,
+        LIGO_SECOND_TREND_TYPE: 10,
+        VIRGO_SECOND_TREND_TYPE: 10,
     }.items():
         if reg.search(ftype):
             return prio, len(ftype)
@@ -106,7 +150,7 @@ def _type_priority(ifo, ftype, trend=None):
     return 5, len(ftype)
 
 
-def on_tape(*files):
+def on_tape(*files: str) -> bool:
     """Determine whether any of the given files are on tape.
 
     Parameters
@@ -116,21 +160,34 @@ def on_tape(*files):
 
     Returns
     -------
-    True/False : `bool`
+    ontape : `bool`
         `True` if any of the files are determined to be on tape,
-        otherwise `False`
+        otherwise `False`.
+
+    Notes
+    -----
+    A returned value of `False` does not necessarily mean that none of the
+    paths are on tape, just that this function couldn't say that they
+    definitely *are* on tape.
     """
     for path in files:
-        stat = os.stat(path)
+        if is_remote(path):  # we can't inspect remote files
+            return False
+        url = parse_url(path)
+        if not url.path:
+            return False
         try:
-            if stat.st_blocks == 0:
-                return True
+            stat = Path(url.path).stat()
+        except FileNotFoundError:
+            return False
+        try:
+            return stat.st_blocks == 0
         except AttributeError:  # windows doesn't have st_blocks
             return False
     return False
 
 
-def _gwdatafind_module(**datafind_kw):
+def _gwdatafind_module(**datafind_kw) -> ModuleType:
     """Return the appropriate GWDataFind-like API based on the environment.
 
     This allows switching to the hacky `gwpy.io.ffldatafind` replacement
@@ -147,15 +204,14 @@ def _gwdatafind_module(**datafind_kw):
 
     # FFL
     try:
-        ffldatafind._get_ffl_basedir()
+        ffldatafind._get_ffl_basedir()  # noqa: SLF001
     except KeyError:  # failed to discover FFL directories
-        raise RuntimeError(
-            "unknown datafind configuration, cannot discover data",
-        )
+        msg = "unknown datafind configuration, cannot discover data"
+        raise RuntimeError(msg) from None
     return ffldatafind
 
 
-def _select_gwdatafind_mod(func):
+def _select_gwdatafind_mod(func: Callable[P, T]) -> Callable[P, T]:
     """Decorate a function to see the right ``gwdatafind`` API.
 
     This exists only to allow on-the-fly replacing of the actual `gwdatafind`
@@ -163,7 +219,7 @@ def _select_gwdatafind_mod(func):
     data from FFL files.
     """
     @wraps(func)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: P.args, **kwargs: P.kwargs) -> T:
         # replace the 'gwdatafind' module in the function namespace
         # with the API we need for this call
         with mock.patch.dict(func.__globals__):
@@ -173,29 +229,35 @@ def _select_gwdatafind_mod(func):
     return wrapped
 
 
-def _parse_ifos_and_trends(chans):
+def _parse_ifos_and_trends(
+    chans: Iterable[str | Channel],
+) -> set[tuple[str, str | None]]:
     """Parse ``(ifo, trend)`` pairs from this list of channels."""
-    from ..detector import Channel
     found = set()
     for name in chans:
         chan = Channel(name)
-        try:
-            found.add((chan.ifo[0], chan.type))
-        except TypeError:  # chan.ifo is None
-            raise ValueError(
+        if (ifo := chan.ifo) is None:
+            msg = (
                 "Cannot parse interferometer prefix from channel name "
-                f"'{chan}', cannot proceed with find()",
+                f"'{chan}', cannot proceed with find()"
             )
+            raise ValueError(msg)
+        found.add((ifo[0], chan.type))
     return found
 
 
-def _find_gaps(ifo, frametype, segment, on_gaps):
+def _find_gaps(
+    ifo: str,
+    frametype: str,
+    segment: Segment | None,
+    **kwargs,
+) -> float:
     """Discover gaps in a datafind/ffl archive for the given ifo/type.
 
     Returns
     -------
-    gaps : `int`
-        the cumulative size of all gaps in the relevant archive
+    gaps : `float`
+        The cumulative size of all gaps in the relevant archive.
     """
     if segment is None:
         return 0
@@ -203,13 +265,19 @@ def _find_gaps(ifo, frametype, segment, on_gaps):
         ifo,
         frametype,
         *segment,
-        on_gaps=on_gaps,
+        **kwargs,
     )
     csegs = cache_segments(cache)
     return max(0, abs(segment) - abs(csegs))
 
 
-def _error_missing_channels(required, found, gpstime, allow_tape):
+def _error_missing_channels(
+    required: Iterable[str],
+    found: Iterable[str],
+    gpstime: SupportsFloat | None,
+    *,
+    allow_tape: bool,
+) -> None:
     """Raise an exception if required channels are not found."""
     missing = set(required) - set(found)
 
@@ -222,61 +290,180 @@ def _error_missing_channels(required, found, gpstime, allow_tape):
         msg += f" at GPS={gpstime}"
     msg += ":\n    " + "\n    ".join(missing)
     if not allow_tape:
-        msg += ("\n[files on tape have not been checked, use "
-                "allow_tape=True for a complete search]")
+        msg += (
+            "\n[files on tape have not been checked, use "
+            "allow_tape=True for a complete search]"
+        )
     raise ValueError(msg)
 
 
-def _rank_types(match):
+def _rank_types(match: Mapping[str, list[tuple[str, str, float]]]) -> None:
     """Rank and sort the matched frametypes according to some criteria.
 
-    ``matches`` is a dict of (channel, [(type, gwf, gapsize), ...])
-    entries.
+    Parameters
+    ----------
+    match : `dict` of ``channel: (type, gwf, gapsize)``
+        The match dict to sort.
     """
-    paths = set(typetuple[1] for key in match for typetuple in match[key])
+    paths = {typetuple[1] for key in match for typetuple in match[key]}
     rank = {path: (on_tape(path), num_channels(path)) for path in paths}
     # deprioritise types on tape and those with lots of channels
     for key in match:
         match[key].sort(key=lambda x: (-x[2],) + rank[x[1]])
 
 
-# -- user methods -------------------------------------------------------------
+# -- user methods --------------------
 
-@_select_gwdatafind_mod
-def find_frametype(channel, gpstime=None, frametype_match=None,
-                   host=None, port=None, return_all=False, allow_tape=False,
-                   on_gaps="error"):
+# single channel, return_all=False
+@typing.overload
+def find_frametype(
+    channel: str | Channel,
+    gpstime: GpsLike | None = None,
+    *,
+    frametype_match: str | re.Pattern | None = None,
+    host: str | None = None,
+    urltype: str = "file",
+    ext: str = "gwf",
+    return_all: Literal[False] = False,
+    allow_tape: bool = False,
+    on_gaps: Literal["error", "ignore", "warn"] = "error",
+    **gwdatafind_kw,
+) -> str: ...
+
+# single channel, return_all=True
+@typing.overload
+def find_frametype(
+    channel: str | Channel,
+    gpstime: GpsLike | None = None,
+    *,
+    frametype_match: str | re.Pattern | None = None,
+    host: str | None = None,
+    urltype: str = "file",
+    ext: str = "gwf",
+    return_all: Literal[True] = True,
+    allow_tape: bool = False,
+    on_gaps: Literal["error", "ignore", "warn"] = "error",
+    **gwdatafind_kw,
+) -> list[str]: ...
+
+# single channel, return_all not given
+@typing.overload
+def find_frametype(
+    channel: str | Channel,
+    gpstime: GpsLike | None = None,
+    *,
+    frametype_match: str | re.Pattern | None = None,
+    host: str | None = None,
+    urltype: str = "file",
+    ext: str = "gwf",
+    allow_tape: bool = False,
+    on_gaps: Literal["error", "ignore", "warn"] = "error",
+    **gwdatafind_kw,
+) -> str: ...
+
+# multiple channels, return_all=False
+@typing.overload
+def find_frametype(
+    channel: Iterable[str | Channel],
+    gpstime: GpsLike | None = None,
+    *,
+    frametype_match: str | re.Pattern | None = None,
+    host: str | None = None,
+    urltype: str = "file",
+    ext: str = "gwf",
+    return_all: Literal[False] = False,
+    allow_tape: bool = False,
+    on_gaps: Literal["error", "ignore", "warn"] = "error",
+    **gwdatafind_kw,
+) -> dict[str, str]: ...
+
+# multiple channels, return_all=True
+@typing.overload
+def find_frametype(
+    channel: Iterable[str | Channel],
+    gpstime: GpsLike | None = None,
+    *,
+    frametype_match: str | re.Pattern | None = None,
+    host: str | None = None,
+    urltype: str = "file",
+    ext: str = "gwf",
+    return_all: Literal[True] = True,
+    allow_tape: bool = False,
+    on_gaps: Literal["error", "ignore", "warn"] = "error",
+    **gwdatafind_kw,
+) -> dict[str, list[str]]: ...
+
+# multiple channels, return_all not given
+@typing.overload
+def find_frametype(
+    channel: Iterable[str | Channel],
+    gpstime: GpsLike | None = None,
+    *,
+    frametype_match: str | re.Pattern | None = None,
+    host: str | None = None,
+    urltype: str = "file",
+    ext: str = "gwf",
+    allow_tape: bool = False,
+    on_gaps: Literal["error", "ignore", "warn"] = "error",
+    **gwdatafind_kw,
+) -> dict[str, list[str]]: ...
+
+def find_frametype(
+    channel: str | Channel | Iterable[str | Channel],
+    gpstime: GpsLike | None = None,
+    *,
+    frametype_match: str | re.Pattern | None = None,
+    urltype: str = "file",
+    ext: str = "gwf",
+    return_all: bool = False,
+    allow_tape: bool = False,
+    on_gaps: Literal["error", "ignore", "warn"] = "error",
+    **gwdatafind_kw,
+) -> str | list[str] | dict[str, str] | dict[str, list[str]]:
     """Find the frametype(s) that hold data for a given channel.
 
     Parameters
     ----------
     channel : `str`, `~gwpy.detector.Channel`
-        the channel to be found
+        The channel to find.
 
     gpstime : `int`, optional
-        target GPS time at which to find correct type
+        Target GPS time at which to find correct type.
 
     frametype_match : `str`, optional
-        regular expression to use for frametype `str` matching
+        Regular expression to use for frametype `str` matching.
 
     host : `str`, optional
-        name of datafind host to use
+        Name of datafind host to use.
 
-    port : `int`, optional
-        port on datafind host to use
+    urltype : `str`, optional
+        The URL type to use.
+        Default is "file" to use paths available on the file system.
 
-    return_all : `bool`, optional, default: `False`
-        return all found types, default is to return to 'best' match
+    ext : `str`, optional
+        The file extension for which to search.
+        "gwf" is the only file extension supported, but this may be
+        extended in the future.
 
-    allow_tape : `bool`, optional, default: `False`
-        do not test types whose frame files are stored on tape (not on
-        spinning disk)
+    return_all : `bool`, optional
+        If `True` return all found types;
+        if `False` (default) return only the 'best' match.
+
+    allow_tape : `bool`, optional
+        If `False` (default) do not test types whose frame files are
+        stored on tape (not on spinning disk).
 
     on_gaps : `str`, optional
-        action to take when gaps are discovered in datafind coverage,
-        default: ``'error'``, i.e. don't match frametypes with gaps.
-        Select ``'ignore'`` to ignore gaps, or ``'warn'`` to display
-        warnings when gaps are found in a datafind `find_urls` query
+        Action to take when the requested all or some of the GPS interval
+        is not covereed by the dataset, one of:
+
+        - ``'error'``: raise a `RuntimeError` (default)
+        - ``'warn'``: emit a warning but return all available URLs
+        - ``'ignore'``: return the list of URLs with no warnings
+
+    gwdatafind_kw
+        Other keyword arguments are passed to the
+        `gwdatafind.find_types`, and `gwdatafind.find_urls`.functions.
 
     Returns
     -------
@@ -291,20 +478,24 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
         the list of all matching frame types
 
     If multiple names are given, the above return types are wrapped into a
-    `dict` of `(channel, type_or_list)` pairs.
+    `dict[str, str | list[str]]`.
 
     Examples
     --------
     >>> from gwpy.io import datafind as io_datafind
     >>> io_datafind.find_frametype('H1:IMC-PWR_IN_OUTPUT', gpstime=1126259462)
     'H1_R'
-    >>> io_datafind.find_frametype('H1:IMC-PWR_IN_OUTPUT', gpstime=1126259462,
-    ...                            return_all=True)
+    >>> io_datafind.find_frametype(
+    ...     'H1:IMC-PWR_IN_OUTPUT',
+    ...     gpstime=1126259462,
+    ...     return_all=True,
+    ... )
     ['H1_R', 'H1_C']
     >>> io_datafind.find_frametype(
-    ...     ('H1:IMC-PWR_IN_OUTPUT', 'H1:OMC-DCPD_SUM_OUTPUT',
-    ...      'H1:GDS-CALIB_STRAIN'),
-    ...     gpstime=1126259462, return_all=True))"
+    ...     ('H1:IMC-PWR_IN_OUTPUT', 'H1:OMC-DCPD_SUM_OUTPUT', 'H1:GDS-CALIB_STRAIN'),
+    ...     gpstime=1126259462,
+    ...     return_all=True,
+    ... )
     {'H1:GDS-CALIB_STRAIN': ['H1_HOFT_C00'],
      'H1:OMC-DCPD_SUM_OUTPUT': ['H1_R', 'H1_C'],
      'H1:IMC-PWR_IN_OUTPUT': ['H1_R', 'H1_C']}
@@ -312,7 +503,17 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     # this function is now horrendously complicated to support a large
     # number of different use cases, hopefully the comments are sufficient
 
-    from ..detector import Channel
+    # check required file extension
+    if ext.lower().lstrip(".") != "gwf":
+        msg = "Finding frametypes for channels is only supported for ext='gwf'"
+        raise ValueError(msg)
+    ext = ext.lower().lstrip(".")
+
+    # check required file extension
+    if ext.lower().lstrip(".") != "gwf":
+        msg = "Finding frametypes for channels is only supported for ext='gwf'"
+        raise ValueError(msg)
+    ext = ext.lower().lstrip(".")
 
     # format channel names as list
     if isinstance(channel, list | tuple):
@@ -320,14 +521,16 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
     else:
         channels = [channel]
 
+    log.debug("Finding frametype for channels: %s", ",".join(channels))
+
     # create set() of GWF channel names, and dict map back to user names
     #    this allows users to use nds-style names in this query, e.g.
     #    'X1:TEST.mean,m-trend', and still get results
-    channels = {c: Channel(c).name for c in channels}
-    names = {val: key for key, val in channels.items()}
+    chandict: dict[str, str] = {c: str(Channel(c).name) for c in channels}
+    names = {val: key for key, val in chandict.items()}
 
     # format GPS time(s)
-    if isinstance(gpstime, list | tuple):
+    if isinstance(gpstime, tuple):
         gpssegment = LigoSegment(*gpstime)
         gpstime = gpssegment[0]
     else:
@@ -336,21 +539,27 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
         gpstime = int(to_gps(gpstime))
 
     # if use gaps post-S5 GPStime, forcibly skip _GRBYYMMDD frametypes at CIT
-    if frametype_match is None and gpstime is not None and gpstime > 875232014:
-        frametype_match = GRB_TYPE
+    if frametype_match is None and gpstime is not None and gpstime > GPS_END_S5:
+        frametype_match = NOT_GRB_TYPE
 
     # -- go
 
-    match = defaultdict(list)
+    match: dict[str, list[tuple[str, str, float]]] = defaultdict(list)
     searched = set()
 
     for ifo, trend in _parse_ifos_and_trends(channels):
+        log.debug("Finding types for %s", ifo)
+
         # find all types (prioritising trends if we need to)
         types = find_types(
             ifo,
             match=frametype_match,
             trend=trend,
+            ext=ext,
+            **gwdatafind_kw,
         )
+
+        log.debug("Found %s types", len(types))
 
         # loop over types testing each in turn
         for ftype in types:
@@ -360,45 +569,30 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
             if (ifo, ftype) in searched:
                 continue
 
-            # find instance of this frametype
-            try:
-                path = find_latest(
-                    ifo,
-                    ftype,
-                    gpstime=gpstime,
-                    allow_tape=allow_tape,
-                    on_missing="ignore",
-                )
-            except (OSError, RuntimeError, IndexError):  # something went wrong
+            thismatch = _inspect_ftype(
+                list(names),
+                ifo,
+                ftype,
+                gpstime,
+                gpssegment,
+                on_gaps,
+                allow_tape=allow_tape,
+                urltype=urltype,
+                ext=ext,
+                **gwdatafind_kw,
+            )
+
+            if thismatch is None:  # failed to read
                 continue
 
-            # check for gaps in the record for this type
-            gaps = _find_gaps(ifo, ftype, gpssegment, on_gaps)
+            for name, info in thismatch.items():
+                n = names[name]
+                match[n].append(info)
 
-            # search the TOC for one frame file and match any channels
-            found = 0
-            nchan = len(names)
-            try:
-                for n in iter_channel_names(path):
-                    if n in names:  # frametype includes this channel!
-                        # count how many channels we have found in this type
-                        found += 1
-
-                        # record the match using the user-given channel name
-                        match[names[n]].append((ftype, path, gaps))
-
-                        # if only matching once, don't search other types
-                        # for this channel
-                        if not return_all:
-                            names.pop(n)
-
-                        if found == nchan:  # all channels have been found
-                            break
-            except RuntimeError as exc:  # failed to open file (probably)
-                warnings.warn(
-                    f"failed to read channels for type {ftype!r}: {exc}:",
-                )
-                continue
+                # if only matching once, don't search other types
+                # for this channel
+                if not return_all:
+                    names.pop(n)
 
             # record this type as having been searched
             searched.add((ifo, ftype))
@@ -407,28 +601,165 @@ def find_frametype(channel, gpstime=None, frametype_match=None,
                 break
 
     # raise exception if one or more channels were not found
-    _error_missing_channels(channels, match.keys(), gpstime, allow_tape)
+    _error_missing_channels(
+        names.values(),
+        match.keys(),
+        gpstime,
+        allow_tape=allow_tape or urltype != "file",
+    )
 
     # rank types (and pick best if required)
     _rank_types(match)
 
     # and format as a dict for each channel
-    output = {key: list(list(zip(*match[key], strict=True))[0]) for key in match}
-    if not return_all:  # reduce the list-of-one to a single element
-        output = {key: val[0] for key, val in output.items()}
+    results: dict[str, list[str]] = {
+        key: list(next(zip(*match[key], strict=True)))
+        for key in match
+    }
 
-    # if given a list of channels, return the dict
+    # -- handle various return scenarios
+
+    # multiple channels, return_all=True
+    if isinstance(channel, list | tuple) and return_all:
+        return results
+
+    # multiple channels, return_all=False
     if isinstance(channel, list | tuple):
-        return output
+        return {key: val[0] for key, val in results.items()}
 
-    # otherwise just return the result for the given channel
-    return output[str(channel)]
+    # single channel, return_all=True
+    single = results[str(channel)]
+    if return_all:
+        return single
+
+    # single channel, return_all=False
+    return single[0]
 
 
-@_select_gwdatafind_mod
-def find_best_frametype(channel, start, end,
-                        frametype_match=None, allow_tape=True,
-                        host=None, port=None):
+def _inspect_ftype(
+    names: list[str],
+    ifo: str,
+    frametype: str,
+    gpstime: int | None,
+    gpssegment: Segment | None,
+    on_gaps: Literal["error", "ignore", "warn"],
+    *,
+    allow_tape: bool = False,
+    **requests_kw,
+) -> dict[str, tuple[str, str, float]] | None:
+    """Inspect one dataset (frametype) for matches to the required ``names``.
+
+    This function queries GWDataFind for a single file matching this dataset,
+    downloads it, and looks at the list of channel names in the TOC.
+    """
+    log.debug("Inspecting %s-%s", ifo, frametype)
+    # find instance of this frametype
+    try:
+        path = find_latest(
+            ifo,
+            frametype,
+            gpstime=gpstime,
+            allow_tape=allow_tape,
+            **requests_kw,
+        )
+    except (OSError, RuntimeError, IndexError):  # something went wrong
+        log.debug("Failed to find URL for %s-%s", ifo, frametype)
+        return None
+
+    # download the file so we can inspect it
+    log.debug("Using URL '%s'", path)
+    try:
+        path = download_file(path)
+    except NETWORK_ERROR as exc:  # failed to download the file
+        log.debug(
+            "Failed to download file for %s-%s: %s",
+            ifo,
+            frametype,
+            str(exc),
+        )
+        return None
+
+    # check for gaps in the record for this type
+    gaps = _find_gaps(
+        ifo,
+        frametype,
+        gpssegment,
+        on_gaps=on_gaps,
+        **requests_kw,
+    )
+
+    # record matches for each channel
+    match: dict[str, tuple[str, str, float]] = {}
+
+    # search the TOC for one frame file and match any channels
+    found = 0
+    nchan = len(names)
+    try:
+        for n in iter_channel_names(path):
+            if n in names:  # frametype includes this channel!
+                # count how many channels we have found in this type
+                found += 1
+
+                # record the match using the user-given channel name
+                match[n] = (frametype, path, gaps)
+
+                if found == nchan:  # all channels have been found
+                    break
+
+    except (
+        OSError,
+        RuntimeError,
+    ) as exc:  # failed to open file (probably)
+        log.warning(
+            "failed to read channels for %s-%s: %s",
+            ifo,
+            frametype,
+            str(exc),
+        )
+        return None
+
+    log.debug(
+        "Found %s/%s channels in %s-%s",
+        len(match),
+        nchan,
+        ifo,
+        frametype,
+    )
+    return match
+
+
+@typing.overload
+def find_best_frametype(
+    channel: str | Channel,
+    start: GpsLike,
+    end: GpsLike,
+    *,
+    allow_tape: bool = True,
+    **kwargs,
+) -> str:
+    ...
+
+
+@typing.overload
+def find_best_frametype(
+    channel: Iterable[str | Channel],
+    start: GpsLike,
+    end: GpsLike,
+    *,
+    allow_tape: bool = True,
+    **kwargs,
+) -> dict[str, str]:
+    ...
+
+
+def find_best_frametype(
+    channel: str | Channel | Iterable[str | Channel],
+    start: GpsLike,
+    end: GpsLike,
+    *,
+    allow_tape: bool = True,
+    **kwargs,
+) -> str | dict[str, str]:
     """Intelligently select the best frametype from which to read this channel.
 
     Parameters
@@ -444,18 +775,12 @@ def find_best_frametype(channel, start, end,
         GPS end time of period of interest,
         any input parseable by `~gwpy.time.to_gps` is fine
 
-    host : `str`, optional
-        name of datafind host to use
-
-    port : `int`, optional
-        port on datafind host to use
-
-    frametype_match : `str`, optiona
-        regular expression to use for frametype `str` matching
-
     allow_tape : `bool`, optional
         do not test types whose frame files are stored on tape (not on
         spinning disk)
+
+    kwargs
+        Other keyword arguments are passed to `find_frametype`.
 
     Returns
     -------
@@ -466,7 +791,12 @@ def find_best_frametype(channel, start, end,
     Raises
     ------
     ValueError
-        if no valid frametypes are found
+        If no valid frametypes are found.
+
+    See Also
+    --------
+    find_frametype
+        For details of how available frametypes are matched.
 
     Examples
     --------
@@ -475,50 +805,134 @@ def find_best_frametype(channel, start, end,
     'L1_HOFT_C00'
     """
     try:
-        return find_frametype(channel, gpstime=(start, end),
-                              frametype_match=frametype_match,
-                              allow_tape=allow_tape, on_gaps="error",
-                              host=host, port=port)
+        # try and find the one true frametype for this channel
+        return find_frametype(
+            channel,
+            gpstime=(start, end),
+            allow_tape=allow_tape,
+            return_all=False,
+            on_gaps="error",
+            **kwargs,
+        )
     except RuntimeError:  # gaps (or something else went wrong)
-        ftout = find_frametype(channel, gpstime=(start, end),
-                               frametype_match=frametype_match,
-                               return_all=True, allow_tape=allow_tape,
-                               on_gaps="ignore", host=host, port=port)
+        # find all frametypes
+        ftout = find_frametype(
+            channel,
+            gpstime=(start, end),
+            allow_tape=allow_tape,
+            return_all=True,
+            on_gaps="ignore",
+            **kwargs,
+        )
+        # and pick the one with the highest rank
+        # (as applied by find_frametype)
         try:
             if isinstance(ftout, dict):
                 return {key: ftout[key][0] for key in ftout}
             return ftout[0]
         except IndexError:
-            raise ValueError("Cannot find any valid frametypes for channel(s)")
+            msg = "Cannot find any valid frametypes for channel(s)"
+            raise ValueError(msg) from None
 
 
 @_select_gwdatafind_mod
-def find_types(observatory, match=None, trend=None, **kwargs):
+def find_types(
+    observatory: str,
+    match: str | re.Pattern | None = None,
+    trend: str | None = None,
+    **kwargs,
+) -> list[str]:
     """Find the available data types for a given observatory.
 
-    See also
+    Parameters
+    ----------
+    observatory : `str`
+        The observatory for which to search, as a single character,
+        e.g ``"G"`` for GEO-600.
+
+    match : `str`, `re.Pattern`, optional
+        Regular expression to match types against.
+
+    trend : `str`, optional
+        A trend type name to prioritise, e.g. ``"m-trend"``.
+
+    kwargs
+        Other arguments are passed to `gwdatafind.find_types`.
+
+    Returns
+    -------
+    types : `list` of `str`
+        A list of matching types, sorted by priority
+        (*h(t)* datasets first, large datasets last).
+
+    See Also
     --------
     gwdatafind.find_types
+        For details of how available types are discovered.
     """
+    types = gwdatafind.find_types(
+        observatory,
+        match=match,
+        **kwargs,
+    )
     return sorted(
-        gwdatafind.find_types(observatory, match=match, **kwargs),
-        key=lambda x: _type_priority(observatory, x, trend=trend),
+        types,
+        key=partial(_type_priority, trend=trend),
     )
 
 
 @_select_gwdatafind_mod
-def find_urls(observatory, frametype, start, end, on_gaps="error", **kwargs):
+def find_urls(
+    observatory: str,
+    frametype: str,
+    start: GpsLike,
+    end: GpsLike,
+    on_gaps: Literal["error", "ignore", "warn"] = "error",
+    **kwargs,
+) -> list[str]:
     """Find the URLs of files of a given data type in a GPS interval.
 
-    See also
+    Parameters
+    ----------
+    observatory : `str`
+        The observatory for which to search, as a single character,
+        e.g ``"G"`` for GEO-600.
+
+    frametype : `str`
+        Name of dataset to match.
+
+    start : `~gwpy.time.LIGOTimeGPS`, `int`, `str`
+        GPS start time of search.
+        any input parseable by `~gwpy.time.to_gps` is fine.
+        Non-integer GPS start time will be rounded down.
+
+    end : `~gwpy.time.LIGOTimeGPS`, `int`, `str`
+        GPS end time of search.
+        any input parseable by `~gwpy.time.to_gps` is fine
+        Non-integer GPS end time will be rounded up.
+
+    on_gaps : `str`, optional
+        Action to take when the requested all or some of the GPS interval
+        is not covereed by the dataset, one of:
+
+        - ``'error'``: raise a `RuntimeError` (default)
+        - ``'warn'``: emit a warning but return all available URLs
+        - ``'ignore'``: return the list of URLs with no warnings
+
+    kwargs
+        Other arguments are passed to `gwdatafind.find_urls`.
+
+    See Also
     --------
     gwdatafind.find_urls
+        For details of the underlying discovery tool, and supported
+        keyword arguments.
     """
     return gwdatafind.find_urls(
         observatory,
         frametype,
-        start,
-        end,
+        int(to_gps(start)),
+        ceil(to_gps(end)),
         on_gaps=on_gaps,
         **kwargs,
     )
@@ -526,17 +940,47 @@ def find_urls(observatory, frametype, start, end, on_gaps="error", **kwargs):
 
 @_select_gwdatafind_mod
 def find_latest(
-    observatory,
-    frametype,
-    gpstime=None,
-    allow_tape=False,
+    observatory: str,
+    frametype: str,
+    gpstime: GpsLike | None = None,
+    *,
+    allow_tape: bool = False,
     **kwargs,
-):
+) -> str:
     """Find the path of the latest file of a given data type.
 
-    See also
+    Parameters
+    ----------
+    observatory : `str`
+        The observatory for which to search, as a single character,
+        e.g ``"G"`` for GEO-600.
+
+    frametype : `str`
+        Name of dataset to match.
+
+    gpstime : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS time to search for a file,
+        any input parseable by `~gwpy.time.to_gps` is fine
+        Default (`None`) is to search for the most recent file available.
+
+    allow_tape : `bool`, optional
+        If `False` (default) raise `OSError` if the 'latest' URL available
+        points to a local path stored on tape (not on spinning disk).
+
+    kwargs
+        Other keyword arguments are passed to `gwdatafind.find_latest` or
+        `gwdatafind.find_urls`.
+
+    See Also
     --------
     gwdatafind.find_latest
+        For details of how the latest URL is discovered and available keyword
+        arguments.
+        This is called when ``gpstime=None`` is given.
+
+    gwdatafind.find_urls
+        For details of how the URLs are discovered when ``gpstime`` is given,
+        and available keyword arguments.
     """
     if SINGLE_IFO_OBSERVATORY.match(observatory):
         observatory = observatory[0]
@@ -549,20 +993,26 @@ def find_latest(
                 gpstime,
                 gpstime+1,
                 on_gaps="ignore",
+                **kwargs,
             )[-1]
         else:
             path = gwdatafind.find_latest(
                 observatory,
                 frametype,
                 on_missing="ignore",
+                **kwargs,
             )[-1]
-    except (IndexError, RuntimeError):
-        raise RuntimeError(f"no files found for {observatory}-{frametype}")
+    except (
+        IndexError,
+        RuntimeError,
+    ) as exc:
+        msg = f"no files found for {observatory}-{frametype}"
+        raise RuntimeError(msg) from exc
 
-    path = file_path(path)
     if not allow_tape and on_tape(path):
-        raise OSError(
+        msg = (
             f"Latest frame file for {observatory}-{frametype} is on tape "
-            f"(pass allow_tape=True to force): {path}",
+            f"(pass allow_tape=True to force): {path}"
         )
+        raise OSError(msg)
     return path

@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2022)
+# Copyright (c) 2022-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -15,9 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.io.ffldatafind`."""
+"""Tests for :mod:`gwpy.io.ffldatafind`."""
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+# ruff: noqa: S108
 
 import os
 from contextlib import nullcontext
@@ -31,15 +33,15 @@ from .. import (
     ffldatafind,
 )
 
-
-# -- test utilities ---------
+# -- test utilities ------------------
 
 @pytest.mark.parametrize("content", [
     "abcdef",
     "line 1\nline2",
 ])
 def test_read_last_line(tmp_path, content):
-    """Check that the `_read_last_line` utility works."""
+    """Test `_read_last_line()`."""
+    ffldatafind._read_last_line.cache_clear()
     # write content to a file
     path = tmp_path / "tmp.txt"
     path.write_text(content)
@@ -48,45 +50,48 @@ def test_read_last_line(tmp_path, content):
 
 
 def test_read_last_line_oserror(tmp_path):
-    """Check that `_read_last_line` raises `OSError` for empty files."""
+    """Test `_read_last_line()` error handling."""
+    ffldatafind._read_last_line.cache_clear()
     path = tmp_path / "tmp.txt"
     path.touch(exist_ok=False)
-    with pytest.raises(OSError):
+    with pytest.raises(
+        OSError,
+        match="Invalid argument",
+    ):
         assert ffldatafind._read_last_line(path)
 
 
-# -- test ffl utils ---------
+# -- test ffl utils ------------------
 
-@pytest.mark.parametrize(("var", "value", "result"), (
+@pytest.mark.parametrize(("var", "value", "result"), [
     ("FFLPATH", "/path/to/ffl", "/path/to/ffl"),
     ("VIRGODATA", "/virgoData", "/virgoData/ffl"),
-))
+])
 @mock.patch.dict("os.environ", clear=True)
 def test_get_ffl_basedir(var, value, result):
-    """Test that `_get_ffl_basedir` does what it is supposed to."""
+    """Test `_get_ffl_basedir()`."""
     # note: use str(Path(x)) to convert to Posix->Windows
     os.environ[var] = str(Path(value))
-    assert ffldatafind._get_ffl_basedir() == str(Path(result))
+    assert ffldatafind._get_ffl_basedir() == Path(result)
 
 
 @mock.patch.dict("os.environ", clear=True)
 def test_get_ffl_basedir_error():
-    """Test that `_get_ffl_basedir` errors when the environment isn't right."""
+    """Test `_get_ffl_basedir()` error handling."""
     with pytest.raises(KeyError):
         ffldatafind._get_ffl_basedir()
 
 
-@pytest.mark.parametrize(("path", "result"), (
-    ("test.ffl", True),
+@pytest.mark.parametrize(("path", "result"), [
     (Path("/path/to/test.ffl"), True),
-    ("test.txt", False),
-))
+    (Path("test.txt"), False),
+])
 def test_is_ffl_file(path, result):
-    """Test that `_is_ffl_file` does what it is supposed to."""
+    """Test `_is_ffl_file()`."""
     assert ffldatafind._is_ffl_file(path) is result
 
 
-# -- test ffl UI ------------
+# -- test ffl UI ---------------------
 
 FFLS = {
     "a/test.ffl": [
@@ -118,9 +123,7 @@ TEST_URLS = [
 
 @pytest.fixture(autouse=True)
 def mock_ffl(tmp_path):
-    """Create a temporary FFL file structure and mock it into
-    the test environment.
-    """
+    """Create an FFL directory tree and mock it into the test environment."""
     for path, lines in FFLS.items():
         ffl = tmp_path / path
         ffl.parent.mkdir(parents=True, exist_ok=True)
@@ -134,25 +137,25 @@ def mock_ffl(tmp_path):
 
 
 @pytest.mark.parametrize(("site", "match", "result"), [
-    (None, None, ["test", "test2", "test3"]),
-    ("X", None, ["test", "test2"]),
-    (None, "2", ["test2"]),
-    ("Y", "test", ["test3"]),
+    pytest.param(None, None, ["test", "test2", "test3"], id="all"),
+    pytest.param("X", None, ["test", "test2"], id="X"),
+    pytest.param("Y", "test", ["test3"], id="Y"),
+    pytest.param(None, "2", ["test2"], id="2"),
 ])
 def test_find_types(site, match, result):
-    """Check that `ffldatafind.find_types` works."""
+    """Test `find_types()`."""
     assert sorted(ffldatafind.find_types(
         site=site,
         match=match,
     )) == sorted(result)
 
 
-@pytest.mark.parametrize(("match", "ctx", "result"), (
+@pytest.mark.parametrize(("match", "ctx", "result"), [
     (None, nullcontext(), TEST_URLS),
-    (r"\-0\-", pytest.warns(UserWarning), TEST_URLS[:1]),
-))
+    (r"\-0\-", pytest.warns(UserWarning, match="Missing segments"), TEST_URLS[:1]),
+])
 def test_find_urls(match, ctx, result):
-    """Check that `ffldatafind.find_urls` works."""
+    """Test `find_urls()`."""
     with ctx:
         assert sorted(ffldatafind.find_urls(
             "X",
@@ -163,15 +166,13 @@ def test_find_urls(match, ctx, result):
         )) == result
 
 
-@pytest.mark.parametrize(("on_gaps", "ctx"), (
+@pytest.mark.parametrize(("on_gaps", "ctx"), [
     ("ignore", nullcontext()),
-    ("warn", pytest.warns(UserWarning)),
-    ("raise", pytest.raises(RuntimeError)),
-))
+    ("warn", pytest.warns(UserWarning, match="Missing segments")),
+    ("raise", pytest.raises(RuntimeError, match="Missing segments")),
+])
 def test_find_urls_on_gaps(on_gaps, ctx):
-    """Check that the ``on_gaps`` keyword in `ffldatafind.find_urls`
-    works in each case.
-    """
+    """Test `find_urls(..., on_gaps=...)`."""
     with ctx:
         assert ffldatafind.find_urls(
             "X",
@@ -183,22 +184,20 @@ def test_find_urls_on_gaps(on_gaps, ctx):
 
 
 def test_find_latest():
-    """Check that `ffldatafind.find_latest` works."""
+    """`Test `find_latest()`."""
     assert ffldatafind.find_latest(
         "X",
         "test",
     ) == sorted(x.split()[0] for x in FFLS["b/test.ffl"])[-1:]
 
 
-@pytest.mark.parametrize(("on_missing", "ctx"), (
+@pytest.mark.parametrize(("on_missing", "ctx"), [
     ("ignore", nullcontext()),
-    ("warn", pytest.warns(UserWarning)),
-    ("raise", pytest.raises(RuntimeError)),
-))
+    ("warn", pytest.warns(UserWarning, match="No files found")),
+    ("raise", pytest.raises(RuntimeError, match="No files found")),
+])
 def test_find_latest_on_missing(on_missing, ctx):
-    """Check that the ``on_missing`` keyword in `ffldatafind.find_latest`
-    works in each case.
-    """
+    """Test `find_latest(... on_missing=...)`."""
     with ctx:
         assert ffldatafind.find_latest(
             "BAD",
@@ -207,7 +206,7 @@ def test_find_latest_on_missing(on_missing, ctx):
         ) == []
 
 
-# -- test gwpy.io.datafind interface
+# -- test gwpy.io.datafind interface -
 
 @mock.patch(
     "gwpy.io.datafind.iter_channel_names",
@@ -222,9 +221,7 @@ def test_find_latest_on_missing(on_missing, ctx):
     mock.MagicMock(return_value=1),
 )
 def test_datafind_find_frametype():
-    """Test that gwpy.io.datafind.find_frametype ends up calling out
-    to ffldatafind under the right circumstances.
-    """
+    """Test `gwpy.io.datafind.find_frametype` redirects to `ffldatafind`."""
     assert io_datafind.find_frametype(
         "Y1:TEST-CHANNEL",
         allow_tape=True,

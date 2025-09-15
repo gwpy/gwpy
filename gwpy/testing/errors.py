@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2021-)
+# Copyright (c) 2021-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -17,16 +17,31 @@
 
 """Error handling for the GWpy test suite."""
 
+from __future__ import annotations
+
 import socket
-from collections.abc import Callable
 from functools import wraps
 from ssl import SSLError
+from typing import TYPE_CHECKING
 from urllib.error import URLError
 
 import pytest
 import requests.exceptions
+from igwn_segments import segment
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import (
+        ParamSpec,
+        TypeVar,
+    )
+
+    P = ParamSpec("P")
+    R = TypeVar("R")
 
 # -- Network/HTTP --------------------
+
+SERVER_ERROR = segment(500, 600)
 
 NETWORK_ERROR: tuple[type[Exception], ...] = (
     ConnectionError,
@@ -54,9 +69,11 @@ except ImportError as exc:  # pragma: no cover
     import warnings
     warnings.warn(
         f"failed to import exception types from pytest_socket: {exc}",
+        stacklevel=2,
     )
 else:
-    NETWORK_ERROR = NETWORK_ERROR + (
+    NETWORK_ERROR = (
+        *NETWORK_ERROR,
         SocketBlockedError,
         SocketConnectBlockedError,
     )
@@ -70,19 +87,17 @@ pytest_rerun_flaky_httperror = pytest.mark.flaky(
 
 
 def pytest_skip_network_error(
-    func: Callable,
-) -> Callable:
+    func: Callable[P, R],
+) -> Callable[P, R]:
     """Execute `func` but skip if it raises one of the network exceptions."""
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
             return func(*args, **kwargs)
         except NETWORK_ERROR as exc:  # pragma: no cover
             pytest.skip(str(exc))
         except requests.exceptions.HTTPError as exc:  # pragma: no cover
-            if (
-                500 <= exc.response.status_code < 600
-            ):
+            if exc.response.status_code in SERVER_ERROR:
                 pytest.skip(str(exc))
             raise
 
@@ -113,15 +128,15 @@ def pytest_skip_flaky_network(
 # -- CVMFS ---------------------------
 
 def pytest_skip_cvmfs_read_error(
-    func: Callable,
-) -> Callable:
+    func: Callable[P, R],
+) -> Callable[P, R]:
     """Execute `func` but skip if a CVMFS file fails to open.
 
     This is most likely indicative of a broken CVMFS mount, which is not
     GWpy's problem.
     """
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
             return func(*args, **kwargs)
         except RuntimeError as exc:  # pragma: no cover

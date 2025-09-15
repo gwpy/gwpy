@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -21,25 +22,48 @@ All specific unified input/output for class objects should be placed in
 an 'io' subdirectory of the containing directory for that class.
 """
 
+# ruff: noqa: PLC0415
+
+from __future__ import annotations
+
 import os
-import os.path
-from contextlib import contextmanager
-from functools import wraps
-from importlib import import_module
+from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 import numpy
 
-try:
-    from igwn_ligolw.ligolw import (
-        ElementError as LigolwElementError,
-        LIGOLWContentHandler,
-    )
-except ImportError:  # no igwn-ligolw
-    LigolwElementError = None
-    LIGOLWContentHandler = None
+from .utils import (
+    FileLike,
+    file_list,
+)
 
-from .utils import (file_list, FILE_LIKE)
-from ..utils.decorators import deprecated_function
+if TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Generator,
+        Iterable,
+    )
+    from typing import Literal
+    from xml.sax.handler import ContentHandler
+    from xml.sax.xmlreader import AttributesImpl
+
+    from igwn_ligolw.ligolw import (
+        Document,
+        Element,
+        FilteringLIGOLWContentHandler,
+        PartialLIGOLWContentHandler,
+        Stream,
+        Table,
+    )
+
+    from .utils import (
+        NamedReadable,
+        FileSystemPath,
+        Readable,
+    )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -49,43 +73,20 @@ LIGOLW_SIGNATURE = b"<!doctype ligo_lw"
 LIGOLW_ELEMENT = b"<ligo_lw>"
 
 
-# -- hack around around TypeError from LIGOTimeGPS(numpy.int32(...)) ----------
+# -- content handling ----------------
 
-def _ligotimegps(s, ns=0):
-    """Catch TypeError and cast `s` and `ns` to `int`."""
-    from lal import LIGOTimeGPS
-    try:
-        return LIGOTimeGPS(s, ns)
-    except TypeError:
-        return LIGOTimeGPS(int(s), int(ns))
-
-
-@contextmanager
-def patch_ligotimegps(module="igwn_ligolw.lsctables"):
-    """Context manager to on-the-fly patch LIGOTimeGPS to accept all int types."""
-    module = import_module(module)
-    orig = module.LIGOTimeGPS
-    module.LIGOTimeGPS = _ligotimegps
-    try:
-        yield
-    finally:
-        module.LIGOTimeGPS = orig
-
-
-# -- content handling ---------------------------------------------------------
-
-def _int_ilwd(ilwd):
+def _int_ilwd(ilwd: str) -> int:
     """Convert an ``ilwd`` string into an integer."""
     try:
         _, _, i = ilwd.strip().split(":")
-    except ValueError:
-        raise ValueError(f"invalid ilwd:char '{ilwd}'")
+    except ValueError as exc:
+        msg = f"invalid ilwd:char '{ilwd}'"
+        raise ValueError(msg) from exc
     return int(i)
 
 
-def strip_ilwdchar(_ContentHandler):
-    """Wrap a LIGO_LW content handler to swap ilwdchar for int on-the-fly
-    when reading a document.
+def strip_ilwdchar(content_handler: type[ContentHandler]) -> type[ContentHandler]:
+    """Wrap a contenthandler to swap ilwdchar for int when reading a document.
 
     This is adapted from :func:`ligo.skymap.utils.ilwd`, copyright
     Leo Singer (GPL-3.0-or-later).
@@ -97,14 +98,17 @@ def strip_ilwdchar(_ContentHandler):
     from igwn_ligolw.lsctables import TableByName
     from igwn_ligolw.types import FromPyType
 
-    class IlwdMapContentHandler(_ContentHandler):
+    class IlwdMapContentHandler(content_handler):  # type: ignore[misc,valid-type]
 
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002
             super().__init__(*args, **kwargs)
-            self._idconverter = {}
+            self._idconverter: dict[tuple[int, str], Callable[[str], int]] = {}
 
-        @wraps(_ContentHandler.startColumn)
-        def startColumn(self, parent, attrs):
+        def startColumn(  # noqa: N802
+            self,
+            parent: Element,
+            attrs: AttributesImpl,
+        ) -> Column:
             result = super().startColumn(parent, attrs)
 
             # if an old ID type, convert type definition to an int
@@ -129,8 +133,11 @@ def strip_ilwdchar(_ContentHandler):
 
             return result
 
-        @wraps(_ContentHandler.startStream)
-        def startStream(self, parent, attrs):
+        def startStream(  # noqa: N802
+            self,
+            parent: Element,
+            attrs: AttributesImpl,
+        ) -> Stream:
             result = super().startStream(parent, attrs)
             if isinstance(result, Table.Stream):
                 loadcolumns = set(parent.columnnames)
@@ -151,16 +158,16 @@ def strip_ilwdchar(_ContentHandler):
     return IlwdMapContentHandler
 
 
-def _wrap_content_handler(contenthandler):
+def _wrap_content_handler(contenthandler: type[ContentHandler]) -> type[ContentHandler]:
 
     @strip_ilwdchar
-    class ContentHandler(contenthandler):
+    class ContentHandler(contenthandler):  # type: ignore[misc,valid-type]
         pass
 
     return ContentHandler
 
 
-def default_content_handler():
+def default_content_handler() -> type[ContentHandler]:
     """Return a standard content handler to read LIGO_LW documents.
 
     This handler knows how to parse LSCTables, and automatically converts
@@ -174,7 +181,9 @@ def default_content_handler():
     return _wrap_content_handler(LIGOLWContentHandler)
 
 
-def get_partial_contenthandler(element):
+def get_partial_contenthandler(
+    element: type[Element],
+) -> type[PartialLIGOLWContentHandler]:
     """Build a `PartialLIGOLWContentHandler` to read only this element.
 
     Parameters
@@ -194,16 +203,18 @@ def get_partial_contenthandler(element):
     )
 
     if issubclass(element, Table):
-        def _element_filter(name, attrs):
+        def _element_filter(name: str, attrs: AttributesImpl) -> bool:
             return element.CheckProperties(name, attrs)
     else:
-        def _element_filter(name, _):
+        def _element_filter(name: str, attrs: AttributesImpl) -> bool:  # noqa: ARG001
             return name == element.tagName
 
     return build_content_handler(PartialLIGOLWContentHandler, _element_filter)
 
 
-def get_filtering_contenthandler(element):
+def get_filtering_contenthandler(
+    element: type[Element],
+) -> type[FilteringLIGOLWContentHandler]:
     """Build a `FilteringLIGOLWContentHandler` to exclude this element.
 
     Parameters
@@ -223,11 +234,10 @@ def get_filtering_contenthandler(element):
     )
 
     if issubclass(element, Table):
-        def _element_filter(name, attrs):
+        def _element_filter(name: str, attrs: AttributesImpl) -> bool:
             return ~element.CheckProperties(name, attrs)
     else:
-        def _element_filter(name, _):
-            # pylint: disable=unused-argument
+        def _element_filter(name: str, attrs: AttributesImpl) -> bool:  # noqa: ARG001
             return name != element.tagName
 
     return build_content_handler(
@@ -236,7 +246,10 @@ def get_filtering_contenthandler(element):
     )
 
 
-def build_content_handler(parent, filter_func):
+def build_content_handler(
+    parent: type[PartialLIGOLWContentHandler],
+    filter_func: Callable[[str, AttributesImpl], bool],
+) -> type[PartialLIGOLWContentHandler]:
     """Build a `~xml.sax.handler.ContentHandler` with a given filter.
 
     Parameters
@@ -253,38 +266,41 @@ def build_content_handler(parent, filter_func):
         a new content handler that applies the filter function and the
         default parsing extras from :func:`_wrap_content_handler`.
     """
-    class ContentHandler(parent):
-        # pylint: disable=too-few-public-methods
-        def __init__(self, document):
+    class ContentHandler(parent):  # type: ignore[misc,valid-type]
+        def __init__(self, document: Document) -> None:
             super().__init__(document, filter_func)
 
     return _wrap_content_handler(ContentHandler)
 
 
-# -- reading ------------------------------------------------------------------
+# -- reading -------------------------
 
-def read_ligolw(source, contenthandler=None, **kwargs):
+def read_ligolw(
+    source: NamedReadable | list[NamedReadable],
+    contenthandler: type[ContentHandler] | None = None,
+    **kwargs,
+) -> Document:
     """Read one or more LIGO_LW format files.
 
     Parameters
     ----------
-    source : `str`, `file`
-        the open file or file path to read
+    source : `str`, `file`, `list` of `str` or `file`
+        The open file or file path to read.
 
     contenthandler : `~xml.sax.handler.ContentHandler`, optional
-        content handler used to parse document
+        Content handler used to parse document.
 
-    verbose : `bool`, optional
-        be verbose when reading files, default: `False`
+    kwargs
+        Other keyword arguments to pass to `igwn_ligolw.utils.load_url`.
 
     Returns
     -------
-    xmldoc : :class:`~igwn_ligolw.ligolw.Document`
+    xmldoc : `~igwn_ligolw.ligolw.Document`
         the document object as parsed from the file(s)
     """
-    from igwn_ligolw.ligolw import Document
     from igwn_ligolw import types
-    from igwn_ligolw.utils import (load_url, ligolw_add)
+    from igwn_ligolw.ligolw import Document
+    from igwn_ligolw.utils import ligolw_add, load_url
 
     # mock ToPyType to link to numpy dtypes
     topytype = types.ToPyType.copy()
@@ -297,33 +313,33 @@ def read_ligolw(source, contenthandler=None, **kwargs):
         contenthandler = default_content_handler()
 
     # read one or more files into a single Document
-    source = file_list(source)
+    sources = file_list(source)
     try:
-        if len(source) == 1:
+        if len(sources) == 1:
             return load_url(
-                source[0],
+                sources[0],
                 contenthandler=contenthandler,
-                **kwargs
+                **kwargs,
             )
         return ligolw_add.ligolw_add(
             Document(),
-            source,
+            sources,
             contenthandler=contenthandler,
-            **kwargs
+            **kwargs,
         )
     finally:  # replace ToPyType
         types.ToPyType = topytype
 
 
-# -- reading ------------------------------------------------------------------
+# -- reading -------------------------
 
 def read_table(
-    source,
-    tablename=None,
-    columns=None,
-    contenthandler=None,
+    source: Document | NamedReadable | list[NamedReadable],
+    tablename: str | None = None,
+    columns: list[str] | None = None,
+    contenthandler: type[ContentHandler] | None = None,
     **kwargs,
-):
+) -> Table:
     """Read a :class:`~igwn_ligolw.ligolw.Table` from one or more LIGO_LW files.
 
     Parameters
@@ -354,13 +370,16 @@ def read_table(
     table : :class:`~igwn_ligolw.ligolw.Table`
         `Table` of data
     """
-    from igwn_ligolw.ligolw import Document
-    from igwn_ligolw import (table, lsctables)
+    from igwn_ligolw import lsctables
+    from igwn_ligolw.ligolw import (
+        Document,
+        Table,
+    )
 
     # get content handler to read only this table (if given)
     if tablename is not None:
         tableclass = lsctables.TableByName[
-            table.Table.TableName(tablename)
+            Table.TableName(tablename)
         ]
         if contenthandler is None:
             contenthandler = get_partial_contenthandler(tableclass)
@@ -389,23 +408,29 @@ def read_table(
     if tablename is None:
         tables = list_tables(xmldoc)
         if not tables:
-            raise ValueError("No tables found in LIGO_LW document(s)")
+            msg = "No tables found in LIGO_LW document(s)"
+            raise ValueError(msg)
         if len(tables) > 1:
-            raise ValueError(
+            msg = (
                 "Multiple tables found in LIGO_LW document(s), please specify "
                 "the table to read via the ``tablename=`` keyword argument. "
                 "The following tables were found: "
-                "'{}'".format("', '".join(tables)),
+                "'{}'".format("', '".join(tables))
             )
-        tableclass = lsctables.TableByName[table.Table.TableName(tables[0])]
+            raise ValueError(msg)
+        tableclass = lsctables.TableByName[Table.TableName(tables[0])]
 
     # extract table
     return tableclass.get_table(xmldoc)
 
 
-# -- writing ------------------------------------------------------------------
+# -- writing -------------------------
 
-def open_xmldoc(fobj, contenthandler=None, **kwargs):
+def open_xmldoc(
+    fobj: Readable,
+    contenthandler: type[ContentHandler] | None = None,
+    **kwargs,
+) -> Document:
     """Try and open an existing LIGO_LW-format file, or create a new Document.
 
     Parameters
@@ -423,7 +448,7 @@ def open_xmldoc(fobj, contenthandler=None, **kwargs):
         :func:`~igwn_ligolw.utils.load_fileobj` as appropriate
 
     Returns
-    --------
+    -------
     xmldoc : :class:`~igwn_ligolw.ligolw.Document`
         either the `Document` as parsed from an existing file, or a new, empty
         `Document`
@@ -435,7 +460,7 @@ def open_xmldoc(fobj, contenthandler=None, **kwargs):
         contenthandler = default_content_handler()
 
     # read from an existing Path/filename
-    if not isinstance(fobj, FILE_LIKE):
+    if not isinstance(fobj, FileLike):
         try:
             with open(fobj, "rb") as fobj2:
                 return open_xmldoc(
@@ -454,19 +479,25 @@ def open_xmldoc(fobj, contenthandler=None, **kwargs):
     )
 
 
-def get_ligolw_element(xmldoc):
+def get_ligolw_element(xmldoc: Document) -> Element:
     """Find an existing <LIGO_LW> element in this XML Document."""
-    from igwn_ligolw.ligolw import (LIGO_LW, WalkChildren)
+    from igwn_ligolw.ligolw import LIGO_LW, WalkChildren
 
     if isinstance(xmldoc, LIGO_LW):
         return xmldoc
     for elem in WalkChildren(xmldoc):
         if isinstance(elem, LIGO_LW):
             return elem
-    raise ValueError("Cannot find LIGO_LW element in XML Document")
+    msg = "Cannot find LIGO_LW element in XML Document"
+    raise ValueError(msg)
 
 
-def write_tables_to_document(xmldoc, tables, overwrite=False):
+def write_tables_to_document(
+    xmldoc: Document,
+    tables: Iterable[Table],
+    *,
+    overwrite: bool = False,
+) -> Document:
     """Write the given LIGO_LW table into a :class:`Document`.
 
     Parameters
@@ -481,8 +512,8 @@ def write_tables_to_document(xmldoc, tables, overwrite=False):
         if `True`, delete an existing instance of the table type, otherwise
         append new rows
     """
-    from igwn_ligolw.ligolw import LIGO_LW
     from igwn_ligolw import lsctables
+    from igwn_ligolw.ligolw import LIGO_LW
 
     # find or create LIGO_LW tag
     try:
@@ -495,7 +526,8 @@ def write_tables_to_document(xmldoc, tables, overwrite=False):
         try:  # append new data to existing table
             old = lsctables.TableByName[
                 table.TableName(table.Name)].get_table(xmldoc)
-        except ValueError:  # or create a new table
+        except ValueError:  # noqa: PERF203
+            # or create a new table
             llw.appendChild(table)
         else:
             if overwrite:
@@ -509,13 +541,14 @@ def write_tables_to_document(xmldoc, tables, overwrite=False):
 
 
 def write_tables(
-    target,
-    tables,
-    append=False,
-    overwrite=False,
-    contenthandler=None,
+    target: str | Path | FileLike | Document,
+    tables: Iterable[Table],
+    *,
+    append: bool = False,
+    overwrite: bool = False,
+    contenthandler: type[ContentHandler] | None = None,
     **kwargs,
-):
+) -> None:
     """Write an LIGO_LW table to file.
 
     Parameters
@@ -542,8 +575,8 @@ def write_tables(
         other keyword arguments to pass to
         :func:`~igwn_ligolw.utils.load_fileobj` as appropriate
     """
-    from igwn_ligolw.ligolw import Document, LIGO_LW
     from igwn_ligolw import utils as ligolw_utils
+    from igwn_ligolw.ligolw import LIGO_LW, Document
 
     # allow writing directly to XML
     if isinstance(target, Document | LIGO_LW):
@@ -560,9 +593,10 @@ def write_tables(
     elif (
         not overwrite
         and isinstance(target, str | os.PathLike)
-        and os.path.exists(target)
+        and Path(target).exists()
     ):
-        raise OSError(f"File exists: {target}")
+        msg = f"File exists: {target}"
+        raise OSError(msg)
     else:  # or create a new document
         xmldoc = Document()
 
@@ -570,9 +604,12 @@ def write_tables(
     write_tables_to_document(xmldoc, tables, overwrite=overwrite)
 
     # find writer function and target filename
-    if isinstance(target, FILE_LIKE):
+    if isinstance(target, FileLike):
         writer = ligolw_utils.write_fileobj
-        name = target.name
+        try:
+            name = target.name  # type: ignore[union-attr]
+        except AttributeError:
+            name = ""
     else:
         writer = ligolw_utils.write_filename
         name = target = str(target)
@@ -585,9 +622,11 @@ def write_tables(
     writer(xmldoc, target, **kwargs)
 
 
-# -- utilities ----------------------------------------------------------------
+# -- utilities -----------------------
 
-def iter_tables(source):
+def iter_tables(
+    source: Document | NamedReadable | list[NamedReadable],
+) -> Generator[Table, None, None]:
     """Iterate over all tables in the given document(s).
 
     Parameters
@@ -600,7 +639,7 @@ def iter_tables(source):
     igwn_ligolw.ligolw.Table
         a table structure from the document(s)
     """
-    from igwn_ligolw.ligolw import (Element, Stream, WalkChildren)
+    from igwn_ligolw.ligolw import Element, Stream, WalkChildren
 
     # get LIGO_LW object
     if not isinstance(source, Element):
@@ -614,7 +653,7 @@ def iter_tables(source):
             yield elem
 
 
-def list_tables(source):
+def list_tables(source: FileLike | str | Document | list) -> list[str]:
     """List the names of all tables in this file(s).
 
     Parameters
@@ -631,7 +670,11 @@ def list_tables(source):
     return [tbl.TableName(tbl.Name) for tbl in iter_tables(source)]
 
 
-def to_table_type(val, cls, colname):
+def to_table_type(
+    val: object,
+    cls: type[Table],
+    colname: str,
+) -> object:
     """Cast a value to the correct type for inclusion in a LIGO_LW table.
 
     This method returns the input unmodified if a type mapping for ``colname``
@@ -662,8 +705,8 @@ def to_table_type(val, cls, colname):
     <class 'numpy.float32'> 1.0
     """
     from igwn_ligolw.types import (
-        ToNumPyType as numpytypes,
-        ToPyType as pytypes,
+        ToNumPyType as numpytypes,  # noqa: N813
+        ToPyType as pytypes,  # noqa: N813
     )
 
     # if nothing to do...
@@ -679,11 +722,16 @@ def to_table_type(val, cls, colname):
         return pytypes[llwtype](val)
 
 
-# -- identify -----------------------------------------------------------------
+# -- identify ------------------------
 
-def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
+def is_ligolw(
+    origin: Literal["read", "write"],  # noqa: ARG001
+    filepath: FileSystemPath | None,  # noqa: ARG001
+    fileobj: FileLike | None,
+    *args,  # noqa: ANN002
+    **kwargs,  # noqa: ARG001
+) -> bool:
     """Identify a file object as LIGO_LW-format XML."""
-    # pylint: disable=unused-argument
     if fileobj is not None:
         loc = fileobj.tell()
         fileobj.seek(0)
@@ -691,11 +739,15 @@ def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
             line1 = fileobj.readline().lower()
             line2 = fileobj.readline().lower()
             try:
+                # binary format
                 return (
                     line1.startswith(XML_SIGNATURE)
                     and line2.startswith((LIGOLW_SIGNATURE, LIGOLW_ELEMENT))
                 )
-            except TypeError:  # bytes vs str
+            except TypeError:
+                # text format
+                line1 = cast("str", line1)
+                line2 = cast("str", line2)
                 return (
                     line1.startswith(XML_SIGNATURE.decode("utf-8"))
                     and line2.startswith((
@@ -709,21 +761,5 @@ def is_ligolw(origin, filepath, fileobj, *args, **kwargs):
     try:
         from igwn_ligolw.ligolw import Element
     except ImportError:
-        return
+        return False
     return len(args) > 0 and isinstance(args[0], Element)
-
-
-@deprecated_function
-def is_xml(origin, filepath, fileobj, *args, **kwargs):  # pragma: no cover
-    """Identify a file object as XML (any format)."""
-    # pylint: disable=unused-argument
-    if fileobj is not None:
-        loc = fileobj.tell()
-        fileobj.seek(0)
-        try:
-            sig = fileobj.read(5).lower()
-            return sig == XML_SIGNATURE
-        finally:
-            fileobj.seek(loc)
-    elif filepath is not None:
-        return filepath.endswith((".xml", ".xml.gz"))

@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2024-)
+# Copyright (c) 2024-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -53,17 +53,14 @@ def test_get_backend_environ(backend):
 @mock.patch.dict("os.environ")
 @pytest.mark.requires(BACKEND_LIBRARY["frameCPP"])  # need at least one backend
 def test_get_backend_environ_bad():
-    """Test that :func:`get_backend_environ` returns a valid value
-    even when the environment variable has a bad one.
-    """
+    """Test that `get_backend_environ` returns a valid value despiate a bad env."""
     os.environ["GWPY_FRAME_LIBRARY"] = "blahblahblah"
     assert io_gwf.get_backend() in io_gwf.BACKENDS
 
 
-@pytest.mark.requires(BACKEND_LIBRARY["frameCPP"])
 def test_get_backend_function():
     """Test that `get_backend_function` works."""
-    from gwpy.io.gwf import framecpp as io_framecpp
+    io_framecpp = pytest.importorskip("gwpy.io.gwf.framecpp")
     func = io_gwf.get_backend_function("create_frame", backend="frameCPP")
     assert func is io_framecpp.create_frame
 
@@ -72,7 +69,7 @@ def test_get_backend_function_badbackend():
     """Test that `get_backend_function` formats errors correctly."""
     with pytest.raises(
         ImportError,
-        match="No module named 'gwpy.io.gwf.notimplemented'",
+        match=r"No module named 'gwpy.io.gwf.notimplemented'",
     ):
         io_gwf.get_backend_function("notimplemented", backend="notimplemented")
 

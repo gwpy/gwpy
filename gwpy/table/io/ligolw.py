@@ -29,7 +29,6 @@ from astropy.utils.compat.numpycompat import COPY_IF_NEEDED
 
 from ...io.ligolw import (
     is_ligolw,
-    patch_ligotimegps,
     read_table as read_ligolw_table,
     to_table_type as to_ligolw_table_type,
     write_tables as write_ligolw_tables,
@@ -273,13 +272,11 @@ def _get_column(
             hasattr(llwtable, get_)
             and name not in GET_AS_EXCLUDE
         ):
-            with patch_ligotimegps(module=type(llwtable).__module__):
-                return getattr(llwtable, get_)()
+            return getattr(llwtable, get_)()
 
         # try array of property values
         try:
-            with patch_ligotimegps(module=type(llwtable).__module__):
-                return numpy.asarray([getattr(row, name) for row in llwtable])
+            return numpy.asarray([getattr(row, name) for row in llwtable])
         except AttributeError:  # no property
             pass
 

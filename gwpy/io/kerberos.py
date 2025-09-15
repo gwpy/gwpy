@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -24,6 +24,8 @@ command-line tool using the python-gssapi library.
 See the documentation of the `kinit` function for example usage.
 """
 
+# ruff: noqa: PLC0415
+
 from __future__ import annotations
 
 import getpass
@@ -31,17 +33,20 @@ import os
 import re
 import subprocess
 import sys
-import typing
 import warnings
 from collections import OrderedDict
 from pathlib import Path
+from shutil import which
+from typing import TYPE_CHECKING
 from unittest import mock
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from gssapi import (
         Credentials,
         Name,
     )
+
+    from .utils import FileSystemPath
 
 from ..utils.decorators import deprecated_function
 
@@ -50,6 +55,8 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
     "kinit",
 ]
+
+KLIST = which("klist") or "klist"
 
 try:
     _IPYTHON = __IPYTHON__  # type: ignore[name-defined]
@@ -61,7 +68,7 @@ except NameError:
 
 class KerberosError(RuntimeError):
     """Kerberos (krb5) operation failed."""
-    pass
+
 
 
 # -- utilities ----------------------------------
@@ -69,7 +76,7 @@ class KerberosError(RuntimeError):
 def _validate_keytab(
     username: str | None = None,
     realm: str | None = None,
-    keytab: str | Path | None = None,
+    keytab: FileSystemPath | None = None,
 ) -> tuple[str | None, str | None]:
     """Get the default keytab and check that a file exists.
 
@@ -120,7 +127,7 @@ def _validate_keytab(
     if keytab is None:
         return username, None
 
-    keytab = os.path.expanduser(keytab)
+    keytab = str(Path(keytab).expanduser())
     try:  # get principal from default keytab
         principal = _keytab_principal(keytab)
         puser, prealm = principal.split("@", 1)
@@ -167,9 +174,13 @@ def _validate_keytab(
 def _check_interactive(
     username: str | None,
     password: str | None,
-    keytab: str | Path | None,
-):
-    """Check that we can prompt for necessary information."""
+    keytab: FileSystemPath | None,
+) -> None:
+    """Check that we can prompt for necessary information.
+
+    This function raises an exception if we need to prompt for
+    information but we are not in an interactive session.
+    """
     _prompt_username = username is None
     _prompt_password = not keytab and password is None
     if (
@@ -177,10 +188,11 @@ def _check_interactive(
         and not _IPYTHON
         and (_prompt_username or _prompt_password)
     ):
-        raise KerberosError(
+        msg = (
             "cannot generate Kerberos ticket in a non-interactive session, "
-            "please manually create a ticket, or consider using a keytab file",
+            "please manually create a ticket, or consider using a keytab file"
         )
+        raise KerberosError(msg)
 
 
 def _get_principal(
@@ -206,25 +218,24 @@ def _get_principal(
             gssapi.MechType.kerberos,
         )
     except gssapi.exceptions.GSSError as exc:
-        raise KerberosError(
-            "failed to canonicalize Kerberos principal name, "
-            "please specify `realm`",
-        ) from exc
+        msg = "failed to canonicalize Kerberos principal name, please specify `realm`"
+        raise KerberosError(msg) from exc
 
 
 def _acquire_keytab(
     principal: Name,
-    keytab: str,
-    ccache: str | None = None,
+    keytab: FileSystemPath,
+    ccache: FileSystemPath | None = None,
     lifetime: int | None = None,
 ) -> Credentials:
     """Acquire a Kerberos TGT using a keytab."""
     import gssapi
-    store = {
-        "client_keytab": str(keytab),
+    keytab = os.fspath(keytab)
+    store: dict[bytes | str, bytes | str] = {
+        "client_keytab": keytab,
     }
     if ccache:
-        store["ccache"] = str(ccache)
+        store["ccache"] = os.fspath(ccache)
     with mock.patch.dict("os.environ", {"KRB5_KTNAME": keytab}):
         creds = gssapi.Credentials(
             name=principal,
@@ -239,20 +250,21 @@ def _acquire_keytab(
 def _acquire_password(
     principal: Name,
     password: str,
-    ccache: str | None = None,
+    ccache: FileSystemPath | None = None,
     lifetime: int | None = None,
 ) -> Credentials:
     """Acquire a Kerberos TGT using principal/password."""
     import gssapi
     raw_creds = gssapi.raw.acquire_cred_with_password(
-        name=principal,
-        password=password.encode("utf-8"),
+        principal,
+        password.encode("utf-8"),
+        lifetime=lifetime,
         usage="initiate",
     )
-    creds = gssapi.Credentials(raw_creds.creds)
+    creds = gssapi.Credentials(base=raw_creds.creds)
     creds.inquire()
     creds.store(
-        store={"ccache": str(ccache)} if ccache else None,
+        store={"ccache": os.fspath(ccache)} if ccache else None,
         usage="initiate",
         overwrite=True,
     )
@@ -260,11 +272,11 @@ def _acquire_password(
 
 
 def _keytab_principal(
-    keytab: str | Path,
+    keytab: FileSystemPath,
 ) -> str:
     """Return the principal assocated with a Kerberos keytab file."""
     import gssapi
-    with mock.patch.dict("os.environ", {"KRB5_KTNAME": str(keytab)}):
+    with mock.patch.dict("os.environ", {"KRB5_KTNAME": os.fspath(keytab)}):
         return str(gssapi.Credentials(usage="accept").name)
 
 
@@ -272,12 +284,13 @@ def kinit(
     username: str | None = None,
     password: str | None = None,
     realm: str | None = None,
-    keytab: str | Path | None = None,
-    ccache: str | None = None,
+    keytab: FileSystemPath | None = None,
+    ccache: FileSystemPath | None = None,
     lifetime: int | None = None,
     krb5ccname: str | None = None,
+    *,
     verbose: bool | None = None,
-):
+) -> Credentials:
     """Initialise a Kerberos ticket-granting ticket (TGT).
 
     Parameters
@@ -300,11 +313,11 @@ def kinit(
         ``username``.
         Defaults to ``'default_realm'``; see ``man krb5.conf(5)``.
 
-    keytab : `str`, optional
+    keytab : `str`, `~pathlib.Path`, optional
         Path to keytab file. If not given this will be read from the
         ``KRB5_KTNAME`` environment variable. See notes for more details.
 
-    ccache : `str`, optional
+    ccache : `str`, `~pathlib.Path`, optional
         Path to Kerberos credentials cache.
 
     lifetime : `int`, optional
@@ -318,6 +331,11 @@ def kinit(
     verbose : `bool`, optional
         Print verbose output (if `True`), or not (`False)`; default is `True`
         if any user-prompting is needed, otherwise `False`.
+
+    Returns
+    -------
+    creds : `gssapi.Credentials`
+        The acquired Kerberos credentials.
 
     Notes
     -----
@@ -342,10 +360,11 @@ def kinit(
     try:
         import gssapi
     except ImportError as exc:
-        raise type(exc)(
+        msg = (
             "cannot generate Kerberos credentials without python-gssapi, "
-            "or run `kinit` from your terminal manually.",
+            "or run `kinit` from your terminal manually."
         )
+        raise ImportError(msg) from exc
 
     # handle deprecated keyword
     if krb5ccname:
@@ -353,6 +372,7 @@ def kinit(
             f"The `krb5ccname` keyword for {__name__}.kinit was renamed "
             "to `ccache`, and will stop working in a future release.",
             DeprecationWarning,
+            stacklevel=2,
         )
         if ccache is None:
             ccache = krb5ccname
@@ -361,10 +381,8 @@ def kinit(
     try:
         username, keytab = _validate_keytab(username, realm, keytab)
     except gssapi.exceptions.GSSError as exc:
-        raise KerberosError(
-            f"Kerberos keytab '{keytab}' is invalid, "
-            "see traceback for full details",
-        ) from exc
+        msg = f"Kerberos keytab '{keytab}' is invalid, see traceback for full details"
+        raise KerberosError(msg) from exc
 
     # refuse to prompt if we can't get an answer
     # note: jupyter streams are not recognised as interactive
@@ -390,7 +408,7 @@ def kinit(
         if keytab:
             creds = _acquire_keytab(
                 principal,
-                str(keytab),
+                keytab,
                 ccache=ccache,
                 lifetime=lifetime,
             )
@@ -402,10 +420,11 @@ def kinit(
                 lifetime=lifetime,
             )
     except gssapi.exceptions.GSSError as exc:
-        raise KerberosError(
+        msg = (
             f"failed to generate Kerberos TGT for {principal}, "
-            "see traceback for full details",
-        ) from exc
+            "see traceback for full details"
+        )
+        raise KerberosError(msg) from exc
 
     if verbose:
         print(
@@ -413,13 +432,14 @@ def kinit(
             f"({creds.lifetime} seconds remaining)",
         )
 
+    return creds
+
 
 # -- deprecated ---------------------------------
 
 @deprecated_function
-def parse_keytab(keytab):  # pragma: no cover
-    """Read the contents of a KRB5 keytab file, returning a list of
-    credentials listed within.
+def parse_keytab(keytab: str) -> list[tuple[str, str, int]]:  # pragma: no cover
+    """Read the contents of a KRB5 keytab file, returning a list of credentials.
 
     Parameters
     ----------
@@ -439,23 +459,28 @@ def parse_keytab(keytab):  # pragma: no cover
     [('albert.einstein', 'LIGO.ORG', 1)]
     """
     try:
-        out = subprocess.check_output(["klist", "-k", keytab],
-                                      stderr=subprocess.PIPE)
-    except OSError:
-        raise KerberosError("Failed to locate klist, cannot read keytab")
-    except subprocess.CalledProcessError:
-        raise KerberosError(f"Cannot read keytab '{keytab}'")
-    principals = []
+        out = subprocess.check_output(
+            [KLIST, "-k", keytab],
+            stderr=subprocess.PIPE,
+        )
+    except OSError as exc:
+        msg = "failed to locate klist, cannot read keytab"
+        raise KerberosError(msg) from exc
+    except subprocess.CalledProcessError as exc:
+        msg = f"cannot read keytab '{keytab}'"
+        raise KerberosError(msg) from exc
+    principals: list[tuple[str, str, int]] = []
+    line: str | bytes
     for line in out.splitlines():
         if isinstance(line, bytes):
-            line = line.decode("utf-8")
+            line = line.decode("utf-8")  # noqa: PLW2901
         try:
-            kvno, principal, = re.split(r"\s+", line.strip(" "), 1)
+            kvno, principal, = re.split(r"\s+", line.strip(" "), maxsplit=1)
         except ValueError:
             continue
         else:
             if not kvno.isdigit():
                 continue
-            principals.append(tuple(principal.split("@")) + (int(kvno),))
+            principals.append((*principal.split("@"), int(kvno)))
     # return unique, ordered list
-    return list(OrderedDict.fromkeys(principals).keys())
+    return list(OrderedDict.fromkeys(principals))

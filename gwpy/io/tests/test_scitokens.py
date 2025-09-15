@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2025-)
+# Copyright (c) 2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -37,7 +37,7 @@ TEST_CLAIMS = {
 @pytest.fixture
 def tokenstr():
     """Return a serialized demo token using ``TEST_CLAIMS``."""
-    from scitokens.utils import demo
+    demo = pytest.importorskip("scitokens.utils.demo")
     tok = demo.token(
         TEST_CLAIMS | {"exp": time.time() + 86400},
     )
@@ -48,8 +48,8 @@ def tokenstr():
 @pytest.fixture
 def token(tokenstr):
     """Return a demo `scitoken.SciToken` using ``TEST_CLAIMS``."""
-    from scitokens import SciToken
-    return SciToken.deserialize(tokenstr)
+    scitokens = pytest.importorskip("scitokens")
+    return scitokens.SciToken.deserialize(tokenstr)
 
 
 @pytest.fixture

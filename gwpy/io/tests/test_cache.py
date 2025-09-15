@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -17,15 +18,14 @@
 
 """Unit test for `io` module."""
 
-import os.path
 import tempfile
 from copy import deepcopy
+from pathlib import Path
 
 import numpy
-
 import pytest
 
-from ...segments import (Segment, SegmentList)
+from ...segments import Segment, SegmentList
 from .. import cache as io_cache
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -35,26 +35,27 @@ SEGMENTS = SegmentList(map(Segment, [
     (1, 2),
     (4, 5),
 ]))
-CACHE = [os.path.join("tmp", f"A-B-{seg[0]}-{seg[1]-seg[0]}.tmp")
-         for seg in SEGMENTS]
+CACHE = [Path("tmp") / f"A-B-{seg[0]}-{seg[1]-seg[0]}.tmp" for seg in SEGMENTS]
 
 
 # -- fixtures -----------------------------------------------------------------
 
 @pytest.fixture
 def cache():
-    return list(CACHE)
+    """Return a sample cache."""
+    return list(map(str, CACHE))
 
 
 @pytest.fixture
 def segments():
+    """Return a sample SegmentList."""
     return deepcopy(SEGMENTS)
 
 
 # -- tests --------------------------------------------------------------------
 
-@pytest.mark.parametrize("format, entry1", [
-    (None, CACHE[0]),
+@pytest.mark.parametrize(("fmt", "entry1"), [
+    (None, str(CACHE[0])),
     pytest.param(
         "lal",
         f"A B {SEGMENTS[0][0]} {abs(SEGMENTS[0])} {CACHE[0]}",
@@ -64,11 +65,12 @@ def segments():
         f"{CACHE[0]} {SEGMENTS[0][0]} {abs(SEGMENTS[0])} 0 0",
         id="ffl"),
 ])
-def test_read_write_cache(cache, tmp_path, format, entry1):
+def test_read_write_cache(cache, tmp_path, fmt, entry1):
+    """Test `read_cache()` and `write_cache()`."""
     tmp = tmp_path / "test.lcf"
 
     # write cache using filename
-    io_cache.write_cache(cache, tmp, format=format)
+    io_cache.write_cache(cache, tmp, format=fmt)
 
     # check that first line is proper LAL format
     with tmp.open("r") as tmpf:
@@ -79,7 +81,7 @@ def test_read_write_cache(cache, tmp_path, format, entry1):
 
     # check read/write with a file object
     with tmp.open("w") as tmpf:
-        io_cache.write_cache(cache, tmpf, format=format)
+        io_cache.write_cache(cache, tmpf, format=fmt)
     with tmp.open("r") as tmpf:
         assert io_cache.read_cache(tmpf) == cache
 
@@ -93,7 +95,8 @@ def test_read_write_cache(cache, tmp_path, format, entry1):
 
 @pytest.mark.requires("lal.utils")
 def test_write_cache_cacheentry(cache, tmp_path):
-    from lal.utils import CacheEntry
+    """Test `write_cache()` with `lal.CacheEntry` objects."""
+    from lal.utils import CacheEntry  # noqa: PLC0415
     tmp = tmp_path / "test.lcf"
     lcache = list(map(CacheEntry.from_T050017, cache))
     with tmp.open("w") as tmpf:
@@ -109,24 +112,27 @@ def test_write_cache_cacheentry(cache, tmp_path):
     assert io_cache.read_cache(tmp) == cache
 
 
-@pytest.mark.parametrize("input_, result", [
+@pytest.mark.parametrize(("input_", "result"), [
     (None, False),
     ([], False),
     (["A-B-12345-6.txt"], True),
 ])
 def test_is_cache(input_, result):
+    """Test `is_cache()`."""
     assert io_cache.is_cache(input_) is result
 
 
 @pytest.mark.requires("lal.utils")
 def test_is_cache_lal():
-    cache = [io_cache.CacheEntry.from_T050017("/tmp/A-B-12345-6.txt")]
+    """Test `is_cache()` with `lal.CacheEntry` objects."""
+    cache = [io_cache.CacheEntry.from_T050017("/data/A-B-12345-6.txt")]
     assert io_cache.is_cache(cache)
-    assert not io_cache.is_cache(cache + [None])
+    assert not io_cache.is_cache([*cache, None])  # type: ignore[list-item]
 
 
 @pytest.mark.requires("glue.lal")
 def test_is_cache_glue():
+    """Test `is_cache()` with `glue.lal.Cache` objects."""
     assert io_cache.is_cache(io_cache.Cache())
 
     # check ASCII file gets returned as False
@@ -141,7 +147,7 @@ def test_is_cache_glue():
 def test_is_cache_file(tmp_path):
     """Check that `gwpy.io.cache.is_cache` returns `True` when it should."""
     # write a cache file
-    e = io_cache.CacheEntry.from_T050017("/tmp/A-B-12345-6.txt")
+    e = io_cache.CacheEntry.from_T050017("/data/A-B-12345-6.txt")
     tmp = tmp_path / "tmpfile"
     io_cache.write_cache([e], tmp)
 
@@ -161,10 +167,11 @@ def test_is_cache_file_empty(tmp_path):
 
 
 def test_is_cache_entry():
-    assert io_cache.is_cache_entry("/tmp/A-B-12345-6.txt")
+    """Test `is_cache_entry()`."""
+    assert io_cache.is_cache_entry("/data/A-B-12345-6.txt")
     assert not io_cache.is_cache_entry("random-file-name.blah")
     try:
-        e = io_cache.CacheEntry.from_T050017("/tmp/A-B-12345-6.txt")
+        e = io_cache.CacheEntry.from_T050017("/data/A-B-12345-6.txt")
     except AttributeError:
         pass
     else:
@@ -172,7 +179,7 @@ def test_is_cache_entry():
 
 
 def test_cache_segments(cache, segments):
-    """Test :func:`gwpy.io.cache.cache_segments`."""
+    """Test `cache_segments()`."""
     # check empty input
     sl = io_cache.cache_segments()
     assert isinstance(sl, SegmentList)
@@ -188,17 +195,29 @@ def test_cache_segments(cache, segments):
     assert sl == segments
 
 
-@pytest.mark.parametrize("path, metadata", [
-    ("A-B-0-1.txt", ("A", "B", Segment(0, 1))),
-    ("/path/to/A-B-0.456-1.345.txt.gz", ("A", "B", Segment(0.456, 1.801))),
+@pytest.mark.parametrize(("path", "metadata"), [
+    pytest.param(
+        "A-B-0-1.txt",
+        ("A", "B", Segment(0, 1)),
+        id="int",
+    ),
+    pytest.param(
+        "/path/to/A-B-0.456-1.345.txt.gz",
+        ("A", "B", Segment(0.456, 1.801)),
+        id="float",
+    ),
 ])
 def test_filename_metadata(path, metadata):
-    """Test :func:`gwpy.io.cache.filename_metadata`."""
+    """Test `filename_metadata`."""
     assert io_cache.filename_metadata(path) == metadata
 
 
 def test_filename_metadata_error():
-    with pytest.raises(ValueError):
+    """Test `filename_metadata` error handling."""
+    with pytest.raises(
+        ValueError,
+        match=r"^could not convert string to float",
+    ):
         io_cache.filename_metadata("A-B-0-4xml.gz")
 
 
@@ -211,7 +230,7 @@ def test_filename_metadata_error():
     ("A-B-1.23-4.ext.gz", Segment(1.23, 5.23)),
 ])
 def test_file_segment(filename, seg):
-    """Test :func:`gwpy.io.cache.file_segment`."""
+    """Test `file_segment()`."""
     fs = io_cache.file_segment(filename)
     assert isinstance(fs, Segment)
     assert fs == seg
@@ -227,13 +246,13 @@ def test_file_segment_errors():
     """Test :func:`gwpy.io.cache.file_segment` error handling."""
     with pytest.raises(
         ValueError,
-        match="^Failed to parse 'blah' as a LIGO-T050017-compatible filename$"
+        match=r"^Failed to parse 'blah' as a LIGO-T050017-compatible filename$",
     ):
         io_cache.file_segment("blah")
 
 
 def test_flatten(cache):
-    """Test :func:`gwpy.io.cache.flatten`."""
+    """Test `flatten()`."""
     # check flattened version of single cache is unchanged
     assert io_cache.flatten(cache) == cache
     assert io_cache.flatten(cache, cache) == cache
@@ -246,14 +265,16 @@ def test_flatten(cache):
 
 
 def test_find_contiguous(cache, segments):
-    """Test :func:`gwpy.io.cache.find_contiguous`."""
-    for i, cache in enumerate(io_cache.find_contiguous(cache)):
-        io_cache.cache_segments(cache).extent() == segments[i]
+    """Test `find_contiguous()`."""
+    segments.coalesce()
+    for i, subcache in enumerate(io_cache.find_contiguous(cache)):
+        assert io_cache.cache_segments(subcache).extent() == segments[i]
 
     assert not list(io_cache.find_contiguous())
 
 
 def test_sieve(cache, segments):
+    """Test `sieve()`."""
     sieved = io_cache.sieve(cache, segments[0])
     assert type(sieved) is type(cache)
     assert sieved == cache[:1]
@@ -263,7 +284,7 @@ def test_sieve(cache, segments):
 
 
 def test_sieve_strict():
-    """Check that the ``strict`` keyword does its job in :func:`sieve()`."""
+    """Test `sieve(..., strict={True,False})`."""
     cache = [
         "A-B-0-1.txt",
         "A-B-1-1.txt",
@@ -272,22 +293,18 @@ def test_sieve_strict():
     ]
 
     # check that strict=True raises an error
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=r"^Failed to parse",
+    ):
         io_cache.sieve(cache, Segment(0, 2), strict=True)
 
     # but strict=False only emits a warning
-    with pytest.warns(UserWarning):
+    with pytest.warns(
+        UserWarning,
+        match=r"^Failed to parse",
+    ):
         assert (
             io_cache.sieve(cache, Segment(0, 2), strict=False)
             == cache[:2]
         )
-
-
-def test_file_list():
-    with pytest.deprecated_call():
-        assert io_cache.file_list("1,2,3") == ["1", "2", "3"]
-
-
-def test_file_name():
-    with pytest.deprecated_call():
-        assert io_cache.file_name("123") == "123"

@@ -71,9 +71,9 @@ import typing
 
 from numpy import inf
 
+from ...io.registry import identify_factory
 from ...io.utils import (
     file_list,
-    identify_factory,
     with_open,
 )
 from .. import (

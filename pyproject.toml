@@ -170,6 +170,7 @@ dev = [
   "pycbc >=1.13.4 ; sys_platform != 'win32' and python_version < '3.13'",
   "pymysql",
   "python-ligo-lw >=1.7.0,<2.0.0 ; sys_platform != 'win32'",
+  "requests-pelican",
   "requests-scitokens",
   "scitokens >=1.8.0",
   "sqlalchemy",
@@ -329,6 +330,8 @@ ignore = [
 ]
 # allow 'mock_...' variables to go unused in tests
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)|mock_.*)$"
+# allow adding __future__ annotations
+future-annotations = true
 
 [tool.ruff.lint.isort]
 combine-as-imports = true

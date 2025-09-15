@@ -21,9 +21,12 @@
 from __future__ import annotations
 
 import re
-import typing
 from copy import copy
 from math import ceil
+from typing import (
+    TYPE_CHECKING,
+    overload,
+)
 
 import numpy
 from astropy import units
@@ -38,9 +41,12 @@ from .connect import (
 )
 from .units import parse_unit
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     import builtins
-    from typing import SupportsFloat
+    from typing import (
+        Literal,
+        SupportsFloat,
+    )
 
     import arrakis
     import nds2
@@ -130,7 +136,7 @@ class Channel:
             ``(key, value)`` pairs for attributes of new channel.
         """
         # init properties
-        self._name: str | None = None
+        self._name: str  # set in _init_name()
         self._ifo: str | None = None
         self._system: str | None = None
         self._subsystem: str | None = None
@@ -174,13 +180,13 @@ class Channel:
             for key, val in parts.items():
                 try:
                     setattr(self, key, val)
-                except AttributeError:
+                except AttributeError:  # noqa: PERF203
                     setattr(self, f"_{key}", val)
 
     # -- properties -----------------------------
 
     @property
-    def name(self) -> str | None:
+    def name(self) -> str:
         """Name of this channel.
 
         This should follow the naming convention, with the following
@@ -189,12 +195,8 @@ class Channel:
         return self._name
 
     @name.setter
-    def name(self, name: str | None) -> None:
-        self._name = name
-
-    @name.deleter
-    def name(self) -> None:
-        self._name = None
+    def name(self, name: str) -> None:
+        self._name = str(name)
 
     @property
     def sample_rate(self) -> Quantity | None:
@@ -316,6 +318,8 @@ class Channel:
 
         This property is mapped to the `Channel.type` string.
         """
+        if self.type is None:
+            return 0  # UNKNOWN
         return io_nds2.Nds2ChannelType.find(self.type).value
 
     @ndstype.setter
@@ -422,6 +426,7 @@ class Channel:
     def query(
         cls,
         name: str,
+        *,
         kerberos: bool | None = None,
         **kwargs,
     ) -> Self:
@@ -433,8 +438,7 @@ class Channel:
             Name of channel for which to query.
 
         kerberos : `bool`, optional
-            If `True` use an existing Kerberos ticket as the authentication
-            credential.
+            If `True` use an existing Kerberos ticket as the authentication credential.
             Default (`None`) is to check for credentials and request username
             and password if none are found.
 
@@ -468,7 +472,7 @@ class Channel:
         host: str | None = None,
         port: int | None = None,
         connection: nds2.connection | None = None,
-        type: str | int | None = None,
+        type: str | int | None = None,  # noqa: A002
     ) -> Self:
         """Query an NDS server for channel information.
 
@@ -622,15 +626,36 @@ class Channel:
             raise ValueError(msg)
         return match.groupdict()
 
+    @overload
     def find_frametype(
         self,
         gpstime: GpsLike | None = None,
         *,
-        frametype_match: str | None = None,
-        host: str | None = None,
-        port: int | None = None,
+        frametype_match: str | re.Pattern | None = None,
+        return_all: Literal[False] = False,
+        allow_tape: bool = True,
+        **kwargs,
+    ) -> str: ...
+
+    @overload
+    def find_frametype(
+        self,
+        gpstime: GpsLike | None = None,
+        *,
+        frametype_match: str | re.Pattern | None = None,
+        return_all: Literal[True] = True,
+        allow_tape: bool = True,
+        **kwargs,
+    ) -> list[str]: ...
+
+    def find_frametype(
+        self,
+        gpstime: GpsLike | None = None,
+        *,
+        frametype_match: str | re.Pattern | None = None,
         return_all: bool = False,
         allow_tape: bool = True,
+        **kwargs,
     ) -> str | list[str]:
         """Find the containing frametype(s) for this `Channel`.
 
@@ -645,12 +670,6 @@ class Channel:
             A regular expression string to use to down-select from the
             list of all available datasets.
 
-        host : `str`, optional
-            The name of the GWDataFind server to use for frame file discovery.
-
-        port : `int`, optional
-            The port of the GWDataFind server on the given host.
-
         return_all: `bool`, optional
             If `True` return all matched datasets; if `False` (default)
             only the first match is returned
@@ -659,22 +678,25 @@ class Channel:
             If `True` (default) include datasets whose files are stored on slow
             magnetic tape.
 
+        kwargs
+            Other keyword arguments are passed directly to
+            :func:`gwpy.io.datafind.find_frametype`.
+
         Returns
         -------
-        frametype : `str`, `list[str]`
-            If ``return_all=False`` a single `str` containing the 'best'
-            dataset name.
+        frametype : `str` or `list[str]`
+            If ``return_all=False`` a single `str` containing the 'best' dataset name.
             If ``return_all=True`` a `list` of dataset names.
         """
-        from ..io import datafind
+        from ..io import datafind  # noqa: PLC0415
+
         return datafind.find_frametype(
             self,
             gpstime=gpstime,
             frametype_match=frametype_match,
-            host=host,
-            port=port,
             return_all=return_all,
             allow_tape=allow_tape,
+            **kwargs,
         )
 
     def copy(self) -> Self:
@@ -695,15 +717,15 @@ class Channel:
 
     def __eq__(self, other: object) -> bool:
         """Return `True` if all attributes of this channel match ``other``."""
-        for attr in ("name", "sample_rate", "unit", "url", "type", "dtype"):
-            try:
+        try:
+            for attr in ("name", "sample_rate", "unit", "url", "type", "dtype"):
                 if getattr(self, attr) != getattr(other, attr):
                     return False
-            except (
-                AttributeError,
-                TypeError,
-            ):
-                return False
+        except (
+            AttributeError,  # no such attribute
+            TypeError,  # attribute values can't be compared
+        ):
+            return False
         return True
 
     def __hash__(self) -> int:
@@ -864,6 +886,7 @@ class ChannelList(list):
     def query(
         cls,
         name: str,
+        *,
         kerberos: bool | None = None,
         **kwargs,
     ) -> Self:
@@ -875,8 +898,7 @@ class ChannelList(list):
             name of channel, or part of it.
 
         kerberos : `bool`, optional
-            If `True` use an existing Kerberos ticket as the authentication
-            credential.
+            If `True` use an existing Kerberos ticket as the authentication credential.
             Default (`None`) is to check for credentials and request username
             and password if none are found.
 
@@ -889,7 +911,7 @@ class ChannelList(list):
         channels : `ChannelList`
             A new list containing all `Channels <Channel>` found.
         """
-        from .io import cis
+        from .io import cis  # noqa: PLC0415
         return cls(cis.query(
             name,
             kerberos=kerberos,
@@ -904,7 +926,7 @@ class ChannelList(list):
         host: str | None = None,
         port: int | None = None,
         connection: nds2.connection | None = None,
-        type: str | int | None = io_nds2.Nds2ChannelType.any().value,
+        type: str | int | None = io_nds2.NDS2_CHANNEL_TYPE_ANY,  # noqa: A002
         unique: bool = False,
     ) -> Self:
         """Query an NDS server for channel information.
@@ -959,14 +981,15 @@ class ChannelList(list):
         return cls(map(Channel.from_nds2, ndschannels))
 
     @classmethod
-    @io_nds2.open_connection
     def query_nds2_availability(
         cls,
         channels: list[str | Channel],
         start: GpsLike,
         end: GpsLike,
         ctype: int | str = io_nds2.Nds2ChannelType.any().value,
-        **nds2_connection_kw,
+        connection: nds2.connection | None = None,
+        host: str | None = None,
+        port: int | None = None,
     ) -> SegmentListDict:
         """Query for when data are available for these channels in NDS2.
 
@@ -1002,20 +1025,21 @@ class ChannelList(list):
             dict of ``(name, SegmentList)`` pairs
         """
         start = int(to_gps(start))
-        end = int(ceil(to_gps(end)))
-        chans = io_nds2.find_channels(
-            channels,
-            unique=True,
-            epoch=(start, end),
-            type=ctype,
-            **nds2_connection_kw,
-        )
-        availability = io_nds2.get_availability(
-            chans,
-            start,
-            end,
-            **nds2_connection_kw,
-        )
+        end = ceil(to_gps(end))
+        with io_nds2._connection(connection=connection, host=host, port=port) as conn:
+            chans = io_nds2.find_channels(
+                channels,
+                unique=True,
+                epoch=(start, end),
+                type=ctype,
+                connection=conn,
+            )
+            availability = io_nds2.get_availability(
+                chans,
+                start,
+                end,
+                connection=conn,
+            )
         return type(availability)(zip(
             channels,
             availability.values(),

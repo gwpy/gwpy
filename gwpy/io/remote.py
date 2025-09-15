@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2024-)
+# Copyright (c) 2024-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -29,25 +29,79 @@ URLs, via a hand-off to the function of the same name in `gwpy.io.pelican`.
 
 from __future__ import annotations
 
-import typing
+from pathlib import PureWindowsPath
+from typing import (
+    TYPE_CHECKING,
+    overload,
+)
 
-from astropy.utils.data import get_readable_fileobj
+from astropy.utils import data as astropy_data
+from urllib3.util import parse_url
 
 from ..utils.env import bool_env
 from . import pelican as io_pelican
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from contextlib import AbstractContextManager
-    from typing import BinaryIO
+    from typing import (
+        IO,
+        BinaryIO,
+        Literal,
+        TextIO,
+    )
 
+
+def is_remote(url: str) -> bool:
+    r"""Return `True` if ``url`` points at a remote URL.
+
+    This function just inspects the 'scheme' of the URL, if present,
+    and returns `True` if the scheme *isn't* ``"file"``.
+
+    On Windows, any ``url`` that includes a drive assignment, e.g:
+    ``"C:\\Users\\me\\data.txt"`` will return `False`.
+
+    Parameters
+    ----------
+    url : `str`, `pathlib.Path`
+        The URL to inspect.
+
+    Returns
+    -------
+    remote : `bool`
+        `True` if the URL looks like it is remote (would need a
+        network connection for access), otherwise `False`.
+    """
+    if PureWindowsPath(url).drive:  # windows drive path
+        return False
+    # check the URL scheme
+    return parse_url(url).scheme not in (None, "file")
+
+
+@overload
+def open_remote_file(
+    url: str,
+    *,
+    cache: bool | None = None,
+    encoding: Literal["binary"],
+    **kwargs,
+) -> AbstractContextManager[BinaryIO]: ...
+
+@overload
+def open_remote_file(
+    url: str,
+    *,
+    cache: bool | None = None,
+    encoding: str | None,
+    **kwargs,
+) -> AbstractContextManager[TextIO]: ...
 
 def open_remote_file(
     url: str,
     *,
     cache: bool | None = None,
-    encoding: str = "binary",
+    encoding: str | None = "binary",
     **kwargs,
-) -> AbstractContextManager[BinaryIO]:
+) -> AbstractContextManager[IO]:
     """Download a file and open it.
 
     This function is a wrapper around `astropy.utils.data.get_readable_fileobj`
@@ -93,7 +147,7 @@ def open_remote_file(
     file : file-like
         The file opened in binary format.
 
-    See also
+    See Also
     --------
     astropy.utils.data.get_readable_fileobj
         For details of the underlying downloader.
@@ -101,24 +155,127 @@ def open_remote_file(
     gwpy.io.pelican.open_remote_file
         For details of the Pelican-aware download wrapper.
     """
+    return _handle_remote_file(
+        url,
+        mode="open",
+        cache=cache,
+        encoding=encoding,
+        **kwargs,
+    )
+
+
+def download_file(
+    url: str,
+    *,
+    cache: bool | None = None,
+    **kwargs,
+) -> str:
+    """Download a file from a URL and optionally cache the result.
+
+    This function is a wrapper around `astropy.utils.data.download_file`
+    with the following customisations:
+
+    - File URLs (``file://``) and plain paths (without a URL scheme)
+      are returned unmodified **without** being downloaded or cached.
+
+    - Default to ``cache=True`` if the ``GWPY_CACHE`` environment variable
+      is set to something 'truthy'.
+
+    - If the URL looks like a |Pelican|_ URL, hand off to a dedicated
+      Pelican download wrapper to attempt the remote access.
+
+    Parameters
+    ----------
+    url : `str`, file-like
+        The name of the resource to access. Can be a local path, or a
+        `file://` URL, or any remote URL supported by Astropy.
+
+    cache : `bool`
+        Whether to cache the contents of remote URLs.
+        Default is `True` if the ``GWPY_CACHE`` environment variable
+        is set to something 'truthy'.
+
+    kwargs
+        All other positional and keyword arguments are passed directly
+        to `astropy.utils.data.get_readable_fileobj`.
+
+    Returns
+    -------
+    load_path : str
+        The local path that the file was downloaded to.
+
+    See Also
+    --------
+    astropy.utils.data.download_file
+        For details of the underlying downloader.
+
+    gwpy.io.pelican.open_remote_file
+        For details of the Pelican-aware download wrapper.
+    """
+    return _handle_remote_file(
+        url,
+        mode="download",
+        cache=cache,
+        **kwargs,
+    )
+
+
+@overload
+def _handle_remote_file(
+    url: str,
+    mode: Literal["open"],
+    *,
+    cache: bool | None = None,
+    **kwargs,
+) -> AbstractContextManager[BinaryIO]: ...
+
+@overload
+def _handle_remote_file(
+    url: str,
+    mode: Literal["download"],
+    *,
+    cache: bool | None = None,
+    **kwargs,
+) -> str: ...
+
+def _handle_remote_file(
+    url: str,
+    mode: Literal["open", "download"] = "open",
+    *,
+    cache: bool | None = None,
+    **kwargs,
+) -> AbstractContextManager[IO] | str:
+    """Handle getting a remote file, including Pelican URLs.
+
+    This just abstracts out the common code used by both
+    `open_remote_file` and `download_file`.
+    """
     # enable caching by default based on environment
+    if mode == "download" and not is_remote(url):
+        return url
+
+    if mode == "download":
+        get = astropy_data.download_file
+        pelican_get = io_pelican.download_file
+    else:
+        get = astropy_data.get_readable_fileobj
+        pelican_get = io_pelican.open_remote_file  # type: ignore[assignment]
+
     if cache is None:
-        cache = bool_env("GWPY_CACHE", False)
+        cache = bool_env("GWPY_CACHE", default=False)
 
     # if given a Pelican URL hand off to the Pelican-aware wrapper
     if io_pelican.is_pelican_url(url):
-        return io_pelican.open_remote_file(
+        return pelican_get(
             url,
             cache=cache,
-            encoding=encoding,
             **kwargs,
         )
 
     # download the file
     # note: get_readable_fileobj is a context manager, so doesn't execute here
-    return get_readable_fileobj(
+    return get(
         url,
         cache=cache,
-        encoding=encoding,
         **kwargs,
     )

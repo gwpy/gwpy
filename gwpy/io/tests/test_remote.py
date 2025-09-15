@@ -15,52 +15,57 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for :mod:`gwpy.io.pelican`."""
+"""Tests for :mod:`gwpy.io.remote`."""
 
-from unittest import mock
+from pathlib import PureWindowsPath
 
 import pytest
 
 from ...testing.errors import pytest_skip_flaky_network
-from .. import pelican as io_pelican
+from .. import remote as io_remote
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+REMOTE_FILE = "https://gitlab.com/gwpy/gwpy/-/raw/main/README.md"
+README_HEAD = "GWpy is a collaboration-driven Python package"
 
-def _protocols():
-    return ["pelican", "osdf"]
 
-
-@mock.patch("gwpy.io.pelican._pelican_protocols", _protocols)
 @pytest.mark.parametrize(("url", "result"), [
     pytest.param("/path/to/data", False, id="path"),
-    pytest.param("https://example.com/path/to/data", False, id="http"),
+    pytest.param("file:///path/to/data", False, id="file"),
+    pytest.param("https://example.com/path/to/data", True, id="http"),
     pytest.param("pelican://example.com/path/to/data", True, id="pelican"),
-    pytest.param("osdf:///path/to/data", True, id="osdf"),
+    pytest.param(PureWindowsPath(r"c:\Users\myname\mydata.txt"), False, id="windows"),
 ])
-def test_is_pelican_url(url, result):
-    """Test `is_pelican_url()`."""
-    assert io_pelican.is_pelican_url(url) is result
+def test_is_remote(url, result):
+    """Test `is_remote()`."""
+    assert io_remote.is_remote(url) is result
 
 
 @pytest_skip_flaky_network
-@pytest.mark.requires("requests_pelican")
-def test_query_director():
-    """Test `query_director()`."""
-    urls, needauth, authkw = io_pelican.query_director(
-        "osdf:///igwn/ligo",
-    )
-    assert len(urls) >= 1
-    assert all(u.endswith(":8443/igwn/ligo") for u in urls)
-    assert needauth is True
-    assert authkw.get("issuer", None)
-
-
-@pytest_skip_flaky_network
-@pytest.mark.requires("requests_pelican")
 def test_download_file():
     """Test `download_file()`."""
-    path = io_pelican.download_file(
+    path = io_remote.download_file(REMOTE_FILE, cache=False)
+    with open(path) as file:
+        assert next(file).strip().startswith(README_HEAD)
+
+
+@pytest_skip_flaky_network
+def test_open_remote_file():
+    """Test `open_remote_file()`."""
+    with io_remote.open_remote_file(
+        REMOTE_FILE,
+        cache=False,
+        encoding="utf-8",
+    ) as file:
+        assert next(file).strip().startswith(README_HEAD)
+
+
+@pytest_skip_flaky_network
+@pytest.mark.requires("requests_pelican")
+def test_download_file_pelican():
+    """Test `download_file()` with a ``pelican://`` URI."""
+    path = io_remote.download_file(
         "osdf:///gwdata/zenodo/README.zenodo",
         cache=False,
     )
@@ -70,10 +75,11 @@ def test_download_file():
 
 @pytest_skip_flaky_network
 @pytest.mark.requires("requests_pelican")
-def test_open_remote_file():
-    """Test `open_remote_file()`."""
-    with io_pelican.open_remote_file(
+def test_open_remote_file_pelican():
+    """Test `open_remote_file()` with a ``pelican://`` URI."""
+    with io_remote.open_remote_file(
         "osdf:///gwdata/zenodo/README.zenodo",
         cache=False,
+        encoding="utf-8",
     ) as file:
         assert next(file).strip() == "## Mirror of IGWN Zenodo Communities"

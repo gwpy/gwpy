@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2014-2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -17,6 +17,8 @@
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
 """Unit tests for :mod:`gwpy.io.kerberos`."""
+
+# ruff: noqa: S106
 
 import os
 import subprocess
@@ -44,6 +46,7 @@ def requires_gssapi():
 
 @pytest.fixture(autouse=True)
 def mock_krb5_env():
+    """Fixture to ensure Kerberos environment variables are not set."""
     with mock.patch.dict(os.environ):
         for key in (
             "KRB5_KTNAME",
@@ -54,7 +57,8 @@ def mock_krb5_env():
 
 
 def kerberos_name(name):
-    import gssapi
+    """Return a `gssapi.Name` for a Kerberos principal."""
+    import gssapi  # noqa: PLC0415
     return gssapi.Name(
         base=name,
         name_type=gssapi.NameType.kerberos_principal,
@@ -77,7 +81,7 @@ def test_kinit_no_gssapi():
 @mock.patch("getpass.getpass", return_value="test")
 @mock.patch("gssapi.raw.acquire_cred_with_password")
 @mock.patch("gssapi.Credentials")
-def test_kinit_up(creds, acquire, getpass, input_, _, capsys):
+def test_kinit_up(mock_creds, acquire, getpass, input_, mock_isatty):
     """Test `gwpy.io.kerberos.kinit` with username and password given.
 
     Note: without a real credential to use, we can't do much more than check
@@ -97,8 +101,9 @@ def test_kinit_up(creds, acquire, getpass, input_, _, capsys):
 
     # and then use the results in gssapi calls
     acquire.assert_called_with(
-        name=kerberos_name("rainer.weiss@LIGO.ORG"),
-        password=b"test",
+        kerberos_name("rainer.weiss@LIGO.ORG"),
+        b"test",
+        lifetime=None,
         usage="initiate",
     )
 
@@ -108,7 +113,7 @@ def test_kinit_up(creds, acquire, getpass, input_, _, capsys):
 @mock.patch("getpass.getpass")
 @mock.patch("gssapi.raw.acquire_cred_with_password")
 @mock.patch("gssapi.Credentials")
-def test_kinit_up_kwargs(creds, acquire, getpass, input_):
+def test_kinit_up_kwargs(mock_creds, acquire, getpass, input_):
     """Test `gwpy.io.kerberos.kinit` with username and password given.
 
     Note: without a real credential to use, we can't do much more than check
@@ -122,8 +127,9 @@ def test_kinit_up_kwargs(creds, acquire, getpass, input_):
     input_.assert_not_called()
     getpass.assert_not_called()
     acquire.assert_called_with(
-        name=kerberos_name("albert.einstein@EXAMPLE.COM"),
-        password=b"test",
+        kerberos_name("albert.einstein@EXAMPLE.COM"),
+        b"test",
+        lifetime=None,
         usage="initiate",
     )
 
@@ -148,8 +154,8 @@ def test_kinit_keytab_dne(tmp_path):
 @requires_gssapi()
 @mock.patch.dict("os.environ")
 @mock.patch("gssapi.Credentials")
-@mock.patch("gwpy.io.kerberos._keytab_principal", lambda x: "rainer.weiss@LIGO.ORG")
-def test_kinit_keytab(creds, tmp_path):
+@mock.patch("gwpy.io.kerberos._keytab_principal", return_value="rainer.weiss@LIGO.ORG")
+def test_kinit_keytab(mock_keytab_principal, mock_creds, tmp_path):
     """Test `gwpy.io.kerberos.kinit` can handle keytabs properly."""
     keytab = tmp_path / "keytab"
     keytab.touch()
@@ -161,7 +167,7 @@ def test_kinit_keytab(creds, tmp_path):
         ccache=ccache,
         lifetime=1000,
     )
-    creds.assert_called_once_with(
+    mock_creds.assert_called_once_with(
         name=kerberos_name("rainer.weiss@LIGO.ORG"),
         store={
             "client_keytab": str(keytab),
@@ -172,10 +178,10 @@ def test_kinit_keytab(creds, tmp_path):
     )
 
     # pass keytab via environment
-    creds.reset()
+    mock_creds.reset()
     os.environ["KRB5_KTNAME"] = str(keytab)
     io_kerberos.kinit()
-    creds.assert_called_with(
+    mock_creds.assert_called_with(
         name=kerberos_name("rainer.weiss@LIGO.ORG"),
         store={
             "client_keytab": str(keytab),
@@ -187,8 +193,7 @@ def test_kinit_keytab(creds, tmp_path):
 
 @requires_gssapi()
 def test_kinit_notty():
-    """Test `gwpy.io.kerberos.kinit` raises an error in a non-interactive
-    session if it needs to prompt for information.
+    """Test `gwpy.io.kerberos.kinit` raises an error if it can't prompt.
 
     By default all tests are executed by pytest in a non-interactive session
     so we don't have to mock anything!
@@ -199,10 +204,10 @@ def test_kinit_notty():
 
 @requires_gssapi()
 @mock.patch("gwpy.io.kerberos._acquire_password")
-def test_kinit_error(_acquire_password):
+def test_kinit_error(mock_acquire_password):
     """Test that `gwpy.io.kerberos.kinit` propagates `GSSError`s appropriately."""
-    import gssapi
-    _acquire_password.side_effect = gssapi.exceptions.GSSError(0, 0)
+    import gssapi  # noqa: PLC0415
+    mock_acquire_password.side_effect = gssapi.exceptions.GSSError(0, 0)
 
     with pytest.raises(
         io_kerberos.KerberosError,
@@ -220,7 +225,7 @@ def test_kinit_error(_acquire_password):
 
 @requires_gssapi()
 @mock.patch("gwpy.io.kerberos._acquire_password")
-def test_kinit_krb5ccname(_):
+def test_kinit_krb5ccname(mock_acquire_password):
     """Test that the ``krb5ccname`` keyword emits a deprecation warning."""
     with pytest.warns(
         DeprecationWarning,
@@ -245,7 +250,7 @@ KVNO Principal
 
 
 @mock.patch("subprocess.check_output", return_value=KLIST)
-def test_parse_keytab(check_output):
+def test_parse_keytab(mock_check_output):
     """Test `gwpy.io.kerberos.parse_keytab."""
     # assert principals get extracted correctly
     with pytest.deprecated_call():
@@ -256,10 +261,10 @@ def test_parse_keytab(check_output):
 
 @mock.patch("subprocess.check_output")
 @pytest.mark.parametrize(("se", "match"), [
-    (OSError, "^Failed to locate klist, cannot read keytab$"),
+    (OSError, "^failed to locate klist, cannot read keytab$"),
     (
         subprocess.CalledProcessError(1, "error"),
-        "Cannot read keytab 'test.keytab'",
+        "cannot read keytab 'test.keytab'",
     ),
 ])
 def test_parse_keytab_oserror(mock_check_output, se, match):

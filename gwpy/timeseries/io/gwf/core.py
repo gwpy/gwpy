@@ -36,6 +36,7 @@ from ....io import (
     cache as io_cache,
     gwf as io_gwf,
 )
+from ....io.utils import FileLike
 from ....segments import Segment
 from ....time import to_gps
 from ....utils.decorators import deprecated_function
@@ -141,7 +142,8 @@ def read_timeseriesdict(
     if (
         (isinstance(source, str) and source.endswith((".lcf", ".cache")))
         or (
-            isinstance(source, io_cache.FILE_LIKE)
+            isinstance(source, FileLike)
+            and hasattr(source, "name")
             and source.name.endswith((".lcf", ".cache"))
         )
     ):
