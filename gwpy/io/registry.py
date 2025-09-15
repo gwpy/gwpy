@@ -25,7 +25,12 @@ This module imports a subset of the useful functions from
 from __future__ import annotations
 
 import contextlib
+import inspect
 import warnings
+from abc import (
+    ABC,
+    abstractmethod,
+)
 from concurrent.futures import (
     ThreadPoolExecutor,
     as_completed,
@@ -52,10 +57,7 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        Callable,
-        Sequence,
-    )
+    from collections.abc import Sequence
     from contextlib import AbstractContextManager
     from typing import (
         BinaryIO,
@@ -208,8 +210,25 @@ class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
 default_registry = UnifiedIORegistry()
 
 
-class UnifiedRead(astropy_registry.UnifiedReadWrite, Generic[T]):
-    """Base ``Class.read()`` implementation that handles parallel reads."""
+class MergeProtocol(Protocol[T]):
+    """Typing protocol for merge functions used in `UnifiedRead`."""
+
+    def __call__(self, items: Sequence[T]) -> T:
+        """Merge a sequence of items into a single item."""
+
+
+class UnifiedRead(astropy_registry.UnifiedReadWrite, ABC, Generic[T]):
+    """Base ``Class.read()`` implementation that handles parallel reads.
+
+    Each parallel read must return an instance of the same type
+    as the input class, and the results are merged by the provided
+    ``merge_function`` which should have the following signature.
+
+        def merge_function(self: Type, instances: list[Type], **kwargs) -> Type
+
+    i.e take in the type object and a list of instances, and return
+    a single instance of the same type.
+    """
 
     def __init__(
         self,
@@ -224,6 +243,44 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite, Generic[T]):
             "read",
             registry=registry,
         )
+
+    # -- Merge -----------------------
+
+    @abstractmethod
+    def merge(self, items: Sequence[T], **kwargs) -> T:
+        """Merge a sequence of items into a single item.
+
+        Parameters
+        ----------
+        items : Sequence[T]
+            The sequence of items to merge.
+        **kwargs
+            Additional keyword arguments specific to the merge operation.
+            Subclasses may override this method with specific named parameters;
+            use ``# type: ignore[override]`` to suppress mypy warnings about
+            signature compatibility.
+
+        Returns
+        -------
+        T
+            The merged item.
+
+        Notes
+        -----
+        The base class automatically extracts merge-specific kwargs from the
+        ``__call__`` method by inspecting the merge method signature, so
+        subclasses with specific named parameters will receive them correctly.
+        """
+
+    def _merge_kwargs(self, kwargs: dict, merge_function: MergeProtocol) -> dict:
+        merge_sig = inspect.signature(merge_function)
+        return {
+            key: kwargs.pop(key)
+            for key in list(kwargs.keys())
+            if key in merge_sig.parameters and key not in ("self", "items")
+        }
+
+    # -- Read ------------------------
 
     def _read_single_file(
         self,
@@ -246,30 +303,30 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite, Generic[T]):
 
     def __call__(
         self,
-        merge_function: Callable[[list[T]], T],
         source: NamedReadable | list[NamedReadable],
         *args,  # noqa: ANN002
         format: str | None = None,  # noqa: A002
         cache: bool | None = None,
         parallel: int = 1,
         verbose: str | bool = False,
+        merge_function: MergeProtocol | None = None,
         **kwargs,
     ) -> T:
         """Execute ``cls.read()``.
 
         This method generalises parallel reading of lists of files for
-        any input class. The output of each parallel read is then merged
-        by ``merge_function`` which should have the following signature.
+        any input class.
 
-            def merge_function(cls: Type, instances: list[Type]) -> Type
-
-        i.e take in the type object and a list of instances, and return
-        a single instance of the same type.
 
         This method also generalises downloading files from remote URLs
         over HTTP or via `fsspec`.
         """
         cls = self._cls
+
+        # extract merge-specific kwargs by inspecting the merge method signature
+        if merge_function is None:
+            merge_function = self.merge
+        merge_kwargs = self._merge_kwargs(kwargs, merge_function)
 
         # handle deprecated keyword
         if nproc := kwargs.pop("nproc", None):
@@ -350,7 +407,8 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite, Generic[T]):
                 if progress:
                     progress.update(1)
 
-        return merge_function(outputs)
+        # Merge results
+        return merge_function(outputs, **merge_kwargs)
 
 
 class UnifiedWrite(astropy_registry.UnifiedReadWrite, Generic[T]):
