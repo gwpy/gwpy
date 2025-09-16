@@ -253,7 +253,7 @@ class DataQualityDictRead(UnifiedRead):
             if on_missing == "ignore":
                 continue
             if on_missing == "warn":
-                warnings.warn(msg, stacklevel=3)
+                warnings.warn(msg, stacklevel=2)
                 continue
             raise ValueError(msg)
 

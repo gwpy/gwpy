@@ -210,10 +210,12 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method="welch",
 
     required = int((numsegs - 1) * stride + segmentlength)
     if size != required:
-        warnings.warn("Data array is the wrong size for the correct number "
-                      "of averages given the input parameters. The trailing "
-                      "%d samples will not be used in this calculation."
-                      % (size - required))
+        warnings.warn(
+            "Data array is the wrong size for the correct number "
+            "of averages given the input parameters. The trailing "
+            f"{size - required} samples will not be used in this calculation.",
+            stacklevel=2,
+        )
         timeseries = timeseries[:required]
 
     # generate output spectrum

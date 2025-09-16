@@ -345,9 +345,12 @@ class EventTable(Table):
 
     def plot(self, *args, **kwargs):
         """DEPRECATED, use `EventTable.scatter`."""
-        warnings.warn("{0}.plot was renamed {0}.scatter and will be removed "
-                      "in an upcoming release".format(type(self).__name__),
-                      DeprecationWarning)
+        warnings.warn(
+            "{0}.plot was renamed {0}.scatter and will be removed "
+            "in an upcoming release".format(type(self).__name__),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.scatter(*args, **kwargs)
 
     def scatter(self, x, y, **kwargs):

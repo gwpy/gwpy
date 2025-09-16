@@ -315,6 +315,7 @@ def coherence(
                 "frequency series will be downsampled before "
                 "coherence is calculated",
                 category=UserWarning,
+                stacklevel=2,
             )
         # downsample the one with the higher rate
         if timeseries.sample_rate > other.sample_rate:

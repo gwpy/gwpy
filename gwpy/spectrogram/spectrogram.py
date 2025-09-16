@@ -532,16 +532,22 @@ class Spectrogram(Array2D):
         if low is not None and low == self.f0:
             low = None
         elif low is not None and low < self.f0:
-            warnings.warn("Spectrogram.crop_frequencies given low frequency "
-                          "cutoff below f0 of the input Spectrogram. Low "
-                          "frequency crop will have no effect.")
+            warnings.warn(
+                "Spectrogram.crop_frequencies given low frequency "
+                "cutoff below f0 of the input Spectrogram. Low "
+                "frequency crop will have no effect.",
+                stacklevel=2,
+            )
         # check high frequency
         if high is not None and high.value == self.band[1]:
             high = None
         elif high is not None and high.value > self.band[1]:
-            warnings.warn("Spectrogram.crop_frequencies given high frequency "
-                          "cutoff above cutoff of the input Spectrogram. High "
-                          "frequency crop will have no effect.")
+            warnings.warn(
+                "Spectrogram.crop_frequencies given high frequency "
+                "cutoff above cutoff of the input Spectrogram. High "
+                "frequency crop will have no effect.",
+                stacklevel=2,
+            )
         # find low index
         if low is None:
             idx0 = None

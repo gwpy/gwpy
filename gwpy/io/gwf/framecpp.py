@@ -658,6 +658,7 @@ def _channel_segments(
             if warn:
                 warnings.warn(
                     f"'{channel}' not found in frame {i} of {gwf}",
+                    stacklevel=2,
                 )
 
 

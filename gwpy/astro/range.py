@@ -273,6 +273,7 @@ def sensemon_range(
         warnings.warn(
             f"Upper frequency bound greater than {mass1}-{mass2} ISCO "
             f"frequency of {fisco}, using ISCO",
+            stacklevel=2,
         )
         fmax = fisco
     # integrate and return

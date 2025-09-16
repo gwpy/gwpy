@@ -171,6 +171,7 @@ class Qtransform(Spectrogram):
                     "fformat called with a string. "
                     "This has been deprecated and may disappear "
                     "in a future release.",
+                    stacklevel=2,
                 )
                 x = float(x)
             return f"{x:.2f}"

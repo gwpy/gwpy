@@ -292,9 +292,13 @@ class FrequencySeries(Series):
         return fdfilter(self, *filt, **kwargs)
 
     def filterba(self, *args, **kwargs):
-        warnings.warn("filterba will be removed soon, please use "
-                      "FrequencySeries.filter instead, with the same "
-                      "arguments", DeprecationWarning)
+        warnings.warn(
+            "filterba will be removed soon, please use "
+            "FrequencySeries.filter instead, with the same "
+            "arguments",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.filter(*args, **kwargs)
 
     @classmethod
@@ -343,7 +347,10 @@ class FrequencySeries(Series):
         try:
             unit, scale = to_lal_unit(self.unit)
         except ValueError as exc:
-            warnings.warn(f"{exc}, defaulting to lal.DimensionlessUnit")
+            warnings.warn(
+                f"{exc}, defaulting to lal.DimensionlessUnit",
+                stacklevel=2,
+            )
             unit = lal.DimensionlessUnit
             scale = 1
 

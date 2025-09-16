@@ -43,6 +43,7 @@ def median_mean(*args, **kwargs):
             f"no FFT method registered as 'median_mean', used {api_name!r}; "
             "in the future this will raise a ValueError.",
             DeprecationWarning,
+            stacklevel=2,
         )
         return result
     # try and call normally, mainly to raise the standard error

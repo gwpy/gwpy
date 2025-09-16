@@ -75,6 +75,7 @@ class TimeSeries(TimeDomainProduct):
                 "time series (channels * start times). "
                 f"There are {len(self.timeseries)} series "
                 f"and {len(self.args.legend)} legends",
+                stacklevel=2,
             )
             nlegargs = 0    # don't use  them
 
