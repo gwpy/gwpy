@@ -397,7 +397,7 @@ class StateTimeSeries(TimeSeriesBase):
             defines the `known` segments, while the contiguous `True`
             sets defined each of the `active` segments.
         """
-        from ..segments import DataQualityFlag  # noqa: PLC0415
+        from ..segments import DataQualityFlag
 
         # format dtype
         if dtype is None:
@@ -863,7 +863,7 @@ class StateVector(TimeSeriesBase):
         StateTimeSeries.to_dqflag
             For details on the segment representation method for `StateVector` bits.
         """
-        from ..segments import DataQualityDict  # noqa: PLC0415
+        from ..segments import DataQualityDict
 
         out = DataQualityDict()
         bitseries = self.get_bit_series(bits=bits)
@@ -1094,7 +1094,7 @@ class StateVector(TimeSeriesBase):
             return super().plot(**kwargs)
 
         if format == "segments":
-            from ..plot import Plot  # noqa: PLC0415
+            from ..plot import Plot
 
             kwargs.setdefault("xscale", "auto-gps")
             return Plot(

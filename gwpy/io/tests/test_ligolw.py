@@ -64,7 +64,7 @@ OLD_FORMAT_LIGO_LW_XML = """
 @pytest.fixture
 def llwdoc():
     """Build an empty LIGO_LW Document."""
-    from igwn_ligolw.ligolw import (  # noqa: PLC0415
+    from igwn_ligolw.ligolw import (
         LIGO_LW,
         Document,
     )
@@ -76,8 +76,8 @@ def llwdoc():
 
 def new_table(tablename, data=None, **new_kw):
     """Create a new LIGO_LW Table with data."""
-    from igwn_ligolw import lsctables  # noqa: PLC0415
-    from igwn_ligolw.ligolw import Table  # noqa: PLC0415
+    from igwn_ligolw import lsctables
+    from igwn_ligolw.ligolw import Table
 
     table_class = lsctables.TableByName[Table.TableName(tablename)]
     table = table_class.new(**new_kw)
@@ -159,7 +159,7 @@ def test_open_xmldoc(tmp_path, llwdoc_with_tables):
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_open_xmldoc_new(tmp_path):
     """Test that `open_xmldoc()` can create a new file."""
-    from igwn_ligolw.ligolw import Document  # noqa: PLC0415
+    from igwn_ligolw.ligolw import Document
 
     new = io_ligolw.open_xmldoc(tmp_path / "new.xml")
     assert isinstance(new, Document)
@@ -227,7 +227,7 @@ def test_list_tables_file(llwdoc_with_tables):
 ])
 def test_to_table_type(value, name, result):
     """Test `to_table_type()`."""
-    from igwn_ligolw.lsctables import SnglBurstTable  # noqa: PLC0415
+    from igwn_ligolw.lsctables import SnglBurstTable
     out = io_ligolw.to_table_type(value, SnglBurstTable, name)
     assert isinstance(out, type(result))
     assert out == result

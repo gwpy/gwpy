@@ -212,7 +212,7 @@ class TimeSeries(TimeSeriesBase):
         amplitude of the output `~gwpy.frequencyseries.FrequencySeries` is
         correct.
         """
-        from ..frequencyseries import FrequencySeries  # noqa: PLC0415
+        from ..frequencyseries import FrequencySeries
 
         if nfft is None:
             nfft = self.size
@@ -268,7 +268,7 @@ class TimeSeries(TimeSeriesBase):
         TimeSeries.fft
            The FFT method used.
         """
-        from gwpy.spectrogram import Spectrogram  # noqa: PLC0415
+        from gwpy.spectrogram import Spectrogram
 
         # format lengths
         if fftlength is None:
@@ -654,7 +654,7 @@ class TimeSeries(TimeSeriesBase):
             at every ``stride`` in the input `TimeSeries`, with each column
             corresponding to a single FFT.
         """
-        from ..spectrogram import Spectrogram  # noqa: PLC0415
+        from ..spectrogram import Spectrogram
 
         # format lengths
         if isinstance(fftlength, Quantity):
@@ -1668,7 +1668,7 @@ class TimeSeries(TimeSeriesBase):
             Time-frequency coherence spectrogram as generated from the
             input time-series.
         """
-        from ..spectrogram.coherence import from_timeseries  # noqa: PLC0415
+        from ..spectrogram.coherence import from_timeseries
 
         return from_timeseries(
             self,
@@ -2898,7 +2898,7 @@ class TimeSeries(TimeSeriesBase):
         >>> ax.set_epoch(0)
         >>> plot.show()
         """
-        from ..frequencyseries import FrequencySeries  # noqa: PLC0415
+        from ..frequencyseries import FrequencySeries
 
         # condition data
         if whiten is True:  # generate ASD dynamically

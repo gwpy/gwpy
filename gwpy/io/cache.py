@@ -92,7 +92,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def _silence_lal_debug_warnings() -> Iterator[None]:
     """Temporarily silence debug warnings from LAL."""
     try:
-        import lal  # noqa: PLC0415
+        import lal
     except ImportError:
         yield
         return

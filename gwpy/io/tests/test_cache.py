@@ -96,7 +96,7 @@ def test_read_write_cache(cache, tmp_path, fmt, entry1):
 @pytest.mark.requires("lal.utils")
 def test_write_cache_cacheentry(cache, tmp_path):
     """Test `write_cache()` with `lal.CacheEntry` objects."""
-    from lal.utils import CacheEntry  # noqa: PLC0415
+    from lal.utils import CacheEntry
     tmp = tmp_path / "test.lcf"
     lcache = list(map(CacheEntry.from_T050017, cache))
     with tmp.open("w") as tmpf:

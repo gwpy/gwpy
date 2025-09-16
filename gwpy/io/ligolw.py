@@ -22,7 +22,6 @@ All specific unified input/output for class objects should be placed in
 an 'io' subdirectory of the containing directory for that class.
 """
 
-# ruff: noqa: PLC0415
 
 from __future__ import annotations
 

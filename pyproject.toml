@@ -324,6 +324,7 @@ ignore = [
   "D213",  # docstring summary on second line
   "D413",  # blank line after last section
   "ICN001",  # unconventional import alias
+  "PLC0415",  # import outside top level
   "PLR0913",  # too many arguments
   "SIM108",  # if-else instead of ternary if
   "TID252",  # relative imports

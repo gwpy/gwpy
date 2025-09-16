@@ -149,7 +149,7 @@ class _TimeSeriesRead(UnifiedRead):
     ) -> TimeSeriesBase:
         # if reading a cache, read it now and sieve
         if io_cache.is_cache(source):
-            from .io.cache import preformat_cache  # noqa: PLC0415
+            from .io.cache import preformat_cache
             source = preformat_cache(
                 source,
                 start=start,
@@ -195,7 +195,7 @@ class TimeSeriesBaseRead(_TimeSeriesRead):
         end: GpsConvertible | None = None,
     ) -> TimeSeriesBase:
         """Combine a list of `TimeSeriesBase` objects into one `Series`."""
-        from . import TimeSeriesBaseList  # noqa: PLC0415
+        from . import TimeSeriesBaseList
         if len(items) == 1:  # don't copy a single array
             joined = items[0]
         else:

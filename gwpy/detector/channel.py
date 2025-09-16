@@ -688,7 +688,7 @@ class Channel:
             If ``return_all=False`` a single `str` containing the 'best' dataset name.
             If ``return_all=True`` a `list` of dataset names.
         """
-        from ..io import datafind  # noqa: PLC0415
+        from ..io import datafind
 
         return datafind.find_frametype(
             self,
@@ -911,7 +911,7 @@ class ChannelList(list):
         channels : `ChannelList`
             A new list containing all `Channels <Channel>` found.
         """
-        from .io import cis  # noqa: PLC0415
+        from .io import cis
         return cls(cis.query(
             name,
             kerberos=kerberos,

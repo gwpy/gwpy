@@ -226,7 +226,7 @@ def file_list(
         isinstance(flist, str)
         and flist.endswith((".cache", ".lcf", ".ffl"))
     ):
-        from .cache import read_cache  # noqa: PLC0415
+        from .cache import read_cache
         return read_cache(flist)
 
     # separate comma-separate list of names
