@@ -171,8 +171,8 @@ class QTiling(QObject):
             fmax = maxf
         elif fmax > maxf:  # truncate upper frequency to maximum
             warnings.warn(
-                "upper frequency of {fmax} is too high for the given "
-                "Q range, resetting to {maxf}",
+                f"upper frequency of {fmax} Hz is too high for the given "
+                f"Q range, resetting to {maxf} Hz",
             )
             fmax = maxf
         self.frange = (fmin, fmax)
