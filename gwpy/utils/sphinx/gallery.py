@@ -104,7 +104,8 @@ def _render_entry_point_example(
     try:
         entrypoint, = importlib.metadata.entry_points(name=ep_name)
     except ValueError as exc:
-        raise ValueError("ambiguous entry point") from exc
+        msg = "ambiguous entry point"
+        raise ValueError(msg) from exc
     pymod, pyfunc = entrypoint.value.rsplit(":", 1)
     pyimport = f"from {pymod} import {pyfunc}"
 

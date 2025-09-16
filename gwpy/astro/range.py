@@ -104,11 +104,12 @@ def _get_spectrogram(
             AttributeError,  # object doesn't have a `.spectrogram()` method
             TypeError,  # something else went wrong
         ) as exc:
-            raise TypeError(
+            msg = (
                 "Could not produce a spectrogram from the input, please "
                 "pass an instance of gwpy.timeseries.TimeSeries or "
-                "gwpy.spectrogram.Spectrogram",
-            ) from exc
+                "gwpy.spectrogram.Spectrogram"
+            )
+            raise TypeError(msg) from exc
     return hoft
 
 

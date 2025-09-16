@@ -144,7 +144,8 @@ class Spectrogram(Array2D):
         # parse t0 or epoch
         epoch = kwargs.pop("epoch", None)
         if epoch is not None and t0 is not None:
-            raise ValueError("give only one of epoch or t0")
+            msg = "give only one of epoch or t0"
+            raise ValueError(msg)
         if epoch is None and t0 is not None:
             kwargs["x0"] = _format_time(t0)
         elif epoch is not None:
@@ -346,9 +347,11 @@ class Spectrogram(Array2D):
         data = numpy.vstack([s.value for s in spectra])
         spec1 = list(spectra)[0]
         if not all(s.f0 == spec1.f0 for s in spectra):
-            raise ValueError("Cannot stack spectra with different f0")
+            msg = "Cannot stack spectra with different f0"
+            raise ValueError(msg)
         if not all(s.df == spec1.df for s in spectra):
-            raise ValueError("Cannot stack spectra with different df")
+            msg = "Cannot stack spectra with different df"
+            raise ValueError(msg)
         kwargs.setdefault("name", spec1.name)
         kwargs.setdefault("channel", spec1.channel)
         kwargs.setdefault("epoch", spec1.epoch)
@@ -359,8 +362,8 @@ class Spectrogram(Array2D):
             try:
                 kwargs.setdefault("dt", spectra[1].epoch.gps - spec1.epoch.gps)
             except (AttributeError, IndexError):
-                raise ValueError("Cannot determine dt (time-spacing) for "
-                                 "Spectrogram from inputs")
+                msg = "Cannot determine dt (time-spacing) for Spectrogram from inputs"
+                raise ValueError(msg)
         return Spectrogram(data, **kwargs)
 
     def percentile(self, percentile):

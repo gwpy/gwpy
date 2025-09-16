@@ -244,9 +244,8 @@ class QTiling(QObject):
             Compute the Q-transform over a single time-frequency plane.
         """
         if not numpy.isfinite(fseries).all():
-            raise ValueError(
-                "Input signal contains non-numerical values",
-            )
+            msg = "Input signal contains non-numerical values"
+            raise ValueError(msg)
         weight = 1 + numpy.log10(
             self.qrange[1] / self.qrange[0],
         ) / numpy.sqrt(2)
@@ -552,7 +551,8 @@ class QTile(QBase):
             elif norm in ("mean",):
                 narray = energy / energy.mean()
             else:
-                raise ValueError(f"invalid normalisation '{norm}'")
+                msg = f"invalid normalisation '{norm}'"
+                raise ValueError(msg)
             return narray.astype("float32", casting="same_kind", copy=False)
         return energy
 

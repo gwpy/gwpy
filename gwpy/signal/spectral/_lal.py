@@ -205,8 +205,8 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method="welch",
     if method == "median-mean" and numsegs % 2:
         numsegs -= 1
         if not numsegs:
-            raise ValueError("Cannot calculate median-mean spectrum with "
-                             "this small a TimeSeries.")
+            msg = "Cannot calculate median-mean spectrum with this small a TimeSeries."
+            raise ValueError(msg)
 
     required = int((numsegs - 1) * stride + segmentlength)
     if size != required:

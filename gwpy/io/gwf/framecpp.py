@@ -180,7 +180,8 @@ def open_gwf(
     """
     # check mode
     if mode not in ("r", "w"):
-        raise ValueError("mode must be either 'r' or 'w'")
+        msg = "mode must be either 'r' or 'w'"
+        raise ValueError(msg)
     # match open file stream
     if mode == "r" and isinstance(gwf, frameCPP.IFrameFStream):
         return gwf
@@ -338,8 +339,8 @@ def create_fradcdata(
     """
     # assert correct type
     if not series.xunit.is_equivalent("s") or series.ndim != 1:
-        raise TypeError("only 1-dimensional timeseries data can be "
-                        "written as FrAdcData")
+        msg = "only 1-dimensional timeseries data can be written as FrAdcData"
+        raise TypeError(msg)
 
     frdata = frameCPP.FrAdcData(
         _series_name(series),
@@ -489,7 +490,8 @@ def create_frsimdata(
     """
     # assert correct type
     if not series.xunit.is_equivalent("s"):
-        raise TypeError("only timeseries data can be written as FrSimData")
+        msg = "only timeseries data can be written as FrSimData"
+        raise TypeError(msg)
 
     return frameCPP.FrSimData(
         _series_name(series),

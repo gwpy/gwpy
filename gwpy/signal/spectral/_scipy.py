@@ -304,10 +304,11 @@ def coherence(
     if timeseries.sample_rate != other.sample_rate:
         # scipy assumes a single sampling frequency
         if not downsample:
-            raise ValueError(
+            msg = (
                 "Cannot calculate coherence when sampling "
-                "frequencies are unequal",
+                "frequencies are unequal"
             )
+            raise ValueError(msg)
         if warn_fs:
             warnings.warn(
                 "Sampling frequencies are unequal. Higher "

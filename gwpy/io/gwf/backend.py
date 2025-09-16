@@ -108,10 +108,11 @@ def get_backend(
             continue
         else:
             return lib
-    raise ImportError(
+    msg = (
         "no GWF API available, please install a third-party GWF "
-        f"library ({', '.join(BACKENDS)}) and try again",
+        f"library ({', '.join(BACKENDS)}) and try again"
     )
+    raise ImportError(msg)
 
 
 def import_backend(
@@ -172,10 +173,8 @@ def get_backend_function(
             continue
         except AttributeError as exc:  # function not implemented
             if backend:  # user asked for this backend specifically
-                raise NotImplementedError(
-                    f"GWF backend '{backend}' does not implement '{name}'",
-                ) from exc
+                msg = f"GWF backend '{backend}' does not implement '{name}'"
+                raise NotImplementedError(msg) from exc
             continue
-    raise NotImplementedError(
-        f"no GWF backend module found that implements '{name}'",
-    )
+    msg = f"no GWF backend module found that implements '{name}'"
+    raise NotImplementedError(msg)

@@ -102,9 +102,8 @@ def get_window(
 
     # sanity check
     if window.shape != (Nx,):
-        raise ValueError(
-            f"invalid window array shape {window.shape}, should be ({Nx},)",
-        )
+        msg = f"invalid window array shape {window.shape}, should be ({Nx},)"
+        raise ValueError(msg)
 
     return window
 
@@ -141,9 +140,8 @@ def canonical_name(name: str) -> str:
         # pylint: disable=protected-access
         return WINDOWS[name.lower()].__name__
     except KeyError:  # no match
-        raise ValueError(
-            f"no window function in scipy.signal equivalent to '{name}'",
-        )
+        msg = f"no window function in scipy.signal equivalent to '{name}'"
+        raise ValueError(msg)
 
 
 # -- recommended overlap -------------
@@ -199,7 +197,8 @@ def recommended_overlap(
     try:
         rov = ROV[name]
     except KeyError:
-        raise ValueError(f"no recommended overlap for '{name}' window")
+        msg = f"no recommended overlap for '{name}' window"
+        raise ValueError(msg)
     if nfft:
         return int(ceil(nfft * rov))
     return rov

@@ -181,9 +181,8 @@ def get_channel_type(
     for name, type_ in _iter_toc(gwf, backend=backend):
         if channel == name:
             return type_
-    raise ValueError(
-        f"'{channel}' not found in table-of-contents for {gwf}",
-    )
+    msg = f"'{channel}' not found in table-of-contents for {gwf}"
+    raise ValueError(msg)
 
 
 def channel_exists(

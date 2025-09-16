@@ -196,9 +196,8 @@ def parse_column_filter(definition: str) -> list[FilterSpec]:
             ),
         ]
 
-    raise ValueError(
-        f"cannot parse filter definition from '{definition}'",
-    )
+    msg = f"cannot parse filter definition from '{definition}'"
+    raise ValueError(msg)
 
 
 def parse_column_filters(

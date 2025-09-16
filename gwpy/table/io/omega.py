@@ -56,9 +56,8 @@ class OmegaHeader(core.BaseHeader):
                 self.names.append(match.group("colname"))
 
         if not self.names:
-            raise core.InconsistentTableError(
-                "No column names found in Omega header",
-            )
+            msg = "No column names found in Omega header"
+            raise core.InconsistentTableError(msg)
 
         self.cols = []
         for name in self.names:

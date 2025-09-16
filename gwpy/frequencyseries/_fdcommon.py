@@ -41,11 +41,8 @@ def fdfilter(data, *filt, **kwargs):
     analog = kwargs.pop("analog", False)
     fs = kwargs.pop("sample_rate", None)
     if kwargs:
-        raise TypeError(
-            "filter() got an unexpected keyword argument "
-            f"'{list(kwargs).pop()}'",
-        )
-
+        msg = f"filter() got an unexpected keyword argument '{list(kwargs).pop()}'"
+        raise TypeError(msg)
     # parse filter
     if fs is None:
         fs = 2 * data.frequencies[-1].to("Hz").value

@@ -82,10 +82,12 @@ class SpectralVariance(Array2D):
             return
         bins = Quantity(bins)
         if bins.size != self.shape[1] + 1:
-            raise ValueError(
+            msg = (
                 "SpectralVariance.bins must be given as a list of bin edges, "
                 "including the rightmost edge, and have length 1 greater than "
-                "the y-axis of the SpectralVariance data")
+                "the y-axis of the SpectralVariance data"
+            )
+            raise ValueError(msg)
         self._bins = bins
 
     @bins.deleter
@@ -141,9 +143,8 @@ class SpectralVariance(Array2D):
 
     @property
     def T(self):
-        raise NotImplementedError(
-            f"transposing a {type(self).__name__} is not supported",
-        )
+        msg = f"transposing a {type(self).__name__} is not supported"
+        raise NotImplementedError(msg)
 
     # -- i/o ------------------------------------
 
@@ -156,7 +157,8 @@ class SpectralVariance(Array2D):
         # disable slicing bins
         if not isinstance(item, tuple) or null_slice(item[1]):
             return super().__getitem__(item)
-        raise NotImplementedError("cannot slice SpectralVariance across bins")
+        msg = "cannot slice SpectralVariance across bins"
+        raise NotImplementedError(msg)
     __getitem__.__doc__ = Array2D.__getitem__.__doc__
 
     @classmethod
@@ -206,7 +208,8 @@ class SpectralVariance(Array2D):
         """
         # parse args and kwargs
         if not spectrograms:
-            raise ValueError("Must give at least one Spectrogram")
+            msg = "Must give at least one Spectrogram"
+            raise ValueError(msg)
         bins = kwargs.pop("bins", None)
         low = kwargs.pop("low", None)
         high = kwargs.pop("high", None)
@@ -215,8 +218,8 @@ class SpectralVariance(Array2D):
         norm = kwargs.pop("norm", False)
         density = kwargs.pop("density", False)
         if norm and density:
-            raise ValueError("Cannot give both norm=True and density=True, "
-                             "please pick one")
+            msg = "Cannot give both norm=True and density=True, please pick one"
+            raise ValueError(msg)
 
         # get data and bins
         spectrogram = spectrograms[0]
@@ -288,10 +291,8 @@ class SpectralVariance(Array2D):
 
     def plot(self, xscale="log", method="pcolormesh", **kwargs):
         if method == "imshow":
-            raise TypeError(
-                f"plotting a {type(self).__name__} with {method}() is not "
-                "supported",
-            )
+            msg = f"plotting a {type(self).__name__} with {method}() is not supported"
+            raise TypeError(msg)
         bins = self.bins.value
         if (
             numpy.all(bins > 0)

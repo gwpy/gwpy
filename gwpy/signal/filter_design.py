@@ -449,10 +449,11 @@ def convert_zpk_units(
         "rad/s",
         "rad/sample",
     ]:
-        raise ValueError(
+        msg = (
             "zpk can only be given with unit='Hz', 'rad/s', or 'rad/sample', "
-            f"not '{unit}'",
+            f"not '{unit}'"
         )
+        raise ValueError(msg)
 
     return zeros, poles, gain
 

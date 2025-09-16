@@ -493,19 +493,20 @@ class CliProduct(metaclass=abc.ABCMeta):
         """Sanity check arguments and raise errors if required."""
         # validate number of data sets requested
         if len(self.chan_list) < self.MIN_CHANNELS:
-            raise ValueError(
-                f"this product requires at least {self.MIN_CHANNELS} channels",
-            )
+            msg = f"this product requires at least {self.MIN_CHANNELS} channels"
+            raise ValueError(msg)
         if self.n_datasets < self.MIN_DATASETS:
-            raise ValueError(
+            msg = (
                 f"{self.MIN_DATASETS} are required for this plot but only "
-                f"{self.n_datasets} are supplied",
+                f"{self.n_datasets} are supplied"
             )
+            raise ValueError(msg)
         if self.n_datasets > self.MAX_DATASETS:
-            raise ValueError(
+            msg = (
                 f"A maximum of {self.MAX_DATASETS} datasets allowed for this "
-                f"plot but {self.n_datasets} specified",
+                f"plot but {self.n_datasets} specified"
             )
+            raise ValueError(msg)
 
     # -- data transfer --------------------------
 

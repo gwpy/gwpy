@@ -127,8 +127,8 @@ class CwbHeader(core.BaseHeader):
                     self.names.append(match.group("colname").rstrip())
 
         if not self.names:
-            raise core.InconsistentTableError(
-                "No column names found in cWB header")
+            msg = "No column names found in cWB header"
+            raise core.InconsistentTableError(msg)
 
         if include_cuts:
             self.cols = [  # pylint: disable=attribute-defined-outside-init

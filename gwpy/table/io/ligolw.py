@@ -332,9 +332,8 @@ def to_astropy_column(
             try:
                 dtype = NUMPY_TYPE_MAP[dtype]
             except KeyError:
-                raise TypeError(
-                    f"no mapping from object type '{dtype}' to numpy type",
-                )
+                msg = f"no mapping from object type '{dtype}' to numpy type"
+                raise TypeError(msg)
     return cls(
         data=llwcol,
         copy=copy,
@@ -569,10 +568,11 @@ def write_table(
     if tablename is None:  # try and get tablename from metadata
         tablename = table.meta.get("tablename", None)
     if tablename is None:  # panic
-        raise ValueError(
+        msg = (
             "please pass ``tablename=`` to specify the target "
-            "LIGO_LW Table Name",
+            "LIGO_LW Table Name"
         )
+        raise ValueError(msg)
     llwtable = table_to_ligolw(
         table,
         tablename,

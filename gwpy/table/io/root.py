@@ -57,9 +57,8 @@ def get_treename(
     source = rootdir.file_path
 
     if not rootdir:  # nothing to read?
-        raise ValueError(
-            "No trees found in '{source}'",
-        )
+        msg = "No trees found in '{source}'"
+        raise ValueError(msg)
 
     # find one and only one tree
     try:
@@ -68,11 +67,12 @@ def get_treename(
             cycle=False,
         )
     except ValueError as exc:
-        raise ValueError(
+        msg = (
             f"Multiple trees found in {source}, please select one via the "
             "`treename` keyword argument, e.g. `treename='events'`. "
-            "Available trees are: '{', '.join(names)}'.",
-        ) from exc
+            "Available trees are: '{', '.join(names)}'."
+        )
+        raise ValueError(msg) from exc
     return tree
 
 

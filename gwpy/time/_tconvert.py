@@ -306,7 +306,8 @@ def _str_to_datetime(
         },
     )
     if result is None:
-        raise ValueError(f"failed to parse '{datestr}' as datetime")
+        msg = f"failed to parse '{datestr}' as datetime"
+        raise ValueError(msg)
     return result
 
 

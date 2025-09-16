@@ -166,10 +166,11 @@ def read_gstlal_coinc(
         val_col_event = set(TableByName["coinc_event"].validcolumns)
         for name in columns:
             if name not in (valid := val_col_inspiral | val_col_event):
-                raise ValueError(
+                msg = (
                     f"'{name}' is not a valid column name. "
-                    f"Valid column names: '{', '.join(valid)}'",
+                    f"Valid column names: '{', '.join(valid)}'"
                 )
+                raise ValueError(msg)
         if "coinc_event_id" not in columns:
             columns.add("coinc_event_id")
             extra_cols.add("coinc_event_id")
@@ -242,9 +243,8 @@ def read_gstlal(
         return read_gstlal_sngl(source, **kwargs)
     if triggers == "coinc":
         return read_gstlal_coinc(source, **kwargs)
-    raise ValueError(
-        f"triggers must be 'sngl' or 'coinc', got '{triggers}'",
-    )
+    msg = f"triggers must be 'sngl' or 'coinc', got '{triggers}'"
+    raise ValueError(msg)
 
 
 # registers for unified I/O

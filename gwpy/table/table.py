@@ -571,7 +571,8 @@ class EventTable(Table):
         >>> table.cluster('end_time', 'snr', 0.1)
         """
         if window <= 0.0:
-            raise ValueError("Window must be a positive value")
+            msg = "Window must be a positive value"
+            raise ValueError(msg)
 
         # If no rows, no need to cluster
         if len(self) == 0:

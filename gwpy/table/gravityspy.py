@@ -254,9 +254,12 @@ class GravitySpyTable(EventTable):
         except JSONDecodeError:  # that didn't work
             # if the response was actually HTML, something terrible happened
             if response.headers["Content-Type"] != JSON_CONTENT_TYPE:
-                raise requests.HTTPError(
+                msg = (
                     f"response from {response.url} was '200 OK' but the content is HTML, "
-                    "please check the request parameters",
+                    "please check the request parameters"
+                )
+                raise requests.HTTPError(
+                    msg,
                     response=response,
                 )
             raise

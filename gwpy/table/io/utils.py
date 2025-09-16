@@ -89,10 +89,11 @@ def dynamic_columns(
             read.update(dynamic_column_map[name])
         else:
             names = list(valid_columns or []) + list(dynamic_column_map)
-            raise ValueError(
+            msg = (
                 f"'{name}' is not a valid column name; "
-                f"valid column names: {', '.join(names)}",
+                f"valid column names: {', '.join(names)}"
             )
+            raise ValueError(msg)
     return read, dynamic
 
 

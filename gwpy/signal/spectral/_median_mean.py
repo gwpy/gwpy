@@ -46,7 +46,8 @@ def median_mean(*args, **kwargs):
         )
         return result
     # try and call normally, mainly to raise the standard error
-    raise KeyError("no PSD method registered with name 'median-mean'")
+    msg = "no PSD method registered with name 'median-mean'"
+    raise KeyError(msg)
 
 
 fft_registry.register_method(median_mean)
