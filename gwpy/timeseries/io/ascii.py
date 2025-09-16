@@ -74,7 +74,7 @@ def read_ascii(
     series : instance of ``array_type``
         The data series as read from the input file.
 
-    See also
+    See Also
     --------
     gwpy.types.io.ascii.read_ascii_series
         For details of how the series is read from the file.

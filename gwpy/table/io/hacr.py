@@ -170,7 +170,7 @@ def get_hacr_channels(
     Returns
     -------
 
-    See also
+    See Also
     --------
     gwpy.table.io.hacr.create_engine
         For details of valid keyword arguments to create the

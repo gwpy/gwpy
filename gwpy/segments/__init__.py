@@ -32,9 +32,9 @@ from . import io
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
+    "DataQualityDict",
+    "DataQualityFlag",
     "Segment",
     "SegmentList",
     "SegmentListDict",
-    "DataQualityFlag",
-    "DataQualityDict",
 ]

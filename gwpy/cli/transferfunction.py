@@ -17,14 +17,15 @@
 
 """Transfer function plots."""
 
-from astropy.time import Time
 from collections import OrderedDict
+
 import numpy as np
+from astropy.time import Time
 
 from ..plot.bode import BodePlot
-from ..plot.tex import label_to_latex
-from .cliproduct import (TransferFunctionProduct, FFTMixin)
 from ..plot.gps import GPS_SCALES
+from ..plot.tex import label_to_latex
+from .cliproduct import FFTMixin, TransferFunctionProduct
 
 __author__ = "Evan Goetz <evan.goetz@ligo.org>"
 
@@ -33,6 +34,7 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
     """Plot transfer function between a reference time series and one
     or more other time series.
     """
+
     action = "transferfunction"
 
     def __init__(self, *args, **kwargs):
@@ -157,9 +159,9 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
         # set label
         if label is None:
             if axis.lower().startswith("y"):
-                label = getattr(self, "get_ylabel")()
+                label = self.get_ylabel()
             else:
-                label = getattr(self, "get_xlabel")()
+                label = self.get_xlabel()
         if self.subplot == 0 and axis == "x":
             label = None
         if label:
@@ -175,7 +177,7 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
             2,
             f"{axis.upper()}-axis parameters | "
             f"scale: {scale} | "
-            f"limits: {limits[0]!s} - {limits[1]!s}"
+            f"limits: {limits[0]!s} - {limits[1]!s}",
         )
         self.log(3, (f"{axis.upper()}-axis label: {label}"))
 

@@ -19,16 +19,12 @@
 
 from io import BytesIO
 
-import pytest
-
 import numpy
-from numpy import shares_memory
-
-from scipy import signal
-
-from matplotlib import rc_context
-
+import pytest
 from astropy import units
+from matplotlib import rc_context
+from numpy import shares_memory
+from scipy import signal
 
 from ...testing import utils
 from ...timeseries import TimeSeries
@@ -85,7 +81,7 @@ LIGO_LW_ARRAY = r"""<?xml version='1.0' encoding='utf-8'?>
     </Array>
   </LIGO_LW>
 </LIGO_LW>
-"""  # noqa: E501
+"""
 
 
 class TestFrequencySeries(_TestSeries):
@@ -147,14 +143,14 @@ class TestFrequencySeries(_TestSeries):
             "low",
             analog=False,
             output="zpk",
-            fs=fs
+            fs=fs,
         )
         za, pa, ka = signal.butter(
             3,
             30,
             "low",
             analog=True,
-            output="zpk"
+            output="zpk",
         )
 
         a2 = array.filter(za, pa, ka, analog=True)

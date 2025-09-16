@@ -77,7 +77,7 @@ def get_window(
         If an ``window`` is given an array that doesn't have shape
         matching ``(Nx,)``.
 
-    See also
+    See Also
     --------
     scipy.signal.get_window
         For details of available window types and valid arguments.
@@ -123,7 +123,7 @@ def canonical_name(name: str) -> str:
         The name of the window as implemented in `scipy.signal.window`.
 
     Raises
-    -------
+    ------
     ValueError
         If ``name`` cannot be resolved to a window function in `scipy.signal`.
 
@@ -158,7 +158,7 @@ ROV: dict[str, float] = {
     "hann": .5,
     "hamming": .5,
     "nuttall": .656,
-    "triang": .5
+    "triang": .5,
 }
 
 

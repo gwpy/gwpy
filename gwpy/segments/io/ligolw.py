@@ -168,7 +168,7 @@ def write_ligolw(
     **kwargs
         keyword arguments to use when writing
 
-    See also
+    See Also
     --------
     gwpy.io.ligolw.write_ligolw_tables
         for details of acceptable keyword arguments

@@ -294,7 +294,7 @@ def to_astropy_column(
     """Convert a :class:`~igwn_ligolw.ligolw.Column` to `astropy.table.Column`.
 
     Parameters
-    -----------
+    ----------
     llwcol : `~igwn_ligolw.ligolw.Column`, `numpy.ndarray`, iterable
         The ``LIGO_LW`` column to convert, or an iterable.
 
@@ -487,7 +487,7 @@ def read_table(
         If `True` copy the input data, otherwise return a reference.
         Default is `False`
 
-    See also
+    See Also
     --------
     gwpy.io.ligolw.read_table
         For details of keyword arguments for the read operation.
@@ -560,7 +560,7 @@ def write_table(
         All keyword arguments are passed to
         `gwpy.io.ligolw.write_tables`.
 
-    See also
+    See Also
     --------
     gwpy.io.ligolw.write_tables
         For details of the table writing implementation and any

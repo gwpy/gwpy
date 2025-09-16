@@ -30,6 +30,7 @@ class Coherence(Spectrum):
     """Plot coherence between a reference time series and one
     or more other time series.
     """
+
     action = "coherence"
 
     MIN_DATASETS = 2

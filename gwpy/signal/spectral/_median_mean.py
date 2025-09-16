@@ -40,8 +40,8 @@ def median_mean(*args, **kwargs):
             continue
         # warn about deprecated name match
         warnings.warn(
-            "no FFT method registered as 'median_mean', used {!r}; "
-            "in the future this will raise a ValueError.".format(api_name),
+            f"no FFT method registered as 'median_mean', used {api_name!r}; "
+            "in the future this will raise a ValueError.",
             DeprecationWarning,
         )
         return result

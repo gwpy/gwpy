@@ -19,14 +19,15 @@
 
 from numpy import percentile
 
-from .cliproduct import (FFTMixin, TimeDomainProduct, ImageProduct)
 from ..utils import unique
+from .cliproduct import FFTMixin, ImageProduct, TimeDomainProduct
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 
 class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
     """Plot the spectrogram of a time series."""
+
     action = "spectrogram"
 
     def __init__(self, *args, **kwargs):
@@ -114,7 +115,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             self.log(
                 3,
                 f"Spectrogram calc, stride: {stride}, fftlength: {fftlength}, "
-                f"overlap: {overlap}, #fft: {nfft}"
+                f"overlap: {overlap}, #fft: {nfft}",
             )
         else:
             specgram = self.timeseries[0].spectrogram2(
@@ -123,7 +124,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             self.log(
                 3,
                 f"HR-Spectrogram calc, fftlength: {fftlength}, "
-                f"overlap: {overlap}, #fft: {nfft}"
+                f"overlap: {overlap}, #fft: {nfft}",
             )
 
         return specgram ** (1/2.)   # ASD
@@ -176,7 +177,7 @@ class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
             args.ymax = self.result.yspan[1]
 
         specgram = self.result.crop(
-            args.xmin, min(args.xmax, self.result.xspan[1])
+            args.xmin, min(args.xmax, self.result.xspan[1]),
         )
 
         # y axis cannot be cropped if non-linear

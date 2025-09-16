@@ -19,15 +19,11 @@
 
 from io import BytesIO
 
-import pytest
-
 import numpy
-
-from scipy import signal
-
-from matplotlib import rc_context
-
+import pytest
 from astropy import units
+from matplotlib import rc_context
+from scipy import signal
 
 from ...testing import utils
 from ...types.tests.test_array2d import TestArray2D as _TestArray2D
@@ -38,6 +34,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 class TestSpectrogram(_TestArray2D):
     """Tests of `gwpy.spectrogram.Spectrogram`."""
+
     TEST_CLASS = Spectrogram
 
     def test_new(self):

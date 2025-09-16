@@ -159,7 +159,7 @@ def assert_quantity_sub_equal(
         Other keyword arguments are passed to the array comparison operator
         `numpy.testing.assert_array_equal` or `numpy.testing.assert_allclose`.
 
-    See also
+    See Also
     --------
     numpy.testing.assert_array_equal
     numpy.testing.assert_allclose

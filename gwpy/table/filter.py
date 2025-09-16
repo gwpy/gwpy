@@ -58,13 +58,14 @@ OPERATORS_INV: dict[str, Callable] = {
 }
 
 QUOTE_REGEX = re.compile(r"^[\s\"\']+|[\s\"\']+$")
-DELIM_REGEX = re.compile(r"(and|&+)", re.I)
+DELIM_REGEX = re.compile(r"(and|&+)", re.IGNORECASE)
 
 
 # -- filter parsing ------------------
 
 class FilterSpec(typing.NamedTuple):
     """A table column filter definition."""
+
     column: str
     operator: Callable
     operand: Any
@@ -158,7 +159,7 @@ def parse_column_filter(definition: str) -> list[FilterSpec]:
      FilterSpec(column='snr', operator=<built-in function lt>, operand=100.0)]
     >>> parse_column_filter('channel = "H1:TEST"')
     FilterSpec(column='channel', operator=<built-in function eq>, operand='H1:TEST')
-    """  # noqa: E501
+    """
     # parse definition into parts (skipping null tokens)
     parts = list(generate_tokens(StringIO(definition.strip()).readline))
     while parts[-1].type in {token.ENDMARKER, token.NEWLINE}:
@@ -172,7 +173,7 @@ def parse_column_filter(definition: str) -> list[FilterSpec]:
             oprtr = OPERATORS[op_.string]
             value = _float_or_str(right.string)
             return [FilterSpec(name, oprtr, value)]
-        elif right.type in {token.NAME, token.STRING}:  # 5 < snr
+        if right.type in {token.NAME, token.STRING}:  # 5 < snr
             name = QUOTE_REGEX.sub("", right.string)
             oprtr = OPERATORS_INV[op_.string]
             value = _float_or_str(left.string)
@@ -213,7 +214,7 @@ def parse_column_filters(
     >>> parse_column_filters('snr > 10 && frequency < 1000')
     [FilterSpec(column='snr', operator=<built-in function gt>, operand=10.0),
      FilterSpec(column='frequency', operator=<built-in function lt>, operand=1000.0)]
-    """  # noqa: E501
+    """
     fltrs = []
     for def_ in _flatten(definitions):
         if isinstance(def_, str):

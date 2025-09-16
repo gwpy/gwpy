@@ -18,9 +18,7 @@
 """Tests for :mod:`gwpy.timeseries.io.losc`."""
 
 import pytest
-
 from astropy.utils.data import download_file
-
 from gwosc.locate import get_event_urls
 
 from ...testing.errors import (

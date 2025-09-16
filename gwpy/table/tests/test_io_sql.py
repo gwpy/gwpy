@@ -47,7 +47,7 @@ def _sql_str(expr) -> str:
             columns=["col1", "col2"],
             where="col3 > 4 && col4 = value",
         ),
-        'select col1, col2 from "table" where col3 > :col3_1 and col4 = :col4_1',  # noqa: E501
+        'select col1, col2 from "table" where col3 > :col3_1 and col4 = :col4_1',
         id="where",
     ),
     # order_by

@@ -92,7 +92,7 @@ GSTLAL_FILE = """
     </Stream>
   </Table>
 </LIGO_LW>
-"""  # noqa: E501
+"""
 
 
 @pytest.fixture

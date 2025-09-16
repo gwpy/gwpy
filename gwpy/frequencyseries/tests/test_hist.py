@@ -19,13 +19,10 @@
 
 from io import BytesIO
 
-import pytest
-
 import numpy
-
-from matplotlib import rc_context
-
+import pytest
 from astropy import units
+from matplotlib import rc_context
 
 from ...segments import Segment
 from ...testing import utils

@@ -78,7 +78,7 @@ def write_json_flag(
     **kwargs
         other keyword arguments to pass to :func:`json.dump`
 
-    See also
+    See Also
     --------
     json.dump
         for details on acceptable keyword arguments

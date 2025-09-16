@@ -23,9 +23,9 @@ import warnings
 import numpy
 from astropy import units
 
-from ..io.registry import UnifiedReadWriteMethod
 from ..frequencyseries import FrequencySeries
 from ..frequencyseries._fdcommon import fdfilter
+from ..io.registry import UnifiedReadWriteMethod
 from ..timeseries import (
     TimeSeries,
     TimeSeriesList,
@@ -130,6 +130,7 @@ class Spectrogram(Array2D):
        ~Spectrogram.plot
        ~Spectrogram.zpk
     """
+
     _metadata_slots = Series._metadata_slots + ("y0", "dy", "yindex")
     _default_xunit = TimeSeries._default_xunit
     _default_yunit = FrequencySeries._default_xunit
@@ -299,7 +300,7 @@ class Spectrogram(Array2D):
         plot : `~gwpy.plot.Plot`
             the `Plot` containing the data
 
-        See also
+        See Also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the
@@ -378,13 +379,13 @@ class Spectrogram(Array2D):
         """
         out = numpy.percentile(self.value, percentile, axis=0)
         if self.name is not None:
-            name = "{}: {} percentile".format(self.name, _ordinal(percentile))
+            name = f"{self.name}: {_ordinal(percentile)} percentile"
         else:
             name = None
         return FrequencySeries(
             out, epoch=self.epoch, channel=self.channel, name=name,
             f0=self.f0, df=self.df, unit=self.unit, frequencies=(
-                hasattr(self, "_frequencies") and self.frequencies or None))
+                (hasattr(self, "_frequencies") and self.frequencies) or None))
 
     def zpk(self, zeros, poles, gain, analog=True):
         """Filter this `Spectrogram` by applying a zero-pole-gain filter.
@@ -409,7 +410,7 @@ class Spectrogram(Array2D):
         specgram : `Spectrogram`
             the frequency-domain filtered version of the input data
 
-        See also
+        See Also
         --------
         Spectrogram.filter
             for details on how a digital ZPK-format filter is applied
@@ -489,7 +490,7 @@ class Spectrogram(Array2D):
         specvar : `SpectralVariance`
             2D-array of spectral frequency-amplitude counts
 
-        See also
+        See Also
         --------
         numpy.histogram
             for details on specifying bins and weights
@@ -563,7 +564,7 @@ class Spectrogram(Array2D):
                                    epoch=out.epoch, channel=out.channel,
                                    f0=out.x0.value, df=out.dx.value)
         # requested time axis, return a TimeSeries
-        elif out.ndim == 1:
+        if out.ndim == 1:
             return TimeSeries(out.value, name=out.name, unit=out.unit,
                               epoch=out.epoch, channel=out.channel, dx=out.dx)
         # otherwise return whatever we got back from super (Quantity)
@@ -603,4 +604,5 @@ class SpectrogramList(TimeSeriesList):
     TypeError
         if any elements are not of type `Spectrogram`
     """
+
     EntryClass = Spectrogram

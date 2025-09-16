@@ -17,16 +17,18 @@
 
 """The timeseries CLI product."""
 
-from .cliproduct import TimeDomainProduct
+import warnings
+
 from ..plot import Plot
 from ..plot.tex import label_to_latex
-import warnings
+from .cliproduct import TimeDomainProduct
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 
 class TimeSeries(TimeDomainProduct):
     """Plot one or more time series."""
+
     action = "timeseries"
 
     def get_ylabel(self):
@@ -36,9 +38,9 @@ class TimeSeries(TimeDomainProduct):
             return ""
         if len(units) == 1 and self.usetex:
             return units[0].to_string("latex")
-        elif len(units) == 1:
+        if len(units) == 1:
             return units[0].to_string()
-        elif len(units) > 1:
+        if len(units) > 1:
             return "Multiple units"
         return super().get_ylabel()
 
@@ -72,14 +74,14 @@ class TimeSeries(TimeDomainProduct):
                 "The number of legends specified must match the number of "
                 "time series (channels * start times). "
                 f"There are {len(self.timeseries)} series "
-                f"and {len(self.args.legend)} legends"
+                f"and {len(self.args.legend)} legends",
             )
             nlegargs = 0    # don't use  them
 
         # get colours
         colors = self._color_by_ifo()
 
-        for i in range(0, self.n_datasets):
+        for i in range(self.n_datasets):
             series = self.timeseries[i]
             if nlegargs:
                 label = self.args.legend[0][i]

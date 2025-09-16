@@ -60,8 +60,8 @@ if TYPE_CHECKING:
     )
 
     from .utils import (
-        NamedReadable,
         FileSystemPath,
+        NamedReadable,
         Readable,
     )
 

@@ -38,6 +38,7 @@ class SpectralVariance(Array2D):
     """A 2-dimensional array containing the variance histogram of a
     frequency-series `FrequencySeries`.
     """
+
     _metadata_slots = FrequencySeries._metadata_slots + ("bins",)
     _default_xunit = FrequencySeries._default_xunit
     _rowclass = FrequencySeries
@@ -198,7 +199,7 @@ class SpectralVariance(Array2D):
         specvar : `SpectralVariance`
             2D-array of spectral frequency-amplitude counts
 
-        See also
+        See Also
         --------
         numpy.histogram
             The histogram function
@@ -289,7 +290,7 @@ class SpectralVariance(Array2D):
         if method == "imshow":
             raise TypeError(
                 f"plotting a {type(self).__name__} with {method}() is not "
-                "supported"
+                "supported",
             )
         bins = self.bins.value
         if (

@@ -98,7 +98,7 @@ def test_read_cwb_ascii_columns_where(cwb_ascii):
         cwb_ascii,
         format="ascii.cwb",
         columns=columns,
-        where=["PSI > 0"]
+        where=["PSI > 0"],
     )
     assert set(tab.colnames) == set(columns)
     assert list(tab["bandwidth"]) == [67]  # only one event with PSI > 0

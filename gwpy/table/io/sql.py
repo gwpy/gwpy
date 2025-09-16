@@ -245,7 +245,7 @@ def create_engine(
     engine : `sqlalchemy.engine.Engine`
         A new engine.
 
-    See also
+    See Also
     --------
     sqlalchemy.engine.URL.create
         For details of how URLs are constructed.

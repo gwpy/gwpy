@@ -192,7 +192,7 @@ def _design_fir(
     taps based on the pass and stop band frequencies, and to set sensible
     defaults for a few other keyword arguments.
 
-    See also
+    See Also
     --------
     scipy.signal.firwin
         for details of how the FIR filters are actually generated
@@ -267,7 +267,7 @@ def num_taps(
         2 / 3.
         * log10(1 / (10 * gpass * gstop))
         * sample_rate
-        / abs(transitionwidth)
+        / abs(transitionwidth),
     )
     # highpass filters must have an odd number of taps
     if transitionwidth > 0 and ntaps % 2 == 0:
@@ -319,7 +319,7 @@ def truncate_transfer(
     `ncorner` extra samples will be zeroed on the left as a hard highpass
     filter.
 
-    See also
+    See Also
     --------
     gwpy.signal.window.planck
     """
@@ -400,7 +400,7 @@ def fir_from_transfer(
     If `ncorner` is not `None`, then `ncorner` extra samples will be zeroed
     on the left as a hard highpass filter.
 
-    See also
+    See Also
     --------
     scipy.signal.remez
         An alternative FIR filter design using the Remez exchange algorithm.
@@ -837,7 +837,7 @@ def notch(
         The output format for an IIR filter depends on the input arguments,
         default is a tuple of ``(zeros, poles, gain)``.
 
-    See also
+    See Also
     --------
     scipy.signal.iirdesign
         For details on the IIR filter design method and the output formats.

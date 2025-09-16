@@ -87,7 +87,7 @@ def _image_download_target(
         outdir
         / label
         / stype
-        / "{}_{}_spectrogram_{{}}.png".format(ifo, id_)
+        / f"{ifo}_{id_}_spectrogram_{{}}.png",
     )
 
 
@@ -106,7 +106,7 @@ class GravitySpyTable(EventTable):
     - WDNN
     - Karoo GP
 
-    See also
+    See Also
     --------
     astropy.table.Table
         for details on parameters for creating a `GravitySpyTable`
@@ -245,7 +245,7 @@ class GravitySpyTable(EventTable):
             "ifo": ", ".join(map(repr, ifos)),
             "database": database,
         })
-        url = "{}/?{}".format(base, query)
+        url = f"{base}/?{query}"
 
         response = requests.get(url, **kwargs)
         response.raise_for_status()  # check the response
@@ -255,10 +255,8 @@ class GravitySpyTable(EventTable):
             # if the response was actually HTML, something terrible happened
             if response.headers["Content-Type"] != JSON_CONTENT_TYPE:
                 raise requests.HTTPError(
-                    "response from {} was '200 OK' but the content is HTML, "
-                    "please check the request parameters".format(
-                        response.url,
-                    ),
+                    f"response from {response.url} was '200 OK' but the content is HTML, "
+                    "please check the request parameters",
                     response=response,
                 )
             raise

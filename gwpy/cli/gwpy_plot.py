@@ -17,13 +17,12 @@
 
 """Generate plots of GW observatory data using GWpy."""
 
-import time
-
 import os
 import sys
+import time
 from argparse import (
-    ArgumentParser,
     ArgumentDefaultsHelpFormatter,
+    ArgumentParser,
     RawTextHelpFormatter,
 )
 

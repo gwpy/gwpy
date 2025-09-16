@@ -23,8 +23,8 @@ This module is deprecated and will be removed in a future release.
 from contextlib import nullcontext
 
 from ...frequencyseries import FrequencySeries
-from ._utils import scale_timeseries_unit
 from . import _registry as fft_registry
+from ._utils import scale_timeseries_unit
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -54,7 +54,7 @@ def welch(timeseries, segmentlength, noverlap=None, scheme=None, **kwargs):
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
         average power `FrequencySeries`
 
-    See also
+    See Also
     --------
     pycbc.psd.welch
     """
@@ -113,6 +113,6 @@ median_mean.__doc__ = welch.__doc__.replace("mean average",
 for func in (welch, bartlett, median, median_mean):
     fft_registry.register_method(
         func,
-        name="pycbc-{}".format(func.__name__),
+        name=f"pycbc-{func.__name__}",
         deprecated=True,
     )

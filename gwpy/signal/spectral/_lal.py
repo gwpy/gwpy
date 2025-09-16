@@ -69,7 +69,7 @@ def generate_fft_plan(length, level=None, dtype="float64", forward=True):
     plan : `REAL8FFTPlan` or similar
         FFT plan of the relevant data type
     """
-    from ...utils.lal import (find_typed_function, to_lal_type_str)
+    from ...utils.lal import find_typed_function, to_lal_type_str
 
     # generate key for caching plan
     laltype = to_lal_type_str(dtype)
@@ -108,7 +108,7 @@ def generate_window(length, window=None, dtype="float64"):
     `window` : `REAL8Window` or similar
         time-domain window to use for FFT
     """
-    from ...utils.lal import (find_typed_function, to_lal_type_str)
+    from ...utils.lal import find_typed_function, to_lal_type_str
 
     if window is None:
         window = ("kaiser", 24)
@@ -181,6 +181,7 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method="welch",
         average power `FrequencySeries`
     """
     import lal
+
     from ...utils.lal import find_typed_function
 
     # default to 50% overlap

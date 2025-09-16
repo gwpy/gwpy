@@ -549,7 +549,7 @@ class TestDataQualityFlag:
         padded = flag.pad(*PADDING, inplace=False)
         assert padded is not flag
 
-        padded = flag.pad(*PADDING, inplace=True)  # noqa: PD002
+        padded = flag.pad(*PADDING, inplace=True)
         assert padded is flag
         utils.assert_segmentlist_equal(flag.known, KNOWNPAD)
         utils.assert_segmentlist_equal(flag.active, ACTIVEPAD)

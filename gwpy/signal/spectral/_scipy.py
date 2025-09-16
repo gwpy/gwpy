@@ -182,7 +182,7 @@ def rayleigh(
     if noverlap:
         numsegs = 1 + int(
             (timeseries.size - segmentlength)
-            / float(noverlap)
+            / float(noverlap),
         )
     else:
         numsegs = int(timeseries.size // segmentlength)
@@ -240,7 +240,7 @@ def csd(
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
         Average power `FrequencySeries`.
 
-    See also
+    See Also
     --------
     scipy.signal.csd
     """
@@ -291,7 +291,7 @@ def coherence(
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
         Average power `FrequencySeries`.
 
-    See also
+    See Also
     --------
     scipy.signal.coherence
     """

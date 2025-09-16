@@ -172,7 +172,7 @@ def table_to_gwf(
         Other keyword arguments are passed to the GWF creator and writer
         functions (see below).
 
-    See also
+    See Also
     --------
     gwpy.io.gwf.create_frame
         For details of how the GWF ``FrameH`` structure is created and

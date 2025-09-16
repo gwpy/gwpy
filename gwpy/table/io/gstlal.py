@@ -93,7 +93,7 @@ def read_gstlal_sngl(
     kwargs
         Other keyword arguments are passed to `Table.read(format="ligolw")`.
 
-    See also
+    See Also
     --------
     gwpy.io.ligolw.read_table
         For details of keyword arguments for the read operation.
@@ -147,7 +147,7 @@ def read_gstlal_coinc(
     kwargs
         Other keyword arguments are passed to `Table.read(format="ligolw")`.
 
-    See also
+    See Also
     --------
     gwpy.io.ligolw.read_table
         For details of keyword arguments for the read operation.
@@ -233,7 +233,7 @@ def read_gstlal(
     kwargs
         Other keyword arguments are passed to `Table.read(format="ligolw")`.
 
-    See also
+    See Also
     --------
     gwpy.table.io.gstlal.read_gstlal_sngl
     gwpy.table.io.gstlal.read_gstlal_coinc
@@ -303,9 +303,9 @@ GET_COLUMN["chi_snr"] = get_chi_snr
 GET_COLUMN_EXTRA["chi_snr"] = {"snr", "chisq"}
 
 # use the generic mass functions
-for _key in {
+for _key in (
     "mchirp",
     "mtotal",
-}:
+):
     GET_COLUMN[_key] = DYNAMIC_COLUMN_FUNC[_key]
     GET_COLUMN_EXTRA[_key] = DYNAMIC_COLUMN_INPUT[_key]

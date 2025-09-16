@@ -20,8 +20,8 @@
 
 import warnings
 from functools import wraps
-from operator import attrgetter
 from math import ceil
+from operator import attrgetter
 
 import numpy
 from astropy.table import (
@@ -39,7 +39,7 @@ from .connect import (
     EventTableRead,
     EventTableWrite,
 )
-from .filter import (filter_table, parse_operator)
+from .filter import filter_table, parse_operator
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -67,8 +67,8 @@ def _rates_preprocess(func):
             try:
                 kwargs["timecolumn"] = self._get_time_column()
             except ValueError as exc:
-                exc.args = ("{0}, please give `timecolumn` "
-                            "keyword".format(exc.args[0]),)
+                exc.args = (f"{exc.args[0]}, please give `timecolumn` "
+                            "keyword",)
                 raise
         # otherwise use anything (it doesn't matter)
         kwargs.setdefault("timecolumn", self.colnames[0])
@@ -94,11 +94,12 @@ class EventTable(Table):
     with extra read/write formats, and methods to perform filtering,
     rate calculations, and visualisation.
 
-    See also
+    See Also
     --------
     astropy.table.Table
         for details on parameters for creating an `EventTable`
     """
+
     # -- utilities ------------------------------
 
     def _is_time_column(self, name):
@@ -142,7 +143,7 @@ class EventTable(Table):
             )
             msg = (
                 "cannot identify time column for table, no columns "
-                "named {}, or with a GPS dtype".format(tcolnames)
+                f"named {tcolnames}, or with a GPS dtype"
             )
             if len(matches) > 1:
                 msg = msg.replace("no columns", "multiple columns")
@@ -371,7 +372,7 @@ class EventTable(Table):
         plot : `~gwpy.plot.Plot`
             the newly created figure
 
-        See also
+        See Also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the
@@ -415,7 +416,7 @@ class EventTable(Table):
         plot : `~gwpy.plot.Plot`
             the newly created figure
 
-        See also
+        See Also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the
@@ -433,6 +434,7 @@ class EventTable(Table):
 
     def _plot(self, method, *args, **kwargs):
         from matplotlib import rcParams
+
         from ..plot import Plot
         from ..plot.tex import label_to_latex
 
@@ -453,7 +455,7 @@ class EventTable(Table):
         ):
             name = col.name
             if rcParams["text.usetex"]:
-                name = r"\texttt{{{0}}}".format(label_to_latex(col.name))
+                name = rf"\texttt{{{label_to_latex(col.name)}}}"
             if col.unit is not None:
                 name += " [{0}]".format(col.unit.to_string("latex_inline"))
             axis.set_label_text(name)
@@ -481,7 +483,7 @@ class EventTable(Table):
         plot : `~gwpy.plot.Plot`
             The newly created figure.
 
-        See also
+        See Also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the

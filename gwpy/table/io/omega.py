@@ -35,6 +35,7 @@ from .utils import read_with_columns_and_where
 
 class OmegaHeader(core.BaseHeader):
     """Parser for Omega ASCII header."""
+
     def get_cols(self, lines: list[str]):
         """Initialize Column objects from a multi-line ASCII header.
 
@@ -71,11 +72,13 @@ class OmegaHeader(core.BaseHeader):
 
 class OmegaData(core.BaseData):
     """Parser for Omega ASCII data."""
+
     comment = "%"
 
 
 class Omega(core.BaseReader):
     """Read an Omega file."""
+
     _format_name = "omega"
     _io_registry_can_write = True
     _description = "Omega format table"

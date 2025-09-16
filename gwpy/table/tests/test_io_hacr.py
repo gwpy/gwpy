@@ -55,7 +55,7 @@ def hacr_table():
         "maxPower": "float64",
         "totPower": "float64",
         "veto": "int64",
-    }.items())
+    }.items(), strict=False)
     table = random_table(
         length=100,
         names=names,

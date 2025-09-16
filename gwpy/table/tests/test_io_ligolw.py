@@ -50,7 +50,7 @@ def table():
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def llwtable():
     from igwn_ligolw.lsctables import SnglBurstTable
     llwtab = SnglBurstTable.new(columns=["peak_frequency", "snr"])

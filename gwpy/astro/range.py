@@ -358,7 +358,7 @@ def inspiral_range_psd(
     rspec : `~gwpy.frequencyseries.FrequencySeries`
         The calculated inspiral sensitivity PSD [Mpc^2 / Hz].
 
-    See also
+    See Also
     --------
     sensemon_range_psd
         For the method based on LIGO-T030276, also known as LIGO SenseMonitor.
@@ -405,7 +405,7 @@ def inspiral_range_psd(
     out = type(psd)(
         4
         * (dist / snr)**2
-        * (hz**2 / psd.value)[f > 0]
+        * (hz**2 / psd.value)[f > 0],
     )
 
     # finalize properties and return
@@ -485,7 +485,7 @@ def inspiral_range(
     >>> print(r)
     70.4612102889 Mpc
 
-    See also
+    See Also
     --------
     sensemon_range
         For the method based on LIGO-T030276, also known as LIGO SenseMonitor.
@@ -703,7 +703,7 @@ def range_timeseries(
     compact binary inspirals and to unmodelled GW bursts, each a class
     of transient event.
 
-    See also
+    See Also
     --------
     gwpy.timeseries.TimeSeries.spectrogram
         for the underlying power spectral density estimator
@@ -819,7 +819,7 @@ def range_spectrogram(
     innermost stable circular orbit (ISCO), the output will extend only up
     to the latter.
 
-    See also
+    See Also
     --------
     gwpy.timeseries.TimeSeries.spectrogram
         for the underlying power spectral density estimator
