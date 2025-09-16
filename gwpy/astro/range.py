@@ -23,11 +23,10 @@ distance of an instrumental power-spectral density.
 from __future__ import annotations
 
 import warnings
-from collections.abc import Callable
 from functools import wraps
 from math import pi
+from typing import TYPE_CHECKING
 
-import numpy
 from astropy import (
     constants,
     units,
@@ -35,10 +34,16 @@ from astropy import (
 from scipy.integrate import trapezoid
 from scipy.interpolate import interp1d
 
-from ..frequencyseries import FrequencySeries
 from ..spectrogram import Spectrogram
 from ..timeseries import TimeSeries
 from ..utils import round_to_power
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    import numpy
+
+    from ..frequencyseries import FrequencySeries
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Alex Urban <alexander.urban@ligo.org>"

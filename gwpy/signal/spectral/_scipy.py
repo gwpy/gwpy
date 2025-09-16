@@ -37,7 +37,6 @@ if typing.TYPE_CHECKING:
 
     from numpy.typing import NDArray
 
-    from ...frequencyseries import FrequencySeries
     from ...timeseries import TimeSeries
     from ..window import WindowLike
 

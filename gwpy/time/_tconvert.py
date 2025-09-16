@@ -25,10 +25,10 @@ Peter Shawhan.
 from __future__ import annotations
 
 import datetime
-from collections.abc import Callable
 from decimal import Decimal
 from numbers import Number
 from typing import (
+    TYPE_CHECKING,
     SupportsFloat,
     cast,
 )
@@ -38,6 +38,9 @@ from astropy.units import Quantity
 from dateparser import parse as dateparser_parse
 
 from . import LIGOTimeGPS
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 GpsConvertible = SupportsFloat | datetime.date | str
 

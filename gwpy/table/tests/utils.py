@@ -35,7 +35,6 @@ from .. import (
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from astropy.table import Table
     from numpy.typing import (
         ArrayLike,
         DTypeLike,
