@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2024-)
+# Copyright (c) 2024-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -19,15 +19,18 @@
 
 from __future__ import annotations
 
-import typing
 import warnings
+from typing import TYPE_CHECKING
 
 from ..io.registry import (
     UnifiedRead,
     UnifiedWrite,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from ..io.utils import NamedReadable
     from . import (
         DataQualityDict,
         DataQualityFlag,
@@ -53,8 +56,9 @@ class SegmentListRead(UnifiedRead):
         otherwise return exactly as contained in file(s).
 
     kwargs
-        Other keyword arguments depend on the format, see the online
-        documentation for details (:ref:`gwpy-segments-io`)
+        Other keyword arguments depend on the format,
+        see `SegmentList.read.help(format=<format>)` for details, or
+        see the online documentation (:ref:`gwpy-segments-io`).
 
     Returns
     -------
@@ -68,24 +72,18 @@ class SegmentListRead(UnifiedRead):
 
     Notes
     -----"""
-    def __call__(
-        self,
-        *args,
-        coalesce: bool  = False,
-        **kwargs,
-    ):
-        def combiner(listofseglists: list[SegmentList]) -> SegmentList:
-            """Combine `SegmentList` from each file into a single object."""
-            out = self._cls(seg for seglist in listofseglists for seg in seglist)
-            if coalesce:
-                return out.coalesce()
-            return out
 
-        return super().__call__(
-            combiner,
-            *args,
-            **kwargs,
-        )
+    def merge(  # type: ignore[override]
+        self,
+        items: Sequence[SegmentList],
+        *,
+        coalesce: bool = False,
+    ) -> SegmentList:
+        """Combine the `SegmentList` from each file into a single object."""
+        out = self._cls(seg for seglist in items for seg in seglist)
+        if coalesce:
+            return out.coalesce()
+        return out
 
 
 class SegmentListWrite(UnifiedWrite):
@@ -150,33 +148,44 @@ class DataQualityFlagRead(UnifiedRead):
 
     Notes
     -----"""
+
+    def merge(  # type: ignore[override]
+        self,
+        items: Sequence[DataQualityFlag],
+        *,
+        coalesce: bool = False,
+    ) -> DataQualityFlag:
+        """Combine `DataQualityFlag` from each file into a single object."""
+        itrtr = iter(items)
+        out = next(itrtr)
+        for flag in itrtr:
+            out.known += flag.known
+            out.active += flag.active
+        if coalesce:
+            return out.coalesce()
+        return out
+
     def __call__(
         self,
+        source: NamedReadable | list[NamedReadable],
         *args,
         coalesce: bool = False,
         **kwargs,
-    ):
+    ) -> DataQualityFlag:
+        """Read data into a `DataQualityFlag`."""
         if "flag" in kwargs:  # pragma: no cover
             warnings.warn(
                 "'flag' keyword was renamed 'name', "
                 "this warning will result in an error in the future",
                 DeprecationWarning,
+                stacklevel=2,
             )
             kwargs.setdefault("name", kwargs.pop("flag"))
 
-        def combiner(flags: list[DataQualityFlag]) -> DataQualityFlag:
-            """Combine `DataQualityFlag` from each file into a single object."""
-            out = flags[0]
-            for flag in flags[1:]:
-                out.known += flag.known
-                out.active += flag.active
-            if coalesce:
-                return out.coalesce()
-            return out
-
         return super().__call__(
-            combiner,
+            source,
             *args,
+            coalesce=coalesce,
             **kwargs,
         )
 
@@ -223,6 +232,44 @@ class DataQualityDictRead(UnifiedRead):
 
     Notes
     -----"""
+
+    def merge(  # type: ignore[override]
+        self,
+        inputs: Sequence[DataQualityDict],
+        *,
+        names: list[str] | None = None,
+        on_missing: str = "error",
+        coalesce: bool = False,
+    ) -> DataQualityDict:
+        """Combine a list of `DataQualityDict` objects into one `DataQualityDict`.
+
+        Must be given at least one `DataQualityDict`.
+        """
+        # check all names are contained
+        required = set(names or [])
+        found = {name for dqdict in inputs for name in dqdict}
+        for name in required - found:  # validate all names are found once
+            msg = f"'{name}' not found in any input file"
+            if on_missing == "ignore":
+                continue
+            if on_missing == "warn":
+                warnings.warn(msg, stacklevel=3)
+                continue
+            raise ValueError(msg)
+
+        # combine flags
+        out = self._cls()
+        for dqdict in inputs:
+            for flag in dqdict:
+                if flag in out:
+                    out[flag].known.extend(dqdict[flag].known)
+                    out[flag].active.extend(dqdict[flag].active)
+                else:
+                    out[flag] = dqdict[flag]
+        if coalesce:
+            return out.coalesce()
+        return out
+
     def __call__(
         self,
         *args,
@@ -231,40 +278,11 @@ class DataQualityDictRead(UnifiedRead):
         coalesce: bool = False,
         **kwargs,
     ):
-        cls = self._cls
-
-        def combiner(inputs: list[DataQualityDict]) -> DataQualityDict:
-            out = cls()
-
-            # check all names are contained
-            required = set(names or [])
-            found = set(name for dqdict in inputs for name in dqdict)
-            for name in required - found:  # validate all names are found once
-                msg = f"'{name}' not found in any input file"
-                if on_missing == "ignore":
-                    continue
-                if on_missing == "warn":
-                    warnings.warn(msg)
-                    continue
-                raise ValueError(msg)
-
-            # combine flags
-            for dqdict in inputs:
-                for flag in dqdict:
-                    try:  # repeated occurence
-                        out[flag].known.extend(dqdict[flag].known)
-                        out[flag].active.extend(dqdict[flag].active)
-                    except KeyError:  # first occurence
-                        out[flag] = dqdict[flag]
-            if coalesce:
-                return out.coalesce()
-            return out
-
         return super().__call__(
-            combiner,
             *args,
             names=names,
-            on_missing="ignore",
+            on_missing=on_missing,
+            coalesce=coalesce,
             **kwargs,
         )
 

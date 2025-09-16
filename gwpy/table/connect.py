@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2017-2025 Cardiff University
+#               2017 Louisiana State University
 #
 # This file is part of GWpy.
 #
@@ -24,8 +24,8 @@ import inspect
 import os
 import pydoc
 import re
-import typing
 import warnings
+from typing import TYPE_CHECKING
 
 from astropy.io.registry import (
     IORegistryError,
@@ -40,7 +40,10 @@ from ..io.registry import (
     default_registry,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from typing import Literal
+
     from .table import EventTable
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -101,16 +104,18 @@ class EventTableRead(UnifiedRead):
 
     Notes
     -----"""
-    def __init__(
+
+    def merge(  # type: ignore[override]
         self,
-        instance,
-        cls,
-        registry=default_registry,
-    ):
-        super().__init__(
-            instance,
-            cls,
-            registry=registry,
+        items: Sequence[EventTable],
+        join_type: Literal["inner", "exact", "outer"] = "outer",
+        metadata_conflicts: Literal["silent", "warn", "error"] = "silent",
+    ) -> EventTable:
+        """Combine `EventTable` from each file into a single object."""
+        return vstack(
+            items,
+            join_type=join_type,
+            metadata_conflicts=metadata_conflicts,
         )
 
     def __call__(
@@ -125,11 +130,11 @@ class EventTableRead(UnifiedRead):
                 "the 'selection' keyword has been renamed 'where', "
                 "this warning will be an error in the near future",
                 DeprecationWarning,
+                stacklevel=2,
             )
             kwargs.setdefault("where", kwargs.pop("selection"))
 
         return super().__call__(
-            vstack,
             *args,
             **kwargs,
         )
@@ -170,7 +175,9 @@ class EventTableWrite(TableWrite, UnifiedWrite):
 
     Notes
     -----"""
-    def __init__(self, instance, cls):
+
+    def __init__(self, instance: EventTable, cls: type[EventTable]) -> None:
+        """Create a new `EventTableWrite` instance."""
         UnifiedWrite.__init__(
             self,
             instance,
@@ -282,17 +289,6 @@ class EventTableFetch(EventTableRead):
 
     Notes
     -----"""
-    def __init__(
-        self,
-        instance,
-        cls,
-        registry=fetch_registry,
-    ):
-        super().__init__(
-            instance,
-            cls,
-            registry=registry,
-        )
 
     def __call__(
         self,

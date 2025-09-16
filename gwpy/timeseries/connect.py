@@ -19,7 +19,7 @@
 
 from __future__ import annotations
 
-import typing
+from typing import TYPE_CHECKING
 
 from ..io import cache as io_cache
 from ..io.registry import (
@@ -27,9 +27,14 @@ from ..io.registry import (
 )
 from ..types.connect import SeriesWrite
 
-if typing.TYPE_CHECKING:
-    from ...time._tconvert import GpsConvertible
-    from ...types import Series
+if TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Sequence,
+    )
+
+    from ..time._tconvert import GpsConvertible
+    from ..types import Series
 
 
 # -- utilities -----------------------
@@ -40,7 +45,7 @@ def _join_factory(
     pad: float | None,
     start: GpsConvertible | None = None,
     end: GpsConvertible | None = None,
-):
+) -> Callable[[Sequence[Series]], Series]:
     """Build a joiner for the given cls, and the given padding options."""
     from . import TimeSeriesBaseDict
 
@@ -136,10 +141,11 @@ def _pad_series(
     if not (pada or padb):  # if noop, just return the input
         return ts
     if error:  # if error, bail out now
-        raise ValueError(
+        msg = (
             f"{type(ts).__name__} with span {span} does not cover "
-            "requested interval {type(span)(start, end)}",
+            "requested interval {type(span)(start, end)}"
         )
+        raise ValueError(msg)
     # otherwise applying the padding
     return ts.pad((pada, padb), mode="constant", constant_values=(pad,))
 
@@ -147,12 +153,29 @@ def _pad_series(
 # -- Unified I/O singletons ----------
 
 class _TimeSeriesRead(UnifiedRead):
-    """Base `UnifiedRead` implementation.
+    """Base `TimeSeriesRead` implementation.
 
     This defines the logic, but all concrete instances should be created
     from a subclass that gives a detailed docstring to support
     `Klass.read.help()`.
     """
+
+    def merge(  # type: ignore[override]
+        self,
+        items: Sequence[Series],
+        pad: float | None = None,
+        gap: str | None = None,
+    ) -> Series:
+        """Combine a list of `Series` objects into one `Series`.
+
+        Must be given at least one series.
+        """
+        from . import TimeSeriesBaseList
+        if len(items) == 1:  # don't copy a single array
+            return items[0]
+        list_ = TimeSeriesBaseList(*items)
+        return list_.join(pad=pad, gap=gap)
+
     def __call__(  # type: ignore[override]
         self,
         source,
@@ -172,10 +195,10 @@ class _TimeSeriesRead(UnifiedRead):
                 end=end,
             )
 
-        # get join arguments
+        # construct parametrised merge function
         if gap is None:
             gap = "raise" if pad is None else "pad"
-        joiner = _join_factory(
+        merge = _join_factory(
             self._cls,
             gap,
             pad,
@@ -185,11 +208,11 @@ class _TimeSeriesRead(UnifiedRead):
 
         # read
         return super().__call__(
-            joiner,
             source,
             *args,
             start=start,
             end=end,
+            merge_function=merge,
             **kwargs,
         )
 

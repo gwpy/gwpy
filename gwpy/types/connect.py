@@ -19,38 +19,26 @@
 
 from __future__ import annotations
 
-import typing
-from functools import partial
+from typing import TYPE_CHECKING
 
 from ..io.registry import (
     UnifiedRead,
     UnifiedWrite,
 )
 
-if typing.TYPE_CHECKING:
-    from typing import Literal
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from typing import (
+        Literal,
+        TypeVar,
+    )
 
-    from .array2d import Array2D
     from .series import Series
 
-
-def _combine_series(
-    listofseries: list[Series],
-    pad: float | None = None,
-    gap: Literal["raise", "ignore", "pad"] | None = None,
-) -> Series:
-    """Combine a list of `Series` objects into one `Series`.
-
-    Must be given at least one series.
-    """
-    out = listofseries.pop(0)
-    while listofseries:
-        out.append(listofseries.pop(0), gap=gap, pad=pad)
-    return out
+    T = TypeVar("T", bound=Series)
 
 
 # -- Series --------------------------
-
 
 class SeriesRead(UnifiedRead):
     """Read data into a `Series`.
@@ -89,20 +77,21 @@ class SeriesRead(UnifiedRead):
     Notes
     -----"""
 
-    def __call__(
+    def merge(  # type: ignore[override]
         self,
-        *args,
+        items: Sequence[Series],
         pad: float | None = None,
         gap: Literal["raise", "ignore", "pad"] | None = None,
-        **kwargs,
     ) -> Series:
-        """Read data into a `Series`."""
-        combiner = partial(_combine_series, pad=pad, gap=gap)
-        return super().__call__(
-            combiner,
-            *args,
-            **kwargs,
-        )
+        """Combine a list of `Series` objects into one `Series`.
+
+        Must be given at least one series.
+        """
+        itrtr = iter(items)
+        out = next(itrtr)
+        for series in itrtr:
+            out.append(series, gap=gap, pad=pad)
+        return out
 
 
 class SeriesWrite(UnifiedWrite):
@@ -127,7 +116,7 @@ class SeriesWrite(UnifiedWrite):
 
 # -- Array2D -------------------------
 
-class Array2DRead(UnifiedRead):
+class Array2DRead(SeriesRead):
     """Read data into a `Array2D`.
 
     Arguments and keywords depend on the output format, see the
@@ -163,21 +152,6 @@ class Array2DRead(UnifiedRead):
 
     Notes
     -----"""
-
-    def __call__(
-        self,
-        *args,
-        pad: float | None = None,
-        gap: Literal["raise", "ignore", "pad"] | None = None,
-        **kwargs,
-    ) -> Array2D:
-        """Read data into a `Array2D`."""
-        combiner = partial(_combine_series, pad=pad, gap=gap)
-        return super().__call__(
-            combiner,
-            *args,
-            **kwargs,
-        )
 
 
 class Array2DWrite(UnifiedWrite):
