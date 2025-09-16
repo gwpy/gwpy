@@ -68,7 +68,7 @@ class TestSpectrogram(_TestArray2D):
             2000 * units.milliHertz,
         ) == self.data[5][2] * array.unit
 
-    @pytest.mark.parametrize("ratio", ("mean", "median"))
+    @pytest.mark.parametrize("ratio", ["mean", "median"])
     def test_ratio(self, array, ratio):
         rat = array.ratio(ratio)
         array_meth = getattr(array, ratio)
@@ -139,7 +139,7 @@ class TestSpectrogram(_TestArray2D):
         with pytest.warns(UserWarning):
             array.crop_frequencies(array.yspan[0], array.yspan[1]+1)
 
-    @pytest.mark.parametrize("method", ("imshow", "pcolormesh"))
+    @pytest.mark.parametrize("method", ["imshow", "pcolormesh"])
     def test_plot(self, array, method):
         with rc_context(rc={"text.usetex": False}):
             plot = array.plot(method=method)

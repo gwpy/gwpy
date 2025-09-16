@@ -169,7 +169,7 @@ class _TestCliProduct:
             raise NotImplementedError
         assert prod.action is self.ACTION
 
-    @pytest.mark.parametrize("level", (1, 2, 3))
+    @pytest.mark.parametrize("level", [1, 2, 3])
     def test_log(self, prod, level, capsys):
         v = prod.verbose
         prod.log(level, "Test")

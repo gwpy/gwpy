@@ -28,7 +28,7 @@ def _sql_str(expr) -> str:
     return out.replace("\n", "")
 
 
-@pytest.mark.parametrize(("kwargs", "result"), (
+@pytest.mark.parametrize(("kwargs", "result"), [
     # just table
     pytest.param(
         None,
@@ -70,7 +70,7 @@ def _sql_str(expr) -> str:
         id="order_by_desc",
     ),
 
-))
+])
 @pytest.mark.requires("sqlalchemy")
 def test_format_query(kwargs, result):
     """Test that `gwpy.table.io.sql.format_query` works."""

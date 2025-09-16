@@ -95,8 +95,8 @@ def test_to_astropy_table_empty():
 
 # -- i/o -----------------------------
 
-@pytest.mark.parametrize("ext", ("xml", "xml.gz"))
-@pytest.mark.parametrize("table_class", (Table, EventTable))
+@pytest.mark.parametrize("ext", ["xml", "xml.gz"])
+@pytest.mark.parametrize("table_class", [Table, EventTable])
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_write_ligolw(table, ext, table_class):
     utils.test_read_write(
@@ -114,7 +114,7 @@ def test_read_write_ligolw(table, ext, table_class):
     )
 
 
-@pytest.mark.parametrize("use_numpy_dtypes", (False, True))
+@pytest.mark.parametrize("use_numpy_dtypes", [False, True])
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_write_ligolw_types(use_numpy_dtypes):
     t2 = Table.read(
