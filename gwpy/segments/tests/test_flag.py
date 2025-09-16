@@ -1038,7 +1038,7 @@ class TestDataQualityDict:
             # check on_missing='error' (default) raises ValueError
             with pytest.raises(
                 ValueError,
-                match="^'randomname' not found in any input file$",
+                match=r"^'randomname' not found in any input file$",
             ):
                 _read()
 
@@ -1054,7 +1054,7 @@ class TestDataQualityDict:
             # check on_missing=<anything else> raises exception
             with pytest.raises(
                 ValueError,
-                match="^'randomname' not found in any input file$",
+                match=r"^'randomname' not found in any input file$",
             ):
                 _read(on_missing="blah")
 

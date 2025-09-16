@@ -69,7 +69,7 @@ class TestGravitySpyTable(_TestEventTable):
         mocker = requests_mock.Mocker()
         raises = pytest.raises(
             requests.HTTPError,
-            match="please check the request parameters$",
+            match=r"please check the request parameters$",
         )
         with mocker as rmock, raises:
             rmock.get(

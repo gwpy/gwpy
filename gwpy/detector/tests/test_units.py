@@ -51,7 +51,7 @@ def test_parse_unit_parse_strict_raise():
     # check that errors get raise appropriately
     with pytest.raises(
         ValueError,
-        match="^'metre' did not parse as unit.* Did you mean meter?",
+        match=r"^'metre' did not parse as unit.* Did you mean meter?",
     ):
         parse_unit("metre", parse_strict="raise")
 
@@ -61,7 +61,7 @@ def test_parse_unit_parse_strict_warn():
     # check that warnings get posted, and a custom NamedUnit gets returned
     with pytest.warns(
         units.UnitsWarning,
-        match="^'metre' did not parse as gwpy unit.* Did you mean meter?",
+        match=r"^'metre' did not parse as gwpy unit.* Did you mean meter?",
     ):
         u = parse_unit("metre", parse_strict="warn")
     assert isinstance(u, units.UnrecognizedUnit)

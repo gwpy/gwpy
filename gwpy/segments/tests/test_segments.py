@@ -159,7 +159,7 @@ class TestSegmentList:
         tmp.write_text("0 0 1 .5")
         with pytest.raises(
             ValueError,
-            match="incorrect duration .5",
+            match=r"incorrect duration \.5",
         ):
             self.TEST_CLASS.read(tmp, strict=True, format="segwizard")
         sl = self.TEST_CLASS.read(tmp, strict=False, format="segwizard")
@@ -194,7 +194,7 @@ class TestSegmentList:
         # check overwrite kwarg
         with pytest.raises(
             OSError,
-            match="File .* already exists",
+            match=r"File .* already exists",
         ):
             segmentlist.write(tmp, "test-segmentlist")
         segmentlist.write(tmp, "test-segmentlist", overwrite=True)

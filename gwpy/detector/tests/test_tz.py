@@ -35,7 +35,7 @@ def test_get_timezone_error():
     """Test `get_timezone()`."""
     with pytest.raises(
         ValueError,
-        match="^Unrecognised ifo: 'ABC'$",
+        match=r"^Unrecognised ifo: 'ABC'$",
     ):
         tz.get_timezone("ABC")
 

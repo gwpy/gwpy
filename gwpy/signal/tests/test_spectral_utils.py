@@ -38,6 +38,6 @@ def test_scale_timeseries_unit(unit, kwargs, result):
 def test_scale_timeseries_unit_error():
     with pytest.raises(
         ValueError,
-        match="^unknown scaling: 'other'$",
+        match=r"^unknown scaling: 'other'$",
     ):
         fft_utils.scale_timeseries_unit(None, scaling="other")

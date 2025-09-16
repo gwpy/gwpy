@@ -128,7 +128,7 @@ def test_write_root_append(table, tmp_path):
     # check that we can't read without specifying a tree
     with pytest.raises(
         ValueError,
-        match="^Multiple trees found",
+        match=r"^Multiple trees found",
     ):
         type(table).read(tmp)
 

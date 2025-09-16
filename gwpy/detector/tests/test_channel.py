@@ -240,7 +240,7 @@ class TestChannel:
     ])
     def test_url_error(self, url):
         """Test `Channel.url` error handling."""
-        with pytest.raises(ValueError, match=f"^Invalid URL {url!r}$"):
+        with pytest.raises(ValueError, match=fr"^Invalid URL {url!r}$"):
             self.TEST_CLASS("test", url=url)
 
     def test_frametype(self):
@@ -422,10 +422,7 @@ class TestChannel:
         # check errors
         with pytest.raises(
             ValueError,
-            match=(
-                "^Cannot parse channel name according to "
-                "LIGO-T990033$"
-            ),
+            match=r"^Cannot parse channel name according to LIGO-T990033$",
         ):
             self.TEST_CLASS.parse_channel_name("blah")
 
@@ -483,7 +480,7 @@ class TestChannel:
         )
         with pytest.raises(
             ValueError,
-            match=f"^No channels found matching '{name}'$",
+            match=fr"^No channels found matching '{name}'$",
         ):
             self.TEST_CLASS.query(
                 name,

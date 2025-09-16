@@ -315,7 +315,7 @@ class TestEventTable(TestTable):
         # check that a non-positive window throws an appropriate ValueError
         with pytest.raises(
             ValueError,
-            match="^Window must be a positive value$",
+            match=r"^Window must be a positive value$",
         ):
             clustertable.cluster("time", "amplitude", 0)
 

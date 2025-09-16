@@ -210,7 +210,7 @@ class TestAxes(AxesTestBase):
         """Test that `ax.hist` presents the right error message for empty data."""
         with pytest.raises(
             ValueError,
-            match="^cannot generate log-spaced histogram bins",
+            match=r"^cannot generate log-spaced histogram bins",
         ):
             ax.hist([], logbins=True)
 
@@ -273,7 +273,7 @@ class TestAxes(AxesTestBase):
         h = numpy.ones_like(x) * .8
         with pytest.raises(
             ValueError,
-            match="unrecognised tile anchor 'blah'",
+            match=r"unrecognised tile anchor 'blah'",
         ):
             ax.tile(x, y, w, h, anchor="blah")
 

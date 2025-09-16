@@ -269,7 +269,7 @@ class TestFrequencySeries(_TestSeries):
         array.f0 = 1.
         with pytest.raises(
             ValueError,
-            match="^Cannot convert FrequencySeries",
+            match=r"^Cannot convert FrequencySeries",
         ):
             array.to_pycbc()
 
@@ -330,7 +330,7 @@ class TestFrequencySeries(_TestSeries):
 
     @pytest.mark.requires("lal", "igwn_ligolw")
     def test_read_ligolw_error_no_array(self, ligolw):
-        with pytest.raises(ValueError, match="^no <Array> elements found"):
+        with pytest.raises(ValueError, match=r"^no <Array> elements found"):
             FrequencySeries.read(ligolw, "blah")
 
     @pytest.mark.requires("lal", "igwn_ligolw")

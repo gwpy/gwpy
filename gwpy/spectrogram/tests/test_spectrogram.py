@@ -48,7 +48,7 @@ class TestSpectrogram(_TestArray2D):
     def test_new_redundant_args(self):
         with pytest.raises(
             ValueError,
-            match="^give only one of epoch or t0$",
+            match=r"^give only one of epoch or t0$",
         ):
             self.TEST_CLASS(self.data, epoch=1, t0=1)
 

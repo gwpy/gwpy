@@ -139,7 +139,7 @@ def test_to_lal_unit_error():
     """Test `to_lal_unit` error handling."""
     with pytest.raises(
         ValueError,
-        match="^LAL has no unit corresponding to 'rad'$",
+        match=r"^LAL has no unit corresponding to 'rad'$",
     ):
         utils_lal.to_lal_unit("rad/s")
 
