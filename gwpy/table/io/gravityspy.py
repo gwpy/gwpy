@@ -1,5 +1,5 @@
-# Copyright (C) Scott Coughlin (2017-2020)
-#               Cardiff University (2020-)
+# Copyright (c) 2017-2020 Scott Coughlin
+#               2020-2025 Cardiff University
 #
 # This file is part of GWpy.
 #

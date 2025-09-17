@@ -1,4 +1,5 @@
-# Copyright (C) Joseph Areeda (2015-2020)
+# Copyright (c) 2015-2020 Joseph Areeda
+#               2020-2025 Cardiff University
 #
 # This file is part of GWpy.
 #

@@ -1,4 +1,4 @@
-# Copyright (C) Duncan Macleod (2018-2020)
+# Copyright (c) 2018-2025 Cardiff University
 #
 # This file is part of GWpy.
 #

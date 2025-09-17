@@ -1,4 +1,4 @@
-# Copyright (C) California Institute of Technology (2022)
+# Copyright (c) 2022 California Institute of Technology
 #
 # This file is part of GWpy.
 #

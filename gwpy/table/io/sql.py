@@ -1,4 +1,4 @@
-# Copyright (C) Scott Coughlin (2017-2020)
+# Copyright (c) 2017-2020 Scott Coughlin
 #
 # This file is part of GWpy.
 #
