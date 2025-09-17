@@ -483,7 +483,7 @@ def find_channels(
     dtype: int | str | DTypeLike = NDS2_DATA_TYPE_ANY,
     *,
     unique: bool = False,
-    epoch: str | tuple[int, int] = "ALL",
+    epoch: str | tuple[int, int] | None = "ALL",
 ) -> list[nds2.channel]:
     """Query an NDS2 server for channel information.
 
