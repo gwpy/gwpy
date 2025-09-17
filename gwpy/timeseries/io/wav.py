@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2014-2017 Louisiana State University
+#               2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -62,7 +62,7 @@ def read(
     **kwargs
         All keyword arguments are passed onto :func:`scipy.io.wavfile.read`.
 
-    See also
+    See Also
     --------
     scipy.io.wavfile.read
         For details on how the WAV file is actually read.
@@ -83,7 +83,7 @@ def write(
     series: TimeSeries,
     output: str | IO,
     scale: float | None = None,
-):
+) -> None:
     """Write a `TimeSeries` to a WAV file.
 
     Parameters
@@ -99,7 +99,7 @@ def write(
         pass `scale=1` to not apply any scale, otherwise
         the data will be auto-scaled
 
-    See also
+    See Also
     --------
     scipy.io.wavfile.write
         for details on how the WAV file is actually written
@@ -123,7 +123,7 @@ def _is_wav(
     origin: str,
     filepath: str,
     fileobj: IO,
-    *args,
+    *args: IO,
     **kwargs,
 ) -> bool:
     """Identify a file as WAV.
@@ -153,15 +153,16 @@ def _is_wav(
         return filepath.endswith((".wav", ".wave"))
 
     # attempt to read the file as .wav
+    kwargs.pop("start", None)
+    kwargs.pop("end", None)
     try:
-        wave.open(args[0])
+        with wave.open(*args, **kwargs):
+            return True
     except (
         AttributeError,  # not a file-like object
         wave.Error,  # scipy failed to read this as a WAV file
     ):
         return False
-    else:
-        return True
 
 
 # -- register ------------------------

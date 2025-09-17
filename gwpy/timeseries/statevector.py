@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-2021)
+# Copyright (c) 2014-2017 Louisiana State University
+#               2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module defines the Boolean array representing the state of some data.
+"""The boolean `StateTimeSeries` and bit field `StateVector`.
 
+Each bit represents a boolean condition.
 Such states are typically the comparison of a `TimeSeries` against some
 threshold, where sub-threshold is good and sup-threshold is bad,
 for example.
@@ -29,11 +30,16 @@ statement of instrumental operation
 
 from __future__ import annotations
 
-import typing
+import os
+from contextlib import suppress
 from functools import wraps
 from math import (
     ceil,
-    log,
+    log2,
+)
+from typing import (
+    TYPE_CHECKING,
+    overload,
 )
 
 import numpy
@@ -41,6 +47,7 @@ from astropy import units
 
 from ..detector import Channel
 from ..io.registry import UnifiedReadWriteMethod
+from ..segments import Segment
 from ..time import Time
 from ..types import Array2D
 from .connect import (
@@ -56,20 +63,64 @@ from .core import (
     as_series_dict_class,
 )
 
-if typing.TYPE_CHECKING:
-    import nds2
+if TYPE_CHECKING:
+    from collections.abc import (
+        Callable,
+        Iterable,
+        Iterator,
+        Sequence,
+    )
+    from typing import (
+        Literal,
+        NoReturn,
+        SupportsIndex,
+        TypeAlias,
+    )
 
-    from ..typing import GpsLike
+    import nds2
+    from astropy.units import (
+        Quantity,
+        Unit,
+    )
+    from numpy.typing import (
+        ArrayLike,
+        DTypeLike,
+        NDArray,
+    )
+
+    from ..plot import Plot
+    from ..segments import (
+        DataQualityDict,
+        DataQualityFlag,
+    )
+    from ..typing import (
+        GpsLike,
+        Self,
+        UnitLike,
+    )
+
+    BitsInput: TypeAlias = dict[int, str | None] | Sequence[str | None]
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-__all__ = ["StateTimeSeries", "StateTimeSeriesDict",
-           "StateVector", "StateVectorDict", "StateVectorList", "Bits"]
+__all__ = [
+    "Bits",
+    "StateTimeSeries",
+    "StateTimeSeriesDict",
+    "StateVector",
+    "StateVectorDict",
+    "StateVectorList",
+]
 
 
 # -- utilities ----------------------------------------------------------------
 
-def _bool_segments(array, start=0, delta=1, minlen=1):
+def _bool_segments(
+    array: Iterable[bool | int],
+    start: float = 0,
+    delta: float = 1,
+    minlen: int = 1,
+) -> Iterator[Segment]:
     """Yield segments of consecutive `True` values in a boolean array.
 
     Parameters
@@ -126,12 +177,12 @@ def _bool_segments(array, start=0, delta=1, minlen=1):
                 return  # stop
             finally:  # yield segment (including at StopIteration)
                 if n >= minlen:  # ... if long enough
-                    yield (start + i * delta, start + (i + n) * delta)
+                    yield Segment(start + i * delta, start + (i + n) * delta)
             i += n
         i += 1
 
 
-# -- StateTimeSeries ----------------------------------------------------------
+# -- StateTimeSeries -----------------
 
 class StateTimeSeries(TimeSeriesBase):
     """Boolean array representing a good/bad state determination.
@@ -139,39 +190,38 @@ class StateTimeSeries(TimeSeriesBase):
     Parameters
     ----------
     value : array-like
-        input data array
+        Input data array.
 
     t0 : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~gwpy.time.to_gps` is fine
+        any input parsable by `~gwpy.time.to_gps` is fine.
 
-    dt : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        time between successive samples (seconds), can also be given inversely
-        via `sample_rate`
+    dt : `float`, `~astropy.units.Quantity`, optional
+        Time between successive samples (seconds), can also be given inversely
+        via `sample_rate`.
 
-    sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        the rate of samples per second (Hertz), can also be given inversely
-        via `dt`
+    sample_rate : `float`, `~astropy.units.Quantity`, optional
+        The rate of samples per second (Hertz), can also be given inversely via `dt`.
 
     times : `array-like`
-        the complete array of GPS times accompanying the data for this series.
+        The complete array of GPS times accompanying the data for this series.
         This argument takes precedence over `t0` and `dt` so should be given
-        in place of these if relevant, not alongside
+        in place of these if relevant, not alongside.
 
     name : `str`, optional
-        descriptive title for this array
+        Descriptive title for this array.
 
     channel : `~gwpy.detector.Channel`, `str`, optional
-        source data stream for these data
+        Source data stream for these data.
 
     dtype : `~numpy.dtype`, optional
-        input data type
+        Input data type.
 
-    copy : `bool`, optional, default: `False`
-        choose to copy the input data to new memory
+    copy : `bool`, optional
+        Choose to copy the input data to new memory.
 
-    subok : `bool`, optional, default: `True`
-        allow passing of sub-classes by the array generator
+    subok : `bool`, optional
+        Allow passing of sub-classes by the array generator.
 
     Notes
     -----
@@ -182,48 +232,97 @@ class StateTimeSeries(TimeSeriesBase):
        ~StateTimeSeries.to_dqflag
     """
 
-    def __new__(cls, data, t0=None, dt=None, sample_rate=None, times=None,
-                channel=None, name=None, **kwargs):
+    def __new__(
+        cls,
+        data: NDArray | list | tuple,
+        t0: GpsLike | None = None,
+        dt: float | Quantity | None = None,
+        sample_rate: float | Quantity | None = None,
+        times: ArrayLike | None = None,
+        channel: Channel | str | None = None,
+        name: str | None = None,
+        **kwargs,
+    ) -> Self:
         """Generate a new StateTimeSeries."""
         if kwargs.pop("unit", None) is not None:
-            raise TypeError("%s does not accept keyword argument 'unit'"
-                            % cls.__name__)
+            msg = f"{cls.__name__} does not accept keyword argument 'unit'"
+            raise TypeError(msg)
+
         if isinstance(data, list | tuple):
             data = numpy.asarray(data)
+
         if not isinstance(data, cls):
             data = data.astype(bool, copy=False)
+
         return super().__new__(
-            cls, data, t0=t0, dt=dt, sample_rate=sample_rate, times=times,
-            name=name, channel=channel, **kwargs)
-
-    # -- unit handling (always dimensionless) ---
-
-    @property
-    def unit(self):
-        return units.dimensionless_unscaled
-
-    def override_unit(self, *args, **kwargs):
-        raise NotImplementedError(
-            f"overriding units is not supported for {type(self).__name__}",
+            cls,
+            data,
+            t0=t0,
+            dt=dt,
+            sample_rate=sample_rate,
+            times=times,
+            name=name,
+            channel=channel,
+            **kwargs,
         )
 
-    def _to_own_unit(self, value, check_precision=True):
-        if isinstance(value, units.Quantity) and value.unit != self.unit:
-            raise ValueError("Cannot store %s with units %r"
-                             % (type(self).__name__, value.unit))
-        if not isinstance(value, units.Quantity):
-            value *= self.unit
-        return value
+    # -- unit handling (always dimensionless)
 
-    # -- math handling (always boolean) ---------
+    @property  # type: ignore[misc]
+    def unit(self) -> Unit:
+        """The unit of this `StateTimeSeries`."""
+        return units.dimensionless_unscaled
 
-    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-        out = super().__array_ufunc__(ufunc, method, *inputs, **kwargs)
+    def override_unit(
+        self,
+        unit: UnitLike,
+        parse_strict: str = "raise",
+    ) -> NoReturn:
+        """Override the unit of this `StateTimeSeries`. UNSUPPORTED DO NOT USE."""
+        msg = f"overriding units is not supported for {type(self).__name__}"
+        raise NotImplementedError(msg)
+
+    # -- math handling (always boolean)
+
+    def __array_ufunc__(
+        self,
+        function: Callable,
+        method: str,
+        *inputs,
+        **kwargs,
+    ) -> Self | Quantity:
+        """Handle ufuncs on this `StateTimeSeries`."""
+        out = super().__array_ufunc__(function, method, *inputs, **kwargs)
         if out.ndim:
             return out.astype(bool)
         return out
 
-    def diff(self, n=1, axis=-1):
+    def diff(
+        self,
+        n: int = 1,
+        axis: int = -1,
+    ) -> Self:
+        """Return the difference between successive samples.
+
+        The difference is defined as the exclusive-or of the
+        previous and current samples.
+
+        Parameters
+        ----------
+        n : `int`, optional
+            Number of times to apply the difference operation,
+            defaults to `1`, i.e. the first difference.
+
+        axis : `int`, optional
+            Axis along which to compute the difference, defaults to the last
+            axis, i.e. the time axis.
+
+        Returns
+        -------
+        new : `StateTimeSeries`
+            A new `StateTimeSeries` containing the difference of the
+            current series, with the same metadata as the original.
+        """
         slice1 = (slice(1, None),)
         slice2 = (slice(None, -1),)
         new = (self.value[slice1] ^ self.value[slice2]).view(type(self))
@@ -235,16 +334,28 @@ class StateTimeSeries(TimeSeriesBase):
         if n > 1:
             return new.diff(n-1, axis=axis)
         return new
-    diff.__doc__ = TimeSeriesBase.diff.__doc__
 
     @wraps(numpy.ndarray.all, assigned=("__doc__",))
-    def all(self, axis=None, out=None):
-        return numpy.all(self.value, axis=axis, out=out)
+    def all(
+        self,
+        axis: int | None = None,
+        out: numpy.ndarray | None = None,
+    ) -> bool:
+        """Return `True` if all values are `True` along the given axis."""
+        return bool(numpy.all(self.value, axis=axis, out=out))
 
-    # -- useful methods -------------------------
+    # -- useful methods --------------
 
-    def to_dqflag(self, name=None, minlen=1, dtype=None, round=False,
-                  label=None, description=None):
+    def to_dqflag(
+        self,
+        name: str | None = None,
+        minlen: int = 1,
+        dtype: type | None = None,
+        *,
+        round: bool = False,  # noqa: A002
+        label: str | None = None,
+        description: str | None = None,
+    ) -> DataQualityFlag:
         """Convert this series into a `~gwpy.segments.DataQualityFlag`.
 
         Each contiguous set of `True` values are grouped as a
@@ -254,36 +365,39 @@ class StateTimeSeries(TimeSeriesBase):
 
         Parameters
         ----------
+        name: `str`, optional
+            Name of the segment.
+
         minlen : `int`, optional
-            minimum number of consecutive `True` values to identify as a
+            Minimum number of consecutive `True` values to identify as a
             `~gwpy.segments.Segment`. This is useful to ignore single
             bit flips, for example.
 
         dtype : `type`, `callable`
-            output segment entry type, can pass either a type for simple
+            Output segment entry type, can pass either a type for simple
             casting, or a callable function that accepts a float and returns
-            another numeric type, defaults to the `dtype` of the time index
+            another numeric type, defaults to the `dtype` of the time index.
 
         round : `bool`, optional
-            choose to round each `~gwpy.segments.Segment` to its
-            inclusive integer boundaries
+            Choose to round each `~gwpy.segments.Segment` to its
+            inclusive integer boundaries.
 
         label : `str`, optional
-            the :attr:`~gwpy.segments.DataQualityFlag.label` for the
+            The :attr:`~gwpy.segments.DataQualityFlag.label` for the
             output flag.
 
         description : `str`, optional
-            the :attr:`~gwpy.segments.DataQualityFlag.description` for the
+            The :attr:`~gwpy.segments.DataQualityFlag.description` for the
             output flag.
 
         Returns
         -------
         dqflag : `~gwpy.segments.DataQualityFlag`
-            a segment representation of this `StateTimeSeries`, the span
+            A segment representation of this `StateTimeSeries`, the span
             defines the `known` segments, while the contiguous `True`
-            sets defined each of the `active` segments
+            sets defined each of the `active` segments.
         """
-        from ..segments import DataQualityFlag
+        from ..segments import DataQualityFlag  # noqa: PLC0415
 
         # format dtype
         if dtype is None:
@@ -298,39 +412,57 @@ class StateTimeSeries(TimeSeriesBase):
         known = [tuple(map(dtype, self.span))]
 
         # build flag and return
-        out = DataQualityFlag(name=name or self.name, active=active,
-                              known=known, label=label or self.name,
-                              description=description)
+        out = DataQualityFlag(
+            name=name or self.name,
+            active=active,
+            known=known,
+            label=label or self.name,
+            description=description,
+        )
         if round:
             return out.round()
         return out
 
-    def to_lal(self, *args, **kwargs):
+    def to_lal(self) -> NoReturn:
         """Bogus function inherited from superclass, do not use."""
-        raise NotImplementedError("The to_lal method, inherited from the "
-                                  "TimeSeries, cannot be used with the "
-                                  "StateTimeSeries because LAL has no "
-                                  "BooleanTimeSeries structure")
+        msg = (
+            "The to_lal method, inherited from the TimeSeries, cannot be used with the "
+            "StateTimeSeries because LAL has no BooleanTimeSeries structure"
+        )
+        raise NotImplementedError(msg)
 
     @classmethod
-    @wraps(TimeSeriesBase.from_nds2_buffer)
-    def from_nds2_buffer(cls, buffer, **metadata):
+    def from_nds2_buffer(
+        cls,
+        buffer: nds2.buffer,
+        **metadata,
+    ) -> Self:
+        """Create a `StateTimeSeries` from an NDS2 buffer."""
         metadata.setdefault("unit", None)
         return super().from_nds2_buffer(buffer, **metadata)
 
-    def __getitem__(self, item):
-        if isinstance(item, float | int):
-            return numpy.ndarray.__getitem__(self, item)
-        else:
-            return super().__getitem__(item)
+    from_nds2_buffer.__doc__ = TimeSeriesBase.from_nds2_buffer.__doc__
 
-    def tolist(self):
+    @overload  # type: ignore[override]
+    def __getitem__(self, key: SupportsIndex) -> bool: ...
+    @overload
+    def __getitem__(self, key: slice) -> Self: ...
+    def __getitem__(
+        self,
+        key: SupportsIndex | slice,
+    ) -> bool | Self:
+        """Return the value at the given index or slice."""
+        if isinstance(key, float | int):
+            return numpy.ndarray.__getitem__(self, key)
+        return super().__getitem__(key)
+
+    @wraps(TimeSeriesBase.tolist)
+    def tolist(self) -> list:
+        """Convert this `StateTimeSeries` to a list of boolean values."""
         return self.value.tolist()
 
-    tolist.__doc__ = numpy.ndarray.tolist.__doc__
 
-
-# -- Bits ---------------------------------------------------------------------
+# -- Bits ----------------------------
 
 class Bits(list):
     """Definition of the bits in a `StateVector`.
@@ -349,35 +481,45 @@ class Bits(list):
     description : `dict`, optional
         (bit, desc) `dict` of longer descriptions for each bit
     """
-    def __init__(self, bits, channel=None, epoch=None, description=None):
-        # handle dict of (index, bitname) pairs
+
+    def __init__(
+        self,
+        bits: BitsInput,
+        channel: Channel | str | None = None,
+        epoch: Time | float | Quantity | None = None,
+        description: dict[str, str] | None = None,
+    ) -> None:
+        """Initialize a new `Bits` object."""
         if isinstance(bits, dict):
-            n = max(map(int, bits.keys())) + 1
-            list.__init__(self, [None] * n)
+            # dict of (index, bitname) pairs
+            depth = max(map(int, bits.keys())) + 1
+            super().__init__([None] * depth)
             for key, val in bits.items():
                 self[int(key)] = val
-        # otherwise just parse a list of bitnames
         else:
-            list.__init__(self, [b or None for b in bits])
+            # list of names
+            super().__init__((b or None) for i, b in enumerate(bits))
 
         # populate metadata
         if channel is not None:
             self.channel = channel
         if epoch is not None:
             self.epoch = epoch
-        self.description = description
 
-        # rebuild descriptions
+        # populate descriptions
+        if description is None:
+            description = {}
+        self.description = {}
         for i, bit in enumerate(self):
             if bit is None or bit in self.description:
                 continue
-            elif channel:
-                self.description[bit] = "%s bit %d" % (self.channel, i)
+            if channel:
+                self.description[bit] = f"{self.channel} bit {i}"
             else:
                 self.description[bit] = None
 
     @property
-    def epoch(self):
+    def epoch(self) -> Time | None:
         """Starting GPS time epoch for these `Bits`.
 
         This attribute is recorded as a `~astropy.time.Time` object in the
@@ -391,7 +533,7 @@ class Bits(list):
             return None
 
     @epoch.setter
-    def epoch(self, epoch):
+    def epoch(self, epoch: Time | float | Quantity) -> None:
         if isinstance(epoch, Time):
             self._epoch = epoch.gps
         elif isinstance(epoch, units.Quantity):
@@ -400,7 +542,7 @@ class Bits(list):
             self._epoch = float(epoch)
 
     @property
-    def channel(self):
+    def channel(self) -> Channel | None:
         """Data channel associated with these `Bits`."""
         try:
             return self._channel
@@ -408,47 +550,62 @@ class Bits(list):
             return None
 
     @channel.setter
-    def channel(self, chan):
+    def channel(self, chan: Channel | str) -> None:
         if isinstance(chan, Channel):
             self._channel = chan
         else:
             self._channel = Channel(chan)
 
     @property
-    def description(self):
-        """(key, value) dictionary of long bit descriptions."""
+    def description(self) -> dict[str, str | None]:
+        """(name, desc) mapping of long bit descriptions."""
         return self._description
 
     @description.setter
-    def description(self, desc):
+    def description(
+        self,
+        desc: dict[str, str | None] | None,
+    ) -> None:
         if desc is None:
             self._description = {}
         else:
             self._description = desc
 
-    def __repr__(self):
-        indent = " " * len("<%s(" % self.__class__.__name__)
-        mask = ("\n%s" % indent).join(["%d: %r" % (idx, bit) for
-                                       idx, bit in enumerate(self)
-                                       if bit])
-        return ("<{1}({2},\n{0}channel={3},\n{0}epoch={4})>".format(
-            indent, self.__class__.__name__,
-            mask, repr(self.channel), repr(self.epoch)))
+    @description.deleter
+    def description(self) -> None:
+        self._description = {}
 
-    def __str__(self):
-        indent = " " * len("%s(" % self.__class__.__name__)
-        mask = ("\n%s" % indent).join(["%d: %s" % (idx, bit) for
-                                       idx, bit in enumerate(self)
-                                       if bit])
-        return ("{1}({2},\n{0}channel={3},\n{0}epoch={4})".format(
-            indent, self.__class__.__name__,
-            mask, str(self.channel), str(self.epoch)))
+    def __repr__(self) -> str:
+        """Return a string representation of this `Bits` object."""
+        indent = " " * len(f"<{self.__class__.__name__}(")
+        mask = (os.linesep + indent).join([
+            f"{idx}: {bit!r}" for idx, bit in enumerate(self) if bit
+        ])
+        return os.linesep.join([
+            f"<{self.__class__.__name__}({mask},",
+            f"{indent}channel={self.channel!r},",
+            f"{indent}epoch={self.epoch!r})>",
+        ])
 
-    def __array__(self, dtype="U"):
+    def __str__(self) -> str:
+        """Return a printable string representation of this `Bits` object."""
+        indent = " " * len(f"{self.__class__.__name__}(")
+        mask = (os.linesep + indent).join([
+            f"{idx}: {bit}" for idx, bit in enumerate(self) if bit
+        ])
+        return os.linesep.join([
+            f"{self.__class__.__name__}({mask},",
+            f"{indent}channel={self.channel!s},",
+            f"{indent}epoch={self.epoch!s})",
+        ])
+
+    @wraps(TimeSeriesBase.__array__)
+    def __array__(self, dtype: DTypeLike = "U") -> numpy.ndarray:
+        """Return a numpy array representation of this `Bits` object."""
         return numpy.array([b or "" for b in self], dtype=dtype)
 
 
-# -- StateVector --------------------------------------------------------------
+# -- StateVector ---------------------
 
 class StateVector(TimeSeriesBase):
     """Binary array representing good/bad state determinations of some data.
@@ -460,42 +617,42 @@ class StateVector(TimeSeriesBase):
     Parameters
     ----------
     value : array-like
-        input data array
+        Input data array.
 
     bits : `Bits`, `list`, optional
-        list of bits defining this `StateVector`
+        List of bits defining this `StateVector`.
 
     t0 : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~gwpy.time.to_gps` is fine
+        any input parsable by `~gwpy.time.to_gps` is fine.
 
-    dt : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        time between successive samples (seconds), can also be given inversely
-        via `sample_rate`
+    dt : `float`, `~astropy.units.Quantity`, optional
+        Time between successive samples (seconds), can also be given inversely
+        via `sample_rate`.
 
-    sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        the rate of samples per second (Hertz), can also be given inversely
-        via `dt`
+    sample_rate : `float`, `~astropy.units.Quantity`, optional
+        The rate of samples per second (Hertz), can also be given inversely
+        via `dt`.
 
     times : `array-like`
-        the complete array of GPS times accompanying the data for this series.
+        The complete array of GPS times accompanying the data for this series.
         This argument takes precedence over `t0` and `dt` so should be given
-        in place of these if relevant, not alongside
+        in place of these if relevant, not alongside.
 
     name : `str`, optional
-        descriptive title for this array
+        Descriptive title for this array.
 
     channel : `~gwpy.detector.Channel`, `str`, optional
-        source data stream for these data
+        Source data stream for these data.
 
     dtype : `~numpy.dtype`, optional
-        input data type
+        Input data type.
 
-    copy : `bool`, optional, default: `False`
-        choose to copy the input data to new memory
+    copy : `bool`, optional
+        Choose to copy the input data to new memory.
 
-    subok : `bool`, optional, default: `True`
-        allow passing of sub-classes by the array generator
+    subok : `bool`, optional
+        Allow passing of sub-classes by the array generator.
 
     Notes
     -----
@@ -510,64 +667,93 @@ class StateVector(TimeSeriesBase):
         ~StateVector.plot
 
     """
-    _metadata_slots = TimeSeriesBase._metadata_slots + ("bits",)
-    _print_slots = TimeSeriesBase._print_slots + ("_bits",)
 
-    def __new__(cls, data, bits=None, t0=None, dt=None, sample_rate=None,
-                times=None, channel=None, name=None, **kwargs):
+    _metadata_slots = (*TimeSeriesBase._metadata_slots, "bits")
+    _print_slots = (*TimeSeriesBase._print_slots, "_bits")
+
+    def __new__(
+        cls,
+        data: ArrayLike,
+        bits: BitsInput | None = None,
+        t0: GpsLike | None = None,
+        dt: float | Quantity | None = None,
+        sample_rate: float | Quantity | None = None,
+        times: ArrayLike | None = None,
+        channel: Channel | str | None = None,
+        name: str | None = None,
+        **kwargs,
+    ) -> Self:
         """Generate a new `StateVector`."""
-        new = super().__new__(cls, data, t0=t0, dt=dt,
-                              sample_rate=sample_rate,
-                              times=times, channel=channel,
-                              name=name, **kwargs)
+        new = super().__new__(
+            cls,
+            data,
+            t0=t0,
+            dt=dt,
+            sample_rate=sample_rate,
+            times=times,
+            channel=channel,
+            name=name,
+            **kwargs,
+        )
         new.bits = bits
         return new
 
-    # -- StateVector properties -----------------
+    # -- StateVector properties ------
 
     # -- bits
     @property
-    def bits(self):
-        """list of `Bits` for this `StateVector`.
+    def bits(self) -> Bits:
+        """List of `Bits` for this `StateVector`.
 
         :type: `Bits`
         """
         try:
             return self._bits
-        except AttributeError:
-            if self.dtype.name.startswith(("uint", "int")):
+        except AttributeError as exc:
+            if self.dtype.kind in "iu":
                 nbits = self.itemsize * 8
-                self.bits = Bits(["Bit %d" % b for b in range(nbits)],
-                                 channel=self.channel, epoch=self.epoch)
+                self.bits = Bits(
+                    [f"Bit {b}" for b in range(nbits)],
+                    channel=self.channel,
+                    epoch=self.epoch,
+                )
                 return self.bits
-            elif hasattr(self.channel, "bits"):
-                self.bits = self.channel.bits
+
+            if hasattr(self.channel, "bits"):
+                self.bits = self.channel.bits  # type: ignore[union-attr]
                 return self.bits
-            return None
+
+            msg = (
+                "cannot determine bits for this StateVector, please set them "
+                "explicitly via the 'bits' argument or attribute."
+            )
+            raise ValueError(msg) from exc
 
     @bits.setter
-    def bits(self, mask):
+    def bits(
+        self,
+        mask: Bits | BitsInput | None,
+    ) -> None:
         if mask is None:
             del self.bits
             return
         if not isinstance(mask, Bits):
-            mask = Bits(mask, channel=self.channel,
-                        epoch=self.epoch)
+            mask = Bits(
+                mask,
+                channel=self.channel,
+                epoch=self.epoch,
+            )
         self._bits = mask
 
     @bits.deleter
-    def bits(self):
-        try:
+    def bits(self) -> None:
+        with suppress(AttributeError):
             del self._bits
-        except AttributeError:
-            pass
 
     # -- boolean
     @property
-    def boolean(self):
-        """A mapping of this `StateVector` to a 2-D array containing all
-        binary bits as booleans, for each time point.
-        """
+    def boolean(self) -> Array2D:
+        """A 2-D boolean array representation of this `StateVector`."""
         try:
             return self._boolean
         except AttributeError:
@@ -575,57 +761,74 @@ class StateVector(TimeSeriesBase):
             boolean = numpy.zeros((self.size, nbits), dtype=bool)
             for i, sample in enumerate(self.value):
                 boolean[i, :] = [int(sample) >> j & 1 for j in range(nbits)]
-            self._boolean = Array2D(boolean, name=self.name,
-                                    x0=self.x0, dx=self.dx, y0=0, dy=1)
+            self._boolean = Array2D(
+                boolean,
+                name=self.name,
+                x0=self.x0,
+                dx=self.dx,
+                y0=0,
+                dy=1,
+            )
             return self.boolean
 
-    # -- data type handling ---------------------
-
-    def _to_own_unit(self, value, check_precision=True):
-        if isinstance(value, units.Quantity) and value.unit != self.unit:
-            raise ValueError("Cannot store %s with units %r"
-                             % (type(self).__name__, value.unit))
-        if not isinstance(value, units.Quantity):
-            return value * self.unit
-        return value
-
-    # -- i/o --------------------------
+    # -- i/o -------------------------
 
     read = UnifiedReadWriteMethod(StateVectorRead)
     write = UnifiedReadWriteMethod(StateVectorWrite)
 
-    # -- StateVector methods --------------------
+    # -- StateVector methods ---------
 
-    def get_bit_series(self, bits=None):
+    def get_bit_series(
+        self,
+        bits: Iterable[int | str] | None = None,
+    ) -> StateTimeSeriesDict:
         """Get the `StateTimeSeries` for each bit of this `StateVector`.
 
         Parameters
         ----------
         bits : `list`, optional
-            a list of bit indices or bit names, defaults to all bits
+            A list of bit indices or bit names, defaults to all bits.
 
         Returns
         -------
         bitseries : `StateTimeSeriesDict`
-            a `dict` of `StateTimeSeries`, one for each given bit
+            A `dict` of `StateTimeSeries`, one for each given bit.
         """
         if bits is None:
-            bits = [b for b in self.bits if b not in {None, ""}]
+            bits = [b for b in self.bits if b]
         bindex = []
-        for bit in bits:
-            try:
-                bindex.append((self.bits.index(bit), bit))
-            except (IndexError, ValueError) as exc:
-                exc.args = ("Bit %r not found in StateVector" % bit,)
-                raise
+        try:
+            for bit in bits:
+                if isinstance(bit, int):
+                    bindex.append((bit, self.bits[bit]))
+                else:
+                    bindex.append((self.bits.index(bit), bit))
+        except (
+            IndexError,
+            ValueError,
+        ) as exc:
+            exc.args = (f"Bit {bit!r} not found in StateVector",)
+            raise
+
         self._bitseries = StateTimeSeriesDict()
         for i, bit in bindex:
             self._bitseries[bit] = StateTimeSeries(
-                self.value >> i & 1, name=bit, epoch=self.x0.value,
-                channel=self.channel, sample_rate=self.sample_rate)
+                self.value >> i & 1,
+                name=bit,
+                epoch=self.x0.value,
+                channel=self.channel,
+                sample_rate=self.sample_rate,
+            )
         return self._bitseries
 
-    def to_dqflags(self, bits=None, minlen=1, dtype=float, round=False):
+    def to_dqflags(
+        self,
+        bits: Iterable[int | str] | None = None,
+        minlen: int = 1,
+        dtype: type = float,
+        *,
+        round: bool = False,  # noqa: A002
+    ) -> DataQualityDict:
         """Convert this `StateVector` into a `~gwpy.segments.DataQualityDict`.
 
         The `StateTimeSeries` for each bit is converted into a
@@ -633,34 +836,46 @@ class StateVector(TimeSeriesBase):
 
         Parameters
         ----------
-        minlen : `int`, optional, default: 1
-           minimum number of consecutive `True` values to identify as a
-           `Segment`. This is useful to ignore single bit flips,
-           for example.
-
         bits : `list`, optional
-            a list of bit indices or bit names to select, defaults to
-            `~StateVector.bits`
+            A list of bit indices or bit names to select,
+            defaults to `~StateVector.bits`.
+
+        minlen : `int`, optional
+           Minimum number of consecutive `True` values to identify as a
+           `Segment`. This is useful to ignore single bit flips, for example.
+
+        dtype : `type`, optional
+            Output segment entry type, can pass either a type for simple
+            casting, or a callable function that accepts a float and returns
+            another numeric type, defaults to `float`.
+
+        round : `bool`, optional
+            Choose to round each `Segment` to its inclusive integer boundaries.
 
         Returns
         -------
         DataQualityFlag list : `list`
-            a list of `~gwpy.segments.flag.DataQualityFlag`
-            representations for each bit in this `StateVector`
+            A list of `~gwpy.segments.flag.DataQualityFlag`
+            representations for each bit in this `StateVector`.
 
-        See also
+        See Also
         --------
         StateTimeSeries.to_dqflag
-            for details on the segment representation method for
-            `StateVector` bits
+            For details on the segment representation method for `StateVector` bits.
         """
-        from ..segments import DataQualityDict
+        from ..segments import DataQualityDict  # noqa: PLC0415
+
         out = DataQualityDict()
         bitseries = self.get_bit_series(bits=bits)
         for bit, sts in bitseries.items():
-            out[bit] = sts.to_dqflag(name=bit, minlen=minlen, round=round,
-                                     dtype=dtype,
-                                     description=self.bits.description[bit])
+            name = str(bit)
+            out[bit] = sts.to_dqflag(
+                name=name,
+                minlen=minlen,
+                round=round,
+                dtype=dtype,
+                description=self.bits.description[name],
+            )
         return out
 
     @classmethod
@@ -670,7 +885,7 @@ class StateVector(TimeSeriesBase):
         start: GpsLike,
         end: GpsLike,
         *,
-        bits: list[str] | dict[int, str] | Bits | None = None,
+        bits: Bits | BitsInput | None = None,
         host: str | None = None,
         port: int | None = None,
         verbose: bool | str = False,
@@ -679,9 +894,9 @@ class StateVector(TimeSeriesBase):
         pad: float | None = None,
         allow_tape: bool | None = None,
         scaled: bool | None = None,
-        type: int | str | None = None,
+        type: int | str | None = None,  # noqa: A002
         dtype: int | str | None = None,
-    ):
+    ) -> Self:
         """Fetch data from NDS into a `StateVector`.
 
         Parameters
@@ -712,6 +927,10 @@ class StateVector(TimeSeriesBase):
         verify : `bool`, optional
             Check channels exist in database before asking for data.
             Default is `True`.
+
+        pad : `float`, optional
+            Value with which to fill gaps in the source data.
+            By default gaps will result in a `ValueError`.
 
         verbose : `bool`, optional
             Print verbose progress information about NDS download.
@@ -764,7 +983,14 @@ class StateVector(TimeSeriesBase):
         return new
 
     @classmethod
-    def get(cls, channel, start, end, bits=None, **kwargs):
+    def get(
+        cls,
+        channel: str | Channel,
+        start: GpsLike,
+        end: GpsLike,
+        bits: Bits | BitsInput | None = None,
+        **kwargs,
+    ) -> StateVector:
         """Get `StateVector` data for this channel.
 
         This method attemps to get data any way it can, potentially iterating
@@ -773,39 +999,41 @@ class StateVector(TimeSeriesBase):
         Parameters
         ----------
         channel : `str`, `~gwpy.detector.Channel`
-            the name of the channel to read, or a `Channel` object.
+            The name of the channel to read, or a `Channel` object..
 
         start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS start time of required data,
-            any input parseable by `~gwpy.time.to_gps` is fine
+            any input parseable by `~gwpy.time.to_gps` is fine.
 
         end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
             GPS end time of required data,
-            any input parseable by `~gwpy.time.to_gps` is fine
+            any input parseable by `~gwpy.time.to_gps` is fine.
 
         bits : `Bits`, `list`, optional
-            definition of bits for this `StateVector`
+            Definition of bits for this `StateVector`
 
         source : `str`, `list`
             Data source(s) to use to get the data.
             One of:
 
-            - ``"files"`` - use |gwdatafind|_ to find the paths of local files
-              and then read them
-            - ``"nds2"`` - use |nds2|_
+            "files"
+                Use |gwdatafind|_ to find the paths of local files and then read them.
 
-        nproc : `int`, optional, default: `1`
-            number of parallel processes to use, serial process by
+            "nds2"
+                Use |nds2|_.
+
+        nproc : `int`, optional
+            Number of parallel processes to use, serial process by
             default.
 
         verbose : `bool`, optional
-            print verbose output about NDS progress.
+            Print verbose output about NDS progress.
 
-        **kwargs
+        kwargs
             Other keyword arguments to pass to the data access function for
             each data source.
 
-        See also
+        See Also
         --------
         StateVector.find
             For details of how data are accessed for ``source="files"``
@@ -820,55 +1048,65 @@ class StateVector(TimeSeriesBase):
             new.bits = bits
         return new
 
-    def plot(self, format="segments", bits=None, **kwargs):
+    def plot(  # type: ignore[override]
+        self,
+        format: Literal["timeseries", "segments"] = "segments",  # noqa: A002
+        bits: Iterable[int | str] | None = None,
+        **kwargs,
+    ) -> Plot:
         """Plot the data for this `StateVector`.
 
         Parameters
         ----------
-        format : `str`, optional, default: ``'segments'``
+        format : `str`, optional
             The type of plot to make, either 'segments' to plot the
             SegmentList for each bit, or 'timeseries' to plot the raw
-            data for this `StateVector`
+            data for this `StateVector`.
 
         bits : `list`, optional
             A list of bit indices or bit names, defaults to
             `~StateVector.bits`. This argument is ignored if ``format`` is
-            not ``'segments'``
+            not ``'segments'``.
 
-        **kwargs
+        kwargs
             Other keyword arguments to be passed to either
-            `~gwpy.plot.SegmentAxes.plot` or
-            `~gwpy.plot.Axes.plot`, depending
+            `~gwpy.plot.SegmentAxes.plot` or `~gwpy.plot.Axes.plot`, depending
             on ``format``.
 
         Returns
         -------
         plot : `~gwpy.plot.Plot`
-            output plot object
+            Output plot object.
 
-        See also
+        See Also
         --------
         matplotlib.pyplot.figure
-            for documentation of keyword arguments used to create the
-            figure
+            For documentation of keyword arguments used to create the figure.
+
         matplotlib.figure.Figure.add_subplot
-            for documentation of keyword arguments used to create the
-            axes
+            For documentation of keyword arguments used to create the axes.
+
         gwpy.plot.SegmentAxes.plot_flag
-            for documentation of keyword arguments used in rendering each
+            For documentation of keyword arguments used in rendering each
             statevector flag.
         """
         if format == "timeseries":
             return super().plot(**kwargs)
-        if format == "segments":
-            from ..plot import Plot
-            kwargs.setdefault("xscale", "auto-gps")
-            return Plot(*self.to_dqflags(bits=bits).values(),
-                        projection="segments", **kwargs)
-        raise ValueError("'format' argument must be one of: 'timeseries' or "
-                         "'segments'")
 
-    def resample(self, rate):
+        if format == "segments":
+            from ..plot import Plot  # noqa: PLC0415
+
+            kwargs.setdefault("xscale", "auto-gps")
+            return Plot(
+                *self.to_dqflags(bits=bits).values(),
+                projection="segments",
+                **kwargs,
+            )
+
+        msg = "'format' argument must be one of: 'timeseries' or 'segments'"
+        raise ValueError(msg)
+
+    def resample(self, rate: float | Quantity) -> StateVector:
         """Resample this `StateVector` to a new rate.
 
         Because of the nature of a state-vector, downsampling is done
@@ -879,26 +1117,28 @@ class StateVector(TimeSeriesBase):
         Parameters
         ----------
         rate : `float`
-            rate to which to resample this `StateVector`, must be a
+            Rate to which to resample this `StateVector`, must be a
             divisor of the original sample rate (when downsampling)
             or a multiple of the original (when upsampling).
 
         Returns
         -------
         vector : `StateVector`
-            resampled version of the input `StateVector`
+            Resampled version of the input `StateVector`.
         """
         rate1 = self.sample_rate.value
         if isinstance(rate, units.Quantity):
             rate2 = rate.value
         else:
             rate2 = float(rate)
+
         # upsample
         if (rate2 / rate1).is_integer():
-            raise NotImplementedError("StateVector upsampling has not "
-                                      "been implemented yet, sorry.")
+            msg = "StateVector upsampling has not been implemented yet, sorry."
+            raise NotImplementedError(msg)
+
         # downsample
-        elif (rate1 / rate2).is_integer():
+        if (rate1 / rate2).is_integer():
             factor = int(rate1 / rate2)
             # reshape incoming data to one column per new sample
             newsize = int(self.size / factor)
@@ -908,46 +1148,57 @@ class StateVector(TimeSeriesBase):
                 nbits = len(self.bits)
             else:
                 max_ = self.value.max()
-                nbits = int(ceil(log(max_, 2))) if max_ else 1
+                nbits = ceil(log2(max_)) if max_ else 1
             bits = range(nbits)
             # construct an iterator over the columns of the old array
             itr = numpy.nditer(
                 [old, None],
                 flags=["external_loop", "reduce_ok"],
-                op_axes=[None, [0, -1]],
-                op_flags=[["readonly"], ["readwrite", "allocate"]])
+                op_axes=[None, [0, -1]],  # type: ignore[list-item]
+                op_flags=[["readonly"], ["readwrite", "allocate"]],
+            )
             dtype = self.dtype
             type_ = self.dtype.type
             # for each new sample, each bit is logical AND of old samples
             # bit is ON,
             for x, y in itr:
-                y[...] = numpy.sum([type_((x >> bit & 1).all() * (2 ** bit))
-                                    for bit in bits], dtype=self.dtype)
+                y[...] = numpy.sum(
+                    [type_((x >> bit & 1).all() * (2 ** bit)) for bit in bits],
+                    dtype=self.dtype,
+                )
             new = StateVector(itr.operands[1], dtype=dtype)
             new.__metadata_finalize__(self)
             new._unit = self.unit
             new.sample_rate = rate2
             return new
+
         # error for non-integer resampling factors
-        elif rate1 < rate2:
-            raise ValueError("New sample rate must be multiple of input "
-                             "series rate if upsampling a StateVector")
-        else:
-            raise ValueError("New sample rate must be divisor of input "
-                             "series rate if downsampling a StateVector")
+        if rate1 < rate2:
+            msg = (
+                "New sample rate must be multiple of input series rate if "
+                "upsampling a StateVector"
+            )
+            raise ValueError(msg)
+        msg = (
+            "New sample rate must be divisor of input series rate if "
+            "downsampling a StateVector"
+        )
+        raise ValueError(msg)
 
 
 @as_series_dict_class(StateTimeSeries)
 class StateTimeSeriesDict(TimeSeriesBaseDict):
-    __doc__ = TimeSeriesBaseDict.__doc__.replace("TimeSeriesBase",
-                                                 "StateTimeSeries")
+    """Dictionary of `StateTimeSeries` objects."""
+
+    __doc__ = TimeSeriesBaseDict.__doc__.replace("TimeSeriesBase", "StateTimeSeries")  # type: ignore[union-attr]
     EntryClass = StateTimeSeries
 
 
 @as_series_dict_class(StateVector)
 class StateVectorDict(TimeSeriesBaseDict):
-    __doc__ = TimeSeriesBaseDict.__doc__.replace("TimeSeriesBase",
-                                                 "StateVector")
+    """Dictionary of `StateVector` objects."""
+
+    __doc__ = TimeSeriesBaseDict.__doc__.replace("TimeSeriesBase", "StateVector")  # type: ignore[union-attr]
     EntryClass = StateVector
 
     # -- i/o -------------------------
@@ -957,6 +1208,7 @@ class StateVectorDict(TimeSeriesBaseDict):
 
 
 class StateVectorList(TimeSeriesBaseList):
-    __doc__ = TimeSeriesBaseList.__doc__.replace("TimeSeriesBase",
-                                                 "StateVector")
+    """List of `StateVector` objects."""
+
+    __doc__ = TimeSeriesBaseList.__doc__.replace("TimeSeriesBase", "StateVector")  # type: ignore[union-attr]
     EntryClass = StateVector

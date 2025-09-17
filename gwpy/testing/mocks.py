@@ -48,7 +48,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def nds2_buffer(
     channel: str,
     data: list | NDArray,
-    epoch: LIGOTimeGPS,
+    epoch: LIGOTimeGPS | float,
     sample_rate: float,
     unit: str | UnitBase,
     name: str | None = None,

@@ -45,11 +45,14 @@ from .connect import (
 from .index import Index
 
 if TYPE_CHECKING:
-    from typing import Literal
+    from typing import (
+        ClassVar,
+        Literal,
+        SupportsIndex,
+    )
 
     from astropy.units import UnitBase
     from astropy.units.typing import QuantityLike
-    from numpy.typing import ArrayLike
 
     from ..plot import Plot
     from ..segments import Segment
@@ -140,7 +143,7 @@ class Series(Array):
         "dx",
         "xindex",
     )
-    _default_xunit = Unit("")
+    _default_xunit: ClassVar[UnitBase] = Unit("")
     _ndim = 1
 
     def __new__(
@@ -603,7 +606,18 @@ class Series(Array):
         return self[idx]
 
     def copy(self, order: Literal["C", "F", "A", "K"] = "C") -> Self:
-        """Return a copy of this `Series`."""
+        """Return a copy of this `Series`.
+
+        Parameters
+        ----------
+        order : {'C', 'F', 'A', 'K'}, optional
+            The desired memory layout order for the copy.
+
+        See Also
+        --------
+        numpy.ndarray.copy
+            For details of the copy operation.
+        """
         new = super().copy(order=order)
         with contextlib.suppress(AttributeError):
             new._xindex = self._xindex.copy()
@@ -670,7 +684,7 @@ class Series(Array):
 
     def __getitem__(
         self,
-        item: slice | int | bool | ArrayLike,
+        item: SupportsIndex | slice,
     ) -> Self | Quantity:
         """Get an item, or a slice, from this `Series`."""
         new = super().__getitem__(item)

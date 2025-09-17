@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2014-2017 Louisiana State University
+#               2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -21,27 +21,50 @@
 For more details, see :ref:`gwpy-table-io`.
 """
 
-import os.path
+from __future__ import annotations
+
+import logging
 import re
 from math import ceil
+from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from astropy.units import Quantity
 from astropy.utils.data import get_readable_fileobj
-
 from gwosc.locate import get_urls
 
-from .. import (StateVector, TimeSeries)
-from ...io import (gwf as io_gwf, hdf5 as io_hdf5)
+from ...detector.units import parse_unit
+from ...io import (
+    gwf as io_gwf,
+    hdf5 as io_hdf5,
+)
 from ...io.cache import (
     file_segment,
     sieve as sieve_cache,
 )
 from ...io.utils import file_path
-from ...detector.units import parse_unit
 from ...segments import Segment
 from ...time import to_gps
 from ...utils.env import bool_env
+from .. import StateVector, TimeSeries
+
+# Module logger
+logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from contextlib import AbstractContextManager
+    from typing import (
+        IO,
+        BinaryIO,
+    )
+
+    import h5py
+
+    from ...detector import Channel
+    from ...typing import GpsLike
+    from .. import TimeSeriesBase
 
 DQMASK_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*DQMASK\Z")
 STRAIN_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*STRAIN\Z")
@@ -55,11 +78,19 @@ GWOSC_LOCATE_KWARGS = (
 )
 
 
-# -- utilities ----------------------------------------------------------------
+# -- utilities -----------------------
 
-def _download_file(url, cache=None, verbose=False, timeout=None, **kwargs):
+def _download_file(
+    url: str,
+    *,
+    cache: bool | None = None,
+    verbose: bool = False,
+    timeout: float | None = None,
+    **kwargs,
+) -> AbstractContextManager[BinaryIO]:
+    """Download a file with optional caching."""
     if cache is None:
-        cache = bool_env("GWPY_CACHE", False)
+        cache = bool_env("GWPY_CACHE", default=False)
     return get_readable_fileobj(
         url,
         cache=cache,
@@ -69,18 +100,20 @@ def _download_file(url, cache=None, verbose=False, timeout=None, **kwargs):
     )
 
 
-def _fetch_gwosc_data_file(url, *args, **kwargs):
-    """Fetch a single GWOSC file and return a `Series`."""
-    cls = kwargs.pop("cls", TimeSeries)
-    cache = kwargs.pop("cache", None)
-    verbose = kwargs.pop("verbose", False)
-    timeout = kwargs.pop("timeout", None)  # astropy will set a default
-
-    # match file format
+def _get_file_extension(url: str) -> str:
+    """Get the file extension from a URL, handling compressed files."""
     if url.endswith(".gz"):
-        ext = os.path.splitext(url[:-3])[-1]
+        path = Path(url[:-3])
     else:
-        ext = os.path.splitext(url)[-1]
+        path = Path(url)
+    return path.suffix
+
+
+def _set_format_from_extension(
+    ext: str,
+    kwargs: dict[str, str],
+) -> None:
+    """Set format in kwargs based on file extension."""
     if ext == ".hdf5":
         kwargs.setdefault("format", "hdf5.gwosc")
     elif ext == ".txt":
@@ -88,41 +121,63 @@ def _fetch_gwosc_data_file(url, *args, **kwargs):
     elif ext == ".gwf":
         kwargs.setdefault("format", "gwf")
 
-    with _download_file(url, cache, verbose=verbose, timeout=timeout) as rem:
-        # get channel for GWF if not given
+
+def _parse_bits_from_gwf_unit(series: StateVector) -> None:
+    """Parse bit definitions from GWF unit string."""
+    try:
+        bits = {}
+        for bit in str(series.unit).split():
+            a, b = bit.split(":", 1)
+            bits[int(a)] = b
+        series.bits = bits
+        series.override_unit("")
+    except (TypeError, ValueError):
+        # Don't care, bad GWOSC format
+        pass
+
+
+def _fetch_gwosc_data_file(
+    url: str,
+    *args: str | None,
+    cls: type[TimeSeriesBase] = TimeSeries,
+    cache: bool | None = None,
+    verbose: bool = False,
+    timeout: float | None = None,
+    **kwargs,
+) -> TimeSeriesBase:
+    """Fetch a single GWOSC file and return a `Series`."""
+    # Match file format
+    ext = _get_file_extension(url)
+    _set_format_from_extension(ext, kwargs)
+
+    with _download_file(url, cache=cache, verbose=verbose, timeout=timeout) as rem:
+        # Get channel for GWF if not given
         if ext == ".gwf" and (not args or args[0] is None):
-            args = (_gwf_channel(rem, cls, kwargs.get("verbose")),)
+            args = (_gwf_channel(rem, cls, verbose=verbose),)
+
         if verbose:
-            print("Reading data...", end=" ")
+            logger.info("Reading data...")
+
         try:
             series = cls.read(rem, *args, **kwargs)
         except Exception as exc:
             if verbose:
-                print("")
-            exc.args = ("Failed to read GWOSC data from %r: %s"
-                        % (url, str(exc)),)
+                logger.exception("Failed to read data")
+            exc.args = (f"Failed to read GWOSC data from {url!r}: {exc}",)
             raise
         else:
-            # parse bits from unit in GWF
+            # Parse bits from unit in GWF
             if ext == ".gwf" and isinstance(series, StateVector):
-                try:
-                    bits = {}
-                    for bit in str(series.unit).split():
-                        a, b = bit.split(":", 1)
-                        bits[int(a)] = b
-                    series.bits = bits
-                    series.override_unit("")
-                except (TypeError, ValueError):  # don't care, bad GWOSC
-                    pass
+                _parse_bits_from_gwf_unit(series)
 
             if verbose:
-                print("[Done]")
+                logger.info("Done reading data")
             return series
 
 
-def _overlapping(files):
+def _overlapping(files: Iterable[str]) -> bool:
     """Quick method to see if a file list contains overlapping files."""
-    segments = set()
+    segments: set[Segment] = set()
     for path in files:
         seg = file_segment(path)
         for s in segments:
@@ -132,7 +187,7 @@ def _overlapping(files):
     return False
 
 
-def _name_from_gwosc_hdf5(f, path):
+def _name_from_gwosc_hdf5(f: h5py.HLObject, path: str) -> str:
     """Forge a name from a path in a GWOSC HDF5 file.
 
     We want to be as close as possible to the GWF channel name.
@@ -158,9 +213,15 @@ def _name_from_gwosc_hdf5(f, path):
     return f"{ifo}1:{channel}"
 
 
-# -- remote data access (the main event) --------------------------------------
+# -- remote data access (the main event)
 
-def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
+def fetch_gwosc_data(
+    detector: str,
+    start: GpsLike,
+    end: GpsLike,
+    cls: type[TimeSeriesBase] = TimeSeries,
+    **kwargs,
+) -> TimeSeriesBase:
     """Fetch GWOSC data for a given detector.
 
     This function is for internal purposes only, all users should instead
@@ -170,21 +231,20 @@ def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
     # format arguments
     start = to_gps(start)
     end = to_gps(end)
-    span = Segment(start, end)
-    kwargs.update({
-        "start": start,
-        "end": end,
-    })
+    span: Segment[float] = Segment(start, end)
 
-    # find URLs (requires gwopensci)
-    url_kw = {key: kwargs.pop(key) for key in GWOSC_LOCATE_KWARGS if
-              key in kwargs}
+    # find URLs (requires python-gwosc)
+    url_kw = {key: kwargs.pop(key) for key in GWOSC_LOCATE_KWARGS if key in kwargs}
     if "sample_rate" in url_kw:  # format as Hertz
         url_kw["sample_rate"] = Quantity(url_kw["sample_rate"], "Hz").value
-    cache = sieve_cache(
-        get_urls(detector, int(start), int(ceil(end)), **url_kw),
-        segment=span,
+    urls = get_urls(
+        detector,
+        int(start),
+        ceil(end),
+        **url_kw,
     )
+    cache = sieve_cache(urls, segment=span)
+
     # if event dataset, pick shortest file that covers the request
     # -- this is a bit hacky, and presumes that only an event dataset
     # -- would be produced with overlapping files.
@@ -198,11 +258,17 @@ def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
                 break
     if kwargs.get("verbose", False):  # get_urls() guarantees len(cache) >= 1
         host = urlparse(cache[0]).netloc
-        print("Fetched {0} URLs from {1} for [{2} .. {3}))".format(
-            len(cache), host, int(start), int(ceil(end))))
+        logger.info(
+            "Fetched %d URLs from %s for [%s .. %s])",
+            len(cache),
+            host,
+            start,
+            ceil(end),
+        )
 
     is_gwf = cache[0].endswith(".gwf")
-    if is_gwf and len(cache):
+    args: tuple[str | Channel | None, ...]
+    if is_gwf and cache:
         args = (kwargs.pop("channel", None),)
     else:
         args = ()
@@ -223,16 +289,17 @@ def fetch_gwosc_data(detector, start, end, cls=TimeSeries, **kwargs):
     return out
 
 
-# -- I/O ----------------------------------------------------------------------
+# -- I/O -----------------------------
 
 @io_hdf5.with_read_hdf5
 def read_gwosc_hdf5(
-    h5f,
-    path="strain/Strain",
-    start=None,
-    end=None,
-    copy=False,
-):
+    h5f: str | h5py.HLObject,
+    path: str = "strain/Strain",
+    start: GpsLike | None = None,
+    end: GpsLike | None = None,
+    *,
+    copy: bool = False,
+) -> TimeSeries:
     """Read a `TimeSeries` from a GWOSC-format HDF file.
 
     Parameters
@@ -242,6 +309,15 @@ def read_gwosc_hdf5(
 
     path : `str`
         name of HDF5 dataset to read.
+
+    start : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
+        start GPS time of desired data
+
+    end : `Time`, `~gwpy.time.LIGOTimeGPS`, optional
+        end GPS time of desired data
+
+    copy : `bool`, default: `False`
+        create a fresh-memory copy of the underlying array
 
     Returns
     -------
@@ -257,21 +333,27 @@ def read_gwosc_hdf5(
     dt = Quantity(dataset.attrs["Xspacing"], xunit)
     unit = dataset.attrs["Yunits"]
     # build and return
-    return TimeSeries(nddata, epoch=epoch, sample_rate=(1/dt).to("Hertz"),
-                      unit=unit, name=path.rsplit("/", 1)[1],
-                      copy=copy).crop(start=start, end=end)
+    return TimeSeries(
+        nddata,
+        epoch=epoch,
+        sample_rate=(1/dt).to("Hertz"),
+        unit=unit,
+        name=path.rsplit("/", 1)[1],
+        copy=copy,
+    ).crop(start=start, end=end)
 
 
 @io_hdf5.with_read_hdf5
 def read_gwosc_hdf5_state(
-    f,
-    path="quality/simple",
-    start=None,
-    end=None,
-    copy=False,
-    value_dataset="DQmask",
-    bits_dataset="DQDescriptions",
-):
+    f: str | h5py.HLObject,
+    path: str = "quality/simple",
+    start: GpsLike | None = None,
+    end: GpsLike | None = None,
+    *,
+    copy: bool = False,
+    value_dataset: str = "DQmask",
+    bits_dataset: str = "DQDescriptions",
+) -> StateVector:
     """Read a `StateVector` from a GWOSC-format HDF file.
 
     Parameters
@@ -323,16 +405,21 @@ def read_gwosc_hdf5_state(
                        dx=dt, copy=copy).crop(start=start, end=end)
 
 
-def _gwf_channel(path, series_class=TimeSeries, verbose=False):
+def _gwf_channel(
+    source: IO | str,
+    series_class: type[TimeSeriesBase] = TimeSeries,
+    *,
+    verbose: bool = False,
+) -> str:
     """Find the right channel name for a GWOSC GWF file."""
-    channels = list(io_gwf.iter_channel_names(file_path(path)))
+    channels = list(io_gwf.iter_channel_names(file_path(source)))
     if issubclass(series_class, StateVector):
         regex = DQMASK_CHANNEL_REGEX
     else:
         regex = STRAIN_CHANNEL_REGEX
     found, = list(filter(regex.match, channels))
     if verbose:
-        print("Using channel {0!r}".format(found))
+        logger.debug("Using channel %r", found)
     return found
 
 

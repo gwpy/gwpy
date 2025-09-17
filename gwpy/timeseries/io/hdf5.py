@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2014-2017 Louisiana State University
+#               2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -16,7 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module attaches the HDF5 input output methods to the TimeSeries."""
+"""HDF5 input/output methods for the TimeSeries."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from astropy import units
 
@@ -30,20 +34,31 @@ from ...types.io.hdf5 import (
     write_hdf5_series,
 )
 from .. import (
-    TimeSeries,
-    TimeSeriesDict,
     StateVector,
     StateVectorDict,
+    TimeSeries,
+    TimeSeriesDict,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    import h5py
 
 SEC_UNIT = units.second
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-# -- read ---------------------------------------------------------------------
+# -- read ----------------------------
 
-def read_hdf5_timeseries(h5f, path=None, start=None, end=None, **kwargs):
+def read_hdf5_timeseries(
+    h5f: h5py.Group,
+    path: str | None = None,
+    start: float | None = None,
+    end: float | None = None,
+    **kwargs,
+) -> TimeSeries:
     """Read a `TimeSeries` from HDF5."""
     # read data
     kwargs.setdefault("array_type", TimeSeries)
@@ -58,13 +73,18 @@ def read_hdf5_timeseries(h5f, path=None, start=None, end=None, **kwargs):
     return series
 
 
-def _is_timeseries_dataset(dataset):
-    """Returns `True` if a dataset contains `TimeSeries` data."""
+def _is_timeseries_dataset(dataset: h5py.Dataset) -> bool:
+    """Return `True` if a dataset contains `TimeSeries` data."""
     return SEC_UNIT.is_equivalent(dataset.attrs.get("xunit", "undef"))
 
 
 @with_read_hdf5
-def read_hdf5_dict(h5f, names=None, group=None, **kwargs):
+def read_hdf5_dict(
+    h5f: h5py.Group,
+    names: list[str] | None = None,
+    group: str | None = None,
+    **kwargs,
+) -> dict:
     """Read a `TimeSeriesDict` from HDF5."""
     # find group from which to read
     if group:
@@ -85,23 +105,29 @@ def read_hdf5_dict(h5f, names=None, group=None, **kwargs):
     return out
 
 
-def read_hdf5_factory(data_class):
+def read_hdf5_factory(data_class: type) -> Callable:
+    """Create a function to read HDF5 data for the given class type."""
     if issubclass(data_class, dict):
-        def read_(*args, **kwargs):
+        def read_(*args, **kwargs):  # noqa: ANN002,ANN202
             kwargs.setdefault("dict_type", data_class)
             return read_hdf5_dict(*args, **kwargs)
     else:
-        def read_(*args, **kwargs):
+        def read_(*args, **kwargs):  # noqa: ANN002,ANN202
             kwargs.setdefault("array_type", data_class)
             return read_hdf5_timeseries(*args, **kwargs)
 
     return read_
 
 
-# -- write --------------------------------------------------------------------
+# -- write ---------------------------
 
 @with_write_hdf5
-def write_hdf5_dict(tsdict, h5f, group=None, **kwargs):
+def write_hdf5_dict(
+    tsdict: dict,
+    h5f: h5py.Group,
+    group: str | None = None,
+    **kwargs,
+) -> None:
     """Write a `TimeSeriesBaseDict` to HDF5.
 
     Each series in the dict is written as a dataset in the group
@@ -120,7 +146,7 @@ def write_hdf5_dict(tsdict, h5f, group=None, **kwargs):
         series.write(h5g, path=str(key), **kwargs)
 
 
-# -- register -----------------------------------------------------------------
+# -- register ------------------------
 
 # series classes
 for series_class in (TimeSeries, StateVector):

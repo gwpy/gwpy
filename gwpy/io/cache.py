@@ -28,6 +28,7 @@ from __future__ import annotations
 import contextlib
 import os
 import warnings
+from collections.abc import Sequence
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -59,11 +60,16 @@ if TYPE_CHECKING:
         TypeVar,
     )
 
+    from lal.utils import CacheEntry
+
     from ..time import GpsType
-    from .utils import FileSystemPath
+    from .utils import (
+        FileSystemPath,
+        NamedReadable,
+    )
 
     T = TypeVar("T")
-
+    CacheEntryType = TypeVar("CacheEntryType", bound=FileSystemPath | CacheEntry)
 
 try:
     from lal.utils import CacheEntry
@@ -102,7 +108,9 @@ def _silence_lal_debug_warnings() -> Iterator[None]:
         lal.ClobberDebugLevel(debuglevel)
 
 
-def _preformat_entry(entry: FileSystemPath) -> tuple[str, str, str, Segment]:
+def _preformat_entry(
+    entry: NamedReadable | bytes | CacheEntry,
+) -> tuple[str, str, str, Segment]:
     path = file_path(entry)
     obs, tag, seg = filename_metadata(path)
     start, end = seg
@@ -113,7 +121,7 @@ def _preformat_entry(entry: FileSystemPath) -> tuple[str, str, str, Segment]:
     return path, obs, tag, type(seg)(start, end)
 
 
-def _format_entry_lal(entry: FileSystemPath) -> str:
+def _format_entry_lal(entry: NamedReadable | bytes | CacheEntry) -> str:
     path, obs, tag, seg = _preformat_entry(entry)
     return f"{obs} {tag} {seg[0]} {abs(seg)} {path}"
 
@@ -128,7 +136,7 @@ def _parse_entry_lal(
     return _CacheEntry(obs, desc, Segment(gpsstart, end), path)
 
 
-def _format_entry_ffl(entry: FileSystemPath) -> str:
+def _format_entry_ffl(entry: NamedReadable | bytes | CacheEntry) -> str:
     path, _, _, seg = _preformat_entry(entry)
     return f"{path} {seg[0]} {abs(seg)} 0 0"
 
@@ -210,7 +218,7 @@ class _CacheEntry(NamedTuple):
 # -- cache I/O -----------------------
 
 def _iter_cache(
-    cachefile: IO,
+    cachefile: Iterable[str],
     gpstype: type[GpsType | float] = LIGOTimeGPS,
 ) -> Iterator[_CacheEntry]:
     """Yield a `_CacheEntry` for each line in the file.
@@ -218,7 +226,7 @@ def _iter_cache(
     This method supports reading LAL- and (nested) FFL-format cache files.
     """
     try:
-        path = Path(cachefile.name).resolve()  # type: ignore[union-attr]
+        path = Path(cachefile.name).resolve()  # type: ignore[attr-defined]
     except AttributeError:
         path = None
     for line in cachefile:
@@ -270,8 +278,11 @@ def read_cache(
     paths : `list` of `str`
         A list of file paths as read from the cache file.
     """
+    # by now the decorator has opened the file for us
+    cacheio = cast("Iterable[str]", cachefile)
+
     # read file
-    cache = [x.path for x in _iter_cache(cast("IO", cachefile), gpstype=coltype)]
+    cache = [x.path for x in _iter_cache(cacheio, gpstype=coltype)]
 
     # sieve and sort
     if segment:
@@ -312,7 +323,7 @@ def read_cache_entry(
 
 @with_open(mode="w", pos=1)
 def write_cache(
-    cache: list[str],
+    cache: Iterable[FileSystemPath],
     fobj: IO,
     *,
     format: Literal["lal", "ffl"] | None = None,  # noqa: A002
@@ -321,8 +332,8 @@ def write_cache(
 
     Parameters
     ----------
-    cache : `list` of `str`
-        The list of file paths to write
+    cache : `list` of `str` or `os.PathLike`
+        The list of path-like things to write.
 
     fobj : `file`, `str`, `pathlib.Path`
         The open file object, or file path to write to.
@@ -353,7 +364,9 @@ def write_cache(
             fobj.write(f"{line}\n".encode())
 
 
-def is_cache(cache: Readable | list[str]) -> bool:
+def is_cache(
+    cache: Readable | Cache | Sequence[CacheEntry | FileSystemPath],
+) -> bool:
     """Return `True` if ``cache`` is a readable cache file or object.
 
     Parameters
@@ -377,13 +390,13 @@ def is_cache(cache: Readable | list[str]) -> bool:
     if HAS_CACHE and isinstance(cache, Cache):
         return True
     return bool(
-        isinstance(cache, list | tuple)
+        isinstance(cache, Sequence)
         and cache
         and all(map(is_cache_entry, cache)),
     )
 
 
-def is_cache_entry(path: str | CacheEntry) -> bool:
+def is_cache_entry(path: CacheEntry | FileSystemPath) -> bool:
     """Return `True` if ``path`` can be represented as a cache entry.
 
     In practice this just tests whether the input is |LIGO-T050017|_ compliant.
@@ -410,7 +423,7 @@ def is_cache_entry(path: str | CacheEntry) -> bool:
 
 # -- cache manipulation --------------
 
-def filename_metadata(filename: str) -> tuple[str, str, Segment]:
+def filename_metadata(filename: FileSystemPath) -> tuple[str, str, Segment]:
     """Return metadata parsed from a filename following LIGO-T050017.
 
     This method is lenient with regards to integers in the GPS start time of
@@ -469,13 +482,13 @@ def filename_metadata(filename: str) -> tuple[str, str, Segment]:
     return obs, desc, Segment(gpsstart, gpsstart + fdur)
 
 
-def file_segment(filename: str | CacheEntry) -> Segment:
+def file_segment(filename: CacheEntry | FileSystemPath) -> Segment:
     """Return the data segment for a filename following T050017.
 
     Parameters
     ----------
-    filename : `str`, :class:`~lal.utils.CacheEntry`
-        the path name of a file
+    filename : `str`, `~os.PathLike`, :class:`~lal.utils.CacheEntry`
+        The path name of a file.
 
     Returns
     -------
@@ -494,7 +507,7 @@ def file_segment(filename: str | CacheEntry) -> Segment:
         return filename_metadata(filename)[2]
 
 
-def cache_segments(*caches: Iterable[str | CacheEntry]) -> SegmentList:
+def cache_segments(*caches: Iterable[CacheEntry | FileSystemPath]) -> SegmentList:
     """Return the segments of data covered by entries in the cache(s).
 
     Parameters
@@ -513,7 +526,9 @@ def cache_segments(*caches: Iterable[str | CacheEntry]) -> SegmentList:
     return out.coalesce()
 
 
-def flatten(*caches: list[str | CacheEntry]) -> list[str | CacheEntry]:
+def flatten(
+    *caches: list[CacheEntryType],
+) -> list[CacheEntryType]:
     """Flatten a nested list of cache entries.
 
     Parameters
@@ -531,8 +546,8 @@ def flatten(*caches: list[str | CacheEntry]) -> list[str | CacheEntry]:
 
 
 def find_contiguous(
-    *caches: list[str | CacheEntry],
-) -> Iterator[list[str | CacheEntry]]:
+    *caches: list[CacheEntryType],
+) -> Iterator[list[CacheEntryType]]:
     """Separate one or more cache entry lists into time-contiguous sub-lists.
 
     Parameters
@@ -551,11 +566,11 @@ def find_contiguous(
 
 
 def sieve(
-    cache: list[str | CacheEntry],
+    cache: list[CacheEntryType],
     segment: Segment,
     *,
     strict: bool = True,
-) -> list[str | CacheEntry]:
+) -> list[CacheEntryType]:
     """Filter the cache to find those entries that overlap ``segment``.
 
     Parameters

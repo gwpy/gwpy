@@ -37,6 +37,7 @@ class buffer:  # noqa: N801
     name: str
     sample_rate: float
     signal_gain: float
+    signal_slope: float
     signal_offset: float
     signal_units: str
 

@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2014-2017)
-#               Cardiff University (2017-)
+# Copyright (c) 2014-2017 Louisiana State University
+#               2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -23,7 +23,6 @@ from __future__ import annotations
 import typing
 
 if typing.TYPE_CHECKING:
-    from types import UnionType
     from typing import TypeVar
 
     _T = TypeVar("_T")
@@ -70,7 +69,7 @@ def _channel_dict_kwarg(
         )
     ):
         # copy value for all channels
-        return {c: value for c in channels}
+        return dict.fromkeys(channels, value)
 
     # zip list of values with list of channels
     if isinstance(value, list | tuple):
@@ -89,4 +88,4 @@ def _channel_dict_kwarg(
         return {c: value[c] for c in set(channels).intersection(value)}
 
     # repeat value for all channels
-    return {c: value for c in channels}
+    return dict.fromkeys(channels, value)

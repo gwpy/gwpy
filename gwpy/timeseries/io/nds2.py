@@ -1,5 +1,5 @@
-# Copyright (C) Louisiana State University (2017)
-#               Cardiff University (2017-2025)
+# Copyright (c) 2014-2017 Louisiana State University
+#               2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -22,9 +22,12 @@ from __future__ import annotations
 
 import logging
 import operator
-import typing
 from functools import reduce
 from math import ceil
+from typing import (
+    TYPE_CHECKING,
+    TypedDict,
+)
 
 from numpy import ones as numpy_ones
 
@@ -40,7 +43,7 @@ from ...utils.progress import progress_bar
 from .. import TimeSeries
 from ..connect import _pad_series
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import (
         Iterable,
         Iterator,
@@ -57,10 +60,20 @@ if typing.TYPE_CHECKING:
     )
 
     _TChan = TypeVar("_TChan")
+    _T = TypeVar("_T", bound=TimeSeriesBase)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 LOGGER = get_logger(__name__)
+
+
+class NdsConnectionKeywords(TypedDict):
+    """Keywords for NDS2 connection and fetch parameters."""
+
+    connection: nds2.connection | None
+    host: str | None
+    port: int | None
+    allow_tape: bool | None
 
 
 def log_nds2(
@@ -84,6 +97,7 @@ def _parse_nds_enum_dict_param(
 ) -> dict[_TChan, int]:
     """Parse an NDS2 Enum value into a dict keyed on ``channels``."""
     # parse input key
+    enum: type[io_nds2._Nds2Enum]
     if key == "type":
         enum = io_nds2.Nds2ChannelType
         default = enum.any().value
@@ -101,7 +115,7 @@ def _parse_nds_enum_dict_param(
 
     # return dict of ints
     if isinstance(value, int):
-        return {c: value for c in channels}
+        return dict.fromkeys(channels, value)
 
     # here we know ``value`` is a dict, so just fill in the blanks
     value = value.copy()
@@ -130,15 +144,15 @@ def _get_connection_kw(
     channels: Iterable[str | Channel],
     start: GpsLike | None,
     allow_tape: bool | None,
-) -> Iterator[dict[str, str | int | bool | nds2.connection | None]]:
+) -> Iterator[NdsConnectionKeywords]:
     """Yield a dict of connection keywords for each endpoint candidate."""
     if connection is not None or host is not None:
-        yield {
-            "connection": connection,
-            "host": host,
-            "port": port,
-            "allow_tape": allow_tape,
-        }
+        yield NdsConnectionKeywords(
+            connection=connection,
+            host=host,
+            port=port,
+            allow_tape=allow_tape,
+        )
     else:
         ifos = {Channel(channel).ifo for channel in channels}
         try:
@@ -155,12 +169,12 @@ def _get_connection_kw(
 
         for allow_tape_ in tapes:
             for host_, port_ in hostlist:
-                yield {
-                    "connection": None,
-                    "host": host_,
-                    "port": port_,
-                    "allow_tape": allow_tape_,
-                }
+                yield NdsConnectionKeywords(
+                    connection=None,
+                    host=host_,
+                    port=port_,
+                    allow_tape=allow_tape_,
+                )
 
 
 def fetch_dict(
@@ -176,10 +190,10 @@ def fetch_dict(
     pad: float | None = None,
     scaled: bool | None = None,
     allow_tape: bool | None = None,
-    type: int | str | None = None,
+    type: int | str | None = None,  # noqa: A002
     dtype: int | str | None = None,
-    series_class: type[TimeSeriesBase] = TimeSeries,
-) -> TimeSeriesBaseDict:
+    series_class: type[_T] = TimeSeries,
+) -> TimeSeriesBaseDict[_T]:
     """Fetch data from NDS for a number of channels.
 
     Parameters
@@ -251,8 +265,9 @@ def fetch_dict(
     Returns
     -------
     data : :class:`~gwpy.timeseries.TimeSeriesBaseDict`
-        a new `TimeSeriesBaseDict` of (`str`, `TimeSeries`) pairs fetched
-        from NDS.
+        A new `TimeSeriesBaseDict` of (`str`, `series_class`) pairs fetched
+        from NDS. The specific dict subclass returned is determined by
+        `series_class.DictClass`.
     """
     channels = list(map(str, channels))
 
@@ -290,7 +305,10 @@ def fetch_dict(
                 pad=pad,
                 scaled=scaled,
                 series_class=series_class,
-                **conn_kw,
+                connection=conn_kw.get("connection"),
+                host=conn_kw.get("host"),
+                port=conn_kw.get("port"),
+                allow_tape=conn_kw.get("allow_tape"),
             )
         except (RuntimeError, ValueError) as exc:
             if len(channels) == 1 and nsources == 1:
@@ -302,7 +320,7 @@ def fetch_dict(
 
         msg = str(error).split("\n", 1)[0]
         log_nds2(
-            conn_kw.get("connection") or conn_kw.get("host"),
+            conn_kw.get("connection") or conn_kw.get("host") or "nds2",
             "Failed to fetch data for %s in interval [%s, %s): %s",
             ", ".join(map(str, channels)),
             gpsstart,
@@ -348,11 +366,11 @@ def fetch_dict(
 
 
 def fetch(
-    channels: list[str],
+    channels: list[str | Channel],
     start: LIGOTimeGPS,
     end: LIGOTimeGPS,
     *,
-    type: str | int | dict | None = None,
+    type: str | int | dict | None = None,  # noqa: A002
     dtype: str | int | dict | None = None,
     allow_tape: bool | None = None,
     connection: nds2.connection | None = None,
@@ -360,9 +378,9 @@ def fetch(
     port: int | None = None,
     pad: float | None = None,
     scaled: bool | None = None,
-    series_class: type[TimeSeriesBase] = TimeSeries,
+    series_class: type[_T] = TimeSeries,
     verbose: bool | str = False,
-) -> TimeSeriesBaseDict:
+) -> TimeSeriesBaseDict[_T]:
     """Fetch a dict of data series from NDS2.
 
     This method sits underneath `TimeSeries.fetch` and related methods,
@@ -404,7 +422,7 @@ def fetch(
 
     # read using integers
     istart = int(start)
-    iend = int(ceil(end))
+    iend = ceil(end)
 
     # verify channels exist
     log_nds2(connection, "Checking channels list against database")
@@ -518,7 +536,7 @@ def _create_series(
     To cover a gap in data returned from NDS.
     """
     channel = Channel.from_nds2(ndschan)
-    nsamp = int((end - start) * channel.sample_rate.value)
+    nsamp = int((end - start) * channel.sample_rate.value)  # type: ignore[union-attr]
     return series_class(
         numpy_ones(nsamp) * value,
         t0=start,

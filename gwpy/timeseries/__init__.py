@@ -1,4 +1,5 @@
-# Copyright (C) Duncan Macleod (2014-2020)
+# Copyright (c) 2014-2017 Louisiana State University
+#               2017-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -17,10 +18,26 @@
 
 """Create, manipulate, read, and write time-series data."""
 
-from .core import (TimeSeriesBase, TimeSeriesBaseDict, TimeSeriesBaseList)
-from .timeseries import (TimeSeries, TimeSeriesDict, TimeSeriesList)
-from .statevector import (StateVector, StateVectorDict, StateVectorList,
-                          StateTimeSeries, StateTimeSeriesDict, Bits)
+from __future__ import annotations
+
+from .core import (
+    TimeSeriesBase,
+    TimeSeriesBaseDict,
+    TimeSeriesBaseList,
+)
+from .timeseries import (
+    TimeSeries,
+    TimeSeriesDict,
+    TimeSeriesList,
+)
+from .statevector import (
+    StateVector,
+    StateVectorDict,
+    StateVectorList,
+    StateTimeSeries,
+    StateTimeSeriesDict,
+    Bits,
+)
 
 from . import io
 

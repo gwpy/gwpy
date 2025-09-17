@@ -106,6 +106,56 @@ def round_to_power(
     return type(base)(base ** selector(math.log(x, base)))
 
 
+def property_alias(
+    prop: property,
+    doc: str | None = None,
+) -> property:
+    """Create a property alias for another property.
+
+    This is useful when you want to expose a property from a contained
+    object as a property of the containing object, but want to be able
+    to set a different docstring for the alias.
+
+    Parameters
+    ----------
+    prop : `property`
+        The property to alias.
+
+    doc : `str`, optional
+        The docstring for the new property.  If not given, the docstring
+        of the original property will be used.
+
+    Returns
+    -------
+    alias : `property`
+        The new property which acts as an alias for `prop`.
+
+    Examples
+    --------
+    >>> from gwpy.utils.misc import property_alias
+    >>> class A:
+    ...     @property
+    ...     def x(self):
+    ...         "The x property"
+    ...         return 1
+    >>> class B:
+    ...     def __init__(self):
+    ...         self.a = A()
+    ...     a = property_alias(A.x, "Alias for A.x")
+    >>> b = B()
+    >>> b.a
+    1
+    >>> B.a.__doc__
+    'Alias for A.x'
+    """
+    return property(
+        prop.fget,
+        prop.fset,
+        prop.fdel,
+        doc or prop.__doc__,
+    )
+
+
 def unique(
     list_: Iterable[T],
 ) -> list[T]:
