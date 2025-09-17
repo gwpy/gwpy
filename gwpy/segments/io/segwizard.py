@@ -155,7 +155,7 @@ def _format_segment(
     except ValueError:  # two-columns
         return Segment(*map(gpstype, tokens))
     seg = Segment(gpstype(start), gpstype(end))
-    if strict and not float(abs(seg)) == float(dur):
+    if strict and abs(seg) != float(dur):
         msg = f"segment {seg} has incorrect duration {dur}"
         raise ValueError(msg)
     return seg
