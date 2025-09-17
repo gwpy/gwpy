@@ -109,10 +109,10 @@ def test_inspiral_range_psd(psd):
 
 
 @pytest.mark.requires("inspiral_range")
-@pytest.mark.parametrize(("snr", "expected"), (
+@pytest.mark.parametrize(("snr", "expected"), [
     (8, TEST_RESULTS["inspiral_range"]),
     (10, TEST_RESULTS["inspiral_range_snr_10"]),
-))
+])
 def test_inspiral_range(psd, snr, expected):
     """Test :func:`gwpy.astro.inspiral_range`."""
     result = astro.inspiral_range(psd, snr=snr)

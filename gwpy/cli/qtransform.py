@@ -30,6 +30,7 @@ from .spectrogram import Spectrogram
 
 class Qtransform(Spectrogram):
     """Plot the Q-transform (Omega)."""
+
     DEFAULT_FFTLENGTH = None
     MAX_DATASETS = 1
     action = "qtransform"
@@ -110,8 +111,7 @@ class Qtransform(Spectrogram):
         max_plot = max(args.plot)
         search = max(search, max_plot * 2 + 8)
         args.search = search
-        self.log(3, "Search window: {0:.0f} sec, max plot window {1:.0f}".
-                 format(search, max_plot))
+        self.log(3, f"Search window: {search:.0f} sec, max plot window {max_plot:.0f}")
 
         # make sure we don't create too big interpolations
 
@@ -171,6 +171,7 @@ class Qtransform(Spectrogram):
                     "fformat called with a string. "
                     "This has been deprecated and may disappear "
                     "in a future release.",
+                    stacklevel=2,
                 )
                 x = float(x)
             return f"{x:.2f}"
@@ -189,7 +190,8 @@ class Qtransform(Spectrogram):
 
     def get_spectrogram(self):
         """Worked on a single timesharing and generates a single Q-transform
-        spectrogram."""
+        spectrogram.
+        """
         args = self.args
 
         fftlength = args.secpfft

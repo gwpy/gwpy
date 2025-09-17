@@ -77,7 +77,7 @@ def get_gravityspy_triggers(
         other filters you would like to supply
         underlying reader method for the given format
 
-    See also
+    See Also
     --------
     `EventTable.fetch(source='sql')`
         For details of arguments and keyword arguments for this format.
@@ -179,7 +179,7 @@ def create_engine(
     engine : `sqlalchemy.engine.Engine`
         A new engine.
 
-    See also
+    See Also
     --------
     gwpy.table.io.sql.create_engine
         For details of how the engine is created.
@@ -190,12 +190,13 @@ def create_engine(
         password = os.getenv("GRAVITYSPY_DATABASE_PASSWD")
 
     if not username and not password:
-        raise ValueError(
+        msg = (
             "Remember to either pass or export GRAVITYSPY_DATABASE_USER "
             "and export GRAVITYSPY_DATABASE_PASSWD in order to access the "
             "Gravity Spy Data. LIGO-Virgo-KAGRA members may visit "
-            "https://secrets.ligo.org/secrets/144/ for more information.",
+            "https://secrets.ligo.org/secrets/144/ for more information."
         )
+        raise ValueError(msg)
 
     return io_sql.create_engine(
         drivername,

@@ -50,7 +50,7 @@ SKIP_TEX: pytest.MarkDecorator = pytest.mark.skipif(
 
 @pytest.fixture(scope="function", params=[
     pytest.param(False, id="no-tex"),
-    pytest.param(True, id="usetex", marks=SKIP_TEX)
+    pytest.param(True, id="usetex", marks=SKIP_TEX),
 ])
 def usetex(
     request: pytest.FixtureRequest,
@@ -71,7 +71,7 @@ def usetex(
 def noisy_sinusoid() -> TimeSeries:
     """10s of 2V/rtHz RMS sine wave at 500Hz with 1mV/rtHz white noise (2kHz).
 
-    See also
+    See Also
     --------
     scipy.signal.welch
     """
@@ -98,7 +98,7 @@ def corrupt_noisy_sinusoid(
 ) -> TimeSeries:
     """The `noisy_sinusoid` but with 10 samples of corruption in the middle.
 
-    See also
+    See Also
     --------
     scipy.signal.welch
     """

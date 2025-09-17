@@ -17,19 +17,21 @@
 
 """Spectrum plots."""
 
-from astropy.time import Time
 import warnings
 
-from .cliproduct import (FrequencyDomainProduct, FFTMixin)
-from ..utils import unique
+from astropy.time import Time
+
 from ..plot import Plot
 from ..plot.tex import label_to_latex
+from ..utils import unique
+from .cliproduct import FFTMixin, FrequencyDomainProduct
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 
 class Spectrum(FFTMixin, FrequencyDomainProduct):
     """Plot the ASD spectrum of one or more time series."""
+
     action = "spectrum"
 
     def __init__(self, *args, **kwargs):
@@ -102,14 +104,15 @@ class Spectrum(FFTMixin, FrequencyDomainProduct):
                 "The number of legends specified must match the number of "
                 "time series (channels * start times). "
                 f"There are {len(self.timeseries)} series "
-                f"and {len(self.args.legend)} legends"
+                f"and {len(self.args.legend)} legends",
+                stacklevel=2,
             )
             nlegargs = 0  # don't use  themm
 
         # determine colour
         colors = self._color_by_ifo()
 
-        for i in range(0, self.n_datasets):
+        for i in range(self.n_datasets):
             series = self.timeseries[i]
             if nlegargs:
                 label = self.args.legend[0][i]

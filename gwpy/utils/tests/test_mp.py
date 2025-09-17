@@ -55,7 +55,7 @@ def test_multiprocess_with_queues(capsys, nproc, verbose):
 @pytest.mark.parametrize("nproc", [1, 2])
 def test_multiprocess_with_queues_errors(nproc):
     """Check that errors from child processes propagate to the parent."""
-    with pytest.raises(ValueError, match="^math domain error$"):
+    with pytest.raises(ValueError, match=r"^math domain error$"):
         utils_mp.multiprocess_with_queues(
             nproc,
             sqrt,

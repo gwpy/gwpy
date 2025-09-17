@@ -546,7 +546,7 @@ class TimeSeriesBase(Series):
         -----
         `StateVector` data are not available in ``txt.gz`` format.
         """
-        from .io.losc import fetch_gwosc_data  # noqa: PLC0415
+        from .io.losc import fetch_gwosc_data
         return fetch_gwosc_data(
             ifo,
             start,
@@ -878,7 +878,7 @@ class TimeSeriesBase(Series):
     ) -> Self:
         """Generate a new TimeSeries from a LAL TimeSeries of any type."""
         # convert the units
-        from ..utils.lal import (  # noqa: PLC0415
+        from ..utils.lal import (
             from_lal_type,
             from_lal_unit,
         )
@@ -917,9 +917,9 @@ class TimeSeriesBase(Series):
 
            This operation always copies data to new memory.
         """
-        import lal  # noqa: PLC0415
+        import lal
 
-        from ..utils.lal import (  # noqa: PLC0415
+        from ..utils.lal import (
             find_typed_function,
             to_lal_unit,
         )
@@ -995,7 +995,7 @@ class TimeSeriesBase(Series):
         timeseries : `~pycbc.types.timeseries.TimeSeries`
             A PyCBC representation of this `TimeSeries`.
         """
-        from pycbc import types  # noqa: PLC0415
+        from pycbc import types
         return types.TimeSeries(
             self.value,
             delta_t=self.dt.to("s").value,
@@ -1324,7 +1324,7 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
             A new `TimeSeriesBaseDict` of (`str`, `TimeSeries`) pairs fetched
             from NDS.
         """
-        from .io.nds2 import fetch_dict  # noqa: PLC0415
+        from .io.nds2 import fetch_dict
 
         with logger(
             name=fetch_dict.__module__,
@@ -1428,7 +1428,7 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
             If no files are found to read, or if the read operation
             fails.
         """
-        from .io.gwdatafind import find  # noqa: PLC0415
+        from .io.gwdatafind import find
 
         series_class = readargs.pop("series_class", cls.EntryClass)
         with logger(
@@ -1736,7 +1736,7 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
         })
 
         # make plot
-        from ..plot import Plot  # noqa: PLC0415
+        from ..plot import Plot
 
         if kwargs.get("separate", False):
             plot = Plot(*self.values(), **kwargs)

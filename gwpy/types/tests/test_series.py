@@ -260,14 +260,14 @@ class TestSeries(_TestArray[SeriesType], Generic[SeriesType]):
         # check that there is no xindex when a single value is accessed
         with pytest.raises(
             AttributeError,
-            match="'.*' object has no",
+            match=r"'.*' object has no",
         ):
             array[0].xindex  # noqa: B018
 
         # we don't need this, we don't want it accidentally injected
         with pytest.raises(
             AttributeError,
-            match="'.*' object has no",
+            match=r"'.*' object has no",
         ):
             array[0]._xindex  # noqa: B018
 

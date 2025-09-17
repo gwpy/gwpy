@@ -107,8 +107,8 @@ if typing.TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
-    "DataQualityFlag",
     "DataQualityDict",
+    "DataQualityFlag",
 ]
 
 DEFAULT_SEGMENT_SERVER = get_default_host()
@@ -820,7 +820,7 @@ class DataQualityFlag:
                 f"{indent}      ",
             ).strip().splitlines()
             if len(rep) > 10:  # use ellipsis
-                rep = rep[:3] + [f"{indent}      ..."] + rep[-3:]
+                rep = [*rep[:3], f"{indent}      ...", *rep[-3:]]
 
         # print the thing
         return "".join((
@@ -1516,7 +1516,7 @@ class DataQualityDict(dict):
             self[key].known &= tmp[key].known
             self[key].active = tmp[key].active
             if pad:
-                self[key] = self[key].pad(inplace=True)  # noqa: PD002
+                self[key] = self[key].pad(inplace=True)
                 if segments is not None:
                     self[key].known &= segments
                     self[key].active &= segments

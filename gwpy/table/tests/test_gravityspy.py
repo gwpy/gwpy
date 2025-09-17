@@ -19,13 +19,12 @@
 """Unit tests for `gwpy.table.gravityspy`."""
 
 import pytest
-
 import requests
 
 from ...testing.errors import pytest_skip_flaky_network
 from .. import (
-    gravityspy as table_gravityspy,
     GravitySpyTable,
+    gravityspy as table_gravityspy,
 )
 from .test_table import TestEventTable as _TestEventTable
 
@@ -70,7 +69,7 @@ class TestGravitySpyTable(_TestEventTable):
         mocker = requests_mock.Mocker()
         raises = pytest.raises(
             requests.HTTPError,
-            match="please check the request parameters$",
+            match=r"please check the request parameters$",
         )
         with mocker as rmock, raises:
             rmock.get(
@@ -101,5 +100,5 @@ class TestGravitySpyTable(_TestEventTable):
         table.download(download_path=tmp_path)
         assert (
             tmp_path
-            / "{}_{}_spectrogram_0.5.png".format(TEST_IFO, TEST_ID)
+            / f"{TEST_IFO}_{TEST_ID}_spectrogram_0.5.png"
         ).is_file()

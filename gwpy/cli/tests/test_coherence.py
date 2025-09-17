@@ -25,8 +25,12 @@ from .test_spectrum import TestCliSpectrum as _TestCliSpectrum
 class TestCliCoherence(_TestCliSpectrum):
     TEST_CLASS = cli.Coherence
     ACTION = "coherence"
-    TEST_ARGS = _TestCliProduct.TEST_ARGS + [
-        "--chan", "Y1:TEST-CHANNEL", "--secpfft", "0.25",
+    TEST_ARGS = [
+        *_TestCliProduct.TEST_ARGS,
+        "--chan",
+        "Y1:TEST-CHANNEL",
+        "--secpfft",
+        "0.25",
     ]
 
     def test_init(self, prod):

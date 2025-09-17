@@ -49,7 +49,8 @@ def scale_timeseries_unit(
     elif scaling == "spectrum":
         baseunit = units.dimensionless_unscaled
     else:
-        raise ValueError(f"unknown scaling: '{scaling}'")
+        msg = f"unknown scaling: '{scaling}'"
+        raise ValueError(msg)
     if tsunit:
         specunit = tsunit ** 2 / baseunit
     else:

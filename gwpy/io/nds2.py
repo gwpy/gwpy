@@ -200,12 +200,12 @@ def _get_nds2_name(
     Understands how to format NDS name strings from
     `gwpy.detector.Channel` and `nds2.channel` objects
     """
-    from ..detector import Channel  # noqa: PLC0415
+    from ..detector import Channel
 
     if isinstance(channel, Channel):
         return channel.ndsname
 
-    import nds2  # noqa: PLC0415
+    import nds2
 
     if isinstance(channel, nds2.channel):
         return ",".join((
@@ -366,7 +366,7 @@ def connect(
     connection : `nds2.connection`
         A new open connection to the given NDS host.
     """
-    import nds2  # noqa: PLC0415
+    import nds2
 
     # set default port for NDS1 connections (required, I think)
     if port is None and NDS1_HOSTNAME.match(host):
@@ -731,7 +731,7 @@ def get_availability(
     nds2.connection.get_availability
         For documentation on the underlying query method.
     """
-    from ..segments import (  # noqa: PLC0415
+    from ..segments import (
         Segment,
         SegmentList,
         SegmentListDict,

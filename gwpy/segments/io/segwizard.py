@@ -140,7 +140,8 @@ def _line_format(
     ):
         if pat.match(line):
             return pat
-    raise ValueError(f"unable to parse segment from line '{line}'")
+    msg = f"unable to parse segment from line '{line}'"
+    raise ValueError(msg)
 
 
 def _format_segment(
@@ -154,10 +155,9 @@ def _format_segment(
     except ValueError:  # two-columns
         return Segment(*map(gpstype, tokens))
     seg = Segment(gpstype(start), gpstype(end))
-    if strict and not float(abs(seg)) == float(dur):
-        raise ValueError(
-            f"segment {seg} has incorrect duration {dur}",
-        )
+    if strict and abs(seg) != float(dur):
+        msg = f"segment {seg} has incorrect duration {dur}"
+        raise ValueError(msg)
     return seg
 
 

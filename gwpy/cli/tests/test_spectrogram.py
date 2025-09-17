@@ -20,7 +20,7 @@
 import pytest
 
 from ... import cli
-from .base import (_TestImageProduct, _TestTimeDomainProduct, _TestFFTMixin)
+from .base import _TestFFTMixin, _TestImageProduct, _TestTimeDomainProduct
 
 
 class TestCliSpectrogram(_TestFFTMixin, _TestTimeDomainProduct,

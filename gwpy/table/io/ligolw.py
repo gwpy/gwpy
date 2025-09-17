@@ -80,7 +80,8 @@ except ImportError:
 else:
     HAVE_LSCTABLES = True
     LIGOLW_TABLES = set(lsctables.TableByName.values())
-    LIGOLW_PROPERTY_TYPES = LIGOLW_PROPERTY_TYPES + (
+    LIGOLW_PROPERTY_TYPES = (
+        *LIGOLW_PROPERTY_TYPES,
         lsctables.gpsproperty,
         lsctables.gpsproperty_with_gmst,
         lsctables.instrumentsproperty,
@@ -294,7 +295,7 @@ def to_astropy_column(
     """Convert a :class:`~igwn_ligolw.ligolw.Column` to `astropy.table.Column`.
 
     Parameters
-    -----------
+    ----------
     llwcol : `~igwn_ligolw.ligolw.Column`, `numpy.ndarray`, iterable
         The ``LIGO_LW`` column to convert, or an iterable.
 
@@ -332,9 +333,8 @@ def to_astropy_column(
             try:
                 dtype = NUMPY_TYPE_MAP[dtype]
             except KeyError:
-                raise TypeError(
-                    f"no mapping from object type '{dtype}' to numpy type",
-                )
+                msg = f"no mapping from object type '{dtype}' to numpy type"
+                raise TypeError(msg)
     return cls(
         data=llwcol,
         copy=copy,
@@ -487,7 +487,7 @@ def read_table(
         If `True` copy the input data, otherwise return a reference.
         Default is `False`
 
-    See also
+    See Also
     --------
     gwpy.io.ligolw.read_table
         For details of keyword arguments for the read operation.
@@ -560,7 +560,7 @@ def write_table(
         All keyword arguments are passed to
         `gwpy.io.ligolw.write_tables`.
 
-    See also
+    See Also
     --------
     gwpy.io.ligolw.write_tables
         For details of the table writing implementation and any
@@ -569,10 +569,11 @@ def write_table(
     if tablename is None:  # try and get tablename from metadata
         tablename = table.meta.get("tablename", None)
     if tablename is None:  # panic
-        raise ValueError(
+        msg = (
             "please pass ``tablename=`` to specify the target "
-            "LIGO_LW Table Name",
+            "LIGO_LW Table Name"
         )
+        raise ValueError(msg)
     llwtable = table_to_ligolw(
         table,
         tablename,

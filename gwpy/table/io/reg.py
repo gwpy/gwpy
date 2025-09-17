@@ -77,7 +77,7 @@ def wrap_unified_io_readers(klass: type[Table]):
     """Decorate all of the registered readers for ``klass`` to support the
     ``columns`` and ``where`` keywords.
 
-    See also
+    See Also
     --------
     read_with_columns
         For details of the decorator adding ``columns`` keyword support.

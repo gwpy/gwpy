@@ -21,7 +21,6 @@ This module holds code used by both the `FrequencySeries` and `Spectrogram`.
 """
 
 import numpy
-
 from scipy import signal
 
 from ..signal.filter_design import parse_filter
@@ -32,7 +31,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def fdfilter(data, *filt, **kwargs):
     """Filter a frequency-domain data object.
 
-    See also
+    See Also
     --------
     gwpy.frequencyseries.FrequencySeries.filter
     gwpy.spectrogram.Spectrogram.filter
@@ -42,11 +41,8 @@ def fdfilter(data, *filt, **kwargs):
     analog = kwargs.pop("analog", False)
     fs = kwargs.pop("sample_rate", None)
     if kwargs:
-        raise TypeError(
-            "filter() got an unexpected keyword argument "
-            f"'{list(kwargs).pop()}'"
-        )
-
+        msg = f"filter() got an unexpected keyword argument '{list(kwargs).pop()}'"
+        raise TypeError(msg)
     # parse filter
     if fs is None:
         fs = 2 * data.frequencies[-1].to("Hz").value

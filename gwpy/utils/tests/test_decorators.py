@@ -44,7 +44,7 @@ def test_return_as_error():
 
     with pytest.raises(
         ValueError,
-        match="^failed to cast return from myfunc as int: ",
+        match=r"^failed to cast return from myfunc as int: ",
     ):
         myfunc("test")
 

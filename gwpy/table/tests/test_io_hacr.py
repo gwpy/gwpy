@@ -55,7 +55,7 @@ def hacr_table():
         "maxPower": "float64",
         "totPower": "float64",
         "veto": "int64",
-    }.items())
+    }.items(), strict=False)
     table = random_table(
         length=100,
         names=names,
@@ -135,10 +135,10 @@ def hacr_engine(hacr_sqlite):
     return create_engine(hacr_sqlite)
 
 
-@pytest.mark.parametrize(("start", "end", "result"), (
+@pytest.mark.parametrize(("start", "end", "result"), [
     ("Jan 1 2024", "Jan 1 2024 00:01", ["geo202401"]),
     ("Jan 1 2024", "Mar 1 2024", ["geo202401", "geo202402"]),
-))
+])
 def test_get_database_names(start, end, result):
     """Test `get_database_names`."""
     assert io_hacr.get_database_names(start, end) == result

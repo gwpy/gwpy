@@ -450,7 +450,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         # wrong channel (framel on windows gives a slightly different error)
         with pytest.raises(
             ValueError,
-            match="({})".format("|".join((  # noqa: FLY002
+            match=r"({})".format("|".join((  # noqa: FLY002
                 "^channel 'another channel' not found",
                 "vector not found: another channel",
             ))),

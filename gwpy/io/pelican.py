@@ -24,7 +24,6 @@ to pass back to `astropy.utils.data.download_file` and friends, and some
 SciToken authorisation initialisation.
 """
 
-# ruff: noqa: PLC0415
 
 from __future__ import annotations
 

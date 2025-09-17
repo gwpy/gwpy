@@ -25,10 +25,10 @@ Peter Shawhan.
 from __future__ import annotations
 
 import datetime
-from collections.abc import Callable
 from decimal import Decimal
 from numbers import Number
 from typing import (
+    TYPE_CHECKING,
     SupportsFloat,
     cast,
 )
@@ -39,13 +39,16 @@ from dateparser import parse as dateparser_parse
 
 from . import LIGOTimeGPS
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 GpsConvertible = SupportsFloat | datetime.date | str
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
+    "from_gps",
     "tconvert",
     "to_gps",
-    "from_gps",
 ]
 
 
@@ -241,7 +244,7 @@ def from_gps(
             exc.args = (
                 "cannot represent leap second using datetime.datetime, "
                 "consider using "
-                f"astropy.time.Time({gps}, format=\"gps\", scale=\"utc\") "
+                f'astropy.time.Time({gps}, format="gps", scale="utc") '
                 "directly",
             )
         raise
@@ -300,10 +303,11 @@ def _str_to_datetime(
             "RETURN_AS_TIMEZONE_AWARE": True,
             "TO_TIMEZONE": "UTC",
             "PREFER_DATES_FROM": "current_period",
-        }
+        },
     )
     if result is None:
-        raise ValueError(f"failed to parse '{datestr}' as datetime")
+        msg = f"failed to parse '{datestr}' as datetime"
+        raise ValueError(msg)
     return result
 
 

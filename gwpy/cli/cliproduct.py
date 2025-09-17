@@ -20,16 +20,18 @@
 import abc
 import os.path
 import re
-import time
 import sys
+import time
 from functools import wraps
-
-from matplotlib import (rcParams, style)
 
 from astropy.time import Time
 from astropy.units import Quantity
+from matplotlib import rcParams, style
 
-from ..utils import unique
+from ..plot.colors import GW_OBSERVATORY_COLORS
+from ..plot.gps import GPS_SCALES, GPSTransform
+from ..plot.tex import label_to_latex
+from ..segments import DataQualityFlag
 from ..signal import filter_design
 from ..signal.window import recommended_overlap
 from ..time import to_gps
@@ -38,15 +40,11 @@ from ..timeseries import (
     TimeSeriesDict,
 )
 from ..timeseries.timeseries import DEFAULT_FFT_METHOD
-from ..plot.colors import GW_OBSERVATORY_COLORS
-from ..plot.gps import (GPS_SCALES, GPSTransform)
-from ..plot.tex import label_to_latex
-from ..segments import DataQualityFlag
-
+from ..utils import unique
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
-BAD_UNITS = {"*", "Counts.", }
+BAD_UNITS = {"*", "Counts." }
 
 
 # -- utilities ----------------------------------------------------------------
@@ -209,7 +207,7 @@ class CliProduct(metaclass=abc.ABCMeta):
     # -- utilities ------------------------------
 
     def log(self, level, msg):
-        """print log message if verbosity is set high enough
+        """Print log message if verbosity is set high enough
         :rtype: object.
         """
         if self.verbose >= level:
@@ -218,7 +216,6 @@ class CliProduct(metaclass=abc.ABCMeta):
                 print(msg, file=sys.stderr)
             else:
                 print(msg)
-        return
 
     # -- argument parsing -----------------------
 
@@ -323,7 +320,7 @@ class CliProduct(metaclass=abc.ABCMeta):
         """Add an `~argparse.ArgumentGroup` for signal-processing options."""
         group = parser.add_argument_group(
             "Signal processing options",
-            "What to do with the data before plotting"
+            "What to do with the data before plotting",
         )
         group.add_argument(
             "--highpass",
@@ -496,19 +493,20 @@ class CliProduct(metaclass=abc.ABCMeta):
         """Sanity check arguments and raise errors if required."""
         # validate number of data sets requested
         if len(self.chan_list) < self.MIN_CHANNELS:
-            raise ValueError(
-                f"this product requires at least {self.MIN_CHANNELS} channels"
-            )
+            msg = f"this product requires at least {self.MIN_CHANNELS} channels"
+            raise ValueError(msg)
         if self.n_datasets < self.MIN_DATASETS:
-            raise ValueError(
+            msg = (
                 f"{self.MIN_DATASETS} are required for this plot but only "
                 f"{self.n_datasets} are supplied"
             )
+            raise ValueError(msg)
         if self.n_datasets > self.MAX_DATASETS:
-            raise ValueError(
+            msg = (
                 f"A maximum of {self.MAX_DATASETS} datasets allowed for this "
                 f"plot but {self.n_datasets} specified"
             )
+            raise ValueError(msg)
 
     # -- data transfer --------------------------
 
@@ -646,7 +644,6 @@ class CliProduct(metaclass=abc.ABCMeta):
 
     def scale_axes_from_data(self):
         """Auto-scale the view based on visible data."""
-        pass
 
     def _set_axis_properties(self, axis):
         """Generic method to set properties for X/Y axis."""
@@ -701,7 +698,7 @@ class CliProduct(metaclass=abc.ABCMeta):
             2,
             f"{axis.upper()}-axis parameters | "
             f"scale: {scale} | "
-            f"limits: {limits[0]!s} - {limits[1]!s}"
+            f"limits: {limits[0]!s} - {limits[1]!s}",
         )
         self.log(3, (f"{axis.upper()}-axis label: {label}"))
 
@@ -729,7 +726,6 @@ class CliProduct(metaclass=abc.ABCMeta):
         The `Axes.title` actually serves at the sub-title for the plot,
         typically giving processing parameters and information.
         """
-
         if title is None:
             title_line = self.get_title().rstrip(", ")
         else:
@@ -846,7 +842,7 @@ class CliProduct(metaclass=abc.ABCMeta):
             "{ifo}:DMT-GRD_ISC_LOCK_NOMINAL:1",
             "{ifo}:DMT-DC_READOUT_LOCKED:1",
             "{ifo}:DMT-CALIBRATED:1",
-            "{ifo}:DMT-ANALYSIS_READY:1"
+            "{ifo}:DMT-ANALYSIS_READY:1",
         ]
         segments = list()
         if hasattr(args, "std_seg"):
@@ -886,6 +882,7 @@ class CliProduct(metaclass=abc.ABCMeta):
 
 class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
     """Base class for all x/y/color plots."""
+
     DEFAULT_CMAP = "viridis"
     MAX_DATASETS = 1
 
@@ -938,7 +935,7 @@ class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
     @staticmethod
     def get_color_label():
         """Returns the default colorbar label."""
-        return None
+        return
 
     def set_axes_properties(self):
         """Set properties for each axis (scale, limits, label) and create
@@ -962,6 +959,7 @@ class FFTMixin(metaclass=abc.ABCMeta):
 
     This just adds FFT-based command line options
     """
+
     DEFAULT_FFTLENGTH = 1.
 
     @classmethod
@@ -1069,6 +1067,7 @@ class FFTMixin(metaclass=abc.ABCMeta):
 
 class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
     """`CliProduct` with time on the X-axis."""
+
     @classmethod
     def arg_xaxis(cls, parser):
         """Add an `~argparse.ArgumentGroup` for X-axis options.
@@ -1129,6 +1128,7 @@ class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
 
 class FrequencyDomainProduct(CliProduct, metaclass=abc.ABCMeta):
     """`CliProduct` with frequency on the X-axis."""
+
     def get_xlabel(self):
         """Default X-axis label for plot."""
         return "Frequency (Hz)"

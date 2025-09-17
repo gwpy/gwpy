@@ -170,7 +170,7 @@ def normalize_fft_params(
         kwargs["window"] = window
 
     # create FFT plan for LAL
-    if library == "lal" and kwargs.get("plan", None) is None:
+    if library == "lal" and kwargs.get("plan") is None:
         from ._lal import generate_fft_plan
         kwargs["plan"] = generate_fft_plan(nfft, dtype=series.dtype)
 
@@ -384,20 +384,23 @@ def average_spectrogram(
 
     # sanity check parameters
     if nstride > timeseries.size:
-        raise ValueError(
+        msg = (
             f"stride ({nstride} samples) cannot be greater than the "
-            f"size of this TimeSeries ({timeseries.size})",
+            f"size of this TimeSeries ({timeseries.size})"
         )
+        raise ValueError(msg)
     if nfft > nstride:
-        raise ValueError(
+        msg = (
             f"fftlength ({nfft} samples) cannot be greater than "
-            f"stride ({nstride})",
+            f"stride ({nstride})"
         )
+        raise ValueError(msg)
     if noverlap >= nfft:
-        raise ValueError(
+        msg = (
             f"overlap ({noverlap} samples) must be less than "
-            f"fftlength ({nfft})",
+            f"fftlength ({nfft})"
         )
+        raise ValueError(msg)
 
     # define chunks
     tschunks = _chunk_timeseries(timeseries, nstride, noverlap)
@@ -441,10 +444,8 @@ def spectrogram(timeseries: TimeSeries, **kwargs) -> Spectrogram:
 
     # sanity check parameters
     if noverlap >= nfft:
-        raise ValueError(
-            "overlap ({noverlap} samples) must be less than "
-            "fftlength ({nfft})",
-        )
+        msg = "overlap ({noverlap} samples) must be less than fftlength ({nfft})"
+        raise ValueError(msg)
 
     # define chunks
     chunks = []

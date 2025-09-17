@@ -93,7 +93,7 @@ def read_gstlal_sngl(
     kwargs
         Other keyword arguments are passed to `Table.read(format="ligolw")`.
 
-    See also
+    See Also
     --------
     gwpy.io.ligolw.read_table
         For details of keyword arguments for the read operation.
@@ -147,7 +147,7 @@ def read_gstlal_coinc(
     kwargs
         Other keyword arguments are passed to `Table.read(format="ligolw")`.
 
-    See also
+    See Also
     --------
     gwpy.io.ligolw.read_table
         For details of keyword arguments for the read operation.
@@ -166,10 +166,11 @@ def read_gstlal_coinc(
         val_col_event = set(TableByName["coinc_event"].validcolumns)
         for name in columns:
             if name not in (valid := val_col_inspiral | val_col_event):
-                raise ValueError(
+                msg = (
                     f"'{name}' is not a valid column name. "
-                    f"Valid column names: '{', '.join(valid)}'",
+                    f"Valid column names: '{', '.join(valid)}'"
                 )
+                raise ValueError(msg)
         if "coinc_event_id" not in columns:
             columns.add("coinc_event_id")
             extra_cols.add("coinc_event_id")
@@ -233,7 +234,7 @@ def read_gstlal(
     kwargs
         Other keyword arguments are passed to `Table.read(format="ligolw")`.
 
-    See also
+    See Also
     --------
     gwpy.table.io.gstlal.read_gstlal_sngl
     gwpy.table.io.gstlal.read_gstlal_coinc
@@ -242,9 +243,8 @@ def read_gstlal(
         return read_gstlal_sngl(source, **kwargs)
     if triggers == "coinc":
         return read_gstlal_coinc(source, **kwargs)
-    raise ValueError(
-        f"triggers must be 'sngl' or 'coinc', got '{triggers}'",
-    )
+    msg = f"triggers must be 'sngl' or 'coinc', got '{triggers}'"
+    raise ValueError(msg)
 
 
 # registers for unified I/O
@@ -303,9 +303,9 @@ GET_COLUMN["chi_snr"] = get_chi_snr
 GET_COLUMN_EXTRA["chi_snr"] = {"snr", "chisq"}
 
 # use the generic mass functions
-for _key in {
+for _key in (
     "mchirp",
     "mtotal",
-}:
+):
     GET_COLUMN[_key] = DYNAMIC_COLUMN_FUNC[_key]
     GET_COLUMN_EXTRA[_key] = DYNAMIC_COLUMN_INPUT[_key]

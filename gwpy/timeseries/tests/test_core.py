@@ -187,8 +187,8 @@ class TestTimeSeriesBase(_TestSeries[TimeSeriesBaseType], Generic[TimeSeriesBase
     @pytest.mark.parametrize("copy", [False, True])
     def test_from_arrakis(self, copy):
         """Test `TimeSeriesBase.from_arrakis`."""
-        from arrakis import Channel as ArrakisChannel  # noqa: PLC0415
-        from arrakis.block import Series as ArrakisSeries  # noqa: PLC0415
+        from arrakis import Channel as ArrakisChannel
+        from arrakis.block import Series as ArrakisSeries
 
         # create arrakis objects
         achan = ArrakisChannel(
@@ -281,7 +281,7 @@ class TestTimeSeriesBase(_TestSeries[TimeSeriesBaseType], Generic[TimeSeriesBase
     @pytest.mark.requires("lal")
     def test_to_from_lal_unrecognised_units(self, array):
         """Test that unrecognised units get warned, but the operation continues."""
-        import lal  # noqa: PLC0415
+        import lal
         array.override_unit("undef")
         with pytest.warns(
             UserWarning,
@@ -311,7 +311,7 @@ class TestTimeSeriesBase(_TestSeries[TimeSeriesBaseType], Generic[TimeSeriesBase
     @pytest.mark.requires("lal", "pycbc")
     def test_to_from_pycbc(self, array):
         """Test `TimeSeriesBase.to_pycbc` and `TimeSeriesBase.from_pycbc`."""
-        from pycbc.types import TimeSeries as PyCBCTimeSeries  # noqa: PLC0415
+        from pycbc.types import TimeSeries as PyCBCTimeSeries
 
         # test default conversion
         pycbcts = array.to_pycbc()
@@ -516,7 +516,7 @@ class TestTimeSeriesBaseDict(Generic[TimeSeriesBaseDictType, EntryType]):
     @pytest.mark.parametrize("copy", [False, True])
     def test_from_arrakis(self, copy):
         """Test :meth:`TimeSeriesBaseDict.from_arrakis`."""
-        from arrakis import (  # noqa: PLC0415
+        from arrakis import (
             Channel as ArrakisChannel,
             SeriesBlock as ArrakisBlock,
         )

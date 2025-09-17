@@ -63,7 +63,7 @@ def test_canonical_name(in_, out):
 def test_canonical_name_error():
     with pytest.raises(
         ValueError,
-        match="^no window function in scipy.signal equivalent to 'blah'$",
+        match=r"^no window function in scipy.signal equivalent to 'blah'$",
     ):
         window.canonical_name("blah")
 
@@ -83,7 +83,7 @@ def test_recommended_overlap_nfft():
 def test_recommended_overlap_error():
     with pytest.raises(
         ValueError,
-        match="^no recommended overlap for 'kaiser' window$",
+        match=r"^no recommended overlap for 'kaiser' window$",
     ):
         window.recommended_overlap("kaiser")
 

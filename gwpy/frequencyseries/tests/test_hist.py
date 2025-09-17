@@ -19,13 +19,10 @@
 
 from io import BytesIO
 
-import pytest
-
 import numpy
-
-from matplotlib import rc_context
-
+import pytest
 from astropy import units
+from matplotlib import rc_context
 
 from ...segments import Segment
 from ...testing import utils
@@ -91,7 +88,7 @@ class TestSpectralVariance(_TestArray2D):
         )
         with pytest.raises(
             NotImplementedError,
-            match="^cannot slice SpectralVariance across bins$",
+            match=r"^cannot slice SpectralVariance across bins$",
         ):
             array[0, ::2]
 

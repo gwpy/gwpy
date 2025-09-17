@@ -57,10 +57,10 @@ __credits__ = [
     "Alex Urban <alexander.urban@ligo.org>",
 ]
 __all__ = [
-    "QTiling",
+    "QGram",
     "QPlane",
     "QTile",
-    "QGram",
+    "QTiling",
     "q_scan",
 ]
 
@@ -78,6 +78,7 @@ class QObject:
     This object exists just to provide basic methods for all other
     Q-transform objects.
     """
+
     def __init__(
         self,
         duration: float,
@@ -99,6 +100,7 @@ class QBase(QObject):
 
     This class just provides a property for Q-prime = Q / sqrt(11)
     """
+
     def __init__(
         self,
         q: float,
@@ -142,6 +144,7 @@ class QTiling(QObject):
     mismatch : `float`
         Maximum fractional mismatch between neighbouring tiles.
     """
+
     def __init__(
         self,
         duration: float,
@@ -173,6 +176,7 @@ class QTiling(QObject):
             warnings.warn(
                 f"upper frequency of {fmax} Hz is too high for the given "
                 f"Q range, resetting to {maxf} Hz",
+                stacklevel=2,
             )
             fmax = maxf
         self.frange = (fmin, fmax)
@@ -235,15 +239,14 @@ class QTiling(QObject):
         N : `int`
             Estimated number of statistically independent tiles.
 
-        See also
+        See Also
         --------
         QPlane.transform
             Compute the Q-transform over a single time-frequency plane.
         """
         if not numpy.isfinite(fseries).all():
-            raise ValueError(
-                "Input signal contains non-numerical values",
-            )
+            msg = "Input signal contains non-numerical values"
+            raise ValueError(msg)
         weight = 1 + numpy.log10(
             self.qrange[1] / self.qrange[0],
         ) / numpy.sqrt(2)
@@ -282,6 +285,7 @@ class QPlane(QBase):
     mismatch : `float`
         Maximum fractional mismatch between neighbouring tiles.
     """
+
     def __init__(
         self,
         q: float,
@@ -393,7 +397,7 @@ class QPlane(QBase):
             The complex energies of the Q-transform of the input `fseries`
             at each frequency.
 
-        See also
+        See Also
         --------
         QTile.transform
             For details on the transform over a row of `(Q, frequency)` tiles.
@@ -409,6 +413,7 @@ class QPlane(QBase):
 
 class QTile(QBase):
     """Representation of a tile with fixed Q and frequency."""
+
     def __init__(
         self,
         q: float,
@@ -446,7 +451,7 @@ class QTile(QBase):
         return 2 * int(
             self.frequency
             / self.qprime
-            * self.duration
+            * self.duration,
         ) + 1
 
     def _get_indices(self) -> NDArray[numpy.int64]:
@@ -547,7 +552,8 @@ class QTile(QBase):
             elif norm in ("mean",):
                 narray = energy / energy.mean()
             else:
-                raise ValueError(f"invalid normalisation '{norm}'")
+                msg = f"invalid normalisation '{norm}'"
+                raise ValueError(msg)
             return narray.astype("float32", casting="same_kind", copy=False)
         return energy
 
@@ -566,6 +572,7 @@ class QGram:
     search : `~gwpy.segments.Segment`
         Search window of interest to determine the loudest tile.
     """
+
     def __init__(
         self,
         plane: QPlane,
@@ -631,7 +638,7 @@ class QGram:
         out : `~gwpy.spectrogram.Spectrogram`
             Output `Spectrogram` of normalised Q energy.
 
-        See also
+        See Also
         --------
         scipy.interpolate
             This method uses `~scipy.interpolate.InterpolatedUnivariateSpline`

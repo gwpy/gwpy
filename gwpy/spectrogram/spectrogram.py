@@ -23,9 +23,9 @@ import warnings
 import numpy
 from astropy import units
 
-from ..io.registry import UnifiedReadWriteMethod
 from ..frequencyseries import FrequencySeries
 from ..frequencyseries._fdcommon import fdfilter
+from ..io.registry import UnifiedReadWriteMethod
 from ..timeseries import (
     TimeSeries,
     TimeSeriesList,
@@ -130,7 +130,8 @@ class Spectrogram(Array2D):
        ~Spectrogram.plot
        ~Spectrogram.zpk
     """
-    _metadata_slots = Series._metadata_slots + ("y0", "dy", "yindex")
+
+    _metadata_slots = (*Series._metadata_slots, "y0", "dy", "yindex")
     _default_xunit = TimeSeries._default_xunit
     _default_yunit = FrequencySeries._default_xunit
     _rowclass = TimeSeries
@@ -143,7 +144,8 @@ class Spectrogram(Array2D):
         # parse t0 or epoch
         epoch = kwargs.pop("epoch", None)
         if epoch is not None and t0 is not None:
-            raise ValueError("give only one of epoch or t0")
+            msg = "give only one of epoch or t0"
+            raise ValueError(msg)
         if epoch is None and t0 is not None:
             kwargs["x0"] = _format_time(t0)
         elif epoch is not None:
@@ -299,7 +301,7 @@ class Spectrogram(Array2D):
         plot : `~gwpy.plot.Plot`
             the `Plot` containing the data
 
-        See also
+        See Also
         --------
         matplotlib.pyplot.figure
             for documentation of keyword arguments used to create the
@@ -345,9 +347,11 @@ class Spectrogram(Array2D):
         data = numpy.vstack([s.value for s in spectra])
         spec1 = list(spectra)[0]
         if not all(s.f0 == spec1.f0 for s in spectra):
-            raise ValueError("Cannot stack spectra with different f0")
+            msg = "Cannot stack spectra with different f0"
+            raise ValueError(msg)
         if not all(s.df == spec1.df for s in spectra):
-            raise ValueError("Cannot stack spectra with different df")
+            msg = "Cannot stack spectra with different df"
+            raise ValueError(msg)
         kwargs.setdefault("name", spec1.name)
         kwargs.setdefault("channel", spec1.channel)
         kwargs.setdefault("epoch", spec1.epoch)
@@ -358,8 +362,8 @@ class Spectrogram(Array2D):
             try:
                 kwargs.setdefault("dt", spectra[1].epoch.gps - spec1.epoch.gps)
             except (AttributeError, IndexError):
-                raise ValueError("Cannot determine dt (time-spacing) for "
-                                 "Spectrogram from inputs")
+                msg = "Cannot determine dt (time-spacing) for Spectrogram from inputs"
+                raise ValueError(msg)
         return Spectrogram(data, **kwargs)
 
     def percentile(self, percentile):
@@ -378,13 +382,13 @@ class Spectrogram(Array2D):
         """
         out = numpy.percentile(self.value, percentile, axis=0)
         if self.name is not None:
-            name = "{}: {} percentile".format(self.name, _ordinal(percentile))
+            name = f"{self.name}: {_ordinal(percentile)} percentile"
         else:
             name = None
         return FrequencySeries(
             out, epoch=self.epoch, channel=self.channel, name=name,
             f0=self.f0, df=self.df, unit=self.unit, frequencies=(
-                hasattr(self, "_frequencies") and self.frequencies or None))
+                (hasattr(self, "_frequencies") and self.frequencies) or None))
 
     def zpk(self, zeros, poles, gain, analog=True):
         """Filter this `Spectrogram` by applying a zero-pole-gain filter.
@@ -409,7 +413,7 @@ class Spectrogram(Array2D):
         specgram : `Spectrogram`
             the frequency-domain filtered version of the input data
 
-        See also
+        See Also
         --------
         Spectrogram.filter
             for details on how a digital ZPK-format filter is applied
@@ -489,7 +493,7 @@ class Spectrogram(Array2D):
         specvar : `SpectralVariance`
             2D-array of spectral frequency-amplitude counts
 
-        See also
+        See Also
         --------
         numpy.histogram
             for details on specifying bins and weights
@@ -528,16 +532,22 @@ class Spectrogram(Array2D):
         if low is not None and low == self.f0:
             low = None
         elif low is not None and low < self.f0:
-            warnings.warn("Spectrogram.crop_frequencies given low frequency "
-                          "cutoff below f0 of the input Spectrogram. Low "
-                          "frequency crop will have no effect.")
+            warnings.warn(
+                "Spectrogram.crop_frequencies given low frequency "
+                "cutoff below f0 of the input Spectrogram. Low "
+                "frequency crop will have no effect.",
+                stacklevel=2,
+            )
         # check high frequency
         if high is not None and high.value == self.band[1]:
             high = None
         elif high is not None and high.value > self.band[1]:
-            warnings.warn("Spectrogram.crop_frequencies given high frequency "
-                          "cutoff above cutoff of the input Spectrogram. High "
-                          "frequency crop will have no effect.")
+            warnings.warn(
+                "Spectrogram.crop_frequencies given high frequency "
+                "cutoff above cutoff of the input Spectrogram. High "
+                "frequency crop will have no effect.",
+                stacklevel=2,
+            )
         # find low index
         if low is None:
             idx0 = None
@@ -563,7 +573,7 @@ class Spectrogram(Array2D):
                                    epoch=out.epoch, channel=out.channel,
                                    f0=out.x0.value, df=out.dx.value)
         # requested time axis, return a TimeSeries
-        elif out.ndim == 1:
+        if out.ndim == 1:
             return TimeSeries(out.value, name=out.name, unit=out.unit,
                               epoch=out.epoch, channel=out.channel, dx=out.dx)
         # otherwise return whatever we got back from super (Quantity)
@@ -603,4 +613,5 @@ class SpectrogramList(TimeSeriesList):
     TypeError
         if any elements are not of type `Spectrogram`
     """
+
     EntryClass = Spectrogram

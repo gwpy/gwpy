@@ -19,12 +19,15 @@
 time-frequency coherence spectrogram from a pair of time-series.
 """
 
-from multiprocessing import (Process, Queue as ProcessQueue)
 from math import ceil
+from multiprocessing import (
+    Process,
+    Queue as ProcessQueue,
+)
 
 from numpy import zeros
 
-from .spectrogram import (Spectrogram, SpectrogramList)
+from .spectrogram import Spectrogram, SpectrogramList
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -153,8 +156,7 @@ def from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
         result = queue.get()
         if isinstance(result, Exception):
             raise result
-        else:
-            data.append(result)
+        data.append(result)
 
     # and block
     for process in processlist:

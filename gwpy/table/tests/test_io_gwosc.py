@@ -31,7 +31,7 @@ def test_fetch_gwosc():
     assert {
         "mass_1_source",
         "luminosity_distance",
-        "chi_eff"
+        "chi_eff",
     }.intersection(table.colnames)
 
     # check unit parsing worked
@@ -47,7 +47,7 @@ def test_fetch_open_data_kwargs():
             "name",
             "mass_1_source",
             "mass_2_source",
-            "luminosity_distance"
+            "luminosity_distance",
         ],
     )
     assert len(table) == 1
@@ -56,5 +56,5 @@ def test_fetch_open_data_kwargs():
         "name",
         "mass_1_source",
         "mass_2_source",
-        "luminosity_distance"
+        "luminosity_distance",
     }

@@ -19,15 +19,11 @@
 
 from io import BytesIO
 
-import pytest
-
 import numpy
-
-from scipy import signal
-
-from matplotlib import rc_context
-
+import pytest
 from astropy import units
+from matplotlib import rc_context
+from scipy import signal
 
 from ...testing import utils
 from ...types.tests.test_array2d import TestArray2D as _TestArray2D
@@ -38,6 +34,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 class TestSpectrogram(_TestArray2D):
     """Tests of `gwpy.spectrogram.Spectrogram`."""
+
     TEST_CLASS = Spectrogram
 
     def test_new(self):
@@ -51,7 +48,7 @@ class TestSpectrogram(_TestArray2D):
     def test_new_redundant_args(self):
         with pytest.raises(
             ValueError,
-            match="^give only one of epoch or t0$",
+            match=r"^give only one of epoch or t0$",
         ):
             self.TEST_CLASS(self.data, epoch=1, t0=1)
 
@@ -71,7 +68,7 @@ class TestSpectrogram(_TestArray2D):
             2000 * units.milliHertz,
         ) == self.data[5][2] * array.unit
 
-    @pytest.mark.parametrize("ratio", ("mean", "median"))
+    @pytest.mark.parametrize("ratio", ["mean", "median"])
     def test_ratio(self, array, ratio):
         rat = array.ratio(ratio)
         array_meth = getattr(array, ratio)
@@ -142,7 +139,7 @@ class TestSpectrogram(_TestArray2D):
         with pytest.warns(UserWarning):
             array.crop_frequencies(array.yspan[0], array.yspan[1]+1)
 
-    @pytest.mark.parametrize("method", ("imshow", "pcolormesh"))
+    @pytest.mark.parametrize("method", ["imshow", "pcolormesh"])
     def test_plot(self, array, method):
         with rc_context(rc={"text.usetex": False}):
             plot = array.plot(method=method)

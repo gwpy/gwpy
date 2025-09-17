@@ -18,8 +18,8 @@
 """Unit tests for :mod:`gwpy.cli.coherencegram`."""
 
 from ... import cli
-from .test_spectrogram import TestCliSpectrogram as _TestCliSpectrogram
 from .test_coherence import TestCliCoherence as _TestCliCoherence
+from .test_spectrogram import TestCliSpectrogram as _TestCliSpectrogram
 
 
 class TestCliCoherencegram(_TestCliSpectrogram):

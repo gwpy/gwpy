@@ -129,9 +129,8 @@ def get_database_names(
     start = int(to_gps(start))
     end = int(to_gps(end))
     if end < start:
-        raise ValueError(
-            "invalid start/end for HACR query, end must be greater than start",
-        )
+        msg = "invalid start/end for HACR query, end must be greater than start"
+        raise ValueError(msg)
     if start == end:
         end += 1
     # convert to datetimes
@@ -170,7 +169,7 @@ def get_hacr_channels(
     Returns
     -------
 
-    See also
+    See Also
     --------
     gwpy.table.io.hacr.create_engine
         For details of valid keyword arguments to create the
@@ -275,10 +274,11 @@ def get_hacr_triggers(
     databases: Iterable[str | None]
     if engine is None and database is None:
         if start is None or end is None:
-            raise ValueError(
+            msg = (
                 "start and end options must be given to determine "
-                "databases to query",
+                "databases to query"
             )
+            raise ValueError(msg)
         databases = get_database_names(start, end)
     else:
         databases = [database]
@@ -347,9 +347,8 @@ def get_hacr_triggers(
             dtype=dtypes,
         )
     else:  # no databases found
-        raise RuntimeError(
-            "no HACR data found from query",
-        )
+        msg = "no HACR data found from query"
+        raise RuntimeError(msg)
 
     # add dynamic columns
     if dynamic_cols:

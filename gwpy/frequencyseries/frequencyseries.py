@@ -87,6 +87,7 @@ class FrequencySeries(Series):
        ~FrequencySeries.plot
        ~FrequencySeries.zpk
     """
+
     _default_xunit = units.Unit("Hz")
     _print_slots = ["f0", "df", "epoch", "name", "channel"]
 
@@ -154,7 +155,7 @@ class FrequencySeries(Series):
         out : :class:`~gwpy.timeseries.TimeSeries`
             the normalised, real-valued `TimeSeries`.
 
-        See also
+        See Also
         --------
         numpy.fft.irfft : The inverse (real) FFT function
 
@@ -209,7 +210,7 @@ class FrequencySeries(Series):
         spectrum : `FrequencySeries`
             the frequency-domain filtered version of the input data
 
-        See also
+        See Also
         --------
         FrequencySeries.filter
             for details on how a digital ZPK-format filter is applied
@@ -237,7 +238,7 @@ class FrequencySeries(Series):
         out : `FrequencySeries`
             the interpolated version of the input `FrequencySeries`
 
-        See also
+        See Also
         --------
         numpy.interp
             for the underlying 1-D linear interpolation scheme
@@ -291,9 +292,13 @@ class FrequencySeries(Series):
         return fdfilter(self, *filt, **kwargs)
 
     def filterba(self, *args, **kwargs):
-        warnings.warn("filterba will be removed soon, please use "
-                      "FrequencySeries.filter instead, with the same "
-                      "arguments", DeprecationWarning)
+        warnings.warn(
+            "filterba will be removed soon, please use "
+            "FrequencySeries.filter instead, with the same "
+            "arguments",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.filter(*args, **kwargs)
 
     @classmethod
@@ -335,13 +340,17 @@ class FrequencySeries(Series):
         conversion.
         """
         import lal
-        from ..utils.lal import (find_typed_function, to_lal_unit)
+
+        from ..utils.lal import find_typed_function, to_lal_unit
 
         # map unit
         try:
             unit, scale = to_lal_unit(self.unit)
         except ValueError as exc:
-            warnings.warn(f"{exc}, defaulting to lal.DimensionlessUnit")
+            warnings.warn(
+                f"{exc}, defaulting to lal.DimensionlessUnit",
+                stacklevel=2,
+            )
             unit = lal.DimensionlessUnit
             scale = 1
 
@@ -398,10 +407,11 @@ class FrequencySeries(Series):
         else:
             epoch = self.epoch.gps
         if self.f0.to("Hz").value:
-            raise ValueError(
+            msg = (
                 f"Cannot convert FrequencySeries to PyCBC with f0 = {self.f0}."
                 " Starting frequency must be equal to 0 Hz."
             )
+            raise ValueError(msg)
         return types.FrequencySeries(self.value,
                                      delta_f=self.df.to("Hz").value,
                                      epoch=epoch, copy=copy)

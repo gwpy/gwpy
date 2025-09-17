@@ -77,7 +77,7 @@ def get_window(
         If an ``window`` is given an array that doesn't have shape
         matching ``(Nx,)``.
 
-    See also
+    See Also
     --------
     scipy.signal.get_window
         For details of available window types and valid arguments.
@@ -102,9 +102,8 @@ def get_window(
 
     # sanity check
     if window.shape != (Nx,):
-        raise ValueError(
-            f"invalid window array shape {window.shape}, should be ({Nx},)",
-        )
+        msg = f"invalid window array shape {window.shape}, should be ({Nx},)"
+        raise ValueError(msg)
 
     return window
 
@@ -123,7 +122,7 @@ def canonical_name(name: str) -> str:
         The name of the window as implemented in `scipy.signal.window`.
 
     Raises
-    -------
+    ------
     ValueError
         If ``name`` cannot be resolved to a window function in `scipy.signal`.
 
@@ -141,9 +140,8 @@ def canonical_name(name: str) -> str:
         # pylint: disable=protected-access
         return WINDOWS[name.lower()].__name__
     except KeyError:  # no match
-        raise ValueError(
-            f"no window function in scipy.signal equivalent to '{name}'",
-        )
+        msg = f"no window function in scipy.signal equivalent to '{name}'"
+        raise ValueError(msg)
 
 
 # -- recommended overlap -------------
@@ -158,7 +156,7 @@ ROV: dict[str, float] = {
     "hann": .5,
     "hamming": .5,
     "nuttall": .656,
-    "triang": .5
+    "triang": .5,
 }
 
 
@@ -199,7 +197,8 @@ def recommended_overlap(
     try:
         rov = ROV[name]
     except KeyError:
-        raise ValueError(f"no recommended overlap for '{name}' window")
+        msg = f"no recommended overlap for '{name}' window"
+        raise ValueError(msg)
     if nfft:
         return int(ceil(nfft * rov))
     return rov

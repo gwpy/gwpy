@@ -24,6 +24,7 @@ __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 class Coherencegram(Spectrogram):
     """Plot the coherence-spectrogram comparing two time series."""
+
     DEFAULT_CMAP = "plasma"
     MIN_DATASETS = 2
     MAX_DATASETS = 2

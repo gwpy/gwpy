@@ -302,6 +302,7 @@ class EventTableFetch(EventTableRead):
                 "the 'selection' keyword has been renamed 'where', "
                 "this warning will be an error in the near future",
                 DeprecationWarning,
+                stacklevel=2,
             )
             kwargs.setdefault("where", kwargs.pop("selection"))
 

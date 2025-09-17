@@ -99,7 +99,7 @@ def test_open_data_source_error():
     """Check that an invalid source raises the right exception."""
     with pytest.raises(
         ValueError,
-        match="^Don't know how to open data source of type 'NoneType'$",
+        match=r"^Don't know how to open data source of type 'NoneType'$",
     ):
         gwpy_lalframe.open_data_source(None)
 
@@ -143,7 +143,7 @@ def test_read_channel_error():
     """Test that LALFrame raises a ValueError when the channel isn't found."""
     with pytest.raises(
         ValueError,
-        match="^channel 'bad' not found$",
+        match=r"^channel 'bad' not found$",
     ):
         gwpy_lalframe.read(TEST_GWF_FILE, ["bad"])
 

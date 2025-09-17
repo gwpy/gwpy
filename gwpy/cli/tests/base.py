@@ -21,16 +21,14 @@ import warnings
 from argparse import ArgumentParser
 
 import pytest
-
-from numpy import random
-
 from matplotlib import pyplot
+from numpy import random
 
 from ...cli import cliproduct
 from ...frequencyseries import FrequencySeries
-from ...timeseries import TimeSeries
 from ...plot import Plot
 from ...testing import utils
+from ...timeseries import TimeSeries
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -171,7 +169,7 @@ class _TestCliProduct:
             raise NotImplementedError
         assert prod.action is self.ACTION
 
-    @pytest.mark.parametrize("level", (1, 2, 3))
+    @pytest.mark.parametrize("level", [1, 2, 3])
     def test_log(self, prod, level, capsys):
         v = prod.verbose
         prod.log(level, "Test")

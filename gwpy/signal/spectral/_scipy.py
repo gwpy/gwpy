@@ -37,7 +37,6 @@ if typing.TYPE_CHECKING:
 
     from numpy.typing import NDArray
 
-    from ...frequencyseries import FrequencySeries
     from ...timeseries import TimeSeries
     from ..window import WindowLike
 
@@ -182,7 +181,7 @@ def rayleigh(
     if noverlap:
         numsegs = 1 + int(
             (timeseries.size - segmentlength)
-            / float(noverlap)
+            / float(noverlap),
         )
     else:
         numsegs = int(timeseries.size // segmentlength)
@@ -240,7 +239,7 @@ def csd(
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
         Average power `FrequencySeries`.
 
-    See also
+    See Also
     --------
     scipy.signal.csd
     """
@@ -291,7 +290,7 @@ def coherence(
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
         Average power `FrequencySeries`.
 
-    See also
+    See Also
     --------
     scipy.signal.coherence
     """
@@ -305,16 +304,18 @@ def coherence(
     if timeseries.sample_rate != other.sample_rate:
         # scipy assumes a single sampling frequency
         if not downsample:
-            raise ValueError(
+            msg = (
                 "Cannot calculate coherence when sampling "
-                "frequencies are unequal",
+                "frequencies are unequal"
             )
+            raise ValueError(msg)
         if warn_fs:
             warnings.warn(
                 "Sampling frequencies are unequal. Higher "
                 "frequency series will be downsampled before "
                 "coherence is calculated",
                 category=UserWarning,
+                stacklevel=2,
             )
         # downsample the one with the higher rate
         if timeseries.sample_rate > other.sample_rate:

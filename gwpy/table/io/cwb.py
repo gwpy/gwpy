@@ -98,6 +98,7 @@ EventTable.write.registry.register_writer(
 
 class CwbHeader(core.BaseHeader):
     """Parser for cWB ASCII header."""
+
     def get_cols(self, lines: list[str]):
         """Initialize Column objects from a multi-line ASCII header.
 
@@ -109,7 +110,7 @@ class CwbHeader(core.BaseHeader):
         re_name_def = re.compile(
             r"^\s*#\s+"  # whitespace and comment marker
             r"(?P<colnumber>[0-9]+)\s+-\s+"  # number of column
-            r"(?P<colname>(.*))"
+            r"(?P<colname>(.*))",
         )
         self.names = []
         include_cuts = False
@@ -126,8 +127,8 @@ class CwbHeader(core.BaseHeader):
                     self.names.append(match.group("colname").rstrip())
 
         if not self.names:
-            raise core.InconsistentTableError(
-                "No column names found in cWB header")
+            msg = "No column names found in cWB header"
+            raise core.InconsistentTableError(msg)
 
         if include_cuts:
             self.cols = [  # pylint: disable=attribute-defined-outside-init
@@ -149,6 +150,7 @@ class CwbHeader(core.BaseHeader):
 
 class CwbData(core.BaseData):
     """Parser for cWB ASCII data."""
+
     comment = "#"
 
 
@@ -171,6 +173,7 @@ class Cwb(core.BaseReader):
         or given as a `list`, e.g. ``'snr > 5 && frequency < 1000'`` or
         ``['snr > 5', 'frequency < 1000']``.
     """
+
     _format_name = "cwb"
     _io_registry_can_write = True
     _description = "cWB EVENTS format table"

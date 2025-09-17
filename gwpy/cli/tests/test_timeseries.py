@@ -18,7 +18,7 @@
 """Unit tests for :mod:`gwpy.cli.timeseries`."""
 
 from ... import cli
-from .base import (_TestTimeDomainProduct, update_namespace)
+from .base import _TestTimeDomainProduct, update_namespace
 
 
 class TestCliTimeSeries(_TestTimeDomainProduct):

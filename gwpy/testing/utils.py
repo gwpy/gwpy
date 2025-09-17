@@ -159,7 +159,7 @@ def assert_quantity_sub_equal(
         Other keyword arguments are passed to the array comparison operator
         `numpy.testing.assert_array_equal` or `numpy.testing.assert_allclose`.
 
-    See also
+    See Also
     --------
     numpy.testing.assert_array_equal
     numpy.testing.assert_allclose
@@ -264,7 +264,7 @@ def assert_segmentlist_equal(
 def assert_flag_equal(
     a: DataQualityFlag,
     b: DataQualityFlag,
-    attrs: list[str] = ["name", "ifo", "tag", "version"],
+    attrs: Iterable[str] = ("name", "ifo", "tag", "version"),
 ):
     """Assert that two `DataQualityFlag`s contain the same data."""
     assert_segmentlist_equal(a.active, b.active)
@@ -320,11 +320,11 @@ def test_read_write(
     extension: str | None = None,
     autoidentify: bool = True,
     read_args: Iterable[Any] = [],
-    read_kw: dict[str, Any] = {},
+    read_kw: dict[str, Any] | None = None,
     write_args: Iterable[Any] = [],
-    write_kw: dict[str, Any] = {},
+    write_kw: dict[str, Any] | None = None,
     assert_equal: Callable = assert_quantity_sub_equal,
-    assert_kw: dict[str, Any] = {},
+    assert_kw: dict[str, Any] | None = None,
 ):
     """Test that data can be written to and read from a file in some format.
 
@@ -363,6 +363,12 @@ def test_read_write(
         keyword arguments to pass to ``assert_equal``
     """
     # parse extension and add leading period
+    if assert_kw is None:
+        assert_kw = {}
+    if write_kw is None:
+        write_kw = {}
+    if read_kw is None:
+        read_kw = {}
     if extension is None:
         extension = format
     extension = extension.lstrip(".")

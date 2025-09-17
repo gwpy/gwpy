@@ -39,7 +39,6 @@ See `/docs/cli/examples.ini` in the GWpy project for an example.
 from __future__ import annotations
 
 import importlib.metadata
-import os
 import shlex
 import typing
 from configparser import ConfigParser
@@ -105,7 +104,8 @@ def _render_entry_point_example(
     try:
         entrypoint, = importlib.metadata.entry_points(name=ep_name)
     except ValueError as exc:
-        raise ValueError("ambiguous entry point") from exc
+        msg = "ambiguous entry point"
+        raise ValueError(msg) from exc
     pymod, pyfunc = entrypoint.value.rsplit(":", 1)
     pyimport = f"from {pymod} import {pyfunc}"
 
@@ -119,9 +119,9 @@ def _render_entry_point_example(
     pyargs = indent(
         # join the arguments into a list, but drop a
         # new line for each new option flag, and indent
-        f", ".join(map(repr, shlex.split(argv))).replace(
+        ", ".join(map(repr, shlex.split(argv))).replace(
             ", '-",
-            f",\n'-",
+            ",\n'-",
         ),
         indentstr,
     ).strip()

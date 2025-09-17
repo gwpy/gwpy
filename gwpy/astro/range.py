@@ -16,18 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides methods to calculate the astrophysical sensitive
-distance of an instrumental power-spectral density.
-"""
+"""Methods to calculate the sensitive distance."""
 
 from __future__ import annotations
 
 import warnings
-from collections.abc import Callable
 from functools import wraps
 from math import pi
+from typing import TYPE_CHECKING
 
-import numpy
 from astropy import (
     constants,
     units,
@@ -35,10 +32,16 @@ from astropy import (
 from scipy.integrate import trapezoid
 from scipy.interpolate import interp1d
 
-from ..frequencyseries import FrequencySeries
 from ..spectrogram import Spectrogram
 from ..timeseries import TimeSeries
 from ..utils import round_to_power
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    import numpy
+
+    from ..frequencyseries import FrequencySeries
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Alex Urban <alexander.urban@ligo.org>"
@@ -99,11 +102,12 @@ def _get_spectrogram(
             AttributeError,  # object doesn't have a `.spectrogram()` method
             TypeError,  # something else went wrong
         ) as exc:
-            raise TypeError(
+            msg = (
                 "Could not produce a spectrogram from the input, please "
                 "pass an instance of gwpy.timeseries.TimeSeries or "
-                "gwpy.spectrogram.Spectrogram",
-            ) from exc
+                "gwpy.spectrogram.Spectrogram"
+            )
+            raise TypeError(msg) from exc
     return hoft
 
 
@@ -267,6 +271,7 @@ def sensemon_range(
         warnings.warn(
             f"Upper frequency bound greater than {mass1}-{mass2} ISCO "
             f"frequency of {fisco}, using ISCO",
+            stacklevel=2,
         )
         fmax = fisco
     # integrate and return
@@ -358,7 +363,7 @@ def inspiral_range_psd(
     rspec : `~gwpy.frequencyseries.FrequencySeries`
         The calculated inspiral sensitivity PSD [Mpc^2 / Hz].
 
-    See also
+    See Also
     --------
     sensemon_range_psd
         For the method based on LIGO-T030276, also known as LIGO SenseMonitor.
@@ -405,7 +410,7 @@ def inspiral_range_psd(
     out = type(psd)(
         4
         * (dist / snr)**2
-        * (hz**2 / psd.value)[f > 0]
+        * (hz**2 / psd.value)[f > 0],
     )
 
     # finalize properties and return
@@ -485,7 +490,7 @@ def inspiral_range(
     >>> print(r)
     70.4612102889 Mpc
 
-    See also
+    See Also
     --------
     sensemon_range
         For the method based on LIGO-T030276, also known as LIGO SenseMonitor.
@@ -703,7 +708,7 @@ def range_timeseries(
     compact binary inspirals and to unmodelled GW bursts, each a class
     of transient event.
 
-    See also
+    See Also
     --------
     gwpy.timeseries.TimeSeries.spectrogram
         for the underlying power spectral density estimator
@@ -754,8 +759,7 @@ def range_spectrogram(
     range_func=None,
     **rangekwargs,
 ) -> Spectrogram:
-    """Calculate the average range or range power spectrogram (Mpc or
-    Mpc^2 / Hz) directly from strain.
+    """Calculate the average range spectrogram (Mpc or Mpc^2 / Hz) from strain.
 
     Parameters
     ----------
@@ -819,7 +823,7 @@ def range_spectrogram(
     innermost stable circular orbit (ISCO), the output will extend only up
     to the latter.
 
-    See also
+    See Also
     --------
     gwpy.timeseries.TimeSeries.spectrogram
         for the underlying power spectral density estimator

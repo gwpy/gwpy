@@ -59,7 +59,7 @@ def cwd(path):
 @pytest.fixture(autouse=True)
 def close_figures():
     """Fixture to close all matplotlib figures after each test."""
-    from matplotlib import pyplot  # noqa: PLC0415
+    from matplotlib import pyplot
     try:
         yield
     finally:

@@ -59,7 +59,7 @@ class TestCliQtransform(_TestCliSpectrogram):
             fr"f-range: \[{_float_reg}, {_float_reg}\], "
             fr"e-range: \[{_float_reg}, {_float_reg}\]"
             r"\Z",
-            re.I,
+            re.IGNORECASE,
         )
         assert title_reg.match(dataprod.get_title())
 

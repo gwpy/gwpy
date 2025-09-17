@@ -58,7 +58,7 @@ def mock_krb5_env():
 
 def kerberos_name(name):
     """Return a `gssapi.Name` for a Kerberos principal."""
-    import gssapi  # noqa: PLC0415
+    import gssapi
     return gssapi.Name(
         base=name,
         name_type=gssapi.NameType.kerberos_principal,
@@ -206,7 +206,7 @@ def test_kinit_notty():
 @mock.patch("gwpy.io.kerberos._acquire_password")
 def test_kinit_error(mock_acquire_password):
     """Test that `gwpy.io.kerberos.kinit` propagates `GSSError`s appropriately."""
-    import gssapi  # noqa: PLC0415
+    import gssapi
     mock_acquire_password.side_effect = gssapi.exceptions.GSSError(0, 0)
 
     with pytest.raises(

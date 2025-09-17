@@ -59,7 +59,7 @@ def identify_root(
         return str(filepath).endswith(".root")
     # or finally introspect an object from uproot
     try:
-        import uproot  # noqa: PLC0415
+        import uproot
     except ImportError:
         return False
     return isinstance(args[0], uproot.ReadOnlyFile | uproot.ReadOnlyDirectory)

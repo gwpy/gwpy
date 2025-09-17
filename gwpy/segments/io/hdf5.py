@@ -241,7 +241,7 @@ def read_hdf5_dict(
             if on_missing == "ignore":
                 continue
             if on_missing == "warn":
-                warnings.warn(str(exc), stacklevel=3)
+                warnings.warn(str(exc), stacklevel=2)
             else:
                 msg = f"no H5Group found for flag '{name}'"
                 raise ValueError(msg) from None

@@ -92,7 +92,7 @@ GSTLAL_FILE = """
     </Stream>
   </Table>
 </LIGO_LW>
-"""  # noqa: E501
+"""
 
 
 @pytest.fixture
@@ -206,7 +206,7 @@ def test_incorrect_coinc_column(gstlal_table):
 def test_incorrect_trigger_name(gstlal_table):
     with pytest.raises(
         ValueError,
-        match="^triggers must be 'sngl' or 'coinc', got 'nan'$",
+        match=r"^triggers must be 'sngl' or 'coinc', got 'nan'$",
     ):
         EventTable.read(
             gstlal_table,

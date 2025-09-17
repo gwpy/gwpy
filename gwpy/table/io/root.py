@@ -57,9 +57,8 @@ def get_treename(
     source = rootdir.file_path
 
     if not rootdir:  # nothing to read?
-        raise ValueError(
-            "No trees found in '{source}'",
-        )
+        msg = "No trees found in '{source}'"
+        raise ValueError(msg)
 
     # find one and only one tree
     try:
@@ -68,11 +67,12 @@ def get_treename(
             cycle=False,
         )
     except ValueError as exc:
-        raise ValueError(
+        msg = (
             f"Multiple trees found in {source}, please select one via the "
             "`treename` keyword argument, e.g. `treename='events'`. "
-            "Available trees are: '{', '.join(names)}'.",
-        ) from exc
+            "Available trees are: '{', '.join(names)}'."
+        )
+        raise ValueError(msg) from exc
     return tree
 
 
@@ -120,7 +120,7 @@ def table_from_root(
     KeyError
         If ``treename`` is given but no tree is found with that name.
 
-    See also
+    See Also
     --------
     uproot.open
         For details of how ROOT files are parsed and what keyword
@@ -134,7 +134,7 @@ def table_from_root(
     # handle uproot.open keywords
     createkw = {
         # valid for uproot 5.5.1
-        k: kwargs.pop(k) for k in {
+        k: kwargs.pop(k) for k in (
             "object_cache",
             "array_cache",
             "custom_classes",
@@ -147,8 +147,8 @@ def table_from_root(
             "use_threads"
             "num_fallback_workers"
             "begin_chunk_size"
-            "minimal_ttree_metadata"
-        } if k in kwargs
+            "minimal_ttree_metadata",
+        ) if k in kwargs
     }
 
     path = file_path(source)
@@ -204,7 +204,7 @@ def table_to_root(
         If ``append=True`` is given and the target filename does not
         already exist.
 
-    See also
+    See Also
     --------
     uproot.create
         For details of how new files are created and what keyword
@@ -229,12 +229,12 @@ def table_to_root(
 
     # handle file creation/update options
     createkw = {
-        k: kwargs.pop(k) for k in {
+        k: kwargs.pop(k) for k in (
             "initial_directory_bytes",
             "initial_streamers_bytes",
             "uuid_function",
             "compression",
-        } if k in kwargs
+        ) if k in kwargs
     }
     if overwrite:
         create_func = uproot.recreate

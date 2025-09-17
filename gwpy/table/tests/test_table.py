@@ -67,17 +67,17 @@ class TestTable:
             table_class=cls.TABLE,
         )
 
-    @pytest.fixture()
+    @pytest.fixture
     @classmethod
     def table(cls):
         return cls.create(100, ["time", "snr", "frequency"])
 
-    @pytest.fixture()
+    @pytest.fixture
     @classmethod
     def emptytable(cls):
         return cls.create(0, ["time", "snr", "frequency"])
 
-    @pytest.fixture()
+    @pytest.fixture
     @classmethod
     def clustertable(cls):
         return cls.TABLE(data=[[11, 1, 1, 10, 1, 1, 9],
@@ -315,7 +315,7 @@ class TestEventTable(TestTable):
         # check that a non-positive window throws an appropriate ValueError
         with pytest.raises(
             ValueError,
-            match="^Window must be a positive value$",
+            match=r"^Window must be a positive value$",
         ):
             clustertable.cluster("time", "amplitude", 0)
 

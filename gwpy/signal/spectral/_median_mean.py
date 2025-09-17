@@ -40,13 +40,15 @@ def median_mean(*args, **kwargs):
             continue
         # warn about deprecated name match
         warnings.warn(
-            "no FFT method registered as 'median_mean', used {!r}; "
-            "in the future this will raise a ValueError.".format(api_name),
+            f"no FFT method registered as 'median_mean', used {api_name!r}; "
+            "in the future this will raise a ValueError.",
             DeprecationWarning,
+            stacklevel=2,
         )
         return result
     # try and call normally, mainly to raise the standard error
-    raise KeyError("no PSD method registered with name 'median-mean'")
+    msg = "no PSD method registered with name 'median-mean'"
+    raise KeyError(msg)
 
 
 fft_registry.register_method(median_mean)

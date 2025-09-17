@@ -28,8 +28,12 @@ __author__ = "Evan Goetz <evan.goetz@ligo.org>"
 class TestCliTransferFunction(_TestTransferFunctionProduct):
     TEST_CLASS = cli.TransferFunction
     ACTION = "transferfunction"
-    TEST_ARGS = _TestCliProduct.TEST_ARGS + [
-        "--chan", "Y1:TEST-CHANNEL", "--secpfft", "0.25",
+    TEST_ARGS = [
+        *_TestCliProduct.TEST_ARGS,
+        "--chan",
+        "Y1:TEST-CHANNEL",
+        "--secpfft",
+        "0.25",
     ]
 
     def test_init(self, prod):

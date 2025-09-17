@@ -24,7 +24,6 @@ command-line tool using the python-gssapi library.
 See the documentation of the `kinit` function for example usage.
 """
 
-# ruff: noqa: PLC0415
 
 from __future__ import annotations
 

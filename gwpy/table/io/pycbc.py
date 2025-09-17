@@ -283,7 +283,7 @@ def filter_empty_files(
     nonempty : `list`
         The subset of the input ``files`` that are considered not empty.
 
-    See also
+    See Also
     --------
     empty_hdf5_file
         For details of the 'emptiness' test.
@@ -349,7 +349,7 @@ def identify_pycbc_live(
         filepath = getattr(fileobj, "name", None)
     return bool(
         filepath is not None
-        and PYCBC_FILENAME.match(basename(filepath))
+        and PYCBC_FILENAME.match(basename(filepath)),
     )
 
 
@@ -402,10 +402,10 @@ GET_COLUMN["new_snr"] = get_new_snr
 GET_COLUMN_EXTRA["new_snr"] = {"snr", "chisq"}
 
 # use the generic mass functions
-for _key in {
+for _key in (
     "mchirp",
     "mtotal",
-}:
+):
     GET_COLUMN[_key] = DYNAMIC_COLUMN_FUNC[_key]
     GET_COLUMN_EXTRA[_key] = DYNAMIC_COLUMN_INPUT[_key]
 

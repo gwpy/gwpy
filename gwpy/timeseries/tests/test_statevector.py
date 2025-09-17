@@ -333,7 +333,7 @@ class TestStateVector(_TestTimeSeriesBase):
         # check that invalid bits throws exception
         with pytest.raises(
             ValueError,
-            match="^Bit 'blah' not found in StateVector$",
+            match=r"^Bit 'blah' not found in StateVector$",
         ):
             array.get_bit_series(["blah"])
 

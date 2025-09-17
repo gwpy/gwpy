@@ -20,9 +20,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from ...utils.decorators import deprecated_function
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

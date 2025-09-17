@@ -58,7 +58,7 @@ def nds2_buffer(
     data_type: int = 8,
 ) -> nds2.buffer:
     """Create a mocked `nds2.buffer`."""
-    import nds2  # noqa: PLC0415
+    import nds2
     epoch = LIGOTimeGPS(epoch)
     ndsbuffer = mock.create_autospec(nds2.buffer)
     ndsbuffer.length = len(data)
@@ -100,7 +100,7 @@ def nds2_channel(
     data_type: int = 8,
 ) -> nds2.channel:
     """Create a mocked `nds2.channel`."""
-    import nds2  # noqa: PLC0415
+    import nds2
     channel = mock.create_autospec(nds2.channel)
     channel.name = name
     channel.sample_rate = sample_rate
@@ -123,7 +123,7 @@ def nds2_connection(
     protocol: int = 2,
 ) -> nds2.connection:
     """Create a mock an `nds2.connection` that returns the given buffers."""
-    import nds2  # noqa: PLC0415
+    import nds2
     NdsConnection = mock.create_autospec(nds2.connection)  # noqa: N806
     NdsConnection.get_parameter.return_value = False
     NdsConnection.get_host.return_value = host
@@ -198,7 +198,7 @@ def nds2_availability(
     segments: SegmentListLike,
 ) -> nds2.availability:
     """Create a mock `nds2.availability` object."""
-    import nds2  # noqa: PLC0415
+    import nds2
     segs = list(map(nds2_segment, segments))
     availability = mock.create_autospec(nds2.availability)
     availability.name = name
@@ -211,7 +211,7 @@ def nds2_segment(
     segment: SegmentLike,
 ) -> nds2.segment:
     """Create a mock `nds2.simple_segment`."""
-    import nds2  # noqa: PLC0415
+    import nds2
     nds2seg = mock.create_autospec(nds2.segment)
     nds2seg.gps_start = segment[0]
     nds2seg.gps_stop = segment[1]
