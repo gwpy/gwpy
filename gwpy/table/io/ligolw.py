@@ -80,7 +80,8 @@ except ImportError:
 else:
     HAVE_LSCTABLES = True
     LIGOLW_TABLES = set(lsctables.TableByName.values())
-    LIGOLW_PROPERTY_TYPES = LIGOLW_PROPERTY_TYPES + (
+    LIGOLW_PROPERTY_TYPES = (
+        *LIGOLW_PROPERTY_TYPES,
         lsctables.gpsproperty,
         lsctables.gpsproperty_with_gmst,
         lsctables.instrumentsproperty,

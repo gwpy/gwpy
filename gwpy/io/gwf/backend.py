@@ -47,7 +47,7 @@ def _backend_candidates(
     backends: list[str] = BACKENDS,
 ) -> Iterator[str]:
     default = os.getenv("GWPY_FRAME_LIBRARY") or backends[0]
-    yield from dict.fromkeys([default] + backends)
+    yield from dict.fromkeys([default, *backends])
 
 
 def get_backend(

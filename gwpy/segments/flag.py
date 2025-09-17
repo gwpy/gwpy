@@ -820,7 +820,7 @@ class DataQualityFlag:
                 f"{indent}      ",
             ).strip().splitlines()
             if len(rep) > 10:  # use ellipsis
-                rep = rep[:3] + [f"{indent}      ..."] + rep[-3:]
+                rep = [*rep[:3], f"{indent}      ...", *rep[-3:]]
 
         # print the thing
         return "".join((

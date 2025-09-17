@@ -39,7 +39,7 @@ class SpectralVariance(Array2D):
     frequency-series `FrequencySeries`.
     """
 
-    _metadata_slots = FrequencySeries._metadata_slots + ("bins",)
+    _metadata_slots = (*FrequencySeries._metadata_slots, "bins")
     _default_xunit = FrequencySeries._default_xunit
     _rowclass = FrequencySeries
 

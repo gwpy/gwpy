@@ -54,7 +54,8 @@ def _columns_from_frevent(frevent: FrEvent) -> list[str]:
         "timeBefore",
         "timeAfter",
         "comment",
-    ] + list(params.keys())
+        *list(params.keys()),
+    ]
 
 
 def _row_from_frevent(

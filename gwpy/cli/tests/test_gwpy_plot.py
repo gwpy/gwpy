@@ -26,7 +26,7 @@ from .. import (
 from .base import NDS2_CONNECTION_FIXTURE_DATA  # noqa: F401
 
 
-@pytest.mark.parametrize("mode", [None] + list(PRODUCTS.keys()))
+@pytest.mark.parametrize("mode", [None, *list(PRODUCTS.keys())])
 def test_gwpy_plot_help(mode):
     args = [mode, "--help"] if mode else ["--help"]
     with pytest.raises(SystemExit) as exc:
