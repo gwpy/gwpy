@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides methods to calculate the astrophysical sensitive
-distance of an instrumental power-spectral density.
-"""
+"""Methods to calculate the sensitive distance."""
 
 from __future__ import annotations
 
@@ -761,8 +759,7 @@ def range_spectrogram(
     range_func=None,
     **rangekwargs,
 ) -> Spectrogram:
-    """Calculate the average range or range power spectrogram (Mpc or
-    Mpc^2 / Hz) directly from strain.
+    """Calculate the average range spectrogram (Mpc or Mpc^2 / Hz) from strain.
 
     Parameters
     ----------

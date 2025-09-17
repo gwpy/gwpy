@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""The `astro` module provides methods for sensitivity calculations of
-gravitational-wave interferometer data.
+"""Methods for sensitivity calculations of gravitational-wave interferometer data.
 
 The LIGO project measures time-dependent sensitivity by calculating the
 distance at which the gravitational-wave signature of a binary neutron star
