@@ -1,5 +1,5 @@
-# Copyright (c) 2017-2021 Cardiff University
-#               2014-2017 Louisiana State University
+# Copyright (c) 2014-2017 Louisiana State University
+#               2017-2021 Cardiff University
 #
 # This file is part of GWpy.
 #

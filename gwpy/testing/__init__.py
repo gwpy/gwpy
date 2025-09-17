@@ -1,4 +1,4 @@
-# Copyright (C) Cardiff University (2018-)
+# Copyright (c) 2018-2025 Cardiff University
 #
 # This file is part of GWpy.
 #

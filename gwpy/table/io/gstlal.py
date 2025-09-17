@@ -1,6 +1,6 @@
-# Copyright (C) Pensylvania State University (2019)
-#               California Institute of Technology (2019-2022)
-#               Cardiff University (2024-)
+# Copyright (c) 2019 Pensylvania State University
+#               2019-2022 California Institute of Technology
+#               2024-2025 Cardiff University
 #
 # This file is part of GWpy.
 #

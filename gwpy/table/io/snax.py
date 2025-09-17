@@ -1,5 +1,5 @@
-# Copyright (c) 2020 Cardiff University
-#               2019-2020 Patrick Godwin
+# Copyright (c) 2019-2020 Patrick Godwin
+#               2020 Cardiff University
 #
 # This file is part of GWpy.
 #

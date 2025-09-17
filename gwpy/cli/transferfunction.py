@@ -1,4 +1,5 @@
-# Copyright (C) Evan Goetz (2021)
+# Copyright (c) 2021 Evan Goetz
+#               2021-2025 Cardiff University
 #
 # This file is part of GWpy.
 #
