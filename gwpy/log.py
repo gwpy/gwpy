@@ -23,7 +23,6 @@ import logging
 import os
 import sys
 import typing
-from contextlib import contextmanager
 
 try:
     from coloredlogs import (
@@ -36,7 +35,6 @@ except ImportError:
         return False
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator
     from typing import IO
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -45,10 +43,10 @@ DEFAULT_FORMAT = "%(asctime)s:%(name)s:%(levelname)s:%(message)s"
 DEFAULT_DATEFMT = "%Y-%m-%dT%H:%M:%S.%f%z"
 
 
-def get_default_loglevel() -> int:
-    """Return the default log level by inspecting the ``GWPY_LOGLEVEL`` variable.
+def get_default_level() -> int:
+    """Return the default log level by inspecting the ``GWPY_LOG_LEVEL`` variable.
 
-    If ``GWPY_LOGLEVEL`` is not set, `logging.NOTSET` is returned.
+    If ``GWPY_LOG_LEVEL`` is not set, `logging.NOTSET` is returned.
 
     Returns
     -------
@@ -57,23 +55,23 @@ def get_default_loglevel() -> int:
 
     Examples
     --------
-    >>> os.environ["GWPY_LOGLEVEL"] = "DEBUG"
-    >>> get_default_loglevel()
+    >>> os.environ["GWPY_LOG_LEVEL"] = "DEBUG"
+    >>> get_default_level()
     10
-    >>> os.environ["GWPY_LOGLEVEL"] = logging.INFO
+    >>> os.environ["GWPY_LOG_LEVEL"] = logging.INFO
     20
     """
     try:
-        loglevel = os.environ["GWPY_LOGLEVEL"]
+        level = os.environ["GWPY_LOG_LEVEL"]
     except KeyError:
         return logging.NOTSET
-    if loglevel.isdigit():
-        return int(loglevel)
+    if level.isdigit():
+        return int(level)
     levels = logging.getLevelNamesMapping()
-    return levels[loglevel]
+    return levels[level]
 
 
-def get_logger(
+def init_logger(
     name: str,
     level: int | str | None = None,
     *,
@@ -100,7 +98,7 @@ def get_logger(
     level : `int`, `str`, optional
         The level to set on the logger.
         If ``level=None`` (default) is given, the logging level will be
-        determined from the ``GWPY_LOGLEVEL`` environment variable, or
+        determined from the ``GWPY_LOG_LEVEL`` environment variable, or
         set to `logging.NOTSET`.
 
     stream : `io.IOBase`, optional
@@ -140,7 +138,7 @@ def get_logger(
     """
     # get the default level
     if level is None:
-        level = get_default_loglevel()
+        level = get_default_level()
 
     # get the logger
     logger = logging.getLogger(name)
@@ -160,43 +158,3 @@ def get_logger(
         ))
         logger.addHandler(handler)
     return logger
-
-
-@contextmanager
-def logger(
-    name: str,
-    level: int | str | None,
-) -> Iterator[logging.Logger]:
-    """Return a `logging.Logger` with the given ``name`` and ``level``.
-
-    The logging level is reset to its previous value after the context manager
-    exits.
-
-    Parameters
-    ----------
-    name : `str`
-        The name of the logger.
-
-    level : `int`, `str`, `None`
-        The level to set on the logger.
-        If `None` is given, the log level is not changed from its current value,
-        but will still be reset when the context manager exits.
-
-    Yields
-    ------
-    logger : `logging.Logger`
-        The logger.
-
-    Examples
-    --------
-    >>> with logger("gwpy.timeseries", "DEBUG") as log:
-    ...     log.debug("something interesting")
-    """
-    logger = logging.getLogger(name)
-    current = logger.getEffectiveLevel()
-    if level is not None:
-        logger.setLevel(level)
-    try:
-        yield logger
-    finally:
-        logger.setLevel(current)

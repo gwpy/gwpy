@@ -39,20 +39,18 @@ See `/docs/cli/examples.ini` in the GWpy project for an example.
 from __future__ import annotations
 
 import importlib.metadata
+import logging
 import shlex
 import typing
 from configparser import ConfigParser
 from string import Template
 from textwrap import indent
 
-from ...log import get_logger
-
 if typing.TYPE_CHECKING:
-    import logging
     from collections.abc import Mapping
     from pathlib import Path
 
-LOGGER = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 CLI_TEMPLATE = Template("""
 \"\"\"
@@ -81,7 +79,7 @@ def _render_entry_point_example(
     config: Mapping,
     section: str,
     outdir: Path,
-    logger: logging.Logger,
+    logger: logging.Logger = logger,
     entry_point: str = "gwpy-plot",
     filename_prefix: str = "cli_",
 ) -> Path:
@@ -147,7 +145,7 @@ def _render_entry_point_example(
 def render_entry_point_examples(
     inifile: Path,
     outdir: Path,
-    logger: logging.Logger = LOGGER,
+    logger: logging.Logger = logger,
     entry_point: str = "gwpy-plot",
     filename_prefix: str = "cli_",
 ) -> None:

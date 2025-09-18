@@ -32,7 +32,7 @@ The following variables are understood:
       - The library to prefer when reading :ref:`GWF <gwpy-timeseries-io-gwf`
         data, one of ``"FrameCPP"``, ``"FrameL"``, ``"LALFrame"``
         (case insensitive)
-    * - ``GWPY_LOGLEVEL``
+    * - ``GWPY_LOG_LEVEL``
       - String or Number
       - ``0``
       - The logging level to use, see :ref:`python:levels`. Default is ``0``

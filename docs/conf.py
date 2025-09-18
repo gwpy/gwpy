@@ -16,11 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
 import os.path
 import re
 import warnings
-from datetime import datetime
-from datetime.timezone import UTC
 from pathlib import Path
 
 import matplotlib
@@ -31,7 +30,7 @@ from sphinx.util import logging
 import gwpy
 from gwpy.utils.sphinx import gallery as cli_gallery
 
-TODAY = datetime.now(tz=UTC).date()
+TODAY = datetime.datetime.now(tz=datetime.UTC).date()
 
 SPHINX_DIR = Path(__file__).parent.absolute()
 STATIC_DIRNAME = "_static"

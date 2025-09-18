@@ -28,6 +28,7 @@ See the documentation of the `kinit` function for example usage.
 from __future__ import annotations
 
 import getpass
+import logging
 import os
 import re
 import subprocess
@@ -54,6 +55,8 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
     "kinit",
 ]
+
+logger = logging.getLogger(__name__)
 
 KLIST = which("klist") or "klist"
 
@@ -328,8 +331,8 @@ def kinit(
         GSSAPI implementation).
 
     verbose : `bool`, optional
-        Print verbose output (if `True`), or not (`False)`; default is `True`
-        if any user-prompting is needed, otherwise `False`.
+        DEPRECATED. This argument does nothing, instead of using ``verbose=True``
+        use logging to control output.
 
     Returns
     -------
@@ -365,7 +368,7 @@ def kinit(
         )
         raise ImportError(msg) from exc
 
-    # handle deprecated keyword
+    # handle deprecated keywords
     if krb5ccname:
         warnings.warn(
             f"The `krb5ccname` keyword for {__name__}.kinit was renamed "
@@ -375,6 +378,14 @@ def kinit(
         )
         if ccache is None:
             ccache = krb5ccname
+    if verbose is not None:
+        warnings.warn(
+            f"The `verbose` keyword for {__name__}.kinit is deprecated, "
+            "and will stop working in a future release. "
+            "Please use logging to control output.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     # get keytab and check we can use it (username in keytab)
     try:
@@ -425,11 +436,11 @@ def kinit(
         )
         raise KerberosError(msg) from exc
 
-    if verbose:
-        print(
-            f"Kerberos ticket acquired for {creds.name} "
-            f"({creds.lifetime} seconds remaining)",
-        )
+    logger.info(
+        "Kerberos ticket acquired for %s (%d seconds remaining)",
+        creds.name,
+        creds.lifetime,
+    )
 
     return creds
 

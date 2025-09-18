@@ -20,11 +20,11 @@
 
 from __future__ import annotations
 
+import logging
 import typing
 
 from ...detector import ChannelList
 from ...io import datafind as io_datafind
-from ...log import get_logger
 from ...time import to_gps
 from .. import TimeSeries
 
@@ -40,7 +40,7 @@ if typing.TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-LOGGER = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def find(
@@ -142,7 +142,7 @@ def find(
     frametypes: dict[str, list[str]] = {}
 
     if frametype is None:
-        LOGGER.debug("Finding frametypes for %d channels", len(channels))
+        logger.debug("Finding frametypes for %d channels", len(channels))
         matched = io_datafind.find_best_frametype(
             channels,
             start,
@@ -156,7 +156,7 @@ def find(
         for name, ftype in matched.items():
             frametypes.setdefault(ftype, []).append(name)
 
-        LOGGER.debug("Determined %s frametypes to read", len(frametypes))
+        logger.debug("Determined %s frametypes to read", len(frametypes))
     else:  # use the given frametype for all channels
         frametypes[frametype] = list(map(str, channels))
 
@@ -164,7 +164,7 @@ def find(
 
     out = dict_class()
     for ftype, clist in frametypes.items():
-        LOGGER.debug(
+        logger.debug(
             "Reading %d channels from '%s': %s",
             len(clist),
             ftype,
