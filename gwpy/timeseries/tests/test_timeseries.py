@@ -1062,7 +1062,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             overlap=overlap,
             method=method,
         )
-        assert fs.unit == noisy_sinusoid.unit ** 2 / "Hz"
+        assert fs.unit == noisy_sinusoid.unit ** 2 / units.Hz
         assert fs.max() == fs.value_at(500)
         assert fs.size == fftlength * noisy_sinusoid.sample_rate.value // 2 + 1
         assert fs.f0 == 0 * units.Hz
@@ -1098,7 +1098,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             )
 
         assert isinstance(psd, FrequencySeries)
-        assert psd.unit == noisy_sinusoid.unit ** 2 / "Hz"
+        assert psd.unit == noisy_sinusoid.unit ** 2 / units.Hz
         assert psd.max() == psd.value_at(500)
 
     def test_asd(self, gw150914):

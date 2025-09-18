@@ -19,6 +19,7 @@
 """Tests for LAL signal processing interface."""
 
 import pytest
+from astropy import units
 
 from ..spectral import _lal as fft_lal
 
@@ -93,7 +94,7 @@ def test_welch(noisy_sinusoid):
     psd = fft_lal.welch(noisy_sinusoid, 4096, noverlap=2048)
     # assert PSD peaks at 500 Hz (as designed)
     assert psd.max() == psd.value_at(500.)
-    assert psd.unit == noisy_sinusoid.unit ** 2 / "Hz"
+    assert psd.unit == noisy_sinusoid.unit ** 2 / units.Hz
     assert psd.channel is noisy_sinusoid.channel
     assert psd.name is noisy_sinusoid.name
 
