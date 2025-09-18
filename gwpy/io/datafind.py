@@ -90,7 +90,7 @@ if typing.TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 SINGLE_IFO_OBSERVATORY = re.compile("^[A-Z][0-9]$")
 
@@ -521,7 +521,7 @@ def find_frametype(
     else:
         channels = [channel]
 
-    log.debug("Finding frametype for channels: %s", ",".join(channels))
+    logger.debug("Finding frametype for channels: %s", ",".join(channels))
 
     # create set() of GWF channel names, and dict map back to user names
     #    this allows users to use nds-style names in this query, e.g.
@@ -548,7 +548,7 @@ def find_frametype(
     searched = set()
 
     for ifo, trend in _parse_ifos_and_trends(channels):
-        log.debug("Finding types for %s", ifo)
+        logger.debug("Finding types for %s", ifo)
 
         # find all types (prioritising trends if we need to)
         types = find_types(
@@ -559,7 +559,7 @@ def find_frametype(
             **gwdatafind_kw,
         )
 
-        log.debug("Found %s types", len(types))
+        logger.debug("Found %s types", len(types))
 
         # loop over types testing each in turn
         for ftype in types:
@@ -652,7 +652,7 @@ def _inspect_ftype(
     This function queries GWDataFind for a single file matching this dataset,
     downloads it, and looks at the list of channel names in the TOC.
     """
-    log.debug("Inspecting %s-%s", ifo, frametype)
+    logger.debug("Inspecting %s-%s", ifo, frametype)
     # find instance of this frametype
     try:
         path = find_latest(
@@ -663,15 +663,15 @@ def _inspect_ftype(
             **requests_kw,
         )
     except (OSError, RuntimeError, IndexError):  # something went wrong
-        log.debug("Failed to find URL for %s-%s", ifo, frametype)
+        logger.debug("Failed to find URL for %s-%s", ifo, frametype)
         return None
 
     # download the file so we can inspect it
-    log.debug("Using URL '%s'", path)
+    logger.debug("Using URL '%s'", path)
     try:
         path = download_file(path)
     except NETWORK_ERROR as exc:  # failed to download the file
-        log.debug(
+        logger.debug(
             "Failed to download file for %s-%s: %s",
             ifo,
             frametype,
@@ -710,7 +710,7 @@ def _inspect_ftype(
         OSError,
         RuntimeError,
     ) as exc:  # failed to open file (probably)
-        log.warning(
+        logger.warning(
             "failed to read channels for %s-%s: %s",
             ifo,
             frametype,
@@ -718,7 +718,7 @@ def _inspect_ftype(
         )
         return None
 
-    log.debug(
+    logger.debug(
         "Found %s/%s channels in %s-%s",
         len(match),
         nchan,
