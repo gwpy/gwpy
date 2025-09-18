@@ -25,7 +25,6 @@ import typing
 
 from ...detector import ChannelList
 from ...io import datafind as io_datafind
-from ...log import get_logger
 from ...time import to_gps
 from .. import TimeSeries
 
