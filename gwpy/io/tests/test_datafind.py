@@ -282,12 +282,22 @@ def test_type_priority(ftype, trend, priority):
 
 @pytest_skip_flaky_network
 @pytest.mark.requires("lalframe", "requests_pelican")
-def test_find_frametype_gwosc_osdf():
+@mock.patch.dict("os.environ", {"GWPY_CACHE": "false"})
+def test_find_frametype_gwosc_osdf(caplog):
     """Test `find_frametype` with GWOSC data over OSDF."""
-    assert io_datafind.find_frametype(
-        "H1:GWOSC-4KHZ_R1_STRAIN",
-        host="datafind.gwosc.org",
-        urltype="osdf",
-        gpstime=1269362688,
-        frametype_match="_4KHZ_",
-    ) == "H1_GWOSC_O3b_4KHZ_R1"
+    caplog.set_level("DEBUG", logger="gwpy.io.datafind")
+    try:
+        assert io_datafind.find_frametype(
+            "H1:GWOSC-4KHZ_R1_STRAIN",
+            host="datafind.gwosc.org",
+            urltype="osdf",
+            gpstime=1269362688,
+            frametype_match="_4KHZ_",
+        ) == "H1_GWOSC_O3b_4KHZ_R1"
+    except ValueError:
+        # Astropy < 7.1 doesn't handle TimeoutError well, so check for
+        # network-related issues in the logs and skip the test if so.
+        for record in caplog.records:
+            if "Failed to download file" in (msg := record.getMessage()):
+                pytest.skip(msg)
+        raise
