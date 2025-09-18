@@ -31,7 +31,10 @@ with easy-to-follow tutorials at each step.
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "The LIGO Scientific Collaboration and the Virgo Collaboration"
 
+import logging
+
 from . import (
+    log,
     plot,  # registers gwpy.plot.Axes as default rectilinear axes
 )
 
@@ -39,3 +42,33 @@ try:
     from ._version import version as __version__
 except ModuleNotFoundError:  # development mode
     __version__ = ""
+
+
+def init_logging(level: str | int = log.get_default_level()) -> None:
+    """Quickly initialise logging for GWpy.
+
+    This is mainly useful for scripts and interactive sessions to enable
+    logging output from GWpy, and mainly for debugging purposes.
+
+    For more control over logging, set up logging manually using the
+    standard Python :mod:`logging` module, or see :ref:`gwpy-logging`.
+
+    Parameters
+    ----------
+    level : int, optional
+        The logging level to use.
+        If not provided, the level from the ``GWPY_LOG_LEVEL`` environment
+        variable will be used.
+        If that variable is not set, ``INFO`` is used.
+
+    Examples
+    --------
+    >>> import gwpy
+    >>> gwpy.init_logging("DEBUG")
+    """
+    logger = log.init_logger(__name__, level=level or logging.INFO)
+    logger.debug(
+        "Initialised %s logging for %s",
+        logging.getLevelName(logger.getEffectiveLevel()),
+        logger.name,
+    )

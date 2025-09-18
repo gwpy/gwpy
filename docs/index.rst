@@ -81,6 +81,7 @@ Working with data
    detector/channel
    time/index
    astro/index
+   logging
    env
 
 .. toctree::
