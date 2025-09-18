@@ -22,6 +22,7 @@ they just call out to the same method anyway.
 """
 
 import pytest
+from astropy import units
 
 from ..spectral import _scipy as fft_scipy
 
@@ -33,7 +34,7 @@ def test_welch(noisy_sinusoid):
     # and has a median that matches the RMS withinn 10%
     assert psd.median().value == pytest.approx(1e-3, rel=1e-1)
     # check metadata
-    assert psd.unit == noisy_sinusoid.unit ** 2 / "Hz"
+    assert psd.unit == noisy_sinusoid.unit ** 2 / units.Hz
     assert psd.channel is noisy_sinusoid.channel
     assert psd.name is noisy_sinusoid.name
 
