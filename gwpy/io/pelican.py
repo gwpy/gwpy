@@ -24,10 +24,9 @@ to pass back to `astropy.utils.data.download_file` and friends, and some
 SciToken authorisation initialisation.
 """
 
-
 from __future__ import annotations
 
-import sys
+import logging
 from contextlib import contextmanager
 from functools import (
     cache,
@@ -50,6 +49,8 @@ if TYPE_CHECKING:
     )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+log = logging.getLogger(__name__)
 
 
 def _pelicanfs_protocols() -> list[str]:
@@ -138,7 +139,12 @@ def query_director(
         **kwargs,
     )
     auth_kw: dict[str, Any] = {}
-    if need_auth := director.namespace["require-token"]:
+    if (
+        # directory says we need auth
+        (need_auth := director.namespace["require-token"])
+        # but this is not an IGWN namespace (tokens are separately issued)
+        and not director.namespace["namespace"].startswith("/igwn")
+    ):
         for auth in director.auth:
             for key, val in auth.items():
                 auth_kw.setdefault(key, []).append(val)
@@ -197,7 +203,6 @@ def _prepare_download_kwargs(
     url: str,
     federation: str | None,
     cache: bool | Literal["update"],
-    show_progress: bool,  # noqa: FBT001
     kwargs: dict[str, Any],
 ) -> tuple[str, dict[str, Any]]:
     """Prepare the keyword arguments for downloading a file from Pelican."""
@@ -215,18 +220,18 @@ def _prepare_download_kwargs(
     # if we are going to download the file, query the Pelican director
     # for HTTP(S) sources, and required auth information
     if need_download:
-        if (  # copy logic for when astropy will show download progress
-            show_progress
-            and hasattr(sys.stdout, "isatty")
-            and sys.stdout.isatty()
-        ):
-            print("Getting Pelican information from director...")
+        log.debug("Getting Pelican information from director")
 
         # query Pelican director for information
         sources, need_auth, auth_kw = query_director(url)
 
         # resolve URL to real HTTP URLs
         kwargs.setdefault("sources", sources)
+        log.debug(
+            "Resolved %d HTTP sources for %s",
+            len(sources),
+            url.rsplit("/", 1)[-1],
+        )
 
         # add auth
         if need_auth:
@@ -294,7 +299,6 @@ def open_remote_file(
         url,
         federation,
         cache,
-        show_progress,
         kwargs,
     )
 
@@ -361,7 +365,6 @@ def download_file(
         url,
         federation,
         cache,
-        show_progress,
         kwargs,
     )
 
