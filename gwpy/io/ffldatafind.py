@@ -54,7 +54,7 @@ if TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 _SITE_REGEX = re.compile(r"\A(\w+)-")
 _DEFAULT_TYPE_MATCH = re.compile(r"^(?!lastfile|spectro|\.).*")
@@ -99,7 +99,7 @@ def _get_ffl_basedir() -> Path:
     except KeyError:
         pass
     else:
-        log.debug("Parsed FFLPATH='%s'", fflpath)
+        logger.debug("Parsed FFLPATH='%s'", fflpath)
         return fflpath
 
     # VIRGODATA
@@ -112,7 +112,7 @@ def _get_ffl_basedir() -> Path:
         )
         raise KeyError(msg) from None
     else:
-        log.debug("Parsed VIRGODATA='%s'", virgodata)
+        logger.debug("Parsed VIRGODATA='%s'", virgodata)
         return virgodata / "ffl"
 
 
@@ -158,7 +158,7 @@ def _find_ffls(basedir: str | Path | None = None) -> dict[tuple[str, str], list[
             ValueError,  # last entry didn't match _SITE_REGEX
         ):
             continue
-        log.debug("Found FFL for %s-%s: '%s'", site, tag, path)
+        logger.debug("Found FFL for %s-%s: '%s'", site, tag, path)
         ffls[(site, tag)].append(path)
     return ffls
 
