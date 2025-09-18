@@ -63,7 +63,7 @@ if TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class NdsConnectionKeywords(TypedDict):
@@ -86,7 +86,7 @@ def log_nds2(
     if not isinstance(connection, str):
         connection = connection.get_host()
     message = f"[{connection}] {message}"
-    log.log(level, message, *args, **kwargs)
+    logger.log(level, message, *args, **kwargs)
 
 
 def _parse_nds_enum_dict_param(
@@ -286,7 +286,7 @@ def fetch_dict(
     ))
     nsources = len(connection_kws)
 
-    log.debug("Identified %s potential NDS2 sources for data", nsources)
+    logger.debug("Identified %s potential NDS2 sources for data", nsources)
 
     # -- try each one in turn
 
@@ -404,7 +404,7 @@ def fetch(
                 "must be given to fetch data from NDS2"
             )
             raise ValueError(msg)
-        log.debug("Connecting to %s", host)
+        logger.debug("Connecting to %s", host)
         connection = io_nds2.auth_connect(host, port)
         log_nds2(connection, "Connected to NDS%s server", connection.get_protocol())
 
