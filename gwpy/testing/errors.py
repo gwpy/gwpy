@@ -49,6 +49,7 @@ NETWORK_ERROR: tuple[type[Exception], ...] = (
     requests.exceptions.ReadTimeout,
     socket.timeout,
     SSLError,
+    TimeoutError,
     URLError,
 )
 
