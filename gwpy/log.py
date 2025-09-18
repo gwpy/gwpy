@@ -23,7 +23,6 @@ import logging
 import os
 import sys
 import typing
-from contextlib import contextmanager
 
 try:
     from coloredlogs import (
@@ -36,7 +35,6 @@ except ImportError:
         return False
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator
     from typing import IO
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -160,43 +158,3 @@ def init_logger(
         ))
         logger.addHandler(handler)
     return logger
-
-
-@contextmanager
-def logger(
-    name: str,
-    level: int | str | None,
-) -> Iterator[logging.Logger]:
-    """Return a `logging.Logger` with the given ``name`` and ``level``.
-
-    The logging level is reset to its previous value after the context manager
-    exits.
-
-    Parameters
-    ----------
-    name : `str`
-        The name of the logger.
-
-    level : `int`, `str`, `None`
-        The level to set on the logger.
-        If `None` is given, the log level is not changed from its current value,
-        but will still be reset when the context manager exits.
-
-    Yields
-    ------
-    logger : `logging.Logger`
-        The logger.
-
-    Examples
-    --------
-    >>> with logger("gwpy.timeseries", "DEBUG") as log:
-    ...     log.debug("something interesting")
-    """
-    logger = logging.getLogger(name)
-    current = logger.getEffectiveLevel()
-    if level is not None:
-        logger.setLevel(level)
-    try:
-        yield logger
-    finally:
-        logger.setLevel(current)

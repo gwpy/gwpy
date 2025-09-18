@@ -54,7 +54,6 @@ from gwosc.api import DEFAULT_URL as GWOSC_DEFAULT_HOST
 
 from ..detector import Channel
 from ..io.registry import UnifiedReadWriteMethod
-from ..log import logger
 from ..segments import SegmentList
 from ..time import (
     LIGOTimeGPS,
@@ -1326,26 +1325,22 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
         """
         from .io.nds2 import fetch_dict
 
-        with logger(
-            name=fetch_dict.__module__,
-            level="DEBUG" if verbose else None,
-        ):
-            return fetch_dict(  # type: ignore[return-value]
-                channels,
-                start,
-                end,
-                host=host,
-                port=port,
-                verify=verify,
-                verbose=verbose,
-                connection=connection,
-                pad=pad,
-                scaled=scaled,
-                allow_tape=allow_tape,
-                type=type,
-                dtype=dtype,
-                series_class=cls.EntryClass,
-            )
+        return fetch_dict(  # type: ignore[return-value]
+            channels,
+            start,
+            end,
+            host=host,
+            port=port,
+            verify=verify,
+            verbose=verbose,
+            connection=connection,
+            pad=pad,
+            scaled=scaled,
+            allow_tape=allow_tape,
+            type=type,
+            dtype=dtype,
+            series_class=cls.EntryClass,
+        )
 
     @classmethod
     def find(
@@ -1431,25 +1426,21 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
         from .io.gwdatafind import find
 
         series_class = readargs.pop("series_class", cls.EntryClass)
-        with logger(
-            name=find.__module__,
-            level="DEBUG" if verbose else None,
-        ):
-            return cls(find(
-                channels,
-                start,
-                end,
-                observatory=observatory,
-                frametype=frametype,
-                frametype_match=frametype_match,
-                pad=pad,
-                scaled=scaled,
-                allow_tape=allow_tape,
-                parallel=parallel,
-                verbose=verbose,
-                series_class=series_class,
-                **readargs,
-            ))
+        return cls(find(
+            channels,
+            start,
+            end,
+            observatory=observatory,
+            frametype=frametype,
+            frametype_match=frametype_match,
+            pad=pad,
+            scaled=scaled,
+            allow_tape=allow_tape,
+            parallel=parallel,
+            verbose=verbose,
+            series_class=series_class,
+            **readargs,
+        ))
 
     @classmethod
     def get(  # type: ignore[override]
