@@ -41,6 +41,7 @@ import logging
 import os
 import re
 from collections import defaultdict
+from contextlib import nullcontext
 from functools import (
     partial,
     wraps,
@@ -550,58 +551,69 @@ def find_frametype(
     match: dict[str, list[tuple[str, str, float]]] = defaultdict(list)
     searched = set()
 
-    for ifo, trend in _parse_ifos_and_trends(channels):
-        logger.debug("Finding types for %s", ifo)
+    if sess := gwdatafind_kw.pop("session", None):
+        ctx = nullcontext(sess)
+    elif _gwdatafind_module(**gwdatafind_kw) is gwdatafind:
+        ctx = gwdatafind.Session()
+    else:
+        ctx = nullcontext()
 
-        # find all types (prioritising trends if we need to)
-        types = find_types(
-            ifo,
-            match=frametype_match,
-            trend=trend,
-            ext=ext,
-            **gwdatafind_kw,
-        )
+    with ctx as sess:
+        if sess:
+            gwdatafind_kw["session"] = sess
 
-        logger.debug("Found %s types", len(types))
+        for ifo, trend in _parse_ifos_and_trends(channels):
+            logger.debug("Finding types for %s", ifo)
 
-        # loop over types testing each in turn
-        for ftype in types:
-
-            # if we've already search this type for this IFO,
-            # don't do it again
-            if (ifo, ftype) in searched:
-                continue
-
-            thismatch = _inspect_ftype(
-                list(names),
+            # find all types (prioritising trends if we need to)
+            types = find_types(
                 ifo,
-                ftype,
-                gpstime,
-                gpssegment,
-                on_gaps,
-                allow_tape=allow_tape,
-                urltype=urltype,
+                match=frametype_match,
+                trend=trend,
                 ext=ext,
                 **gwdatafind_kw,
             )
 
-            if thismatch is None:  # failed to read
-                continue
+            logger.debug("Found %s types", len(types))
 
-            for name, info in thismatch.items():
-                n = names[name]
-                match[n].append(info)
+            # loop over types testing each in turn
+            for ftype in types:
 
-                # if only matching once, don't search other types
-                # for this channel
-                if not return_all:
-                    names.pop(n)
+                # if we've already search this type for this IFO,
+                # don't do it again
+                if (ifo, ftype) in searched:
+                    continue
 
-            # record this type as having been searched
-            searched.add((ifo, ftype))
+                thismatch = _inspect_ftype(
+                    list(names),
+                    ifo,
+                    ftype,
+                    gpstime,
+                    gpssegment,
+                    on_gaps,
+                    allow_tape=allow_tape,
+                    urltype=urltype,
+                    ext=ext,
+                    **gwdatafind_kw,
+                )
 
-            if not names:  # if all channels matched, stop
-                break
+                if thismatch is None:  # failed to read
+                    continue
+
+                for name, info in thismatch.items():
+                    n = names[name]
+                    match[n].append(info)
+
+                    # if only matching once, don't search other types
+                    # for this channel
+                    if not return_all:
+                        names.pop(n)
+
+                # record this type as having been searched
+                searched.add((ifo, ftype))
+
+                if not names:  # if all channels matched, stop
+                    break
 
     # raise exception if one or more channels were not found
     _error_missing_channels(
