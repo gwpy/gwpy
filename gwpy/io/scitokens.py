@@ -28,6 +28,7 @@ packages:
 
 from __future__ import annotations
 
+import logging
 import sys
 import tempfile
 from contextlib import nullcontext
@@ -41,6 +42,8 @@ if TYPE_CHECKING:
     from scitokens import SciToken
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+log = logging.getLogger(__name__)
 
 
 # -- find an existing token
@@ -244,9 +247,10 @@ def add_http_authorization_header(
 
     try:
         from requests_scitokens import HTTPSciTokenAuth
-    except ImportError:
+    except ImportError as exc:
         if error:
             raise
+        log.debug("Cannot add SciToken Authorization header: %s", str(exc))
         return
 
     # construct the auth handler
@@ -276,10 +280,12 @@ def add_http_authorization_header(
     # if we got a token, serialize it and return
     if auth.token:
         headers["Authorization"] = auth.generate_bearer_header()
+        log.debug("Added Authorization header with SciToken for %s", url)
         return
 
     # handle failure
-    if not error:
-        return
     errmsg = "failed to identify a valid SciToken"
+    if not error:
+        log.debug("%s: %s", errmsg, str(error_obj))
+        return
     raise RuntimeError(errmsg) from error_obj
