@@ -50,7 +50,7 @@ if typing.TYPE_CHECKING:
     from collections.abc import Mapping
     from pathlib import Path
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 CLI_TEMPLATE = Template("""
 \"\"\"
@@ -79,7 +79,7 @@ def _render_entry_point_example(
     config: Mapping,
     section: str,
     outdir: Path,
-    logger: logging.Logger = log,
+    logger: logging.Logger = logger,
     entry_point: str = "gwpy-plot",
     filename_prefix: str = "cli_",
 ) -> Path:
@@ -145,7 +145,7 @@ def _render_entry_point_example(
 def render_entry_point_examples(
     inifile: Path,
     outdir: Path,
-    logger: logging.Logger = log,
+    logger: logging.Logger = logger,
     entry_point: str = "gwpy-plot",
     filename_prefix: str = "cli_",
 ) -> None:
