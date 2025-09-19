@@ -74,8 +74,7 @@ class Coherence(Spectrum):
 
         fftlength = float(args.secpfft)
         overlap = args.overlap
-        self.log(2, "Calculating spectrum secpfft: %s, overlap: %s" %
-                 (fftlength, overlap))
+        self.log(2, f"Calculating spectrum secpfft: {fftlength}, overlap: {overlap}")
         if overlap is not None:
             overlap *= fftlength
 
