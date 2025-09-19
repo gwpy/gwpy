@@ -33,7 +33,7 @@ Here we use use the :meth:`TimeSeries.coherence` method to highlight coupling
 of motion of a beam periscope attached to the main laser table into the
 strain output of the LIGO-Hanford interferometer.
 
-These data are available as part of the |GWOSC_AUX_RELEASE|_.
+These data are available as part of the |GWOSC_AUX_GW170817|_.
 """
 
 # %%

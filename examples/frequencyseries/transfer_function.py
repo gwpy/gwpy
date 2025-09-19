@@ -41,7 +41,7 @@ from gwpy.timeseries import TimeSeriesDict
 from gwpy.plot import BodePlot
 
 # %%
-# For this example we will use data from the |GWOSC_AUX_RELEASE|_:
+# For this example we will use data from the |GWOSC_AUX_GW170817|_:
 
 start = tconvert("August 14 2017 10:25")
 end = start + 1800

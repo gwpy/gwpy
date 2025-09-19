@@ -32,7 +32,7 @@ The `TimeSeries` method :meth:`~TimeSeries.coherence_spectrogram` performs the
 same coherence calculation every ``stride``, giving a time-varying coherence
 measure.
 
-These data are available as part of the |GWOSC_AUX_RELEASE|_.
+These data are available as part of the |GWOSC_AUX_GW170817|_.
 """
 
 # %%

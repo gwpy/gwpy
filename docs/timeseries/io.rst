@@ -63,7 +63,7 @@ This information is very important to understand the data at hand.
 Such information is often represented by a :class:`StateVector`.
 The following methods are able to read these data.
 
-GWOSC also hosts the |GWOSC_AUX_RELEASE|_, providing public access to
+GWOSC also hosts the |GWOSC_AUX_GW170817|_, providing public access to
 environmental sensor data around |GW170814|_.
 These data are freely accessible using :ref:`gwpy-external-nds2`.
 

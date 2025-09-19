@@ -10,7 +10,7 @@ Automatic data-discovery
 
 The :meth:`TimeSeries.fetch_open_data` method is only able to download
 GW strain data from those datasets exposed through the |GWOSC|_ API;
-this notably does not include the |GWOSC_AUX_RELEASE|_, or strain data
+this notably does not include the |GWOSC_AUX_GW170817|_, or strain data
 for any events or observing runs not yet published.
 
 In addition, the GW strain data make up only a tiny fraction of the 'raw'
@@ -28,7 +28,7 @@ research.
 These data are also made available remotely using :ref:`gwpy-external-nds2`,
 which enables sending data directly over a network to any location.
 This is used for both the full proprietary data (which requires an
-authorisation credential to access) and also the |GWOSC_AUX_RELEASE|_
+authorisation credential to access) and also the |GWOSC_AUX_GW170817|_
 (which is freely available).
 
 .. _gwpy-timeseries-get:
@@ -65,7 +65,7 @@ data 'by any means necessary'; in practice that is
 
    To use :meth:`TimeSeries.get`, you need to know the full name of the
    data channel you want, which is often not obvious.
-   The |GWOSC_AUX_RELEASE|_ includes a link to a full listing of all
+   The |GWOSC_AUX_GW170817|_ includes a link to a full listing of all
    included channels.
    For the full proprietary data set, the IGWN Detector
    Characterisation working group maintains a record of the most relevant

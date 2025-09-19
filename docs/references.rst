@@ -139,8 +139,8 @@
 .. |GWOSC| replace:: GWOSC
 .. _GWOSC: https://gwosc.org/
 
-.. |GWOSC_AUX_RELEASE| replace:: Auxiliary Channel Three Hour Release
-.. _GWOSC_AUX_RELEASE: https://gwosc.org/auxiliary/GW170814/
+.. |GWOSC_AUX_GW170817| replace:: Auxiliary Channel Three Hour Release
+.. _GWOSC_AUX_GW170817: https://gwosc.org/auxiliary/GW170814/
 
 .. |LIGO-T050017| replace:: LIGO-T050017
 .. _LIGO-T050017: https://dcc.ligo.org/LIGO-T050017/public
