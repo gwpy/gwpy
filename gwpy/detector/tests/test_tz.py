@@ -48,7 +48,7 @@ def test_get_timezone_offset(ifo, result):
     """Test `get_timezone_offset()`."""
     assert tz.get_timezone_offset(
         ifo,
-        datetime.datetime(2025, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+        datetime.datetime(2025, 1, 1, 0, 0, 0, tzinfo=datetime.UTC),
     ) == result
 
 
