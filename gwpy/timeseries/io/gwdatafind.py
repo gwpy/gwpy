@@ -21,14 +21,14 @@
 from __future__ import annotations
 
 import logging
-import typing
+from typing import TYPE_CHECKING
 
 from ...detector import ChannelList
 from ...io import datafind as io_datafind
 from ...time import to_gps
 from .. import TimeSeries
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from re import Pattern
 
     from ...detector import Channel

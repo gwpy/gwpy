@@ -20,8 +20,8 @@
 
 from __future__ import annotations
 
-import typing
 from functools import wraps
+from typing import TYPE_CHECKING
 
 import igwn_segments
 from matplotlib.artist import allow_rasterization
@@ -38,7 +38,7 @@ from .axes import Axes
 from .colors import tint
 from .text import to_string
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Literal
 

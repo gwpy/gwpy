@@ -20,7 +20,7 @@
 
 from __future__ import annotations
 
-import typing
+from typing import TYPE_CHECKING
 
 import h5py
 import pytest
@@ -38,7 +38,7 @@ from .. import (
     SegmentList,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from typing import SupportsFloat
 
 TEST_SEGWIZARD_FILE = TEST_DATA_PATH / "X1-GWPY_TEST_SEGMENTS-0-10.txt"

@@ -20,8 +20,8 @@
 
 from __future__ import annotations
 
-import typing
 import warnings
+from typing import TYPE_CHECKING
 
 import numpy
 import scipy.signal
@@ -32,7 +32,7 @@ from ...frequencyseries import FrequencySeries
 from . import _registry as fft_registry
 from ._utils import scale_timeseries_unit
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Callable
 
     from numpy.typing import NDArray

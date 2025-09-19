@@ -19,14 +19,14 @@
 
 from __future__ import annotations
 
-import typing
+from typing import TYPE_CHECKING
 
 from astropy.units import UnitBase
 from matplotlib import rcParams
 
 from . import tex
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from matplotlib.axis import Axis
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

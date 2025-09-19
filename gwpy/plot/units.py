@@ -20,12 +20,12 @@
 
 from __future__ import annotations
 
-import typing
 from functools import wraps
+from typing import TYPE_CHECKING
 
 from astropy.units.format import LatexInline
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from astropy.units import UnitBase
 
 

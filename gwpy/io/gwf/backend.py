@@ -22,9 +22,9 @@ from __future__ import annotations
 
 import importlib
 import os
-import typing
+from typing import TYPE_CHECKING
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import (
         Iterable,
         Iterator,

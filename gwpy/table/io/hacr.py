@@ -33,11 +33,11 @@ arguments
 from __future__ import annotations
 
 import os.path
-import typing
 from functools import (
     cache,
     partial,
 )
+from typing import TYPE_CHECKING
 
 from astropy.table import (
     Column,
@@ -55,7 +55,7 @@ from .. import EventTable
 from . import sql as io_sql
 from .utils import dynamic_columns
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Iterable
     from typing import Any
 

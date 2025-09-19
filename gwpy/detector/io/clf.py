@@ -67,7 +67,7 @@ from __future__ import annotations
 
 import configparser
 import re
-import typing
+from typing import TYPE_CHECKING
 
 from numpy import inf
 
@@ -81,7 +81,7 @@ from .. import (
     ChannelList,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pathlib import Path
     from typing import IO
 

@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     )
     from typing import (
         ParamSpec,
+        Self,
         TypeVar,
     )
 
@@ -56,10 +57,7 @@ if TYPE_CHECKING:
 
     from ..detector import Channel
     from ..segments import SegmentListDict
-    from ..typing import (
-        GpsLike,
-        Self,
-    )
+    from ..typing import GpsLike
 
     # Type variables for function decorators
     P = ParamSpec("P")

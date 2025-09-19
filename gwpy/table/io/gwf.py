@@ -20,7 +20,7 @@
 
 from __future__ import annotations
 
-import typing
+from typing import TYPE_CHECKING
 
 from astropy.table import Table
 
@@ -30,7 +30,7 @@ from ...time import LIGOTimeGPS
 from .. import EventTable
 from ..filter import parse_column_filters
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Iterable
     from pathlib import Path
     from typing import IO

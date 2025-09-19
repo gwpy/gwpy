@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     from typing import (
         ClassVar,
         Literal,
+        Self,
         SupportsIndex,
     )
 
@@ -56,10 +57,7 @@ if TYPE_CHECKING:
 
     from ..plot import Plot
     from ..segments import Segment
-    from ..typing import (
-        Self,
-        UnitLike,
-    )
+    from ..typing import UnitLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

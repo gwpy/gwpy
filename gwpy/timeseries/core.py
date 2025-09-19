@@ -38,13 +38,14 @@ user-facing objects.**
 from __future__ import annotations
 
 import sys
-import typing
 import warnings
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
     Generic,
     TypeVar,
     cast,
+    overload,
 )
 
 import numpy
@@ -69,7 +70,7 @@ from .connect import (
     TimeSeriesBaseWrite,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     import re
     from collections.abc import (
         Callable,
@@ -80,6 +81,7 @@ if typing.TYPE_CHECKING:
         Any,
         ClassVar,
         Literal,
+        Self,
         SupportsFloat,
         SupportsIndex,
     )
@@ -99,7 +101,6 @@ if typing.TYPE_CHECKING:
     from ..segments import Segment
     from ..typing import (
         GpsLike,
-        Self,
         UnitLike,
     )
     from ..utils.lal import LALTimeSeriesType
@@ -1949,9 +1950,9 @@ class TimeSeriesBaseList(list[_T], Generic[_T]):
             out.append(series, gap=gap, pad=pad)
         return out
 
-    @typing.overload
+    @overload
     def __getitem__(self, key: SupportsIndex) -> _T: ...
-    @typing.overload
+    @overload
     def __getitem__(self, key: slice) -> Self: ...
 
     def __getitem__(self, key: SupportsIndex | slice) -> Self | _T:

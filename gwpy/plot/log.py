@@ -20,7 +20,6 @@
 
 from __future__ import annotations
 
-import typing
 from functools import wraps
 from math import (
     ceil,
@@ -28,6 +27,7 @@ from math import (
     isclose,
     log,
 )
+from typing import TYPE_CHECKING
 
 import numpy
 from matplotlib import (
@@ -39,7 +39,7 @@ from matplotlib.scale import (
     register_scale,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from matplotlib.axis import Axis
     from numpy.typing import NDArray
 

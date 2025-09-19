@@ -22,13 +22,16 @@ from __future__ import annotations
 import operator
 import re
 import token
-import typing
 from io import StringIO
 from tokenize import generate_tokens
+from typing import (
+    TYPE_CHECKING,
+    NamedTuple,
+)
 
 import numpy
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import (
         Callable,
         Iterable,
@@ -63,7 +66,7 @@ DELIM_REGEX = re.compile(r"(and|&+)", re.IGNORECASE)
 
 # -- filter parsing ------------------
 
-class FilterSpec(typing.NamedTuple):
+class FilterSpec(NamedTuple):
     """A table column filter definition."""
 
     column: str

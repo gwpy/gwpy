@@ -21,11 +21,11 @@
 from __future__ import annotations
 
 import re
-import typing
 import warnings
 from contextlib import nullcontext
 from http import HTTPStatus
 from io import BytesIO
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import h5py
@@ -45,7 +45,7 @@ from ...segments import (
 from ...testing import utils
 from ...testing.errors import pytest_skip_flaky_network
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from typing import SupportsFloat
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

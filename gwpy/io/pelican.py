@@ -28,19 +28,19 @@ SciToken authorisation initialisation.
 from __future__ import annotations
 
 import sys
-import typing
 from contextlib import contextmanager
 from functools import (
     cache,
     wraps,
 )
+from typing import TYPE_CHECKING
 from unittest import mock
 
 from astropy.utils import data as astropy_data
 
 from . import scitokens as io_scitokens
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Iterator
     from contextlib import AbstractContextManager
     from typing import (

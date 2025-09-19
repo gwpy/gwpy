@@ -22,9 +22,9 @@ from __future__ import annotations
 
 import subprocess
 import tempfile
-import typing
 from itertools import zip_longest
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy
 import pytest
@@ -36,7 +36,7 @@ from numpy.testing import (
 
 from ..io.cache import file_segment
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import (
         Callable,
         Container,

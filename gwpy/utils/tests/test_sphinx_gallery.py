@@ -20,14 +20,14 @@
 from __future__ import annotations
 
 import importlib.metadata
-import typing
 from configparser import ConfigParser
+from typing import TYPE_CHECKING
 
 import pytest
 
 from ..sphinx import gallery
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pathlib import Path
 
 # load the default entry point

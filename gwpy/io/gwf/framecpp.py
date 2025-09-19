@@ -20,9 +20,12 @@
 
 from __future__ import annotations
 
-import typing
 import warnings
 from enum import IntEnum
+from typing import (
+    TYPE_CHECKING,
+    overload,
+)
 
 import numpy
 from LDAStools import frameCPP
@@ -39,7 +42,7 @@ from .core import (
     _series_name,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import (
         Callable,
         Iterable,
@@ -144,14 +147,14 @@ class FrProcDataSubType(IntEnum):
 # -- I/O functions -------------------
 
 
-@typing.overload
+@overload
 def open_gwf(
     gwf: str | Path | IO | frameCPP.IFrameFStream | frameCPP.OFrameFStream,
     mode: Literal["r"],
 ) -> frameCPP.IFrameFStream:
     ...
 
-@typing.overload
+@overload
 def open_gwf(
     gwf: str | Path | IO | frameCPP.IFrameFStream | frameCPP.OFrameFStream,
     mode: Literal["w"],
@@ -545,7 +548,7 @@ def create_frvect(series: Series) -> frameCPP.FrVect:
 
 # -- utilities -----------------------
 
-@typing.overload
+@overload
 def _iter_toc(
     gwf: str | Path | IO | frameCPP.IFrameFStream,
     type: str | None,
@@ -553,7 +556,7 @@ def _iter_toc(
 ) -> Iterator[int]:
     ...
 
-@typing.overload
+@overload
 def _iter_toc(
     gwf: str | Path | IO | frameCPP.IFrameFStream,
     type: str | None,

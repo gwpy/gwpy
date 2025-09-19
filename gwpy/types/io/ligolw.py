@@ -20,13 +20,13 @@
 from __future__ import annotations
 
 import contextlib
-import typing
+from typing import TYPE_CHECKING
 
 from ...io.ligolw import read_ligolw
 from ...time import to_gps
 from .. import Series
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pathlib import Path
     from typing import (
         IO,

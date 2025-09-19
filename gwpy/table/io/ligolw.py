@@ -21,8 +21,8 @@
 from __future__ import annotations
 
 import inspect
-import typing
 from functools import cache
+from typing import TYPE_CHECKING
 
 import numpy
 from astropy.utils.compat.numpycompat import COPY_IF_NEEDED
@@ -43,7 +43,7 @@ from .utils import (
     read_with_where,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Iterable
     from pathlib import Path
     from typing import (

@@ -20,8 +20,8 @@
 
 from __future__ import annotations
 
-import typing
 from math import pi
+from typing import TYPE_CHECKING
 
 import numpy
 from astropy.units import Quantity
@@ -30,7 +30,7 @@ from matplotlib.ticker import MaxNLocator
 from ..signal.filter_design import parse_filter
 from . import Plot
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from astropy.units.typing import QuantityLike
     from matplotlib.axes import Axes
     from matplotlib.lines import Line2D

@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import re
-import typing
+from typing import TYPE_CHECKING
 
 from ...io.registry import default_registry
 from ...io.utils import with_open
@@ -30,6 +30,12 @@ from .. import (
     Segment,
     SegmentList,
 )
+
+if TYPE_CHECKING:
+    from typing import (
+        IO,
+        TextIO,
+    )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -53,7 +59,7 @@ FOUR_COL_REGEX = re.compile(
 def _is_segwizard(
     origin: str,
     filepath: str,
-    fileobj: typing.IO,
+    fileobj: IO,
     *args,
     **kwargs,
 ):
@@ -80,7 +86,7 @@ def _is_segwizard(
 
 @with_open
 def from_segwizard(
-    source: typing.IO,
+    source: IO,
     gpstype: type = LIGOTimeGPS,
     strict: bool = True,
 ) -> SegmentList:
@@ -166,7 +172,7 @@ def _format_segment(
 @with_open(mode="w", pos=1)
 def to_segwizard(
     segs: SegmentList,
-    target: typing.TextIO,
+    target: TextIO,
     header: bool = True,
     coltype: type = LIGOTimeGPS,
 ):

@@ -22,12 +22,15 @@ These methods are designed for internal use only.
 
 from __future__ import annotations
 
-import typing
 from numbers import Integral
+from typing import (
+    TYPE_CHECKING,
+    overload,
+)
 
 import numpy
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from typing import (
         Literal,
         TypeAlias,
@@ -173,12 +176,12 @@ def null_slice(
     )
 
 
-@typing.overload
+@overload
 def as_slice(slice_: SliceLike) -> slice | numpy.ndarray:
     ...
 
 
-@typing.overload
+@overload
 def as_slice(slice_: tuple[SliceLike, ...]) -> tuple[slice | numpy.ndarray, ...]:
     ...
 

@@ -20,8 +20,8 @@
 
 from __future__ import annotations
 
-import typing
 from math import ceil
+from typing import TYPE_CHECKING
 
 import numpy
 from scipy.signal import get_window as _get_window
@@ -32,7 +32,7 @@ from scipy.special import expit
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from typing import TypeAlias
 
     from numpy.typing import NDArray

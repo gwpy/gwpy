@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     import builtins
     from typing import (
         Literal,
+        Self,
         SupportsFloat,
     )
 
@@ -58,7 +59,6 @@ if TYPE_CHECKING:
     from ..segments import SegmentListDict
     from ..typing import (
         GpsLike,
-        Self,
         UnitLike,
     )
 

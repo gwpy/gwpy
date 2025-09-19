@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import sys
-import typing
+from typing import TYPE_CHECKING
 
 from ...io.utils import with_open
 from .. import (
@@ -29,7 +29,7 @@ from .. import (
     ChannelList,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from typing import IO
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

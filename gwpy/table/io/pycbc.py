@@ -21,8 +21,8 @@
 from __future__ import annotations
 
 import re
-import typing
 from os.path import basename
+from typing import TYPE_CHECKING
 
 import h5py
 import numpy
@@ -42,7 +42,7 @@ from .utils import (
     DYNAMIC_COLUMN_INPUT,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
     from typing import (

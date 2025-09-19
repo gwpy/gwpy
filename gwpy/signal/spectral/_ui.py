@@ -24,8 +24,8 @@ so isn't really for direct user interaction.
 
 from __future__ import annotations
 
-import typing
 from functools import wraps
+from typing import TYPE_CHECKING
 
 import numpy
 from astropy.units import Quantity
@@ -41,7 +41,7 @@ from ..window import (
 )
 from . import _utils as fft_utils
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 

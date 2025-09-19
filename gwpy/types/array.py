@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     )
     from typing import (
         Literal,
+        Self,
         SupportsIndex,
     )
 
@@ -61,7 +62,6 @@ if TYPE_CHECKING:
 
     from ..typing import (
         GpsLike,
-        Self,
         UnitLike,
     )
 

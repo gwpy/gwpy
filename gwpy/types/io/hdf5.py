@@ -22,13 +22,13 @@ from __future__ import annotations
 
 import contextlib
 import pickle
-import typing
 from decimal import Decimal
 from functools import (
     partial,
     wraps,
 )
 from operator import attrgetter
+from typing import TYPE_CHECKING
 
 from astropy.units import (
     Quantity,
@@ -44,7 +44,7 @@ from .. import (
     Series,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
     from typing import (

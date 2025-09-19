@@ -73,6 +73,7 @@ if TYPE_CHECKING:
     from typing import (
         Literal,
         NoReturn,
+        Self,
         SupportsIndex,
         TypeAlias,
     )
@@ -95,7 +96,6 @@ if TYPE_CHECKING:
     )
     from ..typing import (
         GpsLike,
-        Self,
         UnitLike,
     )
 

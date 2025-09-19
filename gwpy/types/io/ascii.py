@@ -23,7 +23,7 @@ These files should be in (at least) two-column x,y format.
 
 from __future__ import annotations
 
-import typing
+from typing import TYPE_CHECKING
 
 from numpy import (
     column_stack,
@@ -37,7 +37,7 @@ from .. import (
     Series,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
     from typing import IO

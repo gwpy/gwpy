@@ -22,8 +22,8 @@
 from __future__ import annotations
 
 import re
-import typing
 from os.path import basename
+from typing import TYPE_CHECKING
 
 from astropy.table import join
 
@@ -36,7 +36,7 @@ from .utils import (
     dynamic_columns,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
     from typing import IO

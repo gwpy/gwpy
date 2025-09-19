@@ -29,7 +29,7 @@ with calls to functions below that add support for handling ``fraction=0.``.
 from __future__ import annotations
 
 import contextlib
-import typing
+from typing import TYPE_CHECKING
 
 from matplotlib.colors import LogNorm
 from matplotlib.figure import Figure
@@ -38,7 +38,7 @@ from matplotlib.ticker import LogFormatterSciNotation
 from .colors import format_norm
 from .log import LogFormatter
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from typing import (
         Any,
         Literal,

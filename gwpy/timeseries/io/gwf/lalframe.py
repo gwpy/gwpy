@@ -25,8 +25,8 @@ from __future__ import annotations
 
 import contextlib
 import os.path
-import typing
 import warnings
+from typing import TYPE_CHECKING
 
 import lal
 import lalframe
@@ -40,7 +40,7 @@ from ....segments import Segment
 from ....utils import lal as lalutils
 from ... import TimeSeries
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pathlib import Path
     from typing import IO
 

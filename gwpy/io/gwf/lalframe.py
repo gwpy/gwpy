@@ -19,8 +19,11 @@
 
 from __future__ import annotations
 
-import typing
 import warnings
+from typing import (
+    TYPE_CHECKING,
+    overload,
+)
 
 import lalframe
 
@@ -30,7 +33,7 @@ from ...utils import lal as lalutils
 from ..utils import file_path
 from .core import FRDATA_TYPES
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import (
         Iterable,
         Iterator,
@@ -79,7 +82,7 @@ def open_gwf(
 
 # -- read ----------------------------
 
-@typing.overload
+@overload
 def _iter_toc(
     gwf: str | Path | IO | lalframe.FrameUFrFile,
     type: str | None,
@@ -89,7 +92,7 @@ def _iter_toc(
     ...
 
 
-@typing.overload
+@overload
 def _iter_toc(
     gwf: str | Path | IO | lalframe.FrameUFrFile,
     type: str | None,
