@@ -171,8 +171,8 @@ def _get_property_type(
 @cache
 def table_columns(ligolw_table_class: type[ligolw.Table]) -> list[str]:
     """Return the list of column names for this table."""
-    from igwn_ligolw import table
-    return list(map(table.Column.ColumnName, ligolw_table_class.validcolumns))
+    from igwn_ligolw import ligolw
+    return list(map(ligolw.Column.ColumnName, ligolw_table_class.validcolumns))
 
 
 # -- conversions ---------------------
@@ -495,7 +495,7 @@ def read_table(
     gwpy.table.io.ligolw.to_astropy_table
         For details of keyword arguments for the conversion operation.
     """
-    from igwn_ligolw import table as ligolw_table
+    from igwn_ligolw import ligolw
     from igwn_ligolw.lsctables import TableByName
 
     # -- keyword handling ------------
@@ -517,7 +517,7 @@ def read_table(
     convert_kw["columns"] = columns or read_kw["columns"]
 
     if tablename:
-        tableclass = TableByName[ligolw_table.Table.TableName(tablename)]
+        tableclass = TableByName[ligolw.Table.TableName(tablename)]
         read_kw["columns"] = dynamic_columns(
             convert_kw["columns"],
             table_columns(tableclass),
