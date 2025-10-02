@@ -79,7 +79,7 @@ def _pelican_protocols() -> list[str]:
     ):
         try:
             return protocol_finder()
-        except ImportError:  # noqa: PERF203
+        except ImportError:
             pass
     return []
 

@@ -180,7 +180,7 @@ class Channel:
             for key, val in parts.items():
                 try:
                     setattr(self, key, val)
-                except AttributeError:  # noqa: PERF203
+                except AttributeError:
                     setattr(self, f"_{key}", val)
 
     # -- properties -----------------------------

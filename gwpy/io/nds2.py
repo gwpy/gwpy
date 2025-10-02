@@ -325,7 +325,7 @@ def host_resolution_order(
     for difo in ifolist:
         try:
             ifodefault = DEFAULT_HOSTS[difo]
-        except KeyError:  # noqa: PERF203
+        except KeyError:
             # unknown default NDS2 host for detector, if we don't have
             # hosts already defined (either by NDSSERVER or similar)
             # we should warn the user

@@ -525,7 +525,7 @@ def write_tables_to_document(
         try:  # append new data to existing table
             old = lsctables.TableByName[
                 table.TableName(table.Name)].get_table(xmldoc)
-        except ValueError:  # noqa: PERF203
+        except ValueError:
             # or create a new table
             llw.appendChild(table)
         else:

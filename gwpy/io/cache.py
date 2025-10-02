@@ -232,7 +232,7 @@ def _iter_cache(
     for line in cachefile:
         try:
             yield _CacheEntry.parse(line, gpstype=gpstype)
-        except ValueError:  # noqa: PERF203
+        except ValueError:
             # virgo FFL format (seemingly) supports nested FFL files
             parts = line.split()
             if len(parts) == 3 and Path(parts[0]).resolve() != path:
@@ -360,7 +360,7 @@ def write_cache(
     for line in map(formatter, cache):
         try:
             print(line, file=fobj)
-        except TypeError:  # bytes-mode  # noqa: PERF203
+        except TypeError:  # bytes-mode
             fobj.write(f"{line}\n".encode())
 
 
@@ -473,7 +473,7 @@ def filename_metadata(filename: FileSystemPath) -> tuple[str, str, Segment]:
     while True:  # recursively remove extension components
         try:
             fdur = float(dur)
-        except ValueError:  # noqa: PERF203
+        except ValueError:
             if "." not in dur:
                 raise
             dur = dur.rsplit(".", 1)[0]
