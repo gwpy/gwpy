@@ -265,9 +265,11 @@ class Spectrogram(Array2D):
             elif operand == "median":
                 operand = self.median(axis=0)
             else:
-                raise ValueError("operand %r unrecognised, please give a "
-                                 "Quantity or one of: 'mean', 'median'"
-                                 % operand)
+                msg = (
+                    f"operand {operand!r} unrecognised, please give a "
+                    "Quantity or one of: 'mean', 'median'"
+                )
+                raise ValueError(msg)
         out = self / operand
         return out
 

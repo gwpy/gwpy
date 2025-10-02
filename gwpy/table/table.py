@@ -460,7 +460,7 @@ class EventTable(Table):
             if rcParams["text.usetex"]:
                 name = rf"\texttt{{{label_to_latex(col.name)}}}"
             if col.unit is not None:
-                name += " [{0}]".format(col.unit.to_string("latex_inline"))
+                name += " [{}]".format(col.unit.to_string("latex_inline"))
             axis.set_label_text(name)
             axis.isDefault_label = True
 

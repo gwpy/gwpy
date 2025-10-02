@@ -21,9 +21,12 @@
 from __future__ import annotations
 
 import contextlib
-import typing
 from decimal import Decimal
 from numbers import Number
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 import numpy
 from astropy import units
@@ -46,7 +49,7 @@ from ..time import (
     to_gps,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import (
         Any,
@@ -159,7 +162,7 @@ class GPSMixin:
         except ValueError:
             # catch annoying plurals
             unit = units.Unit(str(unit).rstrip("s"))
-        unit = typing.cast("UnitBase", unit)
+        unit = cast("UnitBase", unit)
 
         # decompose and check that it's actually a time unit
         dec = unit.decompose()

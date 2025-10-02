@@ -21,9 +21,9 @@
 from __future__ import annotations
 
 import re
-import typing
 from collections import defaultdict
 from math import ceil
+from typing import TYPE_CHECKING
 
 import numpy
 
@@ -44,7 +44,7 @@ from ... import (
 from ...core import _dynamic_scaled
 from .utils import _channel_dict_kwarg
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import (
         Callable,
         Iterator,

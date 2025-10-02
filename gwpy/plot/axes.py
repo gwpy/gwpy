@@ -20,10 +20,13 @@
 from __future__ import annotations
 
 import contextlib
-import typing
 from functools import wraps
 from math import log
 from numbers import Number
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 import numpy
 from astropy.time import Time
@@ -46,7 +49,7 @@ from .colors import format_norm
 from .gps import GPS_SCALES
 from .legend import HandlerLine2D
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import (
         Iterator,
         Sequence,
@@ -194,7 +197,7 @@ class Axes(_Axes):
         for ax in (self.xaxis, self.yaxis):
             if ax.get_scale() in GPS_SCALES and ax.isDefault_label:
                 labels[ax] = ax.get_label_text()
-                trans = typing.cast("GPSTransform", ax.get_transform())
+                trans = cast("GPSTransform", ax.get_transform())
                 epoch = float(trans.get_epoch())
                 unit = trans.get_unit_name()
                 iso = Time(epoch, format="gps", scale="utc").iso
@@ -406,7 +409,7 @@ class Axes(_Axes):
 
         # handle Array2D as a special case
         if len(args) == 1 and hasattr(args[0], "yindex"):
-            array = typing.cast("Array2D", args[0])
+            array = cast("Array2D", args[0])
             return self._pcolormesh_array2d(array, norm=norm, **kwargs)
 
         return super().pcolormesh(*args, norm=norm, **kwargs)

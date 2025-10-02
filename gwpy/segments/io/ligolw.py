@@ -21,8 +21,8 @@
 from __future__ import annotations
 
 import operator
-import typing
 from functools import reduce
+from typing import TYPE_CHECKING
 
 from ...io.ligolw import (
     build_content_handler,
@@ -37,7 +37,7 @@ from ...segments import (
     DataQualityFlag,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from typing import (
         Any,
         TypeAlias,

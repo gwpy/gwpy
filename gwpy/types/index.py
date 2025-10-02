@@ -21,20 +21,20 @@
 from __future__ import annotations
 
 import contextlib
-import typing
+from typing import TYPE_CHECKING
 
 import numpy
 from astropy.units import Quantity
 
 from .array import COPY_IF_NEEDED
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
+    from typing import Self
+
     from numpy.typing import (
         ArrayLike,
         DTypeLike,
     )
-
-    from ..typing import Self
 
 
 class Index(Quantity):

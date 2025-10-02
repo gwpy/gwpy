@@ -19,8 +19,8 @@
 
 from __future__ import annotations
 
-import typing
 from functools import wraps
+from typing import TYPE_CHECKING
 
 from .. import EventTable
 from .utils import (
@@ -28,7 +28,7 @@ from .utils import (
     read_with_where,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from astropy.io.registry import UnifiedIORegistry
     from astropy.table import Table
 

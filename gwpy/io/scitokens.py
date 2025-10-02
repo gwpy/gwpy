@@ -30,11 +30,11 @@ from __future__ import annotations
 
 import sys
 import tempfile
-import typing
 from contextlib import nullcontext
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import MutableMapping
     from contextlib import AbstractContextManager
 

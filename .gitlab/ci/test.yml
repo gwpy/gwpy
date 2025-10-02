@@ -31,7 +31,7 @@ include:
   - local: .gitlab/ci/compatibility.yml
     inputs:
       stage: test
-      minimum_python_version: "3.10"
+      minimum_python_version: "3.11"
       experimental_python_version: "3.13"
       pytest_options: "--color yes --cov gwpy --numprocesses auto gwpy/"
 
@@ -46,7 +46,6 @@ include:
   parallel:
     matrix:
       - PYTHON_VERSION:
-          - "3.10"
           - "3.11"
           - "3.12"
           - "3.13"
@@ -57,7 +56,6 @@ include:
   parallel:
     matrix:
       - PYTHON_VERSION:
-          - "3.10"
           - "3.11"
           - "3.12"
           - "3.13"
@@ -180,7 +178,6 @@ python_test_macos:
   parallel:
     matrix:
       - PYTHON_VERSION:
-          - "3.10"
           - "3.11"
           #- "3.12" <-- cannot build ligo-segments on macOS
 

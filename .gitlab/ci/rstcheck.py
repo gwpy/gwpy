@@ -6,13 +6,16 @@ import hashlib
 import json
 import re
 import sys
-import typing
 from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    TypedDict,
+)
 
 from rstcheck_core.config import RstcheckConfig
 from rstcheck_core.runner import RstcheckMainRunner
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from typing import Literal
 
     from rstcheck_core.types import LintError
@@ -28,14 +31,14 @@ SEVERITY: dict[str, str] = {
 }
 
 
-class CodeQualityLocation(typing.TypedDict):
+class CodeQualityLocation(TypedDict):
     """Location parameter in a `CodeQualityItem`."""
 
     path: str
     lines: dict[str, int]
 
 
-class CodeQualityItem(typing.TypedDict):
+class CodeQualityItem(TypedDict):
     """Gitlab Code Quality item.
 
     See <https://docs.gitlab.com/ci/testing/code_quality/#code-quality-report-format>.

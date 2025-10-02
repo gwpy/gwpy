@@ -26,8 +26,7 @@ import numpy
 
 if TYPE_CHECKING:
     import builtins
-
-    from ..typing import Self
+    from typing import Self
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     )
     from typing import (
         ParamSpec,
+        Self,
         TypeVar,
     )
 
@@ -56,10 +57,7 @@ if TYPE_CHECKING:
 
     from ..detector import Channel
     from ..segments import SegmentListDict
-    from ..typing import (
-        GpsLike,
-        Self,
-    )
+    from ..typing import GpsLike
 
     # Type variables for function decorators
     P = ParamSpec("P")
@@ -327,7 +325,7 @@ def host_resolution_order(
     for difo in ifolist:
         try:
             ifodefault = DEFAULT_HOSTS[difo]
-        except KeyError:  # noqa: PERF203
+        except KeyError:
             # unknown default NDS2 host for detector, if we don't have
             # hosts already defined (either by NDSSERVER or similar)
             # we should warn the user

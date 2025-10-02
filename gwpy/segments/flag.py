@@ -34,7 +34,6 @@ import operator
 import os
 import re
 import textwrap
-import typing
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from copy import (
@@ -50,6 +49,7 @@ from math import (
     ceil,
     floor,
 )
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from astropy.table import Row as AstropyTableRow
@@ -80,13 +80,14 @@ from .segments import (
     SegmentList,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import (
         Callable,
         Iterable,
     )
     from typing import (
         ParamSpec,
+        Self,
         SupportsFloat,
         TypeVar,
     )
@@ -95,10 +96,7 @@ if typing.TYPE_CHECKING:
     import igwn_ligolw
 
     from ...plot import Plot
-    from ...typing import (
-        GpsLike,
-        Self,
-    )
+    from ...typing import GpsLike
 
     P = ParamSpec("P")
     R = TypeVar("R")

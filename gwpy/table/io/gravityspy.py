@@ -32,12 +32,12 @@ is the username and thesecret is the password.
 from __future__ import annotations
 
 import os
-import typing
+from typing import TYPE_CHECKING
 
 from .. import EventTable
 from . import sql as io_sql
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from typing import Any
 
     import sqlalchemy

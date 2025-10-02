@@ -505,7 +505,7 @@ def fetch(
         for chan, ndschan in zip(channels, ndschannels, strict=True):
             try:
                 ts = out[chan]
-            except KeyError:  # noqa: PERF203
+            except KeyError:
                 out[chan] = _create_series(
                     ndschan,
                     pad,

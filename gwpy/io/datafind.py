@@ -40,7 +40,6 @@ from __future__ import annotations
 import logging
 import os
 import re
-import typing
 from collections import defaultdict
 from functools import (
     partial,
@@ -48,6 +47,10 @@ from functools import (
 )
 from math import ceil
 from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    overload,
+)
 from unittest import mock
 
 import gwdatafind
@@ -68,7 +71,7 @@ from .remote import (
     is_remote,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import (
         Callable,
         Iterable,
@@ -315,7 +318,7 @@ def _rank_types(match: Mapping[str, list[tuple[str, str, float]]]) -> None:
 # -- user methods --------------------
 
 # single channel, return_all=False
-@typing.overload
+@overload
 def find_frametype(
     channel: str | Channel,
     gpstime: GpsLike | None = None,
@@ -331,7 +334,7 @@ def find_frametype(
 ) -> str: ...
 
 # single channel, return_all=True
-@typing.overload
+@overload
 def find_frametype(
     channel: str | Channel,
     gpstime: GpsLike | None = None,
@@ -347,7 +350,7 @@ def find_frametype(
 ) -> list[str]: ...
 
 # single channel, return_all not given
-@typing.overload
+@overload
 def find_frametype(
     channel: str | Channel,
     gpstime: GpsLike | None = None,
@@ -362,7 +365,7 @@ def find_frametype(
 ) -> str: ...
 
 # multiple channels, return_all=False
-@typing.overload
+@overload
 def find_frametype(
     channel: Iterable[str | Channel],
     gpstime: GpsLike | None = None,
@@ -378,7 +381,7 @@ def find_frametype(
 ) -> dict[str, str]: ...
 
 # multiple channels, return_all=True
-@typing.overload
+@overload
 def find_frametype(
     channel: Iterable[str | Channel],
     gpstime: GpsLike | None = None,
@@ -394,7 +397,7 @@ def find_frametype(
 ) -> dict[str, list[str]]: ...
 
 # multiple channels, return_all not given
-@typing.overload
+@overload
 def find_frametype(
     channel: Iterable[str | Channel],
     gpstime: GpsLike | None = None,
@@ -728,7 +731,7 @@ def _inspect_ftype(
     return match
 
 
-@typing.overload
+@overload
 def find_best_frametype(
     channel: str | Channel,
     start: GpsLike,
@@ -740,7 +743,7 @@ def find_best_frametype(
     ...
 
 
-@typing.overload
+@overload
 def find_best_frametype(
     channel: Iterable[str | Channel],
     start: GpsLike,

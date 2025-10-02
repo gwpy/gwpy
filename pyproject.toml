@@ -28,7 +28,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -43,7 +42,7 @@ keywords = [
 ]
 
 # requirements
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
   "astropy >=6.1.6",
   "dateparser >=1.2.0",
@@ -60,7 +59,6 @@ dependencies = [
   "requests >=2.32.3",
   "scipy >=1.12.0",
   "tqdm >=4.67.0",
-  "typing-extensions ; python_version<'3.11'"
 ]
 
 # dynamic properties set by tools

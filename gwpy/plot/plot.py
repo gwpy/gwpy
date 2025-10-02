@@ -23,12 +23,12 @@ from __future__ import annotations
 import contextlib
 import importlib
 import itertools
-import typing
 from collections.abc import (
     KeysView,
     ValuesView,
 )
 from itertools import zip_longest
+from typing import TYPE_CHECKING
 
 import numpy
 from matplotlib import (
@@ -52,7 +52,7 @@ from .rc import (
     rcParams,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
     from typing import (

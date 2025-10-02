@@ -255,10 +255,7 @@ def from_gps(
 # special case strings
 
 def _now() -> datetime.datetime:
-    try:
-        now = datetime.datetime.now(datetime.UTC)
-    except AttributeError:  # python < 3.11
-        now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.UTC)
     return now.replace(microsecond=0)
 
 

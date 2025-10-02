@@ -25,7 +25,6 @@ authors.
 
 from __future__ import annotations
 
-import typing
 import warnings
 from math import (
     ceil,
@@ -34,6 +33,7 @@ from math import (
     log,
     pi,
 )
+from typing import TYPE_CHECKING
 
 import numpy
 from numpy import fft as npfft
@@ -41,7 +41,7 @@ from numpy import fft as npfft
 from ..segments import Segment
 from ..utils import round_to_power
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from numpy.typing import NDArray

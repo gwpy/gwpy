@@ -237,7 +237,7 @@ def read_hdf5_dict(
     for name in names:
         try:
             out[name] = read_hdf5_flag(h5f, name, **kwargs)
-        except KeyError as exc:  # noqa: PERF203
+        except KeyError as exc:
             if on_missing == "ignore":
                 continue
             if on_missing == "warn":

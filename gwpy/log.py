@@ -22,7 +22,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
-import typing
+from typing import TYPE_CHECKING
 
 try:
     from coloredlogs import (
@@ -34,7 +34,7 @@ except ImportError:
         """Return `False` to indicate that colours are unsupported."""
         return False
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from typing import IO
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

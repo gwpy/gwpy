@@ -20,8 +20,10 @@
 
 from __future__ import annotations
 
-import typing
-from typing import TypedDict
+from typing import (
+    TYPE_CHECKING,
+    TypedDict,
+)
 
 import numpy
 
@@ -30,11 +32,8 @@ from .. import (
     ChannelList,
 )
 
-if typing.TYPE_CHECKING:
-    try:
-        from typing import NotRequired
-    except ImportError:
-        from typing_extensions import NotRequired
+if TYPE_CHECKING:
+    from typing import NotRequired
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

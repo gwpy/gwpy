@@ -35,11 +35,13 @@ from numpy import fft as npfft
 from scipy import signal
 
 if TYPE_CHECKING:
-    from typing import Literal
+    from typing import (
+        Literal,
+        Self,
+    )
 
     from astropy.units.typing import QuantityLike
     from numpy.typing import ArrayLike
-    from typing_extensions import Self
 
     from ..frequencyseries import FrequencySeries, SpectralVariance
     from ..segments import Segment

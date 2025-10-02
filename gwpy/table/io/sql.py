@@ -23,15 +23,15 @@ All functions in this module require |sqlalchemy|_.
 from __future__ import annotations
 
 import operator
-import typing
 from functools import reduce
+from typing import TYPE_CHECKING
 
 from astropy.table import Table
 
 from .. import EventTable
 from ..filter import parse_column_filters
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import (
         Mapping,
         Sequence,

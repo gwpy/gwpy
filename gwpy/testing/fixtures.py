@@ -26,7 +26,7 @@ Developer note: **none of the fixtures here should declare autouse=True**.
 from __future__ import annotations
 
 import os
-import typing
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import numpy
@@ -37,7 +37,7 @@ from ..plot.tex import has_tex
 from ..timeseries import TimeSeries
 from . import mocks
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Iterator
 
 # -- plotting ------------------------

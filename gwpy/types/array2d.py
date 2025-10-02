@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import contextlib
-import typing
+from typing import TYPE_CHECKING
 from warnings import warn
 
 from astropy.units import (
@@ -38,8 +38,9 @@ from .connect import (
 from .index import Index
 from .series import Series
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Callable
+    from typing import Self
 
     from astropy.units import UnitBase
 
@@ -48,7 +49,6 @@ if typing.TYPE_CHECKING:
     from ..typing import (
         ArrayLike,
         QuantityLike,
-        Self,
     )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

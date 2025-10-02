@@ -21,11 +21,11 @@
 from __future__ import annotations
 
 import itertools
-import typing
+from typing import TYPE_CHECKING
 
 from matplotlib import rcParams
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abs import (
         Iterable,
         Iterator,

@@ -41,12 +41,12 @@ from __future__ import annotations
 import importlib.metadata
 import logging
 import shlex
-import typing
 from configparser import ConfigParser
 from string import Template
 from textwrap import indent
+from typing import TYPE_CHECKING
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Mapping
     from pathlib import Path
 

@@ -25,8 +25,8 @@ detector was operating in a particular state.
 from __future__ import annotations
 
 import os
-import typing
 from typing import (
+    TYPE_CHECKING,
     Generic,
     TypeVar,
 )
@@ -44,10 +44,11 @@ from .connect import (
     SegmentListWrite,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
+    from typing import Self
+
     from astropy.table import Table
 
-    from ..typing import Self
 
 T = TypeVar("T")
 

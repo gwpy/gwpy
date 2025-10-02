@@ -22,7 +22,7 @@ from __future__ import annotations
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-import typing
+from typing import TYPE_CHECKING
 
 import numpy
 from matplotlib.colors import (
@@ -34,7 +34,7 @@ from matplotlib.colors import (
     to_rgb,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from typing import Any
 
     from matplotlib.typing import (

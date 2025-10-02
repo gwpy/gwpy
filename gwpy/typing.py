@@ -20,13 +20,9 @@
 from __future__ import annotations
 
 from typing import (
+    Self,
     TypeAlias,
 )
-
-try:
-    from typing import Self
-except ImportError:  # python < 3.11
-    from typing_extensions import Self
 
 from astropy.units import UnitBase
 from astropy.units.typing import QuantityLike

@@ -20,8 +20,8 @@
 
 from __future__ import annotations
 
-import typing
 from io import BytesIO
+from typing import TYPE_CHECKING
 
 from igwn_segments import infinity
 
@@ -33,7 +33,7 @@ from ...io.cache import (
 from ...io.utils import Readable
 from ...segments import Segment
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import (
         Callable,
         Iterable,

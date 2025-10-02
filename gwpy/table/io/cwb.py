@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import re
-import typing
+from typing import TYPE_CHECKING
 
 from astropy.io.ascii import core
 from astropy.io.registry import get_reader as astropy_get_reader
@@ -32,7 +32,7 @@ from .. import (
 )
 from .utils import read_with_columns_and_where
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pathlib import Path
     from typing import IO
 

@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 import os
-import typing
+from typing import TYPE_CHECKING
 
 from matplotlib import (
     RcParams,
@@ -31,7 +31,7 @@ from matplotlib import (
 from ..utils.env import bool_env
 from . import tex
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from matplotlib.figure import SubplotParams
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

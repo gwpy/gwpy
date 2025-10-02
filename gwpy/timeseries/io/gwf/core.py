@@ -27,10 +27,8 @@ the same subpackage.
 
 from __future__ import annotations
 
-import typing
-from functools import (
-    partial,
-)
+from functools import partial
+from typing import TYPE_CHECKING
 
 from ....io import (
     cache as io_cache,
@@ -48,7 +46,7 @@ from ... import (
 )
 from .utils import _channel_dict_kwarg
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pathlib import Path
     from typing import IO
 

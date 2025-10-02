@@ -292,9 +292,9 @@ class TestStateVector(_TestTimeSeriesBase):
 
     def test_bits(self, array):
         assert isinstance(array.bits, Bits)
-        assert array.bits == ["Bit %d" % i for i in range(32)]
+        assert array.bits == [f"Bit {i}" for i in range(32)]
 
-        bits = ["Bit %d" % i for i in range(4)]
+        bits = [f"Bit {i}" for i in range(4)]
 
         sv = self.create(bits=bits)
         assert isinstance(sv.bits, Bits)
@@ -305,10 +305,10 @@ class TestStateVector(_TestTimeSeriesBase):
         del sv.bits
         del sv.bits
         assert isinstance(sv.bits, Bits)
-        assert sv.bits == ["Bit %d" % i for i in range(32)]
+        assert sv.bits == [f"Bit {i}" for i in range(32)]
 
         sv = self.create(dtype="uint16")
-        assert sv.bits == ["Bit %d" % i for i in range(16)]
+        assert sv.bits == [f"Bit {i}" for i in range(16)]
 
     def test_boolean(self, array):
         b = array.boolean

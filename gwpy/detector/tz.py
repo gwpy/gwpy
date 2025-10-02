@@ -84,8 +84,8 @@ def get_timezone_offset(ifo: str, dt: datetime.datetime | None = None) -> float:
     """
     import pytz
     if dt is None:
-        dt = datetime.datetime.now(tz=datetime.timezone.utc)
+        dt = datetime.datetime.now(tz=datetime.UTC)
     if dt.tzinfo is None:
-        dt = dt.astimezone(datetime.timezone.utc)
+        dt = dt.astimezone(datetime.UTC)
     tz = pytz.timezone(get_timezone(ifo))
     return dt.astimezone(tz).utcoffset().total_seconds()

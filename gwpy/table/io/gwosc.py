@@ -21,8 +21,8 @@ from __future__ import annotations
 
 import json
 import numbers
-import typing
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy
 from astropy import (
@@ -41,7 +41,7 @@ from .utils import (
     read_with_where,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Iterable
     from typing import (
         IO,

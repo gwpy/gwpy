@@ -22,9 +22,12 @@ The frame format is defined in LIGO-T970130 available from dcc.ligo.org
 
 from __future__ import annotations
 
-import typing
 import warnings
 from collections import defaultdict
+from typing import (
+    TYPE_CHECKING,
+    TypedDict,
+)
 
 import framel
 from igwn_segments import infinity
@@ -40,7 +43,7 @@ from ... import (
     TimeSeriesBaseList,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
     from typing import (
@@ -235,7 +238,7 @@ def write(
     return framel.frputvect(file_path(outfile), channellist)
 
 
-class FrameLVectDict(typing.TypedDict):
+class FrameLVectDict(TypedDict):
     """Dict of channel vector information."""
 
     name: str

@@ -20,7 +20,7 @@
 
 from __future__ import annotations
 
-import typing
+from typing import TYPE_CHECKING
 
 from ...io.root import identify_root
 from ...io.utils import file_path
@@ -30,7 +30,7 @@ from .. import (
 )
 from .utils import read_with_columns_and_where
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pathlib import Path
     from typing import IO
 
