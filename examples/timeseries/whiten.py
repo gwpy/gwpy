@@ -49,10 +49,10 @@ gps = event_gps("GW200129_065458")
 
 # %%
 # Then we can import the `TimeSeries` object and fetch the strain data using
-# :meth:`TimeSeries.fetch_open_data` in a window around that event:
+# :meth:`TimeSeries.get` in a window around that event:
 
 from gwpy.timeseries import TimeSeries
-data = TimeSeries.fetch_open_data("L1", int(gps) - 64, int(gps) + 64)
+data = TimeSeries.get("L1", int(gps) - 64, int(gps) + 64)
 
 # %%
 # To demonstrate the relative power across the frequency band, we can

@@ -149,7 +149,7 @@ def test_example(capfd, script):
     try:
         with cwd(script.parent):
             exec(code, globals())
-    except RuntimeError as exc:  # NDS2 failed
+    except* RuntimeError as exc:  # NDS2 failed
         stderr = capfd.readouterr().err
         if NDS2_READ_ERROR_STDERR.match(stderr):
             pytest.skip(f"{exc} caused by '{NDS2_READ_ERROR_STDERR.pattern}'")

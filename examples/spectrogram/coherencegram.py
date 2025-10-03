@@ -32,31 +32,47 @@ The `TimeSeries` method :meth:`~TimeSeries.coherence_spectrogram` performs the
 same coherence calculation every ``stride``, giving a time-varying coherence
 measure.
 
-These data are available as part of the |GWOSC_AUX_GW170817|_.
+These data are available as part of the |GWOSC_O3_AUX_RELEASE|_.
 """
 
 # %%
-# First, we import the `TimeSeriesDict`
-from gwpy.timeseries import TimeSeriesDict
+# First, we import the `TimeSeries`
+from gwpy.timeseries import TimeSeries
 
 # %%
-# and then :meth:`~TimeSeriesDict.get` the data for the differential-arm
-# length servo control loop error signal (``H1:LSC-DARM_IN1_DQ``) and the
-# PSL periscope accelerometer (``H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ``):
-data = TimeSeriesDict.get(
-    ["H1:LSC-DARM_IN1_DQ", "H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ"],
-    1186741560,
-    1186742160,
-    host="nds.gwosc.org",
+# and then :meth:`~TimeSeries.get` the LIGO-Hanford strain data,
+# and the mains power monitor data, for a 20 minute (1200 second
+# window near the end of the |GWOSC_O3_AUX_RELEASE|_:
+
+start = 1389410000
+end = 1389411200
+strain = TimeSeries.get("H1", start, end)
+mains = TimeSeries.get(
+    "H1:PEM-EY_MAINSMON_EBAY_1_DQ",
+    start,
+    end,
+    frametype="H1_AUX_AR1",
 )
-darm = data["H1:LSC-DARM_IN1_DQ"]
-acc = data["H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ"]
 
 # %%
+#
+# .. admonition:: Data are accessed separately
+#     :class: note
+#
+#     We could have used `TimeSeriesDict.get` to access both channels in a
+#     single call - that method would first try to find a single dataset that
+#     contain both of them, then automatically fall back to separate calls if
+#     that fails.
+#
+#     But, since we know that these channels are in different datsets, we
+#     access them separately here for clarity and speed.
+#
+# Calculating coherence
+# ---------------------
 # We can then calculate the :meth:`~TimeSeries.coherence` of one
 # `TimeSeries` with respect to the other, using an 2-second Fourier
-# transform length, with a 1-second (50%) overlap:
-coh = darm.coherence_spectrogram(acc, 10, fftlength=.5, overlap=.25)
+# transform length, with a 1-second (50%) overlap, and a stride of 10:
+coh = strain.coherence_spectrogram(mains, 20, fftlength=2, overlap=1)
 
 # %%
 # Finally, we can :meth:`~gwpy.spectrogram.Spectrogram.plot` the
@@ -66,9 +82,13 @@ ax = plot.gca()
 ax.set_ylabel("Frequency [Hz]")
 ax.set_yscale("log")
 ax.set_ylim(10, 2000)
-ax.set_title(
-    "Coherence between PSL periscope motion and LIGO-Hanford strain data",
-)
+ax.set_title("Coherence between Power mains and LIGO-Hanford strain data")
 ax.grid(visible=True, which="both", axis="both")
 ax.colorbar(label="Coherence", clim=[0, 1], cmap="plasma")
 plot.show()
+
+# %%
+# This shows the time-dependent coherence between the two channels.
+# The 60 Hz power mains frequency and its harmonics are clearly visible,
+# but the coherence is variable over time, demonstrating the varying
+# fidelity of the incoming mains signal.

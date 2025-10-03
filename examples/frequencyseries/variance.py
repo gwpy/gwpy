@@ -39,7 +39,7 @@ highlighting excursions from normal behaviour.
 # interferometer around the time of the GW151226 gravitational wave detection:
 
 from gwpy.timeseries import TimeSeries
-llo = TimeSeries.fetch_open_data("L1", 1135136228, 1135140324)
+llo = TimeSeries.get("L1", 1135136228, 1135140324)
 
 # %%
 # We can then call the :meth:`~gwpy.timeseries.TimeSeries.spectral_variance`

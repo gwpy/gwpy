@@ -92,6 +92,9 @@
 .. |nds2| replace:: ``NDS2``
 .. _nds2: https://wiki.ligo.org/Computing/NDSClient
 
+.. |nds2l| replace:: Network Data Server (NDS2)
+.. _nds2l: https://wiki.ligo.org/Computing/NDSClient
+
 .. |numpydoc| replace:: `numpydoc`
 .. _numpydoc: https://numpydoc.readthedocs.io/
 
@@ -142,6 +145,15 @@
 .. |GWOSC_AUX_GW170817| replace:: Auxiliary Channel Three Hour Release
 .. _GWOSC_AUX_GW170817: https://gwosc.org/auxiliary/GW170814/
 
+.. |GWOSC_O3_AUX_RELEASE| replace:: O3 Auxiliary Channel Data Release
+.. _GWOSC_O3_AUX_RELEASE: https://gwosc.org/O3/auxiliary/
+
+.. |GWOSC_O3_AUX_TREND_RELEASE| replace:: O3 Second-trend Data Release
+.. _GWOSC_O3_AUX_TREND_RELEASE: https://gwosc.org/O3/trend/
+
+.. |GWOSC_O4_AUX_RELEASE| replace:: O4 Auxiliary Channel Data Release
+.. _GWOSC_O4_AUX_RELEASE: https://gwosc.org/O4/auxiliary/
+
 .. |LIGO-T050017| replace:: LIGO-T050017
 .. _LIGO-T050017: https://dcc.ligo.org/LIGO-T050017/public
 
@@ -149,7 +161,7 @@
 .. _OSDF: https://osg-htc.org/services/osdf.html
 
 .. |OSDFl| replace:: the Open Science Data Federation (OSDF)
-.. _OSDF: https://osg-htc.org/services/osdf.html
+.. _OSDFl: https://osg-htc.org/services/osdf.html
 
 .. -- Event science summaries -------------------
 

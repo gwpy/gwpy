@@ -35,7 +35,7 @@ For this example we can use the public data around the |GW150914|_ detection.
 # :meth:`TimeSeries.fetch_open_data` the download the strain
 # data for the LIGO-Hanford interferometer
 from gwpy.timeseries import TimeSeries
-data = TimeSeries.fetch_open_data(
+data = TimeSeries.get(
     "H1",
     "Sep 14 2015 09:45",
     "Sep 14 2015 09:55",

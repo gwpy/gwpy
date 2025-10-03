@@ -31,12 +31,15 @@ should have had an impact on LIGO operations, I'd like to find out.
 # Data access
 # -----------
 # We choose to look at the 0.03Hz-1Hz ground motion band-limited RMS channel
-# (1-second average trends) for each interferometer.
+# (1-second average trends) for each interferometer, which records the low-frequency
+# motion caused by distant earthquakes and similar seismic events.
+# These data are available from the |GWOSC_O3_AUX_TREND_RELEASE|_.
+#
 # We use a
 # `format string <https://docs.python.org/3/tutorial/inputoutput.html#the-string-format-method>`_
 # so we can substitute the interferometer prefix without duplicating the channel name:
 
-channel = "{ifo}:ISI-GND_STS_ITMY_Z_BLRMS_30M_100M"
+channel = "{ifo}:ISI-GND_STS_ITMY_Z_BLRMS_30M_100M.rms"
 lhochan = channel.format(ifo="H1")
 llochan = channel.format(ifo="L1")
 
@@ -49,7 +52,7 @@ data = TimeSeriesDict.get(
     [lhochan, llochan],
     "Jan 16 2020 8:00",
     "Jan 16 2020 14:00",
-    host="nds.gwosc.org",
+    parallel=8,
 )
 
 # %%
@@ -61,7 +64,7 @@ plot = data[lhochan].plot(
     color="gwpy:ligo-hanford",
     label="LIGO-Hanford",
     yscale="log",
-    ylabel=r"$1-3$\,Hz motion [nm/s]",
+    ylabel=r"$1-3$ Hz motion [nm/s]",
 )
 ax = plot.gca()
 ax.plot(data[llochan], color="gwpy:ligo-livingston", label="LIGO-Livingston")
@@ -70,5 +73,7 @@ ax.legend()
 plot.show()
 
 # %%
-# As we can see, the earthquake had a huge impact on the LIGO observatories,
-# severly impairing operations for several hours.
+# As we can see, a series of earthquakes was recorded over this period, potentially
+# impacting the LIGO observatories for several hours.
+# However, the advanced seismic isolation systems at each site meant that both
+# observatories were able to maintain lock throughout this period.

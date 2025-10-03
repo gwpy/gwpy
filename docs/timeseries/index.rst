@@ -86,6 +86,7 @@ Reading/writing time series data
    :maxdepth: 2
 
    io
+   get
 
 =========================
 Plotting time series data

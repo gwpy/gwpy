@@ -57,7 +57,7 @@ In this example we expand upon plotting a :class:`~gwpy.timeseries.TimeSeries`, 
    :nofigs:
 
    >>> from gwpy.timeseries import TimeSeries
-   >>> gwdata = TimeSeries.fetch_open_data(
+   >>> gwdata = TimeSeries.get(
    ...     "H1",
    ...     "Sep 14 2015 09:45",
    ...     "Sep 14 2015 09:55",

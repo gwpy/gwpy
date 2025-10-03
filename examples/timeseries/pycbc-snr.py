@@ -39,7 +39,7 @@ Using |pycbc|_ (the actual search code), we can do that.
 # First we fetch some of the public data from |GWOSC|_:
 
 from gwpy.timeseries import TimeSeries
-data = TimeSeries.fetch_open_data("H1", 1126259446, 1126259478)
+data = TimeSeries.get("H1", 1126259446, 1126259478)
 
 # %%
 # and condition it by applying a highpass filter at 15 Hz

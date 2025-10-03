@@ -39,7 +39,7 @@ and recorded at a LIGO site.
 # interferometer around the time of the GW151226 gravitational wave detection:
 
 from gwpy.timeseries import TimeSeries
-gwdata = TimeSeries.fetch_open_data(
+gwdata = TimeSeries.get(
     "L1",
     "Dec 26 2015 03:37",
     "Dec 26 2015 03:47",

@@ -29,7 +29,7 @@ The following variables are understood:
     * - ``GWPY_FRAME_LIBRARY``
       - String
       - `False`
-      - The library to prefer when reading :ref:`GWF <gwpy-timeseries-io-gwf`
+      - The library to prefer when reading :ref:`GWF <gwpy-timeseries-io-gwf>`
         data, one of ``"FrameCPP"``, ``"FrameL"``, ``"LALFrame"``
         (case insensitive)
     * - ``GWPY_LOG_LEVEL``

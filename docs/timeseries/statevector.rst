@@ -133,7 +133,7 @@ binary system:
    >>> gps = event_gps("GW200105_162426")
    >>> start = int(gps) - 1000
    >>> end = int(gps) + 1000
-   >>> gw200105_state = StateVector.fetch_open_data("L1", start, end)
+   >>> gw200105_state = StateVector.get("L1", start, end)
    >>> print(gw200105_state)
    StateVector([127, 127, 127, ..., 127, 127, 127]
                unit: dimensionless,

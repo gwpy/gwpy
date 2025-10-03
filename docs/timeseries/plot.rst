@@ -19,13 +19,12 @@ Plotting one `TimeSeries`
 
 The `TimeSeries` class includes a :meth:`~TimeSeries.plot` method to
 trivialise visualisation of the contained data.
-Reproducing the example from :ref:`gwpy-timeseries-remote`:
 
 .. plot::
    :include-source:
    :context:
 
-   >>> l1hoft = TimeSeries.fetch_open_data('L1', 'Sep 14 2015 09:50:29', 'Sep 14 2015 09:51:01')
+   >>> l1hoft = TimeSeries.get('L1', 'Sep 14 2015 09:50:29', 'Sep 14 2015 09:51:01')
    >>> plot = l1hoft.plot()
    >>> plot.show()
 
@@ -62,7 +61,7 @@ Reusing the same ``plot`` from above:
    :include-source:
    :context:
 
-   >>> h1hoft = TimeSeries.fetch_open_data('H1', 'Sep 14 2015 09:50:29', 'Sep 14 2015 09:51:01')
+   >>> h1hoft = TimeSeries.get('H1', 'Sep 14 2015 09:50:29', 'Sep 14 2015 09:51:01')
    >>> ax = plot.gca()
    >>> ax.plot(h1hoft)
    >>> plot.refresh()

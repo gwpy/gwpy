@@ -37,7 +37,7 @@ from gwpy.timeseries import StateVector
 
 # %%
 # and download the state information surrounding GW170817:
-data = StateVector.fetch_open_data(
+data = StateVector.get(
     "L1",
     1187008882 - 100,
     1187008882 + 100,
@@ -47,6 +47,7 @@ data = StateVector.fetch_open_data(
 # %%
 # Finally, we make a :meth:`~StateVector.plot`, passing `insetlabels=True` to
 # display the bit names inside the axes:
+print(type(data))
 plot = data.plot(insetlabels=True)
 ax = plot.gca()
 ax.set_xscale("seconds", epoch=1187008882)

@@ -30,47 +30,63 @@ time-series data.
 In LIGO, the coherence is a crucial indicator of how noise sources couple into
 the main differential arm-length readout.
 Here we use use the :meth:`TimeSeries.coherence` method to highlight coupling
-of motion of a beam periscope attached to the main laser table into the
-strain output of the LIGO-Hanford interferometer.
+of the mains power supply into the strain output of the LIGO-Hanford
+interferometer.
 
-These data are available as part of the |GWOSC_AUX_GW170817|_.
+These data are available as part of the |GWOSC_O3_AUX_RELEASE|_.
 """
 
 # %%
 # Data access
 # -----------
-# First, we import the `TimeSeriesDict`
+# First, we import the `TimeSeries`
 
-from gwpy.timeseries import TimeSeriesDict
+from gwpy.timeseries import TimeSeries
 
 # %%
-# and then :meth:`~TimeSeriesDict.get` the data for the differential-arm
-# length servo control loop error signal (``H1:LSC-DARM_IN1_DQ``) and the
-# PSL periscope accelerometer (``H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ``):
+# and then :meth:`~TimeSeries.get` the LIGO-Hanford strain data,
+# and the mains power monitor data, for a 600-second window near the
+# end of the |GWOSC_O3_AUX_RELEASE|_:
 
-data = TimeSeriesDict.get(
-    ["H1:LSC-DARM_IN1_DQ", "H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ"],
-    1186741560,
-    1186742160,
-    host="nds.gwosc.org",
+start = 1389410000
+end = 1389410600
+strain = TimeSeries.get("H1", start, end)
+mains = TimeSeries.get(
+    "H1:PEM-EY_MAINSMON_EBAY_1_DQ",
+    start,
+    end,
+    frametype="H1_AUX_AR1",
 )
-darm = data["H1:LSC-DARM_IN1_DQ"]
-acc = data["H1:PEM-CS_ACC_PSL_PERISCOPE_X_DQ"]
 
 # %%
+#
+# .. admonition:: Data are accessed separately
+#     :class: note
+#
+#     We could have used `TimeSeriesDict.get` to access both channels in a
+#     single call - that method would first try to find a single dataset that
+#     contain both of them, then automatically fall back to separate calls if
+#     that fails.
+#
+#     But, since we know that these channels are in different datsets, we
+#     access them separately here for clarity and speed.
+#
 # Calculating coherence
 # ---------------------
 # We can then calculate the :meth:`~TimeSeries.coherence` of one
-# `TimeSeries` with respect to the other, using an 2-second Fourier
-# transform length, with a 1-second (50%) overlap:
+# `TimeSeries` with respect to the other, using an 8-second Fourier
+# transform length, with a 4-second (50%) overlap:
 
-coh = darm.coherence(acc, fftlength=2, overlap=1)
+coh = strain.coherence(mains, fftlength=8, overlap=4)
 
 # %%
+#
+# The output of this method is a :class:`~gwpy.frequencyseries.FrequencySeries`
+# containing the coherence values for each frequency bin.
+#
 # Visualisation
 # -------------
-# Finally, we can :meth:`~gwpy.frequencyseries.FrequencySeries.plot` the
-# resulting data:
+# We can now :meth:`~gwpy.frequencyseries.FrequencySeries.plot` the coherence:
 
 plot = coh.plot(
     xlabel="Frequency [Hz]",
@@ -82,8 +98,6 @@ plot = coh.plot(
 plot.show()
 
 # %%
-# We can clearly see the correlation between the periscope motion and the
-# differential-arm length servo control loop error signal between 100 Hz
-# and 1000 Hz. Such physical couplings can interfere, mask, or even mimic
-# a gravitational wave signal inferred from the differential arm
-# length motion.
+# Here we can see strong coherence at 60 Hz and its harmonics, indicating
+# that the mains power supply is coupling into the differential arm length
+# control loop.

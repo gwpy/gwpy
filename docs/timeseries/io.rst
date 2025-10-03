@@ -29,52 +29,11 @@ different arguments and keywords based on the input/output file format,
 see :ref:`gwpy-timeseries-io-formats` for details on reading/writing for
 each of the built-in formats.
 
-.. _gwpy-timeseries-io-discovery:
+******************************
+Automatic discovery of GW data
+******************************
 
-***************************************
-Automatic discovery of GW detector data
-***************************************
-
-================
-GW detector data
-================
-
-Gravitational-wave detector data, including all engineering diagnostic data
-as well as the calibrated 'strain' data that are searched for GW signals,
-are archived in :ref:`GWF <gwpy-timeseries-io-gwf>` files stored at the
-relevant observatory.
-These data are available locally to authenticated users of the associated
-computing centres (typically collaboration members), but are also
-distributed as part of |OSDFl|_ and are available remotely using
-:ref:`gwpy-external-nds2`.
-Access to these data is restricted to active collaboration members.
-
-Additionally |GWOSCl|_ hosts publicly-accessible 'open' data, with *event*
-datasets made available at the same time as the relevant result publication
-and typically including ~1 hour of data around each published event detection,
-and *bulk* datasets with the entire observing run data available roughly
-18 months after the end of the run.
-The data are available in :ref:`HDF5 <gwpy-timeseries-io-hdf5-gwosc>` files
-with a specific format.
-
-In addition to strain data, GWOSC files also contains data quality flags
-and information about injections.
-This information is very important to understand the data at hand.
-Such information is often represented by a :class:`StateVector`.
-The following methods are able to read these data.
-
-GWOSC also hosts the |GWOSC_AUX_GW170817|_, providing public access to
-environmental sensor data around |GW170814|_.
-These data are freely accessible using :ref:`gwpy-external-nds2`.
-
-======================
-Data discovery methods
-======================
-
-.. toctree::
-
-   opendata
-   datafind
+For full details on automatic data discovery, see :ref:`gwpy-timeseries-get`.
 
 .. _gwpy-timeseries-io-formats:
 

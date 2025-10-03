@@ -52,8 +52,8 @@ gps = event_gps("GW200115")
 
 from gwpy.timeseries import TimeSeries
 
-lho = TimeSeries.fetch_open_data("H1", gps - 16, gps + 16)
-llo = TimeSeries.fetch_open_data("L1", gps - 16, gps + 16)
+lho = TimeSeries.get("H1", gps - 16, gps + 16)
+llo = TimeSeries.get("L1", gps - 16, gps + 16)
 
 # %%
 # Calculate the ASDs

@@ -41,7 +41,7 @@ detection GW150914, so we can reproduce `that result (bottom panel of figure 1)
 # measurement from |GWOSC|_:
 
 from gwpy.timeseries import TimeSeries
-data = TimeSeries.fetch_open_data("H1", 1126259446, 1126259478)
+data = TimeSeries.get("H1", 1126259446, 1126259478)
 
 # %%
 # Next, we generate the `~TimeSeries.q_transform` of these data:
