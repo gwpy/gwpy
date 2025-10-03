@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import logging
 import re
+import warnings
 from concurrent.futures import (
     ThreadPoolExecutor,
     as_completed,
@@ -37,7 +38,6 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from astropy.units import Quantity
-from astropy.utils.data import get_readable_fileobj
 from gwosc.api import DEFAULT_URL as DEFAULT_GWOSC_URL
 from gwosc.locate import get_urls
 
@@ -51,10 +51,10 @@ from ...io.cache import (
     file_segment,
     sieve as sieve_cache,
 )
+from ...io.remote import open_remote_file
 from ...io.utils import file_path
 from ...segments import Segment
 from ...time import to_gps
-from ...utils.env import bool_env
 from .. import (
     StateVector,
     TimeSeries,
@@ -69,13 +69,10 @@ if TYPE_CHECKING:
     from collections.abc import (
         Collection,
         Iterable,
-        Iterator,
     )
-    from contextlib import AbstractContextManager
     from typing import (
         IO,
         Any,
-        BinaryIO,
         TypeVar,
     )
 
@@ -121,26 +118,6 @@ def _any_gwosc_channels(channels: Iterable[str | Channel]) -> bool:
     return any(map(_is_gwosc_channel, channels))
 
 
-def _download_file(
-    url: str,
-    *,
-    cache: bool | None = None,
-    verbose: bool = False,
-    timeout: float | None = None,
-    **kwargs,
-) -> AbstractContextManager[BinaryIO]:
-    """Download a file with optional caching."""
-    if cache is None:
-        cache = bool_env("GWPY_CACHE", default=False)
-    return get_readable_fileobj(
-        url,
-        cache=cache,
-        show_progress=verbose,
-        remote_timeout=timeout,
-        **kwargs,
-    )
-
-
 def _get_file_extension(url: str) -> str:
     """Get the file extension from a URL, handling compressed files."""
     if url.endswith(".gz"):
@@ -162,8 +139,6 @@ def _default_format(ext: str) -> str | None:
 def _gwf_channel(
     source: IO | str,
     series_class: type[TimeSeriesBase] = TimeSeries,
-    *,
-    verbose: bool = False,
 ) -> str:
     """Find the right channel name for a GWOSC GWF file."""
     channels = list(io_gwf.iter_channel_names(file_path(source)))
@@ -195,7 +170,6 @@ def _fetch_gwosc_data_file(
     *args: str | None,
     series_class: type[TimeSeriesBase] = TimeSeries,
     cache: bool | None = None,
-    verbose: bool = False,
     timeout: float | None = None,
     format: str | None = None,  # noqa: A002
     **kwargs,
@@ -206,10 +180,14 @@ def _fetch_gwosc_data_file(
     fmt = format or _default_format(ext)
 
     logger.debug("Downloading GWOSC data from %s", url)
-    with _download_file(url, cache=cache, verbose=verbose, timeout=timeout) as rem:
+    with open_remote_file(
+        url,
+        cache=cache,
+        remote_timeout=timeout,
+    ) as rem:
         # Get channel for GWF if not given
         if ext == ".gwf" and (not args or args[0] is None):
-            args = (_gwf_channel(rem, series_class, verbose=verbose),)
+            args = (_gwf_channel(rem, series_class),)
 
         logger.debug("Reading %s", url.rsplit("/", maxsplit=1)[-1])
 
@@ -275,6 +253,7 @@ def fetch_gwosc_data(
     format: str = "hdf5",
     host: str = DEFAULT_GWOSC_URL,
     series_class: type[T] = TimeSeries,
+    verbose: bool | None = None,
     **kwargs,
 ) -> T:
     """Fetch open-access data from GWOSC.
@@ -311,9 +290,6 @@ def fetch_gwosc_data(
     host : `str`, optional
         HTTP host name of GWOSC server to access.
 
-    verbose : `bool`, optional, default: `False`
-        Print verbose output while fetching data.
-
     cache : `bool`, optional
         Save/read a local copy of the remote URL, default: `False`;
         useful if the same remote data are to be accessed multiple times.
@@ -321,6 +297,10 @@ def fetch_gwosc_data(
 
     timeout : `float`, optional
         The time to wait for a response from the GWOSC server.
+
+    verbose : `bool`, optional
+        This argument is deprecated and will be removed in a future release.
+        Use DEBUG-level logging instead, see :ref:`gwpy-logging`.
 
     kwargs
         Any other keyword arguments are passed to the `TimeSeries.read`
@@ -365,6 +345,14 @@ def fetch_gwosc_data(
     -----
     `StateVector` data are not available in ``txt.gz`` format.
     """
+    if verbose is not None:
+        warnings.warn(
+            "The 'verbose' argument is deprecated and will be removed in a future "
+            "release, please consider using DEBUG-level logging instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     # format arguments
     start = to_gps(start)
     end = to_gps(end)
@@ -479,9 +467,6 @@ def fetch_dict(
 
     host : `str`
         Host name of GWOSC server to access.
-
-    verbose : `bool`
-        Print verbose output while fetching data.
 
     cache : `bool`
         Save/read a local copy of the remote URL, default: `False`;
