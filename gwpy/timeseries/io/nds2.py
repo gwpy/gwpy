@@ -24,10 +24,7 @@ import logging
 import operator
 from functools import reduce
 from math import ceil
-from typing import (
-    TYPE_CHECKING,
-    TypedDict,
-)
+from typing import TYPE_CHECKING
 
 from numpy import ones as numpy_ones
 
@@ -39,14 +36,17 @@ from ...segments import (
 )
 from ...time import to_gps
 from ...utils.progress import progress_bar
-from .. import TimeSeries
+from .. import (
+    StateVector,
+    StateVectorDict,
+    TimeSeries,
+    TimeSeriesDict,
+)
 from ..connect import _pad_series
+from .losc import _any_gwosc_channels
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        Iterable,
-        Iterator,
-    )
+    from collections.abc import Iterable
     from typing import TypeVar
 
     import nds2
@@ -64,15 +64,6 @@ if TYPE_CHECKING:
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 logger = logging.getLogger(__name__)
-
-
-class NdsConnectionKeywords(TypedDict):
-    """Keywords for NDS2 connection and fetch parameters."""
-
-    connection: nds2.connection | None
-    host: str | None
-    port: int | None
-    allow_tape: bool | None
 
 
 def log_nds2(
@@ -126,7 +117,7 @@ def _parse_nds_enum_dict_param(
 def _set_parameter(
     connection: nds2.connection,
     parameter: str,
-    value: str | int | bool,
+    value: str | int | bool,  # noqa: FBT001
 ) -> None:
     """Set a parameter for the connection, handling errors as warnings."""
     ref = f"{parameter}='{value}'"
@@ -136,69 +127,27 @@ def _set_parameter(
         log_nds2(connection, "Failed to set %s", ref, level=logging.WARNING)
 
 
-def _get_connection_kw(
-    connection: nds2.connection | None,
-    host: str | None,
-    port: int | None,
-    channels: Iterable[str | Channel],
-    start: GpsLike | None,
-    allow_tape: bool | None,
-) -> Iterator[NdsConnectionKeywords]:
-    """Yield a dict of connection keywords for each endpoint candidate."""
-    if connection is not None or host is not None:
-        yield NdsConnectionKeywords(
-            connection=connection,
-            host=host,
-            port=port,
-            allow_tape=allow_tape,
-        )
-    else:
-        ifos = {Channel(channel).ifo for channel in channels}
-        try:
-            ifo = ifos.pop()
-        except KeyError:  # ifos is empty
-            ifo = None
 
-        hostlist = io_nds2.host_resolution_order(ifo, epoch=start)
-
-        if allow_tape is None:
-            tapes = [False, True]
-        else:
-            tapes = [allow_tape]
-
-        for allow_tape_ in tapes:
-            for host_, port_ in hostlist:
-                yield NdsConnectionKeywords(
-                    connection=None,
-                    host=host_,
-                    port=port_,
-                    allow_tape=allow_tape_,
-                )
-
-
-def fetch_dict(
-    channels: list[str | Channel],
+def fetch_series(
+    channel: str | Channel,
     start: GpsLike,
     end: GpsLike,
     *,
+    type: str | int | dict | None = None,  # noqa: A002
+    dtype: str | int | dict | None = None,
+    allow_tape: bool | None = None,
+    connection: nds2.connection | None = None,
     host: str | None = None,
     port: int | None = None,
-    verify: bool = False,
-    verbose: bool | str = False,
-    connection: nds2.connection | None = None,
     pad: float | None = None,
     scaled: bool | None = None,
-    allow_tape: bool | None = None,
-    type: int | str | None = None,  # noqa: A002
-    dtype: int | str | None = None,
     series_class: type[_T] = TimeSeries,
-) -> TimeSeriesBaseDict[_T]:
-    """Fetch data from NDS for a number of channels.
+    verbose: bool | str = False,
+) -> _T:
+    """Fetch a single data series from NDS2.
 
-    Parameters
-    ----------
-    channels : `list` of `str` or `~gwpy.detector.Channel`
-        List of data channels to fetch.
+    channel : `str`, `~gwpy.detector.Channel`
+        The name (or representation) of the data channel to fetch.
 
     start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
         GPS start time of required data,
@@ -246,7 +195,7 @@ def fetch_dict(
         Allow data access from slow tapes.
         If ``host`` or ``connection`` is given, the default is to do
         whatever the server default is, otherwise servers will be searched
-        with ``allow_tape=False`` first, then ``allow_tape=True` if that
+        with ``allow_tape=False`` first, then ``allow_tape=True`` if that
         fails.
 
     type : `int`, `str`, optional
@@ -257,117 +206,32 @@ def fetch_dict(
         NDS2 data type to match.
         Default is to search for any data type.
 
-    series_class : `type[TimeSeriesBase]`, optional
-        The type to use for each `Series` object to be returned.
-        Default is `TimeSeries.`
-
     Returns
     -------
-    data : :class:`~gwpy.timeseries.TimeSeriesBaseDict`
-        A new `TimeSeriesBaseDict` of (`str`, `series_class`) pairs fetched
-        from NDS. The specific dict subclass returned is determined by
-        `series_class.DictClass`.
+    data : `TimeSeries` or `StateVector`
+        A new `TimeSeries` or `StateVector` fetched from NDS.
     """
-    channels = list(map(str, channels))
-
-    # format GPS times
-    gpsstart = to_gps(start)
-    gpsend = to_gps(end)
-
-    # -- determine list of hosts to try
-
-    connection_kws = list(_get_connection_kw(
-        connection,
-        host,
-        port,
-        channels,
-        gpsstart,
-        allow_tape,
-    ))
-    nsources = len(connection_kws)
-
-    logger.debug("Identified %s potential NDS2 sources for data", nsources)
-
-    # -- try each one in turn
-
-    error: Exception | None = None
-
-    for conn_kw in connection_kws:
-        try:
-            return fetch(
-                channels,
-                gpsstart,
-                gpsend,
-                verbose=verbose,
-                type=type,
-                dtype=dtype,
-                pad=pad,
-                scaled=scaled,
-                series_class=series_class,
-                connection=conn_kw.get("connection"),
-                host=conn_kw.get("host"),
-                port=conn_kw.get("port"),
-                allow_tape=conn_kw.get("allow_tape"),
-            )
-        except (RuntimeError, ValueError) as exc:
-            if len(channels) == 1 and nsources == 1:
-                raise
-            if error:
-                # add this error to the chain of errors
-                exc.__context__ = error
-            error = exc
-
-        msg = str(error).split("\n", 1)[0]
-        log_nds2(
-            conn_kw.get("connection") or conn_kw.get("host") or "nds2",
-            "Failed to fetch data for %s in interval [%s, %s): %s",
-            ", ".join(map(str, channels)),
-            gpsstart,
-            gpsend,
-            msg,
-            level=logging.WARNING,
-        )
-
-        # if failing occurred because of data on tape, don't try
-        # reading channels individually, the same error will occur
-        if (
-            not conn_kw.get("allow_tape")
-            and "Requested data is on tape" in str(error)
-        ):
-            continue
-
-    # if we got this far, we can't get all channels in one go
-    if len(channels) == 1:
-        err = "Cannot find all relevant data on any known server."
-        if not verbose:
-            err += (
-                " Try again using the verbose=True keyword argument "
-                " to see detailed failures."
-            )
-        raise RuntimeError(err) from error
-
-    return series_class.DictClass((c, fetch_dict(
-        [c],
-        gpsstart,
-        gpsend,
-        host=host,
-        port=port,
-        verify=verify,
-        verbose=verbose,
-        connection=connection,
-        pad=pad,
-        scaled=scaled,
-        allow_tape=allow_tape,
+    return fetch_dict(
+        [channel],
+        start,
+        end,
         type=type,
         dtype=dtype,
+        allow_tape=allow_tape,
+        connection=connection,
+        host=host,
+        port=port,
+        pad=pad,
+        scaled=scaled,
         series_class=series_class,
-    )[c]) for c in channels)
+        verbose=verbose,
+    )[str(channel)]
 
 
-def fetch(
+def fetch_dict(
     channels: list[str | Channel],
-    start: LIGOTimeGPS,
-    end: LIGOTimeGPS,
+    start: GpsLike,
+    end: GpsLike,
     *,
     type: str | int | dict | None = None,  # noqa: A002
     dtype: str | int | dict | None = None,
@@ -380,11 +244,80 @@ def fetch(
     series_class: type[_T] = TimeSeries,
     verbose: bool | str = False,
 ) -> TimeSeriesBaseDict[_T]:
-    """Fetch a dict of data series from NDS2.
+    """Fetch a dict of series data from NDS2.
 
-    This method sits underneath `TimeSeries.fetch` and related methods,
-    and isn't designed to be called directly.
+    Parameters
+    ----------
+    channels : `list` of `str` or `Channel`
+        List of channel names to fetch.
+
+    start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS start time of required data,
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS end time of required data, defaults to end of data found;
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    host : `str`, optional
+        URL of NDS server to use, if blank will try any server
+        (in a relatively sensible order) to get the data
+
+        One of ``connection`` or ``host`` must be given.
+
+    port : `int`, optional
+        Port number for NDS server query, must be given with `host`.
+
+    verify : `bool`, optional
+        Check channels exist in database before asking for data.
+        Default is `True`.
+
+    verbose : `bool`, optional
+        Print verbose progress information about NDS download.
+        If ``verbose`` is specified as a string, this defines the
+        prefix for the progress meter.
+
+    connection : `nds2.connection`, optional
+        Open NDS connection to use.
+        Default is to open a new connection using ``host`` and ``port``
+        arguments.
+
+        One of ``connection`` or ``host`` must be given.
+
+    pad : `float`, optional
+        Float value to insert between gaps.
+        Default behaviour is to raise an exception when any gaps are
+        found.
+
+    scaled : `bool`, optional
+        Apply slope and bias calibration to ADC data, for non-ADC data
+        this option has no effect.
+
+    allow_tape : `bool`, optional
+        Allow data access from slow tapes.
+        If ``host`` or ``connection`` is given, the default is to do
+        whatever the server default is, otherwise servers will be searched
+        with ``allow_tape=False`` first, then ``allow_tape=True`` if that
+        fails.
+
+    type : `int`, `str`, optional
+        NDS2 channel type integer or string name to match.
+        Default is to search for any channel type.
+
+    dtype : `numpy.dtype`, `str`, `type`, or `dict`, optional
+        NDS2 data type to match.
+        Default is to search for any data type.
+
+    Returns
+    -------
+    data : `TimeSeriesBaseDict`
+        A new `TimeSeriesBaseDict` of (`str`, `TimeSeries`) pairs fetched
+        from NDS.
     """
+    # format GPS times
+    gpsstart = to_gps(start)
+    gpsend = to_gps(end)
+
     # format verbose progress
     desc: str
     if isinstance(verbose, str):
@@ -404,9 +337,7 @@ def fetch(
                 "must be given to fetch data from NDS2"
             )
             raise ValueError(msg)
-        logger.debug("Connecting to %s", host)
         connection = io_nds2.auth_connect(host, port)
-        log_nds2(connection, "Connected to NDS%s server", connection.get_protocol())
 
     # set ALLOW_DATA_ON_TAPE
     if allow_tape is not None:
@@ -420,8 +351,8 @@ def fetch(
     dtype = _parse_nds_enum_dict_param(channels, "dtype", dtype)
 
     # read using integers
-    istart = int(start)
-    iend = ceil(end)
+    istart = int(gpsstart)
+    iend = ceil(gpsend)
 
     # verify channels exist
     log_nds2(connection, "Checking channels list against database")
@@ -509,16 +440,16 @@ def fetch(
                 out[chan] = _create_series(
                     ndschan,
                     pad,
-                    start,
-                    end,
+                    gpsstart,
+                    gpsend,
                     series_class=series_class,
                 )
             else:
-                out[chan] = _pad_series(ts, pad, start, end)
+                out[chan] = _pad_series(ts, pad, gpsstart, gpsend)
 
     # constrain to the non-integer GPS times we were actually given
-    if start != istart or end != iend:
-        out.crop(start=start, end=end)
+    if gpsstart != istart or gpsend != iend:
+        out.crop(start=gpsstart, end=gpsend)
 
     return out
 
@@ -558,3 +489,96 @@ def _get_data_segments(
         connection=connection,
     )
     return allsegs.intersection(allsegs.keys())
+
+
+# -- get registry --------------------
+
+
+def identify_nds2_sources(
+    origin: str,
+    channels: str | Channel | Iterable[str | Channel],
+    start: GpsLike | None,
+    *args,  # noqa: ARG001
+    connection: nds2.connection | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    allow_tape: bool | None = None,
+    **kwargs,  # noqa: ARG001
+) -> Iterable[dict[str, object]] | None:
+    """Identify NDS2 sources for these arguments."""
+    # NDS2 only works for 'get'
+    if origin != "get":
+        return None
+
+    # If the host is a GWDataFind NDS server, don't get involved
+    if "datafind" in str(host):
+        return []
+
+    if connection is not None or host is not None:
+        return [{
+            "connection": connection,
+            "host": host,
+            "port": port,
+            "allow_tape": allow_tape,
+        }]
+
+    channels = (channels,) if isinstance(channels, (str, Channel)) else channels
+
+    # Just IFO names, not channels, most likely a GWOSC request
+    if all(len(str(c)) <= 2 for c in channels):
+        return []
+
+    # Now iterate over possible NDS2 sources by combining known options
+    # for host/port and allow_tape:
+
+    sources: list[dict[str, object]] = []
+
+    ifos = {Channel(channel).ifo for channel in channels}
+    try:
+        ifo = ifos.pop()
+    except KeyError:  # ifos is empty
+        ifo = None
+
+    hostlist = io_nds2.host_resolution_order(ifo, epoch=start)
+
+    if allow_tape is None:
+        tapes = [False, True]
+    else:
+        tapes = [allow_tape]
+
+    gwosc = _any_gwosc_channels(channels)
+
+    for allow_tape_ in tapes:
+        for host_, port_ in hostlist:
+            # Deprioritise tape-allowed connections
+            priority = 100 if allow_tape_ else 10
+            if gwosc and "gwosc" in host_:
+                # Prioritise the GWOSC server for GWOSC channels
+                priority -= 1
+            sources.append({
+                "connection": None,
+                "host": host_,
+                "port": port_,
+                "allow_tape": allow_tape_,
+                "priority": priority,
+            })
+
+    return sources
+
+
+for klass, fetch in (
+    (TimeSeries, fetch_series),
+    (StateVector, fetch_series),
+    (TimeSeriesDict, fetch_dict),
+    (StateVectorDict, fetch_dict),
+):
+    klass.get.registry.register_identifier(
+        "nds2",
+        klass,
+        identify_nds2_sources,
+    )
+    klass.get.registry.register_reader(
+        "nds2",
+        klass,
+        fetch,
+    )

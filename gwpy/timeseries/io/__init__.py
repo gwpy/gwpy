@@ -20,9 +20,11 @@
 
 from . import (  # pylint: disable=unused-import
     ascii,
+    gwdatafind,
     gwf,
     hdf5,
     losc,
+    nds2,
     wav,
 )
 

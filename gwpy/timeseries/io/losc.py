@@ -25,15 +25,23 @@ from __future__ import annotations
 
 import logging
 import re
+from concurrent.futures import (
+    ThreadPoolExecutor,
+    as_completed,
+)
+from itertools import product
 from math import ceil
+from multiprocessing import cpu_count
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from astropy.units import Quantity
 from astropy.utils.data import get_readable_fileobj
+from gwosc.api import DEFAULT_URL as DEFAULT_GWOSC_URL
 from gwosc.locate import get_urls
 
+from ...detector import Channel
 from ...detector.units import parse_unit
 from ...io import (
     gwf as io_gwf,
@@ -47,28 +55,44 @@ from ...io.utils import file_path
 from ...segments import Segment
 from ...time import to_gps
 from ...utils.env import bool_env
-from .. import StateVector, TimeSeries
+from .. import (
+    StateVector,
+    TimeSeries,
+    TimeSeriesBase,
+    TimeSeriesBaseDict,
+)
 
 # Module logger
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import (
+        Collection,
+        Iterable,
+        Iterator,
+    )
     from contextlib import AbstractContextManager
     from typing import (
         IO,
+        Any,
         BinaryIO,
+        TypeVar,
     )
 
     import h5py
 
-    from ...detector import Channel
     from ...typing import GpsLike
-    from .. import TimeSeriesBase
+
+    T = TypeVar("T", bound=TimeSeriesBase)
+
+
+KHZ_4 = 4096
+KHZ_16 = 16384
 
 DQMASK_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*DQMASK\Z")
 STRAIN_CHANNEL_REGEX = re.compile(r"\A[A-Z]\d:(GW|L)OSC-.*STRAIN\Z")
 
+GWOSC_HDF5_FORMAT = "hdf5.gwosc"
 GWOSC_LOCATE_KWARGS = (
     "sample_rate",
     "version",
@@ -77,8 +101,25 @@ GWOSC_LOCATE_KWARGS = (
     "dataset",
 )
 
+NUM_THREADS = min(4, cpu_count() or 1)
+
 
 # -- utilities -----------------------
+
+def _is_gwosc_channel(name: str | Channel) -> bool:
+    """Check if a channel name looks like a GWOSC channel."""
+    return ":GWOSC-" in str(name)
+
+
+def _all_gwosc_channels(channels: Iterable[str | Channel]) -> bool:
+    """Check if all channel names look like GWOSC channels."""
+    return all(map(_is_gwosc_channel, channels))
+
+
+def _any_gwosc_channels(channels: Iterable[str | Channel]) -> bool:
+    """Check if any channel names look like GWOSC channels."""
+    return any(map(_is_gwosc_channel, channels))
+
 
 def _download_file(
     url: str,
@@ -109,23 +150,36 @@ def _get_file_extension(url: str) -> str:
     return path.suffix
 
 
-def _set_format_from_extension(
-    ext: str,
-    kwargs: dict[str, str],
-) -> None:
+def _default_format(ext: str) -> str | None:
     """Set format in kwargs based on file extension."""
     if ext == ".hdf5":
-        kwargs.setdefault("format", "hdf5.gwosc")
-    elif ext == ".txt":
-        kwargs.setdefault("format", "ascii.gwosc")
-    elif ext == ".gwf":
-        kwargs.setdefault("format", "gwf")
+        return GWOSC_HDF5_FORMAT
+    if ext == ".gwf":
+        return "gwf"
+    return None
+
+
+def _gwf_channel(
+    source: IO | str,
+    series_class: type[TimeSeriesBase] = TimeSeries,
+    *,
+    verbose: bool = False,
+) -> str:
+    """Find the right channel name for a GWOSC GWF file."""
+    channels = list(io_gwf.iter_channel_names(file_path(source)))
+    if issubclass(series_class, StateVector):
+        regex = DQMASK_CHANNEL_REGEX
+    else:
+        regex = STRAIN_CHANNEL_REGEX
+    found, = list(filter(regex.match, channels))
+    logger.debug("Using channel %r", found)
+    return found
 
 
 def _parse_bits_from_gwf_unit(series: StateVector) -> None:
     """Parse bit definitions from GWF unit string."""
     try:
-        bits = {}
+        bits: dict[int, str | None] = {}
         for bit in str(series.unit).split():
             a, b = bit.split(":", 1)
             bits[int(a)] = b
@@ -139,39 +193,35 @@ def _parse_bits_from_gwf_unit(series: StateVector) -> None:
 def _fetch_gwosc_data_file(
     url: str,
     *args: str | None,
-    cls: type[TimeSeriesBase] = TimeSeries,
+    series_class: type[TimeSeriesBase] = TimeSeries,
     cache: bool | None = None,
     verbose: bool = False,
     timeout: float | None = None,
+    format: str | None = None,  # noqa: A002
     **kwargs,
 ) -> TimeSeriesBase:
     """Fetch a single GWOSC file and return a `Series`."""
     # Match file format
     ext = _get_file_extension(url)
-    _set_format_from_extension(ext, kwargs)
+    fmt = format or _default_format(ext)
 
+    logger.debug("Downloading GWOSC data from %s", url)
     with _download_file(url, cache=cache, verbose=verbose, timeout=timeout) as rem:
         # Get channel for GWF if not given
         if ext == ".gwf" and (not args or args[0] is None):
-            args = (_gwf_channel(rem, cls, verbose=verbose),)
+            args = (_gwf_channel(rem, series_class, verbose=verbose),)
 
-        if verbose:
-            logger.info("Reading data...")
+        logger.debug("Reading %s", url.rsplit("/", maxsplit=1)[-1])
 
         try:
-            series = cls.read(rem, *args, **kwargs)
+            series = series_class.read(rem, *args, format=fmt, **kwargs)
         except Exception as exc:
-            if verbose:
-                logger.exception("Failed to read data")
             exc.args = (f"Failed to read GWOSC data from {url!r}: {exc}",)
             raise
         else:
             # Parse bits from unit in GWF
             if ext == ".gwf" and isinstance(series, StateVector):
                 _parse_bits_from_gwf_unit(series)
-
-            if verbose:
-                logger.info("Done reading data")
             return series
 
 
@@ -219,14 +269,101 @@ def fetch_gwosc_data(
     detector: str,
     start: GpsLike,
     end: GpsLike,
-    cls: type[TimeSeriesBase] = TimeSeries,
+    dataset: str | None = None,
+    version: int | None = None,
+    sample_rate: int = 4096,
+    format: str = "hdf5",
+    host: str = DEFAULT_GWOSC_URL,
+    series_class: type[T] = TimeSeries,
     **kwargs,
-) -> TimeSeriesBase:
-    """Fetch GWOSC data for a given detector.
+) -> T:
+    """Fetch open-access data from GWOSC.
 
-    This function is for internal purposes only, all users should instead
-    use the interface provided by `TimeSeries.fetch_open_data` (and similar
-    for `StateVector.fetch_open_data`).
+    Parameters
+    ----------
+    detector : `str`
+        The two-character prefix of the IFO in which you are interested,
+        e.g. `'L1'`.
+
+    start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS start time of required data, defaults to start of data found;
+        any input parseable by `~gwpy.time.to_gps` is fine.
+
+    end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
+        GPS end time of required data, defaults to end of data found;
+        any input parseable by `~gwpy.time.to_gps` is fine.
+
+    sample_rate : `float`, optional,
+        The sample rate of desired data; most data are stored
+        by GWOSC at 4096 Hz, however there may be event-related
+        data releases with a 16384 Hz rate, default: `4096`.
+
+    version : `int`, optional
+        Version of files to download, defaults to highest discovered
+        version.
+
+    format : `str`, optional
+        The data format to download and parse, default: ``'h5py'``
+
+        - ``'hdf5'``
+        - ``'gwf'`` - requires |lalframe|_
+
+    host : `str`, optional
+        HTTP host name of GWOSC server to access.
+
+    verbose : `bool`, optional, default: `False`
+        Print verbose output while fetching data.
+
+    cache : `bool`, optional
+        Save/read a local copy of the remote URL, default: `False`;
+        useful if the same remote data are to be accessed multiple times.
+        Set ``GWPY_CACHE=1`` in the environment to auto-cache.
+
+    timeout : `float`, optional
+        The time to wait for a response from the GWOSC server.
+
+    kwargs
+        Any other keyword arguments are passed to the `TimeSeries.read`
+        method that parses the file that was downloaded.
+
+    Examples
+    --------
+    >>> from gwpy.timeseries import (TimeSeries, StateVector)
+    >>> print(TimeSeries.fetch_open_data('H1', 1126259446, 1126259478))
+    TimeSeries([  2.17704028e-19,  2.08763900e-19,  2.39681183e-19,
+                ...,   3.55365541e-20,  6.33533516e-20,
+                  7.58121195e-20]
+               unit: Unit(dimensionless),
+               t0: 1126259446.0 s,
+               dt: 0.000244140625 s,
+               name: Strain,
+               channel: None)
+    >>> print(StateVector.fetch_open_data('H1', 1126259446, 1126259478))
+    StateVector([127,127,127,127,127,127,127,127,127,127,127,127,
+                 127,127,127,127,127,127,127,127,127,127,127,127,
+                 127,127,127,127,127,127,127,127]
+                unit: Unit(dimensionless),
+                t0: 1126259446.0 s,
+                dt: 1.0 s,
+                name: quality/simple,
+                channel: None,
+                bits: Bits(0: data present
+                           1: passes cbc CAT1 test
+                           2: passes cbc CAT2 test
+                           3: passes cbc CAT3 test
+                           4: passes burst CAT1 test
+                           5: passes burst CAT2 test
+                           6: passes burst CAT3 test,
+                           channel=None,
+                           epoch=1126259446.0))
+
+    For the `StateVector`, the naming of the bits will be
+    ``format``-dependent, because they are recorded differently by GWOSC
+    in different formats.
+
+    Notes
+    -----
+    `StateVector` data are not available in ``txt.gz`` format.
     """
     # format arguments
     start = to_gps(start)
@@ -234,14 +371,16 @@ def fetch_gwosc_data(
     span: Segment[float] = Segment(start, end)
 
     # find URLs (requires python-gwosc)
-    url_kw = {key: kwargs.pop(key) for key in GWOSC_LOCATE_KWARGS if key in kwargs}
-    if "sample_rate" in url_kw:  # format as Hertz
-        url_kw["sample_rate"] = Quantity(url_kw["sample_rate"], "Hz").value
+    sample_rate = int(Quantity(sample_rate, "Hz").value)
     urls = get_urls(
         detector,
         int(start),
         ceil(end),
-        **url_kw,
+        dataset=dataset,
+        version=version,
+        sample_rate=sample_rate,
+        format=format,
+        host=host,
     )
     cache = sieve_cache(urls, segment=span)
 
@@ -256,15 +395,13 @@ def fetch_gwosc_data(
             if a <= start and b >= end:
                 cache = [url]
                 break
-    if kwargs.get("verbose", False):  # get_urls() guarantees len(cache) >= 1
-        host = urlparse(cache[0]).netloc
-        logger.info(
-            "Fetched %d URLs from %s for [%s .. %s])",
-            len(cache),
-            host,
-            start,
-            ceil(end),
-        )
+    logger.debug(
+        "Fetched %d URLs from %s for [%s .. %s])",
+        len(cache),
+        urlparse(cache[0]).netloc,
+        start,
+        ceil(end),
+    )
 
     is_gwf = cache[0].endswith(".gwf")
     args: tuple[str | Channel | None, ...]
@@ -275,7 +412,7 @@ def fetch_gwosc_data(
 
     # read data
     out = None
-    kwargs["cls"] = cls
+    kwargs["series_class"] = series_class
     for url in cache:
         keep = file_segment(url) & span
         kwargs["start"], kwargs["end"] = keep
@@ -286,6 +423,134 @@ def fetch_gwosc_data(
             out = new.copy()
         else:
             out.append(new, resize=True)
+    if out is None:
+        msg = f"No data found for {detector} in [{start} .. {end})"
+        raise ValueError(msg)
+    return out
+
+
+def fetch_dict(
+    detectors: Collection[str | Channel],
+    start: GpsLike,
+    end: GpsLike,
+    dataset: str | None = None,
+    version: int | None = None,
+    sample_rate: int = 4096,
+    format: str = "hdf5",
+    host: str = DEFAULT_GWOSC_URL,
+    parallel: int = NUM_THREADS,
+    series_class: type[T] = TimeSeries,
+    **kwargs,
+) -> dict[str | Channel, T]:
+    """Fetch open-access data from GWOSC for multiple detectors.
+
+    Parameters
+    ----------
+    detectors : `list` of `str`
+        List of two-character prefices of the IFOs in which you
+        are interested, e.g. `['H1', 'L1']`.
+
+    start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS start time of required data,
+        any input parseable by `~gwpy.time.to_gps` is fine.
+
+    end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS end time of required data,
+        any input parseable by `~gwpy.time.to_gps` is fine.
+
+    sample_rate : `float`, `Quantity`,
+        The sample rate (Hertz) of desired data; most data are stored
+        by GWOSC at 4096 Hz, however there may be event-related
+        data releases with a 16384 Hz rate.
+
+    version : `int`
+        Version of files to download, defaults to highest discovered
+        version.
+
+    format : `str`
+        The data format to download and parse.
+        One of
+
+        "hdf5"
+            HDF5 data files, read using |h5py|_.
+
+        "gwf"
+            Gravitational-Wave Frame files, requires |LDAStools.frameCPP|_.
+
+    host : `str`
+        Host name of GWOSC server to access.
+
+    verbose : `bool`
+        Print verbose output while fetching data.
+
+    cache : `bool`
+        Save/read a local copy of the remote URL, default: `False`;
+        useful if the same remote data are to be accessed multiple times.
+        Set `GWPY_CACHE=1` in the environment to auto-cache.
+
+    parallel : `int`
+        Number of parallel threads to use when downloading data for
+        multiple detectors. Default is ``1``.
+
+    kwargs
+        Any other keyword arguments are passed to the `TimeSeries.read`
+        method that parses the file that was downloaded.
+
+    See Also
+    --------
+    TimeSeries.fetch_open_data
+        For more examples.
+
+    TimeSeries.read
+        For details of how files are read.
+
+    Examples
+    --------
+    >>> from gwpy.timeseries import TimeSeriesDict
+    >>> print(TimeSeriesDict.fetch_open_data(['H1', 'L1'], 1126259446, 1126259478))
+    TimeSeriesDict({'H1': <TimeSeries([2.17704028e-19, 2.08763900e-19, 2.39681183e-19, ...,
+                 3.55365541e-20, 6.33533516e-20, 7.58121195e-20]
+                unit=Unit(dimensionless),
+                t0=<Quantity 1.12625945e+09 s>,
+                dt=<Quantity 0.00024414 s>,
+                name='Strain',
+                channel=None)>, 'L1': <TimeSeries([-1.04289994e-18, -1.03586274e-18, -9.89322445e-19,
+                 ..., -1.01767748e-18, -9.82876816e-19,
+                 -9.59276974e-19]
+                unit=Unit(dimensionless),
+                t0=<Quantity 1.12625945e+09 s>,
+                dt=<Quantity 0.00024414 s>,
+                name='Strain',
+                channel=None)>})
+    """
+    names = {str(x).split(":", maxsplit=1)[0]: x for x in detectors}
+    parallel = min(len(detectors), parallel or 1)
+
+    def _fod(ifo: str) -> tuple[str, TimeSeriesBase]:
+        """Fetch data for a single detector."""
+        return ifo, fetch_gwosc_data(
+            ifo,
+            start,
+            end,
+            dataset=dataset,
+            version=version,
+            sample_rate=sample_rate,
+            format=format,
+            host=host,
+            parallel=1,
+            series_class=series_class,
+            **kwargs,
+        )
+
+    # fetch all data in a thread pool
+    out = series_class.DictClass()
+    with ThreadPoolExecutor(max_workers=parallel) as pool:
+        futures = [pool.submit(_fod, ifo) for ifo in names]
+        for future in as_completed(futures):
+            ifo, data = future.result()
+            out[name := names[ifo]] = data
+            logger.debug("Fetched data for %s", name)
+
     return out
 
 
@@ -401,36 +666,114 @@ def read_gwosc_hdf5_state(
         dt = Quantity(dt, xunit)
     # Name
     name = _name_from_gwosc_hdf5(f, path)
-    return StateVector(bits, bits=bit_def, t0=epoch, name=name,
-                       dx=dt, copy=copy).crop(start=start, end=end)
+    return StateVector(
+        bits,
+        bits=bit_def,
+        t0=epoch,
+        name=name,
+        dx=dt,
+        copy=copy,
+    ).crop(start=start, end=end)
 
 
-def _gwf_channel(
-    source: IO | str,
-    series_class: type[TimeSeriesBase] = TimeSeries,
-    *,
-    verbose: bool = False,
-) -> str:
-    """Find the right channel name for a GWOSC GWF file."""
-    channels = list(io_gwf.iter_channel_names(file_path(source)))
-    if issubclass(series_class, StateVector):
-        regex = DQMASK_CHANNEL_REGEX
-    else:
-        regex = STRAIN_CHANNEL_REGEX
-    found, = list(filter(regex.match, channels))
-    if verbose:
-        logger.debug("Using channel %r", found)
-    return found
-
-
-# register
 TimeSeries.read.registry.register_reader(
-    "hdf5.gwosc",
+    GWOSC_HDF5_FORMAT,
     TimeSeries,
     read_gwosc_hdf5,
 )
 StateVector.read.registry.register_reader(
-    "hdf5.gwosc",
+    GWOSC_HDF5_FORMAT,
     StateVector,
     read_gwosc_hdf5_state,
 )
+
+
+# -- TimeSeries.get integration ------
+
+def _as_tuple(
+    value: str | int | Iterable[str | int] | None,
+    default: Iterable[str | int],
+) -> tuple[str | int, ...]:
+    if value is None:
+        return tuple(default)
+    if isinstance(value, str | int):
+        return (value,)
+    return tuple(value)
+
+
+def identify_gwosc_sources(
+    origin: str,
+    channels: str | Channel | Iterable[str | Channel],
+    *args,  # noqa: ARG001, ANN002
+    host: str | None = None,
+    format: str | Iterable[str] | None = None,  # noqa: A002
+    sample_rate: int | Iterable[int] | None = None,
+    **kwargs,  # noqa: ARG001
+) -> Iterable[dict[str, Any]] | None:
+    """Identify GWOSC sources for these arguments."""
+    if origin != "get":
+        return None
+
+    sources: list[dict[str, object]] = []
+
+    # If host was given, and looks like nds2/gwdatafind, stop
+    if str(host).startswith((
+        "datafind",
+        "gwdatafind",
+        "nds",
+    )):
+        return sources
+
+    channels = (channels,) if isinstance(channels, str | Channel) else channels
+    names = {str(c) for c in channels}
+
+    # Set priority (and format) based on channel names
+    priority = 10
+    if format is None and _all_gwosc_channels(names):
+        format = "gwf"  # noqa: A001
+        priority = 5  # user mentioned GWOSC, use it if we can
+    elif any(":" in str(c) for c in channels):
+        priority = 1000  # GWOSC almost certainly won't be able to help
+
+    hosts = _as_tuple(host, (DEFAULT_GWOSC_URL,))
+    formats = _as_tuple(format, ("hdf5", "gwf"))
+
+    # Check if sample rate can be inferred from channel names
+    if sample_rate is None:
+        if all("4KHZ" in n for n in names):
+            sample_rate = KHZ_4
+        elif all("16KHZ" in n for n in names):
+            sample_rate = KHZ_16
+    sample_rates = _as_tuple(sample_rate, (KHZ_4, KHZ_16))
+
+    for host_, format_, sample_rate_ in product(
+        hosts,
+        formats,
+        sample_rates,
+    ):
+        sources.append({
+            "host": host_,
+            "format": format_,
+            "sample_rate": sample_rate_,
+            "priority": priority,
+        })
+
+    return sources
+
+
+for klass, fetch in (
+    (TimeSeriesBase, fetch_gwosc_data),
+    (TimeSeriesBaseDict, fetch_dict),
+):
+    # register identifier
+    klass.get.registry.register_identifier(
+        "gwosc",
+        klass,
+        identify_gwosc_sources,
+    )
+    # register fetch
+    klass.get.registry.register_reader(
+        "gwosc",
+        klass,
+        fetch,
+    )

@@ -51,8 +51,10 @@ from ..segments import Segment
 from ..time import Time
 from ..types import Array2D
 from .connect import (
+    StateVectorDictGet,
     StateVectorDictRead,
     StateVectorDictWrite,
+    StateVectorGet,
     StateVectorRead,
     StateVectorWrite,
 )
@@ -775,6 +777,7 @@ class StateVector(TimeSeriesBase):
 
     read = UnifiedReadWriteMethod(StateVectorRead)
     write = UnifiedReadWriteMethod(StateVectorWrite)
+    get = UnifiedReadWriteMethod(StateVectorGet)
 
     # -- StateVector methods ---------
 
@@ -963,8 +966,8 @@ class StateVector(TimeSeriesBase):
             NDS2 data type to match.
             Default is to search for any data type.
         """
-        new = cls.DictClass.fetch(
-            [channel],
+        new = super().fetch(
+            channel,
             start,
             end,
             host=host,
@@ -977,73 +980,7 @@ class StateVector(TimeSeriesBase):
             allow_tape=allow_tape,
             type=type,
             dtype=dtype,
-        )[channel]
-        if bits:
-            new.bits = bits
-        return new
-
-    @classmethod
-    def get(
-        cls,
-        channel: str | Channel,
-        start: GpsLike,
-        end: GpsLike,
-        bits: Bits | BitsInput | None = None,
-        **kwargs,
-    ) -> StateVector:
-        """Get `StateVector` data for this channel.
-
-        This method attemps to get data any way it can, potentially iterating
-        over multiple available data sources.
-
-        Parameters
-        ----------
-        channel : `str`, `~gwpy.detector.Channel`
-            The name of the channel to read, or a `Channel` object..
-
-        start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
-            GPS start time of required data,
-            any input parseable by `~gwpy.time.to_gps` is fine.
-
-        end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
-            GPS end time of required data,
-            any input parseable by `~gwpy.time.to_gps` is fine.
-
-        bits : `Bits`, `list`, optional
-            Definition of bits for this `StateVector`
-
-        source : `str`, `list`
-            Data source(s) to use to get the data.
-            One of:
-
-            "files"
-                Use |gwdatafind|_ to find the paths of local files and then read them.
-
-            "nds2"
-                Use |nds2|_.
-
-        nproc : `int`, optional
-            Number of parallel processes to use, serial process by
-            default.
-
-        verbose : `bool`, optional
-            Print verbose output about NDS progress.
-
-        kwargs
-            Other keyword arguments to pass to the data access function for
-            each data source.
-
-        See Also
-        --------
-        StateVector.find
-            For details of how data are accessed for ``source="files"``
-            and the supported keyword arguments.
-
-        StateVector.fetch
-            For details of how data are accessed for ``source="nds2"``
-            and the supported keyword arguments.
-        """
-        new = cls.DictClass.get([channel], start, end, **kwargs)[channel]
+        )
         if bits:
             new.bits = bits
         return new
@@ -1205,6 +1142,7 @@ class StateVectorDict(TimeSeriesBaseDict):
 
     read = UnifiedReadWriteMethod(StateVectorDictRead)
     write = UnifiedReadWriteMethod(StateVectorDictWrite)
+    get = UnifiedReadWriteMethod(StateVectorDictGet)
 
 
 class StateVectorList(TimeSeriesBaseList):
