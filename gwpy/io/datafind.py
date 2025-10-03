@@ -426,6 +426,7 @@ def find_frametype(
     ext: str = "gwf",
     return_all: bool = False,
     allow_tape: bool = False,
+    cache: bool | None = None,
     on_gaps: Literal["error", "ignore", "warn"] = "error",
     **gwdatafind_kw,
 ) -> str | list[str] | dict[ChannelLike, str] | dict[ChannelLike, list[str]]:
@@ -461,6 +462,11 @@ def find_frametype(
     allow_tape : `bool`, optional
         If `False` (default) do not test types whose frame files are
         stored on tape (not on spinning disk).
+
+    cache : `bool`, `None`, optional
+        Whether to cache the contents of remote URLs.
+        Default (`None`) is to check the ``GWPY_CACHE`` environment variable.
+        See :ref:`gwpy-env-variables` for details.
 
     on_gaps : `str`, optional
         Action to take when the requested all or some of the GPS interval
@@ -599,6 +605,7 @@ def find_frametype(
                     allow_tape=allow_tape,
                     urltype=urltype,
                     ext=ext,
+                    cache=cache,
                     **gwdatafind_kw,
                 )
 
@@ -666,6 +673,7 @@ def _inspect_ftype(
     on_gaps: Literal["error", "ignore", "warn"],
     *,
     allow_tape: bool = False,
+    cache: bool | None = None,
     **requests_kw,
 ) -> dict[str, tuple[str, str, float]] | None:
     """Inspect one dataset (frametype) for matches to the required ``names``.
@@ -690,7 +698,7 @@ def _inspect_ftype(
     # download the file so we can inspect it
     logger.debug("Using URL '%s'", path)
     try:
-        path = download_file(path)
+        path = download_file(path, cache=cache)
     except NETWORK_ERROR as exc:  # failed to download the file
         logger.debug(
             "Failed to download file for %s-%s: %s",
