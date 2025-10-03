@@ -266,6 +266,8 @@ filterwarnings = [
   "ignore:distutils Version::distutils",  # actually setuptools._distutils
   # ignore trapz warnings
   "ignore:`trapz` is deprecated::inspiral_range",
+  # ignore astropy.cosmology warnings
+  "ignore:The module `astropy.cosmology.core` is deprecated::astropy",
 ]
 xfail_strict = true
 
