@@ -112,7 +112,7 @@ def open_remote_file(
     url: str,
     *,
     cache: bool | None = None,
-    encoding: Literal["binary"],
+    encoding: Literal["binary"] = "binary",
     **kwargs,
 ) -> AbstractContextManager[BinaryIO]: ...
 
