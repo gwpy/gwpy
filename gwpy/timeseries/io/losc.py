@@ -253,6 +253,7 @@ def fetch_gwosc_data(
     format: str = "hdf5",
     host: str = DEFAULT_GWOSC_URL,
     series_class: type[T] = TimeSeries,
+    *,
     verbose: bool | None = None,
     **kwargs,
 ) -> T:
@@ -309,7 +310,7 @@ def fetch_gwosc_data(
     Examples
     --------
     >>> from gwpy.timeseries import (TimeSeries, StateVector)
-    >>> print(TimeSeries.fetch_open_data('H1', 1126259446, 1126259478))
+    >>> print(TimeSeries.get('H1', 1126259446, 1126259478))
     TimeSeries([  2.17704028e-19,  2.08763900e-19,  2.39681183e-19,
                 ...,   3.55365541e-20,  6.33533516e-20,
                   7.58121195e-20]
@@ -318,7 +319,7 @@ def fetch_gwosc_data(
                dt: 0.000244140625 s,
                name: Strain,
                channel: None)
-    >>> print(StateVector.fetch_open_data('H1', 1126259446, 1126259478))
+    >>> print(StateVector.get('H1', 1126259446, 1126259478))
     StateVector([127,127,127,127,127,127,127,127,127,127,127,127,
                  127,127,127,127,127,127,127,127,127,127,127,127,
                  127,127,127,127,127,127,127,127]
@@ -492,7 +493,7 @@ def fetch_dict(
     Examples
     --------
     >>> from gwpy.timeseries import TimeSeriesDict
-    >>> print(TimeSeriesDict.fetch_open_data(['H1', 'L1'], 1126259446, 1126259478))
+    >>> print(TimeSeriesDict.get(['H1', 'L1'], 1126259446, 1126259478))
     TimeSeriesDict({'H1': <TimeSeries([2.17704028e-19, 2.08763900e-19, 2.39681183e-19, ...,
                  3.55365541e-20, 6.33533516e-20, 7.58121195e-20]
                 unit=Unit(dimensionless),
@@ -507,7 +508,7 @@ def fetch_dict(
                 dt=<Quantity 0.00024414 s>,
                 name='Strain',
                 channel=None)>})
-    """
+    """  # noqa: E501
     names = {str(x).split(":", maxsplit=1)[0]: x for x in detectors}
     parallel = min(len(detectors), parallel or 1)
 
