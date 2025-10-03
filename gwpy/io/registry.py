@@ -26,6 +26,10 @@ from __future__ import annotations
 
 import contextlib
 import inspect
+import logging
+import os
+import pydoc
+import re
 import warnings
 from abc import (
     ABC,
@@ -57,11 +61,17 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import (
+        Callable,
+        Iterable,
+        Sequence,
+    )
     from contextlib import AbstractContextManager
     from typing import (
+        Any,
         BinaryIO,
         Literal,
+        Never,
     )
 
     from .utils import (
@@ -436,6 +446,154 @@ class UnifiedWrite(astropy_registry.UnifiedReadWrite, Generic[T]):
         """Execute ``instance.write()``."""
         instance = self._instance
         return self.registry.write(instance, *args, **kwargs)
+
+
+# -- Fetch ---------------------------
+# custom registry to support Klass.fetch
+
+class UnifiedFetchRegistry(astropy_registry.UnifiedInputRegistry):
+    """`UnifiedInputRegistry` hacked to support a `.fetch()` method.
+
+    Fetch is a read-like operation that does not take a file or file-like
+    object as input, but instead takes other arguments to fetch data from
+    a single source, e.g. a database or web API.
+    """
+
+    name: Literal["read", "fetch", "get"] = "fetch"
+
+    def __init__(self) -> None:
+        """Initialise a new `UnifiedFetchRegistry` instance."""
+        super().__init__()
+        self._registries[self.name] = self._registries.pop("read")
+        self._registries_order = (self.name, "identify")
+
+    def _update__doc__(self, data_class: type, readwrite: str) -> None:
+        """Update the docstring for ``data_class.<readwrite>()`` method."""
+        if readwrite == "read":
+            readwrite = self.name
+        super()._update__doc__(data_class, readwrite)
+
+        # replace the word 'format' with 'source' in the docstring
+        class_readwrite_func = getattr(data_class, readwrite)
+        doc = class_readwrite_func.__doc__
+        if doc is None:
+            return
+        for search, replace in [
+            # Leader for the sources table
+            ("built-in formats", "built-in sources"),
+            # Column heading in the sources table
+            (r"\n(\s*)?Format", r"\n\1Source"),
+        ]:
+            doc = re.sub(search, replace, doc)
+        class_readwrite_func.__class__.__doc__ = doc
+
+    def _get_valid_format(
+        self,
+        mode: Literal["read", "fetch", "get"],
+        cls: type,
+        path: FileSystemPath | None,
+        fileobj: FileLike | None,
+        args: tuple,
+        kwargs: dict,
+    ) -> str:
+        """Return the first valid format that can be used."""
+        if mode.lower() == "read":
+            mode = self.name
+        return super()._get_valid_format(mode, cls, path, fileobj, args, kwargs)
+
+
+fetch_registry = UnifiedFetchRegistry()
+
+
+class UnifiedFetch(UnifiedRead[T], Generic[T]):
+    """Base ``Class.fetch()`` implementation."""
+
+    method: Literal["fetch", "get"] = "fetch"
+
+    def merge(self, *args, **kwargs) -> Never:
+        """Fetch does not support merging."""
+        msg = f"{self._cls.__name__}.{self.method} does not support merging"
+        raise NotImplementedError(msg)
+
+    def __init__(
+        self,
+        instance: T,
+        cls: type[T],
+        registry: UnifiedFetchRegistry = fetch_registry,
+    ) -> None:
+        """Initialise a new `UnifiedFetch` instance."""
+        super().__init__(
+            instance,
+            cls,
+            registry=registry,
+        )
+
+    def __call__(  # type: ignore[override]
+        self,
+        *args,  # noqa: ANN002
+        source: str | None = None,
+        **kwargs,
+    ) -> T:
+        """Execute ``cls.fetch()``."""
+        # 'read' using the registered format.
+        return self.registry.read(
+            self._cls,
+            *args,
+            format=source,
+            **kwargs,
+        )
+
+    def help(
+        self,
+        source: str | None = None,
+        out: FileLike | None = None,
+    ) -> None:
+        """Output help documentation for the specified `UnifiedFetch` ``source``.
+
+        By default the help output is printed to the console via ``pydoc.pager``.
+        Instead one can supplied a file handle object as ``out`` and the output
+        will be written to that handle.
+
+        Parameters
+        ----------
+        source : str
+            `UnifiedFetch` source (format) name, e.g. 'sql' or 'gwosc'.
+
+        out : None or file-like
+            Output destination (default is stdout via a pager)
+        """
+        cls = self._cls
+
+        # Get reader or writer function associated with the registry
+        get_func = self._registry.get_reader
+        try:
+            if source:
+                read_write_func = get_func(source, cls)
+        except astropy_registry.IORegistryError as err:
+            reader_doc = "ERROR: " + str(err)
+        else:
+            if source:
+                # Format-specific
+                header = (
+                    f"{cls.__name__}.{self.method}(source='{source}') documentation\n"
+                )
+                doc = read_write_func.__doc__
+            else:
+                # General docs
+                header = f"{cls.__name__}.{self.method} general documentation\n"
+                doc = getattr(cls, self.method).__doc__
+
+            reader_doc = re.sub(".", "=", header)
+            reader_doc += header
+            reader_doc += re.sub(".", "=", header)
+            reader_doc += os.linesep
+            if doc is not None:
+                reader_doc += inspect.cleandoc(doc)
+
+        if out is None:
+            pydoc.pager(reader_doc)
+        else:
+            out.write(reader_doc)
 
 
 # -- utilities -----------------------

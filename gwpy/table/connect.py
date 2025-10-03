@@ -20,21 +20,14 @@
 
 from __future__ import annotations
 
-import inspect
-import os
-import pydoc
-import re
 import warnings
 from typing import TYPE_CHECKING
 
-from astropy.io.registry import (
-    IORegistryError,
-    UnifiedInputRegistry,
-)
 from astropy.table import vstack
 from astropy.table.connect import TableWrite
 
 from ..io.registry import (
+    UnifiedFetch,
     UnifiedRead,
     UnifiedWrite,
     default_registry,
@@ -186,31 +179,7 @@ class EventTableWrite(TableWrite, UnifiedWrite):
         )
 
 
-# -- fetch ---------------------------
-# custom registry to support EventTable.fetch
-#
-
-class UnifiedFetchRegistry(UnifiedInputRegistry):
-    def __init__(self):
-        super().__init__()
-        self._registries["fetch"] = self._registries.pop("read")
-        self._registries_order = ("fetch", "identify")
-
-    def _update__doc__(self, data_class, readwrite):
-        if readwrite == "read":
-            readwrite = "fetch"
-        return super()._update__doc__(data_class, readwrite)
-
-    def _get_valid_format(self, mode, *args, **kwargs):
-        if mode.lower() == "read":
-            mode = "fetch"
-        return super()._get_valid_format(mode, *args, **kwargs)
-
-
-fetch_registry = UnifiedFetchRegistry()
-
-
-class EventTableFetch(EventTableRead):
+class EventTableFetch(UnifiedFetch):
     """Fetch a table of events from a database.
 
     Parameters
@@ -311,59 +280,8 @@ class EventTableFetch(EventTableRead):
             kwargs.setdefault("engine", source)
             source = "sql"
 
-        # 'read' the events using the registered format.
-        return self.registry.read(
-            self._cls,
+        return super().__call__(
             *args,
-            format=source,
+            source=source,
             **kwargs,
         )
-
-    def help(self, source=None, out=None):
-        """Output help documentation for the specified unified I/O ``source``.
-
-        By default the help output is printed to the console via ``pydoc.pager``.
-        Instead one can supplied a file handle object as ``out`` and the output
-        will be written to that handle.
-
-        Parameters
-        ----------
-        source : str
-            Unified I/O source (format) name, e.g. 'sql' or 'gwosc'.
-
-        out : None or file-like
-            Output destination (default is stdout via a pager)
-        """
-        cls = self._cls
-        method_name = "fetch"
-
-        # Get reader or writer function associated with the registry
-        get_func = self._registry.get_reader
-        try:
-            if source:
-                read_write_func = get_func(source, cls)
-        except IORegistryError as err:
-            reader_doc = "ERROR: " + str(err)
-        else:
-            if source:
-                # Format-specific
-                header = (
-                    f"{cls.__name__}.{method_name}(source='{source}') documentation\n"
-                )
-                doc = read_write_func.__doc__
-            else:
-                # General docs
-                header = f"{cls.__name__}.{method_name} general documentation\n"
-                doc = getattr(cls, method_name).__doc__
-
-            reader_doc = re.sub(".", "=", header)
-            reader_doc += header
-            reader_doc += re.sub(".", "=", header)
-            reader_doc += os.linesep
-            if doc is not None:
-                reader_doc += inspect.cleandoc(doc)
-
-        if out is None:
-            pydoc.pager(reader_doc)
-        else:
-            out.write(reader_doc)
