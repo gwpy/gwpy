@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import h5py
-from astropy.io.misc.hdf5 import is_hdf5 as identify_hdf5  # noqa: F401
+from astropy.io.misc.hdf5 import is_hdf5
 
 from .utils import FileSystemPath
 
@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import (
         Concatenate,
+        Literal,
         ParamSpec,
         TypeVar,
     )
@@ -47,6 +48,46 @@ if TYPE_CHECKING:
     R = TypeVar("R")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+
+def identify_hdf5(
+    origin: Literal["read", "write"],
+    filepath: FileSystemPath | None = None,
+    fileobj: FileLike | None = None,
+    *args: object,
+    **kwargs: object,
+) -> bool:
+    """Identify an HDF5 file based on its signature.
+
+    Parameters
+    ----------
+    origin : `str`
+        Either ``'read'`` or ``'write'``, indicating whether the
+        identification is being done for reading or writing.
+
+    filepath : `str`, `pathlib.Path`, optional
+        The file path to check.
+
+    fileobj : file-like, optional
+        A file-like object to check.
+
+    args, kwargs
+        Any additional arguments are passed directly to
+        `astropy.io.misc.hdf5.is_hdf5`.
+
+    Returns
+    -------
+    is_hdf5 : `bool`
+        `True` if the file is an HDF5 file, `False` otherwise.
+
+    See Also
+    --------
+    astropy.io.misc.hdf5.is_hdf5
+    """
+    if filepath is not None:
+        # is_hdf5 requires a string filepath
+        filepath = str(filepath)
+    return is_hdf5(origin, filepath, fileobj, *args, **kwargs)
 
 
 def open_hdf5(
