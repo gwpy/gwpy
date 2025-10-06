@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import numbers
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -35,6 +36,7 @@ from gwosc.api import (
     fetch_catalog_json,
 )
 
+from ...io.utils import FileSystemPath
 from .. import EventTable
 from .utils import (
     read_with_columns,
@@ -43,10 +45,10 @@ from .utils import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import (
-        IO,
-        Any,
-    )
+
+    from ...io.utils import Readable
+
+logger = logging.getLogger(__name__)
 
 #: suffix indicating a unit name
 UNIT_SUFFIX = "_unit"
@@ -63,7 +65,7 @@ MISSING_DATA: set[str | None] = {
 }
 
 #: values to fill missing data, based on dtype
-_FILL_VALUE: dict[type, Any] = {
+_FILL_VALUE: dict[type, object] = {
     str: "",
     bytes: b"",
     numbers.Integral: 0,
@@ -92,7 +94,7 @@ def _get_unit(
     return UNITS.get(rawunit, rawunit)
 
 
-def _get_fill_value(type_: type) -> Any:
+def _get_fill_value(type_: type) -> object:
     """Get the fill value for this ``type_``.
 
     If no default is set for the ``type_``, return `None`.
@@ -104,9 +106,9 @@ def _get_fill_value(type_: type) -> Any:
 
 
 def _mask_replace(
-    value: Any,
+    value: object,
     dtype: type,
-) -> Any:
+) -> object:
     """Replace `value` with the default for the given `dtype`.
 
     If not default is set for the ``dtype``, just return the
@@ -144,6 +146,7 @@ def fetch_catalog(
     **kwargs,
 ) -> Table:
     """Download a `Table` of events from the GWOSC EventApi."""
+    logger.debug("Fetching GWOSC event catalog '%s' from %s", catalog, host)
     # fetch and parse data
     table = parse_eventapi_catalog(
         fetch_catalog_json(catalog, host=host),
@@ -158,7 +161,7 @@ def fetch_catalog(
 
 
 def read_catalog(
-    source: str | Path | IO,
+    source: Readable,
     **kwargs,
 ) -> Table:
     """Read a `Table` from a GWOSC EventAPI JSON file.
@@ -173,8 +176,9 @@ def read_catalog(
         Other keyword arguments are passed to `parse_eventapi_catalog`.
     """
     # read a file (object)
-    if isinstance(source, str | Path):
-        with open(source) as file:
+    if isinstance(source, FileSystemPath):
+        logger.debug("Reading GWOSC event catalog from %s", source)
+        with Path(source).open() as file:
             return read_catalog(file)
 
     # read an open file
@@ -211,7 +215,7 @@ def parse_eventapi_catalog(
         are supported.
     """
     data = rawdata["events"]
-    coldata: dict[str, list | numpy.ndarray] = {
+    coldata: dict[str, list] = {
         "name": list(data.keys()),
     }
 
@@ -245,6 +249,7 @@ def parse_eventapi_catalog(
     # add an index on the event name
     tab.add_index("name")
 
+    logger.debug("Parsed %d events from GWOSC EventAPI", len(tab))
     return tab
 
 

@@ -1,4 +1,5 @@
 # Copyright (c) 2022 California Institute of Technology
+#               2025 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -17,9 +18,16 @@
 
 """Tests for :mod:`gwpy.table.io.gstlal`."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 
 from ...table import EventTable
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 __author__ = "Derek Davis <derek.davis@ligo.org>"
 
@@ -96,7 +104,8 @@ GSTLAL_FILE = """
 
 
 @pytest.fixture
-def gstlal_table(tmp_path):
+def gstlal_table(tmp_path: Path) -> Path:
+    """Create a temporary gstlal XML file."""
     tmp = tmp_path / "H1L1V1-LLOID-1-1.xml.gz"
     tmp.write_text(GSTLAL_FILE.strip())
     return tmp
@@ -109,7 +118,8 @@ COINC_LEN = 2
 
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
-def test_read_gstlal_sngl(gstlal_table):
+def test_read_gstlal_sngl(gstlal_table: Path):
+    """Test reading ``sngl_inspiral`` triggers from a gstlal file."""
     table = EventTable.read(
         gstlal_table,
         format="ligolw.gstlal",
@@ -119,13 +129,15 @@ def test_read_gstlal_sngl(gstlal_table):
 
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
-def test_read_sngl_format(gstlal_table):
+def test_read_sngl_format(gstlal_table: Path):
+    """Test reading ``sngl_inspiral`` triggers  with ``format``."""
     table = EventTable.read(gstlal_table, format="ligolw.gstlal.sngl")
     assert len(table) == SNGL_LEN
 
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_sngl_columns(gstlal_table):
+    """Test reading ``sngl_inspiral`` triggers with specified columns."""
     table = EventTable.read(
         gstlal_table,
         format="ligolw.gstlal.sngl",
@@ -136,6 +148,7 @@ def test_read_sngl_columns(gstlal_table):
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_coinc(gstlal_table):
+    """Test reading ``coinc_inspiral`` triggers from a gstlal file."""
     table = EventTable.read(
         gstlal_table,
         format="ligolw.gstlal",
@@ -146,6 +159,7 @@ def test_read_coinc(gstlal_table):
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_coinc_format(gstlal_table):
+    """Test reading ``coinc_inspiral`` triggers with ``format``."""
     table = EventTable.read(
         gstlal_table,
         format="ligolw.gstlal.coinc",
@@ -154,7 +168,8 @@ def test_read_coinc_format(gstlal_table):
 
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
-def test_read_coinc_columns(gstlal_table):
+def test_read_coinc_columns(gstlal_table: Path):
+    """Test reading ``coinc_inspiral`` triggers with specified columns."""
     table = EventTable.read(
         gstlal_table,
         format="ligolw.gstlal.coinc",
@@ -164,7 +179,8 @@ def test_read_coinc_columns(gstlal_table):
 
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
-def test_derived_values(gstlal_table):
+def test_derived_values(gstlal_table: Path):
+    """Test reading ``sngl_inspiral`` triggers with derived values."""
     table = EventTable.read(
         gstlal_table,
         format="ligolw.gstlal",
@@ -177,7 +193,8 @@ def test_derived_values(gstlal_table):
 
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
-def test_incorrect_sngl_column(gstlal_table):
+def test_incorrect_sngl_column(gstlal_table: Path):
+    """Test reading ``sngl_inspiral`` triggers with incorrect column names."""
     with pytest.raises(
         ValueError,
         match="is not a valid column name",
@@ -190,7 +207,8 @@ def test_incorrect_sngl_column(gstlal_table):
 
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
-def test_incorrect_coinc_column(gstlal_table):
+def test_incorrect_coinc_column(gstlal_table: Path):
+    """Test reading ``coinc_inspiral`` triggers with incorrect column names."""
     with pytest.raises(
         ValueError,
         match="is not a valid column name",
@@ -203,7 +221,8 @@ def test_incorrect_coinc_column(gstlal_table):
 
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
-def test_incorrect_trigger_name(gstlal_table):
+def test_incorrect_trigger_name(gstlal_table: Path):
+    """Test reading gstlal file with incorrect trigger type."""
     with pytest.raises(
         ValueError,
         match=r"^triggers must be 'sngl' or 'coinc', got 'nan'$",

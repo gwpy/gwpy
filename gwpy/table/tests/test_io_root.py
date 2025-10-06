@@ -108,7 +108,7 @@ def test_write_root_overwrite(table, tmp_path):
     table.write(tmp)
 
     # assert failure with overwrite=False (default)
-    with pytest.raises(OSError):
+    with pytest.raises(OSError, match="path exists and refusing to overwrite"):
         table.write(tmp)
 
     # assert works with overwrite=True
@@ -139,12 +139,9 @@ def test_write_root_append(table, tmp_path):
 
 @pytest.mark.requires("uproot")
 def test_write_root_append_not_found(table, tmp_path):
-    """Test `Table.write(format='root')` fails with ``append=True``
-    when the source file doesn't exist.
-    """
-    # write once
+    """Test `Table.write(format='root', append=True)` when the source doesn't exist."""
     tmp = tmp_path / "table.root"
-    with pytest.raises(OSError):
+    with pytest.raises(OSError, match="could not read"):
         table.write(tmp, treename="a", append=True)
 
 

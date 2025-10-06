@@ -22,7 +22,7 @@
 from __future__ import annotations
 
 import re
-from os.path import basename
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from astropy.table import join
@@ -37,15 +37,27 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from pathlib import Path
-    from typing import IO
+    from collections.abc import (
+        Callable,
+        Collection,
+        Iterable,
+    )
+    from typing import (
+        IO,
+        Literal,
+    )
 
     from astropy.table import (
         Column,
         Table,
     )
     from igwn_ligolw.ligolw import Document
+
+    from ...io.utils import (
+        FileLike,
+        FileSystemPath,
+    )
+
 
 __author__ = "Derk Davis <derek.davis@ligo.org>"
 __credits__ = "Patrick Godwin <patrick.godwin@ligo.org>"
@@ -60,10 +72,10 @@ GSTLAL_FILENAME = re.compile("([A-Z][0-9])+-LLOID-[0-9.]+-[0-9.]+.xml.gz")
 # -- identify ------------------------
 
 def identify_gstlal(
-    origin: str,
-    filepath: str | Path | None,
-    fileobj: IO | None,
-    *args,
+    origin: Literal["read", "write"],
+    filepath: FileSystemPath | None,
+    fileobj: FileLike | None,
+    *args,  # noqa: ANN002
     **kwargs,
 ) -> bool:
     """Identify a GstLAL file as a ligolw file with the correct name."""
@@ -71,7 +83,7 @@ def identify_gstlal(
         is_ligolw(origin, filepath, fileobj, *args, **kwargs)
         and (
             filepath is not None
-            and GSTLAL_FILENAME.match(basename(filepath))
+            and GSTLAL_FILENAME.match(Path(filepath).name) is not None
         )
     )
 
@@ -81,7 +93,7 @@ def identify_gstlal(
 # singles format
 def read_gstlal_sngl(
     source: str | Path | IO | Document | list[str | Path | IO],
-    columns: list[str] | None = None,
+    columns: Collection[str] | None = None,
     tablename: str = "sngl_inspiral",
     **kwargs,
 ) -> Table:
@@ -133,16 +145,19 @@ def read_gstlal_sngl(
 # coinc format
 def read_gstlal_coinc(
     source: str | Path | IO | Document | list[str | Path | IO],
-    columns: list[str] | None = None,
+    columns: Collection[str] | None = None,
     **kwargs,
 ) -> Table:
-    """Read a `Table` containing coincident event information
-    from one or more GstLAL LIGO_LW XML files.
+    """Read a `Table` containing coinc event info from one or more GstLAL XML files.
 
     Parameters
     ----------
     source : `file`, `str`, `~igwn_ligolw.ligolw.Document`, `list`
         One or more open files or file paths, or a single LIGO_LW ``Document``.
+
+    columns : `list` of `str`, optional
+        List of column names to read. Valid column names are those in
+        `coinc_inspiral` and `coinc_event` tables.
 
     kwargs
         Other keyword arguments are passed to `Table.read(format="ligolw")`.
@@ -269,7 +284,7 @@ for fmt, reader in (
 # `numpy.ndarray` or `~gwpy.table.Column`.
 
 GET_COLUMN: dict[str, Callable] = {}
-GET_COLUMN_EXTRA: dict[str, set] = {}
+GET_COLUMN_EXTRA: dict[str, Iterable[str]] = {}
 
 
 def get_snr_chi(
@@ -280,8 +295,7 @@ def get_snr_chi(
     """Calculate the 'SNR chi' column for this GstLAL ligolw table group."""
     snr = events["snr"][:]
     chisq = events["chisq"][:]
-    snr_chi = snr**snr_pow / chisq**(chi_pow/2.)
-    return snr_chi
+    return snr**snr_pow / chisq**(chi_pow/2.)
 
 
 GET_COLUMN["snr_chi"] = get_snr_chi
@@ -293,8 +307,9 @@ def get_chi_snr(
     snr_pow: float = 2.,
     chi_pow: float = 2.,
 ) -> Column:
-    """Calculate the 'chi SNR' column for this GstLAL ligolw table group,
-    reciprocal of the 'SNR chi' column.
+    """Calculate the 'chi SNR' column for this GstLAL ligolw table group.
+
+    This is the reciprocal of the 'SNR chi' column.
     """
     return 1. / get_snr_chi(events, snr_pow, chi_pow)
 

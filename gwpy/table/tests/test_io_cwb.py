@@ -17,9 +17,18 @@
 
 """Tests for :mod:`gwpy.table.io.cwb`."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 
 from gwpy.table import EventTable
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from astropy.table import Table
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -57,18 +66,20 @@ CWB_ASCII = """
 + - 18.1662 0.828 0.723 81.677 19.00   0.000       0 4.1e+02 0.966 26.177  109   66 0.172 1140   0     1 1420000001.1299 1420000001.1361 2.5e+02 1.6e+02 6.2e-23 4.8e-23 274.22 91.79 -74.38
 + - 13.7103 0.940 0.842 31.190 13.73   0.000       0 2.0e+02 0.882 21.139  109   46 0.017 528   0     1 1420000002.7594 1420000002.7623 1.2e+02 8.5e+01 3.7e-23 3.2e-23 266.48 66.68 -79.10
 + - 13.2168 0.908 0.900 30.457 13.49   0.000       0 1.9e+02 1.034 21.953  104   44 0.019 517   0     1 1420000003.2002 1420000003.2079 1.2e+02 7.4e+01 3.7e-23 2.9e-23 276.33 115.94 -78.07
-""".strip()  # noqa
+""".strip()  # noqa: E501
 
 
 @pytest.fixture
-def cwb_ascii(tmp_path):
+def cwb_ascii(tmp_path: Path) -> Path:
+    """Create a temporary cWB ASCII file."""
     dat = tmp_path / "EVENTS.txt"
     dat.write_text(CWB_ASCII)
     return dat
 
 
 @pytest.fixture
-def cwb_root(cwb_ascii):
+def cwb_root(cwb_ascii: Path) -> Path:
+    """Create a temporary cWB ROOT file from the ASCII file."""
     tab = EventTable.read(
         cwb_ascii,
         columns=["central frequency", "PHI", "THETA"],
@@ -79,19 +90,20 @@ def cwb_root(cwb_ascii):
     return rootf
 
 
-def _check_cwb_table(table):
+def _check_cwb_table(table: Table):
+    """Check that a cWB table has been read correctly."""
     assert len(table) == 4
     assert table[0]["central frequency"] == pytest.approx(123)
     assert table[3]["PHI"] == pytest.approx(276.33)
 
 
-def test_read_cwb_ascii(cwb_ascii):
+def test_read_cwb_ascii(cwb_ascii: Path):
     """Check that the ``"ascii.cwb"`` file reader works."""
     tab = EventTable.read(cwb_ascii, format="ascii.cwb")
     _check_cwb_table(tab)
 
 
-def test_read_cwb_ascii_columns_where(cwb_ascii):
+def test_read_cwb_ascii_columns_where(cwb_ascii: Path):
     """Check that the ``"ascii.cwb"`` file reader works."""
     columns = ["central frequency", "bandwidth", "duration"]
     tab = EventTable.read(
@@ -105,7 +117,7 @@ def test_read_cwb_ascii_columns_where(cwb_ascii):
 
 
 @pytest.mark.requires("uproot")
-def test_read_cwb_root(cwb_root):
+def test_read_cwb_root(cwb_root: Path):
     """Check that the ``"ascii.root"`` file reader works."""
     tab = EventTable.read(cwb_root, format="root.cwb")
     _check_cwb_table(tab)

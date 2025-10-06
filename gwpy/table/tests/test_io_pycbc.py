@@ -20,7 +20,7 @@
 import h5py
 import numpy
 import pytest
-from numpy.random import randn
+from numpy.random import default_rng
 
 from ...frequencyseries import FrequencySeries
 from ...testing.utils import (
@@ -33,7 +33,9 @@ from ..filter import filter_table
 from ..io import pycbc as io_pycbc
 from .utils import random_table
 
-# -- fixtures -----------------------------------
+RNG = default_rng()
+
+# -- fixtures ------------------------
 
 @pytest.fixture
 def h5file():
@@ -49,7 +51,7 @@ def h5file():
 
 @pytest.fixture
 def pycbclivetable():
-    """A populated `EventTable` in PyCBC format."""
+    """Create an `EventTable` in PyCBC format with 100 rows."""
     return random_table(
         names = [
             "a",
@@ -70,13 +72,13 @@ def pycbclivetable():
 
 @pytest.fixture
 def pycbclivepsd():
-    """A mock PSD."""
-    return FrequencySeries(randn(1000), df=1)
+    """Create a mock PSD."""
+    return FrequencySeries(RNG.normal(size=1000), df=1)
 
 
 @pytest.fixture
 def pycbclivefile(tmp_path, pycbclivetable, pycbclivepsd):
-    """A fully-formed PyCBC-format HDF5 file."""
+    """Create a fully-formed PyCBC-format HDF5 file."""
     # create table
     loudest = (pycbclivetable["snr"] > 500).nonzero()[0]
 
@@ -93,36 +95,36 @@ def pycbclivefile(tmp_path, pycbclivetable, pycbclivepsd):
     return tmp
 
 
-# -- internal tests -----------------------------
-
+# -- internal tests ------------------
 
 @pytest.mark.parametrize(("filename", "result"), [
     ("X1-Live-0-0.h5", True),
     ("X1-Live-0-0.hdf5", True),
     ("X1-MY_DATA-0-0.h5", False),
 ])
-def test_idenfity_pycbc_live(tmp_path, filename, result):
-    path = str(tmp_path / filename)
+def test_identify_pycbc_live(tmp_path, filename, result):
+    """Test :func:`identify_pycbc_live`."""
+    path = tmp_path / filename
     h5py.File(path, "w").close()
     assert io_pycbc.identify_pycbc_live("read", path, None) is result
-    with open(path, "rb") as h5f:  # check with open file as well
+    with path.open("rb") as h5f:
         assert io_pycbc.identify_pycbc_live("read", path, h5f) is result
 
 
 def test_empty_hdf5_file(h5file):
-    """Check that :func:`empty_hdf5_file` works."""
+    """Test `empty_hdf5_file`."""
     assert io_pycbc.empty_hdf5_file(h5file)
 
 
 def test_empty_hdf5_file_group(h5file):
-    """Check that :func:`empty_hdf5_file` works with (empty) groups."""
+    """Test `empty_hdf5_file` with a group."""
     h5file.create_group("H1")
     assert io_pycbc.empty_hdf5_file(h5file)
     assert io_pycbc.empty_hdf5_file(h5file, ifo="H1")
 
 
 def test_empty_hdf5_file_datasets(h5file):
-    """Check that :func:`empty_hdf5_file` works with (empty) datasets."""
+    """Test `empty_hdf5_file` with (empty) datasets."""
     h1group = h5file.create_group("H1")
     h1group.create_dataset("psd", data=numpy.empty(10))
     assert io_pycbc.empty_hdf5_file(h5file, ifo="H1")
@@ -134,21 +136,21 @@ def test_empty_hdf5_file_datasets(h5file):
     assert not io_pycbc.empty_hdf5_file(h5file, ifo="H1")
 
 
-# -- EventTable integration tests ---------------
+# -- EventTable integration tests ----
 
 @pytest.mark.parametrize("fmt", [
     None,  # should default to hdf5.pycbc_live as the highest-priority format
     "hdf5.pycbc_live",
 ])
 def test_read_pycbc_live(pycbclivetable, pycbclivefile, fmt):
-    """Check that `EventTable` can read a PyCBC-Live file."""
+    """Test reading a PyCBC-Live file into an `EventTable`."""
     table = EventTable.read(pycbclivefile, format=fmt)
     assert_table_equal(pycbclivetable, table)
     assert table.meta["ifo"] == "X1"
 
 
 def test_read_pycbc_live_kwargs(pycbclivetable, pycbclivefile):
-    """Check that `EventTable` can read a PyCBC-Live file using keywords."""
+    """Test reading a PyCBC-Live file into an `EventTable` with kwargs."""
     table = EventTable.read(
         pycbclivefile,
         format="hdf5.pycbc_live",
@@ -158,9 +160,7 @@ def test_read_pycbc_live_kwargs(pycbclivetable, pycbclivefile):
 
 
 def test_read_pycbc_live_loudest(pycbclivetable, pycbclivefile):
-    """Check that `EventTable` can read the `loudest` table from
-    a PyCBC-Live file.
-    """
+    """Test reading only the loudest events from a PyCBC-Live file."""
     table = EventTable.read(
         pycbclivefile,
         format="hdf5.pycbc_live",
@@ -174,7 +174,7 @@ def test_read_pycbc_live_extended_metadata(
     pycbclivepsd,
     pycbclivefile,
 ):
-    """Check that `EventTable` can read extended metadata from a PyCBC file."""
+    """Test that `EventTable` can read extended metadata from a PyCBC file."""
     table = EventTable.read(
         pycbclivefile,
         format="hdf5.pycbc_live",
@@ -191,11 +191,8 @@ def test_read_pycbc_live_extended_metadata(
         exclude=["name", "channel", "unit", "epoch"])
 
 
-def test_read_pycbc_live_extended_metadata_false(
-    pycbclivetable,
-    pycbclivefile,
-):
-    """Check that `EventTable` can read a PyCBC file without extended metadata."""
+def test_read_pycbc_live_extended_metadata_false(pycbclivefile):
+    """Test that `EventTable` can read minimal metadata from a PyCBC file."""
     # check extended_metadata=False works
     table = EventTable.read(
         pycbclivefile,
@@ -209,7 +206,7 @@ def test_read_pycbc_live_multiple_ifos(
     pycbclivetable,
     pycbclivefile,
 ):
-    """Check that `EventTable` can handle multiple IFOs in a PyCBC-Live file."""
+    """Test that `EventTable` raises an error if multiple IFOs are present."""
     with h5py.File(pycbclivefile, "r+") as h5f:
         h5f.create_group("Z1")
     with pytest.raises(
@@ -231,7 +228,7 @@ def test_read_pycbc_live_processed_columns(
     pycbclivetable,
     pycbclivefile,
 ):
-    """Check that `EventTable` can read processed columns from a PyCBC file."""
+    """Test that `EventTable` can read processed columns from a PyCBC file."""
     # assert processed colums works
     table = EventTable.read(
         pycbclivefile,
@@ -250,9 +247,7 @@ def test_read_pycbc_live_filter_columns(
     pycbclivetable,
     pycbclivefile,
 ):
-    """Check that the ``where`` and ``columns`` kwargs work when
-    reading from a PyCBC-Live file.
-    """
+    """Test that `EventTable` can read with 'where' filter and columns."""
     # test with 'where' filter and columns
     table = EventTable.read(
         pycbclivefile,
@@ -271,7 +266,7 @@ def test_read_pycbc_live_regression_1081(
     pycbclivetable,
     pycbclivefile,
 ):
-    """Check against regression of gwpy/gwpy#1081."""
+    """Test against regression of gwpy/gwpy#1081."""
     table = EventTable.read(
         pycbclivefile,
         format="hdf5.pycbc_live",

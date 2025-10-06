@@ -24,7 +24,10 @@ from __future__ import annotations
 
 import operator
 from functools import reduce
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 from astropy.table import Table
 
@@ -33,6 +36,7 @@ from ..filter import parse_column_filters
 
 if TYPE_CHECKING:
     from collections.abc import (
+        Iterable,
         Mapping,
         Sequence,
     )
@@ -51,7 +55,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 # -- utilities -----------------------
 
 def format_where(
-    condition: WhereExpression | list[WhereExpression],
+    condition: WhereExpression | Iterable[WhereExpression],
 ) -> sqlalchemy.SQLColumnExpression | None:
     """Format a column filter condition as a SQL ``WHERE`` expression.
 
@@ -88,7 +92,7 @@ def format_where(
     if condition is None:
         return None
 
-    if isinstance(condition, str):
+    if isinstance(condition, str | SQLColumnExpression):
         condition = [condition]
 
     expressions = []
@@ -99,7 +103,8 @@ def format_where(
             expressions.append(item)
         else:
             for col, op_, value in parse_column_filters(item):
-                expressions.append(op_(Column(col), value))
+                val = cast("SQLColumnExpression", op_(Column(col), value))
+                expressions.append(val)
     if expressions:
         return reduce(operator.and_, expressions)
     return None
@@ -107,7 +112,8 @@ def format_where(
 
 def format_query(
     tablename: str | sqlalchemy.TableClause,
-    columns: list[str | sqlalchemy.Column] | None = None,
+    columns: Iterable[str | sqlalchemy.Column] | None = None,
+    *,
     where: str | list[str] | None = None,
     order_by: str | sqlalchemy.Column | None = None,
     order_by_desc: bool = False,
@@ -153,9 +159,12 @@ def format_query(
         columns = ["*"]
     else:
         columns = list(map(Column, columns))
+    columns = cast("list[sqlalchemy.Column]", columns)
 
     # build SQL query
-    query = select(*columns).select_from(table(tablename))
+    if isinstance(tablename, str):
+        tablename = table(tablename)
+    query = select(*columns).select_from(tablename)
     if (expr := format_where(where)) is not None:
         query = query.where(expr)
     if order_by:
@@ -209,7 +218,7 @@ def create_engine(
     database: str | None = None,
     query: Mapping[str, Sequence[str] | str] | None = None,
     **kwargs,
-):
+) -> sqlalchemy.Engine:
     """Create a new `sqlalchemy.engine.Engine`.
 
     Requires: |sqlalchemy|_.
@@ -219,7 +228,7 @@ def create_engine(
     drivername : `str`
         Database backend and driver name.
 
-    user : `str`, optional
+    username : `str`, optional
         The username for authentication to the database.
 
     password : `str`, optional
@@ -228,7 +237,7 @@ def create_engine(
     host : `str`, optional
         The name of the remote database host.
 
-    post : `int`, optional
+    port : `int`, optional
         Port to connect to on ``host``.
 
     database : `str`, optional
@@ -264,7 +273,7 @@ def create_engine(
         host=host,
         port=port,
         database=database,
-        query=query,
+        query=query or {},
     )
     return create_engine(url, **kwargs)
 
@@ -272,7 +281,8 @@ def create_engine(
 def fetch(
     # query options
     tablename: str | sqlalchemy.TableClause,
-    columns: list[str | sqlalchemy.Column] | None = None,
+    columns: Iterable[str | sqlalchemy.Column] | None = None,
+    *,
     where: str | list[str] | None = None,
     order_by: str | None = None,
     order_by_desc: bool = False,
@@ -297,6 +307,9 @@ def fetch(
         The name of table you are attempting to receive triggers
         from.
 
+    columns : `list` of `str`, optional
+        The list of columns to ``SELECT``.
+
     where : `str`, `list` of `str`, optional
         A filter or list of filters to apply as ``WHERE`` conditions,
         e.g. ``'snr > 5'``.
@@ -318,7 +331,7 @@ def fetch(
         Database backend and driver name.
         This is required if ``engine`` is not specified.
 
-    user : `str`, optional
+    username : `str`, optional
         The username for authentication to the database.
 
     password : `str`, optional
@@ -327,7 +340,7 @@ def fetch(
     host : `str`, optional
         The name of the remote database host.
 
-    post : `int`, optional
+    port : `int`, optional
         Port to connect to on ``host``.
 
     database : `str`, optional
@@ -335,6 +348,9 @@ def fetch(
 
     query : `dict`, optional
         Query parameters.
+
+    kwargs
+        Other keyword arguments are passed to `pandas.read_sql`.
 
     Returns
     -------
@@ -345,6 +361,9 @@ def fetch(
 
     # create engine
     if engine is None:
+        if drivername is None:
+            msg = "either 'engine' or 'drivername' must be specified"
+            raise ValueError(msg)
         engine = create_engine(
             drivername=drivername,
             username=username,
@@ -381,7 +400,6 @@ def fetch(
         for col in types[types == "unicode"].index:
             dataframe[col] = dataframe[col].astype(str)
 
-    # return Table
     return Table.from_pandas(
         dataframe,
         index=index,

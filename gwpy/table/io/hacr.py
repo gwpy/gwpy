@@ -37,7 +37,10 @@ from functools import (
     cache,
     partial,
 )
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 from astropy.table import (
     Column,
@@ -56,8 +59,13 @@ from . import sql as io_sql
 from .utils import dynamic_columns
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-    from typing import Any
+    from collections.abc import (
+        Callable,
+        Iterable,
+        Iterator,
+        Mapping,
+        Sequence,
+    )
 
     import sqlalchemy
 
@@ -77,7 +85,7 @@ HACR_DATABASE_QUERY = {
 
 # -- dynamic columns -----------------
 
-def gpstime(table, name="gpstime"):
+def gpstime(table: Table, name: str = "gpstime") -> Column:
     """Combine the ``gps_start`` and ``gps_offset`` columns."""
     return Column(
         table["gps_start"][:] + table["gps_offset"][:],
@@ -85,12 +93,12 @@ def gpstime(table, name="gpstime"):
     )
 
 
-DYNAMIC_COLUMN_FUNC = {
+DYNAMIC_COLUMN_FUNC: dict[str, Callable] = {
     "gps": partial(gpstime, name="gps"),
     "gpstime": gpstime,
     "time": gpstime,
 }
-DYNAMIC_COLUMN_INPUT = {
+DYNAMIC_COLUMN_INPUT: dict[str, set[str]] = {
     "gps": (_gps_columns := {"gps_start", "gps_offset"}),
     "gpstime": _gps_columns,
     "time": _gps_columns,
@@ -163,11 +171,17 @@ def get_hacr_channels(
         The name of the database to query.
         Required if ``engine`` is not given.
 
+    engine : `sqlalchemy.engine.Engine`, optional
+        An existing database connection engine.
+        If not given, one will be created using the other connection parameters.
+
     kwargs
         All other keyword arguments are passed to `create_engine`.
 
     Returns
     -------
+    channels : `list` of `str`
+        The list of channel names present in the database.
 
     See Also
     --------
@@ -193,7 +207,7 @@ def get_hacr_channels(
                 where=["monitorName == 'chacr'"],
             ),
         )
-        return list(set(r.channel for r in result))
+        return list({r.channel for r in result})
 
 
 def get_hacr_triggers(
@@ -201,11 +215,11 @@ def get_hacr_triggers(
     channel: str | None = None,
     start: GpsLike | None = None,
     end: GpsLike | None = None,
-    columns: list[str] | None = None,
+    columns: Iterable[str] | None = None,
     tablename: str = "mhacr",
     process_id: int | None = None,
     monitor: str = "chacr",
-    where: WhereExpression | list[WhereExpression] = None,
+    where: WhereExpression | Iterable[WhereExpression] = None,
     # connection options
     engine: sqlalchemy.Engine | None = None,
     drivername: str = "mysql+pymysql",
@@ -214,7 +228,7 @@ def get_hacr_triggers(
     host: str | None = HACR_DATABASE_SERVER,
     port: int | None = None,
     database: str | None = None,
-    query: str | dict[str, Any] | None = None,
+    query: Mapping[str, Sequence[str] | str] | None = None,
     **kwargs,
 ) -> Table:
     """Fetch a table of HACR triggers in the given interval.
@@ -253,6 +267,37 @@ def get_hacr_triggers(
         the query.
         Default is `None`.
 
+    engine : `sqlalchemy.engine.Engine`, optional
+        An existing database connection engine.
+        If not given, one will be created using the other connection parameters.
+
+    drivername : `str`, optional
+        The database backend and driver name.
+        Default is ``"mysql+pymysql"``.
+
+    username : `str`, optional
+        The username for authentication to the database.
+        Defaults to the value of the ``HACR_DATABASE_USER`` environment variable.
+
+    password : `str`, optional
+        The password for authentication to the database.
+        Defaults to the value of the ``HACR_DATABASE_PASSWD`` environment variable.
+
+    host : `str`, optional
+        The hostname of the database server.
+        Defaults to the value of the ``HACR_DATABASE_SERVER`` environment variable.
+
+    port : `int`, optional
+        The port number of the database server.
+        Default is the default port for the given ``drivername``.
+
+    database : `str`, optional
+        The name of the database to query.
+        Required if ``engine`` is not given.
+
+    query : `dict`, optional
+        Additional query parameters to use in the database connection.
+
     kwargs
         All other keyword arguments are passed to `pandas.read_sql`.
 
@@ -289,11 +334,11 @@ def get_hacr_triggers(
     dynamic_cols: set[str] | None = None
 
     # loop over databases
-    tables = []
-    for database in databases:
+    tables: list[EventTable] = []
+    for db in databases:
         if engine is None:
             engine = create_engine(
-                database,  # type: ignore[arg-type]
+                db,  # type: ignore[arg-type]
                 drivername=drivername,
                 username=username,
                 password=password,
@@ -340,7 +385,7 @@ def get_hacr_triggers(
     elif valid_columns is not None:  # create empty table
         names, dtypes = zip(*(
             (name, valid_columns.get(name))
-            for name in read_cols
+            for name in read_cols or []
         ), strict=True)
         table = Table(
             names=names,
@@ -352,6 +397,10 @@ def get_hacr_triggers(
 
     # add dynamic columns
     if dynamic_cols:
+        # if dynamic cols is populated,
+        # then columns and read_cols _must_ also be populated
+        columns = cast("Iterable[str]", columns)
+        read_cols = cast("set[str]", read_cols)
         # generate requested derived columns on-the-fly
         for col_name in dynamic_cols:
             col_data = DYNAMIC_COLUMN_FUNC[col_name](table)
@@ -365,22 +414,16 @@ def get_hacr_triggers(
 
 @cache
 def _process_id_query(
-    tablename,
-    monitor,
-    channel=None,
-    start=None,
-    end=None,
-):
+    tablename: str,
+    monitor: str,
+    channel: str | None = None,
+) -> sqlalchemy.Select:
     """Construct the ``SELECT`` query to get valid HACR ``process_id``s."""
     where = [
         f"monitorName == '{monitor}'",
     ]
     if channel is not None:
         where.append(f"channel == '{channel}'")
-    if start is not None:
-        where.append(f"gps_start >= {int(start)}")
-    if end is not None:
-        where.append(f"gps_stop <= {int(end)}")
     return io_sql.format_query(
         tablename,
         columns=[
@@ -393,18 +436,18 @@ def _process_id_query(
 
 
 def _query_database(
-    engine,
-    start=None,
-    end=None,
-    channel=None,
-    process_id=None,
-    columns=None,
-    tablename="mhacr",
-    monitor="chacr",
-    process_tablename="job",
-    where=None,
+    engine: sqlalchemy.Engine,
+    start: GpsLike | None,
+    end: GpsLike | None,
+    channel: str | None,
+    process_id: int | None,
+    columns: Iterable[str] | None,
+    tablename: str,
+    monitor: str,
+    process_tablename: str,
+    where: Iterable[WhereExpression],
     **kwargs,
-):
+) -> Iterator[EventTable]:
     """Query a database for HACR triggers.
 
     Yields `astropy.table.Table` instances for each ``process_id``.
@@ -452,8 +495,8 @@ def _query_hacr(
     end: GpsLike | None,
     process_id: int | None,
     tablename: str,
-    columns: list[str] | None,
-    where: list[WhereExpression],
+    columns: Iterable[str] | None,
+    where: Iterable[WhereExpression],
     **kwargs,
 ) -> EventTable:
     """Query for HACR triggers matching the given process_id.
@@ -499,7 +542,7 @@ def create_engine(
     host: str | None = HACR_DATABASE_SERVER,
     username: str | None = HACR_DATABASE_USER,
     password: str | None = None,
-    query: dict[str, Any] | None = None,
+    query: Mapping[str, Sequence[str] | str] | None = None,
     **kwargs,
 ) -> sqlalchemy.Engine:
     """Create an `sqlalchemy.engine.Engine` for HACR.

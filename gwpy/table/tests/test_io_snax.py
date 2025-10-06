@@ -17,6 +17,8 @@
 
 """Tests for :mod:`gwpy.table.io.omega`."""
 
+from contextlib import nullcontext
+
 import h5py
 import pytest
 
@@ -30,6 +32,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 @pytest.fixture
 def snaxtable():
+    """Create a table of SNAX-like data."""
     snax = random_table(
         names=[
             "time",
@@ -44,6 +47,7 @@ def snaxtable():
 
 @pytest.fixture
 def snaxfile(snaxtable, tmp_path):
+    """Create a temporary file with example SNAX HDF5 data."""
     tmp = tmp_path / "SNAX-0-0.h5"
     channel = snaxtable[0]["channel"]
     tmptable = snaxtable.copy()
@@ -61,9 +65,7 @@ def test_read_snax(snaxtable, snaxfile):
 
 
 def test_read_snax_channel(snaxtable, snaxfile):
-    """Check that we can read a SNAX-format HDF5 file specifying
-    the channel.
-    """
+    """Check that we can read a SNAX-format HDF5 file specifying the channel."""
     table = EventTable.read(
         snaxfile,
         format="hdf5.snax",
@@ -73,9 +75,7 @@ def test_read_snax_channel(snaxtable, snaxfile):
 
 
 def test_read_snax_columns_where(snaxtable, snaxfile):
-    """Check that the ``where`` and ``columns`` kwargs work when
-    reading from a SNAX-format file.
-    """
+    """Check that ``where`` and ``columns`` work when reading from a SNAX file."""
     # test with where and columns
     table = EventTable.read(
         snaxfile,
@@ -91,9 +91,7 @@ def test_read_snax_columns_where(snaxtable, snaxfile):
 
 
 def test_read_snax_compact(snaxtable, snaxfile):
-    """Check that the ``columns`` and ``where`` kwargs work when
-    reading from a SNAX-format file.
-    """
+    """Check that ``columns`` and ``where`` work when reading from a SNAX file."""
     # test compact representation of channel column
     t2 = EventTable.read(snaxfile, compact=True, format="hdf5.snax")
 
@@ -113,17 +111,34 @@ def test_read_snax_compact(snaxtable, snaxfile):
         assert_table_equal(group, tables[channel])
 
 
-def test_read_snax_errors(snaxtable, snaxfile):
+_missing_msg = "requested channels not found in SNAX file: 'X1:MISSING'"
+
+@pytest.mark.parametrize(("on_missing", "ctx"), [
+    pytest.param(
+        "error",
+        pytest.raises(ValueError, match=_missing_msg),
+        id="error",
+    ),
+    pytest.param(
+        "warn",
+        pytest.warns(UserWarning, match=_missing_msg),
+        id="warn",
+    ),
+    pytest.param(
+        "ignore",
+        nullcontext(),
+        id="ignore",
+    ),
+])
+def test_read_snax_errors(on_missing, ctx, snaxtable, snaxfile):
     """Check error handling when reading from a SNAX-format file."""
     missing = ["X1:SNAX", "X1:MISSING"]
-    with pytest.raises(ValueError):
-        EventTable.read(snaxfile, channels=missing, format="hdf5.snax")
-
-    with pytest.warns(UserWarning):
+    with ctx:
         table = EventTable.read(
             snaxfile,
             channels=missing,
             format="hdf5.snax",
-            on_missing="warn",
+            on_missing=on_missing,
         )
-    assert_table_equal(snaxtable, table)
+    if on_missing != "error":
+        assert_table_equal(snaxtable, table)

@@ -155,7 +155,7 @@ def table_to_gwf(
     filename: str | Path,
     name: str,
     **kwargs,
-):
+) -> None:
     """Create a new `~frameCPP.FrameH` and fill it with data.
 
     Parameters
@@ -206,7 +206,7 @@ def table_to_gwf(
     # append row by row
     names = table.dtype.names
     for row in table:
-        rowd = dict((n, row[n]) for n in names)
+        rowd = {n: row[n] for n in names}
         gps = LIGOTimeGPS(rowd.pop("time", 0))
         frame.AppendFrEvent(FrEvent(
             str(name),

@@ -38,10 +38,11 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def decorate_registered_reader(
     name: str,
     data_class: type[Table] = EventTable,
+    *,
     columns: bool = True,
     where: bool = True,
     registry: UnifiedIORegistry | None = None,
-):
+) -> None:
     """Wrap an existing registered reader to use GWpy's input decorators.
 
     Parameters
@@ -57,6 +58,10 @@ def decorate_registered_reader(
 
     where : `bool`
         Use the `read_with_where` decorator.
+
+    registry : `astropy.io.registry.UnifiedIORegistry`, optional
+        The registry to modify.
+        If `None` (default) then use the registry for `data_class`.
     """
     if registry is None:
         registry = data_class.read.registry
@@ -73,9 +78,8 @@ def decorate_registered_reader(
     )
 
 
-def wrap_unified_io_readers(klass: type[Table]):
-    """Decorate all of the registered readers for ``klass`` to support the
-    ``columns`` and ``where`` keywords.
+def wrap_unified_io_readers(klass: type[Table]) -> None:
+    """Decorate registered readers of ``klass`` to support ``columns`` and ``where``.
 
     See Also
     --------
@@ -85,12 +89,16 @@ def wrap_unified_io_readers(klass: type[Table]):
     read_with_where
         For details of the decorator adding ``where`` keyword support.
     """
+    registry = klass.read.registry
     # wrap each reader to support columns and where keywords
-    for row in klass.read.registry.get_formats(
+    for row in registry.get_formats(
         data_class=klass,
         readwrite="Read",
     ):
         decorate_registered_reader(
             row["Format"],
             data_class=klass,
+            columns=True,
+            where=True,
+            registry=registry,
         )
