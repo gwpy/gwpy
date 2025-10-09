@@ -67,7 +67,10 @@ def get_default_level() -> int:
         return logging.NOTSET
     if level.isdigit():
         return int(level)
-    levels = logging.getLevelNamesMapping()
+    try:
+        levels = logging.getLevelNamesMapping()
+    except AttributeError:  # python < 3.10
+        levels = logging._nameToLevel
     return levels[level]
 
 

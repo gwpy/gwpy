@@ -38,18 +38,18 @@ gps = event_gps("GW150914")
 
 # %%
 # GWpy's `TimeSeries` class provides an interface to the public |GWOSC|
-# data in the :meth:`~TimeSeries.fetch_open_data` method; to use it we
+# data in the :meth:`~TimeSeries.get` method; to use it we
 # need to first import the `TimeSeries` object:
 
 from gwpy.timeseries import TimeSeries
 
 # %%
-# then call the :meth:`~TimeSeries.fetch_open_data` method, passing it the
+# then call the :meth:`~TimeSeries.get` method, passing it the
 # prefix for the interferometer we want (`'L1'` here for LIGO-Livingston),
 # and the GPS start and stop times of our query (based around the GPS time
 # for GW150914):
 
-data = TimeSeries.fetch_open_data("L1", gps-5, gps+5)
+data = TimeSeries.get("L1", gps-5, gps+5)
 
 # %%
 # and then we can make a plot:

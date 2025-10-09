@@ -24,7 +24,7 @@ to the standard methods available in `~matplotlib.pyplot`:
    :include-source:
 
    >>> from gwpy.timeseries import TimeSeries
-   >>> data = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
+   >>> data = TimeSeries.get('L1', 1126259446, 1126259478)
    >>> from matplotlib import pyplot as plt
    >>> plt.plot(data)
    >>> plt.show()
@@ -41,7 +41,7 @@ to those data:
    :include-source:
 
    >>> from gwpy.timeseries import TimeSeries
-   >>> data = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
+   >>> data = TimeSeries.get('L1', 1126259446, 1126259478)
    >>> plot = data.plot()
    >>> plot.show()
 
@@ -53,7 +53,7 @@ and to draw the element itself, e.g:
    :include-source:
 
    >>> from gwpy.timeseries import TimeSeries
-   >>> data = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
+   >>> data = TimeSeries.get('L1', 1126259446, 1126259478)
    >>> plot = data.plot(figsize=(8, 4.8), ylabel='Strain',
    ...                  color='gwpy:ligo-livingston')
    >>> plot.show()
@@ -73,8 +73,8 @@ By default, a flat set of objects are shown on the same axes:
    :context: reset
 
    >>> from gwpy.timeseries import TimeSeries
-   >>> hdata = TimeSeries.fetch_open_data('H1', 1126259446, 1126259478)
-   >>> ldata = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
+   >>> hdata = TimeSeries.get('H1', 1126259446, 1126259478)
+   >>> ldata = TimeSeries.get('L1', 1126259446, 1126259478)
    >>> from gwpy.plot import Plot
    >>> plot = Plot(hdata, ldata, figsize=(12, 4.8))
    >>> plot.show()

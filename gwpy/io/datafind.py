@@ -41,6 +41,7 @@ import logging
 import os
 import re
 from collections import defaultdict
+from contextlib import nullcontext
 from functools import (
     partial,
     wraps,
@@ -49,6 +50,7 @@ from math import ceil
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
+    cast,
     overload,
 )
 from unittest import mock
@@ -90,6 +92,8 @@ if TYPE_CHECKING:
 
     P = ParamSpec("P")
     T = TypeVar("T")
+
+    ChannelLike = TypeVar("ChannelLike", bound=str | Channel)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -275,14 +279,14 @@ def _find_gaps(
 
 
 def _error_missing_channels(
-    required: Iterable[str],
-    found: Iterable[str],
+    required: Iterable[ChannelLike],
+    found: Iterable[ChannelLike],
     gpstime: SupportsFloat | None,
     *,
     allow_tape: bool,
 ) -> None:
     """Raise an exception if required channels are not found."""
-    missing = set(required) - set(found)
+    missing = set(map(str, required)) - set(map(str, found))
 
     if not missing:  # success
         return
@@ -300,7 +304,9 @@ def _error_missing_channels(
     raise ValueError(msg)
 
 
-def _rank_types(match: Mapping[str, list[tuple[str, str, float]]]) -> None:
+def _rank_types(
+    match: Mapping[ChannelLike, list[tuple[str, str, float]]],
+) -> None:
     """Rank and sort the matched frametypes according to some criteria.
 
     Parameters
@@ -367,7 +373,7 @@ def find_frametype(
 # multiple channels, return_all=False
 @overload
 def find_frametype(
-    channel: Iterable[str | Channel],
+    channel: Iterable[ChannelLike],
     gpstime: GpsLike | None = None,
     *,
     frametype_match: str | re.Pattern | None = None,
@@ -378,12 +384,12 @@ def find_frametype(
     allow_tape: bool = False,
     on_gaps: Literal["error", "ignore", "warn"] = "error",
     **gwdatafind_kw,
-) -> dict[str, str]: ...
+) -> dict[ChannelLike, str]: ...
 
 # multiple channels, return_all=True
 @overload
 def find_frametype(
-    channel: Iterable[str | Channel],
+    channel: Iterable[ChannelLike],
     gpstime: GpsLike | None = None,
     *,
     frametype_match: str | re.Pattern | None = None,
@@ -394,12 +400,12 @@ def find_frametype(
     allow_tape: bool = False,
     on_gaps: Literal["error", "ignore", "warn"] = "error",
     **gwdatafind_kw,
-) -> dict[str, list[str]]: ...
+) -> dict[ChannelLike, list[str]]: ...
 
 # multiple channels, return_all not given
 @overload
 def find_frametype(
-    channel: Iterable[str | Channel],
+    channel: Iterable[ChannelLike],
     gpstime: GpsLike | None = None,
     *,
     frametype_match: str | re.Pattern | None = None,
@@ -409,10 +415,10 @@ def find_frametype(
     allow_tape: bool = False,
     on_gaps: Literal["error", "ignore", "warn"] = "error",
     **gwdatafind_kw,
-) -> dict[str, list[str]]: ...
+) -> dict[ChannelLike, list[str]]: ...
 
 def find_frametype(
-    channel: str | Channel | Iterable[str | Channel],
+    channel: str | Channel | Iterable[ChannelLike],
     gpstime: GpsLike | None = None,
     *,
     frametype_match: str | re.Pattern | None = None,
@@ -420,9 +426,10 @@ def find_frametype(
     ext: str = "gwf",
     return_all: bool = False,
     allow_tape: bool = False,
+    cache: bool | None = None,
     on_gaps: Literal["error", "ignore", "warn"] = "error",
     **gwdatafind_kw,
-) -> str | list[str] | dict[str, str] | dict[str, list[str]]:
+) -> str | list[str] | dict[ChannelLike, str] | dict[ChannelLike, list[str]]:
     """Find the frametype(s) that hold data for a given channel.
 
     Parameters
@@ -455,6 +462,11 @@ def find_frametype(
     allow_tape : `bool`, optional
         If `False` (default) do not test types whose frame files are
         stored on tape (not on spinning disk).
+
+    cache : `bool`, `None`, optional
+        Whether to cache the contents of remote URLs.
+        Default (`None`) is to check the ``GWPY_CACHE`` environment variable.
+        See :ref:`gwpy-env-variables` for details.
 
     on_gaps : `str`, optional
         Action to take when the requested all or some of the GPS interval
@@ -529,7 +541,7 @@ def find_frametype(
     # create set() of GWF channel names, and dict map back to user names
     #    this allows users to use nds-style names in this query, e.g.
     #    'X1:TEST.mean,m-trend', and still get results
-    chandict: dict[str, str] = {c: str(Channel(c).name) for c in channels}
+    chandict: dict[ChannelLike, str] = {c: str(Channel(c).name) for c in channels}
     names = {val: key for key, val in chandict.items()}
 
     # format GPS time(s)
@@ -547,61 +559,73 @@ def find_frametype(
 
     # -- go
 
-    match: dict[str, list[tuple[str, str, float]]] = defaultdict(list)
+    match: dict[ChannelLike, list[tuple[str, str, float]]] = defaultdict(list)
     searched = set()
 
-    for ifo, trend in _parse_ifos_and_trends(channels):
-        logger.debug("Finding types for %s", ifo)
+    if sess := gwdatafind_kw.pop("session", None):
+        ctx = nullcontext(sess)
+    elif _gwdatafind_module(**gwdatafind_kw) is gwdatafind:
+        ctx = gwdatafind.Session()
+    else:
+        ctx = nullcontext()
 
-        # find all types (prioritising trends if we need to)
-        types = find_types(
-            ifo,
-            match=frametype_match,
-            trend=trend,
-            ext=ext,
-            **gwdatafind_kw,
-        )
+    with ctx as sess:
+        if sess:
+            gwdatafind_kw["session"] = sess
 
-        logger.debug("Found %s types", len(types))
+        for ifo, trend in _parse_ifos_and_trends(channels):
+            logger.debug("Finding types for %s", ifo)
 
-        # loop over types testing each in turn
-        for ftype in types:
-
-            # if we've already search this type for this IFO,
-            # don't do it again
-            if (ifo, ftype) in searched:
-                continue
-
-            thismatch = _inspect_ftype(
-                list(names),
+            # find all types (prioritising trends if we need to)
+            types = find_types(
                 ifo,
-                ftype,
-                gpstime,
-                gpssegment,
-                on_gaps,
-                allow_tape=allow_tape,
-                urltype=urltype,
+                match=frametype_match,
+                trend=trend,
                 ext=ext,
                 **gwdatafind_kw,
             )
 
-            if thismatch is None:  # failed to read
-                continue
+            logger.debug("Found %s types", len(types))
 
-            for name, info in thismatch.items():
-                n = names[name]
-                match[n].append(info)
+            # loop over types testing each in turn
+            for ftype in types:
 
-                # if only matching once, don't search other types
-                # for this channel
-                if not return_all:
-                    names.pop(n)
+                # if we've already search this type for this IFO,
+                # don't do it again
+                if (ifo, ftype) in searched:
+                    continue
 
-            # record this type as having been searched
-            searched.add((ifo, ftype))
+                thismatch = _inspect_ftype(
+                    list(names),
+                    ifo,
+                    ftype,
+                    gpstime,
+                    gpssegment,
+                    on_gaps,
+                    allow_tape=allow_tape,
+                    urltype=urltype,
+                    ext=ext,
+                    cache=cache,
+                    **gwdatafind_kw,
+                )
 
-            if not names:  # if all channels matched, stop
-                break
+                if thismatch is None:  # failed to read
+                    continue
+
+                for name, info in thismatch.items():
+                    n = names[name]
+                    match[n].append(info)
+
+                    # if only matching once, don't search other types
+                    # for this channel
+                    if not return_all:
+                        names.pop(name)
+
+                # record this type as having been searched
+                searched.add((ifo, ftype))
+
+                if not names:  # if all channels matched, stop
+                    break
 
     # raise exception if one or more channels were not found
     _error_missing_channels(
@@ -615,7 +639,7 @@ def find_frametype(
     _rank_types(match)
 
     # and format as a dict for each channel
-    results: dict[str, list[str]] = {
+    results: dict[ChannelLike, list[str]] = {
         key: list(next(zip(*match[key], strict=True)))
         for key in match
     }
@@ -631,7 +655,8 @@ def find_frametype(
         return {key: val[0] for key, val in results.items()}
 
     # single channel, return_all=True
-    single = results[str(channel)]
+    channel = cast("ChannelLike", channel)
+    single = results[channel]
     if return_all:
         return single
 
@@ -648,6 +673,7 @@ def _inspect_ftype(
     on_gaps: Literal["error", "ignore", "warn"],
     *,
     allow_tape: bool = False,
+    cache: bool | None = None,
     **requests_kw,
 ) -> dict[str, tuple[str, str, float]] | None:
     """Inspect one dataset (frametype) for matches to the required ``names``.
@@ -672,7 +698,7 @@ def _inspect_ftype(
     # download the file so we can inspect it
     logger.debug("Using URL '%s'", path)
     try:
-        path = download_file(path)
+        path = download_file(path, cache=cache)
     except NETWORK_ERROR as exc:  # failed to download the file
         logger.debug(
             "Failed to download file for %s-%s: %s",
@@ -745,24 +771,24 @@ def find_best_frametype(
 
 @overload
 def find_best_frametype(
-    channel: Iterable[str | Channel],
+    channel: Iterable[ChannelLike],
     start: GpsLike,
     end: GpsLike,
     *,
     allow_tape: bool = True,
     **kwargs,
-) -> dict[str, str]:
+) -> dict[ChannelLike, str]:
     ...
 
 
 def find_best_frametype(
-    channel: str | Channel | Iterable[str | Channel],
+    channel: str | Channel | Iterable[ChannelLike],
     start: GpsLike,
     end: GpsLike,
     *,
     allow_tape: bool = True,
     **kwargs,
-) -> str | dict[str, str]:
+) -> str | dict[ChannelLike, str]:
     """Intelligently select the best frametype from which to read this channel.
 
     Parameters

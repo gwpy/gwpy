@@ -26,6 +26,10 @@ from __future__ import annotations
 
 import contextlib
 import inspect
+import logging
+import os
+import pydoc
+import re
 import warnings
 from abc import (
     ABC,
@@ -57,11 +61,17 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import (
+        Callable,
+        Iterable,
+        Sequence,
+    )
     from contextlib import AbstractContextManager
     from typing import (
+        Any,
         BinaryIO,
         Literal,
+        Never,
     )
 
     from .utils import (
@@ -74,6 +84,15 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+
+class GetExceptionGroup(ExceptionGroup):
+    """Exception group raised by ``Klass.get()`` when all sources fail.
+
+    This is a subclass of `ExceptionGroup` that can be used to identify
+    exceptions raised specifically by the ``Klass.get()`` class when all
+    sources fail to get data.
+    """
 
 
 # -- Identify utilities --------------
@@ -436,6 +455,369 @@ class UnifiedWrite(astropy_registry.UnifiedReadWrite, Generic[T]):
         """Execute ``instance.write()``."""
         instance = self._instance
         return self.registry.write(instance, *args, **kwargs)
+
+
+# -- Fetch ---------------------------
+# custom registry to support Klass.fetch
+
+class UnifiedFetchRegistry(astropy_registry.UnifiedInputRegistry):
+    """`UnifiedInputRegistry` hacked to support a `.fetch()` method.
+
+    Fetch is a read-like operation that does not take a file or file-like
+    object as input, but instead takes other arguments to fetch data from
+    a single source, e.g. a database or web API.
+    """
+
+    name: Literal["read", "fetch", "get"] = "fetch"
+
+    def __init__(self) -> None:
+        """Initialise a new `UnifiedFetchRegistry` instance."""
+        super().__init__()
+        self._registries[self.name] = self._registries.pop("read")
+        self._registries_order = (self.name, "identify")
+
+    def _update__doc__(self, data_class: type, readwrite: str) -> None:
+        """Update the docstring for ``data_class.<readwrite>()`` method."""
+        if readwrite == "read":
+            readwrite = self.name
+        super()._update__doc__(data_class, readwrite)
+
+        # replace the word 'format' with 'source' in the docstring
+        class_readwrite_func = getattr(data_class, readwrite)
+        doc = class_readwrite_func.__doc__
+        if doc is None:
+            return
+        for search, replace in [
+            # Leader for the sources table
+            ("built-in formats", "built-in sources"),
+            # Column heading in the sources table
+            (r"\n(\s*)?Format", r"\n\1Source"),
+        ]:
+            doc = re.sub(search, replace, doc)
+        class_readwrite_func.__class__.__doc__ = doc
+
+    def _get_valid_format(
+        self,
+        mode: Literal["read", "fetch", "get"],
+        cls: type,
+        path: FileSystemPath | None,
+        fileobj: FileLike | None,
+        args: tuple,
+        kwargs: dict,
+    ) -> str:
+        """Return the first valid format that can be used."""
+        if mode.lower() == "read":
+            mode = self.name
+        return super()._get_valid_format(mode, cls, path, fileobj, args, kwargs)
+
+
+fetch_registry = UnifiedFetchRegistry()
+
+
+class UnifiedFetch(UnifiedRead[T], Generic[T]):
+    """Base ``Class.fetch()`` implementation."""
+
+    method: Literal["fetch", "get"] = "fetch"
+
+    def merge(self, *args, **kwargs) -> Never:
+        """Fetch does not support merging."""
+        msg = f"{self._cls.__name__}.{self.method} does not support merging"
+        raise NotImplementedError(msg)
+
+    def __init__(
+        self,
+        instance: T,
+        cls: type[T],
+        registry: UnifiedFetchRegistry = fetch_registry,
+    ) -> None:
+        """Initialise a new `UnifiedFetch` instance."""
+        super().__init__(
+            instance,
+            cls,
+            registry=registry,
+        )
+
+    def __call__(  # type: ignore[override]
+        self,
+        *args,  # noqa: ANN002
+        source: str | None = None,
+        **kwargs,
+    ) -> T:
+        """Execute ``cls.fetch()``."""
+        # 'read' using the registered format.
+        return self.registry.read(
+            self._cls,
+            *args,
+            format=source,
+            **kwargs,
+        )
+
+    def help(
+        self,
+        source: str | None = None,
+        out: FileLike | None = None,
+    ) -> None:
+        """Output help documentation for the specified `UnifiedFetch` ``source``.
+
+        By default the help output is printed to the console via ``pydoc.pager``.
+        Instead one can supplied a file handle object as ``out`` and the output
+        will be written to that handle.
+
+        Parameters
+        ----------
+        source : str
+            `UnifiedFetch` source (format) name, e.g. 'sql' or 'gwosc'.
+
+        out : None or file-like
+            Output destination (default is stdout via a pager)
+        """
+        cls = self._cls
+
+        # Get reader or writer function associated with the registry
+        get_func = self._registry.get_reader
+        try:
+            if source:
+                read_write_func = get_func(source, cls)
+        except astropy_registry.IORegistryError as err:
+            reader_doc = "ERROR: " + str(err)
+        else:
+            if source:
+                # Format-specific
+                header = (
+                    f"{cls.__name__}.{self.method}(source='{source}') documentation\n"
+                )
+                doc = read_write_func.__doc__
+            else:
+                # General docs
+                header = f"{cls.__name__}.{self.method} general documentation\n"
+                doc = getattr(cls, self.method).__doc__
+
+            reader_doc = re.sub(".", "=", header)
+            reader_doc += header
+            reader_doc += re.sub(".", "=", header)
+            reader_doc += os.linesep
+            if doc is not None:
+                reader_doc += inspect.cleandoc(doc)
+
+        if out is None:
+            pydoc.pager(reader_doc)
+        else:
+            out.write(reader_doc)
+
+
+# -- Get -----------------------------
+# custom registry to support Klass.get
+
+class UnifiedGetRegistry(UnifiedFetchRegistry):
+    """Unified I/O registry for providing a multi-source ``.get()`` method.
+
+    Each registered reader should work with the target class as normal.
+
+    Each registered identified should return an iterable (generator) of
+    keyword argument sets that should be tried, in order, to provide the
+    necessary data.
+
+    See `gwpy.timeseries.io.nds2` for a working example.
+    """
+
+    name = "get"
+    _identifiers: dict[tuple[str, type], Callable[..., Sequence[dict[str, Any]]]]
+
+    def identify_sources(
+        self,
+        source: str | Iterable[str | dict[str, Any]] | None,
+        data_class_required: type,
+        args: list[Any],
+        kwargs: dict,
+    ) -> list[tuple[str, dict[str, Any]]]:
+        """Identify all valid sources for the given arguments.
+
+        Unlike the standard registry `identify_format` method, this returns
+        a `list` of `dict`, each of which should be tried in turn with the
+        keyword arguments applied for each source.
+
+        This allows the `Klass.get` method to try multiple different sources
+        to get some data.
+        """
+        # format input
+        if isinstance(source, str):
+            source = [source]
+        sources: list[dict[str, Any]] = []
+        source_names: set[str] = set()
+        for src in source or []:
+            if isinstance(src, str):
+                src = {"source": src}  # noqa: PLW2901
+            if not isinstance(src, dict):
+                msg = "source must be a string or a dictionary of keyword arguments"
+                raise TypeError(msg)
+            try:
+                source_names.add(src["source"])
+            except KeyError as exc:
+                msg = "source dictionary must contain a 'source' key"
+                raise ValueError(msg) from exc
+            sources.append(src)
+
+        out: list[tuple[str, dict[str, Any]]] = []
+
+        def _match_source(
+            source: str | None = None,
+            **source_kw,
+        ) -> Iterable[tuple[str, Any]]:
+            """Return all matching sources for the given source name and keywords.
+
+            Each source identifier function returns a list of keyword argument dicts
+            that should be tried in order.
+            If the ``priority`` key is present in the dict, the results are
+            sorted by priority across all registered sources
+            (lowest first, default is 10).
+            """
+            match: list[tuple[str, dict[str, Any]]] = []
+            for data_source, data_class in self._identifiers:
+                # If the user specified a source, and it wasn't this one, skip it
+                if source is not None and data_source != source:
+                    continue
+                # Exclude identifiers for a parent class where the child class
+                # has its own registration _for this source type_.
+                if not self._is_best_match(
+                    data_class_required,
+                    data_class,
+                    filter(lambda klass: klass[0] == data_source, self._identifiers),
+                ):
+                    continue
+                if new := self._identifiers[(data_source, data_class)](
+                    self.name,
+                    *args,
+                    **kwargs,
+                    **source_kw,
+                ):
+                    match.extend((data_source, kw) for kw in new)
+            match.sort(key=lambda x: x[1].pop("priority", 10))  # sort by priority
+            return match
+
+        if not sources:
+            sources = [{"source": None}]
+
+        for source in sources:
+            out.extend(_match_source(**source))
+
+        return out
+
+
+get_registry = UnifiedGetRegistry()
+
+
+class UnifiedGet(UnifiedFetch, Generic[T]):
+    """Unified I/O ``.get()`` implementation.
+
+    This is similar to `UnifiedRead` or `UnifiedFetch` except that the getter
+    will iterate over multiple sources returned by the
+    `UnifiedGetRegistry.identify_sources` method, to retrieve the data any
+    way it can.
+    """
+
+    method = "get"
+
+    def __init__(
+        self,
+        instance: T,
+        cls: type[T],
+        registry: UnifiedGetRegistry = get_registry,
+        module: str | None = None,
+    ) -> None:
+        """Initialise a new `UnifiedFetch` instance."""
+        super().__init__(
+            instance,
+            cls,
+            registry=registry,
+        )
+        self.logger = logging.getLogger(module or cls.__module__)
+
+    def __call__(  # type: ignore[override]
+        self,
+        *args,
+        source: str | list[str | dict[str, Any]] | None = None,
+        **kwargs,
+    ) -> T:
+        """Execute ``cls.get()``."""
+        reg = self.registry
+        sources = reg.identify_sources(
+            source,
+            self._cls,
+            args,
+            kwargs,
+        )
+        nsources = len(sources)
+        if not nsources:
+            msg = "no valid sources found"
+            raise ValueError(msg)
+        self.logger.info("Found %d possible sources", nsources)
+
+        errors = []
+
+        # loop over each source
+        for i, (src, source_kw) in enumerate(sources, start=1):
+            self.logger.info("Attemping access with '%s' [%d/%d]", src, i, nsources)
+            self.logger.debug(
+                "Using options: %s",
+                {k: v for k, v in source_kw.items() if v is not None},
+            )
+            try:
+                return self._get(src, source_kw, *args, **kwargs)
+            except Exception as exc:
+                exc.add_note(f"Error getting data from {src} [{i}/{nsources}]")
+                errors.append(exc)
+                self.logger.debug(
+                    "Failed to get data with %s: %s: %s",
+                    src,
+                    type(exc).__name__,
+                    str(exc),
+                )
+
+        msg = "failed to get data from any source"
+        raise GetExceptionGroup(msg, errors)
+
+    def _get(
+        self,
+        source: str,
+        source_kw: dict[str, Any],
+        *args,
+        **kwargs,
+    ) -> T:
+        """Try and get data from a single source."""
+        getter = self.registry.get_reader(source, self._cls)
+
+        # parse arguments
+        sig = inspect.signature(getter)
+
+        # Check if getter accepts **kwargs (VAR_KEYWORD parameter)
+        has_var_keyword = any(
+            p.kind == inspect.Parameter.VAR_KEYWORD
+            for p in sig.parameters.values()
+        )
+
+        if has_var_keyword:
+            # Pass all kwargs except framework parameters handled by __call__
+            framework_params = {"source"}
+            source_kw |= {
+                key: val for key, val in kwargs.items()
+                if key not in framework_params and val is not None
+            }
+        else:
+            # Only pass kwargs that match explicitly named parameters
+            params = [
+                p.name
+                for p in sig.parameters.values()
+                if p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)
+            ]
+            source_kw |= {
+                key: val for key, val in kwargs.items()
+                if key in params and val is not None
+            }
+
+        return getter(
+            *args,
+            **source_kw,
+        )
 
 
 # -- utilities -----------------------

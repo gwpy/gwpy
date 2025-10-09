@@ -56,9 +56,9 @@ For example:
 
     from gwpy.timeseries import TimeSeries
     from gwpy.plot import Plot
-    h1 = TimeSeries.fetch_open_data('H1', 1126259457, 1126259467)
+    h1 = TimeSeries.get('H1', 1126259457, 1126259467)
     h1b = h1.bandpass(50, 250).notch(60).notch(120)
-    l1 = TimeSeries.fetch_open_data('L1', 1126259457, 1126259467)
+    l1 = TimeSeries.get('L1', 1126259457, 1126259467)
     l1b = l1.bandpass(50, 250).notch(60).notch(120)
     plot = Plot(figsize=(12, 4.8))
     ax = plot.add_subplot(xscale='auto-gps')

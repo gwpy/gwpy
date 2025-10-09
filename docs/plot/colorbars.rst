@@ -48,7 +48,7 @@ specifying, ``norm='log'``:
    :include-source:
 
    from gwpy.timeseries import TimeSeries
-   data = TimeSeries.fetch_open_data('L1', 1187008866, 1187008898)
+   data = TimeSeries.get('L1', 1187008866, 1187008898)
    specgram = data.spectrogram2(fftlength=.5, overlap=.25,
                                 window='hann') ** (1/2.)
    plot = specgram.plot(yscale='log', ylim=(30, 1400))
@@ -68,7 +68,7 @@ Another example
 
    # load data
    from gwpy.timeseries import TimeSeries
-   raw = TimeSeries.fetch_open_data('L1', 1126259446, 1126259478)
+   raw = TimeSeries.get('L1', 1126259446, 1126259478)
 
    # calculate filtered timeseries, and Q-transform spectrogram
    data = raw.bandpass(50, 300).notch(60)

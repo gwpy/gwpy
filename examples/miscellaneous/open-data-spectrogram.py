@@ -86,7 +86,7 @@ print(abs(l1segs.active))
 from gwpy.timeseries import TimeSeries
 spectrograms = []
 for start, end in l1segs.active:
-    l1strain = TimeSeries.fetch_open_data(
+    l1strain = TimeSeries.get(
         "L1",
         start,
         end,

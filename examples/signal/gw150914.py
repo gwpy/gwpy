@@ -39,7 +39,7 @@ well as notch out fixed frequencies polluted by known artefacts.
 # First we download the raw strain data from the GWOSC public archive:
 
 from gwpy.timeseries import TimeSeries
-hdata = TimeSeries.fetch_open_data("H1", 1126259446, 1126259478)
+hdata = TimeSeries.get("H1", 1126259446, 1126259478)
 
 # %%
 # Data conditioning

@@ -39,7 +39,7 @@ using :func:`gwpy.astro.range_spectrogram`.
 # around the |GW170817|_ BNS merger:
 
 from gwpy.timeseries import TimeSeries
-l1 = TimeSeries.fetch_open_data("L1", 1187006834, 1187010930)
+l1 = TimeSeries.get("L1", 1187006834, 1187010930)
 
 # %%
 # Generate a range `Spectrogram`

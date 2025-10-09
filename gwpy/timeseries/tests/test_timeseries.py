@@ -21,7 +21,6 @@
 from __future__ import annotations
 
 import logging
-import os.path
 import sys
 from contextlib import nullcontext
 from itertools import (
@@ -50,10 +49,7 @@ from ...signal.window import planck
 from ...spectrogram import Spectrogram
 from ...table import EventTable
 from ...testing import mocks, utils
-from ...testing.errors import (
-    pytest_skip_cvmfs_read_error,
-    pytest_skip_flaky_network,
-)
+from ...testing.errors import pytest_skip_flaky_network
 from ...time import LIGOTimeGPS
 from ...types import Index
 from .. import StateTimeSeries, TimeSeries, TimeSeriesDict, TimeSeriesList
@@ -194,16 +190,16 @@ GWOSC_GW190814_INJ_BITS = GWOSC_GW150914_INJ_BITS
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def _gwosc_cvmfs(func):
-    """Decorate ``func`` with all necessary CVMFS-related decorators."""
+def _gwosc_pelican(func):
+    """Decorate ``func`` with all necessary GWOSC/Pelican-related decorators."""
     for dec in (
-        pytest.mark.cvmfs,
         pytest.mark.requires("lalframe"),
-        pytest.mark.skipif(
-            not os.path.isdir("/cvmfs/gwosc.osgstorage.org/"),
-            reason="GWOSC CVMFS repository not available",
+        pytest.mark.requires("requests_pelican"),
+        pytest_skip_flaky_network,
+        mock.patch.dict(
+            "os.environ",
+            {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
         ),
-        pytest_skip_cvmfs_read_error,
     ):
         func = dec(func)
     return func
@@ -717,9 +713,9 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
     @pytest_skip_flaky_network
     def test_fetch_open_data_error(self):
         """Test that TimeSeries.fetch_open_data propagates errors."""
-        with pytest.raises(
-            ValueError,
-            match="Cannot find a GWOSC dataset",
+        with pytest.RaisesGroup(
+            pytest.RaisesExc(ValueError, match="Cannot find a GWOSC dataset"),
+            match="failed to get data",
         ):
             self.TEST_CLASS.fetch_open_data(
                 GWOSC_GW150914_IFO,
@@ -819,37 +815,13 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         nds2_connection._buffers = []
 
         # check that we get the right error
-        with pytest.raises(
-            RuntimeError,
-            match="no data received",
+        with pytest.RaisesGroup(
+            pytest.RaisesExc(RuntimeError, match="no data received from nds.test.gwpy"),
+            match="failed to get data",
         ):
             self.TEST_CLASS.fetch("X1:test-missing", 0, 1, host="nds.gwpy")
 
-    @pytest.mark.requires("nds2")
-    @mock.patch(
-        "gwpy.io.nds2.host_resolution_order",
-        return_value=(["nds.example.com", 31200],),
-    )
-    def test_fetch_warning_message(self, mock_hro, caplog):
-        """Test that TimeSeries.fetch emits a useful warning on NDS2 issues."""
-        with pytest.raises(
-            RuntimeError,
-            match="Cannot find all relevant data",
-        ):
-            self.TEST_CLASS.fetch("X1:TEST", 0, 1)
-        assert (
-            "gwpy.timeseries.io.nds2",
-            logging.WARNING,
-            "[nds.example.com] Failed to fetch data for X1:TEST in interval [0, 1): "
-            "Failed to establish a connection[INFO: Invalid IP address]",
-        ) in caplog.record_tuples
-
-    @pytest_skip_flaky_network
-    @_gwosc_cvmfs
-    @mock.patch.dict(
-        "os.environ",
-        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
-    )
+    @_gwosc_pelican
     @pytest.mark.parametrize("kwargs", [
         pytest.param({"verbose": True}, id="default"),
         pytest.param({"observatory": GWOSC_GW150914_IFO[0]}, id="observatory"),
@@ -860,6 +832,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             GWOSC_GW150914_CHANNEL,
             *GWOSC_GW150914_SEGMENT,
             frametype=GWOSC_GW150914_FRAMETYPE,
+            urltype="osdf",
             **kwargs,
         )
         utils.assert_quantity_sub_equal(
@@ -868,20 +841,19 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             exclude=["name", "channel", "unit"],
         )
 
-    @pytest_skip_flaky_network
-    @mock.patch.dict(
-        "os.environ",
-        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
-    )
+    @_gwosc_pelican
     def test_find_datafind_httperror(self):
         """Test that HTTPErrors are presented in `find()`."""
-        with pytest.raises(HTTPError):
+        # Use an invalid observatory to trigger a 400 error from datafind
+        with pytest.raises(ExceptionGroup, match="failed to get data") as excinfo:
             self.TEST_CLASS.find(
                 GWOSC_GW150914_CHANNEL,
                 *GWOSC_GW150914_SEGMENT,
                 frametype=GWOSC_GW150914_FRAMETYPE,
                 observatory="X",
             )
+        # Check that the 400 error is part of the exception group
+        assert excinfo.group_contains(HTTPError, match="400 Client Error")
 
     @mock.patch.dict(
         "os.environ",
@@ -889,38 +861,38 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
     )
     def test_find_datafind_runtimeerror(self):
         """Test that empty datafind caches result in RuntimeErrors in `find()`."""
-        with pytest.raises(RuntimeError):
+        # Use a time where no data is available to trigger a RuntimeError
+        with pytest.raises(ExceptionGroup, match="failed to get data") as excinfo:
             self.TEST_CLASS.find(
                 GWOSC_GW150914_CHANNEL,
-                *GWOSC_GW150914_SEGMENT.shift(-1e8),  # no data available here!
+                *GWOSC_GW150914_SEGMENT.shift(-1e8),
                 frametype=GWOSC_GW150914_FRAMETYPE,
             )
+        # Check that the RuntimeError is part of the exception group
+        assert excinfo.group_contains(RuntimeError)
 
     def test_find_observatory_error(self):
         """Test that `find()` raises ValueError on inconsistent observatory."""
-        with pytest.raises(
-            ValueError,
-            match="Cannot parse list of IFOs from channel names",
-        ):
+        with pytest.raises(ExceptionGroup, match="failed to get data") as excinfo:
             self.TEST_CLASS.find(
                 "Test",
                 0,
                 1,
                 frametype="X1_TEST",
             )
+        assert excinfo.group_contains(
+            ValueError,
+            match="Cannot parse list of IFOs from channel names",
+        )
 
-    @pytest_skip_flaky_network
-    @_gwosc_cvmfs
-    @mock.patch.dict(
-        "os.environ",
-        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
-    )
+    @_gwosc_pelican
     def test_find_best_frametype_in_find(self, gw150914_16384):
         """Test that `TimeSeries.find()` best frametype selection works."""
         ts = self.TEST_CLASS.find(
             GWOSC_GW150914_CHANNEL,
             GWOSC_GW150914_SEGMENT.start,
             GWOSC_GW150914_SEGMENT.end,
+            urltype="osdf",
         )
         utils.assert_quantity_sub_equal(
             ts,
@@ -928,17 +900,12 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             exclude=["name", "channel", "unit"],
         )
 
-    @pytest_skip_flaky_network
-    @_gwosc_cvmfs
+    @_gwosc_pelican
     @mock.patch.dict(
         # force 'import nds2' to fail so that we are actually testing
         # the gwdatafind API or nothing
         "sys.modules",
         {"nds2": None},
-    )
-    @mock.patch.dict(
-        "os.environ",
-        {"GWDATAFIND_SERVER": GWOSC_DATAFIND_SERVER},
     )
     def test_get_datafind(self, gw150914_16384):
         """Test that `TimeSeries.get(..., source='datafind')` works."""
@@ -947,10 +914,11 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
                 GWOSC_GW150914_CHANNEL,
                 GWOSC_GW150914_SEGMENT.start,
                 GWOSC_GW150914_SEGMENT.end,
-                source="files",
+                source="gwdatafind",
                 frametype_match=r"V1\Z",
+                urltype="osdf",
             )
-        except (ImportError, RuntimeError) as e:  # pragma: no-cover
+        except* (ImportError, RuntimeError) as e:  # pragma: no-cover
             pytest.skip(str(e))
         utils.assert_quantity_sub_equal(
             ts,

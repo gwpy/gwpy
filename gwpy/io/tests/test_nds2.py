@@ -306,10 +306,11 @@ def test_auth_connect(connect):
         True,
     ),
 )
-def test_auth_connect_kinit(connect, kinit):
+def test_auth_connect_kinit(connect, kinit, caplog):
     """Test `gwpy.io.nds2.auth_connect` with a callout to `gwpy.io.kerberos.kinit`."""
-    with pytest.warns(io_nds2.NDSWarning):
+    with caplog.at_level("WARNING"):
         assert io_nds2.auth_connect("host", 0)
+    assert "attempting Kerberos kinit()" in caplog.text
     kinit.assert_called_with()
     assert connect.call_count == 2
     connect.assert_called_with("host", 0)

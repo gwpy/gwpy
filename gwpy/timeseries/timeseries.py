@@ -34,26 +34,6 @@ from astropy.units import Quantity
 from numpy import fft as npfft
 from scipy import signal
 
-if TYPE_CHECKING:
-    from typing import (
-        Literal,
-        Self,
-    )
-
-    from astropy.units.typing import QuantityLike
-    from numpy.typing import ArrayLike
-
-    from ..frequencyseries import FrequencySeries, SpectralVariance
-    from ..segments import Segment
-    from ..signal.filter_design import (
-        BAType,
-        FilterType,
-        ZpkType,
-    )
-    from ..signal.window import WindowLike
-    from ..spectrogram import Spectrogram
-    from ..table import EventTable
-
 from ..io.registry import UnifiedReadWriteMethod
 from ..segments import (
     DataQualityFlag,
@@ -71,8 +51,10 @@ from ..signal.window import (
     recommended_overlap,
 )
 from .connect import (
+    TimeSeriesDictGet,
     TimeSeriesDictRead,
     TimeSeriesDictWrite,
+    TimeSeriesGet,
     TimeSeriesRead,
     TimeSeriesWrite,
 )
@@ -82,6 +64,25 @@ from .core import (
     TimeSeriesBaseList,
     as_series_dict_class,
 )
+
+if TYPE_CHECKING:
+    from typing import (
+        Literal,
+        Self,
+    )
+
+    from astropy.units.typing import QuantityLike
+    from numpy.typing import ArrayLike
+
+    from ..frequencyseries import FrequencySeries, SpectralVariance
+    from ..signal.filter_design import (
+        BAType,
+        FilterType,
+        ZpkType,
+    )
+    from ..signal.window import WindowLike
+    from ..spectrogram import Spectrogram
+    from ..table import EventTable
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -180,6 +181,7 @@ class TimeSeries(TimeSeriesBase):
 
     read = UnifiedReadWriteMethod(TimeSeriesRead)
     write = UnifiedReadWriteMethod(TimeSeriesWrite)
+    get = UnifiedReadWriteMethod(TimeSeriesGet)
 
     # -- signal processing -----------
 
@@ -2959,7 +2961,7 @@ class TimeSeriesDict(TimeSeriesBaseDict):
 
     read = UnifiedReadWriteMethod(TimeSeriesDictRead)
     write = UnifiedReadWriteMethod(TimeSeriesDictWrite)
-
+    get = UnifiedReadWriteMethod(TimeSeriesDictGet)
 
 
 class TimeSeriesList(TimeSeriesBaseList):

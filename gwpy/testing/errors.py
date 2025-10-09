@@ -49,6 +49,7 @@ NETWORK_ERROR: tuple[type[Exception], ...] = (
     requests.exceptions.ReadTimeout,
     socket.timeout,
     SSLError,
+    TimeoutError,
     URLError,
 )
 
@@ -123,28 +124,3 @@ def pytest_skip_flaky_network(
     ):
         func = dec(func)
     return func
-
-
-# -- CVMFS ---------------------------
-
-def pytest_skip_cvmfs_read_error(
-    func: Callable[P, R],
-) -> Callable[P, R]:
-    """Execute `func` but skip if a CVMFS file fails to open.
-
-    This is most likely indicative of a broken CVMFS mount, which is not
-    GWpy's problem.
-    """
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        try:
-            return func(*args, **kwargs)
-        except RuntimeError as exc:  # pragma: no cover
-            # if function failed to read a CVMFS file, skip
-            msg = str(exc)
-            if msg.startswith("Unable to open file: /cvmfs"):
-                pytest.skip(msg)
-            # otherwise raise the original error
-            raise
-
-    return wrapper

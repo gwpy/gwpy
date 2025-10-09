@@ -38,8 +38,8 @@ a detector.
 # around the GW170817 BNS merger:
 
 from gwpy.timeseries import TimeSeries
-h1 = TimeSeries.fetch_open_data("H1", 1187006834, 1187010930)
-l1 = TimeSeries.fetch_open_data("L1", 1187006834, 1187010930)
+h1 = TimeSeries.get("H1", 1187006834, 1187010930)
+l1 = TimeSeries.get("L1", 1187006834, 1187010930)
 
 # %%
 # Range estimation

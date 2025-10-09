@@ -29,11 +29,13 @@ URLs, via a hand-off to the function of the same name in `gwpy.io.pelican`.
 
 from __future__ import annotations
 
+import logging
 from pathlib import PureWindowsPath
 from typing import (
     TYPE_CHECKING,
     overload,
 )
+from unittest import mock
 
 from astropy.utils import data as astropy_data
 from urllib3.util import parse_url
@@ -50,6 +52,34 @@ if TYPE_CHECKING:
         TextIO,
     )
 
+log = logging.getLogger(__name__)
+
+
+# -- Patch astropy to log downloads
+
+_download_file_from_source = astropy_data._download_file_from_source
+
+def _logging_download_file_from_source(url: str, *args, **kwargs) -> str:
+    """Patch for astropy's _download_file_from_source to log the URL.
+
+    This is helpful for debugging downloads with multiple sources or
+    redirects.
+    """
+    log.debug("Downloading file from %s", url)
+    out = _download_file_from_source(url, *args, **kwargs)
+    log.debug("Downloaded file from %s to %s", url, out)
+    return out
+
+
+def _mock_download_file_from_source() -> AbstractContextManager:
+    """Context manager to mock astropy's internal download function to log URLs."""
+    return mock.patch(
+        "astropy.utils.data._download_file_from_source",
+        _logging_download_file_from_source,
+    )
+
+
+# -- Remote file handling
 
 def is_remote(url: str) -> bool:
     r"""Return `True` if ``url`` points at a remote URL.
@@ -82,7 +112,7 @@ def open_remote_file(
     url: str,
     *,
     cache: bool | None = None,
-    encoding: Literal["binary"],
+    encoding: Literal["binary"] = "binary",
     **kwargs,
 ) -> AbstractContextManager[BinaryIO]: ...
 
@@ -264,18 +294,19 @@ def _handle_remote_file(
     if cache is None:
         cache = bool_env("GWPY_CACHE", default=False)
 
-    # if given a Pelican URL hand off to the Pelican-aware wrapper
-    if io_pelican.is_pelican_url(url):
-        return pelican_get(
+    with _mock_download_file_from_source():
+        # if given a Pelican URL hand off to the Pelican-aware wrapper
+        if io_pelican.is_pelican_url(url):
+            return pelican_get(
+                url,
+                cache=cache,
+                **kwargs,
+            )
+
+        # download the file
+        # note: get_readable_fileobj is a context manager, so doesn't execute here
+        return get(
             url,
             cache=cache,
             **kwargs,
         )
-
-    # download the file
-    # note: get_readable_fileobj is a context manager, so doesn't execute here
-    return get(
-        url,
-        cache=cache,
-        **kwargs,
-    )

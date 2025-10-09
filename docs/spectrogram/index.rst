@@ -60,7 +60,7 @@ We can extend previous examples of plotting a `~gwpy.timeseries.TimeSeries` with
    :nofigs:
 
    >>> from gwpy.timeseries import TimeSeries
-   >>> gwdata = TimeSeries.fetch_open_data(
+   >>> gwdata = TimeSeries.get(
    ...     "H1",
    ...     "Sep 14 2015 09:45",
    ...     "Sep 14 2015 09:55",

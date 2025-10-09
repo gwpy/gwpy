@@ -40,10 +40,10 @@ plot them on a single figure.
 # %%
 # Data access
 # -----------
-# First, as always, we get the data using :meth:`TimeSeries.fetch_open_data`:
+# First, as always, we get the data using :meth:`TimeSeries.get`:
 
 from gwpy.timeseries import TimeSeries
-hoft = TimeSeries.fetch_open_data("H1", 1187007040, 1187009088)
+hoft = TimeSeries.get("H1", 1187007040, 1187009088)
 
 # %%
 # Calculate spectrogram

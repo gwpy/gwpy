@@ -24,20 +24,27 @@ from typing import TYPE_CHECKING
 
 from ..io import cache as io_cache
 from ..io.registry import (
+    UnifiedGet,
     UnifiedRead,
 )
+from ..time import to_gps
 from ..types.connect import SeriesWrite
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import (
+        Any,
         Literal,
         TypeVar,
     )
 
+    from numpy.typing import DTypeLike
+
+    from ..detector import Channel
     from ..io.utils import NamedReadable
     from ..time import GpsConvertible
     from ..types import Series
+    from ..typing import GpsLike
     from . import (
         TimeSeriesBase,
         TimeSeriesBaseDict,
@@ -184,7 +191,10 @@ class _TimeSeriesRead(UnifiedRead):
 # -- TimeSeriesBase -----------------
 
 class TimeSeriesBaseRead(_TimeSeriesRead):
-    """Read data into a `TimeSeriesBase`."""
+    """Read data into a `TimeSeriesBase`.
+
+    Notes
+    -----"""
 
     def merge(  # type: ignore[override]
         self,
@@ -214,9 +224,38 @@ class TimeSeriesBaseRead(_TimeSeriesRead):
         return joined
 
 
-
 class TimeSeriesBaseWrite(SeriesWrite):
-    """Write data from a `TimeSeriesBase`."""
+    """Write data from a `TimeSeriesBase`.
+
+    Notes
+    -----"""
+
+
+class TimeSeriesBaseGet(UnifiedGet):
+    """Get data from any source.
+
+    Notes
+    -----"""
+
+    def __call__(  # type: ignore[override]
+        self,
+        name: str | Channel,
+        start: GpsLike,
+        end: GpsLike,
+        *,
+        source: str | list[str | dict[str, Any]] | None = None,
+        **kwargs,
+    ) -> TimeSeriesBase:
+        """Retrieve data from a source."""
+        dict_method = getattr(self._cls.DictClass, self.method)
+        kwargs.setdefault("series_class", self._cls)
+        return dict_method(
+            [name],
+            start,
+            end,
+            source=source,
+            **kwargs,
+        )[name]
 
 
 # -- TimeSeries ---------------------
@@ -283,6 +322,73 @@ class TimeSeriesWrite(TimeSeriesBaseWrite):
         output format identifier. If not given, the format will be
         detected if possible. See below for list of acceptable
         formats.
+
+    Notes
+    -----"""
+
+
+class TimeSeriesGet(TimeSeriesBaseGet):
+    """Retrieve data for a channel from any data source.
+
+    This method attempts to get data any way it can, potentially iterating
+    over multiple available data sources.
+
+    Parameters
+    ----------
+    channels : `list`
+        Required data channels.
+
+    start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS start time of required data,
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS end time of required data,
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    source : `str`, `list`, `list` of `dict`.
+        The data source to use. One of the following formats:
+
+        - `str` - the name of a single source to use,
+        - `list` - a list of source names to try in order,
+        - `list` of `dict` - a list of source specifications to try in order;
+          each `dict` must contain a `"source"` key giving the name of the
+          source to use, and may contain other keys giving options to
+          pass to the data access function for that source.
+
+        See 'Notes' section below for valid source names.
+
+    frametype : `str`
+        Name of frametype in which this channel is stored, by default
+        will search for all required frame types.
+
+    pad : `float`
+        Value with which to fill gaps in the source data,
+        by default gaps will result in a `ValueError`.
+
+    scaled : `bool`
+        apply slope and bias calibration to ADC data, for non-ADC data
+        this option has no effect.
+
+    nproc : `int`, default: `1`
+        Number of parallel processes to use, serial process by
+        default.
+
+    allow_tape : `bool`, default: `None`
+        Allow the use of data files that are held on tape.
+        Default is `None` to attempt to allow the `TimeSeries.fetch`
+        method to intelligently select a server that doesn't use tapes
+        for data storage (doesn't always work), but to eventually allow
+        retrieving data from tape if required.
+
+    verbose : `bool`
+        Print verbose output about data access progress.
+        If ``verbose`` is specified as a string, this defines the prefix
+        for the progress meter.
+
+    kwargs
+        Other keyword arguments to pass to the data access function for
+        each data source.
 
     Notes
     -----"""
@@ -364,10 +470,62 @@ class StateVectorWrite(SeriesWrite):
     -----"""
 
 
+class StateVectorGet(TimeSeriesBaseGet):
+    """Retrieve `StateVector` data for a channel.
+
+    This method attemps to get data any way it can, potentially iterating
+    over multiple available data sources.
+
+    Parameters
+    ----------
+    name : `str`, `~gwpy.detector.Channel`
+        The name of the channel to read, or a `Channel` object.
+
+    start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS start time of required data,
+        any input parseable by `~gwpy.time.to_gps` is fine.
+
+    end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS end time of required data,
+        any input parseable by `~gwpy.time.to_gps` is fine.
+
+    bits : `Bits`, `list`, optional
+        Definition of bits for this `StateVector`
+
+    source : `str`, `list`, `list` of `dict`.
+        The data source to use. One of the following formats:
+
+        - `str` - the name of a single source to use,
+        - `list` - a list of source names to try in order,
+        - `list` of `dict` - a list of source specifications to try in order;
+          each `dict` must contain a `"source"` key giving the name of the
+          source to use, and may contain other keys giving options to
+          pass to the data access function for that source.
+
+        See 'Notes' section below for valid source names.
+
+    nproc : `int`, optional
+        Number of parallel processes to use, serial process by
+        default.
+
+    verbose : `bool`, optional
+        Print verbose output about NDS progress.
+
+    kwargs
+        Other keyword arguments to pass to the data access function for
+        each data source.
+
+    Notes
+    -----"""
+
+
 # -- TimeSeriesBaseDict -------------
 
 class TimeSeriesBaseDictRead(_TimeSeriesRead):
-    """Read data into a `TimeSeriesBaseDict`."""
+    """Read data into a `TimeSeriesBaseDict`.
+
+    Notes
+    -----"""
 
     def merge(  # type: ignore[override]
         self,
@@ -379,7 +537,7 @@ class TimeSeriesBaseDictRead(_TimeSeriesRead):
     ) -> TimeSeriesBaseDict:
         """Combine a list of `TimeSeriesBaseDict` objects into one `Series`."""
         out = self._cls()
-        for tsd in iter(items):
+        for tsd in sorted(items, key=lambda x: x.span):
             out.append(tsd, gap=gap, pad=pad)
             del tsd
         if gap in ("pad", "raise"):
@@ -395,7 +553,137 @@ class TimeSeriesBaseDictRead(_TimeSeriesRead):
 
 
 class TimeSeriesBaseDictWrite(SeriesWrite):
-    """Write data from a `TimeSeriesBaseDict`."""
+    """Write data from a `TimeSeriesBaseDict`.
+
+    Notes
+    -----"""
+
+
+class TimeSeriesBaseDictGet(UnifiedGet):
+    """Retrieve data for multiple names from any data source.
+
+    Notes
+    -----"""
+
+    def __call__(  # type: ignore[override]
+        self,
+        names: list[str | Channel],
+        start: GpsLike,
+        end: GpsLike,
+        *,
+        source: str | list[str | dict[str, Any]] | None = None,
+        pad: float | None = None,
+        scaled: bool | None = None,
+        dtype: DTypeLike | None = None,
+        verbose: bool = False,
+        allow_tape: bool | None = None,
+        **kwargs,
+    ) -> TimeSeriesBaseDict:
+        """Retrieve data for multiple channels from any data source."""
+        dictclass = self._cls
+        entryclass = dictclass.EntryClass
+        kwargs.setdefault("series_class", entryclass)
+        try:
+            return super().__call__(
+                names,
+                to_gps(start),
+                to_gps(end),
+                source=source,
+                pad=pad,
+                scaled=scaled,
+                dtype=dtype,
+                verbose=verbose,
+                allow_tape=allow_tape,
+                **kwargs,
+            )
+        except RuntimeError:
+            # if we got here then we failed to get all data at once
+            if len(names) == 1:
+                raise
+            self.logger.info(
+                "Failed to access data for all names as a group, "
+                "trying individually",
+            )
+            return dictclass((name, entryclass.get(
+                name,
+                start,
+                end,
+                source=source,
+                pad=pad,
+                scaled=scaled,
+                dtype=dtype,
+                verbose=verbose,
+                allow_tape=allow_tape,
+                **kwargs,
+            )) for name in names)
+
+
+class TimeSeriesDictGet(TimeSeriesBaseDictGet):
+    """Retrieve data for multiple names from any data source.
+
+    This method attemps to get data any way it can, potentially iterating
+    over multiple available data sources.
+
+    Parameters
+    ----------
+    names : `list`
+        A `list` of channel names to find.
+
+    start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS start time of required data,
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS end time of required data,
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    source : `str`, `list`, `list` of `dict`.
+        The data source to use. One of the following formats:
+
+        - `str` - the name of a single source to use,
+        - `list` - a list of source names to try in order,
+        - `list` of `dict` - a list of source specifications to try in order;
+          each `dict` must contain a `"source"` key giving the name of the
+          source to use, and may contain other keys giving options to
+          pass to the data access function for that source.
+
+        See 'Notes' section below for valid source names.
+
+    frametype : `str`
+        Name of frametype in which this channel is stored, by default
+        will search for all required frame types.
+
+    pad : `float`
+        Value with which to fill gaps in the source data,
+        by default gaps will result in a `ValueError`.
+
+    scaled : `bool`
+        apply slope and bias calibration to ADC data, for non-ADC data
+        this option has no effect.
+
+    nproc : `int`, default: `1`
+        Number of parallel processes to use, serial process by
+        default.
+
+    allow_tape : `bool`, default: `None`
+        Allow the use of data files that are held on tape.
+        Default is `None` to attempt to allow the `TimeSeries.fetch`
+        method to intelligently select a server that doesn't use tapes
+        for data storage (doesn't always work), but to eventually allow
+        retrieving data from tape if required.
+
+    verbose : `bool`
+        Print verbose output about data access progress.
+        If ``verbose`` is specified as a string, this defines the prefix
+        for the progress meter.
+
+    kwargs
+        Other keyword arguments to pass to the data access function for
+        each data source. See `TimeSeriesDict.get.help(source=<>)` for details
+        on the positional and keyword arguments supported for each data source.
+
+    Notes
+    -----"""
 
 
 # -- TimeSeriesDict -----------------
@@ -552,6 +840,46 @@ class StateVectorDictWrite(SeriesWrite):
         output format identifier. If not given, the format will be
         detected if possible. See below for list of acceptable
         formats.
+
+    Notes
+    -----"""
+
+
+class StateVectorDictGet(TimeSeriesBaseDictGet):
+    """Retrieve `StateVector` data for multiple channels.
+
+    This method attemps to get data any way it can, potentially iterating
+    over multiple available data sources.
+
+    Parameters
+    ----------
+    channels : `list`
+        Required data channels.
+
+    start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS start time of required data,
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`
+        GPS end time of required data,
+        any input parseable by `~gwpy.time.to_gps` is fine
+
+    source : `str`, `list`, `list` of `dict`.
+        The data source to use. One of the following formats:
+
+        - `str` - the name of a single source to use,
+        - `list` - a list of source names to try in order,
+        - `list` of `dict` - a list of source specifications to try in order;
+          each `dict` must contain a `"source"` key giving the name of the
+          source to use, and may contain other keys giving options to
+          pass to the data access function for that source.
+
+        See 'Notes' section below for valid source names.
+
+    kwargs
+        Other keyword arguments to pass to the data access function for
+        each data source. See `StateVectorDict.get.help(source=<>)` for details
+        on the positional and keyword arguments supported for each data source.
 
     Notes
     -----"""

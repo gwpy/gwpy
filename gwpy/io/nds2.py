@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import enum
+import logging
 import operator
 import os
 import re
@@ -64,6 +65,8 @@ if TYPE_CHECKING:
     T = TypeVar("T")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+logger = logging.getLogger(__name__)
 
 try:
     import nds2
@@ -366,13 +369,21 @@ def connect(
     """
     import nds2
 
+    logger.debug("Connecting to NDS server %s", host)
     # set default port for NDS1 connections (required, I think)
     if port is None and NDS1_HOSTNAME.match(host):
         port = 8088
 
     if port is None:
-        return nds2.connection(host)
-    return nds2.connection(host, port)
+        conn = nds2.connection(host)
+    else:
+        conn = nds2.connection(host, port)
+    logger.debug(
+        "Connected to NDS%d server %s",
+        conn.get_protocol(),
+        conn.get_host(),
+    )
+    return conn
 
 
 def auth_connect(
@@ -407,11 +418,9 @@ def auth_connect(
     except RuntimeError as exc:
         if "Request SASL authentication" not in str(exc):
             raise
-    warnings.warn(
-        f"error authenticating against {host}:{port}, "
-        "attempting Kerberos kinit()",
-        NDSWarning,
-        stacklevel=2,
+    logger.warning(
+        "error authenticating against %s, attempting Kerberos kinit()",
+        host,
     )
     kinit()
     return connect(host, port)

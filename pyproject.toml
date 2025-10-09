@@ -197,12 +197,13 @@ qa = [
 
 # test suite
 test = [
-  "pytest >=8.2",
+  "pytest >=8.4",
   "pytest-cov >=5.0.0",
   "pytest-freezer",
   "pytest-requires",
   "pytest-rerunfailures",
   "pytest-socket",
+  "pytest-timeout",
   "pytest-xdist",
   "requests-mock",
 ]
@@ -265,6 +266,8 @@ filterwarnings = [
   "ignore:distutils Version::distutils",  # actually setuptools._distutils
   # ignore trapz warnings
   "ignore:`trapz` is deprecated::inspiral_range",
+  # ignore astropy.cosmology warnings
+  "ignore:The module `astropy.cosmology.core` is deprecated::astropy",
 ]
 xfail_strict = true
 
