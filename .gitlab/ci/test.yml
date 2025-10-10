@@ -100,8 +100,8 @@ include:
 
 .uv_install: &uv_install
   # install uv
-  - wget -qO- https://astral.sh/uv/install.sh | sh -s - -q
-  - source ${XDG_BIN_HOME:-$HOME/.local/bin}/env
+  - curl -LsSf https://astral.sh/uv/install.sh | sh -s - -q
+  - source ${UV_INSTALL_DIR}/env
 
 .uv_venv: &uv_venv
   # configure a virtual environment for the right Python version
@@ -111,8 +111,7 @@ include:
 .uv_install_windows: &uv_install_windows
   # install uv
   - powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-  - $env:PATH = $env:USERPROFILE + "\.local\bin;$env:PATH"
-  - $env:PATH -split ';'
+  - $env:PATH += ";$UV_INSTALL_DIR"
 
 .uv_venv_windows: &uv_venv_windows
   # configure a virtual environment for the right Python version
@@ -124,6 +123,7 @@ include:
   variables:
     # set the cache directory for uv
     UV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/uv"
+    UV_INSTALL_DIR: "$CI_PROJECT_DIR/.uv/bin"
   before_script:
     - *uv_install
     - *uv_venv
@@ -221,16 +221,9 @@ python_test_windows:
 .conda_create_test_env:
   before_script:
     - conda info --all
-    # create an (almost) empty environment
-    - conda create -n pip2conda
-        --yes
-        --quiet
-        python
-    - conda activate pip2conda
-    # and use uv to install pip2conda into it
-    - uv pip install "pip2conda>=0.8.0"
-    # then use pip2conda to solve (sort of) the test environment
-    - python -m pip2conda
+    # use pip2conda to solve (sort of) the test environment
+    - uvx --with "pip2conda>=0.9.0"
+      pip2conda
         --all-extras
         --all-groups
         --output environment.txt
@@ -264,6 +257,8 @@ conda_test_linux:
     - !reference [.rules_full_test, rules]
   image: quay.io/condaforge/miniforge3
   before_script:
+    # install curl
+    - apt-get -yqq update && apt-get -yqq install curl
     # install uv
     - *uv_install
     # init conda
