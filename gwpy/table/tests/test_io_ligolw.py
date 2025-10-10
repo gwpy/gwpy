@@ -17,6 +17,10 @@
 
 """Tests for :mod:`gwpy.table.io.ligolw`."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy
 import pytest
 from astropy.table import (
@@ -33,6 +37,9 @@ from ...testing.errors import pytest_skip_network_error
 from .. import EventTable
 from .utils import random_table
 
+if TYPE_CHECKING:
+    from igwn_ligolw.lsctables import SnglBurstTable
+
 TEST_XML_PATH = utils.TEST_DATA_PATH / "H1-LDAS_STRAIN-968654552-10.xml.gz"
 REMOTE_XML_FILE = (
     "https://gitlab.com/gwpy/gwpy/-/raw/v3.0.10/gwpy/testing/data/"
@@ -41,7 +48,7 @@ REMOTE_XML_FILE = (
 
 
 @pytest.fixture
-def table():
+def table() -> Table:
     """Create a table to use in testing."""
     return random_table(
         names=["peak_time", "peak_time_ns", "snr", "central_freq"],
@@ -51,7 +58,8 @@ def table():
 
 
 @pytest.fixture
-def llwtable():
+def llwtable() -> SnglBurstTable:
+    """Create a LIGO_LW table to use in testing."""
     from igwn_ligolw.lsctables import SnglBurstTable
     llwtab = SnglBurstTable.new(columns=["peak_frequency", "snr"])
     for i in range(10):
@@ -66,6 +74,7 @@ def llwtable():
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_to_astropy_table(llwtable):
+    """Test converting a LIGO_LW table to an Astropy Table."""
     tab = EventTable(llwtable)
     assert set(tab.colnames) == {"peak_frequency", "snr"}
     assert_array_equal(tab["snr"], llwtable.getColumnByName("snr"))
@@ -73,6 +82,7 @@ def test_to_astropy_table(llwtable):
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_to_astropy_table_rename(llwtable):
+    """Test converting a LIGO_LW table to an Astropy Table with renaming."""
     tab = EventTable(llwtable, rename={"peak_frequency": "frequency"})
     assert set(tab.colnames) == {"frequency", "snr"}
     assert_array_equal(
@@ -83,6 +93,7 @@ def test_to_astropy_table_rename(llwtable):
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_to_astropy_table_empty():
+    """Test converting an empty LIGO_LW table to an Astropy Table."""
     from igwn_ligolw.lsctables import SnglBurstTable
     llwtable = SnglBurstTable.new(
         columns=["peak_time", "peak_time_ns", "ifo"],
@@ -99,24 +110,27 @@ def test_to_astropy_table_empty():
 @pytest.mark.parametrize("table_class", [Table, EventTable])
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_write_ligolw(table, ext, table_class):
+    """Test `Table.read` and `Table.write` with ``format='ligolw'``."""
+    table = table_class(table)
     utils.test_read_write(
         table,
         "ligolw",
         ext,
-        write_kw=dict(
-            tablename="sngl_burst",
-        ),
+        write_kw={
+            "tablename": "sngl_burst",
+        },
         autoidentify=False,
         assert_equal=utils.assert_table_equal,
-        assert_kw=dict(
-            almost_equal=True,
-        ),
+        assert_kw={
+            "almost_equal": True,
+        },
     )
 
 
 @pytest.mark.parametrize("use_numpy_dtypes", [False, True])
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_read_write_ligolw_types(use_numpy_dtypes):
+    """Test `Table.read(format='ligolw')` with ``use_numpy_dtypes``."""
     t2 = Table.read(
         TEST_XML_PATH,
         tablename="sngl_burst",
@@ -147,6 +161,7 @@ def test_read_ligolw_multiple():
 
 @pytest.mark.requires("igwn_ligolw.lsctables")
 def test_write_ligolw_overwrite(table, tmp_path):
+    """Test `Table.write(format='ligolw', overwrite=True)` overwrites a table."""
     # write the table once
     xml = tmp_path / "test.xml"
     table.write(xml, format="ligolw", tablename="sngl_burst")
@@ -285,7 +300,7 @@ def test_read_ligolw_get_as_exclude(tmp_path):
     E.g. the ``'time_slide'`` table has a column 'time_slide_id' and a
     method `~igwn_ligolw.lsctables.TimeSlideTable.get_time_slide_id` that have
     nothing to do with each other.
-    """
+    """  # noqa: D205
     # create a time_slide table with a 'time_slide_id' column
     table = Table(
         rows=[

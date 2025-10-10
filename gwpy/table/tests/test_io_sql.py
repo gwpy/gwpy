@@ -37,38 +37,39 @@ def _sql_str(expr) -> str:
     ),
     # columns
     pytest.param(
-        dict(columns=["col1", "col2"]),
+        {"columns": ["col1", "col2"]},
         'select col1, col2 from "table"',
         id="columns",
     ),
     # 'where' conditions
     pytest.param(
-        dict(
-            columns=["col1", "col2"],
-            where="col3 > 4 && col4 = value",
-        ),
+        {
+            "columns": ["col1", "col2"],
+            "where": "col3 > 4 && col4 = value",
+        },
         'select col1, col2 from "table" where col3 > :col3_1 and col4 = :col4_1',
         id="where",
     ),
     # order_by
     pytest.param(
-        dict(
-            order_by="col5",
-        ),
+        {
+            "order_by": "col5",
+        },
         'select * from "table" order by col5 asc',
         id="order_by",
     ),
     # order_by_desc
     pytest.param(
-        dict(
-            columns=["col1", "col2"],
-            where=["col3 < 10", "col7 = something"],
-            order_by="col6",
-            order_by_desc=True,
-        ),
+        {
+            "columns": ["col1", "col2"],
+            "where": ["col3 < 10", "col7 = something"],
+            "order_by": "col6",
+            "order_by_desc": True,
+        },
         'select col1, col2 from "table" where col3 < :col3_1 and col7 = :col7_1 order by col6 desc',  # noqa: E501
         id="order_by_desc",
     ),
+
 
 ])
 @pytest.mark.requires("sqlalchemy")

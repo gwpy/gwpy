@@ -58,21 +58,21 @@ def gwf_file(table, tmp_path):
 # -- tests ---------------------------
 
 @pytest.mark.requires("LDAStools.frameCPP")
-def test_read_write_gwf(table, tmp_path):
+def test_read_write_gwf(table):
     """Test `Table.read` and `Table.write` with ``format='gwf'``."""
     utils.test_read_write(
         table,
         "gwf",
         write_args=("test",),
         read_args=("test",),
-        read_kw=dict(
-            columns=table.colnames,
-        ),
+        read_kw={
+            "columns": table.colnames,
+        },
         autoidentify=True,
         assert_equal=utils.assert_table_equal,
-        assert_kw=dict(
-            almost_equal=True,
-        ),
+        assert_kw={
+            "almost_equal": True,
+        },
     )
 
 

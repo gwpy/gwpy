@@ -27,15 +27,13 @@ from astropy.table import Table
 from .. import EventTable
 
 if TYPE_CHECKING:
-    from pathlib import Path
-    from typing import IO
+    from ...io.utils import Readable
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def table_from_omicron(
-    source: str | Path | IO,
-    format: str = "root",
+    source: Readable,
     treename: str = "triggers",
     **kwargs,
 ) -> Table:
@@ -48,7 +46,7 @@ def table_from_omicron(
     """
     return Table.read(
         source,
-        format=format,
+        format="root",
         treename=treename,
         **kwargs,
     )

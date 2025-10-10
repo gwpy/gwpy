@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import re
-from os.path import basename
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import h5py
@@ -44,13 +44,16 @@ from .utils import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from pathlib import Path
     from typing import (
-        IO,
         Any,
+        Literal,
     )
 
     from ...frequencyseries import FrequencySeries
+    from ...io.utils import (
+        FileLike,
+        FileSystemPath,
+    )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Alex Nitz <alex.nitz@ligo.org>"
@@ -70,7 +73,7 @@ def _get_column(
     source: h5py.Group,
     name: str,
     loudest: numpy.ndarray | None = None,
-):
+) -> Table.Column:
     """Read a `~astropy.table.Column` from a PyCBC `h5py.Group`."""
     try:  # normal column
         arr = source[name][:]
@@ -90,6 +93,7 @@ def table_from_file(
     source: h5py.Group,
     ifo: str | None = None,
     columns: list[str] | None = None,
+    *,
     where: str | list[str] | None = None,
     loudest: bool = False,
     extended_metadata: bool = True,
@@ -112,6 +116,9 @@ def table_from_file(
     columns : `list` of `str`, optional
         The list of column names to include in returned table.
         Default is all columns.
+
+    where : `str`, `list` of `str`, optional
+        One or more filter condition strings to apply, e.g. ``'snr>6'``.
 
     loudest : `bool`, optional
         If `True` read only those events marked as 'loudest'.
@@ -136,8 +143,12 @@ def table_from_file(
 
     # parse where conditions
     filters = parse_column_filters(where or [])
-    if filters:  # add necessary columns to read list
-        read_cols.update(fs.column for fs in filters)
+    for fs in filters:
+        cols = fs.column
+        if isinstance(cols, str):
+            read_cols.add(cols)
+        else:
+            read_cols.update(cols)
 
     # set up meta dict
     meta = {"ifo": ifo}
@@ -185,7 +196,7 @@ def _find_table_group(
     try:
         return h5file[ifo], ifo
     except KeyError as exc:
-        exc.args = f"No group for ifo '{ifo}' in PyCBC live HDF5 file",
+        exc.args = (f"No group for ifo '{ifo}' in PyCBC live HDF5 file",)
         raise
 
 
@@ -241,7 +252,7 @@ def _get_extended_metadata(h5group: h5py.Group) -> dict[str, Any]:
     meta : `dict`
        The metadata dict.
     """
-    meta = dict()
+    meta = {}
 
     # get PSD
     try:
@@ -325,17 +336,14 @@ def empty_hdf5_file(
     # for each group (or the IFO group given by the user),
     # check whether there is any useful content
     groups = h5f.keys() if ifo is None else [ifo]
-    for group in groups:
-        if not set(h5f.get(group, [])).issubset({"gates", "psd"}):
-            return False
-    return True
+    return all(set(h5f.get(group, [])) <= {"gates", "psd"} for group in groups)
 
 
 def identify_pycbc_live(
-    origin: str,
-    filepath: str | Path | None,
-    fileobj: IO | None,
-    *args,
+    origin: Literal["read", "write"],
+    filepath: FileSystemPath | None,
+    fileobj: FileLike | None,
+    *args,  # noqa: ANN002
     **kwargs,
 ) -> bool:
     """Identify a PyCBC Live file as an HDF5 with the correct name."""
@@ -349,7 +357,7 @@ def identify_pycbc_live(
         filepath = getattr(fileobj, "name", None)
     return bool(
         filepath is not None
-        and PYCBC_FILENAME.match(basename(filepath)),
+        and PYCBC_FILENAME.match(Path(filepath).name),
     )
 
 
@@ -374,7 +382,7 @@ EventTable.read.registry.register_reader(
 # Each method should take in an `~h5py.Group` and return a `numpy.ndarray`
 
 GET_COLUMN: dict[str, Callable] = {}
-GET_COLUMN_EXTRA: dict[str, set[str]] = dict()
+GET_COLUMN_EXTRA: dict[str, set[str]] = {}
 
 
 def _new_snr_scale(

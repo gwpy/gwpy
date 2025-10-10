@@ -22,7 +22,10 @@ from __future__ import annotations
 
 import inspect
 from functools import cache
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 import numpy
 from astropy.utils.compat.numpycompat import COPY_IF_NEEDED
@@ -44,18 +47,22 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-    from pathlib import Path
-    from typing import (
-        IO,
-        Any,
+    from collections.abc import (
+        Collection,
+        Iterable,
     )
+    from typing import Any
 
     from astropy.table import Column
     from igwn_ligolw import ligolw
     from numpy.typing import (
         ArrayLike,
         DTypeLike,
+    )
+
+    from ...io.utils import (
+        NamedReadable,
+        Writable,
     )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -104,14 +111,14 @@ def _property_columns(prop: property) -> tuple[str, ...]:
         return (prop.start, prop.stop)
     if isinstance(prop, lsctables.instrumentsproperty):
         return (prop.name,)
-    return tuple()
+    return ()
 
 
 def _get_property_columns(
     tabletype: type[ligolw.Table],
     columns: Iterable[str] | None,
 ) -> dict[str, set[str]]:
-    """Returns `set` of columns required to read properties for a table.
+    """Return the `set` of columns required to read properties for a table.
 
     Examples
     --------
@@ -122,11 +129,14 @@ def _get_property_columns(
 
     if columns is None:  # get all property columns
         try:
-            columns = list(zip(*inspect.getmembers(
-                rowtype,
-                predicate=lambda x: isinstance(x, LIGOLW_PROPERTY_TYPES),
-            ), strict=True))[0]
-        except IndexError:
+            columns = next(zip(
+                *inspect.getmembers(
+                    rowtype,
+                    predicate=lambda x: isinstance(x, LIGOLW_PROPERTY_TYPES),
+                ),
+                strict=True,
+            ))
+        except StopIteration:
             # this object doesn't have any property columns
             return {}
 
@@ -150,7 +160,7 @@ def _get_property_type(
     tabletype: type[ligolw.Table],
     column: str,
 ) -> type | None:
-    """Returns the type of values in the given property.
+    """Return the type of values in the given property.
 
     Examples
     --------
@@ -180,11 +190,12 @@ def table_columns(ligolw_table_class: type[ligolw.Table]) -> list[str]:
 def to_astropy_table(
     llwtable: ligolw.Table,
     table_class: type[Table],
-    copy: bool | None = COPY_IF_NEEDED,
-    columns: list[str] | None =None,
+    copy: bool | None = COPY_IF_NEEDED,  # noqa: FBT001
+    *,
+    columns: Collection[str] | None =None,
     use_numpy_dtypes: bool = False,
     rename: dict[str, str] | None = None,
-):
+) -> Table:
     """Convert a `~igwn_ligolw.ligolw.Table` to an `~astropy.tableTable`.
 
     This method is designed as an internal method to be attached to
@@ -259,7 +270,7 @@ def _get_column(
         if name in llwtable.validcolumns:
             dtype = _get_pytype(llwtable.validcolumns[name])
         else:
-            dtype = _get_property_type(type(llwtable), name)
+            dtype = _get_property_type(type(llwtable), name)  # type: ignore[arg-type]
         if dtype:
             return numpy.empty((0,), dtype=dtype)
 
@@ -287,6 +298,7 @@ def _get_column(
 def to_astropy_column(
     llwcol: ligolw.Column,
     cls: type[Column],
+    *,
     copy: bool | None = COPY_IF_NEEDED,
     dtype: DTypeLike | None = None,
     use_numpy_dtype: bool = False,
@@ -329,12 +341,13 @@ def to_astropy_column(
             use_numpy_dtype
             and numpy.dtype(dtype).type is numpy.object_
         ):
+            dtype = cast("type", dtype)
             # dtype maps to 'object' in numpy, try and resolve real numpy type
             try:
                 dtype = NUMPY_TYPE_MAP[dtype]
-            except KeyError:
+            except KeyError as exc:
                 msg = f"no mapping from object type '{dtype}' to numpy type"
-                raise TypeError(msg)
+                raise TypeError(msg) from exc
     return cls(
         data=llwcol,
         copy=copy,
@@ -368,23 +381,23 @@ def _get_column_dtype(
     'int32'
     """
     try:
-        dtype = llwcol.dtype
+        dtype = llwcol.dtype  # type: ignore[union-attr]
         if dtype is numpy.dtype("O"):
             raise AttributeError  # goto below
-        return dtype
     except AttributeError:
         try:  # igwn_ligolw.ligolw.Column
-            name = str(llwcol.getAttribute("Name"))
-            if name.startswith(f"{llwcol.parentNode.Name}:"):
+            name = str(llwcol.getAttribute("Name"))  # type: ignore[union-attr]
+            if name.startswith(f"{llwcol.parentNode.Name}:"):  # type: ignore[union-attr]
                 name = name.split(":", 1)[-1]
-            llwtype = llwcol.parentNode.validcolumns[name]
+            llwtype = llwcol.parentNode.validcolumns[name]  # type: ignore[union-attr]
         except AttributeError:  # not a column
             try:
-                return type(llwcol[0])
+                return type(llwcol[0])  # type: ignore[index]
             except IndexError:
                 return None
         # map column type str to python type
         return _get_pytype(llwtype)
+    return dtype
 
 
 def _get_pytype(llwtype: type) -> type:
@@ -416,7 +429,11 @@ def table_to_ligolw(
     cls = lsctables.TableByName[tablename]
     inst = cls.new()
     try:
-        columnnamesreal = dict(zip(inst.columnnames, inst.columnnamesreal, strict=False))
+        columnnamesreal = dict(zip(
+            inst.columnnames,
+            inst.columnnamesreal,
+            strict=False,
+        ))
     except AttributeError:  # glue doesn't have these attributes
         columnnamesreal = {}
     llwcolumns = [columnnamesreal.get(n, n) for n in columns]
@@ -444,12 +461,12 @@ def table_to_ligolw(
 
 @read_with_where
 def read_table(
-    source: str | Path | IO | ligolw.Document | list[str | Path | IO],
+    source: NamedReadable | ligolw.Document | list[NamedReadable],
     tablename: str | None = None,
-    columns: list[str] | None = None,
-    ligolw_columns: list[str] | None = None,
+    columns: Collection[str] | None = None,
+    ligolw_columns: Collection[str] | None = None,
     **kwargs,
-):
+) -> Table:
     """Read a `Table` from one or more LIGO_LW XML documents.
 
     source : `file`, `str`, `~igwn_ligolw.ligolw.Document`, `list`
@@ -538,12 +555,12 @@ def read_table(
 
 # -- write ---------------------------
 
-def write_table(
+def write_table(  # noqa: D417
     table: Table,
-    target: str | Path | IO,
+    target: Writable | ligolw.Document,
     tablename: str | None = None,
     **kwargs,
-):
+) -> None:
     """Write a `~astropy.table.Table` to file in LIGO_LW XML format.
 
     Parameters

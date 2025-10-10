@@ -21,19 +21,33 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 from ..filter import filter_table
 
 if TYPE_CHECKING:
     from collections.abc import (
         Callable,
+        Collection,
         Iterable,
+        Mapping,
+    )
+    from typing import (
+        ParamSpec,
+        TypeVar,
     )
 
     import h5py
     import numpy
     from astropy.table import Table
+
+    from ..filter import FilterLike
+
+    P = ParamSpec("P")
+    T = TypeVar("T", bound=Table)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -41,9 +55,9 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 # -- dynamic column helpers ----------
 
 def dynamic_columns(
-    columns: list[str] | None,
-    valid_columns: Iterable[str],
-    dynamic_column_map: dict[str, set[str]],
+    columns: Iterable[str] | None,
+    valid_columns: Collection[str],
+    dynamic_column_map: Mapping[str, Iterable[str]],
 ) -> tuple[set[str] | None, set[str]]:
     """Return the list of columns to read and those to dynamically create.
 
@@ -79,7 +93,7 @@ def dynamic_columns(
         return None, set()
     read = set()
     dynamic = set()
-    for name in list(columns):
+    for name in iter(columns):
         # column name is present in the file
         if name in valid_columns:
             read.add(name)
@@ -127,10 +141,12 @@ DYNAMIC_COLUMN_INPUT: dict[str, set[str]] = {
 
 # -- table i/o utilities -------------
 
-def read_with_columns(func):
+def read_with_columns(
+    func: Callable[P, T],
+) -> Callable[P, T]:
     """Decorate a Table read method to use the ``columns`` keyword."""
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         # parse columns argument
         columns = kwargs.pop("columns", None)
 
@@ -140,21 +156,36 @@ def read_with_columns(func):
         # filter on columns
         if columns is None:
             return tab
-        return tab[columns]
+        try:
+            return tab[columns]
+        except KeyError as exc:
+            missing = str(exc)
+            names = list(tab.colnames)
+            msg = (
+                f"column {missing} not found; "
+                f"valid column names: {', '.join(names)}"
+            )
+            raise ValueError(msg) from exc
+
 
     return wrapper
 
 
-def read_with_where(func):
+def read_with_where(
+    func: Callable[P, T],
+) -> Callable[P, T]:
     """Decorate a Table read method to apply the ``where`` keyword.
 
     Allows for filtering tables on-the-fly when read.
     """
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         """Execute a function, then apply a where filter."""
         # parse where
-        where = kwargs.pop("where", None) or []
+        where = cast(
+            "FilterLike | Iterable[FilterLike]",
+            kwargs.pop("where", None) or [],
+        )
 
         # read table
         tab = func(*args, **kwargs)
@@ -168,7 +199,9 @@ def read_with_where(func):
     return wrapper
 
 
-def read_with_columns_and_where(func):
+def read_with_columns_and_where(
+    func: Callable[P, T],
+) -> Callable[P, T]:
     """Decorate a read function to support both ``columns`` and ``where``.
 
     The ``where`` decorator is applied _first_ so that the conditions can

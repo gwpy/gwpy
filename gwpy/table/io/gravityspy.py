@@ -38,7 +38,10 @@ from .. import EventTable
 from . import sql as io_sql
 
 if TYPE_CHECKING:
-    from typing import Any
+    from collections.abc import (
+        Mapping,
+        Sequence,
+    )
 
     import sqlalchemy
 
@@ -51,6 +54,7 @@ def get_gravityspy_triggers(
     # query options
     tablename: str | sqlalchemy.TableClause = "glitches",
     columns: list[str | sqlalchemy.Column] | None = None,
+    *,
     where: str | list[str] | None = None,
     order_by: str | None = None,
     order_by_desc: bool = False,
@@ -62,20 +66,67 @@ def get_gravityspy_triggers(
     host: str = "gravityspyplus.ciera.northwestern.edu",
     port: int = 5432,
     database: str = "gravityspy",
-    query: str | dict[str, Any] | None = None,
+    query: Mapping[str, Sequence[str] | str] | None = None,
     **kwargs,
 ) -> GravitySpyTable:
     """Fetch data into an `GravitySpyTable`.
 
     Parameters
     ----------
-    table : `str`,
-        The name of table you are attempting to receive triggers
-        from.
+    tablename : `str`,
+        The name of table you are attempting to receive triggers from.
+
+    columns : `list` of `str`, optional
+        The columns to read from the database.
+        If `None` (default) all columns are read.
 
     where
         other filters you would like to supply
         underlying reader method for the given format
+
+    order_by : `str`, optional
+        Column to order results by.
+
+    order_by_desc : `bool`, optional
+        Order results in descending order. Default is `False`.
+
+    engine : `sqlalchemy.engine.Engine`, optional
+        An existing SQLAlchemy engine to use for the connection.
+        If not given, one will be created using the other connection
+        parameters.
+
+    drivername : `str`, optional
+        Database backend and driver name.
+        Default is ``"postgresql"``.
+
+    username : `str`, optional
+        The username for authentication to the database.
+        Defaults to the value of the ``GRAVITYSPY_DATABASE_USER``
+        environment variable.
+
+    password : `str`, optional
+        The password for authentication to the database.
+        Defaults to the value of the ``GRAVITYSPY_DATABASE_PASSWD``
+        environment variable.
+
+    host : `str`, optional
+        The name of the server the database you are connecting to
+        lives on.
+        Default is ``"gravityspyplus.ciera.northwestern.edu"``
+
+    port : `int`, optional
+        Port to connect to on ``host``. Default is ``5432``.
+
+    database : `str`, optional
+        The name of the SQL database to connect to.
+        Default is ``"gravityspy"``.
+
+    query : `dict`, optional
+        Additional query parameters used in the database URL.
+
+    kwargs
+        Additional keyword arguments are passed to the
+        `EventTable.fetch(..., format="sql")`.
 
     See Also
     --------
@@ -112,11 +163,12 @@ def get_gravityspy_triggers(
         )
     except ProgrammingError as exc:
         if f'relation "{tablename}" does not exist' in str(exc):
+            tables = _get_table_names(engine)
             msg = exc.args[0]
             msg = msg.replace("does not exist", (
                 "does not exist, the following tablenames are "
                 "acceptable:\n    {}\n".format(
-                    "\n    ".join(engine.table_names()),
+                    "\n    ".join(tables),
                 ),
             ))
             exc.args = (msg,)
@@ -125,6 +177,13 @@ def get_gravityspy_triggers(
 
 # -- utilities -----------------------
 
+def _get_table_names(engine: sqlalchemy.Engine) -> list[str]:
+    """Get a list of table names from a SQLAlchemy engine."""
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+    return inspector.get_table_names()
+
+
 def create_engine(
     drivername: str = "postgresql",
     username: str | None = None,
@@ -132,7 +191,7 @@ def create_engine(
     host: str = "gravityspyplus.ciera.northwestern.edu",
     port: int = 5432,
     database: str = "gravityspy",
-    query: str | dict[str, Any] | None = None,
+    query: Mapping[str, Sequence[str] | str] | None = None,
     **kwargs,
 ) -> sqlalchemy.Engine:
     """Create a new `sqlalchemy.engine.Engine` for a GravitySpy query.
@@ -145,7 +204,7 @@ def create_engine(
         Database backend and driver name.
         Default is ``"postgresql"``.
 
-    user : `str`, optional
+    username : `str`, optional
         The username for authentication to the database.
         Defaults to the value of the ``GRAVITYSPY_DATABASE_USER``
         environment variable.
@@ -160,16 +219,23 @@ def create_engine(
         lives on.
         Default is ``"gravityspyplus.ciera.northwestern.edu"``
 
-    post : `int`, optional
+    port : `int`, optional
         Port to connect to on ``host``. Default is ``5432``.
 
     database : `str`, optional
         The name of the SQL database your connecting to.
         Default is ``"gravityspy"``.
 
+    query : `dict`, optional
+        Additional query parameters used in the database URL.
+
+    kwargs
+        Additional keyword arguments are passed to
+        :meth:`gwpy.table.io.sql.create_engine`.
+
     .. note::
 
-       ``user`` and ``passwd`` should be given together, otherwise they
+       ``username`` and ``passwd`` should be given together, otherwise they
        will be ignored and values will be resolved from the
        ``GRAVITYSPY_DATABASE_USER`` and ``GRAVITYSPY_DATABASE_PASSWD``
        environment variables.
@@ -191,9 +257,10 @@ def create_engine(
 
     if not username and not password:
         msg = (
-            "Remember to either pass or export GRAVITYSPY_DATABASE_USER "
+            "username and password not given; "
+            "remember to either pass or export GRAVITYSPY_DATABASE_USER "
             "and export GRAVITYSPY_DATABASE_PASSWD in order to access the "
-            "Gravity Spy Data. LIGO-Virgo-KAGRA members may visit "
+            "Gravity Spy Data; LIGO-Virgo-KAGRA members may visit "
             "https://secrets.ligo.org/secrets/144/ for more information."
         )
         raise ValueError(msg)

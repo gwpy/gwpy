@@ -23,6 +23,7 @@ from .. import EventTable
 
 @pytest_skip_flaky_network
 def test_fetch_gwosc():
+    """Test fetching a GWOSC event catalog."""
     table = EventTable.fetch(
         "GWTC-1-confident",
         source="gwosc",
@@ -40,6 +41,7 @@ def test_fetch_gwosc():
 
 @pytest_skip_flaky_network
 def test_fetch_open_data_kwargs():
+    """Test fetching a GWOSC event catalog with ``where`` and ``columns``."""
     table = EventTable.fetch_open_data(
         "GWTC-1-confident",
         where="mass_1_source < 5",

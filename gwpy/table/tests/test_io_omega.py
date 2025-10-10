@@ -17,10 +17,17 @@
 
 """Tests for :mod:`gwpy.table.io.omega`."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 
 from ...testing.utils import assert_table_equal
 from ..table import EventTable
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -35,11 +42,12 @@ OMEGA_ASCII = """
 1023927378.250000000 2.3637695312500000e+00 9.0565757364173183e-01 1.1041700849239395e+00 2.1194302085268539e+01
 1023927597.187500000 1.0293457031250000e+01 2.0797345069017714e-01 4.8083060442639054e+00 1.7678989962812786e+01
 1023927433.250000000 2.3637695312500000e+00 9.0565757364173183e-01 1.1041700849239395e+00 1.6883206146877814e+01
-""".strip()  # noqa
+""".strip()  # noqa: E501
 
 
 @pytest.fixture
-def omega_ascii(tmp_path):
+def omega_ascii(tmp_path: Path) -> Path:
+    """Create a temporary file with example Omega ascii data."""
     dat = tmp_path / "EVENTS.txt"
     dat.write_text(OMEGA_ASCII)
     return dat

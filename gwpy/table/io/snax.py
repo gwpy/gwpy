@@ -99,7 +99,7 @@ def table_from_file(
         missing = channels - found
         # check whether missing channels should
         # be an error or simply a warning
-        if missing:
+        if missing and on_missing != "ignore":
             msg = "requested channels not found in SNAX file: '{}'".format(
                 "', '".join(missing),
             )
@@ -108,7 +108,7 @@ def table_from_file(
             if on_missing == "warn":
                 warnings.warn(msg, stacklevel=2)
             else:
-                msg = "on_missing argument must be one of 'warn' or 'error'"
+                msg = "on_missing argument must be one of 'error', 'warn', or 'ignore'"
                 raise ValueError(msg)
         channels = channels & found
 

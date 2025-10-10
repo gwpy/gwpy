@@ -59,7 +59,7 @@ def hacr_table():
     table = random_table(
         length=100,
         names=names,
-        dtypes=types,
+        dtypes=list(types),
     )
 
     # add timing information
@@ -149,7 +149,7 @@ def test_get_hacr_channels(hacr_engine):
     """Test `get_hacr_channels`."""
     with mock.patch(
         "gwpy.table.io.hacr.create_engine",
-        lambda *args, **kwargs: hacr_engine,
+        return_value=hacr_engine,
     ):
         assert set(io_hacr.get_hacr_channels()) == {
             "X1:HACR-1",
@@ -175,7 +175,7 @@ def test_fetch_hacr_columns_where(hacr_table, hacr_engine):
     """Test that `EventTable.fetch(source='hacr')` works with complex queries."""
     with mock.patch(
         "gwpy.table.io.hacr.create_engine",
-        lambda *args, **kwargs: hacr_engine,
+        return_value=hacr_engine,
     ):
         t2 = EventTable.fetch(
             source="hacr",

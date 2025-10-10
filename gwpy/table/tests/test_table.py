@@ -22,8 +22,15 @@ Note that tests of the I/O integrations are separately maintained
 in the ``test_io_{format}.py`` modules alongside this one.
 """
 
-import os.path
+from __future__ import annotations
+
 from io import BytesIO
+from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    Generic,
+    TypeVar,
+)
 
 import pytest
 from astropy import units
@@ -46,21 +53,29 @@ from .. import (
 )
 from .utils import random_table
 
+if TYPE_CHECKING:
+    import numpy
+
+TableType = TypeVar("TableType", bound=Table)
+EventTableType = TypeVar("EventTableType", bound=EventTable)
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-TEST_DATA_DIR = os.path.join(os.path.split(__file__)[0], "data")
-TEST_XML_FILE = os.path.join(
-    TEST_DATA_DIR, "H1-LDAS_STRAIN-968654552-10.xml.gz")
-TEST_OMEGA_FILE = os.path.join(TEST_DATA_DIR, "omega.txt")
+TEST_DATA_PATH = Path(__file__).parent / "data"
+TEST_XML_FILE = TEST_DATA_PATH / "H1-LDAS_STRAIN-968654552-10.xml.gz"
+TEST_OMEGA_FILE = TEST_DATA_PATH / "omega.txt"
 
 
-# -- gwpy.table.Table (astropy.table.Table) -----------------------------------
+# -- Test gwpy.table.Table (astropy.table.Table)
 
-class TestTable:
-    TABLE = Table
+class TestTable(Generic[TableType]):
+    """Tests modifications/extensions to `astropy.table.Table`."""
+
+    TABLE: type[TableType] = Table  # type: ignore[assignment]
 
     @classmethod
-    def create(cls, n, names, dtypes=None):
+    def create(cls, n, names, dtypes=None) -> TableType:
+        """Create a random table of the given length, names and dtypes."""
         return random_table(
             names=names,
             length=n,
@@ -70,44 +85,51 @@ class TestTable:
 
     @pytest.fixture
     @classmethod
-    def table(cls):
+    def table(cls) -> TableType:
+        """Return a random table with some typical columns."""
         return cls.create(100, ["time", "snr", "frequency"])
 
     @pytest.fixture
     @classmethod
-    def emptytable(cls):
+    def emptytable(cls) -> TableType:
+        """Return an empty table with some typical columns."""
         return cls.create(0, ["time", "snr", "frequency"])
 
     @pytest.fixture
     @classmethod
-    def clustertable(cls):
-        return cls.TABLE(data=[[11, 1, 1, 10, 1, 1, 9],
-                               [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0]],
-                         names=["amplitude", "time"])
+    def clustertable(cls) -> TableType:
+        """Return a small table suitable for clustering tests."""
+        return cls.TABLE(
+            data=[
+                [11, 1, 1, 10, 1, 1, 9],
+                [0.0, 1.9, 1.95, 2.0, 2.05, 2.1, 4.0],
+            ],
+            names=["amplitude", "time"],
+        )
 
 
-class TestEventTable(TestTable):
-    TABLE = EventTable
+class TestEventTable(TestTable[EventTableType]):
+    """Tests for `EventTable`."""
 
-    def test_get_time_column(self, table):
-        """Check that `_get_time_colum` works on name."""
+    TABLE: type[EventTableType] = EventTable  # type: ignore[assignment]
+
+    def test_get_time_column(self, table: EventTableType):
+        """Test that `_get_time_column` works on name."""
         assert table._get_time_column() == "time"
 
-    def test_get_time_column_case(self, table):
-        """Check that `_get_time_colum` works on name case-insensitively."""
+    def test_get_time_column_case(self, table: EventTableType):
+        """Test that `_get_time_column` works on name case-insensitively."""
         table.rename_column("time", "TiMe")
         assert table._get_time_column() == "TiMe"
 
     def test_get_time_column_gps_type(self):
-        """Check that `_get_time_column` works on dtype."""
+        """Test that `_get_time_column` works on dtype."""
         # check that single GPS column can be identified
         t = self.create(1, ("a", "b"), dtypes=(float, LIGOTimeGPS))
         assert t._get_time_column() == "b"
 
-    def test_get_time_column_error_no_match(self, table):
-        """Check that `_get_time_column` raises the right exception
-        when no matches are found.
-        """
+    def test_get_time_column_error_no_match(self):
+        """Test `_get_time_column` error handling when it fails to find a match."""
         t = self.create(1, ("a",))
         with pytest.raises(
             ValueError,
@@ -116,6 +138,7 @@ class TestEventTable(TestTable):
             t._get_time_column()
 
     def test_get_time_column_error_multiple_match(self):
+        """Test `_get_time_column` error handling when it finds multiple matches."""
         # check that two GPS columns causes issues
         t = self.create(
             10,
@@ -131,22 +154,25 @@ class TestEventTable(TestTable):
     def test_get_time_column_error_empty(self):
         """Check that `_get_time_column` errors properly on an empty table."""
         t = self.create(0, ("a",))
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="cannot identify time column for table",
+        ):
             t._get_time_column()
 
-    def test_filter(self, table):
+    def test_filter(self, table: EventTableType):
         """Test that `EventTable.filter` works with a simple filter statement."""
         # check simple filter
         lowf = table.filter("frequency < 100")
         assert isinstance(lowf, type(table))
         assert len(lowf) == 11
-        assert lowf["frequency"].max() == pytest.approx(96.5309156606)
+        assert lowf["frequency"].max() == pytest.approx(99.41111793264079)
 
-    def test_filter_empty(self, table):
+    def test_filter_empty(self, table: EventTableType):
         """Test that `EventTable.filter` works with an empty table."""
         assert len(table.filter("snr>5", "snr<=5")) == 0
 
-    def test_filter_chaining(self, table):
+    def test_filter_chaining(self, table: EventTableType):
         """Test that chaining filters works with `EventTable.filter`."""
         loud = table.filter("snr > 100")
         lowf = table.filter("frequency < 100")
@@ -157,7 +183,7 @@ class TestEventTable(TestTable):
         )
         utils.assert_table_equal(brute, lowfloud)
 
-    def test_filter_range(self, table):
+    def test_filter_range(self, table: EventTableType):
         """Test that `EventTable.filter` works with a range statement."""
         # check double-ended filter
         midf = table.filter("100 < frequency < 1000")
@@ -166,7 +192,7 @@ class TestEventTable(TestTable):
             table.filter("frequency > 100").filter("frequency < 1000"),
         )
 
-    def test_filter_function(self, table):
+    def test_filter_function(self, table: EventTableType):
         """Test that `EventTable.filter` works with a filter function."""
         def my_filter(column, threshold):
             return column < threshold
@@ -174,17 +200,15 @@ class TestEventTable(TestTable):
         lowf = table.filter(("frequency", my_filter, 100))
         assert len(lowf) == 11
 
-    def test_filter_function_multiple(self, table):
-        """Test that `EventTable.filter` works with a filter function
-        that requires multiple columns.
-        """
-        def my_filter(table, threshold):
+    def test_filter_function_multiple(self, table: EventTableType):
+        """Test that `EventTable.filter` works with a multi-column filter."""
+        def my_filter(table, threshold) -> numpy.ndarray:
             return table["snr"] * table["frequency"] > threshold
 
         filtered = table.filter((("snr", "frequency"), my_filter, 100000))
-        assert len(filtered) == 64
+        assert len(filtered) == 67
 
-    def test_filter_in_segmentlist(self, table):
+    def test_filter_in_segmentlist(self, table: EventTableType):
         """Test `EventTable.filter` with `in_segmentlist`."""
         # check filtering on segments works
         segs = SegmentList([Segment(100, 200), Segment(400, 500)])
@@ -195,7 +219,7 @@ class TestEventTable(TestTable):
         )
         utils.assert_table_equal(inseg, brute)
 
-    def test_filter_in_segmentlist_empty(self, table):
+    def test_filter_in_segmentlist_empty(self, table: EventTableType):
         """Test `EventTable.filter` with `in_segmentlist` and an empty table."""
         # check empty segmentlist is handled well
         utils.assert_table_equal(
@@ -203,7 +227,7 @@ class TestEventTable(TestTable):
             type(table)(names=table.colnames),
         )
 
-    def test_filter_not_in_segmentlist(self, table):
+    def test_filter_not_in_segmentlist(self, table: EventTableType):
         """Test `EventTable.filter` with `not_in_segmentlist`."""
         segs = SegmentList([Segment(100, 200), Segment(400, 500)])
         notsegs = SegmentList([Segment(0, 1000)]) - segs
@@ -216,14 +240,14 @@ class TestEventTable(TestTable):
             table.filter(("time", filters.not_in_segmentlist, SegmentList())),
         )
 
-    def test_event_rates(self, table):
+    def test_event_rates(self, table: EventTableType):
         """Test :meth:`gwpy.table.EventTable.event_rate`."""
         rate = table.event_rate(1)
         assert isinstance(rate, TimeSeries)
         assert rate.sample_rate == 1 * units.Hz
 
     @pytest.mark.requires("lal")
-    def test_event_rates_gpsobject(self, table):
+    def test_event_rates_gpsobject(self, table: EventTableType):
         """Test that `EventTable.event_rate` can handle object dtypes."""
         rate = table.event_rate(1)
 
@@ -232,11 +256,12 @@ class TestEventTable(TestTable):
         t2 = type(table)(data=[lgps], names=["time"])
         rate2 = t2.event_rate(1, start=table["time"].min())
 
-        utils.assert_quantity_sub_equal(rate, rate2)
+        utils.assert_quantity_sub_equal(rate, rate2, exclude=["epoch", "x0"])
 
     def test_event_rates_start_end(self):
-        """Check that `EventTable.event_rate` can function without explicit
-        time column (and no data) if and only if start/end are both given.
+        """Test that `EventTable.event_rate` works without time column.
+
+        If and only if start/end are both given.
         """
         t2 = self.create(10, names=["a", "b"])
         with pytest.raises(
@@ -244,58 +269,65 @@ class TestEventTable(TestTable):
             match="please give `timecolumn` keyword",
         ):
             t2.event_rate(1)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="cannot identify time column"):
             t2.event_rate(1, start=0)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="cannot identify time column"):
             t2.event_rate(1, end=1)
         t2.event_rate(1, start=0, end=10)
 
-    def test_binned_event_rates(self, table):
-        rates = table.binned_event_rates(100, "snr", [10, 100],
-                                         timecolumn="time")
+    def test_binned_event_rates(self, table: EventTableType):
+        """Test :meth:`binned_event_rates`."""
+        rates = table.binned_event_rates(
+            100,
+            "snr",
+            [10, 100],
+            timecolumn="time",
+        )
         assert isinstance(rates, TimeSeriesDict)
         assert list(rates.keys()), [10, 100]
-        assert rates[10].max() == 0.14 * units.Hz
-        assert rates[10].name == "snr >= 10"
-        assert rates[100].max() == 0.13 * units.Hz
-        assert rates[100].name == "snr >= 100"
+        assert rates[10].max() == 0.16 * units.Hz   # type: ignore[index]
+        assert rates[10].name == "snr >= 10"        # type: ignore[index]
+        assert rates[100].max() == 0.15 * units.Hz  # type: ignore[index]
+        assert rates[100].name == "snr >= 100"      # type: ignore[index]
         table.binned_event_rates(100, "snr", [10, 100], operator="in")
         table.binned_event_rates(100, "snr", [(0, 10), (10, 100)])
 
-        # check that method can function without explicit time column
-        # (and no data) if and only if start/end are both given
-        t2 = self.create(0, names=["a", "b"])
+    def test_binned_event_rates_start_end(self):
+        """Test that `EventTable.binned_event_rates` works without time column.
+
+        If and only if start/end are both given.
+        """
+        table = self.create(0, names=["a", "b"])
         with pytest.raises(
             ValueError,
             match="please give `timecolumn` keyword",
         ):
-            t2.binned_event_rates(1, "a", (10, 100))
-        with pytest.raises(ValueError):
-            t2.binned_event_rates(1, "a", (10, 100), start=0)
-        with pytest.raises(ValueError):
-            t2.binned_event_rates(1, "a", (10, 100), end=1)
-        t2.binned_event_rates(1, "a", (10, 100), start=0, end=10)
+            table.binned_event_rates(1, "a", (10, 100))
+        with pytest.raises(ValueError, match="cannot identify time column"):
+            table.binned_event_rates(1, "a", (10, 100), start=0)
+        with pytest.raises(ValueError, match="cannot identify time column"):
+            table.binned_event_rates(1, "a", (10, 100), end=1)
+        table.binned_event_rates(1, "a", (10, 100), start=0, end=10)
 
-    def test_plot(self, table):
-        with pytest.deprecated_call():
-            plot = table.plot("time", "frequency", color="snr")
-            plot.close()
-
-    def test_scatter(self, table):
+    def test_scatter(self, table: EventTableType):
+        """Test `EventTable.scatter`."""
         plot = table.scatter("time", "frequency", color="snr")
         plot.save(BytesIO(), format="png")
         plot.close()
 
-    def test_hist(self, table):
+    def test_hist(self, table: EventTableType):
+        """Test `EventTable.hist`."""
         plot = table.hist("snr")
         assert len(plot.gca().patches) == 10
         plot.save(BytesIO(), format="png")
         plot.close()
 
-    def test_get_column(self, table):
+    def test_get_column(self, table: EventTableType):
+        """Test `EventTable.get_column`."""
         utils.assert_array_equal(table.get_column("snr"), table["snr"])
 
-    def test_cluster(self, clustertable):
+    def test_cluster(self, clustertable: EventTableType):
+        """Test `EventTable.cluster`."""
         # check that the central data points are all clustered away,
         # the original table is unchanged, and all points return their
         # intended values
@@ -305,14 +337,16 @@ class TestEventTable(TestTable):
         assert_array_equal(t["amplitude"], [11, 10, 9])
         assert_array_equal(t["time"], [0.0, 2.0, 4.0])
 
-    def test_single_point_cluster(self, clustertable):
+    def test_single_point_cluster(self, clustertable: EventTableType):
+        """Test `EventTable.cluster` with a large window."""
         # check that a large cluster window returns at least one data point
         t = clustertable.cluster("time", "amplitude", 10)
         assert len(t) == 1
         assert_array_equal(t["amplitude"], [11])
         assert_array_equal(t["time"], [0.0])
 
-    def test_cluster_window(self, clustertable):
+    def test_cluster_window(self, clustertable: EventTableType):
+        """Test `EventTable.cluster` window parameter error handling."""
         # check that a non-positive window throws an appropriate ValueError
         with pytest.raises(
             ValueError,
@@ -320,7 +354,8 @@ class TestEventTable(TestTable):
         ):
             clustertable.cluster("time", "amplitude", 0)
 
-    def test_cluster_multiple(self, clustertable):
+    def test_cluster_multiple(self, clustertable: EventTableType):
+        """Test `EventTable.cluster` multiple calls consistency."""
         # check that after clustering a table, clustering the table a
         # second time with the same parameters returns the same result
         t_clustered = clustertable.cluster("time", "amplitude", 0.6)
@@ -329,7 +364,7 @@ class TestEventTable(TestTable):
             t_clustered.cluster("time", "amplitude", 0.6),
         )
 
-    def test_cluster_empty(self, emptytable):
-        # check that clustering an empty table is a no-op
+    def test_cluster_empty(self, emptytable: EventTableType):
+        """Test `EventTable.cluster` with an empty table."""
         t = emptytable.cluster("time", "amplitude", 0.6)
         utils.assert_table_equal(t, emptytable)

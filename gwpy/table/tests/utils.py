@@ -22,10 +22,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from astropy.table import Table
-from numpy import (
-    dtype,
-    random,
-)
+from numpy import dtype
+from numpy.random import default_rng
 
 from .. import (
     EventTable,
@@ -39,7 +37,6 @@ if TYPE_CHECKING:
         ArrayLike,
         DTypeLike,
     )
-
 
 TABLE_CLASSES = (
     Table,
@@ -82,10 +79,10 @@ def random_table(
     """
     names = list(names)
     data: list[ArrayLike | Iterable] = []
-    for i, name in enumerate(names):
+    for i in range(len(names)):
         # generate data
-        random.seed(i)
-        col = random.rand(length) * 1000
+        rng = default_rng(seed=i)
+        col = rng.random(size=length) * 1000
         # cast to type
         if dtypes:
             dtp = dtypes[i]

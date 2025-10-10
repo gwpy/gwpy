@@ -18,6 +18,8 @@
 
 """Read events from an Omega-format ASCII file."""
 
+from __future__ import annotations
+
 import re
 
 from astropy.io.ascii import core
@@ -36,7 +38,7 @@ from .utils import read_with_columns_and_where
 class OmegaHeader(core.BaseHeader):
     """Parser for Omega ASCII header."""
 
-    def get_cols(self, lines: list[str]):
+    def get_cols(self, lines: list[str]) -> None:
         """Initialize Column objects from a multi-line ASCII header.
 
         Parameters
@@ -64,9 +66,9 @@ class OmegaHeader(core.BaseHeader):
             col = core.Column(name=name)
             self.cols.append(col)
 
-    def write(self, lines):
-        for name in self.colnames:
-            lines.append(f"% {name}")
+    def write(self, lines: list[str]) -> None:
+        """Write column headers to ASCII lines."""
+        lines.extend(f"% {name}" for name in self.colnames)
 
 
 class OmegaData(core.BaseData):

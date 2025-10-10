@@ -161,14 +161,15 @@ def table_from_root(
         return Table(rootdir[treename].arrays(library="np"), **kwargs)
 
 
-def table_to_root(
+def table_to_root(  # noqa: D417
     table: Table,
     filename: str | Path | IO,
     treename: str = "tree",
+    *,
     overwrite: bool = False,
     append: bool =False,
     **kwargs,
-):
+) -> None:
     """Write a Table to a ROOT file.
 
     Requires: |uproot|_.
@@ -257,6 +258,6 @@ def table_to_root(
 
 # register I/O
 for klass in (Table, EventTable):
+    klass.read.registry.register_identifier("root", klass, identify_root)
     klass.read.registry.register_reader("root", klass, table_from_root)
     klass.write.registry.register_writer("root", klass, table_to_root)
-    klass.read.registry.register_identifier("root", klass, identify_root)

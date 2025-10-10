@@ -26,10 +26,15 @@ from io import StringIO
 from tokenize import generate_tokens
 from typing import (
     TYPE_CHECKING,
+    Generic,
     NamedTuple,
+    TypeVar,
+    cast,
 )
 
 import numpy
+
+FilterOperandType = TypeVar("FilterOperandType")
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -37,9 +42,19 @@ if TYPE_CHECKING:
         Iterable,
         Iterator,
     )
-    from typing import Any
+
+    from astropy.table import Column
 
     from . import Table
+
+    T = TypeVar("T", bound=Table)
+
+    FilterTuple = tuple[
+        str | tuple[str, ...],
+        Callable[[Table | Column, FilterOperandType], numpy.ndarray],
+        FilterOperandType,
+    ]
+    FilterLike = str | FilterTuple
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -66,16 +81,23 @@ DELIM_REGEX = re.compile(r"(and|&+)", re.IGNORECASE)
 
 # -- filter parsing ------------------
 
-class FilterSpec(NamedTuple):
-    """A table column filter definition."""
+FILTER_SIMPLE_ARG_COUNT = 3
+FILTER_COMPOUND_ARG_COUNT = 5
 
-    column: str
-    operator: Callable
-    operand: Any
+class FilterSpec(NamedTuple, Generic[FilterOperandType]):
+    """A table column filter definition.
+
+    The generic type parameter _O represents the type of the operand,
+    which should match the second parameter of the operator callable.
+    """
+
+    column: str | tuple[str, ...]
+    operator: Callable[[Table | Column, FilterOperandType], numpy.ndarray]
+    operand: FilterOperandType
 
 
 def _float_or_str(value: str) -> float | str:
-    """Internal method to attempt `float(value)` handling a `ValueError`."""
+    """Attempt `float(value)` handling a `ValueError`."""
     # remove any surrounding quotes
     value = QUOTE_REGEX.sub("", value)
     try:  # attempt `float()` conversion
@@ -169,7 +191,7 @@ def parse_column_filter(definition: str) -> list[FilterSpec]:
         parts = parts[:-1]
 
     # parse simple definition: e.g: snr > 5 or 5 < snr
-    if len(parts) == 3:
+    if len(parts) == FILTER_SIMPLE_ARG_COUNT:
         left, op_, right = parts
         if left.type in {token.NAME, token.STRING}:  # snr > 5
             name = QUOTE_REGEX.sub("", left.string)
@@ -183,7 +205,7 @@ def parse_column_filter(definition: str) -> list[FilterSpec]:
             return [FilterSpec(name, oprtr, value)]
 
     # parse between definition: e.g: 5 < snr < 10
-    elif len(parts) == 5:
+    elif len(parts) == FILTER_COMPOUND_ARG_COUNT:
         left, op1, mid, op2, right = parts
         name = QUOTE_REGEX.sub("", mid.string)
         return [
@@ -204,7 +226,7 @@ def parse_column_filter(definition: str) -> list[FilterSpec]:
 
 
 def parse_column_filters(
-    *definitions: str | Iterable[str | tuple],
+    *definitions: FilterLike | Iterable[FilterLike],
 ) -> list[FilterSpec]:
     """Parse multiple compound column filter definitions.
 
@@ -229,7 +251,7 @@ def parse_column_filters(
 
 def _flatten(
     container: Iterable,
-) -> Iterator[str | tuple]:
+) -> Iterator[FilterLike]:
     """Flatten arbitrary nested list of filters into a 1-D list."""
     for elem in container:
         if isinstance(elem, str) or is_filter_tuple(elem):
@@ -238,12 +260,12 @@ def _flatten(
             yield from _flatten(elem)
 
 
-def is_filter_tuple(tup):
+def is_filter_tuple(tup: object) -> bool:
     """Return whether a `tuple` matches the format for a column filter."""
     if isinstance(tup, FilterSpec):
         return True
     try:
-        names, func, args = tup
+        names, func, _ = cast("tuple[str | tuple[str, ...], Callable, tuple]", tup)  # type: ignore[misc]
         return (
             (isinstance(names, str) or all(isinstance(x, str) for x in names))
             and callable(func)
@@ -255,9 +277,9 @@ def is_filter_tuple(tup):
 # -- filter --------------------------
 
 def filter_table(
-    table: Table,
-    *column_filters: str | Iterable[str | tuple],
-) -> Table:
+    table: T,
+    *column_filters: FilterLike | Iterable[FilterLike],
+) -> T:
     """Apply one or more column slice filters to a `Table`.
 
     Multiple column filters can be given, and will be applied serially.

@@ -43,7 +43,6 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 def table_from_cwb_root(
     source: str | Path | IO,
-    format: str = "root",
     treename: str = "waveburst",
     **kwargs,
 ) -> Table:
@@ -56,7 +55,7 @@ def table_from_cwb_root(
     """
     return Table.read(
         source,
-        format=format,
+        format="root",
         treename=treename,
         **kwargs,
     )
@@ -67,7 +66,7 @@ def table_to_cwb_root(
     target: str | Path | IO,
     treename: str = "waveburst",
     **kwargs,
-):
+) -> None:
     """Read an `EventTable` from a Coherent WaveBurst ROOT file.
 
     This function just redirects to the format='root' reader with appropriate
@@ -99,7 +98,7 @@ EventTable.write.registry.register_writer(
 class CwbHeader(core.BaseHeader):
     """Parser for cWB ASCII header."""
 
-    def get_cols(self, lines: list[str]):
+    def get_cols(self, lines: list[str]) -> None:
         """Initialize Column objects from a multi-line ASCII header.
 
         Parameters
@@ -141,7 +140,8 @@ class CwbHeader(core.BaseHeader):
             col = core.Column(name=name)
             self.cols.append(col)
 
-    def write(self, lines: list[str]):
+    def write(self, lines: list[str]) -> None:
+        """Write column headers to ASCII lines."""
         if "selection cut 1" in self.colnames:
             lines.append("# -/+ - not passed/passed final selection cuts")
         for i, name in enumerate(self.colnames):

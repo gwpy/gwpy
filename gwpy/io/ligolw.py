@@ -42,6 +42,7 @@ from .utils import (
 if TYPE_CHECKING:
     from collections.abc import (
         Callable,
+        Collection,
         Generator,
         Iterable,
     )
@@ -62,6 +63,7 @@ if TYPE_CHECKING:
         FileSystemPath,
         NamedReadable,
         Readable,
+        Writable,
     )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -335,7 +337,7 @@ def read_ligolw(
 def read_table(
     source: Document | NamedReadable | list[NamedReadable],
     tablename: str | None = None,
-    columns: list[str] | None = None,
+    columns: Collection[str] | None = None,
     contenthandler: type[ContentHandler] | None = None,
     **kwargs,
 ) -> Table:
@@ -386,7 +388,7 @@ def read_table(
         # overwrite loading column names to get just what was asked for
         _oldcols = tableclass.loadcolumns
         if columns is not None:
-            tableclass.loadcolumns = columns
+            tableclass.loadcolumns = set(columns)
 
     # read document
     if isinstance(source, Document):
@@ -540,7 +542,7 @@ def write_tables_to_document(
 
 
 def write_tables(
-    target: str | Path | FileLike | Document,
+    target: Writable | Document,
     tables: Iterable[Table],
     *,
     append: bool = False,
