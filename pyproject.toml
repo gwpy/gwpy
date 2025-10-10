@@ -139,15 +139,6 @@ sql = [
 ]
 
 [dependency-groups]
-# conda packages for development
-# NOTE: this isn't a valid extra to install with pip, but works with pip2conda
-conda = [
-  "lxml !=4.9.1 ; sys_platform == 'win32'",
-  "python-framel >=8.40.1,!=8.46.0 ; sys_platform != 'win32' or python_version<'3.13'",
-  "python-ldas-tools-framecpp >=2.6.9 ; sys_platform != 'win32' and python_version<'3.12'",
-  "python-nds2-client >=0.16",
-]
-
 # development environments
 # NOTE: this should include everything in all of the other groups,
 #       but may contain more
@@ -246,6 +237,17 @@ exclude = [
 ]
 ignore_missing_imports = true
 mypy_path = "typings"
+
+# -- pip2conda
+
+[tool.pip2conda.dependency-groups]
+# conda packages for development
+conda = [
+  "lxml !=4.9.1 ; sys_platform == 'win32'",
+  "python-framel >=8.40.1,!=8.46.0 ; sys_platform != 'win32' or python_version<'3.13'",
+  "python-ldas-tools-framecpp >=2.6.9 ; sys_platform != 'win32' and python_version<'3.12'",
+  "python-nds2-client >=0.16",
+]
 
 # -- pytest
 
