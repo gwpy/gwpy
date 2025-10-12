@@ -15,7 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Logging utilities for GWpy."""
+"""Logging utilities for GWpy.
+
+For more information about logging in GWpy, see
+:ref:`gwpy-logging`.
+"""
 
 from __future__ import annotations
 
@@ -39,8 +43,14 @@ if TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-DEFAULT_FORMAT = "%(asctime)s:%(name)s:%(levelname)s:%(message)s"
-DEFAULT_DATEFMT = "%Y-%m-%dT%H:%M:%S.%f%z"
+DEFAULT_FORMAT = os.getenv(
+    "GWPY_LOG_FORMAT",
+    "%(asctime)s:%(name)s:%(levelname)s:%(message)s",
+)
+DEFAULT_DATEFMT = os.getenv(
+    "GWPY_LOG_DATEFMT",
+    "%Y-%m-%dT%H:%M:%S.%f%z",
+)
 
 
 def get_default_level() -> int:
