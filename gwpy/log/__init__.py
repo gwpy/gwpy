@@ -43,11 +43,11 @@ if TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-DEFAULT_FORMAT = os.getenv(
+DEFAULT_LOG_FORMAT = os.getenv(
     "GWPY_LOG_FORMAT",
     "%(asctime)s:%(name)s:%(levelname)s:%(message)s",
 )
-DEFAULT_DATEFMT = os.getenv(
+DEFAULT_LOG_DATEFMT = os.getenv(
     "GWPY_LOG_DATEFMT",
     "%Y-%m-%dT%H:%M:%S.%f%z",
 )
@@ -89,8 +89,8 @@ def init_logger(
     level: int | str | None = None,
     *,
     stream: IO = sys.stderr,
-    fmt: str = DEFAULT_FORMAT,
-    datefmt: str | None = DEFAULT_DATEFMT,
+    fmt: str = DEFAULT_LOG_FORMAT,
+    datefmt: str | None = DEFAULT_LOG_DATEFMT,
     style: str = "%",
     color: bool = True,
 ) -> logging.Logger:
