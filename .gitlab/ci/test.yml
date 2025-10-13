@@ -194,11 +194,6 @@ python_test_macos:
   rules:
     - !reference [.macos, rules]
     - !reference [.rules_full_test, rules]
-  parallel:
-    matrix:
-      - PYTHON_VERSION:
-          - "3.11"
-          #- "3.12" <-- cannot build ligo-segments on macOS
 
 # Windows
 python_test_windows:
