@@ -98,6 +98,14 @@ GWOSC_LOCATE_KWARGS = (
     "dataset",
 )
 
+# Keyword arguments that we may inherit from TimeSeries.get
+# that are unsafe to use in to fetch_gwosc_data
+IGNORE_GET_KWARGS = {
+    "frametype",
+    "frametype_match",
+    "urltype",
+}
+
 NUM_THREADS = min(4, cpu_count() or 1)
 
 
@@ -353,6 +361,10 @@ def fetch_gwosc_data(
             DeprecationWarning,
             stacklevel=2,
         )
+
+    # strip out arguments for other formats
+    for key in IGNORE_GET_KWARGS:
+        kwargs.pop(key, None)
 
     # format arguments
     start = to_gps(start)

@@ -927,6 +927,28 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         )
 
     @pytest_skip_flaky_network
+    def test_get_gwosc_kwargs(self, gw150914):
+        """Test that `TimeSeries.get(..., frametype="X")` doesn't break GWOSC.
+
+        GWDataFind should be tried first as a source, but if the frametype doesn't
+        match anything, it should fall back to the GWOSC API without falling over.
+        """
+        try:
+            ts = self.TEST_CLASS.get(
+                GWOSC_GW150914_IFO,
+                GWOSC_GW150914_SEGMENT.start,
+                GWOSC_GW150914_SEGMENT.end,
+                frametype="WONT_MATCH",
+            )
+        except* ImportError as e:  # pragma: no-cover
+            pytest.skip(str(e))
+        utils.assert_quantity_sub_equal(
+            ts,
+            gw150914,
+            exclude=["name", "channel", "unit"],
+        )
+
+    @pytest_skip_flaky_network
     @pytest.mark.requires("nds2")
     @utils.skip_kerberos_credential
     def test_get_nds2(self, gw150914_16384):
