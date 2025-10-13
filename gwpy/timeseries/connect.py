@@ -147,13 +147,20 @@ class _TimeSeriesRead(UnifiedRead):
     def __call__(  # type: ignore[override]
         self,
         source: NamedReadable | list[NamedReadable],
-        *args,
+        name: str | Channel | None = None,
         start: GpsConvertible | None = None,
         end: GpsConvertible | None = None,
+        *,
         pad: float | None = None,
         gap: Literal["raise", "ignore", "pad"] | None = None,
         **kwargs,
     ) -> TimeSeriesBase:
+        """Read a `TimeSeries` from a source."""
+        if start is not None:
+            start = to_gps(start)
+        if end is not None:
+            end = to_gps(end)
+
         # if reading a cache, read it now and sieve
         if io_cache.is_cache(source):
             from .io.cache import preformat_cache
@@ -177,7 +184,8 @@ class _TimeSeriesRead(UnifiedRead):
                 end=end,
             )
 
-        # read
+        # read (with optional name)
+        args = () if name is None else (name,)
         return super().__call__(
             source,
             *args,
@@ -269,32 +277,42 @@ class TimeSeriesRead(TimeSeriesBaseRead):
 
     Parameters
     ----------
-    source : `str`, `list`
+    source : `str`, `os.PathLike`, `file`, or `list` of these
         Source of data, any of the following:
 
-        - `str` path of single data file,
-        - `str` path of LAL-format cache file,
-        - `list` of paths.
+        - Path of a single data file
+        - List of data file paths
+        - Path of LAL-format cache file
+
+    name : `str`, optional
+        The name of the data object to read, or a `Channel` object.
+        This argument is required if ``source`` contains (or may contain)
+        multiple datasets.
+
+        - When reading from GWF, this argument should specify the
+        name of the channel to read.
+        - When reading from HDF5, this argument should specify the
+        path or dataset name within the file.
 
     start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS start time of required data, defaults to start of data found;
-        any input parseable by `~gwpy.time.to_gps` is fine
+        any input parseable by `~gwpy.time.to_gps` is fine.
 
     end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS end time of required data, defaults to end of data found;
-        any input parseable by `~gwpy.time.to_gps` is fine
+        any input parseable by `~gwpy.time.to_gps` is fine.
 
     format : `str`, optional
-        source format identifier. If not given, the format will be
+        Source format identifier. If not given, the format will be
         detected if possible. See below for list of acceptable
         formats.
 
     parallel : `int`, optional
-        number of parallel processes to use, serial process by
+        Number of parallel processes to use, serial process by
         default.
 
     pad : `float`, optional
-        value with which to fill gaps in the source data,
+        Value with which to fill gaps in the source data,
         by default gaps will result in a `ValueError`.
 
     Raises
@@ -405,45 +423,52 @@ class StateVectorRead(TimeSeriesBaseRead):
 
     Parameters
     ----------
-    source : `str`, `list`
+    source : `str`, `os.PathLike`, `file`, or `list` of these
         Source of data, any of the following:
 
-        - `str` path of single data file,
-        - `str` path of LAL-format cache file,
-        - `list` of paths.
+        - Path of a single data file
+        - List of data file paths
+        - Path of LAL-format cache file
 
-    name : `str`, `~gwpy.detector.Channel`
-        the name of the channel to read, or a `Channel` object.
+    name : `str`, optional
+        The name of the data object to read, or a `Channel` object.
+        This argument is required if ``source`` contains (or may contain)
+        multiple datasets.
+
+        - When reading from GWF, this argument should specify the
+        name of the channel to read.
+        - When reading from HDF5, this argument should specify the
+        path or dataset name within the file.
 
     start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS start time of required data, defaults to start of data found;
-        any input parseable by `~gwpy.time.to_gps` is fine
+        any input parseable by `~gwpy.time.to_gps` is fine.
 
     end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS end time of required data, defaults to end of data found;
-        any input parseable by `~gwpy.time.to_gps` is fine
+        any input parseable by `~gwpy.time.to_gps` is fine.
 
     bits : `list`, optional
         List of bits names for this `StateVector`, give `None` at
         any point in the list to mask that bit.
 
     format : `str`, optional
-        source format identifier. If not given, the format will be
+        Source format identifier. If not given, the format will be
         detected if possible. See below for list of acceptable
         formats.
 
     parallel : `int`, optional
-        number of parallel processes to use, serial process by
+        Number of parallel processes to use, serial process by
         default.
 
     pad : `float`, optional
-        value with which to fill gaps in the source data,
+        Value with which to fill gaps in the source data,
         by default gaps will result in a `ValueError`.
 
     Raises
     ------
     IndexError
-        if ``source`` is an empty list
+        If ``source`` is an empty list.
 
     Notes
     -----"""
@@ -704,34 +729,39 @@ class TimeSeriesDictRead(TimeSeriesBaseDictRead):
         - `str` path of LAL-format cache file,
         - `list` of paths.
 
-    name : `str`, `~gwpy.detector.Channel`
-        the name of the channel to read, or a `Channel` object.
+    names : Sequence of `str` or `~gwpy.detector.Channel`
+        A list (or similar) of dataset names to read from ``source``.
+
+        - When reading from GWF, this argument should specify the
+        names of the channels to read.
+        - When reading from HDF5, this argument should specify the
+        paths or dataset names within the file.
 
     start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS start time of required data, defaults to start of data found;
-        any input parseable by `~gwpy.time.to_gps` is fine
+        any input parseable by `~gwpy.time.to_gps` is fine.
 
     end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS end time of required data, defaults to end of data found;
-        any input parseable by `~gwpy.time.to_gps` is fine
+        any input parseable by `~gwpy.time.to_gps` is fine.
 
     format : `str`, optional
-        source format identifier. If not given, the format will be
+        Source format identifier. If not given, the format will be
         detected if possible. See below for list of acceptable
         formats.
 
     parallel : `int`, optional
-        number of parallel processes to use, serial process by
+        Number of parallel processes to use, serial process by
         default.
 
     pad : `float`, optional
-        value with which to fill gaps in the source data,
+        Value with which to fill gaps in the source data,
         by default gaps will result in a `ValueError`.
 
     Raises
     ------
     IndexError
-        if ``source`` is an empty list
+        If ``source`` is an empty list.
 
     Notes
     -----"""
@@ -776,24 +806,29 @@ class StateVectorDictRead(TimeSeriesBaseDictRead):
         - `str` path of LAL-format cache file,
         - `list` of paths.
 
-    name : `str`, `~gwpy.detector.Channel`
-        the name of the channel to read, or a `Channel` object.
+    names : Sequence of `str` or `~gwpy.detector.Channel`
+        A list (or similar) of dataset names to read from ``source``.
+
+        - When reading from GWF, this argument should specify the
+        names of the channels to read.
+        - When reading from HDF5, this argument should specify the
+        paths or dataset names within the file.
 
     start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS start time of required data, defaults to start of data found;
-        any input parseable by `~gwpy.time.to_gps` is fine
+        any input parseable by `~gwpy.time.to_gps` is fine.
 
     end : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS end time of required data, defaults to end of data found;
-        any input parseable by `~gwpy.time.to_gps` is fine
+        any input parseable by `~gwpy.time.to_gps` is fine.
 
     format : `str`, optional
-        source format identifier. If not given, the format will be
+        Source format identifier. If not given, the format will be
         detected if possible. See below for list of acceptable
         formats.
 
     parallel : `int`, optional
-        number of parallel processes to use, serial process by
+        Number of parallel processes to use, serial process by
         default.
 
     pad : `float`, optional
@@ -818,7 +853,7 @@ class StateVectorDictRead(TimeSeriesBaseDictRead):
     Raises
     ------
     IndexError
-        if ``source`` is an empty list
+        If ``source`` is an empty list.
 
     Notes
     -----"""
