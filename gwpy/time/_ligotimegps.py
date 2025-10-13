@@ -28,6 +28,9 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 # try and import LIGOTimeGPS from LAL, otherwise use the pure-python backup
 # provided by the ligotimegps package, its slower, but works
 try:
+    # import h5py first to avoid https://git.ligo.org/lscsoft/lalsuite/-/issues/821
+    import h5py  # noqa: F401
+    # then install LAL
     from lal import LIGOTimeGPS
 except ImportError:
     from ligotimegps import LIGOTimeGPS  # noqa: F401
