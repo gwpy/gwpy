@@ -32,6 +32,20 @@ The following variables are understood:
       - The library to prefer when reading :ref:`GWF <gwpy-timeseries-io-gwf>`
         data, one of ``"FrameCPP"``, ``"FrameL"``, ``"LALFrame"``
         (case insensitive)
+    * - ``GWPY_INIT_LOGGING``
+      - :ref:`Bool <gwpy-env-bool>`
+      - `False`
+      - Whether to configure the logging system when GWpy starts
+    * - ``GWPY_LOG_DATEFMT``
+      - String
+      - ``"%Y-%m-%dT%H:%M:%S.%f%z"``
+      - The format to use when printing datetimes in log messages,
+        see :ref:`python:logging-basic-tutorial`.
+    * - ``GWPY_LOG_FORMAT``
+      - String
+      - ``"%(asctime)s:%(name)s:%(levelname)s:%(message)s"``
+      - The format to use when emitting log messages,
+        see :ref:`python:logging-basic-tutorial`.
     * - ``GWPY_LOG_LEVEL``
       - String or Number
       - ``0``

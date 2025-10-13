@@ -37,6 +37,7 @@ from . import (
     log,
     plot,  # registers gwpy.plot.Axes as default rectilinear axes
 )
+from .utils.env import bool_env
 
 try:
     from ._version import version as __version__
@@ -72,3 +73,9 @@ def init_logging(level: str | int = log.get_default_level()) -> None:
         logging.getLevelName(logger.getEffectiveLevel()),
         logger.name,
     )
+
+
+# Initialise logging for the package
+if bool_env("GWPY_INIT_LOGGING", default=False):
+    init_logging()
+del bool_env
