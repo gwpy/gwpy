@@ -49,7 +49,7 @@ DEFAULT_LOG_FORMAT = os.getenv(
 )
 DEFAULT_LOG_DATEFMT = os.getenv(
     "GWPY_LOG_DATEFMT",
-    "%Y-%m-%dT%H:%M:%S.%f%z",
+    "%Y-%m-%dT%H:%M:%S%z",
 )
 
 
