@@ -152,7 +152,6 @@ class _TestCliProduct:
 
     def test_init(self, args):
         prod = self.TEST_CLASS(args)
-        assert prod.verbose == args.verbose
         assert prod.plot is None
         assert prod.plot_num == 0
         assert prod.start_list == [0]
@@ -170,15 +169,14 @@ class _TestCliProduct:
             raise NotImplementedError
         assert prod.action is self.ACTION
 
-    @pytest.mark.parametrize("level", [1, 2, 3])
-    def test_log(self, prod, level, capsys):
-        v = prod.verbose
+    @pytest.mark.parametrize("level", [
+        pytest.param(1, id="info"),
+        pytest.param(2, id="debug"),
+    ])
+    def test_log(self, prod, level, caplog):
+        caplog.set_level("INFO", logger=prod.logger.name)
         prod.log(level, "Test")
-        out, err = capsys.readouterr()
-        if v >= level:
-            assert out == "Test\n"
-        else:
-            assert out == ""
+        assert ("Test" in caplog.text) is (level <= 1)
 
     @pytest.mark.requires("nds2")
     def test_get_data(self, prod, nds2_connection):

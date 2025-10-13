@@ -30,6 +30,7 @@ from argparse import (
 from matplotlib import use
 
 from .. import __version__
+from ..log import init_logger
 from . import PRODUCTS
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
@@ -55,6 +56,18 @@ Examples:
 Written by {__author__}.
 Report bugs to https://gitlab.com/gwpy/gwpy/-/issues/.
 """  # noqa: E501
+
+
+def _init_logging(verbosity):
+    """Set up logging."""
+    # If user did not specify verbosity, don't change anything;
+    # this allows the logging level to be configured by other means,
+    # e.g. a config file or environment variable.
+    if not verbosity:
+        return
+    # Otherwise, set the level for the gwpy logger based on verbosity
+    level = max(3 - verbosity, 0) * 10
+    init_logger("gwpy", level=level)
 
 
 # -- init command line --------------------------------------------------------
@@ -90,7 +103,7 @@ def create_parser():
     # set the argument parser to act as the parent
     parentparser = _ArgumentParser(add_help=False)
     parentparser._optionals.title = "Verbosity options"
-    parentparser.add_argument("-v", "--verbose", action="count", default=1,
+    parentparser.add_argument("-v", "--verbose", action="count", default=0,
                               help="increase verbose output")
     parentparser.add_argument("-s", "--silent", action="store_true",
                               help="show only fatal errors")
@@ -126,6 +139,7 @@ def main(args=None):
     """
     # parse the command line and create a product object
     args = parse_command_line(args=args)
+    _init_logging(args.verbose)
     prod = PRODUCTS[args.mode](args)
     prod.log(2, f"{prod.action} created")
 

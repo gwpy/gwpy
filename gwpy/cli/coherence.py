@@ -18,6 +18,7 @@
 
 """Coherence plots."""
 
+import logging
 from collections import OrderedDict
 
 from ..plot import Plot
@@ -25,6 +26,8 @@ from ..plot.tex import label_to_latex
 from .spectrum import Spectrum
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
+
+logger = logging.getLogger(__name__)
 
 
 class Coherence(Spectrum):
@@ -36,8 +39,8 @@ class Coherence(Spectrum):
 
     MIN_DATASETS = 2
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, logger=logger, **kwargs):
+        super().__init__(*args, logger=logger, **kwargs)
         self.ref_chan = self.args.ref or self.chan_list[0]
         # deal with channel type appendages
         if "," in self.ref_chan:

@@ -18,6 +18,8 @@
 
 """Spectrogram plots."""
 
+import logging
+
 from numpy import percentile
 
 from ..utils import unique
@@ -25,14 +27,16 @@ from .cliproduct import FFTMixin, ImageProduct, TimeDomainProduct
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
+logger = logging.getLogger(__name__)
+
 
 class Spectrogram(FFTMixin, TimeDomainProduct, ImageProduct):
     """Plot the spectrogram of a time series."""
 
     action = "spectrogram"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, logger=logger, **kwargs):
+        super().__init__(*args, logger=logger, **kwargs)
 
         #: attribute to hold calculated Spectrogram data array
         self.result = None

@@ -18,9 +18,13 @@
 
 """Coherence spectrogram."""
 
+import logging
+
 from .spectrogram import Spectrogram
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
+
+logger = logging.getLogger(__name__)
 
 
 class Coherencegram(Spectrogram):
@@ -31,8 +35,8 @@ class Coherencegram(Spectrogram):
     MAX_DATASETS = 2
     action = "coherencegram"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, logger=logger, **kwargs):
+        super().__init__(*args, logger=logger, **kwargs)
         self.ref_chan = self.args.ref or self.chan_list[0]
         # deal with channel type (e.g. m-trend)
         if "," in self.ref_chan:

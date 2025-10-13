@@ -18,6 +18,7 @@
 
 """Q-transform plots."""
 
+import logging
 import os.path
 import re
 import warnings
@@ -28,6 +29,8 @@ from ..segments import Segment
 from ..time import to_gps
 from .spectrogram import Spectrogram
 
+logger = logging.getLogger(__name__)
+
 
 class Qtransform(Spectrogram):
     """Plot the Q-transform (Omega)."""
@@ -36,8 +39,8 @@ class Qtransform(Spectrogram):
     MAX_DATASETS = 1
     action = "qtransform"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, logger=logger, **kwargs):
+        super().__init__(*args, logger=logger, **kwargs)
 
         args = self.args
         self.qxfrm_args = {

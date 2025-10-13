@@ -18,6 +18,7 @@
 
 """The timeseries CLI product."""
 
+import logging
 import warnings
 
 from ..plot import Plot
@@ -26,11 +27,16 @@ from .cliproduct import TimeDomainProduct
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
+logger = logging.getLogger(__name__)
+
 
 class TimeSeries(TimeDomainProduct):
     """Plot one or more time series."""
 
     action = "timeseries"
+
+    def __init__(self, *args, logger=logger, **kwargs):
+        super().__init__(*args, logger=logger, **kwargs)
 
     def get_ylabel(self):
         """Text for y-axis label,  check if channel defines it."""
