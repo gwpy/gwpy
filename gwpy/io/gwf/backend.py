@@ -176,5 +176,9 @@ def get_backend_function(
                 msg = f"GWF backend '{backend}' does not implement '{name}'"
                 raise NotImplementedError(msg) from exc
             continue
+    # Try and import any backend to see if anything is actually available
+    get_backend(package=package, backends=backends)
+    # Otherwise we know that the requested function is not implemented
+    # in any available backend
     msg = f"no GWF backend module found that implements '{name}'"
     raise NotImplementedError(msg)

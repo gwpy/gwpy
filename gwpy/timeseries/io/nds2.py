@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import logging
 import operator
 from functools import reduce
@@ -508,6 +509,10 @@ def identify_nds2_sources(
     """Identify NDS2 sources for these arguments."""
     # NDS2 only works for 'get'
     if origin != "get":
+        return None
+
+    # We must be able to import the NDS2 client
+    if importlib.util.find_spec("nds2") is None:
         return None
 
     # If the host is a GWDataFind NDS server, don't get involved

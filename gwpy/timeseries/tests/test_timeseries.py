@@ -294,6 +294,24 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         )
         utils.assert_quantity_sub_equal(array, data)
 
+    def test_read_start_end_args(self, tmp_path):
+        """Test that `TimeSeries.read` handles start/end as positionals."""
+        # Create an array and write it to a file
+        array = self.create(t0=0, dt=10/self.data.size, name="TEST1")
+        h5file = tmp_path / "X-data-0-10.h5"
+        array.write(h5file)
+
+        # Try and read (half) the file passing start/end as positionals
+        data = self.TEST_CLASS.read(
+            h5file,
+            "TEST1",
+            0,
+            5,
+            format="hdf5",
+        )
+        half = array.size // 2
+        utils.assert_quantity_sub_equal(array[:half], data)
+
     @pytest.mark.parametrize("fmt", ["txt", "csv"])
     def test_read_write_ascii(self, array, fmt):
         """Test reading and writing ASCII files."""
@@ -923,6 +941,28 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         utils.assert_quantity_sub_equal(
             ts,
             gw150914_16384,
+            exclude=["name", "channel", "unit"],
+        )
+
+    @pytest_skip_flaky_network
+    def test_get_gwosc_kwargs(self, gw150914):
+        """Test that `TimeSeries.get(..., frametype="X")` doesn't break GWOSC.
+
+        GWDataFind should be tried first as a source, but if the frametype doesn't
+        match anything, it should fall back to the GWOSC API without falling over.
+        """
+        try:
+            ts = self.TEST_CLASS.get(
+                GWOSC_GW150914_IFO,
+                GWOSC_GW150914_SEGMENT.start,
+                GWOSC_GW150914_SEGMENT.end,
+                frametype="WONT_MATCH",
+            )
+        except* ImportError as e:  # pragma: no-cover
+            pytest.skip(str(e))
+        utils.assert_quantity_sub_equal(
+            ts,
+            gw150914,
             exclude=["name", "channel", "unit"],
         )
 

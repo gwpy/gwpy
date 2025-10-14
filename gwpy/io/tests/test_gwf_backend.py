@@ -29,10 +29,12 @@ BACKEND_LIBRARY = {
     "FrameL": "framel",
     "LALFrame": "lalframe",
 }
+# need at least one backend (LALFrame is most widely available)
+ANY_BACKEND = pytest.mark.requires(BACKEND_LIBRARY["LALFrame"])
 
 
 @mock.patch.dict("os.environ")
-@pytest.mark.requires(BACKEND_LIBRARY["LALFrame"])  # need at least one backend
+@ANY_BACKEND
 def test_get_backend():
     """Test that :func:`get_backend` returns a sensible value."""
     os.environ.pop("GWPY_FRAME_LIBRARY", None)
@@ -51,7 +53,7 @@ def test_get_backend_environ(backend):
 
 
 @mock.patch.dict("os.environ")
-@pytest.mark.requires(BACKEND_LIBRARY["frameCPP"])  # need at least one backend
+@ANY_BACKEND
 def test_get_backend_environ_bad():
     """Test that `get_backend_environ` returns a valid value despiate a bad env."""
     os.environ["GWPY_FRAME_LIBRARY"] = "blahblahblah"
@@ -74,6 +76,7 @@ def test_get_backend_function_badbackend():
         io_gwf.get_backend_function("notimplemented", backend="notimplemented")
 
 
+@ANY_BACKEND
 def test_get_backend_function_notimplemented():
     """Test that `get_backend_function` formats errors correctly."""
     with pytest.raises(
