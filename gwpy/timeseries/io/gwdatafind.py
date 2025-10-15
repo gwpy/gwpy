@@ -41,7 +41,10 @@ from .. import (
 from .losc import _any_gwosc_channels
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import (
+        Collection,
+        Iterable,
+    )
     from re import Pattern
 
     from ...typing import GpsLike
@@ -186,7 +189,7 @@ def find_series(
 
 
 def find_dict(
-    channels: list[str | Channel],
+    channels: Collection[str | Channel],
     start: GpsLike,
     end: GpsLike,
     *,

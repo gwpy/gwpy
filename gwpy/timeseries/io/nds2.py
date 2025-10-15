@@ -47,7 +47,10 @@ from ..connect import _pad_series
 from .losc import _any_gwosc_channels
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import (
+        Iterable,
+        Sequence,
+    )
     from typing import TypeVar
 
     import nds2
@@ -230,7 +233,7 @@ def fetch_series(
 
 
 def fetch_dict(
-    channels: list[str | Channel],
+    channels: Sequence[str | Channel],
     start: GpsLike,
     end: GpsLike,
     *,
