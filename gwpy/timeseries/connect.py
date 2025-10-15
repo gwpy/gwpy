@@ -592,7 +592,7 @@ class TimeSeriesBaseDictGet(UnifiedGet):
 
     def __call__(  # type: ignore[override]
         self,
-        names: list[str | Channel],
+        names: Sequence[str | Channel],
         start: GpsLike,
         end: GpsLike,
         *,

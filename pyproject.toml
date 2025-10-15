@@ -68,6 +68,7 @@ dynamic = [
 
 [project.scripts]
 gwpy-plot = "gwpy.cli.gwpy_plot:main"
+gwpy-rds = "gwpy.tools.rds:main"
 
 [project.urls]
 "Bug Tracker" = "https://gitlab.com/gwpy/gwpy/-/issues"
@@ -171,6 +172,7 @@ docs = [
   "matplotlib >=3.7.0",
   "numpydoc >=0.8.0",
   "Sphinx >=4.4.0",
+  "sphinx-argparse",
   "sphinx-automodapi",
   "sphinx-copybutton >=0.5.2",
   "sphinx-design >=0.6.1",
@@ -288,6 +290,8 @@ ignore_directives = [
   "autosummary",
   # sphinx.ext.ifconfig
   "ifconfig",
+  # sphinx-argparse
+  "argparse",
   # sphinx-automodapi
   "automodsumm",
   # sphinx-design
