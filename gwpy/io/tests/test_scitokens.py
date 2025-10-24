@@ -41,7 +41,10 @@ def tokenstr():
     tok = demo.token(
         TEST_CLAIMS | {"exp": time.time() + 86400},
     )
-    time.sleep(1)  # ensure that iat is in the past
+
+    # ensure that iat is in the past
+    time.sleep(2)
+
     return tok
 
 
