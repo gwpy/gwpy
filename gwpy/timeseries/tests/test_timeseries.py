@@ -49,7 +49,10 @@ from ...signal.window import planck
 from ...spectrogram import Spectrogram
 from ...table import EventTable
 from ...testing import mocks, utils
-from ...testing.errors import pytest_skip_flaky_network
+from ...testing.errors import (
+    pytest_skip_flaky_network,
+    pytest_skip_network_error,
+)
 from ...time import LIGOTimeGPS
 from ...types import Index
 from .. import StateTimeSeries, TimeSeries, TimeSeriesDict, TimeSeriesList
@@ -213,7 +216,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
     # -- fixtures --------------------
 
     @pytest.fixture(scope="class")
-    @pytest_skip_flaky_network
+    @pytest_skip_network_error
     def gw150914(self) -> TimeSeriesType:
         """TimeSeries containing GW150914 data from GWOSC."""
         return self.TEST_CLASS.fetch_open_data(
@@ -222,6 +225,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         )
 
     @pytest.fixture(scope="class")
+    @pytest_skip_network_error
     def gw150914_16384(self) -> TimeSeriesType:
         """TimeSeries containing GW150914 data from GWOSC at 16384 Hz."""
         return self.TEST_CLASS.fetch_open_data(
@@ -232,6 +236,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         )
 
     @pytest.fixture(scope="class")
+    @pytest_skip_network_error
     def gw150914_h1_32(self) -> TimeSeriesType:
         """TimeSeries containing 32-seconds of H1 GW150914 data from GWOSC."""
         return self.TEST_CLASS.fetch_open_data(
@@ -240,6 +245,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         )
 
     @pytest.fixture(scope="class")
+    @pytest_skip_network_error
     def gw150914_l1_32(self) -> TimeSeriesType:
         """TimeSeries containing 32-seconds of L1 GW150914 data from GWOSC."""
         return self.TEST_CLASS.fetch_open_data(
