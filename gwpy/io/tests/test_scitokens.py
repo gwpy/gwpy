@@ -28,6 +28,13 @@ from .. import scitokens as io_scitokens
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+# Rerun tests when the SciTokens demo token is invalid
+rerun_invalid_token = pytest.mark.flaky(
+    reruns=2,
+    only_rerun=["InvalidTokenError"],
+)
+
+# Claims for the demo token
 TEST_CLAIMS = {
     "aud": "https://gwpy.example.com",
     "scope": "gwpy.read gwpy.create gwpy.update",
@@ -41,7 +48,10 @@ def tokenstr():
     tok = demo.token(
         TEST_CLAIMS | {"exp": time.time() + 86400},
     )
-    time.sleep(1)  # ensure that iat is in the past
+
+    # ensure that iat is in the past
+    time.sleep(2)
+
     return tok
 
 
@@ -87,6 +97,7 @@ def assert_tokens_equal(result, expected):
 # -- find_token
 
 @mock.patch.dict(os.environ)
+@rerun_invalid_token
 @pytest.mark.requires("igwn_auth_utils")
 def test_find_token(token, tokenstr):
     """Test that `find_token` returns the right token."""
@@ -100,6 +111,7 @@ def test_find_token(token, tokenstr):
 
 
 @mock.patch.dict(os.environ)
+@rerun_invalid_token
 @pytest.mark.requires("igwn_auth_utils")
 def test_find_token_error(tokenstr):
     """Test error handling in `find_token`."""
@@ -123,6 +135,7 @@ def test_find_token_error(tokenstr):
 
 # -- get_token
 
+@rerun_invalid_token
 @pytest.mark.requires("htgettoken", "scitokens", exc_type=(ImportError, OSError))
 @pytest.mark.usefixtures("htgettoken_main")
 def test_get_token(token, tokenpath):
@@ -138,6 +151,7 @@ def test_get_token(token, tokenpath):
     assert_tokens_equal(new, token)
 
 
+@rerun_invalid_token
 @pytest.mark.requires("htgettoken", "scitokens", exc_type=(ImportError, OSError))
 def test_get_token_error_systemexit():
     """Test that `get_scitoken` handles `SystemExit` well."""
@@ -151,6 +165,7 @@ def test_get_token_error_systemexit():
 
 # -- add_http_authorization_header
 
+@rerun_invalid_token
 @pytest.mark.requires("requests_scitokens")
 def test_add_http_authorization_header_token(tokenstr, token):
     """Test `add_http_authorization_header`."""
@@ -162,6 +177,7 @@ def test_add_http_authorization_header_token(tokenstr, token):
     assert headers["Authorization"] == f"Bearer {tokenstr}"
 
 
+@rerun_invalid_token
 @mock.patch.dict("sys.modules", {"requests_scitokens": None})
 def test_add_http_authorization_header_missing_import():
     """Test `add_http_authorization_header` handling of missing import."""
@@ -172,6 +188,11 @@ def test_add_http_authorization_header_missing_import():
 
 
 @mock.patch.dict(os.environ)
+@pytest.mark.flaky(
+    reruns=2,
+    # find_token raises a RuntimeError on top of InvalidTokenError
+    only_rerun=[RuntimeError],
+)
 @pytest.mark.requires("igwn_auth_utils", "requests_scitokens")
 def test_add_http_authorization_header_find(tokenstr):
     """Test `add_http_authorization_header` calling out to find_token."""
@@ -186,6 +207,7 @@ def test_add_http_authorization_header_find(tokenstr):
 
 
 @mock.patch.dict(os.environ)
+@rerun_invalid_token
 @pytest.mark.requires(
     "htgettoken",
     "igwn_auth_utils",
