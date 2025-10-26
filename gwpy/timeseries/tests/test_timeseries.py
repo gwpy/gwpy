@@ -714,7 +714,6 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             GWOSC_GW150914_SEGMENT.start,
             GWOSC_GW150914_SEGMENT.end,
             format=fmt,
-            verbose=True,
             timeout=60,
         )
         utils.assert_quantity_sub_equal(
@@ -765,7 +764,6 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             "X1:test",
             1000000000,
             1000000004,
-            verbose=True,
         )
         utils.assert_quantity_sub_equal(ts, expected)
 
@@ -777,7 +775,6 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             "X1:test",
             1000000000,
             1000000004,
-            verbose=True,
             connection=nds2_connection,
         )
         utils.assert_quantity_sub_equal(ts, expected)

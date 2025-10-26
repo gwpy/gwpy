@@ -175,9 +175,8 @@ def fetch_series(
         Default is `True`.
 
     verbose : `bool`, optional
-        Print verbose progress information about NDS download.
-        If ``verbose`` is specified as a string, this defines the
-        prefix for the progress meter.
+        This argument is deprecated and will be removed in a future release.
+        Use DEBUG-level logging instead, see :ref:`gwpy-logging`.
 
     connection : `nds2.connection`, optional
         Open NDS connection to use.
@@ -277,9 +276,8 @@ def fetch_dict(
         Default is `True`.
 
     verbose : `bool`, optional
-        Print verbose progress information about NDS download.
-        If ``verbose`` is specified as a string, this defines the
-        prefix for the progress meter.
+        This argument is deprecated and will be removed in a future release.
+        Use DEBUG-level logging instead, see :ref:`gwpy-logging`.
 
     connection : `nds2.connection`, optional
         Open NDS connection to use.

@@ -392,9 +392,8 @@ class TimeSeriesBase(Series):
             Default is `True`.
 
         verbose : `bool`, optional
-            Print verbose progress information about NDS download.
-            If ``verbose`` is specified as a string, this defines the
-            prefix for the progress meter.
+            This argument is deprecated and will be removed in a future release.
+            Use DEBUG-level logging instead, see :ref:`gwpy-logging`.
 
         connection : `nds2.connection`, optional
             Open NDS connection to use.
@@ -455,7 +454,7 @@ class TimeSeriesBase(Series):
         format: Literal["gwf", "hdf5"] = "hdf5",  # noqa: A002
         host: str = GWOSC_DEFAULT_HOST,
         *,
-        verbose: bool = False,
+        verbose: bool | None = None,
         cache: bool | None = None,
         **kwargs,
     ) -> Self:
@@ -495,8 +494,9 @@ class TimeSeriesBase(Series):
         host : `str`, optional
             HTTP host name of GWOSC server to access.
 
-        verbose : `bool`, optional, default: `False`
-            Print verbose output while fetching data.
+        verbose : `bool`, optional
+            This argument is deprecated and will be removed in a future release.
+            Use DEBUG-level logging instead, see :ref:`gwpy-logging`.
 
         cache : `bool`, optional
             Save/read a local copy of the remote URL, default: `False`;
@@ -647,9 +647,8 @@ class TimeSeriesBase(Series):
             Allow reading from frame files on (slow) magnetic tape.
 
         verbose : `bool`, optional
-            Print verbose output about read progress, if ``verbose``
-            is specified as a string, this defines the prefix for the
-            progress meter.
+            This argument is deprecated and will be removed in a future release.
+            Use DEBUG-level logging instead, see :ref:`gwpy-logging`.
 
         readargs
             Any other keyword arguments to be passed to `.read()`.
@@ -1226,9 +1225,8 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
             Default is `True`.
 
         verbose : `bool`, optional
-            Print verbose progress information about NDS download.
-            If ``verbose`` is specified as a string, this defines the
-            prefix for the progress meter.
+            This argument is deprecated and will be removed in a future release.
+            Use DEBUG-level logging instead, see :ref:`gwpy-logging`.
 
         connection : `nds2.connection`, optional
             Open NDS connection to use.
@@ -1296,7 +1294,7 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
         version: int | None = None,
         format: str = "hdf5",  # noqa: A002
         host: str = GWOSC_DEFAULT_HOST,
-        verbose: bool = False,
+        verbose: bool | None = None,
         cache: bool | None = None,
         parallel: int = 1,
         **kwargs,
@@ -1342,7 +1340,8 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
             Host name of GWOSC server to access.
 
         verbose : `bool`
-            Print verbose output while fetching data.
+            This argument is deprecated and will be removed in a future release.
+            Use DEBUG-level logging instead, see :ref:`gwpy-logging`.
 
         cache : `bool`
             Save/read a local copy of the remote URL, default: `False`;
@@ -1483,9 +1482,8 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
             Allow reading from frame files on (slow) magnetic tape.
 
         verbose : `bool`, optional
-            Print verbose output about read progress, if ``verbose``
-            is specified as a string, this defines the prefix for the
-            progress meter.
+            This argument is deprecated and will be removed in a future release.
+            Use DEBUG-level logging instead, see :ref:`gwpy-logging`.
 
         readargs
             Any other keyword arguments to be passed to `.read()`.
