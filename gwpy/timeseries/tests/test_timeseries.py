@@ -857,6 +857,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             *GWOSC_GW150914_SEGMENT,
             frametype=GWOSC_GW150914_FRAMETYPE,
             urltype="osdf",
+            host="datafind.gwosc.org",
             **kwargs,
         )
         utils.assert_quantity_sub_equal(
@@ -875,6 +876,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
                 *GWOSC_GW150914_SEGMENT,
                 frametype=GWOSC_GW150914_FRAMETYPE,
                 observatory="X",
+                host="datafind.gwosc.org",
             )
         # Check that the 400 error is part of the exception group
         assert excinfo.group_contains(HTTPError, match="400 Client Error")
@@ -891,6 +893,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
                 GWOSC_GW150914_CHANNEL,
                 *GWOSC_GW150914_SEGMENT.shift(-1e8),
                 frametype=GWOSC_GW150914_FRAMETYPE,
+                host="datafind.gwosc.org",
             )
         # Check that the RuntimeError is part of the exception group
         assert excinfo.group_contains(RuntimeError)
@@ -917,6 +920,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             GWOSC_GW150914_SEGMENT.start,
             GWOSC_GW150914_SEGMENT.end,
             urltype="osdf",
+            host="datafind.gwosc.org",
         )
         utils.assert_quantity_sub_equal(
             ts,
@@ -925,25 +929,17 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         )
 
     @_gwosc_pelican
-    @mock.patch.dict(
-        # force 'import nds2' to fail so that we are actually testing
-        # the gwdatafind API or nothing
-        "sys.modules",
-        {"nds2": None},
-    )
     def test_get_datafind(self, gw150914_16384):
         """Test that `TimeSeries.get(..., source='datafind')` works."""
-        try:
-            ts = self.TEST_CLASS.get(
-                GWOSC_GW150914_CHANNEL,
-                GWOSC_GW150914_SEGMENT.start,
-                GWOSC_GW150914_SEGMENT.end,
-                source="gwdatafind",
-                frametype_match=r"V1\Z",
-                urltype="osdf",
-            )
-        except* (ImportError, RuntimeError) as e:  # pragma: no-cover
-            pytest.skip(str(e))
+        ts = self.TEST_CLASS.get(
+            GWOSC_GW150914_CHANNEL,
+            GWOSC_GW150914_SEGMENT.start,
+            GWOSC_GW150914_SEGMENT.end,
+            source="gwdatafind",
+            host="datafind.gwosc.org",
+            frametype_match=r"V1\Z",
+            urltype="osdf",
+        )
         utils.assert_quantity_sub_equal(
             ts,
             gw150914_16384,
