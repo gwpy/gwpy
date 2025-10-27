@@ -41,22 +41,6 @@ if TYPE_CHECKING:
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def series_contenthandler() -> ligolw.LIGOLwContentHandler:
-    """Build a `~igwn_ligolw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``."""
-    from igwn_ligolw import (
-        array as ligolw_array,
-        ligolw,
-        param as ligolw_param,
-    )
-
-    @ligolw_array.use_in
-    @ligolw_param.use_in
-    class ArrayContentHandler(ligolw.LIGOLWContentHandler):
-        """`~igwn_ligolw.ligolw.ContentHandler` to read a LIGO_LW ``<Array>``."""
-
-    return ArrayContentHandler
-
-
 def _match_name(elem: ligolw.Element, name: str) -> bool:
     """Return `True` if the ``elem``'s Name matches ``name``."""
     try:
@@ -221,12 +205,16 @@ def read_series(
     series : `~gwpy.types.Series`
         A series with metadata read from the ``<Array>``.
     """
-    from igwn_ligolw.ligolw import Dim
+    from igwn_ligolw import lsctables  # noqa: F401
+    from igwn_ligolw.ligolw import (
+        Dim,
+        LIGOLWContentHandler,
+    )
 
     # read document and find relevant <Array> element
     xmldoc = read_ligolw(
         source,
-        contenthandler=contenthandler or series_contenthandler(),
+        contenthandler=contenthandler or LIGOLWContentHandler,
     )
     if epoch is not None:
         epoch = to_gps(epoch)

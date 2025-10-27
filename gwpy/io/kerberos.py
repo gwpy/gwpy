@@ -334,6 +334,9 @@ def kinit(
         DEPRECATED. This argument does nothing, instead of using ``verbose=True``
         use logging to control output.
 
+    krb5ccname : `str`, optional
+        DEPRECATED. This argument has been renamed to ``ccache``.
+
     Returns
     -------
     creds : `gssapi.Credentials`

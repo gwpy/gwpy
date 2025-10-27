@@ -90,7 +90,6 @@ for start, end in l1segs.active:
         "L1",
         start,
         end,
-        verbose=True,
     )
     specgram = l1strain.spectrogram(30, fftlength=4) ** (1/2.)
     spectrograms.append(specgram)

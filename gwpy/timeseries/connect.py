@@ -400,9 +400,8 @@ class TimeSeriesGet(TimeSeriesBaseGet):
         retrieving data from tape if required.
 
     verbose : `bool`
-        Print verbose output about data access progress.
-        If ``verbose`` is specified as a string, this defines the prefix
-        for the progress meter.
+        This argument is deprecated and will be removed in a future release.
+        Use DEBUG-level logging instead, see :ref:`gwpy-logging`.
 
     kwargs
         Other keyword arguments to pass to the data access function for
@@ -534,7 +533,8 @@ class StateVectorGet(TimeSeriesBaseGet):
         default.
 
     verbose : `bool`, optional
-        Print verbose output about NDS progress.
+        This argument is deprecated and will be removed in a future release.
+        Use DEBUG-level logging instead, see :ref:`gwpy-logging`.
 
     kwargs
         Other keyword arguments to pass to the data access function for
@@ -600,7 +600,7 @@ class TimeSeriesBaseDictGet(UnifiedGet):
         pad: float | None = None,
         scaled: bool | None = None,
         dtype: DTypeLike | None = None,
-        verbose: bool = False,
+        verbose: bool | None = None,
         allow_tape: bool | None = None,
         **kwargs,
     ) -> TimeSeriesBaseDict:
@@ -698,9 +698,8 @@ class TimeSeriesDictGet(TimeSeriesBaseDictGet):
         retrieving data from tape if required.
 
     verbose : `bool`
-        Print verbose output about data access progress.
-        If ``verbose`` is specified as a string, this defines the prefix
-        for the progress meter.
+        This argument is deprecated and will be removed in a future release.
+        Use DEBUG-level logging instead, see :ref:`gwpy-logging`.
 
     kwargs
         Other keyword arguments to pass to the data access function for
