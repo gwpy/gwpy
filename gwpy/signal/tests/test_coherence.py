@@ -28,6 +28,8 @@ import scipy.signal as sig
 from ...signal import spectral
 from ...timeseries import TimeSeries
 
+RNG = np.random.default_rng(12345)
+
 
 @pytest.fixture
 def series_data():
@@ -47,10 +49,10 @@ def series_data():
     ts = np.linspace(0, t_end, n_t)
 
     firstarr = 0.1 * np.cos(ts + 0.1) + 0.9 * np.sin(2 * ts + 5)
-    firstarr += np.random.normal(5.8, 2, n_t)
+    firstarr += RNG.normal(5.8, 2, n_t)
 
     secondarr = 0.5 * np.cos(ts + 0.1) + 0.1 * np.sin(5 * ts + 10)
-    secondarr += np.random.normal(5.8, 2, n_t)
+    secondarr += RNG.normal(5.8, 2, n_t)
 
     return firstarr, secondarr, seglen
 
