@@ -192,12 +192,10 @@ def test_kinit_keytab(mock_keytab_principal, mock_creds, tmp_path):
 
 
 @requires_gssapi()
-def test_kinit_notty():
-    """Test `gwpy.io.kerberos.kinit` raises an error if it can't prompt.
-
-    By default all tests are executed by pytest in a non-interactive session
-    so we don't have to mock anything!
-    """
+@mock.patch("sys.stdout.isatty", return_value=False)
+@mock.patch.dict("os.environ", clear=True)
+def test_kinit_notty(mock_isatty):
+    """Test `gwpy.io.kerberos.kinit` raises an error if it can't prompt."""
     with pytest.raises(io_kerberos.KerberosError):
         io_kerberos.kinit()
 
