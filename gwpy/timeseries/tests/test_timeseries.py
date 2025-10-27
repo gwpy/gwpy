@@ -219,7 +219,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
     @pytest_skip_network_error
     def gw150914(self) -> TimeSeriesType:
         """TimeSeries containing GW150914 data from GWOSC."""
-        return self.TEST_CLASS.fetch_open_data(
+        return self.TEST_CLASS.get(
             GWOSC_GW150914_IFO,
             *GWOSC_GW150914_SEGMENT,
         )
@@ -228,7 +228,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
     @pytest_skip_network_error
     def gw150914_16384(self) -> TimeSeriesType:
         """TimeSeries containing GW150914 data from GWOSC at 16384 Hz."""
-        return self.TEST_CLASS.fetch_open_data(
+        return self.TEST_CLASS.get(
             GWOSC_GW150914_IFO,
             GWOSC_GW150914_SEGMENT.start,
             GWOSC_GW150914_SEGMENT.end,
@@ -239,7 +239,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
     @pytest_skip_network_error
     def gw150914_h1_32(self) -> TimeSeriesType:
         """TimeSeries containing 32-seconds of H1 GW150914 data from GWOSC."""
-        return self.TEST_CLASS.fetch_open_data(
+        return self.TEST_CLASS.get(
             "H1",
             *GWOSC_GW150914_SEGMENT_32,
         )
@@ -248,7 +248,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
     @pytest_skip_network_error
     def gw150914_l1_32(self) -> TimeSeriesType:
         """TimeSeries containing 32-seconds of L1 GW150914 data from GWOSC."""
-        return self.TEST_CLASS.fetch_open_data(
+        return self.TEST_CLASS.get(
             "L1",
             *GWOSC_GW150914_SEGMENT_32,
         )
