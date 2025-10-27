@@ -256,6 +256,13 @@ conda = [
 addopts = "-r a"
 minversion = "8.1"
 filterwarnings = [
+  # ignore pkg_resources deprecation warnings
+  "ignore:pkg_resources is deprecated",
+  "ignore:Deprecated call to `pkg_resources",
+  # ignore invalid escape sequence warnings from third-party packages
+  "ignore:.*invalid escape sequence::pycbc",
+  # ignore ResourceWarning for unclosed closed socket
+  "ignore:unclosed.*SSLSocket.*closed",
   # https://github.com/gwastro/pycbc/pull/3701
   "ignore:`np.int` is a deprecated alias::pycbc..*",
   # https://git.ligo.org/lscsoft/glue/-/merge_requests/69
@@ -271,6 +278,8 @@ filterwarnings = [
   "ignore:`trapz` is deprecated::inspiral_range",
   # ignore astropy.cosmology warnings
   "ignore:The module `astropy.cosmology.core` is deprecated::astropy",
+  # ignore false-positive warnings from dateparser
+  "ignore:Parsing dates involving a day::dateparser",
 ]
 xfail_strict = true
 
