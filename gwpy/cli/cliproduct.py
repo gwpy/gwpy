@@ -19,9 +19,9 @@
 """Base class for CLI (`gwpy-plot`) products."""
 
 import abc
+import logging
 import os.path
 import re
-import sys
 import time
 from functools import wraps
 
@@ -46,6 +46,8 @@ from ..utils import unique
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 BAD_UNITS = {"*", "Counts." }
+
+logger = logging.getLogger(__name__)
 
 
 # -- utilities ----------------------------------------------------------------
@@ -129,13 +131,13 @@ class CliProduct(metaclass=abc.ABCMeta):
 
     action = None
 
-    def __init__(self, args):
+    def __init__(self, args, logger=logger):
+
+        #: Logger
+        self.logger = logger
 
         #: input argument Namespace
         self.args = args
-
-        #: verbosity
-        self.verbose = 0 if args.silent else args.verbose
 
         # NB: finalizing may want to log if we're being verbose
         self._finalize_arguments(args)  # post-process args
@@ -211,12 +213,9 @@ class CliProduct(metaclass=abc.ABCMeta):
         """Print log message if verbosity is set high enough
         :rtype: object.
         """
-        if self.verbose >= level:
-            if level == 0:
-                # level zero is important if not fatal error
-                print(msg, file=sys.stderr)
-            else:
-                print(msg)
+        # Convert verbosity level int to logging level
+        lvl = max(3 - level, 0) * 10
+        self.logger.log(lvl, msg)
 
     # -- argument parsing -----------------------
 
@@ -519,7 +518,6 @@ class CliProduct(metaclass=abc.ABCMeta):
         """
         self.log(2, "---- Loading data -----")
 
-        verb = self.verbose > 1
         args = self.args
 
         # determine how we're supposed get our data
@@ -541,13 +539,12 @@ class CliProduct(metaclass=abc.ABCMeta):
                         ifo,
                         start,
                         end,
-                        verbose=verb,
                     )
                     data.name = f"{ifo}:{data.name}"
                     tsd.append({data.name: data})
             elif source.lower() == "nds2":
                 tsd = TimeSeriesDict.get(self.chan_list, start, end,
-                                         verbose=verb, host=args.nds2_server,
+                                         host=args.nds2_server,
                                          frametype=args.frametype)
             else:
                 tsd = TimeSeriesDict.read(args.framecache, self.chan_list,
@@ -806,8 +803,6 @@ class CliProduct(metaclass=abc.ABCMeta):
 
     def run(self):
         """Make the plot."""
-        self.log(3, f"Verbosity level: {self.verbose}")
-
         self.log(3, "Arguments:")
         argsd = vars(self.args)
         for key in sorted(argsd):

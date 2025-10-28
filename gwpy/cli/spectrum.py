@@ -18,6 +18,7 @@
 
 """Spectrum plots."""
 
+import logging
 import warnings
 
 from astropy.time import Time
@@ -29,14 +30,16 @@ from .cliproduct import FFTMixin, FrequencyDomainProduct
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
+logger = logging.getLogger(__name__)
+
 
 class Spectrum(FFTMixin, FrequencyDomainProduct):
     """Plot the ASD spectrum of one or more time series."""
 
     action = "spectrum"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, logger=logger, **kwargs):
+        super().__init__(*args, logger=logger, **kwargs)
         self.spectra = []
 
     @property

@@ -18,6 +18,7 @@
 
 """Transfer function plots."""
 
+import logging
 from collections import OrderedDict
 
 import numpy as np
@@ -30,6 +31,8 @@ from .cliproduct import FFTMixin, TransferFunctionProduct
 
 __author__ = "Evan Goetz <evan.goetz@ligo.org>"
 
+logger = logging.getLogger(__name__)
+
 
 class TransferFunction(FFTMixin, TransferFunctionProduct):
     """Plot transfer function between a reference time series and one
@@ -38,8 +41,8 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
 
     action = "transferfunction"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, logger=logger, **kwargs):
+        super().__init__(*args, logger=logger, **kwargs)
         self.ref_chan = self.args.ref or self.chan_list[0]
         # deal with channel type appendages
         if "," in self.ref_chan:
