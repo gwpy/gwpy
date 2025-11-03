@@ -135,14 +135,14 @@ class Series(Array):
            xindex: [  0.   2.   4.   6.   8.  10.] W)
     """
 
-    _metadata_slots = (
+    _metadata_slots: ClassVar[tuple[str, ...]] = (
         *Array._metadata_slots,
         "x0",
         "dx",
         "xindex",
     )
     _default_xunit: ClassVar[UnitBase] = Unit("")
-    _ndim = 1
+    _ndim: ClassVar[int] = 1
 
     def __new__(
         cls,
