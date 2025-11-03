@@ -162,6 +162,7 @@ def CreateCOMPLEX16TimeSeries(
 class _FrequencySeries(Generic[_TVector]):
     data: _TVector
     deltaF: float
+    epoch: LIGOTimeGPS
     f0: float
     length: int
     name: str
