@@ -37,29 +37,28 @@ class FrequencySeriesRead(SeriesRead):
 
     Parameters
     ----------
-    source : `str`, `list`
+    source : `str`, `os.PathLike`, `file`, or `list` of these
         Source of data, any of the following:
 
-        - `str` path of single data file,
-        - `str` path of LAL-format cache file,
-        - `list` of paths.
+        - Path of a single data file
+        - List of data file paths
+        - Path of LAL-format cache file
 
-    *args
-        Other arguments are (in general) specific to the given
-        ``format``.
+    args
+        Other arguments are (in general) specific to the given ``format``.
 
     format : `str`, optional
-        Source format identifier. If not given, the format will be
-        detected if possible. See below for list of acceptable
-        formats.
+        Source format identifier.
+        If not given, the format will be detected if possible.
+        See below for list of acceptable formats.
 
-    **kwargs
+    kwargs
         Other keywords are (in general) specific to the given ``format``.
 
     Raises
     ------
     IndexError
-        if ``source`` is an empty list
+        If ``source`` is an empty list.
 
     Notes
     -----"""
@@ -75,12 +74,12 @@ class FrequencySeriesWrite(SeriesWrite):
     Parameters
     ----------
     target : `str`
-        output filename
+        Output filename.
 
     format : `str`, optional
-        output format identifier. If not given, the format will be
-        detected if possible. See below for list of acceptable
-        formats.
+        Output format identifier.
+        If not given, the format will be detected if possible.
+        See below for list of acceptable formats.
 
     Notes
     -----"""
@@ -97,29 +96,30 @@ class SpectralVarianceRead(Array2DRead):
 
     Parameters
     ----------
-    source : `str`, `list`
+    source : `str`, `os.PathLike`, `file`, or `list` of these
         Source of data, any of the following:
 
-        - `str` path of single data file,
-        - `str` path of LAL-format cache file,
-        - `list` of paths.
+        - Path of a single data file
+        - List of data file paths
+        - Path of LAL-format cache file
 
-    *args
-        Other arguments are (in general) specific to the given
-        ``format``.
+    args
+        Other positional arguments are (in general) specific to the given ``format``.
+        See below for list of acceptable formats.
 
     format : `str`, optional
-        Source format identifier. If not given, the format will be
-        detected if possible. See below for list of acceptable
-        formats.
+        Source format identifier.
+        If not given, the format will be detected if possible.
+        See below for list of acceptable formats.
 
-    **kwargs
+    kwargs
         Other keywords are (in general) specific to the given ``format``.
+        See below for list of acceptable formats.
 
     Raises
     ------
     IndexError
-        if ``source`` is an empty list
+        If ``source`` is an empty list.
 
     Notes
     -----"""
@@ -135,12 +135,12 @@ class SpectralVarianceWrite(Array2DWrite):
     Parameters
     ----------
     target : `str`
-        output filename
+        Output filename.
 
     format : `str`, optional
-        output format identifier. If not given, the format will be
-        detected if possible. See below for list of acceptable
-        formats.
+        Output format identifier.
+        If not given, the format will be detected if possible.
+        See below for list of acceptable formats.
 
     Notes
     -----"""

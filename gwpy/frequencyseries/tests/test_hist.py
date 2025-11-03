@@ -33,52 +33,64 @@ from .. import SpectralVariance
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-class TestSpectralVariance(_TestArray2D):
-    TEST_CLASS = SpectralVariance
+class TestSpectralVariance(_TestArray2D[SpectralVariance]):
+    """Tests for `SpectralVariance`."""
 
-    # -- helpers --------------------------------
+    TEST_CLASS = SpectralVariance
+    bins: numpy.ndarray
+
+    # -- helpers ---------------------
 
     @classmethod
-    def setup_class(cls):
-        super().setup_class()
+    def setup_class(cls, dtype=None):
+        """Configure class-level parameters."""
+        super().setup_class(dtype=dtype)
         cls.bins = numpy.linspace(0, 1e5, cls.data.shape[1] + 1, endpoint=True)
 
     @classmethod
     def create(cls, *args, **kwargs):
-        args = list(args)
-        args.insert(0, cls.bins)
-        return super().create(*args, **kwargs)
+        """Create a `SpectralVariance` instance for testing."""
+        return super().create(cls.bins, *args, **kwargs)
 
-    # -- test properties ------------------------
+    # -- test properties -------------
 
     def test_y0(self, array):
+        """Test `SpectralVariance.y0`."""
         assert array.y0 == self.bins[0]
         with pytest.raises(AttributeError):
             array.y0 = 0
 
     def test_dy(self, array):
+        """Test `SpectralVariance.dy`."""
         assert array.dy == self.bins[1] - self.bins[0]
         with pytest.raises(AttributeError):
             array.dy = 0
 
-    def test_yunit(self, array):
+    def test_yunit(self):
+        """Test `SpectralVariance.unit`."""
+        array = self.create()
         assert array.unit == array.bins.unit
 
-    def test_yspan(self, array):
-        yspan = array.yspan
-        assert isinstance(yspan, Segment)
-        assert yspan == (self.bins[0], self.bins[-1])
+    def test_yspan(self):
+        """Test `SpectralVariance.yspan`."""
+        array = self.create()
+        assert isinstance(array.yspan, Segment)
+        assert array.yspan == (array.bins[0], array.bins[-1])
 
-    def test_yindex(self, array):
+    def test_yindex(self):
+        """Test `SpectralVariance.yindex`."""
+        array = self.create()
         utils.assert_array_equal(array.yindex, array.bins[:-1])
 
     def test_transpose(self, array):
+        """Test `SpectralVariance.T`."""
         with pytest.raises(NotImplementedError):
-            array.T
+            array.T  # noqa: B018
 
-    # -- test utilities -------------------------
+    # -- test utilities --------------
 
     def test_getitem(self, array):
+        """Test `SpectralVariance.__getitem__`."""
         utils.assert_quantity_sub_equal(
             array[0::2, 0],
             self.TEST_CLASS._rowclass(
@@ -93,14 +105,16 @@ class TestSpectralVariance(_TestArray2D):
         ):
             array[0, ::2]
 
-    # -- test i/o -------------------------------
+    # -- test i/o --------------------
 
-    def test_read_write_csv(self, array):
+    def test_read_write_csv(self, array):  # noqa: ARG002
+        """Test reading and writing CSV format."""
         pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
 
-    # -- test methods ---------------------------
+    # -- test methods ----------------
 
     def test_init(self, array):
+        """Test `SpectralVariance.__init__`."""
         utils.assert_array_equal(array.value, self.data)
         utils.assert_array_equal(array.bins.value, self.bins)
         assert array.x0 == 0 * units.Hertz
@@ -109,38 +123,51 @@ class TestSpectralVariance(_TestArray2D):
         assert array.dy == self.bins[1] - self.bins[0]
 
     def test_crop_float_precision_last_value(self):
+        """Skip float precision crop tests."""
         pytest.skip("float precision test not supported for SpectralVariance")
 
     def test_crop_float_precision_last_value_float(self):
+        """Skip float precision crop tests."""
         pytest.skip("float precision test not supported for SpectralVariance")
 
     def test_crop_between_grid_points_is_floored(self):
+        """Skip float precision crop tests."""
         pytest.skip("float precision test not supported for SpectralVariance")
 
     def test_crop_float_precision_near_last_value_float(self):
+        """Skip float precision crop tests."""
         pytest.skip("float precision test not supported for SpectralVariance")
 
     def test_crop_float_precision_first_value_float(self):
+        """Skip float precision crop tests."""
         pytest.skip("float precision test not supported for SpectralVariance")
 
-    def test_is_compatible_yindex(self, array):
+    def test_is_compatible_yindex(self):
+        """Skip test for `SpectralVariance.is_compatible` on yindex."""
         pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
 
-    def test_is_compatible_error_yindex(self, array):
+    def test_is_compatible_error_yindex(self, array):  # noqa: ARG002
+        """Skip test for `SpectralVariance.is_compatible` on yindex."""
         pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")
 
     def test_plot(self, array):
+        """Test `SpectralVariance.plot`."""
         with rc_context(rc={"text.usetex": False}):
             plot = array.plot(yscale="linear")
             assert len(plot.gca().collections) == 1
             plot.save(BytesIO(), format="png")
             plot.close()
 
-    def test_value_at(self, array):
-        assert array.value_at(5, self.bins[3]) == (
-            self.data[5][3] * array.unit)
-        assert array.value_at(8 * array.xunit,
-                              self.bins[1] * array.yunit) == (
-            self.data[8][1] * array.unit)
+    def test_value_at(self):
+        """Test `SpectralVariance.value_at`."""
+        array = self.create()
+        assert array.value_at(
+            5,
+            self.bins[3],
+        ) == self.data[5][3] * array.unit
+        assert array.value_at(
+            8 * array.xunit,
+            self.bins[1] * array.yunit,
+        ) == self.data[8][1] * array.unit
         with pytest.raises(IndexError):
             array.value_at(1.6, 5.8)

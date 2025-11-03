@@ -18,8 +18,8 @@
 
 """Input/Output routines for gwpy.frequencyseries."""
 
-from . import (  # pylint: disable=unused-import
-    ascii,
+from . import (
+    ascii,  # noqa: A004
     hdf5,
     ligolw,
 )

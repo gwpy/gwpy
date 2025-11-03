@@ -16,7 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides a spectral-variation histogram class."""
+"""A spectral-variation histogram class."""
+
+from __future__ import annotations
+
+from contextlib import suppress
+from typing import TYPE_CHECKING
 
 import numpy
 from astropy.units import Quantity
@@ -25,28 +30,91 @@ from ..io.registry import UnifiedReadWriteMethod
 from ..segments import Segment
 from ..types import Array2D
 from ..types.sliceutils import null_slice
+from ..utils.misc import property_alias
 from . import FrequencySeries
 from .connect import (
     SpectralVarianceRead,
     SpectralVarianceWrite,
 )
 
+if TYPE_CHECKING:
+    from typing import (
+        ClassVar,
+        Never,
+        Self,
+    )
+
+    from astropy.units import UnitBase
+    from astropy.units.typing import QuantityLike
+    from numpy.typing import (
+        ArrayLike,
+        NDArray,
+    )
+
+    from ..detector import Channel
+    from ..plot import Plot
+    from ..spectrogram import Spectrogram
+    from ..types import Series
+    from ..typing import (
+        GpsLike,
+        UnitLike,
+    )
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = ["SpectralVariance"]
 
 
+def _default_bins(
+    data: NDArray,
+    nbins: int,
+    low: float | None,
+    high: float | None,
+    unit: UnitBase,
+    *,
+    log: bool,
+) -> numpy.ndarray:
+    if low is None:
+        low = data.min() / 2
+    if high is None:
+        high = data.max() * 2
+
+    if isinstance(low, Quantity):
+        low = low.to(unit).value
+    if isinstance(high, Quantity):
+        high = high.to(unit).value
+
+    if log:
+        low = numpy.log10(low)
+        high = numpy.log10(high)
+
+    if log:
+        return numpy.logspace(low, high, num=nbins + 1)
+    return numpy.linspace(low, high, num=nbins + 1)
+
+
 class SpectralVariance(Array2D):
-    """A 2-dimensional array containing the variance histogram of a
-    frequency-series `FrequencySeries`.
-    """
+    """A variance histogram of a `FrequencySeries`."""
 
-    _metadata_slots = (*FrequencySeries._metadata_slots, "bins")
-    _default_xunit = FrequencySeries._default_xunit
-    _rowclass = FrequencySeries
+    _metadata_slots: ClassVar[tuple[str, ...]] = (
+        *FrequencySeries._metadata_slots,  # noqa: SLF001
+        "bins",
+    )
+    _default_xunit: ClassVar[UnitBase] = FrequencySeries._default_xunit  # noqa: SLF001
+    _rowclass: ClassVar[type[Series]] = FrequencySeries
 
-    def __new__(cls, data, bins, unit=None,
-                f0=None, df=None, frequencies=None,
-                name=None, channel=None, epoch=None, **kwargs):
+    def __new__(
+        cls,
+        data: ArrayLike,
+        bins: ArrayLike,
+        unit: UnitLike = None,
+        f0: Quantity | float | None = None,
+        df: Quantity | float | None = None,
+        frequencies: ArrayLike | None = None,
+        name: str | None = None,
+        channel: Channel | str | None = None,
+        epoch: GpsLike | None = None,
+        **kwargs,
+    ) -> Self:
         """Generate a new SpectralVariance histogram."""
         # parse x-axis params
         if f0 is not None:
@@ -57,19 +125,25 @@ class SpectralVariance(Array2D):
             kwargs["xindex"] = frequencies
 
         # generate SpectralVariance using the Series constructor
-        new = super(Array2D, cls).__new__(cls, data, unit=unit, name=name,
-                                          channel=channel, epoch=epoch,
-                                          **kwargs)
+        new = super(Array2D, cls).__new__(
+            cls,
+            data,
+            unit=unit,
+            name=name,
+            channel=channel,
+            epoch=epoch,
+            **kwargs,
+        )
 
         # set bins
         new.bins = bins
 
         return new
 
-    # -- properties -----------------------------
+    # -- properties ------------------
 
     @property
-    def bins(self):
+    def bins(self) -> Quantity:
         """Array of bin edges, including the rightmost edge.
 
         :type: `astropy.units.Quantity`
@@ -77,7 +151,7 @@ class SpectralVariance(Array2D):
         return self._bins
 
     @bins.setter
-    def bins(self, bins):
+    def bins(self, bins: QuantityLike | None) -> None:
         if bins is None:
             del self.bins
             return
@@ -92,132 +166,124 @@ class SpectralVariance(Array2D):
         self._bins = bins
 
     @bins.deleter
-    def bins(self):
-        try:
+    def bins(self) -> None:
+        with suppress(AttributeError):
             del self._bins
-        except AttributeError:
-            pass
 
     # over-write yindex and yspan to communicate with bins
-    @property
-    def yindex(self):
+    @property  # type: ignore[misc]
+    def yindex(self) -> Quantity:
         """List of left-hand amplitude bin edges."""
         return self.bins[:-1]
 
     @property
-    def yspan(self):
+    def yspan(self) -> Segment:
         """Amplitude range (low, high) spanned by this array."""
         return Segment(self.bins.value[0], self.bins.value[-1])
 
-    @property
-    def dy(self):
+    @property  # type: ignore[misc]
+    def dy(self) -> Quantity:
         """Size of the first (lowest value) amplitude bin."""
         return self.bins[1] - self.bins[0]
 
-    @property
-    def y0(self):
-        """Starting value of the first (lowert value) amplitude bin."""
+    @property  # type: ignore[misc]
+    def y0(self) -> Quantity:
+        """Starting value of the first (lowest value) amplitude bin."""
         return self.bins[0]
 
-    f0 = property(Array2D.x0.__get__, Array2D.x0.__set__,
-                  Array2D.x0.__delete__,
-                  """Starting frequency for this `Spectrogram`
-
-                  This attributes is recorded as a
-                  :class:`~astropy.units.quantity.Quantity` object, assuming a
-                  unit of 'Hertz'.
-                  """)
-
-    df = property(Array2D.dx.__get__, Array2D.dx.__set__,
-                  Array2D.dx.__delete__,
-                  """Frequency spacing of this `Spectogram`
-
-                  This attributes is recorded as a
-                  :class:`~astropy.units.quantity.Quantity` object, assuming a
-                  unit of 'Hertz'.
-                  """)
-
-    frequencies = property(fget=Array2D.xindex.__get__,
-                           fset=Array2D.xindex.__set__,
-                           fdel=Array2D.xindex.__delete__,
-                           doc="""Array of frequencies for each sample""")
+    f0 = property_alias(
+        Array2D.x0,  # type: ignore[arg-type]
+        doc="Starting frequency for this `SpectralVariance`.",
+    )
+    df = property_alias(
+        Array2D.dx,  # type: ignore[arg-type]
+        doc="Frequency spacing of this `SpectralVariance`.",
+    )
+    frequencies = property_alias(
+        Array2D.xindex,  # type: ignore[arg-type]
+        doc="Array of frequencies for each sample",
+    )
 
     @property
-    def T(self):
+    def T(self) -> Never:  # noqa: N802
+        """Transpose is not supported."""
         msg = f"transposing a {type(self).__name__} is not supported"
         raise NotImplementedError(msg)
 
-    # -- i/o ------------------------------------
+    # -- i/o -------------------------
 
     read = UnifiedReadWriteMethod(SpectralVarianceRead)
     write = UnifiedReadWriteMethod(SpectralVarianceWrite)
 
-    # -- methods --------------------------------
+    # -- methods ---------------------
 
-    def __getitem__(self, item):
+    def __getitem__(
+        self,
+        item: slice | int | bool | ArrayLike,
+    ) -> Self | Series | Quantity:
+        """Get a slice of this SpectralVariance."""
         # disable slicing bins
-        if not isinstance(item, tuple) or null_slice(item[1]):
-            return super().__getitem__(item)
-        msg = "cannot slice SpectralVariance across bins"
-        raise NotImplementedError(msg)
-    __getitem__.__doc__ = Array2D.__getitem__.__doc__
+        if isinstance(item, tuple) and not null_slice(item[1]):
+            msg = "cannot slice SpectralVariance across bins"
+            raise NotImplementedError(msg)
+        return super().__getitem__(item)
 
     @classmethod
-    def from_spectrogram(cls, *spectrograms, **kwargs):
-        """Calculate a new `SpectralVariance` from a
-        :class:`~gwpy.spectrogram.Spectrogram`.
+    def from_spectrogram(
+        cls,
+        *spectrograms: Spectrogram,
+        bins: ArrayLike | None = None,
+        low: float | None = None,
+        high: float | None = None,
+        nbins: int = 500,
+        log: bool = False,
+        norm: bool = False,
+        density: bool = False,
+    ) -> Self:
+        """Calculate a new `SpectralVariance` from a Spectrogram.
 
         Parameters
         ----------
-        spectrogram : `~gwpy.spectrogram.Spectrogram`
-            input `Spectrogram` data
+        *spectrograms : `~gwpy.spectrogram.Spectrogram`
+            Input `Spectrogram` data.
 
         bins : `~numpy.ndarray`, optional
-            array of histogram bin edges, including the rightmost edge
+            Array of histogram bin edges, including the rightmost edge.
 
         low : `float`, optional
-            left edge of lowest amplitude bin, only read
-            if ``bins`` is not given
+            Left edge of lowest amplitude bin, only read if ``bins`` is not given.
 
         high : `float`, optional
-            right edge of highest amplitude bin, only read
-            if ``bins`` is not given
+            Right edge of highest amplitude bin, only read if ``bins`` is not given.
 
         nbins : `int`, optional
-            number of bins to generate, only read if ``bins`` is not
-            given, default: `500`
+            Number of bins to generate, only read if ``bins`` is not given,
+            default: ``500``.
 
         log : `bool`, optional
-            calculate amplitude bins over a logarithmic scale, only
-            read if ``bins`` is not given, default: `False`
+            Calculate amplitude bins over a logarithmic scale,
+            only read if ``bins`` is not given, default: `False`.
 
         norm : `bool`, optional
-            normalise bin counts to a unit sum, default: `False`
+            Normalise bin counts to a unit sum, default: `False`.
 
         density : `bool`, optional
-            normalise bin counts to a unit integral, default: `False`
+            Normalise bin counts to a unit integral, default: `False`.
 
         Returns
         -------
         specvar : `SpectralVariance`
-            2D-array of spectral frequency-amplitude counts
+            2D-array of spectral frequency-amplitude counts.
 
         See Also
         --------
         numpy.histogram
-            The histogram function
+            The histogram function.
         """
         # parse args and kwargs
         if not spectrograms:
             msg = "Must give at least one Spectrogram"
             raise ValueError(msg)
-        bins = kwargs.pop("bins", None)
-        low = kwargs.pop("low", None)
-        high = kwargs.pop("high", None)
-        nbins = kwargs.pop("nbins", 500)
-        log = kwargs.pop("log", False)
-        norm = kwargs.pop("norm", False)
-        density = kwargs.pop("density", False)
         if norm and density:
             msg = "Cannot give both norm=True and density=True, please pick one"
             raise ValueError(msg)
@@ -226,55 +292,57 @@ class SpectralVariance(Array2D):
         spectrogram = spectrograms[0]
         data = numpy.vstack([s.value for s in spectrograms])
         if bins is None:
-            if low is None and log:
-                low = numpy.log10(data.min() / 2)
-            elif low is None:
-                low = data.min()/2
-            elif log:
-                low = numpy.log10(low)
-            if high is None and log:
-                high = numpy.log10(data.max() * 2)
-            elif high is None:
-                high = data.max() * 2
-            elif log:
-                high = numpy.log10(high)
-            if log:
-                bins = numpy.logspace(low, high, num=nbins+1)
-            else:
-                bins = numpy.linspace(low, high, num=nbins+1)
-        nbins = bins.size-1
+            bins = _default_bins(
+                data,
+                nbins,
+                low,
+                high,
+                spectrogram.unit,
+                log=log,
+            )
+        else:
+            bins = numpy.asarray(bins)
+        nbins = bins.size - 1
         qbins = bins * spectrogram.unit
 
         # loop over frequencies
         out = numpy.zeros((data.shape[1], nbins))
         for i in range(data.shape[1]):
-            out[i, :], bins = numpy.histogram(data[:, i], bins,
-                                              density=density)
+            out[i, :], bins = numpy.histogram(
+                data[:, i],
+                bins,
+                density=density,
+            )
             if norm and out[i, :].sum():  # normalise
                 out[i, :] /= out[i, :].sum()
 
-        # return SpectralVariance
+        # create and return SpectralVariance
         name = f"{spectrogram.name} variance"
-        new = cls(out, qbins, epoch=spectrogram.epoch, name=name,
-                  channel=spectrogram.channel, f0=spectrogram.f0,
-                  df=spectrogram.df)
-        return new
+        return cls(
+            out,
+            qbins,
+            epoch=spectrogram.epoch,
+            name=name,
+            channel=spectrogram.channel,
+            f0=spectrogram.f0,
+            df=spectrogram.df,
+        )
 
-    def percentile(self, percentile):
+    def percentile(self, percentile: float) -> FrequencySeries:
         """Calculate a given spectral percentile for this `SpectralVariance`.
 
         Parameters
         ----------
         percentile : `float`
-            percentile (0 - 100) of the bins to compute
+            Percentile (0 - 100) of the bins to compute.
 
         Returns
         -------
         spectrum : `~gwpy.frequencyseries.FrequencySeries`
-            the given percentile `FrequencySeries` calculated from this
-            `SpectralVaraicence`
+            The given percentile `FrequencySeries` calculated from this
+            `SpectralVariance`.
         """
-        rows, columns = self.shape
+        rows, _columns = self.shape
         out = numpy.zeros(rows)
         # Loop over frequencies
         for i in range(rows):
@@ -287,12 +355,26 @@ class SpectralVariance(Array2D):
             out[i] = val
 
         name = f"{self.name} {percentile}% percentile"
-        return FrequencySeries(out, epoch=self.epoch, channel=self.channel,
-                               frequencies=self.bins[:-1], name=name)
+        return FrequencySeries(
+            out,
+            epoch=self.epoch,
+            channel=self.channel,
+            frequencies=self.bins[:-1],
+            name=name,
+        )
 
-    def plot(self, xscale="log", method="pcolormesh", **kwargs):
+    def plot(  # type: ignore[override]
+        self,
+        xscale: str = "log",
+        method: str = "pcolormesh",
+        **kwargs,
+    ) -> Plot:
+        """Plot the data for this SpectralVariance."""
         if method == "imshow":
-            msg = f"plotting a {type(self).__name__} with {method}() is not supported"
+            msg = (
+                f"plotting a {type(self).__name__} with {method}() "
+                "is not supported"
+            )
             raise TypeError(msg)
         bins = self.bins.value
         if (
