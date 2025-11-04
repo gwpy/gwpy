@@ -34,23 +34,21 @@ if TYPE_CHECKING:
     from typing import (
         Literal,
         TypeAlias,
-        TypeVar,
     )
 
     from numpy.typing import ArrayLike
 
     from . import Array
 
-    SliceLike: TypeAlias = int | list | slice | ArrayLike
-    T = TypeVar("T")
+    SliceLike: TypeAlias = int | bool | list | slice | ArrayLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def format_nd_slice(
-    item: tuple[T, ...] | T,
+    item: SliceLike | tuple[SliceLike, ...],
     ndim: int,
-) -> tuple[T | None, ...]:
+) -> tuple[SliceLike | None, ...]:
     """Preformat a getitem argument as an N-tuple.
 
     Parameters
@@ -149,9 +147,7 @@ def slice_axis_attributes(
     return new
 
 
-def null_slice(
-    slice_: SliceLike | tuple[SliceLike, ...],
-) -> bool:
+def null_slice(slice_: SliceLike) -> bool:
     """Return `True` if a slice will have no affect."""
     try:
         slice_ = as_slice(slice_)

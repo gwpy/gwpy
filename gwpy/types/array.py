@@ -54,7 +54,6 @@ if TYPE_CHECKING:
         ClassVar,
         Literal,
         Self,
-        SupportsIndex,
     )
 
     from astropy.units import UnitBase
@@ -65,6 +64,7 @@ if TYPE_CHECKING:
         GpsLike,
         UnitLike,
     )
+    from .sliceutils import SliceLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -259,7 +259,7 @@ class Array(Quantity):
 
     def __getitem__(
         self,
-        item: SupportsIndex | slice,
+        item: SliceLike | tuple[SliceLike, ...],
     ) -> Self | Quantity:
         """Get an item from this `Array`.
 
