@@ -144,6 +144,7 @@ sql = [
 # NOTE: this should include everything in all of the other groups,
 #       but may contain more
 dev = [
+  { "include-group" = "ci" },
   { "include-group" = "docs" },
   { "include-group" = "qa" },
   { "include-group" = "test" },
@@ -164,6 +165,12 @@ dev = [
   "scitokens >=1.8.0",
   "sqlalchemy",
   "uproot >=4.1.5",
+]
+
+# CI/CD environments
+ci = [
+  # Unknown conda issue on Windows with jupyterlab_widgets 3.0.16
+  "jupyterlab_widgets !=3.0.16 ; sys_platform == 'win32'",
 ]
 
 # sphinx documentation
