@@ -16,10 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module attaches the HDF5 input output methods to the FrequencySeries."""
+"""HDF5 input/output routines for the FrequencySeries."""
 
 from ...types.io.hdf5 import register_hdf5_array_io
-from .. import FrequencySeries, SpectralVariance
+from .. import (
+    FrequencySeries,
+    SpectralVariance,
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

@@ -51,6 +51,7 @@ if TYPE_CHECKING:
         Iterable,
     )
     from typing import (
+        ClassVar,
         Literal,
         Self,
         SupportsIndex,
@@ -127,7 +128,7 @@ class Array(Quantity):
     #
     # this is used in __array_finalize__ to create new instances of this
     # object [http://docs.scipy.org/doc/numpy/user/basics.subclassing.html]
-    _metadata_slots: tuple[str, ...] = (
+    _metadata_slots: ClassVar[tuple[str, ...]] = (
         "name",
         "epoch",
         "channel",

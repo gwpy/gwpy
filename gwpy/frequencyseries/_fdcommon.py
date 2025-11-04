@@ -21,15 +21,32 @@
 This module holds code used by both the `FrequencySeries` and `Spectrogram`.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy
 from scipy import signal
 
 from ..signal.filter_design import parse_filter
 
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
+    from ..frequencyseries import FrequencySeries
+    from ..signal.filter_design import FilterType
+    from ..spectrogram import Spectrogram
+
+    FreqDomainData: TypeAlias = FrequencySeries | Spectrogram
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def fdfilter(data, *filt, **kwargs):
+def fdfilter(
+    data: FreqDomainData,
+    *filt: FilterType,
+    **kwargs,
+) -> FreqDomainData:
     """Filter a frequency-domain data object.
 
     See Also
@@ -47,19 +64,19 @@ def fdfilter(data, *filt, **kwargs):
     # parse filter
     if fs is None:
         fs = 2 * data.frequencies[-1].to("Hz").value
-    form, filt = parse_filter(filt)
+    _, _filt = parse_filter(filt)
     freqs = data.frequencies.value.copy()
 
     if analog:
-        lti = signal.lti(*filt).to_zpk()
+        lti = signal.lti(*_filt).to_zpk()
         z, p, k = lti.zeros, lti.poles, lti.gain
         # dlti.freqresp does not take into account fs
         # better to use the more straightforward functions
-        w, fr = signal.freqs_zpk(z, p, k, worN=freqs)
+        _, fr = signal.freqs_zpk(z, p, k, worN=freqs)
     else:
-        lti = signal.dlti(*filt).to_zpk()
+        lti = signal.dlti(*_filt).to_zpk()
         z, p, k = lti.zeros, lti.poles, lti.gain
-        w, fr = signal.freqz_zpk(z, p, k, worN=freqs, fs=fs)
+        _, fr = signal.freqz_zpk(z, p, k, worN=freqs, fs=fs)
 
     fresp = numpy.nan_to_num(abs(fr))
 
@@ -67,5 +84,4 @@ def fdfilter(data, *filt, **kwargs):
     if inplace:
         data *= fresp
         return data
-    new = data * fresp
-    return new
+    return data * fresp

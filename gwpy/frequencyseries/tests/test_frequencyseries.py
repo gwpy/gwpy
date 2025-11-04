@@ -18,12 +18,14 @@
 
 """Unit test for frequencyseries module."""
 
+from __future__ import annotations
+
 from io import BytesIO
+from typing import TYPE_CHECKING
 
 import numpy
 import pytest
 from astropy import units
-from matplotlib import rc_context
 from numpy import shares_memory
 from scipy import signal
 
@@ -31,6 +33,9 @@ from ...testing import utils
 from ...timeseries import TimeSeries
 from ...types.tests.test_series import TestSeries as _TestSeries
 from .. import FrequencySeries
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -86,37 +91,44 @@ LIGO_LW_ARRAY = r"""<?xml version='1.0' encoding='utf-8'?>
 
 
 class TestFrequencySeries(_TestSeries):
+    """Tests for `FrequencySeries`."""
+
     TEST_CLASS = FrequencySeries
 
-    # -- test properties ------------------------
+    # -- test properties -------------
 
     def test_f0(self, array):
+        """Test `FrequencySeries.f0`."""
         assert array.f0 is array.x0
         array.f0 = 4
         assert array.f0 == 4 * units.Hz
 
     def test_df(self, array):
+        """Test `FrequencySeries.df`."""
         assert array.df is array.dx
         array.df = 4
         assert array.df == 4 * units.Hz
 
     def test_frequencies(self, array):
+        """Test `FrequencySeries.frequencies`."""
         assert array.frequencies is array.xindex
         utils.assert_quantity_equal(
             array.frequencies, numpy.arange(array.size) * array.df + array.f0)
 
-    # -- test methods ---------------------------
+    # -- test methods ----------------
 
+    @pytest.mark.usefixtures("usetex")
     def test_plot(self, array):
-        with rc_context(rc={"text.usetex": False}):
-            plot = array.plot()
-            line = plot.gca().lines[0]
-            utils.assert_array_equal(line.get_xdata(), array.xindex.value)
-            utils.assert_array_equal(line.get_ydata(), array.value)
-            plot.save(BytesIO(), format="png")
-            plot.close()
+        """Test `FrequencySeries.plot`."""
+        plot = array.plot()
+        line = plot.gca().lines[0]
+        utils.assert_array_equal(line.get_xdata(), array.xindex.value)
+        utils.assert_array_equal(line.get_ydata(), array.value)
+        plot.save(BytesIO(), format="png")
+        plot.close()
 
     def test_ifft(self):
+        """Test `FrequencySeries.ifft`."""
         # construct a TimeSeries, then check that it is unchanged by
         # the operation TimeSeries.fft().ifft()
         ts = TimeSeries([1.0, 0.0, -1.0, 0.0], sample_rate=1.0)
@@ -124,6 +136,7 @@ class TestFrequencySeries(_TestSeries):
         utils.assert_allclose(ts.fft().ifft().value, ts.value)
 
     def test_filter_analog(self, array):
+        """Test `FrequencySeries.filter` with analog filter."""
         a2 = array.filter([100], [1], 1e-2, analog=True)
         a3 = array.zpk([100], [1], 1e-2)
         assert isinstance(a2, type(array))
@@ -136,6 +149,7 @@ class TestFrequencySeries(_TestSeries):
         utils.assert_array_equal(a3.value, fresp * array.value)
 
     def test_filter_digital(self, array):
+        """Test `FrequencySeries.filter` with digital filter."""
         # fs is 2 * nyquist
         fs = 2 * array.frequencies.value[-1]
         z, p, k = signal.butter(
@@ -161,8 +175,8 @@ class TestFrequencySeries(_TestSeries):
         utils.assert_quantity_equal(a2.frequencies, array.frequencies)
 
         # manually rebuild the filter to test it works
-        fw, fr = signal.freqz_zpk(z, p, k, worN=array.frequencies.value, fs=fs)
-        fw_a, fr_a = signal.freqs_zpk(za, pa, ka, worN=array.frequencies.value)
+        _, fr = signal.freqz_zpk(z, p, k, worN=array.frequencies.value, fs=fs)
+        _, fr_a = signal.freqs_zpk(za, pa, ka, worN=array.frequencies.value)
         fr_d = abs(fr)
         fr_a = abs(fr_a)
 
@@ -177,11 +191,13 @@ class TestFrequencySeries(_TestSeries):
         assert all(numpy.abs(a2.value-a3.value) < eps)
 
     def test_zpk(self, array):
+        """Test `FrequencySeries.zpk`."""
         a2 = array.zpk([100], [1], 1e-2)
         assert isinstance(a2, type(array))
         utils.assert_quantity_equal(a2.frequencies, array.frequencies)
 
     def test_inject(self):
+        """Test `FrequencySeries.inject`."""
         # create a timeseries out of an array of zeros
         df, nyquist = 1, 2048
         nsamp = int(nyquist/df) + 1
@@ -203,6 +219,7 @@ class TestFrequencySeries(_TestSeries):
         utils.assert_allclose(data.value, numpy.zeros(nsamp))
 
     def test_interpolate(self):
+        """Test `FrequencySeries.interpolate`."""
         # create a simple FrequencySeries
         df, nyquist = 1, 256
         nsamp = int(nyquist/df) + 1
@@ -220,6 +237,7 @@ class TestFrequencySeries(_TestSeries):
 
     @pytest.mark.requires("lal")
     def test_to_from_lal(self, array):
+        """Test `FrequencySeries.to_lal` and `FrequencySeries.from_lal`."""
         import lal
 
         array.epoch = 0
@@ -235,21 +253,24 @@ class TestFrequencySeries(_TestSeries):
 
         # test units
         array.override_unit("undef")
-        with pytest.warns(UserWarning):
+        with pytest.warns(
+            UserWarning,
+            match="LAL has no unit corresponding to 'NONE'",
+        ):
             lalts = array.to_lal()
         assert lalts.sampleUnits == lal.DimensionlessUnit
         a2 = self.TEST_CLASS.from_lal(lalts)
         assert a2.unit == units.dimensionless_unscaled
 
-    @pytest.mark.requires("lal", "pycbc")
     def test_to_from_pycbc(self, array):
-        from pycbc.types import FrequencySeries as PyCBCFrequencySeries
+        """Test `FrequencySeries.to_pycbc` and `FrequencySeries.from_pycbc`."""
+        pycbctypes = pytest.importorskip("pycbc.types")
 
         array.epoch = 0
 
         # test default conversion
         pycbcfs = array.to_pycbc()
-        assert isinstance(pycbcfs, PyCBCFrequencySeries)
+        assert isinstance(pycbcfs, pycbctypes.FrequencySeries)
         utils.assert_array_equal(array.value, pycbcfs.data)
         assert array.f0.value == 0 * units.Hz
         assert array.df.value == pycbcfs.delta_f
@@ -274,25 +295,32 @@ class TestFrequencySeries(_TestSeries):
         ):
             array.to_pycbc()
 
-    @pytest.mark.parametrize("format", [
+    @pytest.mark.parametrize("fmt", [
         "txt",
         "csv",
     ])
-    def test_read_write(self, array, format):
+    def test_read_write(self, array, fmt):
+        """Test reading and writing FrequencySeries in various formats."""
         utils.test_read_write(
-            array, format,
+            array,
+            fmt,
             assert_equal=utils.assert_quantity_sub_equal,
-            assert_kw={"exclude": ["name", "channel", "unit", "epoch"]})
+            assert_kw={
+                "exclude": ["name", "channel", "unit", "epoch"],
+            },
+        )
 
     @staticmethod
     @pytest.fixture
-    def ligolw(tmp_path):
+    def ligolw(tmp_path) -> Path:
+        """Return a `Path` with a LIGO_LW FrequencySeries array."""
         tmp = tmp_path / "test.xml"
         tmp.write_text(LIGO_LW_ARRAY)
         return tmp
 
     @pytest.mark.requires("lal", "igwn_ligolw")
     def test_read_ligolw(self, ligolw):
+        """Test reading a `FrequencySeries` from ``LIGO_LW`` array."""
         array = FrequencySeries.read(ligolw, "PSD1")
         utils.assert_quantity_equal(
             array,
@@ -307,6 +335,7 @@ class TestFrequencySeries(_TestSeries):
 
     @pytest.mark.requires("lal", "igwn_ligolw")
     def test_read_ligolw_params(self, ligolw):
+        """Test reading a `FrequencySeries` from ``LIGO_LW`` array with params."""
         array = FrequencySeries.read(
             ligolw,
             channel="X1:TEST-CHANNEL_2",
@@ -317,11 +346,20 @@ class TestFrequencySeries(_TestSeries):
     @pytest.mark.requires("lal", "igwn_ligolw")
     @pytest.mark.parametrize(("args", "match"), [
         # no name given, 'name' in error message
-        ([], "read: 'channel', 'epoch', 'f0', 'name'$"),
+        pytest.param(
+            [],
+            "read: 'channel', 'epoch', 'f0', 'name'$",
+            id="no-name",
+        ),
         # name given, 'name' not in error message
-        (("PSD2",), "read: 'channel', 'epoch', 'f0'$"),
+        pytest.param(
+            ("PSD2",),
+            "read: 'channel', 'epoch', 'f0'$",
+            id="name-only",
+        ),
     ])
     def test_read_ligolw_error_multiple_array(self, args, match, ligolw):
+        """Test reading a `FrequencySeries` from ``LIGO_LW`` with multiple <Array>."""
         # assert errors
         with pytest.raises(
             ValueError,
@@ -331,15 +369,23 @@ class TestFrequencySeries(_TestSeries):
 
     @pytest.mark.requires("lal", "igwn_ligolw")
     def test_read_ligolw_error_no_array(self, ligolw):
+        """Test reading a `FrequencySeries` from ``LIGO_LW`` with no <Array>."""
         with pytest.raises(ValueError, match=r"^no <Array> elements found"):
             FrequencySeries.read(ligolw, "blah")
 
     @pytest.mark.requires("lal", "igwn_ligolw")
     def test_read_ligolw_error_no_match(self, ligolw):
-        with pytest.raises(ValueError):  # wrong epoch
+        """Test reading a `FrequencySeries` from ``LIGO_LW`` with no matching Array."""
+        with pytest.raises(
+            ValueError,
+            match="no <Array> elements found matching request",
+        ):
             FrequencySeries.read(ligolw, epoch=0)
 
-        with pytest.raises(ValueError):  # <Param>s don't match
+        with pytest.raises(
+            ValueError,
+            match="no <Array> elements found matching request",
+        ):
             FrequencySeries.read(
                 ligolw,
                 "PSD1",
@@ -348,7 +394,11 @@ class TestFrequencySeries(_TestSeries):
 
     @pytest.mark.requires("lal", "igwn_ligolw")
     def test_read_ligolw_error_no_param(self, ligolw):
-        with pytest.raises(ValueError):  # no <Param>
+        """Test reading a `FrequencySeries` from ``LIGO_LW`` with invalid param."""
+        with pytest.raises(
+            ValueError,
+            match="no <Array> elements found matching request",
+        ):
             FrequencySeries.read(
                 ligolw,
                 "PSD2",
@@ -357,5 +407,9 @@ class TestFrequencySeries(_TestSeries):
 
     @pytest.mark.requires("lal", "igwn_ligolw")
     def test_read_ligolw_error_dim(self, ligolw):
-        with pytest.raises(ValueError):  # wrong dimensionality
+        """Test reading a `FrequencySeries` from ``LIGO_LW`` with invalid dim."""
+        with pytest.raises(
+            ValueError,
+            match="cannot parse LIGO_LW Array with 3 dimensions in a Series",
+        ):
             FrequencySeries.read(ligolw, epoch=1000000001)

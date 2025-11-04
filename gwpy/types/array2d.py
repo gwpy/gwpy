@@ -40,7 +40,10 @@ from .series import Series
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from typing import Self
+    from typing import (
+        ClassVar,
+        Self,
+    )
 
     from astropy.units import UnitBase
 
@@ -120,7 +123,7 @@ class Array2D(Series):
         a new array, with a view of the data, and all associated metadata
     """
 
-    _metadata_slots = (
+    _metadata_slots: ClassVar[tuple[str, ...]] = (
         *Series._metadata_slots,
         "y0",
         "dy",
@@ -128,19 +131,19 @@ class Array2D(Series):
     )
 
     #: The default unit for the X-axis index.
-    _default_xunit = Unit("")
+    _default_xunit: ClassVar[UnitBase] = Unit("")
 
     #: The default unit for the Y-axis index.
-    _default_yunit = Unit("")
+    _default_yunit: ClassVar[UnitBase] = Unit("")
 
     #: The class used for viewing a row of this array.
-    _rowclass = Series
+    _rowclass: ClassVar[type[Series]] = Series
 
     #: The class used for viewing a column of this array.
-    _columnclass = Series
+    _columnclass: ClassVar[type[Series]] = Series
 
     #: The number of dimensions of this array.
-    _ndim = 2
+    _ndim: ClassVar[int] = 2
 
     def __new__(
         cls,

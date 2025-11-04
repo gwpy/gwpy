@@ -18,11 +18,11 @@
 
 """Create, manipulate, read, and write spectrum data."""
 
-# import objects
+# Import objects
 from .frequencyseries import FrequencySeries
 from .hist import SpectralVariance
 
-# import unified I/O
-from . import io  # pylint: disable=unused-import
+# Import unified I/O
+from . import io
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
