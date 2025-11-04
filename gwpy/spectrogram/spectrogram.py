@@ -18,7 +18,13 @@
 
 """Spectrogram object."""
 
+from __future__ import annotations
+
 import warnings
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 import numpy
 from astropy import units
@@ -35,25 +41,44 @@ from ..types import (
     Array2D,
     Series,
 )
+from ..utils.misc import property_alias
 from .connect import (
     SpectrogramRead,
     SpectrogramWrite,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import (
+        ClassVar,
+        Literal,
+        Self,
+    )
+
+    from astropy.units import Quantity, UnitBase
+    from numpy.typing import ArrayLike, NDArray
+
+    from ..detector import Channel
+    from ..frequencyseries import SpectralVariance
+    from ..plot import Plot
+    from ..signal.filter_design import FilterType
+    from ..types.sliceutils import SliceLike
+    from ..typing import GpsLike, UnitLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
 __all__ = ["Spectrogram", "SpectrogramList"]
 
 
-def _ordinal(n):
-    """Returns the ordinal string for a given integer.
+def _ordinal(value: float) -> str:
+    """Return the ordinal string for a given integer.
 
     See https://stackoverflow.com/a/20007730/1307974
 
     Parameters
     ----------
-    n : `int`
-        the number to convert to ordinal
+    value : `float`
+        The number to convert to ordinal.
 
     Examples
     --------
@@ -62,8 +87,13 @@ def _ordinal(n):
     >>> _ordinal(102)
     '102nd'
     """
-    idx = int((n//10 % 10 != 1) * (n % 10 < 4) * n % 10)
-    return "{}{}".format(n, "tsnrhtdd"[idx::4])
+    n = int(str(value)[-1])  # last digit
+
+    # Numbers ending >=4 use 'th' as the ordinal suffix
+    th_boundary = 4
+
+    idx = int((n // 10 % 10 != 1) * (n % 10 < th_boundary) * n % 10)
+    return f"{value}{'tsnrhtdd'[idx::4]}"
 
 
 class Spectrogram(Array2D):
@@ -72,52 +102,52 @@ class Spectrogram(Array2D):
     Parameters
     ----------
     value : array-like
-        input data array
+        Input data array.
 
     unit : `~astropy.units.Unit`, optional
-        physical unit of these data
+        Physical unit of these data.
 
     epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~gwpy.time.to_gps` is fine
+        any input parsable by `~gwpy.time.to_gps` is fine.
 
-    sample_rate : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        the rate of samples per second (Hertz)
+    sample_rate : `float`, `~astropy.units.Quantity`, optional
+        The rate of samples per second (Hertz).
 
     times : `array-like`
-        the complete array of GPS times accompanying the data for this series.
+        The complete array of GPS times accompanying the data for this series.
         This argument takes precedence over `epoch` and `sample_rate` so should
-        be given in place of these if relevant, not alongside
+        be given in place of these if relevant, not alongside.
 
-    f0 : `float`, `~astropy.units.Quantity`, optional, default: `0`
-        starting frequency for these data
+    f0 : `float`, `~astropy.units.Quantity`, optional
+        Starting frequency for these data.
 
-    df : `float`, `~astropy.units.Quantity`, optional, default: `1`
-        frequency resolution for these data
+    df : `float`, `~astropy.units.Quantity`, optional
+        Frequency resolution for these data.
 
     frequencies : `array-like`
-        the complete array of frequencies indexing the data.
+        The complete array of frequencies indexing the data.
         This argument takes precedence over `f0` and `df` so should
-        be given in place of these if relevant, not alongside
+        be given in place of these if relevant, not alongside.
 
     epoch : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS epoch associated with these data,
-        any input parsable by `~gwpy.time.to_gps` is fine
+        any input parsable by `~gwpy.time.to_gps` is fine.
 
     name : `str`, optional
-        descriptive title for this array
+        Descriptive title for this array.
 
     channel : `~gwpy.detector.Channel`, `str`, optional
-        source data stream for these data
+        Source data stream for these data.
 
     dtype : `~numpy.dtype`, optional
-        input data type
+        Input data type.
 
     copy : `bool`, optional, default: `False`
-        choose to copy the input data to new memory
+        Choose to copy the input data to new memory.
 
     subok : `bool`, optional, default: `True`
-        allow passing of sub-classes by the array generator
+        Allow passing of sub-classes by the array generator.
 
     Notes
     -----
@@ -131,15 +161,31 @@ class Spectrogram(Array2D):
        ~Spectrogram.zpk
     """
 
-    _metadata_slots = (*Series._metadata_slots, "y0", "dy", "yindex")
-    _default_xunit = TimeSeries._default_xunit
-    _default_yunit = FrequencySeries._default_xunit
+    _metadata_slots: ClassVar[tuple[str, ...]] = (
+        *Series._metadata_slots,  # noqa: SLF001
+        "y0",
+        "dy",
+        "yindex",
+    )
+    _default_xunit: ClassVar[UnitBase] = TimeSeries._default_xunit  # noqa: SLF001
+    _default_yunit: ClassVar[UnitBase] = FrequencySeries._default_xunit  # noqa: SLF001
     _rowclass = TimeSeries
     _columnclass = FrequencySeries
 
-    def __new__(cls, data, unit=None, t0=None, dt=None, f0=None, df=None,
-                times=None, frequencies=None,
-                name=None, channel=None, **kwargs):
+    def __new__(
+        cls,
+        data: ArrayLike,
+        unit: UnitLike = None,
+        t0: GpsLike | None = None,
+        dt: Quantity | float | None = None,
+        f0: Quantity | float | None = None,
+        df: Quantity | float | None = None,
+        times: ArrayLike | None = None,
+        frequencies: ArrayLike | None = None,
+        name: str | None = None,
+        channel: Channel | str | None = None,
+        **kwargs,
+    ) -> Self:
         """Generate a new Spectrogram."""
         # parse t0 or epoch
         epoch = kwargs.pop("epoch", None)
@@ -166,98 +212,88 @@ class Spectrogram(Array2D):
             kwargs["yindex"] = frequencies
 
         # generate Spectrogram
-        return super().__new__(cls, data, unit=unit, name=name,
-                               channel=channel, **kwargs)
+        return super().__new__(
+            cls,
+            data,
+            unit=unit,
+            name=name,
+            channel=channel,
+            **kwargs,
+        )
 
-    # -- Spectrogram properties -----------------
+    # -- Spectrogram properties ------
 
-    epoch = property(TimeSeries.epoch.__get__, TimeSeries.epoch.__set__,
-                     TimeSeries.epoch.__delete__,
-                     """Starting GPS epoch for this `Spectrogram`
+    epoch = property_alias(
+        TimeSeries.epoch,  # type: ignore[arg-type]
+        "GPS epoch for these data.",
+    )
+    t0 = property_alias(
+        TimeSeries.t0,
+        "GPS time of first time bin.",
+    )
+    dt = property_alias(
+        TimeSeries.dt,
+        "Time (seconds) between successive bins.",
+    )
+    span = property_alias(
+        TimeSeries.span,
+        "GPS [start, stop) span for these data.",
+    )
+    f0 = property_alias(
+        Array2D.y0,  # type: ignore[arg-type]
+        "Starting frequency for these data.",
+    )
+    df = property_alias(
+        Array2D.dy,  # type: ignore[arg-type]
+        "Frequency spacing for these data.",
+    )
+    times = property_alias(
+        Array2D.xindex,  # type: ignore[arg-type]
+        "Series of GPS times for each sample",
+    )
+    frequencies = property_alias(
+        Array2D.yindex,  # type: ignore[arg-type]
+        "Series of frequencies for these data.",
+    )
+    band = property_alias(
+        Array2D.yspan,  # type: ignore[arg-type]
+        "Frequency band described by these data.",
+    )
 
-                     :type: `~gwpy.segments.Segment`
-                     """)
-
-    t0 = property(TimeSeries.t0.__get__, TimeSeries.t0.__set__,
-                  TimeSeries.t0.__delete__,
-                  """GPS time of first time bin
-
-                  :type: `~astropy.units.Quantity` in seconds
-                  """)
-
-    dt = property(TimeSeries.dt.__get__, TimeSeries.dt.__set__,
-                  TimeSeries.dt.__delete__,
-                  """Time-spacing for this `Spectrogram`
-
-                  :type: `~astropy.units.Quantity` in seconds
-                  """)
-
-    span = property(TimeSeries.span.__get__, TimeSeries.span.__set__,
-                    TimeSeries.span.__delete__,
-                    """GPS [start, stop) span for this `Spectrogram`
-
-                    :type: `~gwpy.segments.Segment`
-                    """)
-
-    f0 = property(Array2D.y0.__get__, Array2D.y0.__set__,
-                  Array2D.y0.__delete__,
-                  """Starting frequency for this `Spectrogram`
-
-                  :type: `~astropy.units.Quantity` in Hertz
-                  """)
-
-    df = property(Array2D.dy.__get__, Array2D.dy.__set__,
-                  Array2D.dy.__delete__,
-                  """Frequency spacing of this `Spectrogram`
-
-                  :type: `~astropy.units.Quantity` in Hertz
-                  """)
-
-    times = property(fget=Array2D.xindex.__get__,
-                     fset=Array2D.xindex.__set__,
-                     fdel=Array2D.xindex.__delete__,
-                     doc="""Series of GPS times for each sample""")
-
-    frequencies = property(fget=Array2D.yindex.__get__,
-                           fset=Array2D.yindex.__set__,
-                           fdel=Array2D.yindex.__delete__,
-                           doc="Series of frequencies for this Spectrogram")
-
-    band = property(fget=Array2D.yspan.__get__,
-                    fset=Array2D.yspan.__set__,
-                    fdel=Array2D.yspan.__delete__,
-                    doc="""Frequency band described by this `Spectrogram`""")
-
-    # -- Spectrogram i/o ------------------------
+    # -- Spectrogram i/o -------------
 
     read = UnifiedReadWriteMethod(SpectrogramRead)
     write = UnifiedReadWriteMethod(SpectrogramWrite)
 
-    # -- Spectrogram methods --------------------
+    # -- Spectrogram methods ---------
 
-    def ratio(self, operand):
+    def ratio(
+        self,
+        operand: FrequencySeries | Quantity | Literal["mean", "median"],
+    ) -> Spectrogram:
         """Calculate the ratio of this `Spectrogram` against a reference.
 
         Parameters
         ----------
         operand : `str`, `FrequencySeries`, `Quantity`
-            a `~gwpy.frequencyseries.FrequencySeries` or
-            `~astropy.units.Quantity` to weight against, or one of
+            A `~gwpy.frequencyseries.FrequencySeries` or `~astropy.units.Quantity`
+            to weight against, or one of
 
-            - ``'mean'`` : weight against the mean of each spectrum
-              in this Spectrogram
-            - ``'median'`` : weight against the median of each spectrum
-              in this Spectrogram
+            ``'mean'``
+                Weight against the mean of each spectrum in this Spectrogram.
+
+            ``'median'``
+                Weight against the median of each spectrum in this Spectrogram.
 
         Returns
         -------
         spectrogram : `Spectrogram`
-            a new `Spectrogram`
+            A new `Spectrogram`.
 
         Raises
         ------
         ValueError
-            if ``operand`` is given as a `str` that isn't supported
+            If ``operand`` is given as a `str` that isn't supported.
         """
         if isinstance(operand, str):
             if operand == "mean":
@@ -270,51 +306,48 @@ class Spectrogram(Array2D):
                     "Quantity or one of: 'mean', 'median'"
                 )
                 raise ValueError(msg)
-        out = self / operand
-        return out
+        return self / operand
 
     def plot(
         self,
-        method="pcolormesh",
-        figsize=(12, 6),
-        xscale="auto-gps",
+        method: str = "pcolormesh",
+        figsize: tuple[float, float] = (12, 6),
+        xscale: str = "auto-gps",
         **kwargs,
-    ):
+    ) -> Plot:
         """Plot the data for this `Spectrogram`.
 
         Parameters
         ----------
         method : `str`, optional
-            which plotting method to use to render this spectrogram,
-            either ``'pcolormesh'`` (default) or ``'imshow'``
+            The plotting method to use to render this spectrogram,
+            either ``'pcolormesh'`` (default) or ``'imshow'``.
 
         figsize : `tuple` of `float`, optional
-            ``(width, height)`` (inches) of the output figure
+            ``(width, height)`` (inches) of the output figure.
 
         xscale : `str`, optional
-            the X-axis scale
+            The X-axis scale.
 
-        **kwargs
-            all keyword arguments are passed along to underlying
-            functions, see below for references
+        kwargs
+            All keyword arguments are passed along to underlying
+            functions, see below for references.
 
         Returns
         -------
         plot : `~gwpy.plot.Plot`
-            the `Plot` containing the data
+            The `Plot` containing the data.
 
         See Also
         --------
         matplotlib.pyplot.figure
-            for documentation of keyword arguments used to create the
-            figure
+            For documentation of keyword arguments used to create the figure.
         matplotlib.figure.Figure.add_subplot
-            for documentation of keyword arguments used to create the
-            axes
+            For documentation of keyword arguments used to create the axes.
         gwpy.plot.Axes.imshow
         gwpy.plot.Axes.pcolormesh
-            for documentation of keyword arguments used in rendering the
-            `Spectrogram` data
+            For documentation of keyword arguments used in rendering the
+            `Spectrogram` data.
         """
         return super().plot(
             method=method,
@@ -324,22 +357,30 @@ class Spectrogram(Array2D):
         )
 
     @classmethod
-    def from_spectra(cls, *spectra, **kwargs):
+    def from_spectra(
+        cls,
+        *spectra: FrequencySeries,
+        **kwargs,
+    ) -> Spectrogram:
         """Build a new `Spectrogram` from a list of spectra.
 
         Parameters
         ----------
-        *spectra
-            any number of `~gwpy.frequencyseries.FrequencySeries` series
+        *spectra : `~gwpy.frequencyseries.FrequencySeries`
+            One or more frequency series to stack.
+
         dt : `float`, `~astropy.units.Quantity`, optional
-            stride between given spectra
+            Stride between given spectra.
+
+        kwargs
+            Other keyword arguments to pass to the constructor.
 
         Returns
         -------
         Spectrogram
-            a new `Spectrogram` from a vertical stacking of the spectra
+            A new `Spectrogram` from a vertical stacking of the spectra
             The new object takes the metadata from the first given
-            `~gwpy.frequencyseries.FrequencySeries` if not given explicitly
+            `~gwpy.frequencyseries.FrequencySeries` if not given explicitly.
 
         Notes
         -----
@@ -347,12 +388,12 @@ class Spectrogram(Array2D):
         constructor must be the same length.
         """
         data = numpy.vstack([s.value for s in spectra])
-        spec1 = list(spectra)[0]
+        spec1 = spectra[0]
         if not all(s.f0 == spec1.f0 for s in spectra):
-            msg = "Cannot stack spectra with different f0"
+            msg = "cannot stack spectra with different f0"
             raise ValueError(msg)
         if not all(s.df == spec1.df for s in spectra):
-            msg = "Cannot stack spectra with different df"
+            msg = "cannot stack spectra with different df"
             raise ValueError(msg)
         kwargs.setdefault("name", spec1.name)
         kwargs.setdefault("channel", spec1.channel)
@@ -360,15 +401,24 @@ class Spectrogram(Array2D):
         kwargs.setdefault("f0", spec1.f0)
         kwargs.setdefault("df", spec1.df)
         kwargs.setdefault("unit", spec1.unit)
-        if not ("dt" in kwargs or "times" in kwargs):
+        if (
+            "dt" not in kwargs
+            and "times" not in kwargs
+        ):
             try:
-                kwargs.setdefault("dt", spectra[1].epoch.gps - spec1.epoch.gps)
-            except (AttributeError, IndexError):
-                msg = "Cannot determine dt (time-spacing) for Spectrogram from inputs"
-                raise ValueError(msg)
-        return Spectrogram(data, **kwargs)
+                kwargs["dt"] = spectra[1].epoch.gps - spec1.epoch.gps  # type: ignore[union-attr]
+            except (
+                AttributeError,
+                IndexError,
+            ) as exc:
+                msg = "cannot determine dt (time-spacing) for Spectrogram from inputs"
+                raise ValueError(msg) from exc
+        return cls(data, **kwargs)
 
-    def percentile(self, percentile):
+    def percentile(
+        self,
+        percentile: float,
+    ) -> FrequencySeries:
         """Calculate a given spectral percentile for this `Spectrogram`.
 
         Parameters
@@ -383,42 +433,56 @@ class Spectrogram(Array2D):
             `SpectralVaraicence`
         """
         out = numpy.percentile(self.value, percentile, axis=0)
+        ordnl = f"{_ordinal(percentile)} percentile"
         if self.name is not None:
-            name = f"{self.name}: {_ordinal(percentile)} percentile"
+            name = f"{self.name}: {ordnl}"
         else:
-            name = None
+            name = ordnl
         return FrequencySeries(
-            out, epoch=self.epoch, channel=self.channel, name=name,
-            f0=self.f0, df=self.df, unit=self.unit, frequencies=(
-                (hasattr(self, "_frequencies") and self.frequencies) or None))
+            out,
+            epoch=self.epoch,
+            channel=self.channel,
+            name=name,
+            f0=self.f0,
+            df=self.df,
+            unit=self.unit,
+            frequencies=(hasattr(self, "_frequencies") and self.frequencies) or None,
+        )
 
-    def zpk(self, zeros, poles, gain, analog=True):
+    def zpk(
+        self,
+        zeros: NDArray,
+        poles: NDArray,
+        gain: float,
+        *,
+        analog: bool = True,
+    ) -> Self:
         """Filter this `Spectrogram` by applying a zero-pole-gain filter.
 
         Parameters
         ----------
         zeros : `array-like`
-            list of zero frequencies (in Hertz)
+            List of zero frequencies (in Hertz).
 
         poles : `array-like`
-            list of pole frequencies (in Hertz)
+            List of pole frequencies (in Hertz).
 
         gain : `float`
-            DC gain of filter
+            DC gain of filter.
 
         analog : `bool`, optional
-            type of ZPK being applied, if `analog=True` all parameters
-            will be converted in the Z-domain for digital filtering
+            Type of ZPK being applied, if `analog=True` all parameters
+            will be converted in the Z-domain for digital filtering.
 
         Returns
         -------
         specgram : `Spectrogram`
-            the frequency-domain filtered version of the input data
+            The frequency-domain filtered version of the input data.
 
         See Also
         --------
         Spectrogram.filter
-            for details on how a digital ZPK-format filter is applied
+            For details on how a digital ZPK-format filter is applied.
 
         Examples
         --------
@@ -427,9 +491,18 @@ class Spectrogram(Array2D):
 
             >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-        return self.filter(zeros, poles, gain, analog=analog)
+        return self.filter(
+            (zeros, poles, gain),
+            analog=analog,
+        )
 
-    def filter(self, *filt, **kwargs):
+    def filter(
+        self,
+        *filt: FilterType,
+        analog: bool = False,
+        inplace: bool = False,
+        **kwargs,
+    ) -> Spectrogram:
         """Apply the given filter to this `Spectrogram`.
 
         Parameters
@@ -437,36 +510,54 @@ class Spectrogram(Array2D):
         *filt : filter arguments
             1, 2, 3, or 4 arguments defining the filter to be applied,
 
-                - an ``Nx1`` `~numpy.ndarray` of FIR coefficients
-                - an ``Nx6`` `~numpy.ndarray` of SOS coefficients
-                - ``(numerator, denominator)`` polynomials
-                - ``(zeros, poles, gain)``
-                - ``(A, B, C, D)`` 'state-space' representation
+            - an ``Nx1`` `~numpy.ndarray` of FIR coefficients
+            - an ``Nx6`` `~numpy.ndarray` of SOS coefficients
+            - ``(numerator, denominator)`` polynomials
+            - ``(zeros, poles, gain)``
+            - ``(A, B, C, D)`` 'state-space' representation
 
         analog : `bool`, optional
-            if `True`, filter definition will be converted from Hertz
-            to Z-domain digital representation, default: `False`
+            If `True`, filter definition will be converted from Hertz
+            to Z-domain digital representation, default: `False`.
 
         inplace : `bool`, optional
-            if `True`, this array will be overwritten with the filtered
-            version, default: `False`
+            If `True`, this array will be overwritten with the filtered
+            version, default: `False`.
+
+        kwargs
+            Additional keyword arguments passed to the filter function.
 
         Returns
         -------
         result : `Spectrogram`
-            the filtered version of the input `Spectrogram`,
+            The filtered version of the input `Spectrogram`,
             if ``inplace=True`` was given, this is just a reference to
-            the modified input array
+            the modified input array.
 
         Raises
         ------
         ValueError
-            if ``filt`` arguments cannot be interpreted properly
+            If ``filt`` arguments cannot be interpreted properly.
         """
-        return fdfilter(self, *filt, **kwargs)
+        return fdfilter(
+            self,
+            *filt,
+            analog=analog,
+            inplace=inplace,
+            **kwargs,
+        )
 
-    def variance(self, bins=None, low=None, high=None, nbins=500,
-                 log=False, norm=False, density=False):
+    def variance(
+        self,
+        bins: NDArray | None = None,
+        low: float | None = None,
+        high: float | None = None,
+        nbins: int = 500,
+        *,
+        log: bool = False,
+        norm: bool = False,
+        density: bool = False,
+    ) -> SpectralVariance:
         """Calculate the `SpectralVariance` of this `Spectrogram`.
 
         Parameters
@@ -501,24 +592,40 @@ class Spectrogram(Array2D):
             for details on specifying bins and weights
         """
         from ..frequencyseries import SpectralVariance
+
         return SpectralVariance.from_spectrogram(
-            self, bins=bins, low=low, high=high, nbins=nbins, log=log,
-            norm=norm, density=density)
+            self,
+            bins=bins,
+            low=low,
+            high=high,
+            nbins=nbins,
+            log=log,
+            norm=norm,
+            density=density,
+        )
 
-    # -- Spectrogram connectors -----------------
+    # -- Spectrogram connectors ------
 
-    def crop_frequencies(self, low=None, high=None, copy=False):
+    def crop_frequencies(
+        self,
+        low: float | Quantity | None = None,
+        high: float | Quantity | None = None,
+        *,
+        copy: bool = False,
+    ) -> Spectrogram:
         """Crop this `Spectrogram` to the specified frequencies.
 
         Parameters
         ----------
-        low : `float`
-            lower frequency bound for cropped `Spectrogram`
-        high : `float`
-            upper frequency bound for cropped `Spectrogram`
-        copy : `bool`
-            if `False` return a view of the original data, otherwise create
-            a fresh memory copy
+        low : `float`, optional
+            Lower frequency bound for cropped `Spectrogram`.
+
+        high : `float`, optional
+            Upper frequency bound for cropped `Spectrogram`.
+
+        copy : `bool`, optional
+            If `False` return a view of the original data,
+            otherwise create a fresh memory copy.
 
         Returns
         -------
@@ -526,11 +633,17 @@ class Spectrogram(Array2D):
             A new `Spectrogram` with a subset of data from the frequency
             axis
         """
+        # Convert floats to Quantities
         if low is not None:
             low = units.Quantity(low, self._default_yunit)
         if high is not None:
             high = units.Quantity(high, self._default_yunit)
-        # check low frequency
+
+        # Cast for type checker
+        low = cast("Quantity | None", low)
+        high = cast("Quantity | None", high)
+
+        # Check low frequency
         if low is not None and low == self.f0:
             low = None
         elif low is not None and low < self.f0:
@@ -540,17 +653,20 @@ class Spectrogram(Array2D):
                 "frequency crop will have no effect.",
                 stacklevel=2,
             )
-        # check high frequency
-        if high is not None and high.value == self.band[1]:
+
+        # Check high frequency
+        peak = units.Quantity(self.band[1], self.yunit)
+        if high is not None and high == peak:
             high = None
-        elif high is not None and high.value > self.band[1]:
+        elif high is not None and high > peak:
             warnings.warn(
                 "Spectrogram.crop_frequencies given high frequency "
                 "cutoff above cutoff of the input Spectrogram. High "
                 "frequency crop will have no effect.",
                 stacklevel=2,
             )
-        # find low index
+
+        # Find low index
         if low is None:
             idx0 = None
         else:
@@ -560,31 +676,59 @@ class Spectrogram(Array2D):
             idx1 = None
         else:
             idx1 = int(float(high.value - self.f0.value) // self.df.value)
-        # crop
+
+        # Crop
+        new = self[:, idx0:idx1]
         if copy:
-            return self[:, idx0:idx1].copy()
-        return self[:, idx0:idx1]
+            return new.copy()
+        return new
 
-    # -- Spectrogram ufuncs ---------------------
+    # -- Spectrogram ufuncs ----------
 
-    def _wrap_function(self, function, *args, **kwargs):
+    def _wrap_function(
+        self,
+        function: Callable,
+        *args,  # noqa: ANN002
+        **kwargs,
+    ) -> Self | FrequencySeries | TimeSeries | Quantity:
+        """Wrap a numpy function."""
         out = super()._wrap_function(function, *args, **kwargs)
+
         # requested frequency axis, return a FrequencySeries
         if out.ndim == 1 and out.x0.unit == self.y0.unit:
-            return FrequencySeries(out.value, name=out.name, unit=out.unit,
-                                   epoch=out.epoch, channel=out.channel,
-                                   f0=out.x0.value, df=out.dx.value)
+            return self._columnclass(
+                out.value,
+                name=out.name,
+                unit=out.unit,
+                epoch=out.epoch,
+                channel=out.channel,
+                f0=out.x0.value,
+                df=out.dx.value,
+            )
+
         # requested time axis, return a TimeSeries
         if out.ndim == 1:
-            return TimeSeries(out.value, name=out.name, unit=out.unit,
-                              epoch=out.epoch, channel=out.channel, dx=out.dx)
+            return self._rowclass(
+                out.value,
+                name=out.name,
+                unit=out.unit,
+                epoch=out.epoch,
+                channel=out.channel,
+                dx=out.dx,
+            )
+
         # otherwise return whatever we got back from super (Quantity)
         return out
-    _wrap_function.__doc__ = Array2D._wrap_function.__doc__
 
-    # -- other ----------------------------------
+    _wrap_function.__doc__ = Array2D._wrap_function.__doc__  # noqa: SLF001
 
-    def __getitem__(self, item):
+    # -- other -----------------------
+
+    def __getitem__(
+        self,
+        item: SliceLike | tuple[SliceLike, ...],
+    ) -> Self | FrequencySeries:
+        """Return a slice of this spectrogram."""
         out = super().__getitem__(item)
 
         # set epoch manually, because Spectrogram doesn't store self._epoch
@@ -602,18 +746,18 @@ class SpectrogramList(TimeSeriesList):
 
     Parameters
     ----------
-    *items
-        any number of `Spectrogram` series
+    items
+        Any number of `Spectrogram` series.
 
     Returns
     -------
     list
-        a new `SpectrogramList`
+        A new `SpectrogramList`.
 
     Raises
     ------
     TypeError
-        if any elements are not of type `Spectrogram`
+        If any elements are not of type `Spectrogram`.
     """
 
-    EntryClass = Spectrogram
+    EntryClass: ClassVar[type[Spectrogram]] = Spectrogram  # type: ignore[assignment]

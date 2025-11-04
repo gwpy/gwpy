@@ -1684,16 +1684,16 @@ class TimeSeries(TimeSeriesBase):
             Time-frequency coherence spectrogram as generated from the
             input time-series.
         """
-        from ..spectrogram.coherence import from_timeseries
+        from ..spectrogram.coherence import _from_timeseries_parallel
 
-        return from_timeseries(
+        return _from_timeseries_parallel(
             self,
             other,
             stride,
             fftlength=fftlength,
             overlap=overlap,
             window=window,
-            nproc=nproc,
+            parallel=nproc,
         )
 
     def rms(

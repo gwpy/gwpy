@@ -19,7 +19,7 @@
 """Input/Output routines for the Spectrogram."""
 
 from . import (
-    ascii,
+    ascii,  # noqa: A004
     hdf5,
 )
 

@@ -16,37 +16,50 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module contains the relevant methods to generate a
+"""Generate a time-frequency coherence spectrogram from time-series data.
+
+This module contains the relevant methods to generate a
 time-frequency coherence spectrogram from a pair of time-series.
 """
 
+from __future__ import annotations
+
+from concurrent.futures import ProcessPoolExecutor
 from math import ceil
-from multiprocessing import (
-    Process,
-    Queue as ProcessQueue,
-)
+from typing import TYPE_CHECKING
 
 from numpy import zeros
 
 from .spectrogram import Spectrogram, SpectrogramList
 
+if TYPE_CHECKING:
+    from ..signal.window import WindowLike
+    from ..timeseries import TimeSeries
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
-                     window=None, **kwargs):
-    """Generate a time-frequency coherence
-    :class:`~gwpy.spectrogram.Spectrogram` from a pair of
-    :class:`~gwpy.timeseries.TimeSeries`.
+def _from_timeseries(
+    ts1: TimeSeries,
+    ts2: TimeSeries,
+    stride: float,
+    fftlength: float | None = None,
+    overlap: float | None = None,
+    window: WindowLike = "hann",
+    **kwargs,
+) -> Spectrogram:
+    """Generate a time-frequency coherence from a pair of time-series.
 
     For each `stride`, a PSD :class:`~gwpy.frequencyseries.FrequencySeries`
     is generated, with all resulting spectra stacked in time and returned.
     """
     # check sampling rates
-    if ts1.sample_rate.to("Hertz") != ts2.sample_rate.to("Hertz"):
-        sampling = min(ts1.sample_rate.value, ts2.sample_rate.value)
+    s1 = ts1.sample_rate.to("Hertz")
+    s2 = ts2.sample_rate.to("Hertz")
+    if s1 != s2:
+        sampling = min(s1.value, s2.value)
         # resample higher rate series
-        if ts1.sample_rate.value == sampling:
+        if s1.value == sampling:
             ts2 = ts2.resample(sampling)
         else:
             ts1 = ts1.resample(sampling)
@@ -66,8 +79,15 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
     nfreqs = int(fftlength * sampling // 2 + 1)
 
     # generate output spectrogram
-    out = Spectrogram(zeros((nsteps, nfreqs)), epoch=ts1.epoch, dt=stride,
-                      f0=0, df=1/fftlength, copy=True, unit="coherence")
+    out = Spectrogram(
+        zeros((nsteps, nfreqs)),
+        epoch=ts1.epoch,
+        dt=stride,
+        f0=0,
+        df=1 / fftlength,
+        copy=True,
+        unit="coherence",
+    )
 
     if not nsteps:
         return out
@@ -79,89 +99,120 @@ def _from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
         idx_end = idx + nstride
         stepseries1 = ts1[idx:idx_end]
         stepseries2 = ts2[idx:idx_end]
-        stepcoh = stepseries1.coherence(stepseries2, fftlength=fftlength,
-                                        overlap=overlap, window=window,
-                                        **kwargs)
+        stepcoh = stepseries1.coherence(
+            stepseries2,
+            fftlength=fftlength,
+            overlap=overlap,
+            window=window,
+            **kwargs,
+        )
         out.value[step] = stepcoh.value
 
     return out
 
 
-def from_timeseries(ts1, ts2, stride, fftlength=None, overlap=None,
-                    window=None, nproc=1, **kwargs):
+def _from_timeseries_parallel(
+    ts1: TimeSeries,
+    ts2: TimeSeries,
+    stride: float,
+    fftlength: float | None = None,
+    overlap: float | None = None,
+    window: WindowLike = "hann",
+    parallel: int = 1,
+    **kwargs,
+) -> Spectrogram:
     """Calculate the coherence `Spectrogram` between two `TimeSeries`.
 
     Parameters
     ----------
-    timeseries : :class:`~gwpy.timeseries.TimeSeries`
-        input time-series to process.
+    ts1 : `~gwpy.timeseries.TimeSeries`
+        First input time-series to process.
+
+    ts2 : `~gwpy.timeseries.TimeSeries`
+        Second input time-series to process.
+
     stride : `float`
-        number of seconds in single PSD (column of spectrogram).
-    fftlength : `float`
-        number of seconds in single FFT.
-    overlap : `int`, optiona, default: fftlength
-        number of seconds of overlap between FFTs, defaults to no overlap
-    window : `timeseries.window.Window`, optional, default: `None`
-        window function to apply to timeseries prior to FFT.
-    nproc : `int`, default: ``1``
-        maximum number of independent frame reading processes, default
-        is set to single-process file reading.
+        Number of seconds in single PSD (column of spectrogram).
+
+    fftlength : `float`, optional
+        Number of seconds in single FFT..
+
+    overlap : `int`, optional
+        Number of seconds of overlap between FFTs, defaults to no overlap
+
+    window : `str`, `tuple`, optional
+        Window function to apply to timeseries prior to FFT.
+
+    parallel : `int`, optional
+        Maximum number of independent frame reading processes,
+        default is set to single-process file reading.
+
+    kwargs
+        Other keyword arguments passed to coherence method.
 
     Returns
     -------
-    spectrogram : :class:`~gwpy.spectrogram.Spectrogram`
-        time-frequency power spectrogram as generated from the
+    spectrogram : `~gwpy.spectrogram.Spectrogram`
+        Time-frequency power spectrogram as generated from the
         input time-series.
     """
     # format FFT parameters
     if fftlength is None:
-        fftlength = stride / 2.
+        fftlength = stride / 2.0
 
     # get size of spectrogram
     nsteps = int(ts1.size // (stride * ts1.sample_rate.value))
-    nproc = min(nsteps, nproc)
+    parallel = min(nsteps, parallel)
 
     # single-process return
-    if nsteps == 0 or nproc == 1:
-        return _from_timeseries(ts1, ts2, stride, fftlength=fftlength,
-                                overlap=overlap, window=window, **kwargs)
+    if nsteps == 0 or parallel == 1:
+        return _from_timeseries(
+            ts1,
+            ts2,
+            stride,
+            fftlength=fftlength,
+            overlap=overlap,
+            window=window,
+            **kwargs,
+        )
 
-    # wrap spectrogram generator
-    def _specgram(queue_, tsa, tsb):
-        try:
-            queue_.put(_from_timeseries(tsa, tsb, stride, fftlength=fftlength,
-                                        overlap=overlap, window=window,
-                                        **kwargs))
-        except Exception as exc:  # pylint: disable=broad-except
-            queue_.put(exc)
-
-    # otherwise build process list
-    stepperproc = int(ceil(nsteps / nproc))
+    # divide work into chunks
+    stepperproc = ceil(nsteps / parallel)
     nsamp = [stepperproc * ts.sample_rate.value * stride for ts in (ts1, ts2)]
 
-    queue = ProcessQueue(nproc)
-    processlist = []
-    for i in range(nproc):
-        process = Process(target=_specgram,
-                          args=(queue, ts1[i * nsamp[0]:(i + 1) * nsamp[0]],
-                                ts2[i * nsamp[1]:(i + 1) * nsamp[1]]))
-        process.daemon = True
-        processlist.append(process)
-        process.start()
-        if ((i + 1) * nsamp[0]) >= ts1.size:
+    # prepare arguments for each process
+    chunks = []
+    for i in range(parallel):
+        start_idx = int(i * nsamp[0])
+        end_idx = int((i + 1) * nsamp[0])
+        if start_idx >= ts1.size:
             break
+        chunks.append((
+            (
+                ts1[start_idx:end_idx],
+                ts2[int(i * nsamp[1]) : int((i + 1) * nsamp[1])],
+                stride,
+                fftlength,
+                overlap,
+                window,
+            ),
+            kwargs,
+        ))
 
-    # get data
-    data = []
-    for process in processlist:
-        result = queue.get()
-        if isinstance(result, Exception):
-            raise result
-        data.append(result)
+    # process chunks in parallel using ProcessPoolExecutor
+    with ProcessPoolExecutor(max_workers=parallel) as executor:
+        # submit all tasks
+        futures = [
+            executor.submit(
+                _from_timeseries,
+                *args_,
+                **kwargs_,
+            )
+            for args_, kwargs_ in chunks
+        ]
 
-    # and block
-    for process in processlist:
-        process.join()
+        # collect results
+        data = [future.result() for future in futures]
 
     # format and return
     out = SpectrogramList(*data)
