@@ -16,27 +16,45 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Unit tests for :mod:`gwpy.cli.coherence`."""
+"""Tests for :mod:`gwpy.cli.coherence`."""
+
+from __future__ import annotations
+
+from typing import (
+    TYPE_CHECKING,
+    Generic,
+    TypeVar,
+)
 
 from ... import cli
 from .base import _TestCliProduct
-from .test_spectrum import TestCliSpectrum as _TestCliSpectrum
+from .test_spectrum import TestSpectrumProduct as _TestSpectrumProduct
+
+if TYPE_CHECKING:
+    from typing import ClassVar
+
+CoherenceProductType = TypeVar("CoherenceProductType", bound=cli.CoherenceProduct)
 
 
-class TestCliCoherence(_TestCliSpectrum):
-    TEST_CLASS = cli.Coherence
+class TestCoherenceProduct(
+    _TestSpectrumProduct[CoherenceProductType],
+    Generic[CoherenceProductType],
+):
+    """Tests for `gwpy.cli.CoherenceProduct`."""
+
+    TEST_CLASS: ClassVar[type[cli.CoherenceProduct]] = cli.CoherenceProduct
     ACTION = "coherence"
-    TEST_ARGS = [
+    TEST_ARGS: ClassVar[list[str]] = [
         *_TestCliProduct.TEST_ARGS,
         "--chan",
-        "Y1:TEST-CHANNEL",
-        "--secpfft",
-        "0.25",
+         "Y1:TEST-CHANNEL",
+         "--secpfft", "0.25",
     ]
 
-    def test_init(self, prod):
-        assert prod.chan_list == ["X1:TEST-CHANNEL", "Y1:TEST-CHANNEL"]
+    def test_init_ref_chan(self, prod: CoherenceProductType):
+        """Test that `CoherenceProduct.ref_chan` gets initialised properly."""
         assert prod.ref_chan == prod.chan_list[0]
 
-    def test_get_suptitle(self, prod):
+    def test_get_suptitle(self, prod: CoherenceProductType):
+        """Test `CoherenceProduct.get_suptitle`."""
         assert prod.get_suptitle() == f"Coherence: {prod.chan_list[0]}"

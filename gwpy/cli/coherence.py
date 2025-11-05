@@ -18,42 +18,64 @@
 
 """Coherence plots."""
 
+from __future__ import annotations
+
 import logging
-from collections import OrderedDict
+from typing import TYPE_CHECKING
 
 from ..plot import Plot
 from ..plot.tex import label_to_latex
-from .spectrum import Spectrum
+from .spectrum import SpectrumProduct
+
+if TYPE_CHECKING:
+    from argparse import (
+        ArgumentParser,
+        Namespace,
+        _ArgumentGroup,
+    )
+    from logging import Logger
+    from typing import ClassVar
+
+    from matplotlib.legend import Legend
+
+    from ..frequencyseries import FrequencySeries
+    from ..plot import Axes
+    from ..segments import Segment
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 logger = logging.getLogger(__name__)
 
 
-class Coherence(Spectrum):
-    """Plot coherence between a reference time series and one
-    or more other time series.
-    """
+class CoherenceProduct(SpectrumProduct):
+    """Plot coherence between two timeseries."""
 
-    action = "coherence"
+    action: ClassVar[str] = "coherence"
 
-    MIN_DATASETS = 2
+    MIN_DATASETS: ClassVar[int] = 2
 
-    def __init__(self, *args, logger=logger, **kwargs):
-        super().__init__(*args, logger=logger, **kwargs)
+    def __init__(
+        self,
+        args: Namespace,
+        logger: Logger = logger,
+    ) -> None:
+        """Create a new `Coherence` product."""
+        super().__init__(args, logger=logger)
         self.ref_chan = self.args.ref or self.chan_list[0]
         # deal with channel type appendages
-        if "," in self.ref_chan:
-            self.ref_chan = self.ref_chan.split(",")[0]
+        self.ref_chan = self.ref_chan.split(",", 1)[0]
 
     @classmethod
-    def arg_channels(cls, parser):
+    def arg_channels(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Set up channel arguments for this product."""
         group = super().arg_channels(parser)
-        group.add_argument("--ref", help="Reference channel against which "
-                                         "others will be compared")
+        group.add_argument(
+            "--ref",
+            help="Reference channel against which others will be compared",
+        )
         return group
 
-    def _finalize_arguments(self, args):
+    def _finalize_arguments(self, args: Namespace) -> None:
         if args.yscale is None:
             args.yscale = "linear"
         if args.yscale == "linear":
@@ -63,53 +85,61 @@ class Coherence(Spectrum):
                 args.ymax = 1.05
         return super()._finalize_arguments(args)
 
-    def get_ylabel(self):
+    def get_ylabel(self) -> str:
         """Text for y-axis label."""
         return "Coherence"
 
-    def get_suptitle(self):
+    def get_suptitle(self) -> str:
         """Start of default super title, first channel is appended to it."""
         return f"Coherence: {self.ref_chan}"
 
-    def make_plot(self):
+    def make_plot(self) -> Plot:
         """Generate the coherence plot from all time series."""
         args = self.args
 
         fftlength = float(args.secpfft)
         overlap = args.overlap
-        self.log(2, f"Calculating spectrum secpfft: {fftlength}, overlap: {overlap}")
+        self.logger.debug(
+            "Calculating spectrum secpfft: %s, overlap: %s",
+            fftlength,
+            overlap,
+        )
         if overlap is not None:
             overlap *= fftlength
 
-        self.log(3, "Reference channel: " + self.ref_chan)
+        self.logger.debug("Reference channel: %s", self.ref_chan)
 
         # group data by segment
-        groups = OrderedDict()
+        groups: dict[Segment, dict[str, FrequencySeries]] = {}
         for series in self.timeseries:
             seg = series.span
+            name = str(series.name or series.channel or "")
             try:
-                groups[seg][series.channel.name] = series
+                groups[seg][name] = series
             except KeyError:
-                groups[seg] = OrderedDict()
-                groups[seg][series.channel.name] = series
+                groups[seg] = {}
+                groups[seg][name] = series
 
         # -- plot
 
         plot = Plot(figsize=self.figsize, dpi=self.dpi)
         ax = plot.gca()
-        self.spectra = []
+        self.spectra: list[FrequencySeries] = []
 
         # calculate coherence
-        for seg in groups:
-            refts = groups[seg].pop(self.ref_chan)
-            for name in groups[seg]:
-                series = groups[seg][name]
-                coh = series.coherence(refts, fftlength=fftlength,
-                                       overlap=overlap, window=args.window)
+        for group in groups.values():
+            refts = group.pop(self.ref_chan)
+            for name, series in group.items():
+                coh = series.coherence(
+                    refts,
+                    fftlength=fftlength,
+                    overlap=overlap,
+                    window=args.window,
+                )
 
                 label = name
                 if len(self.start_list) > 1:
-                    label += f", {series.epoch.gps}"
+                    label += f", {series.x0.value}"
                 if self.usetex:
                     label = label_to_latex(label)
 
@@ -121,9 +151,9 @@ class Coherence(Spectrum):
 
         return plot
 
-    def set_legend(self):
+    def set_legend(self, ax: Axes | None = None) -> Legend | None:
         """Create a legend for this product."""
-        leg = super().set_legend()
+        leg = super().set_legend(ax=ax)
         if leg is not None:
             leg.set_title("Coherence with:")
         return leg

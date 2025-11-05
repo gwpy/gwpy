@@ -19,26 +19,27 @@
 """Unit tests for :mod:`gwpy.cli.coherencegram`."""
 
 from ... import cli
-from .test_coherence import TestCliCoherence as _TestCliCoherence
-from .test_spectrogram import TestCliSpectrogram as _TestCliSpectrogram
+from .test_coherence import TestCoherenceProduct as _TestCoherenceProduct
+from .test_spectrogram import TestSpectrogramProduct as _TestSpectrogramProduct
 
 
-class TestCliCoherencegram(_TestCliSpectrogram):
-    TEST_CLASS = cli.Coherencegram
+class TestCoherencegramProduct(_TestSpectrogramProduct):
+    """Tests for `CoherencegramProduct`."""
+
+    TEST_CLASS = cli.CoherencegramProduct
     ACTION = "coherencegram"
-    TEST_ARGS = _TestCliCoherence.TEST_ARGS
+    TEST_ARGS = _TestCoherenceProduct.TEST_ARGS
 
     def test_finalize_arguments(self, prod):
+        """Test that `CoherencegramProduct.finalize_arguments` sets defaults."""
         assert prod.args.cmap == "plasma"
         assert prod.args.color_scale == "linear"
         assert prod.args.imin == 0.
         assert prod.args.imax == 1.
 
     def test_get_suptitle(self, prod):
+        """Test `CoherencegramProduct.get_suptitle()`."""
         assert prod.get_suptitle() == (
             "Coherence spectrogram: "
             f"{prod.chan_list[0]} vs {prod.chan_list[1]}"
         )
-
-    def test_init(self, prod):
-        assert prod.chan_list == ["X1:TEST-CHANNEL", "Y1:TEST-CHANNEL"]
