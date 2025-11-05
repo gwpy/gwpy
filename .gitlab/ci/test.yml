@@ -59,6 +59,58 @@ include:
 
 # -- templates
 
+# Bash script to retry a command with exponential backoff
+# Inspired by https://medium.com/@obaff/13-bash-only-tricks-you-can-drop-into-any-ci-cd-pipeline-e70ed0caca4c
+.retry_sh: &retry_sh |
+  retry() {
+    local retries=3
+    local delay=5
+    local exitcode=1
+    for ((i=1; i<=retries; i++)); do
+      if [ $i -gt 1 ]; then
+        sleep "$delay"
+        delay=$((delay * 2))
+        echo -e "\x1B[93m[retry] Running '$@' [$i/$retries]…\x1B[0m" >&2
+      fi
+      "$@" && return 0
+      exitcode=$?
+      if [ "$i" -lt "$retries" ]; then
+        echo -e "\x1B[93m[retry] Attempt $i failed. Waiting $delay s…\x1B[0m" >&2
+      else
+        echo -e "\x1B[93m[retry] Attempt $i failed. No more retries left, returning $exitcode.\x1B[0m" >&2
+      fi
+    done
+    return $exitcode  # propagate failure
+  }
+
+.retry_psh: &retry_psh |
+  function Retry-Command {
+    $retries = 3
+    $delay = 5
+    $exitcode = 1
+    $command = $args
+    for ($i = 1; $i -le $retries; $i++) {
+      if ($i -gt 1) {
+        Start-Sleep -Seconds $delay
+        $delay = $delay * 2
+        Write-Host "[retry] Running '$command' [$i/$retries]…" -ForegroundColor Yellow
+      }
+      $commandString = $command -join ' '
+      Invoke-Expression $commandString
+      if ($LASTEXITCODE -eq 0 -or $?) {
+        return 0
+      }
+      $exitcode = $LASTEXITCODE
+      if ($i -lt $retries) {
+        Write-Host "[retry] Attempt $i failed. Waiting $delay s…" -ForegroundColor Yellow
+      } else {
+        Write-Host "[retry] Attempt $i failed. No more retries left, returning $exitcode." -ForegroundColor Yellow
+      }
+    }
+    return $exitcode
+  }
+  Set-Alias -Name retry -Value Retry-Command
+
 # all development versions
 .dev_test:
   extends: .test
@@ -100,7 +152,8 @@ include:
 
 .uv_install: &uv_install
   # install uv
-  - curl -LsSf https://astral.sh/uv/install.sh | sh -s - -q
+  - *retry_sh
+  - retry curl -LsSf https://astral.sh/uv/install.sh | sh -s - -q
   - source ${UV_INSTALL_DIR}/env
 
 .uv_venv: &uv_venv
@@ -110,7 +163,8 @@ include:
 
 .uv_install_windows: &uv_install_windows
   # install uv
-  - powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+  - *retry_psh
+  - retry 'powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"'
   - $env:PATH += ";$UV_INSTALL_DIR"
 
 .uv_venv_windows: &uv_venv_windows
@@ -217,7 +271,7 @@ python_test_windows:
   before_script:
     - conda info --all
     # use pip2conda to solve (sort of) the test environment
-    - uvx --with "pip2conda>=0.9.0"
+    - retry uvx --with "pip2conda>=0.9.0"
       pip2conda
         --all-extras
         --all-groups
@@ -225,7 +279,7 @@ python_test_windows:
         --python-version ${PYTHON_VERSION}
     - cat environment.txt
     # create the test environment
-    - conda create --quiet --yes --name test --file environment.txt
+    - retry conda create --quiet --yes --name test --file environment.txt
     - conda list --name test
     - conda activate test
 
@@ -254,6 +308,7 @@ conda_test_linux:
   variables:
     DEBIAN_FRONTEND: noninteractive
   before_script:
+    - *retry_sh
     # install latex packages
     - apt-get -yqq update && apt-get install -yqq --no-install-recommends
         cm-super-minimal
@@ -280,9 +335,10 @@ conda_test_macos:
     - !reference [.macos, rules]
     - !reference [.rules_full_test, rules]
   before_script:
+    - *retry_sh
     # install miniforge
-    - curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
-    - bash Miniforge3-$(uname)-$(uname -m).sh -b -p "$CI_PROJECT_DIR/miniforge3"
+    - retry curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+    - retry bash Miniforge3-$(uname)-$(uname -m).sh -b -p "$CI_PROJECT_DIR/miniforge3"
     - . $CI_PROJECT_DIR/miniforge3/etc/profile.d/conda.sh
     # then do the same init as Linux
     - !reference [conda_test_linux, before_script]
@@ -302,10 +358,11 @@ conda_test_windows:
     - !reference [.windows, rules]
     - !reference [.rules_full_test, rules]
   before_script:
+    - *retry_psh
     # install uv
     - *uv_install_windows
     # install miniforge using choco
-    - choco install
+    - retry choco install
         --cache $CHOCO_CACHE_DIR
         --yes
         miniforge3
