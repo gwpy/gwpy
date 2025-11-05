@@ -387,6 +387,7 @@ known-third-party = [
   "ANN",  # type annotations
   "B904",  # raise from
   "EM101",  # string literal in exception
+  "FBT001",  # boolean-typed positional argument
   "PLR2004",  # magic value used in comparison
   "S101",  # assert
   "SLF001",  # private member accessed
