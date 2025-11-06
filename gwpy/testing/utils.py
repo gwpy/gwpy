@@ -18,12 +18,15 @@
 
 """Utilties for the GWpy test suite."""
 
+# ruff: noqa: PT028, S101
+
 from __future__ import annotations
 
 import subprocess
 import tempfile
 from itertools import zip_longest
 from pathlib import Path
+from shutil import which
 from typing import TYPE_CHECKING
 
 import numpy
@@ -50,7 +53,10 @@ if TYPE_CHECKING:
         DataQualityFlag,
         Segment,
     )
+    from ..signal.filter_design import ZpkType
     from ..types import Array
+
+KLIST = which("klist")
 
 # -- useful constants ----------------
 
@@ -70,9 +76,11 @@ def _has_kerberos_credential() -> bool:
     command returns a zero exit code, and `False` if it doesn't, or
     the call fails in any other way.
     """
+    if KLIST is None:
+        return False
     try:
         subprocess.check_call(
-            ["klist", "-s"],
+            [KLIST, "-s"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -96,7 +104,7 @@ skip_kerberos_credential = pytest.mark.skipif(
 def assert_quantity_equal(
     q1: Quantity,
     q2: Quantity,
-):
+) -> None:
     """Assert that two `~astropy.units.Quantity` objects are the same."""
     _assert_quantity(
         q1,
@@ -108,7 +116,7 @@ def assert_quantity_equal(
 def assert_quantity_almost_equal(
     q1: Quantity,
     q2: Quantity,
-):
+) -> None:
     """Assert that two `~astropy.units.Quantity` objects are almost the same.
 
     This method asserts that the units are the same and that the values are
@@ -125,7 +133,7 @@ def _assert_quantity(
     q1: Quantity,
     q2: Quantity,
     array_assertion: Callable = assert_array_equal,
-):
+) -> None:
     assert q1.unit == q2.unit, f"'{q1.unit}' != '{q2.unit}'"
     array_assertion(q1.value, q2.value)
 
@@ -137,7 +145,7 @@ def assert_quantity_sub_equal(
     almost_equal: bool = False,
     exclude: Container[str] | None = None,
     **kwargs,
-):
+) -> None:
     """Assert that two `~gwpy.types.Array` objects are the same (or almost).
 
     Parameters
@@ -177,7 +185,7 @@ def assert_quantity_sub_equal(
     checkattrs = [attr for attr in attrs if attr not in (exclude or [])]
 
     # don't assert indexes that don't exist for both
-    def _check_index(dim):
+    def _check_index(dim: str) -> None:
         index = f"{dim}index"
         _index = "_" + index
         if (
@@ -197,8 +205,8 @@ def assert_quantity_sub_equal(
 def assert_attributes(
     a: Array,
     b: Array,
-    *attrs,
-):
+    *attrs: str,
+) -> None:
     """Assert that the attributes for two objects match.
 
     `attrs` should be `list` of attribute names that can be accessed
@@ -218,11 +226,12 @@ def assert_attributes(
 def assert_table_equal(
     a: Array,
     b: Array,
+    *,
     is_copy: bool = True,
     meta: bool = False,
     check_types: bool = True,
     almost_equal: bool = False,
-):
+) -> None:
     """Assert that two tables store the same information."""
     # check column names are the same
     assert sorted(a.colnames) == sorted(b.colnames)
@@ -255,7 +264,7 @@ def assert_table_equal(
 def assert_segmentlist_equal(
     a: Iterable[Segment],
     b: Iterable[Segment],
-):
+) -> None:
     """Assert that two `SegmentList`s contain the same data."""
     for aseg, bseg in zip_longest(a, b):
         assert aseg == bseg
@@ -265,7 +274,7 @@ def assert_flag_equal(
     a: DataQualityFlag,
     b: DataQualityFlag,
     attrs: Iterable[str] = ("name", "ifo", "tag", "version"),
-):
+) -> None:
     """Assert that two `DataQualityFlag`s contain the same data."""
     assert_segmentlist_equal(a.active, b.active)
     assert_segmentlist_equal(a.known, b.known)
@@ -277,47 +286,52 @@ def assert_dict_equal(
     a: dict[Any, Any],
     b: dict[Any, Any],
     assert_value: Callable,
-    *args,
     **kwargs,
-):
+) -> None:
     """Assert that two `dict`s contain the same data.
 
     Parameters
     ----------
     a, b
-        two objects to compare
+        Two objects to compare.
 
     assert_value : `callable`
-        method to compare that two dict entries are the same
+        Method to compare that two dict entries are the same.
 
-    *args, **kargs
-        positional and keyword arguments to pass to ``assert_value``
+    kwargs
+        Keyword arguments to pass to ``assert_value``.
     """
     assert a.keys() == b.keys()
-    for key in a:
-        assert_value(a[key], b[key], *args, **kwargs)
+    for key in a | b:
+        assert_value(a[key], b[key], **kwargs)
 
 
 def assert_zpk_equal(
-    a: tuple[float, float, float],
-    b: tuple[float, float, float],
+    a: ZpkType,
+    b: ZpkType,
+    *,
     almost_equal: bool = False,
-):
+) -> None:
+    """Assert that two ZPK filters are the same (or almost)."""
     assert_array: Callable
     if almost_equal:
         assert_array = assert_allclose
     else:
         assert_array = assert_array_equal
-    for x, y in zip(a, b, strict=True):  # zip through zeros, poles, gain
-        assert_array(x, y)
+    z1, p1, k1 = a
+    z2, p2, k2 = b
+    assert_array(z1, z2)  # zeros
+    assert_array(p1, p2)  # poles
+    assert_array(k1, k2)  # gain
 
 
 # -- I/O helpers ---------------------
 
 def test_read_write(
     data: Array,
-    format: str,
+    fmt: str,
     extension: str | None = None,
+    *,
     autoidentify: bool = True,
     read_args: Iterable[Any] = [],
     read_kw: dict[str, Any] | None = None,
@@ -325,7 +339,7 @@ def test_read_write(
     write_kw: dict[str, Any] | None = None,
     assert_equal: Callable = assert_quantity_sub_equal,
     assert_kw: dict[str, Any] | None = None,
-):
+) -> None:
     """Test that data can be written to and read from a file in some format.
 
     Parameters
@@ -333,33 +347,33 @@ def test_read_write(
     data : some type with `.read()` and `.write()` methods
         the data to be written
 
-    format : `str`
+    fmt : `str`
         the name of the file format (as registered with `astropy.io.registry`
 
     extension : `str`, optional
-        the name of the file extension, defaults to ``.<format>``
+        the name of the file extension, defaults to ``.<fmt>``
 
-    autoidenfity : `bool`, optional
+    autoidentify : `bool`, optional
         attempt to auto-identify when reading writing by not specifying
         ``format``
 
     read_args : `list`, optional
         positional arguments to pass to ``type(data).read()``
 
-    read_kwargs : `dict`, optional
+    read_kw : `dict`, optional
         keyword arguments to pass to ``type(data).read()``
 
     write_args : `list`, optional
         positional arguments to pass to ``data.write()``
 
-    write_kwargs : `dict`, optional
+    write_kw : `dict`, optional
         keyword arguments to pass to ``data.write()``
 
     assert_equal : `callable`, optional
         the function to assert that the object read back from file matches
         the original ``data``
 
-    assert_kwargs : `dict`, optional
+    assert_kw : `dict`, optional
         keyword arguments to pass to ``assert_equal``
     """
     # parse extension and add leading period
@@ -370,7 +384,7 @@ def test_read_write(
     if read_kw is None:
         read_kw = {}
     if extension is None:
-        extension = format
+        extension = fmt
     extension = extension.lstrip(".")
 
     DataClass = type(data)  # noqa: N806
@@ -378,14 +392,14 @@ def test_read_write(
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = Path(tmpdir) / f"test.{extension}"
 
-        data.write(tmp, *write_args, format=format, **write_kw)
+        data.write(tmp, *write_args, format=fmt, **write_kw)
 
         # try again with automatic format identification
         if autoidentify:
             data.write(str(tmp), *write_args, **write_kw)
 
         # read the data back and check that its the same
-        new = DataClass.read(tmp, *read_args, format=format, **read_kw)
+        new = DataClass.read(tmp, *read_args, format=fmt, **read_kw)
         assert_equal(new, data, **assert_kw)
 
         # try again with automatic format identification
