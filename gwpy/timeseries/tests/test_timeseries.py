@@ -1728,11 +1728,12 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         assert numpy.isclose(detrended.value.mean(), 0.0)
 
     def test_filter(self, gw150914):
-        zpk = [], [], 1
-        fts = gw150914.filter(zpk, analog=True)
+        """Test `TimeSeries.filter()`."""
+        fts = gw150914.filter(([], [], 1), analog=True)
         utils.assert_quantity_sub_equal(gw150914, fts)
 
-        # check SOS filters can be used directly
+    def test_filter_sos(self, gw150914):
+        """Test `TimeSeries.filter()` with SOS filters."""
         zpk = filter_design.highpass(50, sample_rate=gw150914.sample_rate)
         sos = signal.zpk2sos(*zpk)
         utils.assert_quantity_almost_equal(
@@ -1741,9 +1742,16 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         )
 
     def test_zpk(self, gw150914):
+        """Test `TimeSeries.zpk()`.
+
+        The zpk method is just a wrapper around filter, so we just
+        check that they give the same result.
+        """
         zpk = [10, 10], [1, 1], 100
         utils.assert_quantity_sub_equal(
-            gw150914.zpk(*zpk), gw150914.filter(*zpk, analog=True))
+            gw150914.zpk(*zpk),
+            gw150914.filter(*zpk, analog=True),
+        )
 
     def test_highpass_happy_path(self, gw150914):
         """Check that passband val are approx equal, stopband are not."""
