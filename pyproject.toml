@@ -52,7 +52,7 @@ dependencies = [
   "h5py >=3.11.0",
   "igwn-segments >=2.0.0",
   "ligotimegps >=2.1.0",
-  "matplotlib >=3.7.3",
+  "matplotlib >=3.8.0",
   "numpy >=1.24.4",
   "packaging >=24.2",
   "python-dateutil >=2.9.0",
@@ -176,7 +176,7 @@ ci = [
 # sphinx documentation
 docs = [
   "furo >=2024.8.6",
-  "matplotlib >=3.7.0",
+  "matplotlib >=3.8.0",
   "myst-parser >=4.0.1",
   "numpydoc >=0.8.0",
   "pydata-sphinx-theme >=0.16.1",

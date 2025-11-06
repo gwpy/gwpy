@@ -23,7 +23,6 @@ from matplotlib import rcParams
 from matplotlib.collections import PolyCollection
 from matplotlib.lines import Line2D
 from numpy.random import default_rng
-from packaging.version import Version
 
 from ...testing import utils
 from ...time import to_gps
@@ -32,7 +31,6 @@ from ...types import (
     Series,
 )
 from .. import Axes
-from ..axes import matplotlib_version
 from .utils import AxesTestBase
 
 RNG = default_rng(seed=0)
@@ -181,10 +179,7 @@ class TestAxes(AxesTestBase):
         array = Array2D(RNG.random(size=(10, 10)), dx=.1, dy=.2)
         ax.grid(visible=True, which="both", axis="both")
         mesh = ax.pcolormesh(array)
-        if matplotlib_version >= Version("3.8.0"):
-            utils.assert_array_equal(mesh.get_array(), array.T)
-        else:  # matplotlib < 3.8.0
-            utils.assert_array_equal(mesh.get_array(), array.T.flatten())
+        utils.assert_array_equal(mesh.get_array(), array.T)
         utils.assert_array_equal(mesh.get_paths()[-1].vertices[2],
                                  (array.xspan[1], array.yspan[1]))
         # check that axes were preserved
