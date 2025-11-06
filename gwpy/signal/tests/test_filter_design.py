@@ -18,6 +18,9 @@
 
 """Tests for :mod:`gwpy.signal.filter_design`."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import numpy
@@ -27,6 +30,13 @@ from scipy import signal
 
 from ...testing import utils
 from .. import filter_design
+
+if TYPE_CHECKING:
+    from ..filter_design import (
+        TapsType,
+        ZpkCompatible,
+        ZpkType,
+    )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -43,7 +53,8 @@ BANDPASS_F = (LOWPASS_F, HIGHPASS_F)
 
 
 @pytest.fixture(scope="module")
-def notch_60():
+def notch_60() -> ZpkType:
+    """60 Hz notch filter fixture."""
     passband = (NOTCH_F - 1) / FILTER_NYQ, (NOTCH_F + 1) / FILTER_NYQ
     stopband = (NOTCH_F - .1) / FILTER_NYQ, (NOTCH_F + .1) / FILTER_NYQ
     return signal.iirdesign(
@@ -58,7 +69,8 @@ def notch_60():
 
 
 @pytest.fixture(scope="module")
-def lowpass_100_iir():
+def lowpass_100_iir() -> ZpkType:
+    """100 Hz lowpass filter fixture."""
     return signal.iirdesign(
         LOWPASS_F / FILTER_NYQ,
         LOWPASS_F * 1.5 / FILTER_NYQ,
@@ -71,7 +83,8 @@ def lowpass_100_iir():
 
 
 @pytest.fixture(scope="module")
-def lowpass_100_fir():
+def lowpass_100_fir() -> TapsType:
+    """100 Hz lowpass FIR filter fixture."""
     return signal.firwin(
         30,
         LOWPASS_F,
@@ -82,7 +95,8 @@ def lowpass_100_fir():
 
 
 @pytest.fixture(scope="module")
-def highpass_100_iir():
+def highpass_100_iir() -> ZpkType:
+    """100 Hz highpass filter fixture."""
     return signal.iirdesign(
         HIGHPASS_F / FILTER_NYQ,
         HIGHPASS_F * 2 / 3. / FILTER_NYQ,
@@ -95,7 +109,8 @@ def highpass_100_iir():
 
 
 @pytest.fixture(scope="module")
-def highpass_100_fir():
+def highpass_100_fir() -> TapsType:
+    """100 Hz highpass FIR filter fixture."""
     return signal.firwin(
         23,
         HIGHPASS_F,
@@ -107,7 +122,8 @@ def highpass_100_fir():
 
 
 @pytest.fixture(scope="module")
-def bandpass_100_200_iir():
+def bandpass_100_200_iir() -> ZpkType:
+    """100-200 Hz bandpass FIR filter fixture."""
     return signal.iirdesign(
         (LOWPASS_F / FILTER_NYQ, HIGHPASS_F / FILTER_NYQ),
         (LOWPASS_F * 2 / 3. / FILTER_NYQ, HIGHPASS_F * 3 / 2. / FILTER_NYQ),
@@ -120,7 +136,8 @@ def bandpass_100_200_iir():
 
 
 @pytest.fixture(scope="module")
-def bandpass_100_200_fir():
+def bandpass_100_200_fir() -> TapsType:
+    """100-200 Hz bandpass FIR filter fixture."""
     return signal.firwin(
         45,
         BANDPASS_F,
@@ -181,7 +198,7 @@ def test_notch_iir_quantities(notch_60):
 def test_notch_fir_notimplemented():
     """Test :func:`gwpy.signal.filter_design.notch` with an FIR filter."""
     with pytest.raises(NotImplementedError):
-        filter_design.notch(60, 16384, type="fir")
+        filter_design.notch(60, 16384, type="fir")  # type: ignore[call-overload]
 
 
 def test_lowpass_iir(lowpass_100_iir):
@@ -222,11 +239,12 @@ def test_bandpass_fir(bandpass_100_200_fir):
 
 def test_concatenate_zpks():
     """Test :func:`gwpy.signal.filter_design.notch`."""
+    asa = numpy.asarray
     z1, p1, k1 = [1, 2, 3], [4, 5, 6], 1.
     z2, p2, k2 = [1, 2, 3, 4], [5, 6, 7, 8], 100
     utils.assert_zpk_equal(
         filter_design.concatenate_zpks((z1, p1, k1), (z2, p2, k2)),
-        (z1 + z2, p1 + p2, k1 * k2),
+        (asa(z1 + z2), asa(p1 + p2), k1 * k2),
     )
 
 
@@ -241,21 +259,23 @@ def test_parse_filter_fir():
 
 def test_parse_filter_iir():
     """Test :func:`gwpy.signal.filter_design.parse_filter` with an FIR filter."""
-    zpk = [1, 2, 3], [4, 5, 6], 1.
+    zpk = numpy.asarray([1, 2, 3]), numpy.asarray([4, 5, 6]), 1.
     typ, filt = filter_design.parse_filter(zpk)
     assert typ == "zpk"
     utils.assert_zpk_equal(filt, zpk)
 
 
 @pytest.fixture
-def example_zpk_fs_tuple():
+def example_zpk_fs_tuple() -> tuple[ZpkCompatible, float]:
+    """Return an example ZPK and sample rate."""
     z, p, k = [1], [2], 0.1
     fs = 0.1
-    return z, p, k, fs
+    return (z, p, k), fs
 
 
 def test_convert_to_digital_zpk(example_zpk_fs_tuple):
-    z, p, k, fs = example_zpk_fs_tuple
+    """Test `convert_to_digital()` with ZPK input."""
+    (z, p, k), fs = example_zpk_fs_tuple
 
     dform, dfilt = filter_design.convert_to_digital((z, p, k), fs)
 
@@ -264,7 +284,8 @@ def test_convert_to_digital_zpk(example_zpk_fs_tuple):
 
 
 def test_convert_to_digital_ba(example_zpk_fs_tuple):
-    z, p, k, fs = example_zpk_fs_tuple
+    """Test `convert_to_digital()` with BA input."""
+    (z, p, k), fs = example_zpk_fs_tuple
     b, a = signal.zpk2tf(z, p, k)
 
     # this should be converted to ZPK form
@@ -274,6 +295,7 @@ def test_convert_to_digital_ba(example_zpk_fs_tuple):
 
 
 def test_convert_to_digital_fir():
+    """Test `convert_to_digital()` with FIR (numerator only) input."""
     fs = 0.1
     b = numpy.array([1, 0.2, 0.5])
     # this should be converted to ZPK form
@@ -283,8 +305,7 @@ def test_convert_to_digital_fir():
 
 
 def test_convert_to_digital_complex_type_preserved():
-    """Test that conversion to digital does not erroneously convert
-    to float types.
+    """Test that conversion to digital does not erroneously convert to float types.
 
     Tests regression against:
     https://gitlab.com/gwpy/gwpy/-/issues/1630#note_2001485594
@@ -296,14 +317,15 @@ def test_convert_to_digital_complex_type_preserved():
     assert numpy.iscomplexobj(filt[1])
 
 
-def test_convert_to_digital_invalid_form():
-    with mock.patch("gwpy.signal.filter_design.parse_filter") as tmp_mock:
-        tmp_mock.return_value = ("invalid", [1, 2, 3])
-        with pytest.raises(
-            ValueError,
-            match="convert 'invalid'",
-        ):
-            filter_design.convert_to_digital([1, 2, 3], sample_rate=1)
+@mock.patch("gwpy.signal.filter_design.parse_filter")
+def test_convert_to_digital_invalid_form(mock_parse_filter):
+    """Test that `convert_to_digital()` raises ValueError on invalid filter form."""
+    mock_parse_filter.return_value = ("invalid", [1, 2, 3])
+    with pytest.raises(
+        ValueError,
+        match="convert 'invalid'",
+    ):
+        filter_design.convert_to_digital([1, 2, 3], sample_rate=1)
 
 
 def test_convert_to_digital_fir_still_zpk():
