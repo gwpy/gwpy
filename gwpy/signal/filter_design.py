@@ -43,12 +43,16 @@ from .window import (
 
 # filter type definitions
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import (
+        Callable,
+        Collection,
+    )
     from typing import (
         Any,
         Literal,
         SupportsFloat,
         TypeAlias,
+        TypeVar,
     )
 
     from astropy.units.typing import QuantityLike
@@ -60,13 +64,20 @@ if TYPE_CHECKING:
 
     from .window import WindowLike
 
+    TArray = TypeVar("TArray", bound=NDArray[Any])
+
+    # Helper types
+    _Array1D: TypeAlias = numpy.ndarray[tuple[int]]
+    _ArrayLike1D = Collection[complex] | _Array1D
+
     # FIR
     TapsType: TypeAlias = NDArray
     # IIR
     FilterTypeName: TypeAlias = Literal["butter", "cheby1", "cheby2", "ellip"]
     SosType: TypeAlias = NDArray
-    ZpkType: TypeAlias = tuple[NDArray, NDArray, float]
-    BAType: TypeAlias = tuple[NDArray, NDArray]
+    ZpkCompatible: TypeAlias = tuple[_ArrayLike1D, _ArrayLike1D, float]
+    ZpkType: TypeAlias = tuple[_Array1D, _Array1D, float]
+    BAType: TypeAlias = tuple[_Array1D, _Array1D]
     IirFilterType: TypeAlias = SosType | ZpkType | BAType
     # generic
     FilterType = TapsType | IirFilterType
@@ -80,6 +91,15 @@ __all__ = [
     "notch",
 ]
 
+TWO_PI: float = 2 * pi
+
+# All ZPK filters have three components
+ZPK_NARGS = 3
+
+# All SOS filters are 2D arrays with six coefficients per section
+SOS_NDIM = 2
+SOS_NCOEFF = 6
+
 
 def _as_float(
     x: QuantityLike,
@@ -89,7 +109,43 @@ def _as_float(
     return Quantity(x, unit).value
 
 
-TWO_PI: float = 2 * pi
+def is_zpk(zpktup: object) -> bool:
+    """Return `True` if ``zpktup`` looks like a ZPK-format filter definition.
+
+    Returns
+    -------
+    iszpk : `bool`
+        `True` if input argument looks like a 3-tuple giving arrays of
+        zeros and poles, and a gain (`float`).
+    """
+    return (
+        # Input object is a length 3 tuple/list
+        isinstance(zpktup, tuple | list)
+        and len(zpktup) == ZPK_NARGS
+        # First two elements are 1D arrays/lists/tuples
+        and isinstance(zpktup[0], list | tuple | numpy.ndarray)
+        and numpy.ndim(zpktup[0]) == 1
+        and isinstance(zpktup[1], list | tuple | numpy.ndarray)
+        and numpy.ndim(zpktup[1]) == 1
+        # Third element is a float
+        and isinstance(zpktup[2], float)
+    )
+
+
+def is_sos(sos: object) -> bool:
+    """Return `True` if ``sos`` looks like a SOS-format filter definition.
+
+    Returns
+    -------
+    issos : `bool`
+        `True` if input argument looks like a 2D-array giving second-order
+        sections.
+    """
+    return (
+        isinstance(sos, numpy.ndarray)
+        and sos.ndim == SOS_NDIM
+        and sos.shape[1] == SOS_NCOEFF
+    )
 
 
 # -- core filter design utilities ----
@@ -215,18 +271,71 @@ def _design_fir(
     return signal.firwin(nt, wp, window=window, **kwargs)
 
 
+@overload
 def _design(
-    type: str,
-    *args,
+    ftype: Literal["iir"],
+    wp: float | ArrayLike,
+    ws: float | ArrayLike,
+    sample_rate: float,
+    gpass: float,
+    gstop: float,
+    output: Literal["zpk"],
+    **kwargs,
+) -> ZpkType: ...
+
+@overload
+def _design(
+    ftype: Literal["iir"],
+    wp: float | ArrayLike,
+    ws: float | ArrayLike,
+    sample_rate: float,
+    gpass: float,
+    gstop: float,
+    output: Literal["ba"],
+    **kwargs,
+) -> BAType: ...
+
+@overload
+def _design(
+    ftype: Literal["iir"],
+    wp: float | ArrayLike,
+    ws: float | ArrayLike,
+    sample_rate: float,
+    gpass: float,
+    gstop: float,
+    output: Literal["sos"],
+    **kwargs,
+) -> SosType: ...
+
+@overload
+def _design(
+    ftype: Literal["fir"],
+    wp: float | ArrayLike,
+    ws: float | ArrayLike,
+    sample_rate: float,
+    gpass: float,
+    gstop: float,
+    **kwargs,
+) -> TapsType: ...
+
+def _design(
+    ftype: str,
+    wp: float | ArrayLike,
+    ws: float | ArrayLike,
+    sample_rate: float,
+    gpass: float,
+    gstop: float,
+    output: Literal["zpk", "ba", "sos"] = "zpk",
     **kwargs,
 ) -> FilterType:
-    """Convenience function to select between `_design_iir` and `_design_fir`."""
-    design_func: Callable
-    if type == "iir":
-        design_func = _design_iir
+    """Design an IIR or FIR filter."""
+    designer: Callable
+    if ftype == "iir":
+        kwargs["output"] = output
+        designer = _design_iir
     else:
-        design_func = _design_fir
-    return design_func(*args, **kwargs)
+        designer = _design_fir
+    return designer(wp, ws, sample_rate, gpass, gstop, **kwargs)
 
 
 def num_taps(
@@ -235,7 +344,7 @@ def num_taps(
     gpass: float,
     gstop: float,
 ) -> int:
-    """Returns the number of taps for an FIR filter with the given shape.
+    """Return the number of taps for an FIR filter with the given shape.
 
     Parameters
     ----------
@@ -275,28 +384,11 @@ def num_taps(
     return ntaps
 
 
-def is_zpk(zpktup: Any) -> bool:
-    """Return `True` if ``zpktup`` looks like a ZPK-format filter definition.
-
-    Returns
-    -------
-    iszpk : `bool`
-        `True` if input argument looks like a 3-tuple giving arrays of
-        zeros and poles, and a gain (`float`).
-    """
-    return (
-        isinstance(zpktup, tuple | list)
-        and len(zpktup) == 3
-        and isinstance(zpktup[0], list | tuple | numpy.ndarray)
-        and isinstance(zpktup[1], list | tuple | numpy.ndarray)
-        and isinstance(zpktup[2], float)
-    )
-
 
 def truncate_transfer(
-    transfer: numpy.ndarray,
+    transfer: TArray,
     ncorner: int | None = None,
-) -> numpy.ndarray:
+) -> TArray:
     """Smoothly zero the edges of a frequency domain transfer function.
 
     Parameters
@@ -332,10 +424,10 @@ def truncate_transfer(
 
 
 def truncate_impulse(
-    impulse: numpy.ndarray,
+    impulse: TArray,
     ntaps: int,
     window: WindowLike = "hann",
-):
+) -> TArray:
     """Smoothly truncate a time domain impulse response.
 
     Parameters
@@ -370,7 +462,7 @@ def fir_from_transfer(
     ntaps: int,
     window: WindowLike = "hann",
     ncorner: int | None = None,
-):
+) -> NDArray:
     """Design a Type II FIR filter given an arbitrary transfer function.
 
     Parameters
@@ -421,7 +513,7 @@ def fir_from_transfer(
 def convert_zpk_units(
     filt: ZpkType,
     unit: str,
-):
+) -> ZpkType:
     """Convert zeros and poles created for a freq response in Hz to rad/s.
 
     Parameters
@@ -460,16 +552,18 @@ def convert_zpk_units(
 
 @overload
 def convert_to_digital(
-    args: TapsType | BAType | tuple[TapsType | BAType],
-) -> tuple[Literal["ba"], BAType]: ...
+    filter: SosType | ZpkType | lti | tuple[SosType | ZpkType | lti],
+    sample_rate: float,
+) -> tuple[Literal["zpk"], ZpkType]: ...
 
 @overload
 def convert_to_digital(
-    args: SosType | ZpkType | lti | tuple[SosType | ZpkType | lti],
-) -> tuple[Literal["zpk"], ZpkType]: ...
+    filter: TapsType | BAType | tuple[TapsType | BAType],
+    sample_rate: float,
+) -> tuple[Literal["ba"], BAType]: ...
 
 def convert_to_digital(
-    filter: FilterType | lti | tuple[FilterType | lti],
+    filter: FilterType | lti | tuple[FilterType | lti],  # noqa: A002
     sample_rate: float,
 ) -> tuple[Literal["ba", "zpk"], IirFilterType]:
     """Convert an analog filter to digital via bilinear functions.
@@ -495,14 +589,14 @@ def convert_to_digital(
     # If IIR, only if p_i = -2 * fs will it yield poles at zero.
     # See gwpy/signal/tests/test_filter_design for more information.
 
-    form, filter = parse_filter(filter)
+    form, filt = parse_filter(filter)
 
     if form == "ba":
-        b, a = filter
+        b, a = filt
         return form, signal.bilinear(b, a, fs=sample_rate)
 
     if form == "zpk":
-        return form, signal.bilinear_zpk(*filter, fs=sample_rate)
+        return form, signal.bilinear_zpk(*filt, fs=sample_rate)
 
     msg = f"cannot convert '{form}', only 'zpk' or 'ba'"
     raise ValueError(msg)
@@ -510,13 +604,13 @@ def convert_to_digital(
 
 @overload
 def parse_filter(
-    args: TapsType | BAType | tuple[TapsType | BAType],
-) -> tuple[Literal["ba"], BAType]: ...
+    args: SosType | ZpkType | lti | tuple[SosType | ZpkType | lti],
+) -> tuple[Literal["zpk"], ZpkType]: ...
 
 @overload
 def parse_filter(
-    args: SosType | ZpkType | lti | tuple[SosType | ZpkType | lti],
-) -> tuple[Literal["zpk"], ZpkType]: ...
+    args: TapsType | BAType | tuple[TapsType | BAType],
+) -> tuple[Literal["ba"], BAType]: ...
 
 def parse_filter(
     args: FilterType | lti | tuple[FilterType | lti],
@@ -552,11 +646,7 @@ def parse_filter(
     try:
         lti = args.to_zpk()  # type: ignore[union-attr]
     except AttributeError:
-        if (
-            isinstance(args, numpy.ndarray)
-            and args.ndim == 2
-            and args.shape[1] == 6
-        ):
+        if is_sos(args):
             lti = signal.lti(*signal.sos2zpk(args))
         else:
             lti = signal.lti(*args)
@@ -567,13 +657,61 @@ def parse_filter(
 
 # -- user methods --------------------
 
+@overload
+def lowpass(
+    frequency: QuantityLike,
+    sample_rate: QuantityLike,
+    fstop: SupportsFloat | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: Literal["iir"] = "iir",
+    output: Literal["zpk"] = "zpk",
+    **kwargs,
+) -> ZpkType: ...
+
+@overload
 def lowpass(
     frequency: QuantityLike,
     sample_rate: QuantityLike,
     fstop: QuantityLike | None = None,
     gpass: float = 2,
     gstop: float = 30,
-    type: str = "iir",
+    type: Literal["iir"] = "iir",
+    output: Literal["ba"] = "ba",
+    **kwargs,
+) -> BAType: ...
+
+@overload
+def lowpass(
+    frequency: QuantityLike,
+    sample_rate: QuantityLike,
+    fstop: QuantityLike | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: Literal["iir"] = "iir",
+    output: Literal["sos"] = "sos",
+    **kwargs,
+) -> SosType: ...
+
+@overload
+def lowpass(
+    frequency: QuantityLike,
+    sample_rate: QuantityLike,
+    fstop: QuantityLike | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: Literal["fir"] = "fir",
+    **kwargs,
+) -> TapsType: ...
+
+def lowpass(
+    frequency: QuantityLike,
+    sample_rate: QuantityLike,
+    fstop: QuantityLike | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: Literal["iir", "fir"] = "iir",  # noqa: A002
+    output: Literal["zpk", "ba", "sos"] = "zpk",
     **kwargs,
 ) -> FilterType:
     """Design a low-pass filter for the given cutoff frequency.
@@ -597,6 +735,10 @@ def lowpass(
 
     type : `str`, optional, default: ``'iir'``
         The filter type, either ``'iir'`` or ``'fir'``.
+
+    output : `str`, optional, default: ``'zpk'``
+        The output format for an IIR filter,
+        either ``'zpk'``, ``'ba'``, or ``'sos'``.
 
     kwargs
         Other keyword arguments are passed directly to
@@ -639,17 +781,66 @@ def lowpass(
         sample_rate,
         gpass,
         gstop,
+        output=output,
         **kwargs,
     )
 
 
+@overload
 def highpass(
     frequency: SupportsFloat,
     sample_rate: SupportsFloat,
     fstop: float | None = None,
     gpass: float = 2,
     gstop: float = 30,
-    type: str = "iir",
+    type: Literal["iir"] = "iir",
+    output: Literal["zpk"] = "zpk",
+    **kwargs,
+) -> ZpkType: ...
+
+@overload
+def highpass(
+    frequency: SupportsFloat,
+    sample_rate: SupportsFloat,
+    fstop: float | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: Literal["iir"] = "iir",
+    output: Literal["ba"] = "ba",
+    **kwargs,
+) -> BAType: ...
+
+@overload
+def highpass(
+    frequency: SupportsFloat,
+    sample_rate: SupportsFloat,
+    fstop: float | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: Literal["iir"] = "iir",
+    output: Literal["sos"] = "sos",
+    **kwargs,
+) -> SosType: ...
+
+@overload
+def highpass(
+    frequency: SupportsFloat,
+    sample_rate: SupportsFloat,
+    fstop: float | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: Literal["fir"] = "fir",
+    **kwargs,
+) -> TapsType: ...
+
+def highpass(
+    frequency: QuantityLike,
+    sample_rate: QuantityLike,
+    fstop: float | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: Literal["iir", "fir"] = "iir",  # noqa: A002
+    output: Literal["zpk", "ba", "sos"] = "zpk",
     **kwargs,
 ) -> FilterType:
     """Design a high-pass filter for the given cutoff frequency.
@@ -673,6 +864,10 @@ def highpass(
 
     type : `str`
         The filter type, either ``'iir'`` or ``'fir'``.
+
+    output : `str`, optional, default: ``'zpk'``
+        The output format for an IIR filter,
+        either ``'zpk'``, ``'ba'``, or ``'sos'``.
 
     kwargs
         Other keyword arguments are passed directly to
@@ -714,10 +909,12 @@ def highpass(
         sample_rate,
         gpass,
         gstop,
+        output=output,
         **kwargs,
     )
 
 
+@overload
 def bandpass(
     flow: SupportsFloat,
     fhigh: SupportsFloat,
@@ -725,7 +922,58 @@ def bandpass(
     fstop: tuple[float, float] | None = None,
     gpass: float = 2,
     gstop: float = 30,
-    type: str = "iir",
+    type: Literal["iir"] = "iir",
+    output: Literal["zpk"] = "zpk",
+    **kwargs,
+) -> ZpkType: ...
+
+@overload
+def bandpass(
+    flow: SupportsFloat,
+    fhigh: SupportsFloat,
+    sample_rate: SupportsFloat,
+    fstop: tuple[float, float] | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: Literal["iir"] = "iir",
+    output: Literal["ba"] = "ba",
+    **kwargs,
+) -> BAType: ...
+
+@overload
+def bandpass(
+    flow: SupportsFloat,
+    fhigh: SupportsFloat,
+    sample_rate: SupportsFloat,
+    fstop: tuple[float, float] | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: Literal["iir"] = "iir",
+    output: Literal["sos"] = "sos",
+    **kwargs,
+) -> SosType: ...
+
+@overload
+def bandpass(
+    flow: SupportsFloat,
+    fhigh: SupportsFloat,
+    sample_rate: SupportsFloat,
+    fstop: tuple[float, float] | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: Literal["fir"] = "fir",
+    **kwargs,
+) -> TapsType: ...
+
+def bandpass(
+    flow: QuantityLike,
+    fhigh: QuantityLike,
+    sample_rate: QuantityLike,
+    fstop: tuple[float, float] | None = None,
+    gpass: float = 2,
+    gstop: float = 30,
+    type: Literal["iir", "fir"] = "iir",  # noqa: A002
+    output: Literal["zpk", "ba", "sos"] = "zpk",
     **kwargs,
 ) -> FilterType:
     """Design a band-pass filter for the given cutoff frequencies.
@@ -752,6 +1000,10 @@ def bandpass(
 
     type : `str`
         The filter type, either ``'iir'`` or ``'fir'``.
+
+    output : `str`, optional, default: ``'zpk'``
+        The output format for an IIR filter,
+        either ``'zpk'``, ``'ba'``, or ``'sos'``.
 
     kwargs
         Other keyword arguments are passed directly to
@@ -800,14 +1052,42 @@ def bandpass(
         sample_rate,
         gpass,
         gstop,
+        output=output,
         **kwargs,
     )
 
 
+@overload
 def notch(
     frequency: QuantityLike,
     sample_rate: QuantityLike,
     type: Literal["iir"] = "iir",
+    output: Literal["zpk"] = "zpk",
+    **kwargs,
+) -> ZpkType: ...
+
+@overload
+def notch(
+    frequency: QuantityLike,
+    sample_rate: QuantityLike,
+    type: Literal["iir"] = "iir",
+    output: Literal["ba"] = "ba",
+    **kwargs,
+) -> BAType: ...
+
+@overload
+def notch(
+    frequency: QuantityLike,
+    sample_rate: QuantityLike,
+    type: Literal["iir"] = "iir",
+    output: Literal["sos"] = "sos",
+    **kwargs,
+) -> SosType: ...
+
+def notch(
+    frequency: QuantityLike,
+    sample_rate: QuantityLike,
+    type: Literal["iir"] = "iir",  # noqa: A002
     output: Literal["zpk", "ba", "sos"] = "zpk",
     **kwargs,
 ) -> IirFilterType:
@@ -884,7 +1164,7 @@ def notch(
     raise NotImplementedError(msg)
 
 
-def concatenate_zpks(*zpks: ZpkType) -> ZpkType:
+def concatenate_zpks(*zpks: ZpkCompatible) -> ZpkType:
     """Concatenate a list of zero-pole-gain (ZPK) filters.
 
     Parameters
