@@ -241,7 +241,10 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         """TimeSeries containing 32-seconds of H1 GW150914 data from GWOSC."""
         return self.TEST_CLASS.get(
             "H1",
-            *GWOSC_GW150914_SEGMENT_32,
+            GWOSC_GW150914_SEGMENT_32.start,
+            GWOSC_GW150914_SEGMENT_32.end,
+            source="gwosc",
+            sample_rate=4096,
         )
 
     @pytest.fixture(scope="class")
@@ -250,7 +253,10 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         """TimeSeries containing 32-seconds of L1 GW150914 data from GWOSC."""
         return self.TEST_CLASS.get(
             "L1",
-            *GWOSC_GW150914_SEGMENT_32,
+            GWOSC_GW150914_SEGMENT_32.start,
+            GWOSC_GW150914_SEGMENT_32.end,
+            source="gwosc",
+            sample_rate=4096,
         )
 
     # -- test class functionality ----
