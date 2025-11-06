@@ -398,7 +398,7 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite, ABC, Generic[T]):
                 ctx = open_remote_file(
                     arg,
                     cache=cache,
-                    show_progress=show_progress,
+                    show_progress=bool(show_progress),
                     **remote_kwargs,
                 )
             # otherwise just pass it along unmodified
