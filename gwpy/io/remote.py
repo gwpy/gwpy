@@ -112,6 +112,7 @@ def open_remote_file(
     url: str,
     *,
     cache: bool | None = None,
+    show_progress: bool = False,
     encoding: Literal["binary"] = "binary",
     **kwargs,
 ) -> AbstractContextManager[BinaryIO]: ...
@@ -121,6 +122,7 @@ def open_remote_file(
     url: str,
     *,
     cache: bool | None = None,
+    show_progress: bool = False,
     encoding: str | None,
     **kwargs,
 ) -> AbstractContextManager[TextIO]: ...
@@ -129,6 +131,7 @@ def open_remote_file(
     url: str,
     *,
     cache: bool | None = None,
+    show_progress: bool = False,
     encoding: str | None = "binary",
     **kwargs,
 ) -> AbstractContextManager[IO]:
@@ -153,6 +156,9 @@ def open_remote_file(
         Whether to cache the contents of remote URLs.
         Default is `True` if the ``GWPY_CACHE`` environment variable
         is set to something 'truthy'.
+
+    show_progress: `bool`, optional
+        Print verbose progress information to the screen.
 
     encoding : `str`, optional
         When ``'binary'`` (default), returns a file-like object where its
@@ -189,6 +195,7 @@ def open_remote_file(
         url,
         mode="open",
         cache=cache,
+        show_progress=show_progress,
         encoding=encoding,
         **kwargs,
     )
@@ -198,6 +205,7 @@ def download_file(
     url: str,
     *,
     cache: bool | None = None,
+    show_progress: bool = False,
     **kwargs,
 ) -> str:
     """Download a file from a URL and optionally cache the result.
@@ -225,6 +233,9 @@ def download_file(
         Default is `True` if the ``GWPY_CACHE`` environment variable
         is set to something 'truthy'.
 
+    show_progress: `bool`, optional
+        Print verbose progress information to the screen.
+
     kwargs
         All other positional and keyword arguments are passed directly
         to `astropy.utils.data.get_readable_fileobj`.
@@ -246,6 +257,7 @@ def download_file(
         url,
         mode="download",
         cache=cache,
+        show_progress=show_progress,
         **kwargs,
     )
 
