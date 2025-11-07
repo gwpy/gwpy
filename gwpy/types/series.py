@@ -49,7 +49,6 @@ if TYPE_CHECKING:
         ClassVar,
         Literal,
         Self,
-        SupportsIndex,
     )
 
     from astropy.units import UnitBase
@@ -58,6 +57,7 @@ if TYPE_CHECKING:
     from ..plot import Plot
     from ..segments import Segment
     from ..typing import UnitLike
+    from .sliceutils import SliceLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -682,7 +682,7 @@ class Series(Array):
 
     def __getitem__(
         self,
-        item: SupportsIndex | slice,
+        item: SliceLike | tuple[SliceLike, ...],
     ) -> Self | Quantity:
         """Get an item, or a slice, from this `Series`."""
         new = super().__getitem__(item)

@@ -18,8 +18,18 @@
 
 """Create, manipulate, read, and write spectrogram data."""
 
-from .spectrogram import (Spectrogram, SpectrogramList)
+# Import objects
+from .spectrogram import (
+    Spectrogram,
+    SpectrogramList,
+)
 
-from . import io  # register I/O
+# Register I/O
+from . import io
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+__all__ = [
+    "Spectrogram",
+    "SpectrogramList",
+]

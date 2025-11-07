@@ -49,10 +49,8 @@ if TYPE_CHECKING:
 
     from ..plot import Plot
     from ..segments import Segment
-    from ..typing import (
-        ArrayLike,
-        QuantityLike,
-    )
+    from ..typing import QuantityLike
+    from .sliceutils import SliceLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -209,27 +207,27 @@ class Array2D(Series):
     # rebuild getitem to handle complex slicing
     def __getitem__(
         self,
-        item: slice | int | bool | ArrayLike,
+        item: SliceLike | tuple[SliceLike, ...],  # type: ignore[override]
     ) -> Self | Series | Quantity:
         """Get an item or a slice from this `Array2D."""
         new = super().__getitem__(item)
 
-        # slice axis 1 metadata
+        # Slice axis 1 metadata
         colslice, rowslice = sliceutils.format_nd_slice(item, self.ndim)
 
-        # column slice
+        # Column slice
         if new.ndim == 1 and isinstance(colslice, int):
             new = new.view(self._columnclass)
             del new.xindex
             new.__metadata_finalize__(self)
             sliceutils.slice_axis_attributes(self, "y", new, "x", rowslice)
 
-        # row slice
+        # Row slice
         elif new.ndim == 1:
             new = new.view(self._rowclass)
 
-        # slice axis 1 for Array2D (Series.__getitem__ will have performed
-        #                           column slice already)
+        # Slice axis 1 for Array2D
+        # (Series.__getitem__ will have performed column slice already)
         elif new.ndim > 1 and not sliceutils.null_slice(rowslice):
             sliceutils.slice_axis_attributes(self, "y", new, "y", rowslice)
 

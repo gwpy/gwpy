@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module attaches the HDF5 input output methods to the Spectrogram."""
+"""HDF5 input/output methods for Spectrogram objects."""
 
 from ...types.io.hdf5 import register_hdf5_array_io
 from .. import Spectrogram
