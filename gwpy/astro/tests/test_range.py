@@ -18,6 +18,8 @@
 
 """Unit tests for :mod:`gwpy.astro.range`."""
 
+from __future__ import annotations
+
 from unittest import mock
 
 import pytest
@@ -42,7 +44,7 @@ TEST_RESULTS = {
 
 
 @pytest.fixture(scope="module")
-def hoft():
+def hoft() -> TimeSeries:
     """Read the LIGO-Livingston strain data from the test HDF5 file."""
     return TimeSeries.read(
         utils.TEST_HDF5_FILE,
@@ -52,7 +54,7 @@ def hoft():
 
 
 @pytest.fixture(scope="module")
-def psd(hoft):
+def psd(hoft) -> FrequencySeries:
     """Return the PSD for ``hoft``."""
     return hoft.psd(
         .4,
@@ -89,7 +91,7 @@ def test_sensemon_range(psd):
 def test_inspiral_range_missing_dep(psd):
     """Test that :func:`gwpy.astro.inspiral_range` handles a failed import."""
     with pytest.raises(
-        ModuleNotFoundError,
+        ImportError,
         match="extra package 'inspiral-range'",
     ):
         astro.inspiral_range(psd)

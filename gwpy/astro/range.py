@@ -23,7 +23,10 @@ from __future__ import annotations
 import warnings
 from functools import wraps
 from math import pi
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 from astropy import (
     constants,
@@ -38,15 +41,25 @@ from ..utils import round_to_power
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from typing import (
+        ParamSpec,
+        TypeVar,
+    )
 
     import numpy
+    from inspiral_range.waveform import CBCWaveform
 
     from ..frequencyseries import FrequencySeries
+
+    P = ParamSpec("P")
+    R = TypeVar("R")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __credits__ = "Alex Urban <alexander.urban@ligo.org>"
 
-DEFAULT_FFT_METHOD: str = "median"
+DEFAULT_FFT_METHOD = "median"
+
+PSD_UNIT = 1 / units.Hz
 
 
 def _get_isco_frequency(
@@ -112,17 +125,19 @@ def _get_spectrogram(
 
 
 def _preformat_psd(
-    func: Callable,
-) -> Callable:
+    func: Callable[P, R],
+) -> Callable[P, R]:
     """Wrap a function to ensure that the incoming PSD has the right units."""
-    psdunit = 1 / units.Hz
 
     @wraps(func)
-    def decorated_func(psd, *args, **kwargs):
-        if psd.unit != psdunit:  # force PSD to have the right units
+    def decorated_func(*args: P.args, **kwargs: P.kwargs) -> R:
+        psd = cast("FrequencySeries", args[0])
+        # Force PSD to have the right units
+        if psd.unit != PSD_UNIT:
             psd = psd.view()
-            psd.override_unit(psdunit)
-        return func(psd, *args, **kwargs)
+            psd.override_unit(PSD_UNIT)
+        args = (psd, *args[1:])  # type: ignore[assignment]
+        return func(*args, **kwargs)
     return decorated_func
 
 
@@ -134,6 +149,7 @@ def sensemon_range_psd(
     snr: float = 8,
     mass1: float = 1.4,
     mass2: float = 1.4,
+    *,
     horizon: bool = False,
 ) -> FrequencySeries:
     """Approximate the inspiral sensitive distance PSD from a GW strain PSD.
@@ -189,8 +205,6 @@ def sensemon_range_psd(
             * snr ** 2
         )
     )
-    print(psd.unit)
-    print(prefactor.unit)
     return (  # inspiral range PSD, avoiding DC value
         1
         / psd[frange]
@@ -206,6 +220,7 @@ def sensemon_range(
     mass2: float = 1.4,
     fmin: float | None = None,
     fmax: float | None = None,
+    *,
     horizon: bool = False,
 ) -> units.Quantity:
     """Approximate the inspiral sensitive distance from a GW strain PSD.
@@ -292,28 +307,33 @@ def sensemon_range(
 
 # -- inspiral range ------------------
 
-def _import_inspiral_range():
+MISSING_INSPIRAL_RANGE_MESSAGE = (
+    "gwpy.astro's inspiral_range and inspiral_range_psd functions "
+    "require the extra package 'inspiral-range' to provide "
+    "cosmologically-corrected distance calculations, please install "
+    "that package and try again, or install gwpy with the 'astro' "
+    "extra via `python -m pip install gwpy[astro]`"
+)
+
+
+def _cbc_waveform(
+    frequencies: numpy.ndarray,
+    m1: float,
+    m2: float,
+    **kwargs,
+) -> CBCWaveform:
+    """Generate a CBCWaveform."""
     try:
-        from inspiral_range import (
-            find_root_redshift,
-            range as range_func,
-        )
-    except ModuleNotFoundError as exc:  # no inspiral-range package
-        exc.msg = (
-            f"{exc}; gwpy.astro's inspiral_range and inspiral_range_psd functions "
-            "require the extra package 'inspiral-range' to provide "
-            "cosmologically-corrected distance calculations, please install "
-            "that package and try again, or install gwpy with the 'astro' "
-            "extra via `python -m pip install gwpy[astro]`"
-        )
+        from inspiral_range.waveform import CBCWaveform
+    except ImportError as exc:
+        exc.args = (f"{exc}; {MISSING_INSPIRAL_RANGE_MESSAGE}",)
         raise
 
-    from inspiral_range.waveform import CBCWaveform
-
-    return (
-        range_func,
-        find_root_redshift,
-        CBCWaveform,
+    return CBCWaveform(
+        frequencies,
+        m1=m1,
+        m2=m2,
+        **kwargs,
     )
 
 
@@ -323,6 +343,7 @@ def inspiral_range_psd(
     snr: float = 8,
     mass1: float = 1.4,
     mass2: float = 1.4,
+    *,
     horizon: bool = False,
     **kwargs,
 ) -> FrequencySeries:
@@ -372,13 +393,21 @@ def inspiral_range_psd(
         The package which does heavy lifting for waveform simulation and
         cosmology calculations.
     """
-    # import the optional extras required here:
-    range_func, find_root_redshift, cbc_waveform = _import_inspiral_range()
+    try:
+        from inspiral_range import (
+            find_root_redshift,
+            range as range_func,
+        )
+    except ImportError as exc:
+        exc.msg = f"{exc}; {MISSING_INSPIRAL_RANGE_MESSAGE}"
+        raise
+
+    f = psd.frequencies.to("Hz").value
+    frange = (f > 0)
 
     # generate a waveform for this system
-    f = psd.frequencies.to("Hz").value
-    inspiral = cbc_waveform(
-        f[f > 0],
+    inspiral = _cbc_waveform(
+        f[frange],
         m1=mass1,
         m2=mass2,
         **kwargs,
@@ -386,14 +415,14 @@ def inspiral_range_psd(
 
     # determine the detector horizon redshift
     z_hor = find_root_redshift(
-        lambda z: inspiral.SNR(psd.value[f > 0], z) - snr,
+        lambda z: inspiral.SNR(psd.value[frange], z) - snr,
     )
     if horizon:
         dist = inspiral.cosmo.luminosity_distance(z_hor)
     else:
         dist = range_func(
-            f[f > 0],
-            psd.value[f > 0],
+            f[frange],
+            psd.value[frange],
             z_hor=z_hor,
             H=inspiral,
             detection_snr=snr,
@@ -428,6 +457,7 @@ def inspiral_range(
     mass2: float = 1.4,
     fmin: float | None = None,
     fmax: float | None = None,
+    *,
     horizon: bool = False,
     **kwargs,
 ) -> units.Quantity:
@@ -499,8 +529,14 @@ def inspiral_range(
         The package which does heavy lifting for waveform simulation and
         cosmology calculations.
     """
-    # import the optional extras required here:
-    range_func, find_root_redshift, cbc_waveform = _import_inspiral_range()
+    try:
+        from inspiral_range import (
+            find_root_redshift,
+            range as range_func,
+        )
+    except ImportError as exc:
+        exc.msg = f"{exc}; {MISSING_INSPIRAL_RANGE_MESSAGE}"
+        raise
 
     # format frequency limits
     f = psd.frequencies.to("Hz").value
@@ -509,7 +545,7 @@ def inspiral_range(
     frange = (f >= fmin) & (f < fmax)
 
     # generate a waveform for this system
-    inspiral = cbc_waveform(
+    inspiral = _cbc_waveform(
         f[frange],
         m1=mass1,
         m2=mass2,
@@ -518,7 +554,7 @@ def inspiral_range(
 
     # determine the detector horizon redshift
     z_hor = find_root_redshift(
-        lambda z: inspiral.SNR(psd.value[frange], z) - snr,
+        lambda z: inspiral.SNR(psd.value[frange], z=z) - snr,
     )
 
     # return the sensitive distance metric
@@ -749,14 +785,14 @@ def range_timeseries(
 
 
 def range_spectrogram(
-    hoft,
-    stride=None,
-    fftlength=None,
-    overlap=None,
-    window="hann",
-    method=DEFAULT_FFT_METHOD,
-    nproc=1,
-    range_func=None,
+    hoft: TimeSeries | Spectrogram,
+    stride: float | None = None,
+    fftlength: float | None = None,
+    overlap: float | None = None,
+    window: str | numpy.ndarray = "hann",
+    method: str = DEFAULT_FFT_METHOD,
+    nproc: int = 1,
+    range_func: Callable | None = None,
     **rangekwargs,
 ) -> Spectrogram:
     """Calculate the average range spectrogram (Mpc or Mpc^2 / Hz) from strain.
@@ -834,14 +870,23 @@ def range_spectrogram(
     range_timeseries
         for `TimeSeries` trends of the astrophysical range
     """
-    rangekwargs = rangekwargs or {"mass1": 1.4, "mass2": 1.4}
+    rangekwargs = rangekwargs or {
+        "mass1": 1.4,
+        "mass2": 1.4,
+    }
     if range_func is None and "energy" in rangekwargs:
         range_func = burst_range_spectrum
     elif range_func is None:
         range_func = inspiral_range_psd
     hoft = _get_spectrogram(
-        hoft, stride=stride, fftlength=fftlength, overlap=overlap,
-        window=window, method=method, nproc=nproc)
+        hoft,
+        stride=stride,
+        fftlength=fftlength,
+        overlap=overlap,
+        window=window,
+        method=method,
+        nproc=nproc,
+    )
     # set frequency limits
     f = hoft.frequencies.to("Hz")
     fmin = units.Quantity(
@@ -862,7 +907,6 @@ def range_spectrogram(
     )
     # finalise output
     out.__array_finalize__(hoft)
-    out.override_unit("Mpc" if "energy" in rangekwargs
-                      else "Mpc^2 / Hz")
+    out.override_unit("Mpc" if "energy" in rangekwargs else "Mpc^2 / Hz")
     out.f0 = fmin
     return out
