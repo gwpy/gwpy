@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
     from ..frequencyseries import FrequencySeries
+    from ..spectrogram import Spectrogram
     from ..table import EventTable
     from ..time import LIGOTimeGPS
     from ..timeseries import TimeSeries
@@ -65,9 +66,12 @@ __all__ = [
 ]
 
 # q-transform defaults
-DEFAULT_FRANGE: tuple[float, float] = (0, float("inf"))
-DEFAULT_MISMATCH: float = 0.2
-DEFAULT_QRANGE: tuple[float, float] = (4, 64)
+DEFAULT_FRANGE = (0, float("inf"))
+DEFAULT_MISMATCH = 0.2
+DEFAULT_QRANGE = (4, 64)
+
+# constants
+SQRT_2 = 2 ** (1 / 2.)
 
 
 # -- object class definitions --------
@@ -84,7 +88,8 @@ class QObject:
         duration: float,
         sampling: float,
         mismatch: float = DEFAULT_MISMATCH,
-    ):
+    ) -> None:
+        """Initialize a `QObject`."""
         self.duration = float(duration)
         self.sampling = float(sampling)
         self.mismatch = float(mismatch)
@@ -107,7 +112,8 @@ class QBase(QObject):
         duration: float,
         sampling: float,
         mismatch: float = DEFAULT_MISMATCH,
-    ):
+    ) -> None:
+        """Initialize a `QBase`."""
         super().__init__(
             duration,
             sampling,
@@ -152,7 +158,8 @@ class QTiling(QObject):
         qrange: tuple[float, float] = DEFAULT_QRANGE,
         frange: tuple[float, float] = DEFAULT_FRANGE,
         mismatch: float = DEFAULT_MISMATCH,
-    ):
+    ) -> None:
+        """Initialize a `QTiling` object."""
         super().__init__(
             duration,
             sampling,
@@ -194,11 +201,12 @@ class QTiling(QObject):
     def _iter_qs(self) -> Iterator[float]:
         """Iterate over the Q values."""
         # work out how many Qs we need
-        cumum = log(self.qrange[1] / self.qrange[0]) / 2 ** (1 / 2.)
+        sqrt_2 = SQRT_2
+        cumum = log(self.qrange[1] / self.qrange[0]) / sqrt_2
         nplanes = int(max(ceil(cumum / self.deltam), 1))
-        dq = cumum / nplanes  # pylint: disable=invalid-name
+        delta_q = cumum / nplanes
         for i in range(nplanes):
-            yield self.qrange[0] * exp(2 ** (1 / 2.) * dq * (i + .5))
+            yield self.qrange[0] * exp(sqrt_2 * delta_q * (i + .5))
 
     def __iter__(self) -> Iterator[QPlane]:
         """Iterate over this `QTiling`.
@@ -218,9 +226,8 @@ class QTiling(QObject):
         self,
         fseries: FrequencySeries,
         **kwargs,
-    ) -> tuple[QGram, int]:
-        """Compute the time-frequency plane at fixed Q with the most
-        significant tile.
+    ) -> tuple[QGram, float]:
+        """Compute the time-frequency plane at fixed Q with the most significant tile.
 
         Parameters
         ----------
@@ -236,8 +243,8 @@ class QTiling(QObject):
             Signal energies over the time-frequency plane containing the most
             significant tile.
 
-        N : `int`
-            Estimated number of statistically independent tiles.
+        far : `float`
+            Crudely estimated false alarm rate (FAR) for the detected signal.
 
         See Also
         --------
@@ -247,10 +254,10 @@ class QTiling(QObject):
         if not numpy.isfinite(fseries).all():
             msg = "Input signal contains non-numerical values"
             raise ValueError(msg)
-        weight = 1 + numpy.log10(
+        weight: float = 1 + numpy.log10(
             self.qrange[1] / self.qrange[0],
         ) / numpy.sqrt(2)
-        nind, nplanes, peak, result = (0, 0, 0., None)
+        nind, nplanes, peak, result = (0., 0, 0., None)
         # identify the plane with the loudest tile
         for plane in self:
             nplanes += 1
@@ -259,7 +266,10 @@ class QTiling(QObject):
             if result.peak["energy"] > peak:
                 out = result
                 peak = out.peak["energy"]
-        return (out, nind * weight / nplanes)
+
+        ntiles = nind * weight / nplanes
+        far = 1.5 * ntiles * numpy.exp(-out.peak["energy"]) / self.duration
+        return out, far
 
 
 class QPlane(QBase):
@@ -293,7 +303,8 @@ class QPlane(QBase):
         duration: float,
         sampling: float,
         mismatch: float = DEFAULT_MISMATCH,
-    ):
+    ) -> None:
+        """Initialize a `QPlane` object."""
         super().__init__(
             q,
             duration,
@@ -367,6 +378,7 @@ class QPlane(QBase):
     def transform(
         self,
         fseries: FrequencySeries,
+        *,
         norm: bool | str = True,
         epoch: float | LIGOTimeGPS | None = None,
         search: Segment | None = None,
@@ -404,10 +416,11 @@ class QPlane(QBase):
         QGram
             An object with energies populated over time-frequency tiles.
         """
-        out = []
-        for qtile in self:
-            # get energy from transform
-            out.append(qtile.transform(fseries, norm=norm, epoch=epoch))
+        out = [qtile.transform(
+            fseries,
+            norm=norm,
+            epoch=epoch,
+        ) for qtile in self]
         return QGram(self, out, search)
 
 
@@ -421,7 +434,8 @@ class QTile(QBase):
         duration: float,
         sampling: float,
         mismatch: float = DEFAULT_MISMATCH,
-    ):
+    ) -> None:
+        """Initialize a `QTile` object."""
         super().__init__(
             q,
             duration,
@@ -477,8 +491,8 @@ class QTile(QBase):
         )
         return (1 - xfrequencies ** 2) ** 2 * norm
 
-    def get_data_indices(self) -> NDArray[numpy.in64]:
-        """Returns the index array of interesting frequencies for this row."""
+    def get_data_indices(self) -> numpy.ndarray[tuple[int], numpy.dtype[numpy.int64]]:
+        """Return the index array of interesting frequencies for this row."""
         return numpy.round(
             self._get_indices() + 1 + self.frequency * self.duration,
         ).astype(int)
@@ -492,6 +506,7 @@ class QTile(QBase):
     def transform(
         self,
         fseries: FrequencySeries,
+        *,
         norm: bool | str = True,
         epoch: float | LIGOTimeGPS | None = None,
     ) -> TimeSeries:
@@ -577,13 +592,14 @@ class QGram:
         self,
         plane: QPlane,
         energies: list[TimeSeries],
-        search: Segment | None,
-    ):
+        search: tuple[float, float] | None,
+    ) -> None:
+        """Initialize a `QGram` object."""
         self.plane = plane
         self.energies = energies
         self.peak = self._find_peak(search)
 
-    def _find_peak(self, search) -> dict[str, float]:
+    def _find_peak(self, search: tuple[float, float] | None) -> dict[str, float]:
         peak: dict[str, float] = {
             "energy": 0.,
             "snr": 0.,
@@ -592,7 +608,7 @@ class QGram:
         }
         for freq, energy in zip(self.plane.frequencies, self.energies, strict=True):
             if search is not None:
-                energy = energy.crop(*search)
+                energy = energy.crop(*search)  # noqa: PLW2901
             maxidx = energy.value.argmax()
             maxe = energy.value[maxidx]
             if maxe > peak["energy"]:
@@ -608,9 +624,10 @@ class QGram:
         self,
         tres: float | None | str = "<default>",
         fres: float | None | str = "<default>",
+        *,
         logf: bool = False,
         outseg: Segment | None = None,
-    ):
+    ) -> Spectrogram:
         """Interpolate this `QGram` over a regularly-gridded spectrogram.
 
         Parameters
@@ -676,7 +693,11 @@ class QGram:
         # (Q, frequency) `TimeSeries` to have the same time resolution
         if tres == "<default>":
             tres = abs(Segment(outseg)) / 1000.
-        xout = numpy.arange(*outseg, step=tres)
+        xout: numpy.ndarray[tuple[int], numpy.dtype[numpy.float64]] = numpy.arange(
+            outseg[0],
+            outseg[1],
+            step=tres,
+        )
         nx = xout.size
         ny = frequencies.size
         out = Spectrogram(
@@ -849,12 +870,10 @@ def q_scan(
         data = data.fft().value
 
     # return a raw Q-transform and its significance
-    qgram, ntiles = QTiling(
+    return QTiling(
         duration,
         sampling,
         mismatch=mismatch,
         qrange=qrange,
         frange=frange,
     ).transform(data, **kwargs)
-    far = 1.5 * ntiles * numpy.exp(-qgram.peak["energy"]) / duration
-    return qgram, far
