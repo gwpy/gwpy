@@ -14,18 +14,18 @@ for logarithmic scales to one with the following logic:
 This results in plots that have slightly nicer default ticks:
 
 .. plot::
-   :include-source:
-   :context: reset
+    :include-source:
+    :context: reset
 
-   >>> import gwpy  # <-- import anything from gwpy to active custom formatter
-   >>> import numpy
-   >>> from matplotlib import pyplot
-   >>> fig = pyplot.figure()
-   >>> ax = fig.gca()
-   >>> ax.plot(numpy.arange(.1, 5, step=.1))
-   >>> ax.set_xscale('log')
-   >>> ax.set_yscale('log')
-   >>> fig.show()
+    >>> import gwpy  # <-- import anything from gwpy to active custom formatter
+    >>> import numpy
+    >>> from matplotlib import pyplot
+    >>> fig = pyplot.figure()
+    >>> ax = fig.gca()
+    >>> ax.plot(numpy.arange(.1, 5, step=.1))
+    >>> ax.set_xscale('log')
+    >>> ax.set_yscale('log')
+    >>> fig.show()
 
 Here you can see the X-axis formats with the updated ticks, showing '1'
 and '10' instead of '10 :sup:`0`' and '10 :sup:`1`', while the Y-axis --
@@ -36,8 +36,8 @@ minor formatters for log-scaled axes to
 :class:`~matplotlib.ticker.LogFormatterMathtext`:
 
 .. plot::
-   :include-source:
-   :context: close-figs
+    :include-source:
+    :context: close-figs
 
-   >>> from matplotlib.ticker import LogFormatterMathtext
-   >>> ax.yaxis.set_major_formatter(LogFormatterMathtext())
+    >>> from matplotlib.ticker import LogFormatterMathtext
+    >>> ax.yaxis.set_major_formatter(LogFormatterMathtext())

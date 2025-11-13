@@ -10,6 +10,10 @@ Significant events discovered in data from gravitational-wave observatories are
 stored in tabular datasets, typically describing astrophysical events, or
 noise transients (glitches).
 
+.. seealso::
+
+    - **Reference**: :mod:`gwpy.table`
+
 =======================
 The :class:`EventTable`
 =======================
@@ -28,48 +32,36 @@ The only thing to change if you want to use the `EventTable` instead of
 the basic `Table` is the import:
 
 .. code-block:: python
-   :caption: Importing the `EventTable`
-   :name: gwpy-table-import
+    :caption: Importing the `EventTable`
+    :name: gwpy-table-import
 
-   >>> from gwpy.table import EventTable
+    >>> from gwpy.table import EventTable
 
 ======================
 Reading/writing tables
 ======================
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   io
+    io
 
 ============
 Using tables
 ============
 
 .. toctree::
-   :titlesonly:
+    :titlesonly:
 
-   filter
-   rate
+    filter
+    rate
 
 ===============
 Plotting tables
 ===============
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   plot
-   histogram
-
-===============
-Class reference
-===============
-
-The above documentation references the following objects:
-
-.. autosummary::
-   :toctree: ../api/
-   :nosignatures:
-
-   EventTable
+    plot
+    histogram

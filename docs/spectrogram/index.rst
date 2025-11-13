@@ -40,12 +40,12 @@ The full set of metadata that can be provided is as follows:
 
 .. autosummary::
 
-   ~Spectrogram.name
-   ~Spectrogram.unit
-   ~Spectrogram.epoch
-   ~Spectrogram.dt
-   ~Spectrogram.f0
-   ~Spectrogram.df
+    ~Spectrogram.name
+    ~Spectrogram.unit
+    ~Spectrogram.epoch
+    ~Spectrogram.dt
+    ~Spectrogram.f0
+    ~Spectrogram.df
 
 ================================================================
 Calculating a `Spectrogram` from a `~gwpy.timeseries.TimeSeries`
@@ -55,17 +55,17 @@ The time-frequency `Spectrogram` of a `~gwpy.timeseries.TimeSeries` can be calcu
 We can extend previous examples of plotting a `~gwpy.timeseries.TimeSeries` with calculation of a `Spectrogram` with a 20-second stride:
 
 .. plot::
-   :context: reset
-   :include-source:
-   :nofigs:
+    :context: reset
+    :include-source:
+    :nofigs:
 
-   >>> from gwpy.timeseries import TimeSeries
-   >>> gwdata = TimeSeries.get(
-   ...     "H1",
-   ...     "Sep 14 2015 09:45",
-   ...     "Sep 14 2015 09:55",
-   ... )
-   >>> specgram = gwdata.spectrogram(20, fftlength=8, overlap=4) ** (1/2.)
+    >>> from gwpy.timeseries import TimeSeries
+    >>> gwdata = TimeSeries.get(
+    ...     "H1",
+    ...     "Sep 14 2015 09:45",
+    ...     "Sep 14 2015 09:55",
+    ... )
+    >>> specgram = gwdata.spectrogram(20, fftlength=8, overlap=4) ** (1/2.)
 
 .. _gwpy-spectrogram-plot:
 
@@ -77,31 +77,30 @@ Like the `~gwpy.timeseries.TimeSeries` and `~gwpy.frequencyseries.FrequencySerie
 We can extend the previous time-series example to include a plot:
 
 .. plot::
-   :context:
-   :include-source:
+    :context:
+    :include-source:
 
-   >>> plot = specgram.plot(norm='log', vmin=5e-24, vmax=1e-20)
-   >>> ax = plot.gca()
-   >>> ax.set_ylim(10, 2000)
-   >>> ax.set_yscale('log')
-   >>> ax.colorbar(label='GW strain ASD [strain/$\sqrt{\mathrm{Hz}}$]')
-   >>> plot.show()
+    >>> plot = specgram.plot(norm='log', vmin=5e-24, vmax=1e-20)
+    >>> ax = plot.gca()
+    >>> ax.set_ylim(10, 2000)
+    >>> ax.set_yscale('log')
+    >>> ax.colorbar(label='GW strain ASD [strain/$\sqrt{\mathrm{Hz}}$]')
+    >>> plot.show()
 
 ==========================
 `Spectrogram` applications
 ==========================
 
 .. toctree::
-   :titlesonly:
+    :titlesonly:
 
-   ../spectrum/filtering
+    ../spectrum/filtering
 
 =============
 Reference/API
 =============
 
 .. autosummary::
-   :toctree: ../api/
-   :nosignatures:
+    :nosignatures:
 
-   Spectrogram
+    Spectrogram

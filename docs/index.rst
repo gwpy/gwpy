@@ -1,28 +1,26 @@
-#########
-|_title_|
-#########
+#######################################################
+GWpy: A Python Package for Gravitational-Wave Astronomy
+#######################################################
 
-.. |_title_| image:: gwpy-docs-logo.png
-
-.. title:: GWpy docs
+.. title:: GWpy Documentation
 
 .. ifconfig:: 'dev' in release
 
-   .. warning::
+    .. warning::
 
-      You are viewing documentation for a development build of GWpy.
-      This version may include unstable code, or breaking changes relative
-      the most recent stable release.
-      To view the documentation for the latest stable release of GWpy, please
-      `click here <../stable/>`_.
+        You are viewing documentation for a development build of GWpy.
+        This version may include unstable code, or breaking changes relative
+        the most recent stable release.
+        To view the documentation for the latest stable release of GWpy, please
+        `click here <https://gwpy.readthedocs.io/en/stable/>`_.
 
-GWpy is a collaboration-driven `Python <http://www.python.org>`_ package
-providing tools for studying data from ground-based gravitational-wave
-detectors.
+**GWpy** is a collaboration-driven Python package
+providing tools for studying data from ground-based gravitational-wave detectors.
 
-GWpy provides a user-friendly, intuitive interface to the common time-domain
-and frequency-domain data produced by the `LIGO <http://www.ligo.org>`_ and
-`Virgo <http://www.ego-gw.it>`_ instruments and their analysis,
+GWpy provides a user-friendly, intuitive interface
+to the common time-domain and frequency-domain data
+produced by the `LIGO <http://www.ligo.org>`__ and `Virgo <http://www.ego-gw.it>`__ observatories
+and their analyses,
 with easy-to-follow tutorials at each step.
 
 .. image:: https://img.shields.io/conda/vn/conda-forge/gwpy
@@ -35,79 +33,80 @@ with easy-to-follow tutorials at each step.
     :target: https://choosealicense.com/licenses/gpl-3.0/
     :alt: GWpy license badge
 
-***********
-First steps
-***********
+----
+
+Documentation
+=============
+
+.. grid:: 2
+    :gutter: 2
+
+    .. grid-item-card:: 🚀 Getting Started
+        :link: getting-started
+        :link-type: doc
+        :text-align: center
+
+        **New to GWpy?**
+        Start here to install GWpy and learn the basics with a quick tutorial.
+
+    .. grid-item-card:: 📖 User Guide
+        :link: guide
+        :link-type: doc
+        :text-align: center
+
+        **Solving a problem?**
+        Practical guides for accomplishing specific tasks with GWpy.
+
+    .. grid-item-card:: � API Reference
+        :link: reference/index
+        :link-type: doc
+        :text-align: center
+
+        **Looking up details?**
+        Complete reference documentation for all GWpy classes and functions.
+
+    .. grid-item-card:: 💡 Examples
+        :link: examples/index
+        :link-type: doc
+        :text-align: center
+
+        **Looking for inspiration?**
+        Browse a collection of example notebooks showcasing GWpy in action.
+
+    .. grid-item-card:: ℹ️ Project Info
+        :link: about
+        :link-type: doc
+        :text-align: center
+
+        **Learn more about GWpy**
+        Information on the GWpy project.
 
 .. toctree::
-   :maxdepth: 1
+    :hidden:
+    :maxdepth: 2
 
-   What is GWpy? <overview>
-   How do I install GWpy? <install>
-   Citing GWpy <citing>
-
-*****************
-Working with data
-*****************
+    Getting Started <getting-started>
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Data structures
+    :hidden:
+    :maxdepth: 2
 
-   timeseries/index
-   spectrum/index
-   spectrogram/index
-   timeseries/statevector
-   segments/index
-   table/index
+    User Guide <guide>
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Data manipulation
+    :hidden:
+    :maxdepth: 2
 
-   signal/index
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Visualising data
-
-   plot/index
-   cli/index
+    API Reference <reference/index>
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Other utilities
+    :hidden:
+    :maxdepth: 1
 
-   detector/channel
-   time/index
-   astro/index
-   logging
-   env
-   tools/rds
+    Examples <examples/index>
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Examples
+    :hidden:
+    :maxdepth: 1
 
-   examples/index
-   examples/timeseries/index
-   examples/signal/index
-   examples/frequencyseries/index
-   examples/spectrogram/index
-   examples/segments/index
-   examples/table/index
-   examples/miscellaneous/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption:  Developer notes
-
-   dev/release
-
-******************
-Indices and tables
-******************
-
-.. toctree::
-
-* :ref:`genindex`
+    Project Info <about>

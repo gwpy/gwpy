@@ -15,8 +15,8 @@ Usage
 =====
 
 .. argparse::
-   :ref: gwpy.tool.rds.create_parser
-   :prog: gwpy-rds
+    :ref: gwpy.tools.rds.create_parser
+    :prog: gwpy-rds
 
 ========
 Examples
@@ -26,4 +26,8 @@ Examples
     :name: gwpy-rds
     :caption: How to use `gwpy-rds`.
 
-    gwpy-rds --start "2015-09-14 09:50:41" --end "2015-09-14 09:50:49" --channel H1:GDS-CALIB_STRAIN --output-file gw150914.h5
+    gwpy-rds \
+      --start "2015-09-14 09:50:41" \
+      --end "2015-09-14 09:50:49" \
+      --channel H1:GDS-CALIB_STRAIN \
+      --output-file gw150914.h5

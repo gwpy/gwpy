@@ -22,10 +22,10 @@ The :class:`TimeSeries`
 =======================
 
 .. code-block:: python
-   :caption: Importing the `TimeSeries`
-   :name: gwpy-timeseries-import
+    :caption: Importing the `TimeSeries`
+    :name: gwpy-timeseries-import
 
-   from gwpy.timeseries import TimeSeries
+    from gwpy.timeseries import TimeSeries
 
 GWpy provides the `TimeSeries` object as a way of representing time series
 data.
@@ -37,14 +37,14 @@ For example, to create a simple `TimeSeries` filled with
 :mod:`~numpy.random` data:
 
 .. code-block:: python
-   :caption: Creating a `TimeSeries` with random data
-   :name: gwpy-timeseries-random
+    :caption: Creating a `TimeSeries` with random data
+    :name: gwpy-timeseries-random
 
-   >>> from numpy.random import random
-   >>> from gwpy.timeseries import TimeSeries
-   >>> t = TimeSeries(random(1000))
-   >>> print(t)
-   TimeSeries([ 0.59442285, 0.61979421, 0.62968915,...,  0.98309223,
+    >>> from numpy.random import random
+    >>> from gwpy.timeseries import TimeSeries
+    >>> t = TimeSeries(random(1000))
+    >>> print(t)
+    TimeSeries([ 0.59442285, 0.61979421, 0.62968915,...,  0.98309223,
                 0.94513298, 0.1826175 ]
               unit: Unit(dimensionless),
               t0: 0.0 s,
@@ -56,13 +56,12 @@ Here we see the random data we have created, as well as the associated
 metadata common to any time series data:
 
 .. autosummary::
-   :caption: Attributes of the `TimeSeries`
 
-   ~TimeSeries.unit
-   ~TimeSeries.t0
-   ~TimeSeries.dt
-   ~TimeSeries.name
-   ~TimeSeries.channel
+    ~TimeSeries.unit
+    ~TimeSeries.t0
+    ~TimeSeries.dt
+    ~TimeSeries.name
+    ~TimeSeries.channel
 
 ==================
 Associated classes
@@ -72,30 +71,29 @@ Alongside the `TimeSeries` class, `gwpy.timeseries` module provides a
 small set of related classes for handling collections of data:
 
 .. autosummary::
-   :nosignatures:
-   :caption: `TimeSeries` container classes
+    :nosignatures:
 
-   TimeSeriesDict
-   TimeSeriesList
+    TimeSeriesDict
+    TimeSeriesList
 
 ================================
 Reading/writing time series data
 ================================
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   io
-   get
+    io
+    get
 
 =========================
 Plotting time series data
 =========================
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   plot
+    plot
 
 =============
 Reference/API
@@ -104,9 +102,8 @@ Reference/API
 The above documentation references the following objects:
 
 .. autosummary::
-   :toctree: ../api/
-   :nosignatures:
+    :nosignatures:
 
-   TimeSeries
-   TimeSeriesDict
-   TimeSeriesList
+    TimeSeries
+    TimeSeriesDict
+    TimeSeriesList

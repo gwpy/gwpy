@@ -51,7 +51,8 @@ user and developer documentation.
 
 -   **Documentation**: all public classes, methods, and functions should include
     docstrings following the NumPy/SciPy docstring standard.
-    Use Sphinx-compatible reStructuredText markup.
+    Use Sphinx-compatible reStructuredText markup and follow SemBR (https://sembr.org/)
+    where appropriate.
     Docstrings should include type hints even if the function is already annotated.
 
 -   **Tests**: use `pytest`. New code must include unit tests.

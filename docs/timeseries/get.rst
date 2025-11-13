@@ -49,7 +49,7 @@ The raw data include:
 
 These data are available to collaboration members via direct access at the
 observatory sites and computing centres, and may be available remotely using
-:ref:`NDS2 <gwpy-external-nds2>`.
+:ref:`gwpy-external-nds2`.
 
 ----------------------
 Calibrated strain data
@@ -178,9 +178,9 @@ GWDataFind is a service provided by the LIGO Scientific Collaboration to facilit
 the discovery and retrieval of gravitational-wave data, both strain data and auxiliary channels.
 It provides a unified interface to search for data across multiple observatories and data archives.
 
-The :meth:`TimeSeries.get` method uses the |gwdatafind|_ Python package to query the GWDataFind
-service for the requested channel(s) and time range, and will read or download the data from the
-best available source on-the-fly.
+The :meth:`TimeSeries.get` method uses the :doc:`gwdatafind <gwdatafind:index>` Python package
+to query the GWDataFind service for the requested channel(s) and time range,
+and will read or download the data from the best available source on-the-fly.
 
 For remote data access, :meth:`TimeSeries.get` will typically retrieve data from |OSDF|_, which
 provides a distributed network of data caches to ensure high availability and low latency access
@@ -196,9 +196,9 @@ GWOSC
 LIGO, Virgo, and KAGRA observatories.
 These data are freely accessible to any user.
 
-The :meth:`TimeSeries.get` method uses the |gwosc-mod|_ Python package to query the GWOSC
-service for the requested channel(s) and time range, and will download the data from GWOSC
-if it is available.
+The :meth:`TimeSeries.get` method uses the :doc:`gwosc <gwosc:index>` Python
+package to query the GWOSC service for the requested channel(s) and time range,
+and will download the data from GWOSC if it is available.
 
 .. _gwpy-timeseries-get-nds2:
 

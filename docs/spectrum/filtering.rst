@@ -10,10 +10,10 @@ Frequency-domain data (a :class:`~gwpy.frequencyseries.FrequencySeries` or a :cl
 
 .. autosummary::
 
-   FrequencySeries.filter
+    FrequencySeries.filter
 
 .. currentmodule:: gwpy.spectrogram
 
 .. autosummary::
 
-   Spectrogram.filter
+    Spectrogram.filter

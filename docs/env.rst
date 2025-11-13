@@ -71,17 +71,31 @@ Boolean variables
 Many of the variables are boolean switches, meaning they just tell GWpy to
 do something, or not to do something. The following values match as `True`:
 
-- ``'y'``
-- ``'yes'``
-- ``'1'``
-- ``'true'``
+.. grid:: 2
 
-And these match as `False`:
+    .. grid-item-card::
 
-- ``'n'``
-- ``'no'``
-- ``'0'``
-- ``'false'``
+        Truthy values
+        ^^^^^^^^^^^^^
+
+        The following string values match as `True`:
+
+        - ``'y'``
+        - ``'yes'``
+        - ``'1'``
+        - ``'true'``
+
+    .. grid-item-card::
+
+        Falsy values
+        ^^^^^^^^^^^^
+
+        And these match as `False`:
+
+        - ``'n'``
+        - ``'no'``
+        - ``'0'``
+        - ``'false'``
 
 The matching is **case-independent**, so, for example, ``'TRUE'`` will
 match as `True`.

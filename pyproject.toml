@@ -177,7 +177,9 @@ ci = [
 docs = [
   "furo >=2024.8.6",
   "matplotlib >=3.7.0",
+  "myst-parser >=4.0.1",
   "numpydoc >=0.8.0",
+  "pydata-sphinx-theme >=0.16.1",
   "Sphinx >=4.4.0",
   "sphinx-argparse",
   "sphinx-automodapi",
@@ -293,6 +295,7 @@ xfail_strict = true
 # -- rstcheck
 
 [tool.rstcheck]
+report_level = "warning"
 ignore_directives = [
   # matplotlib
   "plot",
@@ -309,25 +312,33 @@ ignore_directives = [
   # sphinx-argparse
   "argparse",
   # sphinx-automodapi
+  "automodapi",
   "automodsumm",
   # sphinx-design
+  "button-ref",
+  "grid",
   "tab-set",
-  # sphinx-panels
-  "tabbed",
+  # sphinx-gallery
+  "image-sg",
   # sphinxcontrib-programoutput
   "command-output",
 ]
 ignore_roles = [
+  # extlinks
+  "dcc",
+  "doi",
+  "issue",
+  "mr",
   # doxylink
   "lal",
   "lalframe",
 ]
-# rstcheck doesn't known about our referenced.txt which is implicitly included
-# in all pages via Sphinx's epilog option
 ignore_messages = [
-  "Hyperlink target .* is not referenced",
+  # rstcheck doesn't know about _references.txt
   "Unknown target name:.*",
   "Undefined substitution referenced: .*",
+  # rstcheck doesn't understand transitions (----) and directives
+  "Document .*may not (begin|end) with a transition",
 ]
 
 # -- ruff

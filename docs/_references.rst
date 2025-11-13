@@ -1,63 +1,4 @@
-.. -- Dependencies ------------------------------
-
-.. |astropy| replace:: `astropy`
-.. _astropy: http://www.astropy.org/
-
-.. |dateparser| replace:: `dateparser`
-.. _dateparser: https://dateparser.readthedocs.io
-
-.. |dateutil| replace:: `dateutil`
-.. _dateutil: https://dateutil.readthedocs.io
-
-.. |dqsegdb2| replace:: `dqsegdb2`
-.. _dqsegdb2: https://dqsegdb2.readthedocs.io
-
-.. |gwdatafind| replace:: `gwdatafind`
-.. _gwdatafind: https://gwdatafind.readthedocs.io
-
-.. |gwosc-mod| replace:: `gwosc`
-.. _gwosc-mod: https://gwosc.readthedocs.io
-
-.. |h5py| replace:: `h5py`
-.. _h5py: http://docs.h5py.org/en/latest/
-
-.. |htgettoken| replace:: `htgettoken`
-.. _htgettoken: https://github.com/fermitools/htgettoken
-
-.. |igwn-auth-utils| replace:: `igwn-auth-utils`
-.. _igwn-auth-utils: https://igwn-auth-utils.readthedocs.io
-
-.. |igwn-segments| replace:: `igwn-segments`
-.. _igwn-segments: https://igwn-segments.readthedocs.io/
-
-.. |ligotimegps| replace:: `ligotimegps`
-.. _ligotimegps: https://github.com/gwpy/ligotimegps/
-
-.. |matplotlib| replace:: `matplotlib`
-.. _matplotlib: https://matplotlib.org/
-
-.. |numpy| replace:: `numpy`
-.. _numpy: http://numpy.org/
-
-.. |requests-pelican| replace:: `requests-pelican`
-.. _requests-pelican: https://requests-pelican.readthedocs.io
-
-.. |requests-scitokens| replace:: `requests-scitokens`
-.. _requests-scitokens: https://requests-scitokens.readthedocs.io
-
-.. |scipy| replace:: `scipy`
-.. _scipy: http://www.scipy.org/
-
-.. |scitokens| replace:: `scitokens`
-.. _scitokens: https://scitokens.readthedocs.io
-
-.. |six| replace:: `six`
-.. _six: https://six.readthedocs.io/
-
-.. |tqdm| replace:: `tqdm`
-.. _tqdm: https://github.com/tqdm/tqdm
-
-.. -- Extra software ----------------------------
+.. -- Software -----------------------
 
 .. |cWB| replace:: cWB
 .. _cWB: https://gwburst.gitlab.io/documentation/latest/html/
@@ -71,11 +12,17 @@
 .. |GstLAL| replace:: GstLAL
 .. _GstLAL: https://lscsoft.docs.ligo.org/gstlal/
 
+.. |htgettoken| replace:: `htgettoken`
+.. _htgettoken: https://github.com/fermitools/htgettoken
+
 .. |LDAStools.frameCPP| replace:: `LDAStools.frameCPP`
 .. _LDAStools.frameCPP: https://computing.docs.ligo.org/ldastools/LDAS_Tools/ldas-tools-framecpp/
 
 .. |lal| replace:: `lal`
 .. _lal: https://lscsoft.docs.ligo.org/lalsuite/lal/
+
+.. |lal.FrDetector| replace:: `lal.FrDetector`
+.. _lal.FrDetector: https://lscsoft.docs.ligo.org/lalsuite/lal/struct_l_a_l_fr_detector.html
 
 .. |lal.LIGOTimeGPS| replace:: `lal.LIGOTimeGPS`
 .. _lal.LIGOTimeGPS: https://lscsoft.docs.ligo.org/lalsuite/lal/struct_l_i_g_o_time_g_p_s.html
@@ -83,8 +30,14 @@
 .. |lal.REAL8TimeSeries| replace:: `lal.REAL8TimeSeries`
 .. _lal.REAL8TimeSeries: https://lscsoft.docs.ligo.org/lalsuite/lal/struct_r_e_a_l8_time_series.html
 
+.. |lal.Unit| replace:: `lal.Unit`
+.. _lal.Unit: https://lscsoft.docs.ligo.org/lalsuite/lal/struct_l_a_l_unit.html
+
 .. |lalframe| replace:: `lalframe`
 .. _lalframe: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
+
+.. |lalframe.FrStream| replace:: `lalframe.FrStream`
+.. _lalframe.FrStream: https://lscsoft.docs.ligo.org/lalsuite/lalframe/struct_l_a_l_fr_stream.html
 
 .. |MySQLdb| replace:: `MySQLdb`
 .. _MySQLdb: http://mysql-python.sourceforge.net/
@@ -95,43 +48,7 @@
 .. |nds2l| replace:: Network Data Server (NDS2)
 .. _nds2l: https://wiki.ligo.org/Computing/NDSClient
 
-.. |numpydoc| replace:: `numpydoc`
-.. _numpydoc: https://numpydoc.readthedocs.io/
-
-.. |igwn-ligolw| replace:: `igwn-ligolw`
-.. _igwn-ligolw: https://igwn-ligolw.readthedocs.io/
-
-.. |pycbc| replace:: PyCBC
-.. _pycbc: https://pycbc.org/
-
-.. |sphinx| replace:: `sphinx`
-.. _sphinx: http://www.sphinx-doc.org/
-
-.. |sphinx-bootstrap-theme| replace:: `sphinx-bootstrap-theme`
-.. _sphinx-bootstrap-theme: http://sphinx-bootstrap-theme.readthedocs.io/
-
-.. |sphinxcontrib-programoutput| replace:: `sphinx-programoutput`
-.. _sphinxcontrib-programoutput: https://pythonhosted.org/sphinxcontrib-programoutput/
-
-.. |sphinx-automodapi| replace:: `sphinx-automodapi`
-.. _sphinx-automodapi: http://sphinx-automodapi.readthedocs.io/
-
-.. |uproot| replace:: `uproot`
-.. _uproot: https://uproot.readthedocs.io/
-
-.. -- Objects -----------------------------------
-
-.. |Table| replace:: :class:`~astropy.table.Table`
-
-.. -- Documents ---------------------------------
-
-.. |LIGO-T970130| replace:: LIGO-T970130
-.. _LIGO-T970130: https://dcc.ligo.org/LIGO-T970130/public
-
-.. |LIGO-T990033| replace:: LIGO-T990033
-.. _LIGO-T990033: https://dcc.ligo.org/LIGO-T990033/public
-
-.. -- Other references --------------------------
+.. -- Other references ---------------
 
 .. |GravitySpy| replace:: Gravity Spy
 .. _GravitySpy: https://gravityspy.org
@@ -141,6 +58,17 @@
 
 .. |GWOSC| replace:: GWOSC
 .. _GWOSC: https://gwosc.org/
+
+.. |OSDF| replace:: OSDF
+.. _OSDF: https://osg-htc.org/services/osdf.html
+
+.. |OSDFl| replace:: the Open Science Data Federation (OSDF)
+.. _OSDFl: https://osg-htc.org/services/osdf.html
+
+.. |Pelican| replace:: Pelican
+.. _Pelican: https://pelicanplatform.org/
+
+.. -- Data releases ------------------
 
 .. |GWOSC_AUX_GW170817| replace:: Auxiliary Channel Three Hour Release
 .. _GWOSC_AUX_GW170817: https://gwosc.org/auxiliary/GW170814/
@@ -154,16 +82,7 @@
 .. |GWOSC_O4_AUX_RELEASE| replace:: O4 Auxiliary Channel Data Release
 .. _GWOSC_O4_AUX_RELEASE: https://gwosc.org/O4/auxiliary/
 
-.. |LIGO-T050017| replace:: LIGO-T050017
-.. _LIGO-T050017: https://dcc.ligo.org/LIGO-T050017/public
-
-.. |OSDF| replace:: OSDF
-.. _OSDF: https://osg-htc.org/services/osdf.html
-
-.. |OSDFl| replace:: the Open Science Data Federation (OSDF)
-.. _OSDFl: https://osg-htc.org/services/osdf.html
-
-.. -- Event science summaries -------------------
+.. -- Event science summaries --------
 
 .. catalogues
 

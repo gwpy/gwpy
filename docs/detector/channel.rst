@@ -8,7 +8,7 @@ The :class:`Channel` class
 
 .. code-block:: python
 
-   >>> from gwpy.detector import Channel
+    >>> from gwpy.detector import Channel
 
 
 ====================
@@ -18,7 +18,7 @@ What is a 'channel'?
 Each of the laser-interferometer gravitational-wave detectors record thousands of different data streams capturing a single instrumental error or control signal, or the output of an environmental sensor.
 These data streams are known as 'channels', and are named according to a convention that describes its source in the instrument, and the signal it records, for example::
 
-   L1:PSS-ISS_PDB_OUT_DQ
+    L1:PSS-ISS_PDB_OUT_DQ
 
 describes the output signal (``OUT``) from photodiode-B (``PDB``) inside the Intensity Stabilisation System (``ISS``) of the Pre-Stabilised Laser (``PSL``) powering the ``L1`` instrument, hosted at the LIGO Livingston Observatory. The ``DQ`` suffix indicates that this channel was recorded in data files for offline study (many more 'test point' channels are used only in real-time, and are never recorded).
 
@@ -42,12 +42,12 @@ Alongside nominative attributes, each :class:`Channel` has the following attribu
 
 .. autosummary::
 
-   ~Channel.name
-   ~Channel.sample_rate
-   ~Channel.unit
-   ~Channel.dtype
-   ~Channel.url
-   ~Channel.model
+    ~Channel.name
+    ~Channel.sample_rate
+    ~Channel.unit
+    ~Channel.dtype
+    ~Channel.url
+    ~Channel.model
 
 Each of these can be manually passed to the `Channel` constructor, or downloaded directly from the LIGO Channel Information System.
 
@@ -82,11 +82,7 @@ Class reference
 This reference contains the following `class` entries:
 
 .. autosummary::
-   :nosignatures:
+    :nosignatures:
 
-   Channel
-   ChannelList
-
-.. autoclass:: Channel
-
-.. autoclass:: ChannelList
+    Channel
+    ChannelList

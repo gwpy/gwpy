@@ -9,7 +9,7 @@ build:
     python: "mambaforge-latest"
   jobs:
     install:
-      - pip install . --group dev
+      - pip install -e . --group dev
     post_install:
       # show what is installed in the build environment
       - conda list

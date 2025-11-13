@@ -25,14 +25,14 @@ calculates an ``epoch`` and ``unit`` each time the figure is drawn, based on
 the current view limits and data limits:
 
 .. plot::
-   :include-source:
-   :context: reset
+    :include-source:
+    :context: reset
 
-   >>> from gwpy.timeseries import TimeSeries
-   >>> raw = TimeSeries.get('L1', 1126259446, 1126259478)
-   >>> data = raw.bandpass(50, 300).notch(60).crop(*raw.span.contract(1))
-   >>> plot = data.plot(xscale='auto-gps')
-   >>> plot.show()
+    >>> from gwpy.timeseries import TimeSeries
+    >>> raw = TimeSeries.get('L1', 1126259446, 1126259478)
+    >>> data = raw.bandpass(50, 300).notch(60).crop(*raw.span.contract(1))
+    >>> plot = data.plot(xscale='auto-gps')
+    >>> plot.show()
 
 Here the default epoch is just the epoch for the given `TimeSeries`, and the
 unit has been automatically chosen as ``'seconds'``.
@@ -40,12 +40,12 @@ However, if we zoom the axes to a tiny fraction of a second, the ``unit`` is
 automatically reselected to something more sensible:
 
 .. plot::
-   :include-source:
-   :context:
+    :include-source:
+    :context:
 
-   >>> ax = plot.gca()
-   >>> ax.set_xlim(1126259462.415, 1126259462.425)
-   >>> plot.refresh()
+    >>> ax = plot.gca()
+    >>> ax.set_xlim(1126259462.415, 1126259462.425)
+    >>> plot.refresh()
 
 ===========
 Fixed units
@@ -68,11 +68,11 @@ The available units are
 - ``'years'``
 
 .. plot::
-   :include-source:
-   :context:
+    :include-source:
+    :context:
 
-   >>> ax.set_xscale('seconds')
-   >>> plot.refresh()
+    >>> ax.set_xscale('seconds')
+    >>> plot.refresh()
 
 ===========
 Fixed epoch
@@ -84,14 +84,14 @@ A GPS axis can be fixed to a specific epoch via the same
 via the special :meth:`~gwpy.plot.Axes.set_epoch` method:
 
 .. plot::
-   :include-source:
-   :context:
+    :include-source:
+    :context:
 
-   >>> ax.set_xlim(1126259462.2, 1126259462.6)
-   >>> ax.set_epoch(1126259462.42)
-   >>> plot.refresh()
+    >>> ax.set_xlim(1126259462.2, 1126259462.6)
+    >>> ax.set_epoch(1126259462.42)
+    >>> plot.refresh()
 
 .. note::
 
-   A fixed epoch can be used with ``'auto-gps'`` as well as any of the
-   fixed units.
+    A fixed epoch can be used with ``'auto-gps'`` as well as any of the
+    fixed units.

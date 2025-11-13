@@ -5,11 +5,11 @@ NDS2
 ####
 
 .. image:: https://img.shields.io/conda/vn/conda-forge/python-nds2-client.svg
-   :alt: python-nds2-client conda-forge version
-   :target: https://anaconda.org/conda-forge/python-nds2-client
+    :alt: python-nds2-client conda-forge version
+    :target: https://anaconda.org/conda-forge/python-nds2-client
 .. image:: https://img.shields.io/conda/pn/conda-forge/python-nds2-client.svg
-   :alt: python-nds2-client conda-forge platforms
-   :target: https://anaconda.org/conda-forge/python-nds2-client
+    :alt: python-nds2-client conda-forge platforms
+    :target: https://anaconda.org/conda-forge/python-nds2-client
 
 Network Data Service (NDS) 2 is a TCP/IP protocol for retrieving data from
 gravitational-wave detector archives.

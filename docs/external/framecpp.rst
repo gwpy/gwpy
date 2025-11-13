@@ -5,14 +5,14 @@ FrameCPP
 ########
 
 .. image:: https://img.shields.io/conda/vn/conda-forge/python-ldas-tools-framecpp.svg
-   :alt: python-ldas-tools-framecpp conda-forge version
-   :target: https://anaconda.org/conda-forge/python-ldas-tools-framecpp
+    :alt: python-ldas-tools-framecpp conda-forge version
+    :target: https://anaconda.org/conda-forge/python-ldas-tools-framecpp
 .. image:: https://img.shields.io/conda/pn/conda-forge/python-ldas-tools-framecpp.svg
-   :alt: python-ldas-tools-framecpp conda-forge platforms
-   :target: https://anaconda.org/conda-forge/python-ldas-tools-framecpp
+    :alt: python-ldas-tools-framecpp conda-forge platforms
+    :target: https://anaconda.org/conda-forge/python-ldas-tools-framecpp
 
 FrameCPP is a library for reading and writing data in GWF format defined
-in |LIGO-T970130|_.
+in :dcc:`LIGO-T970130`.
 The main library is written in C++ and documented at
 
 https://computing.docs.ligo.org/ldastools/LDAS_Tools/ldas-tools-framecpp/

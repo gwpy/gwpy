@@ -19,11 +19,10 @@ The sensitive distance (sometimes called 'range', or 'horizon') is a measure of 
 `gwpy.astro` provides methods to calculate the distance to simple models of inspiral and burst signals:
 
 .. autosummary::
-   :toctree: ../api
 
-   burst_range
-   burst_range_spectrum
-   inspiral_range
-   inspiral_range_psd
-   range_timeseries
-   range_spectrogram
+    burst_range
+    burst_range_spectrum
+    inspiral_range
+    inspiral_range_psd
+    range_timeseries
+    range_spectrogram

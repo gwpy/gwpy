@@ -29,11 +29,11 @@ The full set of metadata that can be provided is as follows:
 
 .. autosummary::
 
-   ~FrequencySeries.name
-   ~FrequencySeries.unit
-   ~FrequencySeries.epoch
-   ~FrequencySeries.f0
-   ~FrequencySeries.df
+    ~FrequencySeries.name
+    ~FrequencySeries.unit
+    ~FrequencySeries.epoch
+    ~FrequencySeries.f0
+    ~FrequencySeries.df
 
 ==========================================================================
 Generating a `FrequencySeries` from a :class:`~gwpy.timeseries.TimeSeries`
@@ -44,25 +44,25 @@ Generating a `FrequencySeries` from a :class:`~gwpy.timeseries.TimeSeries`
 The frequency-spectrum of a :class:`TimeSeries` can be calculated using either of the following methods:
 
 .. autosummary::
-   :nosignatures:
+    :nosignatures:
 
-   TimeSeries.psd
-   TimeSeries.asd
+    TimeSeries.psd
+    TimeSeries.asd
 
 In this example we expand upon plotting a :class:`~gwpy.timeseries.TimeSeries`, by calculating the amplitude-spectral density of the gravitational-wave strain data from LHO:
 
 .. plot::
-   :context: reset
-   :include-source:
-   :nofigs:
+    :context: reset
+    :include-source:
+    :nofigs:
 
-   >>> from gwpy.timeseries import TimeSeries
-   >>> gwdata = TimeSeries.get(
-   ...     "H1",
-   ...     "Sep 14 2015 09:45",
-   ...     "Sep 14 2015 09:55",
-   ... )
-   >>> spectrum = gwdata.asd(8, 4)
+    >>> from gwpy.timeseries import TimeSeries
+    >>> gwdata = TimeSeries.get(
+    ...     "H1",
+    ...     "Sep 14 2015 09:45",
+    ...     "Sep 14 2015 09:55",
+    ... )
+    >>> spectrum = gwdata.asd(8, 4)
 
 where the result is an average spectrum calculated using the
 `Welch method <https://en.wikipedia.org/wiki/Welch_method>`_.
@@ -72,9 +72,9 @@ Reading/writing frequency-domain data
 =====================================
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   io
+    io
 
 
 .. _gwpy-frequencyseries-plot:
@@ -88,31 +88,21 @@ Plotting a `FrequencySeries`
 Similarly to the :class:`~gwpy.timeseries.TimeSeries`, the `FrequencySeries` object comes with its own :meth:`~FrequencySeries.plot` method, which will quickly construct a :class:`~gwpy.plot.Plot`:
 
 .. plot::
-   :context:
-   :include-source:
+    :context:
+    :include-source:
 
-   >>> plot = spectrum.plot()
-   >>> ax = plot.gca()
-   >>> ax.set_xlim(10, 2000)
-   >>> ax.set_ylabel(r'GW strain ASD [strain$/\sqrt{\mathrm{Hz}}$]')
-   >>> ax.set_ylim(5e-24, 1e-20)
-   >>> plot.show()
+    >>> plot = spectrum.plot()
+    >>> ax = plot.gca()
+    >>> ax.set_xlim(10, 2000)
+    >>> ax.set_ylabel(r'GW strain ASD [strain$/\sqrt{\mathrm{Hz}}$]')
+    >>> ax.set_ylim(5e-24, 1e-20)
+    >>> plot.show()
 
 ==============================
 `FrequencySeries` applications
 ==============================
 
 .. toctree::
-   :titlesonly:
+    :titlesonly:
 
-   filtering
-
-===========================
-`FrequencySeries` reference
-===========================
-
-.. autosummary::
-   :toctree: ../api/
-
-   FrequencySeries
-   SpectralVariance
+    filtering

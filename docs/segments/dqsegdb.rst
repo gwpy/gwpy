@@ -8,8 +8,8 @@ The Segment Database
 
 .. warning::
 
-   Access to the GW segment database is reserved for members of
-   the LIGO-Virgo-KAGRA collaborations.
+    Access to the GW segment database is reserved for members of
+    the LIGO-Virgo-KAGRA collaborations.
 
 
 The LIGO and Virgo instruments utilise hundreds of data-quality flags
