@@ -36,7 +36,14 @@ if TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-# Preferentially ordered list of available GWF backends
+__all__ = [
+    "BACKENDS",
+    "get_backend",
+    "get_backend_function",
+    "import_backend",
+]
+
+# Preferentially ordered list of supported GWF backends
 BACKENDS = [
     "frameCPP",
     "LALFrame",

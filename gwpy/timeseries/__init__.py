@@ -18,8 +18,6 @@
 
 """Create, manipulate, read, and write time-series data."""
 
-from __future__ import annotations
-
 from .core import (
     TimeSeriesBase,
     TimeSeriesBaseDict,

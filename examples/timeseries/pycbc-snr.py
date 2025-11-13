@@ -30,7 +30,7 @@ However, an actual astrophysical search algorithm detects signals by
 calculating the signal-to-noise ratio (SNR) of data for each in a large bank
 of signal models, known as templates.
 
-Using |pycbc|_ (the actual search code), we can do that.
+Using :doc:`PyCBC <pycbc:index>` (the actual search code), we can do that.
 """
 
 # %%

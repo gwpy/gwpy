@@ -87,6 +87,20 @@ else:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+__all__ = [
+    "cache_segments",
+    "file_segment",
+    "filename_metadata",
+    "find_contiguous",
+    "flatten",
+    "is_cache",
+    "is_cache_entry",
+    "read_cache",
+    "read_cache_entry",
+    "sieve",
+    "write_cache",
+]
+
 
 @contextlib.contextmanager
 def _silence_lal_debug_warnings() -> Iterator[None]:
@@ -159,7 +173,7 @@ def _parse_entry_ffl(
 class _CacheEntry(NamedTuple):
     """Quick version of lal.utils.CacheEntry for internal purposes only.
 
-    Just to allow metadata handling for files that don't follow LIGO-T050017.
+    Just to allow metadata handling for files that don't follow :dcc:`LIGO-T010150`.
     """
 
     observatory: str | None
@@ -269,7 +283,7 @@ def read_cache(
         interval will be returned.
 
     strict : `bool`, optional
-        If `False` warn about entries that don't follow the LIGO-T050017
+        If `False` warn about entries that don't follow the :dcc:`LIGO-T010150`
         standard, then skip them; if `True` all errors are raised as
         exceptions.
 
@@ -399,18 +413,18 @@ def is_cache(
 def is_cache_entry(path: CacheEntry | FileSystemPath) -> bool:
     """Return `True` if ``path`` can be represented as a cache entry.
 
-    In practice this just tests whether the input is |LIGO-T050017|_ compliant.
+    In practice this just tests whether the input is :dcc:`LIGO-T010150` compliant.
 
     Parameters
     ----------
-    path : `str`, :class:`lal.utils.CacheEntry`
+    path : `str`, `lal.utils.CacheEntry`
         The input to test
 
     Returns
     -------
     isentry : `bool`
         `True` if ``path`` is an instance of `CacheEntry`, or can be parsed
-        using |LIGO-T050017|_.
+        using :dcc:`LIGO-T010150`.
     """
     if HAS_CACHEENTRY and isinstance(path, CacheEntry):
         return True
@@ -424,7 +438,7 @@ def is_cache_entry(path: CacheEntry | FileSystemPath) -> bool:
 # -- cache manipulation --------------
 
 def filename_metadata(filename: FileSystemPath) -> tuple[str, str, Segment]:
-    """Return metadata parsed from a filename following LIGO-T050017.
+    """Return metadata parsed from a filename following :dcc:`LIGO-T010150`.
 
     This method is lenient with regards to integers in the GPS start time of
     the file, as opposed to `gwdatafind.utils.filename_metadata`, which is
@@ -448,9 +462,9 @@ def filename_metadata(filename: FileSystemPath) -> tuple[str, str, Segment]:
 
     Notes
     -----
-    `LIGO-T050017 <https://dcc.ligo.org/LIGO-T050017>`__ declares a
-    file naming convention that includes documenting the GPS start integer
-    and integer duration of a file, see that document for more details.
+    :dcc:`LIGO-T010150` declares a file naming convention that includes
+    documenting the GPS start integer and integer duration of a file,
+    see that document for more details.
 
     Examples
     --------
@@ -465,7 +479,7 @@ def filename_metadata(filename: FileSystemPath) -> tuple[str, str, Segment]:
         obs, desc, start, stub = name.split("-")
     except ValueError as exc:
         exc.args = (
-            f"Failed to parse {name!r} as a LIGO-T050017-compatible filename",
+            f"Failed to parse {name!r} as a LIGO-T010150-compatible filename",
         )
         raise
     gpsstart = float(start)
@@ -483,7 +497,7 @@ def filename_metadata(filename: FileSystemPath) -> tuple[str, str, Segment]:
 
 
 def file_segment(filename: CacheEntry | FileSystemPath) -> Segment:
-    """Return the data segment for a filename following T050017.
+    """Return the data segment for a filename following :dcc:`LIGO-T010150`.
 
     Parameters
     ----------
@@ -497,7 +511,7 @@ def file_segment(filename: CacheEntry | FileSystemPath) -> Segment:
 
     Notes
     -----
-    |LIGO-T050017|_ declares a filenaming convention that includes
+    :dcc:`LIGO-T010150` declares a filenaming convention that includes
     documenting the GPS start integer and integer duration of a file,
     see that document for more details.
     """

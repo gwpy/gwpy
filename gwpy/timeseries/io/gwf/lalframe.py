@@ -18,7 +18,7 @@
 
 """Read gravitational-wave frame (GWF) files using the LALFrame API.
 
-The frame format is defined in LIGO-T970130 available from dcc.ligo.org.
+The frame format is defined in :dcc:`LIGO-T970130`.
 """
 
 from __future__ import annotations
@@ -58,7 +58,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 def open_data_source(
     source: str | Path | IO | lal.Cache | list[str | Path | IO],
 ) -> lalframe.FrStream:
-    """Open a GWF file source into a `lalframe.XLALFrStream` object.
+    """Open a GWF file source into a |lalframe.FrStream|_ object.
 
     Parameters
     ----------
@@ -67,8 +67,8 @@ def open_data_source(
 
     Returns
     -------
-    stream : `lalframe.FrStream`
-        An open `FrStream`.
+    stream : |lalframe.FrStream|_
+        An open `lalframe.FrStream`.
 
     Raises
     ------
@@ -113,7 +113,7 @@ def get_stream_segment(stream: lalframe.FrStream) -> Segment:
 
     Parameters
     ----------
-    stream : `lal.FrStream`
+    stream : |lalframe.FrStream|_
         Stream of data to search.
 
     Returns
@@ -152,7 +152,7 @@ def get_stream_duration(stream: lalframe.FrStream) -> float:
 
     Parameters
     ----------
-    stream : `lal.FrStream`
+    stream : |lalframe.FrStream|_
         Stream of data to search.
 
     Returns

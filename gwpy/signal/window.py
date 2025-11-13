@@ -30,14 +30,20 @@ from scipy.signal.windows._windows import (
 )
 from scipy.special import expit
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
 if TYPE_CHECKING:
     from typing import TypeAlias
 
     from numpy.typing import NDArray
 
     WindowLike: TypeAlias = str | float | tuple | numpy.ndarray
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__all__ = [
+    "canonical_name",
+    "get_window",
+    "planck",
+    "recommended_overlap",
+]
 
 
 def get_window(
@@ -164,7 +170,7 @@ def recommended_overlap(
     name: str,
     nfft: int | None = None,
 ) -> float | int:
-    """Returns the recommended fractional overlap for the given window.
+    """Return the recommended fractional overlap for the given window.
 
     If ``nfft`` is given, the return is in samples.
 
@@ -180,7 +186,7 @@ def recommended_overlap(
     -------
     rov : `float`, `int`
         The recommended overlap (ROV) for the given window, in samples if
-        ``nfft` is given (`int`), otherwise fractional (`float`).
+        ``nfft`` is given (`int`), otherwise fractional (`float`).
 
     Examples
     --------

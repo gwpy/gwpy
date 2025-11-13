@@ -350,14 +350,14 @@ def kinit(
 
     Examples
     --------
-    Example 1: standard user input, with password prompt::
+    Example 1: standard user input, with password prompt:
 
     >>> kinit('albert.einstein')
     Password for albert.einstein@LIGO.ORG:
     Kerberos ticket generated for albert.einstein@LIGO.ORG
 
     Example 2: extract username and realm from keytab, and use that
-    in authentication::
+    in authentication:
 
     >>> kinit(keytab='~/.kerberos/ligo.org.keytab', verbose=True)
     Kerberos ticket generated for albert.einstein@LIGO.ORG

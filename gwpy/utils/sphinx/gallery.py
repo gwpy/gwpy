@@ -47,8 +47,10 @@ from textwrap import indent
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from logging import Logger
     from pathlib import Path
+
+    from sphinx.util.logging import SphinxLoggerAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -76,10 +78,10 @@ ${pyfunction}([
 
 
 def _render_entry_point_example(
-    config: Mapping,
+    config: ConfigParser,
     section: str,
     outdir: Path,
-    logger: logging.Logger = logger,
+    logger: Logger | SphinxLoggerAdapter = logger,
     entry_point: str = "gwpy-plot",
     filename_prefix: str = "cli_",
 ) -> Path:
@@ -145,7 +147,7 @@ def _render_entry_point_example(
 def render_entry_point_examples(
     inifile: Path,
     outdir: Path,
-    logger: logging.Logger = logger,
+    logger: Logger | SphinxLoggerAdapter = logger,
     entry_point: str = "gwpy-plot",
     filename_prefix: str = "cli_",
 ) -> None:

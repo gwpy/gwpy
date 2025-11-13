@@ -84,7 +84,7 @@ def table_from_root(
 ) -> Table:
     """Read a Table from a ROOT file.
 
-    Requires: |uproot|_.
+    Requires: :doc:`uproot <uproot:index>`
 
     Parameters
     ----------
@@ -172,7 +172,7 @@ def table_to_root(  # noqa: D417
 ) -> None:
     """Write a Table to a ROOT file.
 
-    Requires: |uproot|_.
+    Requires: :doc:`uproot <uproot:index>`
 
     Parameters
     ----------

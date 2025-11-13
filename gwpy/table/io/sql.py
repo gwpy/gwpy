@@ -17,7 +17,7 @@
 
 """Utilities for database queries.
 
-All functions in this module require |sqlalchemy|_.
+All functions in this module require :doc:`sqlalchemy <sqlalchemy:index>`.
 """
 
 from __future__ import annotations
@@ -59,7 +59,7 @@ def format_where(
 ) -> sqlalchemy.SQLColumnExpression | None:
     """Format a column filter condition as a SQL ``WHERE`` expression.
 
-    Requires: |sqlalchemy|_.
+    Requires: :doc:`sqlalchemy <sqlalchemy:index>`
 
     Parameters
     ----------
@@ -120,7 +120,7 @@ def format_query(
 ) -> sqlalchemy.Select:
     """Format a SQL query using `sqlalchemy`.
 
-    Requires: |sqlalchemy|_.
+    Requires: :doc:`sqlalchemy <sqlalchemy:index>`
 
     Parameters
     ----------
@@ -221,7 +221,7 @@ def create_engine(
 ) -> sqlalchemy.Engine:
     """Create a new `sqlalchemy.engine.Engine`.
 
-    Requires: |sqlalchemy|_.
+    Requires: :doc:`sqlalchemy <sqlalchemy:index>`
 
     Parameters
     ----------
@@ -299,7 +299,7 @@ def fetch(
 ) -> Table:
     """Fetch data from an SQL table into a `Table`.
 
-    Requires: |sqlalchemy|_.
+    Requires: :doc:`sqlalchemy <sqlalchemy:index>`
 
     Parameters
     ----------

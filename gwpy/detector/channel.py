@@ -567,7 +567,7 @@ class Channel:
         """Decompose a channel name string into its components.
 
         This method parses channels acccording to the LIGO Channel Naming
-        Convention |LIGO-T990033|_.
+        Convention :dcc:`LIGO-T990033`.
 
         Parameters
         ----------

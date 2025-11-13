@@ -22,11 +22,10 @@ The :class:`~astropy.time.Time` object from the astropy package
 is imported for user convenience, and a GPS time conversion function
 is provided.
 
-All other time conversions can be easily completed using the `Time`
-object.
+All other time conversions can be easily completed using the
+:class:`~astropy.time.Time` object.
 """
 
-from importlib import import_module
 from typing import TYPE_CHECKING
 
 from astropy.time import Time
@@ -46,3 +45,11 @@ if TYPE_CHECKING:
     from ._tconvert import GpsConvertible
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+__all__ = [
+    "LIGOTimeGPS",
+    "Time",
+    "from_gps",
+    "tconvert",
+    "to_gps",
+]

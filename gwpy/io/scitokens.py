@@ -21,9 +21,9 @@ The functions in this module require the following optional extra
 packages:
 
 - |htgettoken|_
-- |igwn-auth-utils|_
-- |requests-scitokens|_
-- |scitokens|_
+- :doc:`igwn-auth-utils <igwn-auth-utils:index>`
+- :doc:`requests-scitokens <requests-scitokens:index>`
+- :doc:`scitokens <scitokens:index>`
 """
 
 from __future__ import annotations
@@ -44,6 +44,12 @@ if TYPE_CHECKING:
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 log = logging.getLogger(__name__)
+
+__all__ = [
+    "add_http_authorization_header",
+    "find_token",
+    "get_scitoken",
+]
 
 
 # -- find an existing token
@@ -144,7 +150,7 @@ def get_scitoken(
 
     See Also
     --------
-    `htgettoken`
+    htgettoken
     """
     import htgettoken
     from scitokens import SciToken

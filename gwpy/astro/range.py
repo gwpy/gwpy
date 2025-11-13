@@ -157,8 +157,7 @@ def sensemon_range_psd(
     This method returns the power spectral density (in ``Mpc**2 / Hz``) to
     which a compact binary inspiral with the given component masses would
     be detectable given the instrumental PSD. The calculation is defined in:
-
-    https://dcc.ligo.org/LIGO-T030276/public
+    :dcc:`LIGO-T030276`.
 
     Parameters
     ----------
@@ -228,8 +227,7 @@ def sensemon_range(
     This method returns the distance (in megaparsecs) to which a compact
     binary inspiral with the given component masses would be detectable
     given the instrumental PSD. The calculation is as defined in:
-
-    https://dcc.ligo.org/LIGO-T030276/public
+    :dcc:`LIGO-T030276`.
 
     Parameters
     ----------
@@ -387,7 +385,7 @@ def inspiral_range_psd(
     See Also
     --------
     sensemon_range_psd
-        For the method based on LIGO-T030276, also known as LIGO SenseMonitor.
+        For the method based on :dcc:`LIGO-T030276`, also known as LIGO SenseMonitor.
 
     inspiral-range
         The package which does heavy lifting for waveform simulation and
@@ -523,7 +521,7 @@ def inspiral_range(
     See Also
     --------
     sensemon_range
-        For the method based on LIGO-T030276, also known as LIGO SenseMonitor.
+        For the method based on :dcc:`LIGO-T030276`, also known as LIGO SenseMonitor.
 
     inspiral-range
         The package which does heavy lifting for waveform simulation and

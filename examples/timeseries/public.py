@@ -30,14 +30,14 @@ GW detection event, and to download and visualise detector data.
 """
 
 # %%
-# Firstly, we can use the |gwosc-mod| Python package to query for the
-# time of the first gravitational-wave detection |GW150914|:
+# Firstly, we can use the :doc:`gwosc <gwosc:index>` Python package to query
+# for the time of the first gravitational-wave detection |GW150914|_:
 
 from gwosc.datasets import event_gps
 gps = event_gps("GW150914")
 
 # %%
-# GWpy's `TimeSeries` class provides an interface to the public |GWOSC|
+# GWpy's `TimeSeries` class provides an interface to the public |GWOSC|_
 # data in the :meth:`~TimeSeries.get` method; to use it we
 # need to first import the `TimeSeries` object:
 

@@ -290,9 +290,9 @@ class TimeSeriesRead(TimeSeriesBaseRead):
         multiple datasets.
 
         - When reading from GWF, this argument should specify the
-        name of the channel to read.
+          name of the channel to read.
         - When reading from HDF5, this argument should specify the
-        path or dataset name within the file.
+          path or dataset name within the file.
 
     start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS start time of required data, defaults to start of data found;
@@ -435,9 +435,9 @@ class StateVectorRead(TimeSeriesBaseRead):
         multiple datasets.
 
         - When reading from GWF, this argument should specify the
-        name of the channel to read.
+          name of the channel to read.
         - When reading from HDF5, this argument should specify the
-        path or dataset name within the file.
+          path or dataset name within the file.
 
     start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS start time of required data, defaults to start of data found;
@@ -732,9 +732,9 @@ class TimeSeriesDictRead(TimeSeriesBaseDictRead):
         A list (or similar) of dataset names to read from ``source``.
 
         - When reading from GWF, this argument should specify the
-        names of the channels to read.
+          names of the channels to read.
         - When reading from HDF5, this argument should specify the
-        paths or dataset names within the file.
+          paths or dataset names within the file.
 
     start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS start time of required data, defaults to start of data found;
@@ -809,9 +809,9 @@ class StateVectorDictRead(TimeSeriesBaseDictRead):
         A list (or similar) of dataset names to read from ``source``.
 
         - When reading from GWF, this argument should specify the
-        names of the channels to read.
+          names of the channels to read.
         - When reading from HDF5, this argument should specify the
-        paths or dataset names within the file.
+          paths or dataset names within the file.
 
     start : `~gwpy.time.LIGOTimeGPS`, `float`, `str`, optional
         GPS start time of required data, defaults to start of data found;

@@ -294,7 +294,7 @@ def fetch_gwosc_data(
         The data format to download and parse, default: ``'h5py'``
 
         - ``'hdf5'``
-        - ``'gwf'`` - requires |lalframe|_
+        - ``'gwf'`` - requires `lalframe`
 
     host : `str`, optional
         HTTP host name of GWOSC server to access.
@@ -473,7 +473,7 @@ def fetch_dict(
         One of
 
         "hdf5"
-            HDF5 data files, read using |h5py|_.
+            HDF5 data files, read using `h5py`.
 
         "gwf"
             Gravitational-Wave Frame files, requires |LDAStools.frameCPP|_.

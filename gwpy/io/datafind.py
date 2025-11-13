@@ -32,7 +32,7 @@ or the ``host`` keyword must be passed to :func:`find_urls` and friends.
 Data discovery using the Virgo FFL system requires the ``FFLPATH`` environment
 variable to point to the directory containing FFL files, **or** the
 ``VIRGODATA`` environment variable to point to a directory containing an
-``ffl` subdirectory, which contains FFL files.
+``ffl`` subdirectory, which contains FFL files.
 """
 
 from __future__ import annotations
@@ -96,6 +96,15 @@ if TYPE_CHECKING:
     ChannelLike = TypeVar("ChannelLike", bound=str | Channel)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+__all__ = [
+    "find_best_frametype",
+    "find_frametype",
+    "find_latest",
+    "find_types",
+    "find_urls",
+    "on_tape",
+]
 
 logger = logging.getLogger(__name__)
 

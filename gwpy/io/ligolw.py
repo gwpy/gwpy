@@ -68,6 +68,23 @@ if TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+__all__ = [
+    "build_content_handler",
+    "default_content_handler",
+    "get_filtering_contenthandler",
+    "get_ligolw_element",
+    "get_partial_contenthandler",
+    "is_ligolw",
+    "iter_tables",
+    "list_tables",
+    "open_xmldoc",
+    "read_ligolw",
+    "read_table",
+    "to_table_type",
+    "write_tables",
+    "write_tables_to_document",
+]
+
 # XML elements
 XML_SIGNATURE = b"<?xml"
 LIGOLW_SIGNATURE = b"<!doctype ligo_lw"
@@ -633,12 +650,13 @@ def iter_tables(
     Parameters
     ----------
     source : `file`, `str`, :class:`~igwn_ligolw.ligolw.Document`, `list`
-        one or more open files, file paths, or LIGO_LW `Document`s
+        One or more open files, file paths,
+        or `LIGO_LW documents <igwn_ligolw.ligolw.Document>`.
 
     Yields
     ------
     igwn_ligolw.ligolw.Table
-        a table structure from the document(s)
+        A table structure from the document(s).
     """
     from igwn_ligolw.ligolw import Element, Stream, WalkChildren
 
@@ -660,7 +678,8 @@ def list_tables(source: FileLike | str | Document | list) -> list[str]:
     Parameters
     ----------
     source : `file`, `str`, :class:`~igwn_ligolw.ligolw.Document`, `list`
-        one or more open files, file paths, or LIGO_LW `Document`s
+        One or more open files, file paths,
+        or `LIGO_LW documents <igwn_ligolw.ligolw.Document>`.
 
     Examples
     --------

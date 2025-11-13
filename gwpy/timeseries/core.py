@@ -1331,7 +1331,7 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
             One of
 
             "hdf5"
-                HDF5 data files, read using |h5py|_.
+                HDF5 data files, read using `h5py`.
 
             "gwf"
                 Gravitational-Wave Frame files, requires |LDAStools.frameCPP|_.

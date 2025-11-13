@@ -23,13 +23,12 @@
 Plotting an averaged ASD with percentiles.
 ##########################################
 
-As we have seen in :ref:`sphinx_glr_examples_frequency_hoff`, the Amplitude
-Spectral Density (ASD) is a key indicator of frequency-domain sensitivity for
-a gravitational-wave detector.
+As we have seen in :doc:`hoff`, the Amplitude Spectral Density (ASD) is a key
+indicator of frequency-domain sensitivity for a gravitational-wave detector.
 
 However, the ASD doesn't allow you to see how much the sensitivity varies
 over time.
-One tool for that is the :ref:`spectrogram <gwpy-spectrogram>`, while another
+One tool for that is the :doc:`spectrogram </spectrogram/index>`, while another
 is simply to show percentiles of a number of ASD measurements.
 
 In this example we calculate the median ASD over 2048-seconds surrounding

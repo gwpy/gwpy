@@ -17,7 +17,7 @@
 
 """Read gravitational-wave frame (GWF) files using the FrameL API.
 
-The frame format is defined in LIGO-T970130 available from dcc.ligo.org
+The frame format is defined in :dcc:`LIGO-T970130`.
 """
 
 from __future__ import annotations
