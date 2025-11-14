@@ -50,10 +50,10 @@ UNRECOGNIZED_UNITS: dict[str, units.UnrecognizedUnit] = {}
 # -- parser to handle any unit -------
 
 class GWpyFormat(Generic):
-    """Sub-class of the `Generic` unit parser that is more forgiving.
+    """Sub-class of the `~astropy.units.format.Generic` unit parser that is forgiving.
 
     This format tries to work around 'human' errors in unit naming,
-    including plurals, and capitalisation, and if nothing else works
+    including plurals and capitalisation, and if nothing else works
     it just defines a new unit matching the given string.
 
     New units are not registered, so cannot be referred to later, but are
@@ -62,76 +62,71 @@ class GWpyFormat(Generic):
     """
 
     name = "gwpy"
-    re_closest_unit = re.compile(r"Did you mean (.*)\?\Z")
-    re_closest_unit_delim = re.compile("(, | or )")
+    _re_closest_unit = re.compile(r"Did you mean (.*)\?\Z")
+    _re_closest_unit_delim = re.compile("(, | or )")
 
     @classmethod
-    def _validate_unit(
-        cls,
-        unit: str,
-        detailed_exception: bool = True,  # noqa: FBT001,FBT002
-    ) -> UnitBase:
-        """Validate a unit string."""
-        try:
-            return super()._validate_unit(unit, detailed_exception)
-        except ValueError as exc:
-            singular = unit[:-1] if unit.endswith("s") else ""
+    def _get_unit(cls, t: LexToken) -> UnitBase:
+        """Get the unit for a lexer token, with lenient matching.
 
-            # parse alternative units from the error message
-            # split 'A, B, or C' -> ['A', 'B', 'C']
-            if match := cls.re_closest_unit.search(str(exc)):
-                alts = set(cls.re_closest_unit_delim.split(match.groups()[0])[::2])
-            else:
-                alts = set()
+        This method handles the lenient unit parsing for all Astropy versions.
+        In Astropy < 7.1, there was no base implementation of this method.
+        In Astropy 7.1, this method was removed in favor of `_validate_unit`.
+        In Astropy >= 7.2, this method was restored to the base class.
+        """
+        exc = None
+        name = t.value
 
-            candidates = list(filter(None, (
-                # match uppercase to titled (e.g. MPC -> Mpc)
-                unit.title(),
-                # match titled unit to lower-case (e.g. Amp -> amp)
-                unit.lower(),
-                # match plural to singular (e.g. meters -> meter)
-                singular,
-                singular.lower() if singular else None,
-            )))
-
-            for candidate in candidates:
-                if candidate in alts:
-                    return super()._validate_unit(candidate, detailed_exception)
-
-            raise
-
-    if not ASTROPY_71:
-        @classmethod
-        def _get_unit(cls, t: LexToken) -> UnitBase:
-            # match as normal
+        # For Astropy >= 7.1, use the base class implementation first
+        if ASTROPY_71:
             try:
-                return cls._parse_unit(t.value)
-            except ValueError as exc:
-                name = t.value
-                singular = name[:-1] if name.endswith("s") else ""
+                return super()._get_unit(t)
+            except ValueError as err:
+                exc = err
+        # For Astropy < 7.1, call _parse_unit directly
+        else:
+            try:
+                return cls._parse_unit(name)
+            except ValueError as err:
+                exc = err
 
-                # parse alternative units from the error message
-                # split 'A, B, or C' -> ['A', 'B', 'C']
-                if match := cls.re_closest_unit.search(str(exc)):
-                    alts = set(cls.re_closest_unit_delim.split(match.groups()[0])[::2])
+        # Common fallback logic for all versions
+        singular = name[:-1] if name.endswith("s") else ""
+
+        # Parse alternative units from the error message
+        # split 'A, B, or C' -> ['A', 'B', 'C']
+        if exc and (match := cls._re_closest_unit.search(str(exc))):
+            alts = set(cls._re_closest_unit_delim.split(match.groups()[0])[::2])
+        else:
+            alts = set()
+
+        candidates = list(filter(None, (
+            # match uppercase to titled (e.g. MPC -> Mpc)
+            name.title(),
+            # match titled unit to lower-case (e.g. Amp -> amp)
+            name.lower(),
+            # match plural to singular (e.g. meters -> meter)
+            singular,
+            singular.lower() if singular else None,
+        )))
+
+        for candidate in candidates:
+            if candidate in alts:
+                if ASTROPY_71:
+                    # Use _validate_unit for Astropy >= 7.1
+                    try:
+                        return cls._validate_unit(candidate)
+                    except (ValueError, KeyError):
+                        continue
                 else:
-                    alts = set()
+                    # Use _parse_unit for Astropy < 7.1
+                    return cls._parse_unit(candidate)
 
-                candidates = list(filter(None, (
-                    # match uppercase to titled (e.g. MPC -> Mpc)
-                    name.title(),
-                    # match titled unit to lower-case (e.g. Amp -> amp)
-                    name.lower(),
-                    # match plural to singular (e.g. meters -> meter)
-                    singular,
-                    singular.lower() if singular else None,
-                )))
-
-                for candidate in candidates:
-                    if candidate in alts:
-                        return cls._parse_unit(candidate)
-
-                raise
+        # Re-raise the original exception if no alternatives worked
+        if exc:
+            raise exc
+        msg = f"Unit '{name}' not recognized"
+        raise ValueError(msg)
 
 
 def parse_unit(
