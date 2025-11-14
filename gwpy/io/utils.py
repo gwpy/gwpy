@@ -240,7 +240,7 @@ def file_path(fobj):
     if isinstance(fobj, str) and fobj.startswith("file:"):
         return urlparse(fobj).path
     if isinstance(fobj, (str, os.PathLike)):
-        return str(fobj)
+        return os.fspath(fobj)
     if (isinstance(fobj, FILE_LIKE) and hasattr(fobj, "name")):
         return fobj.name
     try:
