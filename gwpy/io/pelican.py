@@ -17,9 +17,9 @@
 
 """I/O utilities for Pelican.
 
-This module requires the |requests-pelican|_ package.
+This module requires the :doc:`requests-pelican <requests-pelican:index>` package.
 
-This module handles translation of `pelican://` URLs into lists of HTTP URLs
+This module handles translation of ``pelican://`` URLs into lists of HTTP URLs
 to pass back to `astropy.utils.data.download_file` and friends, and some
 SciToken authorisation initialisation.
 """
@@ -49,6 +49,14 @@ if TYPE_CHECKING:
     )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+__all__ = [
+    "download_file",
+    "is_pelican_url",
+    "open_remote_file",
+    "query_director",
+    "resolve_pelican_url",
+]
 
 log = logging.getLogger(__name__)
 
@@ -111,7 +119,7 @@ def query_director(
 
     kwargs
         All keyword arguments are passed to
-        `requests_pelican.director.get_director_resposnse.
+        `requests_pelican.director.get_director_response`.
 
     Returns
     -------
@@ -257,19 +265,21 @@ def open_remote_file(
     """Download a remote file from a Pelican federation (and open it).
 
     This function is a wrapper around `astropy.utils.data.get_readable_fileobj`
-    that uses |requests-pelican|_ to resolve the actual HTTP(S) URLs and
-    pass those as the ``sources`` keyword to `get_readable_fileobj`.
+    that uses :doc:`requests-pelican <requests-pelican:index>` to resolve the
+    actual HTTP(S) URLs and pass those as the ``sources`` keyword to
+    :func:`~astropy.utils.data.get_readable_fileobj`.
 
     Also, if the Pelican director informs that an authorisation token is
     required, this function attempts to an HTTP ``Authorization`` header
-    using a locally-discovered |SciToken|_ (requires |igwn_auth_utils|_).
+    using a locally-discovered `~scitokens.SciToken`
+    (requires :doc:`igwn-auth-utils <igwn-auth-utils:index>`).
 
     Parameters
     ----------
     url : `str`
         The name of the resource to access. Must be a Pelican federation
-        URL, either using the `pelican://` scheme or a federation
-        scheme understood by |requests-pelican|_ (e.g. ``osdf://``), or
+        URL, either using the ``pelican://`` scheme or a federation
+        scheme understood by `requests-pelican` (e.g. ``osdf://``), or
         the ``federation`` keyword must be provided.
 
     federation: `str`, optional
@@ -323,19 +333,21 @@ def download_file(
     """Download a remote file from a Pelican federation.
 
     This function is a wrapper around `astropy.utils.data.download_file`
-    that uses |requests-pelican|_ to resolve the actual HTTP(S) URLs and
-    pass those as the ``sources`` keyword to `download_file`.
+    that uses :doc:`requests-pelican <requests-pelican:index>` to resolve the
+    actual HTTP(S) URLs and pass those as the ``sources`` keyword to
+    :func:`~astropy.utils.data.download_file`.
 
     Also, if the Pelican director informs that an authorisation token is
     required, this function attempts to an HTTP ``Authorization`` header
-    using a locally-discovered |SciToken|_ (requires |igwn_auth_utils|_).
+    using a locally-discovered `~scitokens.SciToken`
+    (requires :doc:`igwn-auth-utils <igwn-auth-utils:index>`).
 
     Parameters
     ----------
     url : `str`
         The name of the resource to access. Must be a Pelican federation
-        URL, either using the `pelican://` scheme or a federation
-        scheme understood by |requests-pelican|_ (e.g. ``osdf://``), or
+        URL, either using the ``pelican://`` scheme or a federation
+        scheme understood by `requests-pelican` (e.g. ``osdf://``), or
         the ``federation`` keyword must be provided.
 
     federation: `str`, optional

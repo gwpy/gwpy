@@ -4,12 +4,14 @@ Citing GWpy
 
 If you have used GWpy as part of a project that leads to a scientific
 publication, please acknowledge this by citing the
-`GWpy paper <https://www.sciencedirect.com/science/article/pii/S2352711021000029>`_: D. M. Macleod *et al*, SoftwareX, **13**, 100657 (2021). The citation in various formats is given below:
+:doi:`GWpy paper <10.1016/j.softx.2021.100657>`.
+
+----
 
 .. tab-set::
 
     .. tab-item:: BibTeX
-        :name: gwpy_citation_examples_bibtex
+        :name: gwpy-citation-bibtex
 
         .. code-block:: bibtex
 
@@ -26,7 +28,7 @@ publication, please acknowledge this by citing the
             }
 
     .. tab-item:: RIS
-        :name: gwpy_citation_examples_ris
+        :name: gwpy-citation-ris
 
         .. code-block::
 
@@ -47,8 +49,8 @@ publication, please acknowledge this by citing the
             UR  - https://www.sciencedirect.com/science/article/pii/S2352711021000029
             ER  - 
 
-    .. tab-item:: EndNode
-        :name: gwpy_citation_examples_endnote
+    .. tab-item:: EndNote
+        :name: gwpy-citation-endnote
 
          .. code-block::
 
@@ -67,7 +69,7 @@ publication, please acknowledge this by citing the
             %@ 2352-7110
 
     .. tab-item:: RefWorks
-        :name: gwpy_citation_examples_refworks
+        :name: gwpy-citation-refworks
 
         .. code-block::
 

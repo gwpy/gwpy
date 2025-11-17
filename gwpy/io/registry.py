@@ -80,10 +80,22 @@ if TYPE_CHECKING:
         NamedReadable,
     )
 
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__all__ = [
+    "GetExceptionGroup",
+    "UnifiedFetch",
+    "UnifiedFetchRegistry",
+    "UnifiedGet",
+    "UnifiedGetRegistry",
+    "UnifiedIORegistry",
+    "UnifiedRead",
+    "UnifiedWrite",
+    "identify_factory",
+    "inherit_unified_io",
+]
+
 # Type variable for Generic classes
 T = TypeVar("T")
-
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 class GetExceptionGroup(ExceptionGroup):
@@ -143,7 +155,7 @@ def identify_factory(*extensions: str) -> IdentifyProtocol:
     return identify
 
 
-def list_identifier(
+def _list_identifier(
     identifier: IdentifyProtocol,
 ) -> IdentifyProtocol:
     """Decorate an I/O identifier to handle a list of files as input.
@@ -217,7 +229,7 @@ class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
         return super().register_identifier(
             data_format,
             data_class,
-            list_identifier(identifier),
+            _list_identifier(identifier),
             force=force,
         )
 
@@ -241,7 +253,7 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite, ABC, Generic[T]):
 
     Each parallel read must return an instance of the same type
     as the input class, and the results are merged by the provided
-    ``merge_function`` which should have the following signature.
+    ``merge_function`` which should have the following signature::
 
         def merge_function(self: Type, instances: list[Type], **kwargs) -> Type
 
@@ -461,7 +473,7 @@ class UnifiedWrite(astropy_registry.UnifiedReadWrite, Generic[T]):
 # custom registry to support Klass.fetch
 
 class UnifiedFetchRegistry(astropy_registry.UnifiedInputRegistry):
-    """`UnifiedInputRegistry` hacked to support a `.fetch()` method.
+    """`UnifiedInputRegistry` hacked to support a ``.fetch()`` method.
 
     Fetch is a read-like operation that does not take a file or file-like
     object as input, but instead takes other arguments to fetch data from

@@ -1,0 +1,47 @@
+# Build artifacts
+_build
+_generated
+lal*.tag
+*.inv
+
+# Examples output
+cli/examples/
+cli/_examples/
+examples/
+
+# API documentation
+reference/*.rst
+!reference/index.rst
+!reference/gwpy.astro.rst
+!reference/gwpy.detector.rst
+!reference/gwpy.frequencyseries.rst
+!reference/gwpy.io.rst
+!reference/gwpy.io.cache.rst
+!reference/gwpy.io.datafind.rst
+!reference/gwpy.io.gwf.rst
+!reference/gwpy.io.hdf5.rst
+!reference/gwpy.io.kerberos.rst
+!reference/gwpy.io.ligolw.rst
+!reference/gwpy.io.nds2.rst
+!reference/gwpy.io.pelican.rst
+!reference/gwpy.io.registry.rst
+!reference/gwpy.io.remote.rst
+!reference/gwpy.io.root.rst
+!reference/gwpy.io.scitokens.rst
+!reference/gwpy.io.utils.rst
+!reference/gwpy.plot.rst
+!reference/gwpy.segments.rst
+!reference/gwpy.signal.rst
+!reference/gwpy.signal.filter_design.rst
+!reference/gwpy.signal.qtransform.rst
+!reference/gwpy.signal.spectral.rst
+!reference/gwpy.signal.window.rst
+!reference/gwpy.spectrogram.rst
+!reference/gwpy.table.rst
+!reference/gwpy.time.rst
+!reference/gwpy.timeseries.rst
+!reference/gwpy.types.rst
+!reference/gwpy.utils.rst
+!reference/gwpy.utils.lal.rst
+tutorials/*.pdf
+tutorials/*.png

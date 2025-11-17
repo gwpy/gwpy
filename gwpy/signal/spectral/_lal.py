@@ -41,6 +41,8 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 # cache windows and FFT plans internally
 LAL_WINDOWS = {}
 LAL_FFTPLANS = {}
+
+#: Default FFT plan level for LAL FFT plans
 LAL_FFTPLAN_LEVEL = 1
 
 

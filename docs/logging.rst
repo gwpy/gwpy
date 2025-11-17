@@ -6,7 +6,8 @@ Logging with GWpy
 #################
 
 Many GWpy modules and classes use the standard Python logging module to provide
-informative messages about their operation. This allows users to control the
+informative messages about their operation.
+This allows users to control the
 verbosity of output and to capture log messages for later analysis.
 
 .. _gwpy-logging-init:
@@ -63,7 +64,7 @@ following code:
     logging.basicConfig(level=logging.INFO)
 
 For more details on configuring logging in Python, see
-:external+python:doc:`howto/logging`.
+:doc:`python:howto/logging`.
 
 .. _gwpy-logging-coloredlogs:
 
@@ -91,4 +92,4 @@ Or set the following environment variables:
     export COLOREDLOGS_AUTO_INSTALL=1
     export COLOREDLOGS_LOG_LEVEL=INFO
 
-For more details on configuring `coloredlogs`, see :external+coloredlogs:doc:`api`.
+For more details on configuring `coloredlogs`, see :doc:`coloredlogs:api`.

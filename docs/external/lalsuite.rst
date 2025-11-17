@@ -5,11 +5,11 @@ LALSuite
 ########
 
 .. image:: https://img.shields.io/conda/vn/conda-forge/lalsuite.svg
-   :alt: lalsuite conda-forge version
-   :target: https://anaconda.org/conda-forge/lalsuite
+    :alt: lalsuite conda-forge version
+    :target: https://anaconda.org/conda-forge/lalsuite
 .. image:: https://img.shields.io/conda/pn/conda-forge/lalsuite.svg
-   :alt: lalsuite conda-forge platforms
-   :target: https://anaconda.org/conda-forge/lalsuite
+    :alt: lalsuite conda-forge platforms
+    :target: https://anaconda.org/conda-forge/lalsuite
 
 LALSuite is a large collection of gravitational-wave data analysis libraries,
 mainly written in C but with high-level bindings for Python.
@@ -49,11 +49,11 @@ LAL
 ===
 
 .. image:: https://img.shields.io/conda/vn/conda-forge/lal.svg
-   :alt: lal conda-forge version
-   :target: https://anaconda.org/conda-forge/lal
+    :alt: lal conda-forge version
+    :target: https://anaconda.org/conda-forge/lal
 .. image:: https://img.shields.io/conda/pn/conda-forge/lal.svg
-   :alt: lal conda-forge platforms
-   :target: https://anaconda.org/conda-forge/lal
+    :alt: lal conda-forge platforms
+    :target: https://anaconda.org/conda-forge/lal
 
 LAL is the base-level library in LALSuite that provides much of the core
 functionality.
@@ -62,7 +62,7 @@ It's documentation is at
 https://lscsoft.docs.ligo.org/lalsuite/lal/
 
 GWpy provides utilities to transform to and from LAL objects
-(like the |lal.REAL8TimeSeries|) from/to their GWpy equivalent
+(like the |lal.REAL8TimeSeries|_) from/to their GWpy equivalent
 (e.g. :class:`gwpy.timeseries.TimeSeries`).
 
 LAL can be installed using `Conda <https://conda.io>`__
@@ -82,11 +82,11 @@ LALFrame
 ========
 
 .. image:: https://img.shields.io/conda/vn/conda-forge/lalframe.svg
-   :alt: lalframe conda-forge version
-   :target: https://anaconda.org/conda-forge/lalframe
+    :alt: lalframe conda-forge version
+    :target: https://anaconda.org/conda-forge/lalframe
 .. image:: https://img.shields.io/conda/pn/conda-forge/lalframe.svg
-   :alt: lalframe conda-forge platforms
-   :target: https://anaconda.org/conda-forge/lalframe
+    :alt: lalframe conda-forge platforms
+    :target: https://anaconda.org/conda-forge/lalframe
 
 LALFrame provides a GWF I/O library compatible with LAL series types.
 It's documentation is at

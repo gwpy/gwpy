@@ -53,7 +53,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # -- type matching -------------------
 
-# LAL type enum
+#: Mapping of LAL type `int` to type `str`
 LAL_TYPE_STR: dict[int, str] = {
     lal.I2_TYPE_CODE: "INT2",
     lal.I4_TYPE_CODE: "INT4",
@@ -67,8 +67,10 @@ LAL_TYPE_STR: dict[int, str] = {
     lal.Z_TYPE_CODE: "COMPLEX16",
 }
 
+#: Mapping of LAL type `str` to type `int`
 LAL_TYPE_FROM_STR: dict[str, int] = {v: k for k, v in LAL_TYPE_STR.items()}
 
+#: Mapping of `numpy` types to LAL type `int`
 LAL_TYPE_FROM_NUMPY: dict[type, int] = {
     numpy.int16: lal.I2_TYPE_CODE,
     numpy.int32: lal.I4_TYPE_CODE,
@@ -82,13 +84,16 @@ LAL_TYPE_FROM_NUMPY: dict[type, int] = {
     numpy.complex128: lal.Z_TYPE_CODE,
 }
 
+#: Mapping of `numpy` types to LAL type `str`
 LAL_TYPE_STR_FROM_NUMPY: dict[type, str] = {
     k: LAL_TYPE_STR[v] for k, v in LAL_TYPE_FROM_NUMPY.items()
 }
+#: Mapping of LAL type `str` to `numpy` types
 LAL_NUMPY_FROM_TYPE_STR: dict[str, type] = {
     v: k for k, v in LAL_TYPE_STR_FROM_NUMPY.items()
 }
 
+#: Regular expression to match LAL type strings
 LAL_TYPE_REGEX: re.Pattern[str] = re.compile(r"(U?INT|REAL|COMPLEX)\d+")
 
 
@@ -139,13 +144,16 @@ def to_lal_type_str(pytype: type | DTypeLike | str | int) -> str:
         raise ValueError(msg) from exc
 
 
-# Type aliases for common types
+# -- Type aliases for common types
+
+#: Type alias for LAL FFT plan types
 LALFFTPlanType = (
     lal.REAL4FFTPlan
     | lal.REAL8FFTPlan
     | lal.COMPLEX8FFTPlan
     | lal.COMPLEX16FFTPlan
 )
+#: Type alias for LAL FrequencySeries types
 LALFrequencySeriesType = (
     lal.INT2FrequencySeries
     | lal.INT4FrequencySeries
@@ -158,6 +166,7 @@ LALFrequencySeriesType = (
     | lal.COMPLEX8FrequencySeries
     | lal.COMPLEX16FrequencySeries
 )
+#: Type alias for LAL TimeSeries types
 LALTimeSeriesType = (
     lal.INT2TimeSeries
     | lal.INT4TimeSeries
@@ -170,6 +179,7 @@ LALTimeSeriesType = (
     | lal.COMPLEX8TimeSeries
     | lal.COMPLEX16TimeSeries
 )
+#: Type alias for LAL Vector types
 LALVectorType = (
     lal.INT2Vector
     | lal.INT4Vector
@@ -182,7 +192,9 @@ LALVectorType = (
     | lal.COMPLEX8Vector
     | lal.COMPLEX16Vector
 )
+#: Type alias for LAL Window types
 LALWindowType = lal.REAL4Window | lal.REAL8Window
+
 
 @overload
 def find_typed_function(
@@ -333,7 +345,7 @@ def from_lal_type(laltype: type) -> type:
 
 # -- units ---------------------------
 
-LAL_UNIT_INDEX: list[units.Quantity] = [
+_LAL_UNIT_INDEX: list[units.Quantity] = [
     # the order corresponds to how LAL stores compound units
     units.meter,
     units.kilogram,
@@ -348,7 +360,7 @@ LAL_UNIT_INDEX: list[units.Quantity] = [
 def to_lal_unit(
     astropy_unit: units.Unit | str,
 ) -> tuple[lal.Unit, float]:
-    """Convert the input unit into a `lal.Unit` and a scaling factor.
+    """Convert the input unit into a |lal.Unit|_ and a scaling factor.
 
     Parameters
     ----------
@@ -357,7 +369,7 @@ def to_lal_unit(
 
     Returns
     -------
-    lal_unit : `lal.Unit`
+    lal_unit : |lal.Unit|_
         The LAL representation of the base unit.
 
     scale : `float`
@@ -408,7 +420,7 @@ def to_lal_unit(
     # decompose unit into LAL base units
     for base, power in zip(aunit.bases, aunit.powers, strict=True):
         try:  # try this base
-            i = LAL_UNIT_INDEX.index(base)
+            i = _LAL_UNIT_INDEX.index(base)
         except ValueError as exc:
             exc.args = (f"LAL has no unit corresponding to '{base}'",)
             raise
@@ -426,7 +438,7 @@ def from_lal_unit(
 
     Parameters
     ----------
-    lunit : `lal.Unit`
+    lunit : |lal.Unit|_
         The input unit.
 
     Returns
@@ -437,7 +449,7 @@ def from_lal_unit(
     Raises
     ------
     TypeError
-        If ``lunit`` cannot be converted to `lal.Unit`.
+        If ``lunit`` cannot be converted to |lal.Unit|_.
 
     ValueError
         If Astropy doesn't understand the base units for the input.
@@ -445,7 +457,7 @@ def from_lal_unit(
     return reduce(
         operator.mul,
         (
-            LAL_UNIT_INDEX[i] ** Fraction(int(num), int(den + 1))
+            _LAL_UNIT_INDEX[i] ** Fraction(int(num), int(den + 1))
             for i, (num, den) in enumerate(zip(
                 lunit.unitNumerator,
                 lunit.unitDenominatorMinusOne,
@@ -458,7 +470,7 @@ def from_lal_unit(
 def to_lal_ligotimegps(
     gps: GpsLike,
 ) -> lal.LIGOTimeGPS:
-    """Convert the given GPS time to a `lal.LIGOTimeGPS` object.
+    """Convert the given GPS time to a |lal.LIGOTimeGPS|_ object.
 
     Parameters
     ----------
@@ -467,7 +479,7 @@ def to_lal_ligotimegps(
 
     Returns
     -------
-    ligotimegps : `lal.LIGOTimeGPS`
+    ligotimegps : |lal.LIGOTimeGPS|_
         A SWIG-LAL `~lal.LIGOTimeGPS` representation of the given GPS time.
     """
     gps = to_gps(gps)
@@ -476,6 +488,7 @@ def to_lal_ligotimegps(
 
 # -- detectors -----------------------
 
+#: Mapping of IFO names to |lal.FrDetector|_ objects
 LAL_DETECTORS: dict[str, lal.FrDetector] = {
     ifo.frDetector.prefix: ifo.frDetector
     for ifo in lal.CachedDetectors

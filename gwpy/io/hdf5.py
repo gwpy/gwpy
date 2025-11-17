@@ -49,6 +49,15 @@ if TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+__all__ = [
+    "create_dataset",
+    "find_dataset",
+    "identify_hdf5",
+    "open_hdf5",
+    "with_read_hdf5",
+    "with_write_hdf5",
+]
+
 
 def identify_hdf5(
     origin: Literal["read", "write"],

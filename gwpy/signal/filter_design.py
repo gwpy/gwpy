@@ -86,9 +86,18 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
     "bandpass",
     "concatenate_zpks",
+    "convert_to_digital",
+    "convert_zpk_units",
+    "fir_from_transfer",
     "highpass",
+    "is_sos",
+    "is_zpk",
     "lowpass",
     "notch",
+    "num_taps",
+    "parse_filter",
+    "truncate_impulse",
+    "truncate_transfer",
 ]
 
 TWO_PI: float = 2 * pi

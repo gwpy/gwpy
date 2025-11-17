@@ -6,13 +6,17 @@
 Times and timestamps
 ####################
 
+.. seealso::
+
+    - **Reference:** :mod:`gwpy.time`
+
 ========
 GPS time
 ========
 
 All gravitational-wave data are recorded with timestamps in the GPS time system (recording the absolute number of seconds since the start of the GPS epoch at midnight on January 6th 1980).
 
-The LIGO Scientific Collaboration stores such GPS times with nanosecond precision using the |LIGOTimeGPS| object.
+The LIGO Scientific Collaboration stores such GPS times with nanosecond precision using the `~gwpy.time.LIGOTimeGPS` object.
 
 ================
 Time conversions
@@ -25,18 +29,8 @@ For convenience, this object is available in GWpy as ``gwpy.time.Time``.
 On top of that, GWpy provides three simple methods to simplify converting between GPS times and Python-standard `datetime` objects, namely:
 
 .. autosummary::
-   :nosignatures:
+    :nosignatures:
 
-   tconvert
-   to_gps
-   from_gps
-
-=========
-Reference
-=========
-
-.. autofunction:: gwpy.time.tconvert
-
-.. autofunction:: gwpy.time.to_gps
-
-.. autofunction:: gwpy.time.from_gps
+    tconvert
+    to_gps
+    from_gps

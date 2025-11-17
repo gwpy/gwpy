@@ -21,27 +21,29 @@ The :meth:`read` and :meth:`write` methods take different arguments and keywords
 ``LIGO_LW`` XML
 ===============
 
-**Additional dependencies:** |igwn-ligolw|_
+**Additional dependencies:** :doc:`igwn-ligolw <igwn-ligolw:index>`
 
 The LIGO Scientific Collaboration uses a custom scheme of XML in which to
 store tabular data, called ``LIGO_LW``.
-Complementing the scheme is a python library - |igwn-ligolw|_ - which
-allows users to read and write all of the different types of tabular data
+Complementing the scheme is a python library - :doc:`igwn-ligolw <igwn-ligolw:index>` -
+which allows users to read and write all of the different types of tabular data
 produced by gravitational-wave searches.
 
 Segments are stored in ``LIGO_LW`` format using a trio of tables:
 
 .. table:: ``LIGO_LW`` XML tables for segment storage
-   :align: left
-   :name: ligolw-segment-tables
+    :align: left
+    :name: ligolw-segment-tables
 
-   ===================  ==========================================================
-   Table name           Contents
-   ===================  ==========================================================
-   ``segment_definer``  Definitions for each flag, including names and versions
-   ``segment_summary``  Known segments for each flag
-   ``segment``          Active segments for each flag
-   ===================  ==========================================================
+    ===================  ==========================================================
+    Table name           Contents
+    ===================  ==========================================================
+    ``segment_definer``  Definitions for each flag, including names and versions
+    ``segment_summary``  Known segments for each flag
+    ``segment``          Active segments for each flag
+    ===================  ==========================================================
+
+.. _gwpy-segments-io-ligolw-reading:
 
 Reading
 -------
@@ -65,12 +67,14 @@ This indicates a single 'known' segment starting at GPS time 1000000000, with tw
 
 The ``coalesce=True`` keyword argument can be used to combine overlapping segments into a single, longer segment.
 
+.. _gwpy-segments-io-ligolw-writing:
+
 Writing
 -------
 
 To write a `DataQualityFlag` to file in ``LIGO_LW`` format, use the :meth:`~DataQuality.write` method::
 
-   >>> f.write('new-segments.xml')
+    >>> f.write('new-segments.xml')
 
 As with :ref:`writing tables <gwpy-table-io-ligolw>`, if the target file already exists, an :class:`~exceptions.IOError` will be raised, use ``overwrite=True`` to force a new file to be written.
 
@@ -86,13 +90,7 @@ Extra attributes can be written to the tables via the ``attrs={}`` keyword, all 
 
     >>> f.write('new-table.xml', append=True, overwrite=True, attrs={'process_id': 0})
 
-.. note::
-
-   The |igwn-ligolw|_ library reads and writes files using an updated
-   version of the ``LIGO_LW`` format compared to :mod:`glue.ligolw` used to.
-   GWpy should support both format versions natively when _reading_, but
-   only supports writing using the updated format.
-
+.. _gwpy-segments-io-ligolw-dict:
 
 `DataQualityDict`
 -----------------
@@ -113,16 +111,20 @@ HDF5
 
 GWpy uses HDF5 Groups to store a `DataQualityFlag`, with each of the :attr:`~DataQualityFlag.known` and :attr:`~DataQualityFlag.active` segment lists stored in a Dataset, and extra metadata stored in the Group's attributes.
 
+.. _gwpy-segments-io-hdf5-reading:
+
 Reading
 -------
 
 To read a `DataQualityFlag` from an ``HDF5``-format file::
 
-   >>> f = DataQualityFlag.read('segments.hdf')
+    >>> f = DataQualityFlag.read('segments.hdf')
 
 As with reading other classes from HDF5, the ``path`` keyword should be used to specify the name of the HDF5 group that contains the given flag.
 
 The ``coalesce=True`` keyword can be used to :meth:`~DataQualityFlag.coalesce` the :attr:`~DataQualityFlag.known` and :attr:`~DataQualityFlag.active` segment lists before returning - by default the segments will be returned as read from the file.
+
+.. _gwpy-segments-io-hdf5-writing:
 
 Writing
 -------
@@ -134,6 +136,8 @@ To write a `DataQualityFlag` to an ``HDF5``-format file::
 As with reading, the ``path`` keyword should be used to specify the name of the HDF5 group to which the given flag should be written.
 
 Alternatively, an HDF5 group can be passed directly to :meth:`~DataQualityFlag.write` when writing multiple objects to the same file.
+
+.. _gwpy-segments-io-hdf5-dict:
 
 `DataQualityDict`
 -----------------
@@ -154,6 +158,8 @@ JSON
 
 The DQSEGDB server uses JSON as the intermediate format for returning information during queries.
 
+.. _gwpy-segments-io-json-reading:
+
 Reading
 -------
 
@@ -162,6 +168,8 @@ To read a `DataQualityFlag` from JSON, simply pass the path of the file::
     >>> f = DataQualityFlag.read('segments.json')
 
 See :func:`json.load` for acceptable keyword arguments options.
+
+.. _gwpy-segments-io-json-writing:
 
 Writing
 -------

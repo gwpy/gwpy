@@ -33,7 +33,7 @@ Reading
 
 To read a `FrequencySeries` from ASCII::
 
-   >>> t = FrequencySeries.read('data.txt')
+    >>> t = FrequencySeries.read('data.txt')
 
 See :func:`numpy.loadtxt` for keyword argument options.
 
@@ -42,7 +42,7 @@ Writing
 
 To write a `FrequencySeries` to ASCII::
 
-   >>> t.write('data.txt')
+    >>> t.write('data.txt')
 
 See :func:`numpy.savetxt` for keyword argument options.
 
@@ -60,14 +60,14 @@ Reading
 
 To read `FrequencySeries` data held in HDF5 files pass the filename (or filenames) or the source, and the path of the data inside the HDF5 file::
 
-   >>> data = FrequencySeries.read('data.h5', 'psd')
+    >>> data = FrequencySeries.read('data.h5', 'psd')
 
 Writing
 -------
 
 Data held in a `FrequencySeries` can be written to an HDF5 file via::
 
-   >>> data.write('output.hdf', 'psd')
+    >>> data.write('output.hdf', 'psd')
 
 If the target file already exists, an :class:`~exceptions.IOError` will be raised, use ``overwrite=True`` to force a new file to be written.
 
@@ -86,7 +86,7 @@ To replace an dataset in an existing file, while preserving other data, use *bot
 ``LIGO_LW`` XML
 ===============
 
-**Additional dependencies:** |igwn-ligolw|_
+**Additional dependencies:** :doc:`igwn-ligolw <igwn-ligolw:index>`
 
 Alongside storing :ref:`tabular data <gwpy-table-io-ligolw>`, the ``LIGO_LW``
 XML format allows storing array data.
@@ -96,43 +96,43 @@ for an array (name, GPS epoch, instrument, etc.), which contain an
 
 .. note::
 
-   For more information on the format and the parsing library,
-   see :mod:`igwn_ligolw.array`.
+    For more information on the format and the parsing library,
+    see :mod:`igwn_ligolw.array`.
 
 Reading
 -------
 
 To read a `FrequencySeries` from a ``LIGO_LW`` XML file::
 
-   >>> data = FrequencySeries.read('data.xml')
+    >>> data = FrequencySeries.read('data.xml')
 
 If the file contains multiple ``<Array>`` elements,
 you will have to provide additional keyword arguments to select which
 element to use:
 
 .. table:: Keyword arguments for `FrequencySeries.read` with ``LIGO_LW`` format
-   :align: left
-   :name: frequencyseries-read-ligolw-kwargs
+    :align: left
+    :name: frequencyseries-read-ligolw-kwargs
 
-   +------------------+-------+---------+--------------------------------------------+
-   | Keyword          | Type  | Default | Usage                                      |
-   +==================+=======+=========+============================================+
-   | ``name``         | `str` | `None`  | ``Name`` of ``<Array>`` element to read    |
-   +------------------+-------+---------+--------------------------------------------+
-   | ``epoch``        | `int` | `None`  | GPS value of the ``<Time>`` element that   |
-   |                  |       |         | is the *sibling* of the desired            |
-   |                  |       |         | ``<Array>``                                |
-   +------------------+-------+---------+--------------------------------------------+
-   | ``<Param Name>`` |       |         | Other kwargs can be given as the ``Name``  |
-   |                  |       |         | of a ``<Param>`` element that is the       |
-   |                  |       |         | *sibling* of the desired ``<Array>``,      |
-   |                  |       |         | and its value                              |
-   +------------------+-------+---------+--------------------------------------------+
+    +------------------+-------+---------+--------------------------------------------+
+    | Keyword          | Type  | Default | Usage                                      |
+    +==================+=======+=========+============================================+
+    | ``name``         | `str` | `None`  | ``Name`` of ``<Array>`` element to read    |
+    +------------------+-------+---------+--------------------------------------------+
+    | ``epoch``        | `int` | `None`  | GPS value of the ``<Time>`` element that   |
+    |                  |       |         | is the *sibling* of the desired            |
+    |                  |       |         | ``<Array>``                                |
+    +------------------+-------+---------+--------------------------------------------+
+    | ``<Param Name>`` |       |         | Other kwargs can be given as the ``Name``  |
+    |                  |       |         | of a ``<Param>`` element that is the       |
+    |                  |       |         | *sibling* of the desired ``<Array>``,      |
+    |                  |       |         | and its value                              |
+    +------------------+-------+---------+--------------------------------------------+
 
 For example::
 
-   >>> data = FrequencySeries.read("psd.xml.gz", name="H1")
-   >>> data = FrequencySeries.read("psd.xml.gz", epoch=1241492407, f0=0, instrument="H1")
+    >>> data = FrequencySeries.read("psd.xml.gz", name="H1")
+    >>> data = FrequencySeries.read("psd.xml.gz", epoch=1241492407, f0=0, instrument="H1")
 
 Writing
 -------

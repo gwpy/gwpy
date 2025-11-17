@@ -29,6 +29,10 @@ if TYPE_CHECKING:
         FileSystemPath,
     )
 
+__all__ = [
+    "identify_root",
+]
+
 ROOT_SIGNATURE = b"root"
 ROOT_SIGNATURE_T = ROOT_SIGNATURE.decode("utf-8")
 

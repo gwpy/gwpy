@@ -25,16 +25,16 @@ The :class:`Segment` and :class:`SegmentList` classes
 
 GWpy provides a number of classes for generating and manipulating such
 segments, enhancing the functionality provided by the (excellent)
-|igwn-segments|_ package.
+:doc:`igwn-segments <igwn-segments:index>` package.
 All credits for their usefulness go to the authors of that package.
 
 These basic objects are as follows:
 
 .. autosummary::
-   :nosignatures:
+    :nosignatures:
 
-   Segment
-   SegmentList
+    Segment
+    SegmentList
 
 While these objects are key to representing core data segments,
 they are usually applied to analyses of data as a `DataQualityFlag`.
@@ -60,9 +60,9 @@ Each `DataQualityFlag` has some key attributes:
 
 .. autosummary::
 
-   ~DataQualityFlag.name
-   ~DataQualityFlag.known
-   ~DataQualityFlag.active
+    ~DataQualityFlag.name
+    ~DataQualityFlag.known
+    ~DataQualityFlag.active
 
 By convention, the :attr:`~DataQualityFlag.name` is typically constructed of
 three colon-separated components: the
@@ -84,15 +84,15 @@ Intersection (``&``)
 --------------------
 ::
 
-   >>> a & b
+    >>> a & b
 
 returns the intersection of both the `~DataQualityFlag.known` and
 `~DataQualityFlag.active` segment lists, e.g::
 
-   >>> a = DataQualityFlag(known=[(0, 5), (10, 15)], active=[(1, 5), (10, 12)])
-   >>> b = DataQualityFlag(known=[(0, 12)], active=[(3, 7), (10, 12)])
-   >>> print(a & b)
-   <DataQualityFlag(No name,
+    >>> a = DataQualityFlag(known=[(0, 5), (10, 15)], active=[(1, 5), (10, 12)])
+    >>> b = DataQualityFlag(known=[(0, 12)], active=[(3, 7), (10, 12)])
+    >>> print(a & b)
+    <DataQualityFlag(No name,
                     known=[[0 ... 5)
                            [10 ... 12)],
                     active=[[3 ... 5)
@@ -109,17 +109,17 @@ Union (``|``)
 -------------
 ::
 
-   >>> a | b
+    >>> a | b
 
 returns the intersection of both the `~DataQualityFlag.known` and
 `~DataQualityFlag.active` segment lists, e.g::
 
-   >>> print(a | b)
-   <DataQualityFlag(No name,
-                 known=[[0 ... 15)],
-                 active=[[1 ... 7)
-                         [10 ... 12)],
-                 description=None)>
+    >>> print(a | b)
+    <DataQualityFlag(No name,
+                     known=[[0 ... 15)],
+                     active=[[1 ... 7)
+                             [10 ... 12)],
+                     description=None)>
 
 This new flag represents times when either ``a`` or ``b`` were known and when
 either was active.
@@ -131,17 +131,17 @@ Subtraction (``-``)
 -------------------
 ::
 
-   >>> a - b
+    >>> a - b
 
 returns the union of the `~DataQualityFlag.known` segments, and the difference
 of the `~DataQualityFlag.active` segment lists, e.g.::
 
-   >>> print(a - b)
-   <DataQualityFlag(No name,
-                    known=[[0 ... 5)
-                           [10 ... 12)],
-                    active=[[1 ... 3)],
-                    description=None)>
+    >>> print(a - b)
+    <DataQualityFlag(No name,
+                     known=[[0 ... 5)
+                            [10 ... 12)],
+                     active=[[1 ... 3)],
+                     description=None)>
 
 The new flag represents times when both ``a`` and ``b`` were *known*, but only ``a`` was active.
 
@@ -152,7 +152,7 @@ Addition (``+``)
 ----------------
 ::
 
-   >>> a + b
+    >>> a + b
 
 This operation is the same as :ref:`gwpy-segments-union`.
 
@@ -161,17 +161,17 @@ Inversion (``~``)
 -----------------
 ::
 
-   >>> ~a
+    >>> ~a
 
 returns the same `~DataQualityFlag.known` segments, and the complement `~DataQualityFlag.active` segment lists, e.g::
 
-   >>> print(~a)
-   <DataQualityFlag(No name,
-                    known=[[0 ... 5)
-                           [10 ... 15)],
-                    active=[[0 ... 1)
-                            [12 ... 15)],
-                    description=None)>
+    >>> print(~a)
+    <DataQualityFlag(No name,
+                     known=[[0 ... 5)
+                            [10 ... 15)],
+                     active=[[0 ... 1)
+                             [12 ... 15)],
+                     description=None)>
 
 The new flag represents times when the state of ``a`` was known, but it was not active.
 
@@ -186,11 +186,11 @@ returns the intersection of `~DataQualityFlag.known` segments and the exclusive 
 
     >>> print(a ^ b)
     <DataQualityFlag(No name,
-                 known=[[0 ... 5)
-                        [10 ... 12)],
-                 active=[[1 ... 3)
-                         [5 ... 7)],
-                 description=None)>
+                     known=[[0 ... 5)
+                            [10 ... 12)],
+                     active=[[1 ... 3)
+                             [5 ... 7)],
+                     description=None)>
 
 The new flag represents times when the state of both ``a`` and ``b`` are known, but exactly one of the flags was active.
 
@@ -210,30 +210,29 @@ Working with segments
 Reading/writing and querying segments:
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   dqsegdb
-   io
+    dqsegdb
+    io
 
 Generating segments from data:
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-   thresholding
+    thresholding
 
 =============
 Reference/API
 =============
 
-This reference includes the following `class` entries:
+:mod:`gwpy.segments` provides the following `class` entries:
 
 .. autosummary::
-   :toctree: ../api/
-   :nosignatures:
+    :nosignatures:
 
-   DataQualityFlag
-   DataQualityDict
-   Segment
-   SegmentList
-   SegmentListDict
+    DataQualityFlag
+    DataQualityDict
+    Segment
+    SegmentList
+    SegmentListDict

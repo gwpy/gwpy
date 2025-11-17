@@ -51,6 +51,20 @@ if TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+__all__ = [
+    "FILE_LIKE",
+    "FileLike",
+    "NamedFileLike",
+    "NamedReadable",
+    "NamedWritable",
+    "Readable",
+    "Writable",
+    "file_list",
+    "file_path",
+    "gopen",
+    "with_open",
+]
+
 
 # -- IO type hints -------------------
 
@@ -105,15 +119,32 @@ class NamedIO(Protocol[AnyStr]):
         """Return the next line from the file."""
 
 
+#: Type alias for file-like objects
 FileLike: TypeAlias = IOBase | gzip.GzipFile | tempfile._TemporaryFileWrapper  # noqa: SLF001
+
+#: Type alias for file-like objects with a ``name`` attribute
 NamedFileLike: TypeAlias = NamedIO | gzip.GzipFile | tempfile._TemporaryFileWrapper  # noqa: SLF001
+
+#: Type alias for file system paths (that can be opened)
 FileSystemPath: TypeAlias = str | os.PathLike
+
+#: Type alias for readable objects (path or file-like)
 Readable: TypeAlias = FileSystemPath | FileLike
+
+#: Type alias for writable objects (path or file-like)
 Writable = Readable
+
+#: Type alias for named readable objects (path or named file-like)
 NamedReadable: TypeAlias = FileSystemPath | NamedFileLike
+
+#: Type alias for named writable objects (path or named file-like)
 NamedWritable = NamedReadable
 
-# legacy name, use FileLike instead
+#: Tuple of file-like types
+#:
+#: .. deprecated:: 4.0.0
+#:
+#:     This type tuple is deprecated, use `FileLike` instead
 FILE_LIKE = (
     IOBase,
     gzip.GzipFile,
@@ -308,6 +339,10 @@ GZIP_SIGNATURE = b"\x1f\x8b\x08"
 
 def gopen(name, *args, **kwargs):
     """Open a file handling optional gzipping.
+
+    .. deprecated:: 4.0.0
+
+        This function is deprecated and will be removed in a future release.
 
     If ``name`` ends with ``'.gz'``, or if the GZIP file signature is
     found at the beginning of the file, the file will be opened with

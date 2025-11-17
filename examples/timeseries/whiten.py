@@ -41,8 +41,8 @@ detected by LIGO.
 # %%
 # Data access
 # -----------
-# First, we use the |gwosc-mod| Python client to get the GPS time of the
-# event:
+# First, we use the :doc:`gwosc <gwosc:index>` Python client to get the GPS
+# time of the event:
 
 from gwosc.datasets import event_gps
 gps = event_gps("GW200129_065458")

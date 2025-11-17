@@ -32,15 +32,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Sphinx documentation
-/docs/_build
-/docs/_generated
-/docs/lal*.tag
-/docs/*.inv
-/docs/api/
-/docs/citing.rst
-/docs/cli/examples/
-/docs/cli/_examples/
-/docs/examples/
+# -- see /docs/.gitignore
 
 # OS/editor files
 *.swp

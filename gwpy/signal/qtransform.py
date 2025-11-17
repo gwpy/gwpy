@@ -65,13 +65,19 @@ __all__ = [
     "q_scan",
 ]
 
-# q-transform defaults
+# -- q-transform defaults
+
+#: Default ``(fmin, fmax)`` frequency range for Q-transform.
 DEFAULT_FRANGE = (0, float("inf"))
+
+#: Default maximum fractional mismatch between neighbouring tiles.
 DEFAULT_MISMATCH = 0.2
+
+#: Default ``(qlow, qhigh)`` Q range for Q-transform.
 DEFAULT_QRANGE = (4, 64)
 
 # constants
-SQRT_2 = 2 ** (1 / 2.)
+_SQRT_2 = 2 ** (1 / 2.)
 
 
 # -- object class definitions --------
@@ -201,7 +207,7 @@ class QTiling(QObject):
     def _iter_qs(self) -> Iterator[float]:
         """Iterate over the Q values."""
         # work out how many Qs we need
-        sqrt_2 = SQRT_2
+        sqrt_2 = _SQRT_2
         cumum = log(self.qrange[1] / self.qrange[0]) / sqrt_2
         nplanes = int(max(ceil(cumum / self.deltam), 1))
         delta_q = cumum / nplanes

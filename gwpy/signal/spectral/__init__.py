@@ -53,6 +53,20 @@ from . import (
 )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__all__ = [
+    "average_spectrogram",
+    "bartlett",
+    "coherence",
+    "csd",
+    "get_default_fft_api",
+    "get_method",
+    "median",
+    "psd",
+    "rayleigh",
+    "register_method",
+    "spectrogram",
+    "welch",
+]
 
 
 @deprecated_function

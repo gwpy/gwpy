@@ -18,7 +18,7 @@
 
 """Input/output routines for gravitational-wave frame (GWF) format files.
 
-The GWF format is defined in |LIGO-T970130|_.
+The GWF format is defined in :dcc:`LIGO-T970130`.
 
 The functions in this module are the ones exposed to the user, but
 connect to the backend-specific functions in the other modules in

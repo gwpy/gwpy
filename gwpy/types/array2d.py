@@ -69,7 +69,7 @@ class Array2D(Series):
     x0 : `float`, `~astropy.units.Quantity`, optional
         The starting value for the x-axis of this array.
 
-    dx : `float`, `~astropy.units.Quantity, optional
+    dx : `float`, `~astropy.units.Quantity`, optional
         The step size for the x-axis of this array.
 
     xindex : `array-like`
@@ -84,7 +84,7 @@ class Array2D(Series):
     y0 : `float`, `~astropy.units.Quantity`, optional
         The starting value for the y-axis of this array.
 
-    dy : `float`, `~astropy.units.Quantity, optional
+    dy : `float`, `~astropy.units.Quantity`, optional
         The step size for the y-axis of this array.
 
     yindex : `array-like`

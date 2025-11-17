@@ -18,6 +18,56 @@
  */
 
 /*
+ * PyData Sphinx theme overrides
+ */
+
+/* Colours */
+html[data-theme="light"] {
+		--pst-color-secondary: #b53c00;
+}
+html[data-theme="dark"] {
+		--pst-color-secondary: #b53c00;
+}
+
+/* Hide left sidebar title */
+nav.bd-links p.bd-links__title {
+		display: none;
+}
+nav.bd-links p.caption {
+		font-size: var(--pst-sidebar-header-font-size);
+}
+
+/* Dedent sidebar links */
+nav.bd-links ul.bd-sidenav a {
+		padding-left: 0;
+}
+nav.bd-links .current > a {
+		box-shadow: none;
+}
+
+/* In-Page TocTree styling */
+.toctree-wrapper-li[class^=toctree-l] > a {
+		font-size: 1em;
+}
+
+/*
+ * Link styling
+ */
+
+a.image-reference {
+		text-decoration: none;
+}
+
+/*
+ * Code signature styling
+ */
+
+.sig .sig-param {
+		font-family: var(--pst-font-family-monospace);
+		font-style: normal;
+}
+
+/*
  * Sphinx-gallery
  */
 

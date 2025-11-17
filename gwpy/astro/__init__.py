@@ -24,23 +24,6 @@ distance at which the gravitational-wave signature of a binary neutron star
 (SNR) of 8.
 In most of the literature, this is known as the 'inspiral range' or the
 'horizon distance'.
-
-The following methods are provided in order to calculate the sensitive
-distance range of a detector
-
-.. autosummary::
-
-   ~gwpy.astro.burst_range
-   ~gwpy.astro.burst_range_spectrum
-   ~gwpy.astro.inspiral_range
-   ~gwpy.astro.inspiral_range_psd
-   ~gwpy.astro.sensemon_range
-   ~gwpy.astro.sensemon_range_psd
-   ~gwpy.astro.range_timeseries
-   ~gwpy.astro.range_spectrogram
-
-Each of the above methods has been given default parameters corresponding to
-the standard usage by the LIGO project.
 """
 
 from .range import (

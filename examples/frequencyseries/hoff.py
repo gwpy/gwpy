@@ -29,8 +29,8 @@ gravitational-wave detector is to esimate it's amplitude spectral density
 The ASD is a measurement of how a signal's amplitude varies across
 different frequencies.
 
-The ASD can be estimated directly from a `TimeSeries` using the
-:meth:`~gwpy.timeseries.TimeSeries.asd` method.
+The ASD can be estimated directly from a `~gwpy.timeseries.TimeSeries`
+using the :meth:`~gwpy.timeseries.TimeSeries.asd` method.
 """
 
 # %%
@@ -38,7 +38,8 @@ The ASD can be estimated directly from a `TimeSeries` using the
 # -----------
 # For this example we choose to estimate the ASD around |GW200115|_,
 # one of the first observations of a neutron star-black hole binary.
-# We can use the |gwosc-mod| Python package to query for the relevant GPS time:
+# We can use the :doc:`gwosc <gwosc:index>` Python package to query
+# for the relevant GPS time:
 
 from gwosc.datasets import event_gps
 

@@ -52,6 +52,13 @@ if TYPE_CHECKING:
         TextIO,
     )
 
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__all__ = [
+    "download_file",
+    "is_remote",
+    "open_remote_file",
+]
+
 log = logging.getLogger(__name__)
 
 

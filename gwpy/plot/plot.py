@@ -517,7 +517,7 @@ class Plot(figure.Figure):
             Specific `Axes` relative to which to position new `Axes`,
             defaults to :func:`~matplotlib.pyplot.gca()`.
 
-        height : `float, `optional
+        height : `float`, optional
             Height of the new axes, as a fraction of the anchor axes.
 
         pad : `float`, optional
@@ -535,6 +535,11 @@ class Plot(figure.Figure):
         plotargs
             Other keyword arguments are passed to
             :meth:`~gwpy.plot.SegmentAxes.plot`.
+
+        See Also
+        --------
+        SegmentAxes
+            For more details about segment axes.
         """
         # get axes to anchor against
         if not ax:

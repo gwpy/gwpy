@@ -17,37 +17,55 @@ In order to simplify visual identification of a specific gravitational-wave obse
     from gwpy.plot import colors
 
     rcParams.update({
-        'text.usetex': False,
-        'font.size': 15
+        "text.usetex": False,
+        "font.size": 15
     })
 
     th = numpy.linspace(0, 2*numpy.pi, 512)
     names = [
-         'gwpy:geo600',
-         'gwpy:kagra',
-         'gwpy:ligo-hanford',
-         'gwpy:ligo-india',
-         'gwpy:ligo-livingston',
-         'gwpy:virgo',
+        "gwpy:geo600",
+        "gwpy:kagra",
+        "gwpy:ligo-hanford",
+        "gwpy:ligo-india",
+        "gwpy:ligo-livingston",
+        "gwpy:virgo",
     ]
 
     fig = pyplot.figure(figsize=(5, 2))
     ax = fig.gca()
-    ax.axis('off')
+    ax.axis("off")
 
     for j, name in enumerate(sorted(names)):
         c = str(to_hex(name))
         v_offset = -(j / len(names))
         ax.plot(th, .1*numpy.sin(th) + v_offset, color=c)
-        ax.annotate("{!r}".format(name), (0, v_offset), xytext=(-1.5, 0),
-                    ha='right', va='center', color=c,
-                    textcoords='offset points', family='monospace')
-        ax.annotate("{!r}".format(c), (2*numpy.pi, v_offset), xytext=(1.5, 0),
-                    ha='left', va='center', color=c,
-                    textcoords='offset points', family='monospace')
+        ax.annotate(
+            "{!r}".format(name),
+            (0, v_offset),
+            xytext=(-1.5, 0),
+            ha="right",
+            va="center",
+            color=c,
+            textcoords="offset points",
+            family="monospace",
+        )
+        ax.annotate(
+            "{!r}".format(c),
+            (2*numpy.pi, v_offset),
+            xytext=(1.5, 0),
+            ha="left",
+            va="center",
+            color=c,
+            textcoords="offset points",
+            family="monospace",
+        )
 
-    fig.subplots_adjust(**{'bottom': 0.0, 'left': 0.54,
-                           'right': 0.78, 'top': 1})
+    fig.subplots_adjust(
+        bottom=0.0,
+        left=0.54,
+        right=0.78,
+        top=1,
+    )
     pyplot.show()
 
 For example:
@@ -56,24 +74,24 @@ For example:
 
     from gwpy.timeseries import TimeSeries
     from gwpy.plot import Plot
-    h1 = TimeSeries.get('H1', 1126259457, 1126259467)
+    h1 = TimeSeries.get("H1", 1126259457, 1126259467)
     h1b = h1.bandpass(50, 250).notch(60).notch(120)
-    l1 = TimeSeries.get('L1', 1126259457, 1126259467)
+    l1 = TimeSeries.get("L1", 1126259457, 1126259467)
     l1b = l1.bandpass(50, 250).notch(60).notch(120)
     plot = Plot(figsize=(12, 4.8))
-    ax = plot.add_subplot(xscale='auto-gps')
-    ax.plot(h1b, color='gwpy:ligo-hanford', label='LIGO-Hanford')
-    ax.plot(l1b, color='gwpy:ligo-livingston', label='LIGO-Livingston')
+    ax = plot.add_subplot(xscale="auto-gps")
+    ax.plot(h1b, color="gwpy:ligo-hanford", label="LIGO-Hanford")
+    ax.plot(l1b, color="gwpy:ligo-livingston", label="LIGO-Livingston")
     ax.set_epoch(1126259462.427)
     ax.set_xlim(1126259462, 1126259462.6)
     ax.set_ylim(-1e-21, 1e-21)
-    ax.set_ylabel('Strain noise')
+    ax.set_ylabel("Strain noise")
     ax.legend()
     plot.show()
 
 The above code was adapted from the example :ref:`sphx_glr_examples_signal_gw150914.py`.
 
-The colours can also be specified using the interferometer prefix (e.g. ``'H1'``) via the `gwpy.plot.colors.GW_OBSERVATORY_COLORS` object:
+The colours can also be specified using the interferometer prefix (e.g. ``"H1"``) via the `gwpy.plot.colors.GW_OBSERVATORY_COLORS` object:
 
 .. plot::
 
@@ -81,10 +99,10 @@ The colours can also be specified using the interferometer prefix (e.g. ``'H1'``
     from gwpy.plot.colors import GW_OBSERVATORY_COLORS
     fig = pyplot.figure()
     ax = fig.gca()
-    ax.plot([1, 2, 3, 4, 5], color=GW_OBSERVATORY_COLORS['L1'])
+    ax.plot([1, 2, 3, 4, 5], color=GW_OBSERVATORY_COLORS["L1"])
     fig.show()
 
 .. note::
 
-   The ``'gwpy:<>'`` colours will not be available until `gwpy`
-   has been imported.
+    The ``"gwpy:<>"`` colours will not be available until `gwpy`
+    has been imported.

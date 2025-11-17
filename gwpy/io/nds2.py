@@ -65,6 +65,18 @@ if TYPE_CHECKING:
     T = TypeVar("T")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__all__ = [
+    "NDSWarning",
+    "Nds2ChannelType",
+    "Nds2DataType",
+    "auth_connect",
+    "connect",
+    "find_channels",
+    "get_availability",
+    "host_resolution_order",
+    "minute_trend_times",
+    "parse_nds_env",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -460,7 +472,7 @@ def _connection(
         conn.set_epoch(epoch.gps_start, epoch.gps_stop)
 
 
-def parse_nds2_enums(func: Callable[P, T]) -> Callable[P, T]:
+def _parse_nds2_enums(func: Callable[P, T]) -> Callable[P, T]:
     """Decorate a function to translate a type string into an integer."""
     @wraps(func)
     def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> T:
@@ -479,7 +491,7 @@ def parse_nds2_enums(func: Callable[P, T]) -> Callable[P, T]:
 
 # -- query methods -------------------
 
-@parse_nds2_enums
+@_parse_nds2_enums
 def find_channels(
     channels: Sequence[str | Channel | nds2.channel],
     connection: nds2.connection | None = None,
@@ -511,7 +523,7 @@ def find_channels(
 
     sample_rate : `int`, `float`, `tuple`, optional
         A single number, representing a specific sample rate to match,
-        or a tuple representing a ``(low, high)` interval to match.
+        or a tuple representing a ``(low, high)`` interval to match.
 
     type : `int`, optional
         The NDS2 channel type to match.

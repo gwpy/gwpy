@@ -27,6 +27,7 @@ from ..cache import read_cache
 from .backend import get_backend_function
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
     from pathlib import Path
     from typing import (
         IO,
@@ -41,6 +42,16 @@ if TYPE_CHECKING:
     from ...types import Series
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+__all__ = [
+    "channel_exists",
+    "data_segments",
+    "get_channel_names",
+    "get_channel_type",
+    "identify_gwf",
+    "iter_channel_names",
+    "num_channels",
+]
 
 # first 4 bytes of any valid GWF file (see LIGO-T970130 §4.3.1)
 GWF_SIGNATURE = b"IGWD"
@@ -151,7 +162,7 @@ def get_channel_type(
     channel: str | Channel,
     gwf: str | Path | IO,
     backend: str | None = None,
-):
+) -> Literal["adc", "sim", "proc"]:
     """Find the channel type in a given GWF file.
 
     Requires a GWF backend library.
@@ -222,7 +233,7 @@ def iter_channel_names(
     gwf: str | Path | IO,
     type: str | None = None,
     backend: str | None = None,
-):
+) -> Iterator[str]:
     """Iterate over the names of channels found in a GWF file.
 
     Requires a GWF backend library.
@@ -253,7 +264,7 @@ def get_channel_names(
     gwf: str | Path | IO,
     type: str | None = None,
     backend: str | None = None,
-):
+) -> list[str]:
     """Return a list of all channel names found in a GWF file.
 
     This method just returns
@@ -288,7 +299,7 @@ def data_segments(
     channel: str,
     warn: bool = True,
     backend: str | None = None,
-):
+) -> SegmentList:
     """Returns the segments containing data for a channel.
 
     Requires a GWF backend library.

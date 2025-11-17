@@ -246,7 +246,7 @@ def test_file_segment_errors():
     """Test :func:`gwpy.io.cache.file_segment` error handling."""
     with pytest.raises(
         ValueError,
-        match=r"^Failed to parse 'blah' as a LIGO-T050017-compatible filename$",
+        match=r"^Failed to parse 'blah' as a LIGO-T010150-compatible filename$",
     ):
         io_cache.file_segment("blah")
 
