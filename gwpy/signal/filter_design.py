@@ -28,6 +28,7 @@ from math import (
 )
 from typing import (
     TYPE_CHECKING,
+    cast,
     overload,
 )
 
@@ -70,7 +71,7 @@ if TYPE_CHECKING:
     TapsType = Array1D
     # IIR
     FilterTypeName: TypeAlias = Literal["butter", "cheby1", "cheby2", "ellip"]
-    SosType: TypeAlias = NDArray
+    SosType: TypeAlias = numpy.ndarray[tuple[int, Literal[6]]]
     ZpkCompatible: TypeAlias = tuple[ArrayLike1D, ArrayLike1D, float]
     ZpkType: TypeAlias = tuple[Array1D, Array1D, float]
     BAType: TypeAlias = tuple[Array1D, Array1D]
@@ -105,6 +106,8 @@ ZPK_NARGS = 3
 SOS_NDIM = 2
 SOS_NCOEFF = 6
 
+
+# -- Utilities -----------------------
 
 def _as_float(
     x: QuantityLike,
@@ -153,7 +156,163 @@ def is_sos(sos: object) -> bool:
     )
 
 
-# -- core filter design utilities ----
+def concatenate_zpks(*zpks: ZpkCompatible) -> ZpkType:
+    """Concatenate a list of zero-pole-gain (ZPK) filters.
+
+    Parameters
+    ----------
+    *zpks
+        One or more zero-pole-gain format, each one should be a 3-`tuple`
+        containing an array of zeros, an array of poles, and a gain `float`.
+
+    Returns
+    -------
+    zeros : `numpy.ndarray`
+        The concatenated array of zeros.
+    poles : `numpy.ndarray`
+        The concatenated array of poles.
+    gain : `float`
+        The overall gain.
+
+    Examples
+    --------
+    Create a lowpass and a highpass filter, and combine them:
+
+    >>> from gwpy.signal.filter_design import (
+    ...     highpass, lowpass, concatenate_zpks)
+    >>> hp = highpass(100, 4096)
+    >>> lp = lowpass(1000, 4096)
+    >>> zpk = concatenate_zpks(hp, lp)
+
+    Plot the filter:
+
+    >>> from gwpy.plot import BodePlot
+    >>> plot = BodePlot(zpk, sample_rate=4096)
+    >>> plot.show()
+    """
+    zeros, poles, gains = zip(*zpks, strict=True)
+    return (
+        numpy.concatenate(zeros),
+        numpy.concatenate(poles),
+        reduce(operator.mul, gains, 1),
+    )
+
+
+# -- Formatting / conversions --------
+
+@overload
+def _convert_to_digital(
+    filter: SosType | ZpkType | lti | tuple[SosType | ZpkType | lti],
+    sample_rate: float,
+) -> tuple[Literal["zpk"], ZpkType]: ...
+
+@overload
+def _convert_to_digital(
+    filter: TapsType | BAType | tuple[TapsType | BAType],
+    sample_rate: float,
+) -> tuple[Literal["ba"], BAType]: ...
+
+def _convert_to_digital(
+    filter: FilterType | lti | tuple[FilterType | lti],  # noqa: A002
+    sample_rate: float,
+) -> tuple[Literal["ba", "zpk"], IirFilterType]:
+    """Convert an analog filter to digital via bilinear functions.
+
+    Parameters
+    ----------
+    filter: `tuple`
+        Input filter to convert.
+
+    sample_rate: `float`
+        Sample rate of digital data that will be filtered.
+
+    Returns
+    -------
+    dform : `str`
+        Type of filter.
+
+    dfilter : 'tuple'
+        Digital filter values.
+    """
+    # This will always end up returning zpk form.
+    # If FIR, bilinear will convert it to IIR.
+    # If IIR, only if p_i = -2 * fs will it yield poles at zero.
+    # See gwpy/signal/tests/test_filter_design for more information.
+
+    form, filt = parse_filter(filter)
+
+    if form == "ba":
+        b, a = filt
+        return form, signal.bilinear(b, a, fs=sample_rate)
+
+    if form == "zpk":
+        return form, signal.bilinear_zpk(*filt, fs=sample_rate)
+
+    msg = f"cannot convert '{form}', only 'zpk' or 'ba'"
+    raise ValueError(msg)
+
+
+@overload
+def parse_filter(
+    args: ZpkType | lti | tuple[ZpkType | lti],
+) -> tuple[Literal["zpk"], ZpkType]: ...
+
+@overload
+def parse_filter(
+    args: SosType | tuple[SosType],
+) -> tuple[Literal["sos"], SosType]: ...
+
+@overload
+def parse_filter(
+    args: TapsType | BAType | tuple[TapsType | BAType],
+) -> tuple[Literal["ba"], BAType]: ...
+
+def parse_filter(
+    args: FilterType | lti | tuple[FilterType | lti],
+) -> tuple[Literal["ba", "sos", "zpk"], BAType | ZpkType | SosType]:
+    """Parse arbitrary input args into a TF, ZPK, or SOS filter definition.
+
+    No transformations are applied to the filter, it is simply unpacked
+    into a standard form.
+
+    Parameters
+    ----------
+    args : `tuple`, `~scipy.signal.lti`
+        Filter definition, normally just captured positional ``*args``
+        from a function call.
+
+    Returns
+    -------
+    ftype : `str`
+        Either ``'ba'`` ``'zpk'`` or ``'sos'``.
+    filt : `tuple`
+        The filter components for the returned `ftype`, either a 2-tuple
+        for with transfer function components, or a 3-tuple for ZPK.
+    """
+    # unpack filter
+    if isinstance(args, tuple) and len(args) == 1:
+        # either packed defintion ((z, p, k)) or simple definition (lti,)
+        args = args[0]
+
+    # parse SOS filter
+    if is_sos(args):  # sos
+        return "sos", cast("SosType", args)
+
+    # parse FIR filter
+    if isinstance(args, numpy.ndarray) and args.ndim == 1:  # fir
+        b, a = cast("numpy.ndarray[tuple[int]]", args), numpy.ones(1)
+        return "ba", (b, a)
+
+    # parse IIR filter
+    try:
+        lti = args.to_zpk()  # type: ignore[union-attr]
+    except AttributeError:
+        lti = signal.lti(*args).to_zpk()
+
+    return "zpk", (lti.zeros, lti.poles, lti.gain)
+
+
+# -- Filter design -------------------
 
 @overload
 def _design_iir(
@@ -278,7 +437,7 @@ def _design_fir(
 
 @overload
 def _design(
-    ftype: Literal["iir"],
+    type_: Literal["iir"],
     wp: float | ArrayLike,
     ws: float | ArrayLike,
     sample_rate: float,
@@ -290,7 +449,7 @@ def _design(
 
 @overload
 def _design(
-    ftype: Literal["iir"],
+    type_: Literal["iir"],
     wp: float | ArrayLike,
     ws: float | ArrayLike,
     sample_rate: float,
@@ -302,7 +461,7 @@ def _design(
 
 @overload
 def _design(
-    ftype: Literal["iir"],
+    type_: Literal["iir"],
     wp: float | ArrayLike,
     ws: float | ArrayLike,
     sample_rate: float,
@@ -314,7 +473,7 @@ def _design(
 
 @overload
 def _design(
-    ftype: Literal["fir"],
+    type_: Literal["fir"],
     wp: float | ArrayLike,
     ws: float | ArrayLike,
     sample_rate: float,
@@ -324,7 +483,7 @@ def _design(
 ) -> TapsType: ...
 
 def _design(
-    ftype: str,
+    type_: str,
     wp: float | ArrayLike,
     ws: float | ArrayLike,
     sample_rate: float,
@@ -335,7 +494,7 @@ def _design(
 ) -> FilterType:
     """Design an IIR or FIR filter."""
     designer: Callable
-    if ftype == "iir":
+    if type_ == "iir":
         kwargs["output"] = output
         designer = _design_iir
     else:
@@ -387,7 +546,6 @@ def num_taps(
     if transitionwidth > 0 and ntaps % 2 == 0:
         return ntaps + 1
     return ntaps
-
 
 
 def truncate_transfer(
@@ -522,152 +680,6 @@ def fir_from_transfer(
     )
     # wrap around and normalise to construct the filter
     return numpy.roll(impulse, int(ntaps / 2 - 1))[0:ntaps]
-
-
-def convert_zpk_units(
-    filt: ZpkType,
-    unit: str,
-) -> ZpkType:
-    """Convert zeros and poles created for a freq response in Hz to rad/s.
-
-    Parameters
-    ----------
-    filt : `tuple`
-        Zeros, poles, gain.
-
-    unit : `str`
-        ``'Hz'`` or ``'rad/s'``.
-
-    Returns
-    -------
-    zeros : `numpy.array` of `numpy.cfloat`
-    poles : `numpy.array` of `numpy.cfloat`
-    gain : input, unadjusted gain
-    """
-    zeros, poles, gain = filt
-
-    if unit == "Hz":
-        for zi in range(len(zeros)):
-            zeros[zi] *= -2. * numpy.pi
-        for pj in range(len(poles)):
-            poles[pj] *= -2. * numpy.pi
-    elif unit not in [
-        "rad/s",
-        "rad/sample",
-    ]:
-        msg = (
-            "zpk can only be given with unit='Hz', 'rad/s', or 'rad/sample', "
-            f"not '{unit}'"
-        )
-        raise ValueError(msg)
-
-    return zeros, poles, gain
-
-
-@overload
-def convert_to_digital(
-    filter: SosType | ZpkType | lti | tuple[SosType | ZpkType | lti],
-    sample_rate: float,
-) -> tuple[Literal["zpk"], ZpkType]: ...
-
-@overload
-def convert_to_digital(
-    filter: TapsType | BAType | tuple[TapsType | BAType],
-    sample_rate: float,
-) -> tuple[Literal["ba"], BAType]: ...
-
-def convert_to_digital(
-    filter: FilterType | lti | tuple[FilterType | lti],  # noqa: A002
-    sample_rate: float,
-) -> tuple[Literal["ba", "zpk"], IirFilterType]:
-    """Convert an analog filter to digital via bilinear functions.
-
-    Parameters
-    ----------
-    filter: `tuple`
-        Input filter to convert.
-
-    sample_rate: `float`
-        Sample rate of digital data that will be filtered.
-
-    Returns
-    -------
-    dform : `str`
-        Type of filter.
-
-    dfilter : 'tuple'
-        Digital filter values.
-    """
-    # This will always end up returning zpk form.
-    # If FIR, bilinear will convert it to IIR.
-    # If IIR, only if p_i = -2 * fs will it yield poles at zero.
-    # See gwpy/signal/tests/test_filter_design for more information.
-
-    form, filt = parse_filter(filter)
-
-    if form == "ba":
-        b, a = filt
-        return form, signal.bilinear(b, a, fs=sample_rate)
-
-    if form == "zpk":
-        return form, signal.bilinear_zpk(*filt, fs=sample_rate)
-
-    msg = f"cannot convert '{form}', only 'zpk' or 'ba'"
-    raise ValueError(msg)
-
-
-@overload
-def parse_filter(
-    args: SosType | ZpkType | lti | tuple[SosType | ZpkType | lti],
-) -> tuple[Literal["zpk"], ZpkType]: ...
-
-@overload
-def parse_filter(
-    args: TapsType | BAType | tuple[TapsType | BAType],
-) -> tuple[Literal["ba"], BAType]: ...
-
-def parse_filter(
-    args: FilterType | lti | tuple[FilterType | lti],
-) -> tuple[Literal["ba", "zpk"], BAType | ZpkType]:
-    """Parse arbitrary input args into a TF or ZPK filter definition.
-
-    Parameters
-    ----------
-    args : `tuple`, `~scipy.signal.lti`
-        Filter definition, normally just captured positional ``*args``
-        from a function call.
-
-    Returns
-    -------
-    ftype : `str`
-        Either ``'ba'`` or ``'zpk'``.
-
-    filt : `tuple`
-        The filter components for the returned `ftype`, either a 2-tuple
-        for with transfer function components, or a 3-tuple for ZPK.
-    """
-    # unpack filter
-    if isinstance(args, tuple) and len(args) == 1:
-        # either packed defintion ((z, p, k)) or simple definition (lti,)
-        args = args[0]
-
-    # parse FIR filter
-    if isinstance(args, numpy.ndarray) and args.ndim == 1:  # fir
-        b, a = args, numpy.ones(1)
-        return "ba", (b, a)
-
-    # parse IIR filter
-    try:
-        lti = args.to_zpk()  # type: ignore[union-attr]
-    except AttributeError:
-        if is_sos(args):
-            lti = signal.lti(*signal.sos2zpk(args))
-        else:
-            lti = signal.lti(*args)
-        lti = lti.to_zpk()
-
-    return "zpk", (lti.zeros, lti.poles, lti.gain)
-
 
 # -- user methods --------------------
 
@@ -1177,44 +1189,3 @@ def notch(
     msg = f"Generating {type} notch filters has not been implemented yet"
     raise NotImplementedError(msg)
 
-
-def concatenate_zpks(*zpks: ZpkCompatible) -> ZpkType:
-    """Concatenate a list of zero-pole-gain (ZPK) filters.
-
-    Parameters
-    ----------
-    *zpks
-        One or more zero-pole-gain format, each one should be a 3-`tuple`
-        containing an array of zeros, an array of poles, and a gain `float`.
-
-    Returns
-    -------
-    zeros : `numpy.ndarray`
-        The concatenated array of zeros.
-    poles : `numpy.ndarray`
-        The concatenated array of poles.
-    gain : `float`
-        The overall gain.
-
-    Examples
-    --------
-    Create a lowpass and a highpass filter, and combine them:
-
-    >>> from gwpy.signal.filter_design import (
-    ...     highpass, lowpass, concatenate_zpks)
-    >>> hp = highpass(100, 4096)
-    >>> lp = lowpass(1000, 4096)
-    >>> zpk = concatenate_zpks(hp, lp)
-
-    Plot the filter:
-
-    >>> from gwpy.plot import BodePlot
-    >>> plot = BodePlot(zpk, sample_rate=4096)
-    >>> plot.show()
-    """
-    zeros, poles, gains = zip(*zpks, strict=True)
-    return (
-        numpy.concatenate(zeros),
-        numpy.concatenate(poles),
-        reduce(operator.mul, gains, 1),
-    )
