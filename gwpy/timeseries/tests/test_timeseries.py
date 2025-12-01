@@ -218,10 +218,11 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
     @pytest.fixture(scope="class")
     @pytest_skip_network_error
     def gw150914(self) -> TimeSeriesType:
-        """TimeSeries containing GW150914 data from GWOSC."""
+        """TimeSeries containing GW150914 data from GWOSC at 4096 Hz."""
         return self.TEST_CLASS.get(
             GWOSC_GW150914_IFO,
             *GWOSC_GW150914_SEGMENT,
+            sample_rate=4096,
         )
 
     @pytest.fixture(scope="class")
@@ -962,6 +963,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
                 GWOSC_GW150914_SEGMENT.start,
                 GWOSC_GW150914_SEGMENT.end,
                 frametype="WONT_MATCH",
+                sample_rate=4096,
             )
         except* ImportError as e:  # pragma: no-cover
             pytest.skip(str(e))
