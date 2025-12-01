@@ -18,17 +18,58 @@
 
 """Unit tests for :mod:`gwpy.cli.spectrum`."""
 
-from astropy.time import Time
+from __future__ import annotations
 
-from ... import cli
+from typing import (
+    TYPE_CHECKING,
+    Generic,
+    TypeVar,
+)
+
+import pytest
+from astropy.time import Time
+from numpy.random import default_rng
+
+from ...frequencyseries import FrequencySeries
+from .. import SpectrumProduct
 from .base import _TestFrequencyDomainProduct
 
+if TYPE_CHECKING:
+    from typing import ClassVar
 
-class TestCliSpectrum(_TestFrequencyDomainProduct):
-    TEST_CLASS = cli.Spectrum
+SpectrumProductType = TypeVar("SpectrumProductType", bound=SpectrumProduct)
+
+
+class TestSpectrumProduct(
+    _TestFrequencyDomainProduct[SpectrumProductType],
+    Generic[SpectrumProductType],
+):
+    """Tests for `gwpy.cli.SpectrumProduct`."""
+
+    TEST_CLASS: ClassVar[type[SpectrumProduct]] = SpectrumProduct
     ACTION = "spectrum"
 
-    def test_get_title(self, prod):
+    @pytest.fixture
+    @classmethod
+    def dataprod(cls, prod: SpectrumProductType) -> SpectrumProductType:
+        """Return a `TestFrequencyDomainProduct` with data."""
+        cls._prod_add_data(prod)
+        fftlength = prod.args.secpfft
+        for i, ts in enumerate(prod.timeseries):
+            nsamp = int(fftlength * 512 / 2.) + 1
+            rng = default_rng(i)
+            fs = FrequencySeries(
+                rng.random(nsamp),
+                x0=0,
+                dx=1/fftlength,
+                channel=ts.channel,
+                name=ts.name,
+            )
+            prod.spectra.append(fs)
+        return prod
+
+    def test_get_title(self, prod: SpectrumProductType):
+        """Test `SpectrumProduct.get_title`."""
         epoch = prod.start_list[0]
         utc = Time(epoch, format="gps", scale="utc").iso
         t = ", ".join([
@@ -38,5 +79,6 @@ class TestCliSpectrum(_TestFrequencyDomainProduct):
         ])
         assert prod.get_title() == t
 
-    def test_get_suptitle(self, prod):
+    def test_get_suptitle(self, prod: SpectrumProductType):
+        """Test `SpectrumProduct.get_suptitle`."""
         assert prod.get_suptitle() == f"Spectrum: {prod.chan_list[0]}"

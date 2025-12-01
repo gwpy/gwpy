@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Evan Goetz
+# Copyright (c) 2021-2024 Evan Goetz
 #               2021-2025 Cardiff University
 #
 # This file is part of GWpy.
@@ -18,269 +18,240 @@
 
 """Transfer function plots."""
 
+from __future__ import annotations
+
 import logging
 from collections import OrderedDict
+from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy.time import Time
 
 from ..plot.bode import BodePlot
-from ..plot.gps import GPS_SCALES
 from ..plot.tex import label_to_latex
-from .cliproduct import FFTMixin, TransferFunctionProduct
+from .cliproduct import FrequencyDomainProduct
+
+if TYPE_CHECKING:
+    from argparse import (
+        ArgumentParser,
+        Namespace,
+        _ArgumentGroup,
+    )
+    from logging import Logger
+    from typing import ClassVar
+
+    from ..frequencyseries import FrequencySeries
+    from ..plot import Axes
+    from ..segments import Segment
+    from ..timeseries import TimeSeries
 
 __author__ = "Evan Goetz <evan.goetz@ligo.org>"
 
 logger = logging.getLogger(__name__)
 
 
-class TransferFunction(FFTMixin, TransferFunctionProduct):
-    """Plot transfer function between a reference time series and one
-    or more other time series.
-    """
+class TransferFunctionProduct(FrequencyDomainProduct):
+    """Plot transfer function between two series."""
 
-    action = "transferfunction"
+    action: ClassVar[str] = "transferfunction"
 
-    def __init__(self, *args, logger=logger, **kwargs):
-        super().__init__(*args, logger=logger, **kwargs)
+    MIN_DATASETS = 2
+
+    def __init__(
+        self,
+        args: Namespace,
+        logger: Logger = logger,
+    ) -> None:
+        """Create a new `TransferFunctionProduct`."""
+        super().__init__(args, logger=logger)
         self.ref_chan = self.args.ref or self.chan_list[0]
         # deal with channel type appendages
-        if "," in self.ref_chan:
-            self.ref_chan = self.ref_chan.split(",")[0]
+        self.ref_chan = self.ref_chan.split(",", maxsplit=1)[0]
         self.plot_dB = self.args.plot_dB
-        self.subplot = None
         self.test_chan = self.chan_list[1]
-        self.tfs = []
-
-    @property
-    def ax(self):  # pylint: disable=invalid-name
-        """The current `~matplotlib.axes.Axes` of this product's plot."""
-        return self.plot.axes[self.subplot]
+        self.tfs: list[FrequencySeries] = []
 
     @classmethod
-    def arg_channels(cls, parser):
+    def arg_channels(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Add an `~argparse._ArgumentGroup` for channel options."""
         group = super().arg_channels(parser)
-        group.add_argument("--ref", help="Reference channel against which "
-                                         "others will be compared")
+        group.add_argument(
+            "--ref",
+            help="Reference channel against which others will be compared",
+        )
         return group
 
     @classmethod
-    def arg_yaxis(cls, parser):
+    def arg_yaxis(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Add an `~argparse._ArgumentGroup` for Y-axis options."""
         group = cls._arg_axis("ymag", parser, scale="log")
-        group.add_argument("--plot-dB", action="store_true",
-                           help="Plot transfer function in dB")
-        group = cls._arg_axis("yphase", parser, scale="linear")
+        group.add_argument(
+            "--plot-dB",
+            action="store_true",
+            help="Plot transfer function in dB",
+        )
+        return cls._arg_axis("yphase", parser, scale="linear")
 
-        return group
+    def _finalize_arguments(self, args: Namespace) -> None:
+        """Finalise command-line arguments for this plot product."""
+        if args.ymagscale is None:
+            args.ymagscale = "log"
+        if args.plot_dB:
+            args.ymagscale = "linear"
 
-    def get_title(self):
+        super()._finalize_arguments(args)
+
+    def get_title(self) -> str:
+        """Generate the title for this plot."""
         gps = self.start_list[0]
         utc = Time(gps, format="gps", scale="utc").iso
         tstr = f"{utc} | {gps} ({self.duration})"
 
         fftstr = f"fftlength={self.args.secpfft}, overlap={self.args.overlap}"
 
-        return ", ".join([tstr, fftstr])
+        return f"{tstr}, {fftstr}"
 
-    def _finalize_arguments(self, args):
-        if args.ymagscale is None:
-            args.ymagscale = "log"
-        if args.plot_dB:
-            args.ymagscale = "linear"
-
-        return super()._finalize_arguments(args)
-
-    def get_ylabel(self):
+    def get_ylabel(self) -> str:
         """Text for y-axis label."""
         ylabelstr = ""
-        if self.subplot == 0:
+        if self.ax is self.axes[0]:
             ylabelstr = "Magnitude"
             if self.plot_dB:
                 ylabelstr += " [dB]"
-        if self.subplot == 1:
+        else:
             ylabelstr = "Phase [deg.]"
 
         return ylabelstr
 
-    def get_suptitle(self):
+    def get_suptitle(self) -> str:
         """Start of default super title, first channel is appended to it."""
         return f"Transfer function: {self.test_chan}/{self.ref_chan}"
 
-    def set_axes_properties(self):
+    def _set_axis_properties(
+        self,
+        ax: Axes,
+        axis: str,
+    ) -> None:
+        """Set properties for X/Y axis on a specific subplot."""
+        # Remove xlabel from top subplot
+        if ax is self.axes[0] and axis == "x":
+            ax.set_xlabel("")
+        super()._set_axis_properties(ax, axis)
 
-        for subplot in [0, 1]:
-            self.subplot = subplot
-            self.scale_axes_from_data()
-            self.set_xaxis_properties()
-            self.set_yaxis_properties()
-
-    def _set_axis_properties(self, axis):
-        """Generic method to set properties for X/Y axis
-        on a specific subplot.
-        """
-        def _get(param):
-            ret = getattr(self.plot.axes[self.subplot],
-                          f"get_{axis[0].lower()}{param}")()
-            return ret
-
-        def _set(param, *args, **kwargs):
-            if axis.lower().startswith("y"):
-                ret = getattr(self.plot.axes[self.subplot], f"set_y{param}")(
-                    *args, **kwargs)
-            else:
-                ret = getattr(self.plot.axes[self.subplot], f"set_x{param}")(
-                    *args, **kwargs)
-            return ret
-
-        scale = getattr(self.args, f"{axis}scale")
-        label = getattr(self.args, f"{axis}label")
-        min_ = getattr(self.args, f"{axis}min")
-        max_ = getattr(self.args, f"{axis}max")
-
-        # parse limits
-        if (
-            scale == "auto-gps"
-            and min_ is not None
-            and max_ is not None
-            and max_ < 1e8
-        ):
-            limits = (min_, min_ + max_)
-        else:
-            limits = (min_, max_)
-
-        # set limits
-        if limits[0] is not None or limits[1] is not None:
-            _set("lim", *limits)
-
-        # set scale
-        if scale:
-            _set("scale", scale)
-
-        # reset scale with epoch if using GPS scale
-        if _get("scale") in GPS_SCALES:
-            _set("scale", scale, epoch=self.args.epoch)
-
-        # set label
-        if label is None:
-            if axis.lower().startswith("y"):
-                label = self.get_ylabel()
-            else:
-                label = self.get_xlabel()
-        if self.subplot == 0 and axis == "x":
-            label = None
-        if label:
-            if self.usetex:
-                label = label_to_latex(label)
-            _set("label", label)
-
-        # log
-        limits = _get("lim")
-        scale = _get("scale")
-        label = _get("label")
-        self.log(
-            2,
-            f"{axis.upper()}-axis parameters | "
-            f"scale: {scale} | "
-            f"limits: {limits[0]!s} - {limits[1]!s}",
-        )
-        self.log(3, (f"{axis.upper()}-axis label: {label}"))
-
-    def set_yaxis_properties(self):
+    def _set_yaxis_properties(self, ax: Axes) -> None:
         """Set properties for Y-axis."""
-        if self.subplot == 0:
-            self._set_axis_properties("ymag")
+        if ax is self.axes[0]:
+            axis_name = "ymag"
         else:
-            self._set_axis_properties("yphase")
+            axis_name = "yphase"
+        self.plot.sca(ax)
+        self._set_axis_properties(ax, axis_name)
 
-    def scale_axes_from_data(self):
+    def _scale_axes_from_data(self, ax: Axes) -> None:
         """Restrict data limits for Y-axis based on what you can see."""
+        axes_type = "mag" if ax is self.axes[0] else "phase"
+
         # get tight limits for X-axis
-        if self.args.xmin is None:
-            self.args.xmin = min(tf.xspan[0] for tf in self.tfs)
+        xmin = self.args.xmin
+        xmax = self.args.xmax
+        if xmin is None:
+            xmin = min(tf.xspan[0] for tf in self.tfs)
             # this is then typically zero, so if the xscale is log or None
             # we'll need to set to be the next bin higher (one step of df)
-            if (self.args.xmin == 0
-                    and (self.args.xscale == "log"
-                         or self.args.xscale is None)):
-                self.args.xmin = min(tf.df.value for tf in self.tfs)
-        if self.args.xmax is None:
-            self.args.xmax = max(tf.xspan[1] for tf in self.tfs)
+            if (
+                xmin == 0
+                and (self.args.xscale == "log" or self.args.xscale is None)
+            ):
+                xmin = min(tf.df.value for tf in self.tfs)
+        if xmax is None:
+            xmax = max(tf.xspan[1] for tf in self.tfs)
 
         # autoscale view for Y-axis
-        cropped = [tf.crop(self.args.xmin, self.args.xmax) for
-                   tf in self.tfs]
+        cropped = [tf.crop(xmin, xmax) for tf in self.tfs]
         ymin = None
         ymax = None
         for tf in cropped:
-            if self.subplot == 0:
-                if self.plot_dB:
-                    vals = 20 * np.log10(abs(tf.value))
-                else:
-                    vals = abs(tf.value)
+            if axes_type == "mag" and self.plot_dB:
+                vals = 20 * np.log10(abs(tf.value))
+            elif axes_type == "mag":
+                vals = abs(tf.value)
             else:
                 vals = np.angle(tf.value, deg=True)
-            minval = min(vals)
-            maxval = max(vals)
+            minval = float(min(vals))
+            maxval = float(max(vals))
             if ymin is None or minval < ymin:
                 ymin = minval
             if ymax is None or maxval > ymax:
                 ymax = maxval
-        self.ax.yaxis.set_data_interval(ymin, ymax, ignore=True)
-        self.ax.autoscale_view(scalex=False)
 
-    def set_plot_properties(self):
+        yint = ax.yaxis.get_data_interval()
+        if ymin is None:
+            ymin = yint[0]
+        if ymax is None:
+            ymax = yint[1]
+        ax.yaxis.set_data_interval(ymin, ymax, ignore=True)
+        ax.autoscale_view(scalex=False)
+
+    def set_plot_properties(self) -> None:
         """Finalize figure object and show() or save()."""
         self.set_axes_properties()
-        self.subplot = 0
-        self.set_title(self.args.title)
+        self.set_title(self.args.title, self.axes[0])
         self.set_suptitle(self.args.suptitle)
-        self.set_grid(not self.args.nogrid)
-        self.subplot = 1
-        self.set_grid(not self.args.nogrid)
+        enable = not self.args.nogrid
+        self.set_grid(ax=self.axes[0], enable=enable)
+        self.set_grid(ax=self.axes[1], enable=enable)
 
-    def make_plot(self):
+    def make_plot(self) -> BodePlot:
         """Generate the transfer function plot from the time series."""
         args = self.args
 
         fftlength = float(args.secpfft)
         overlap = args.overlap
-        self.log(2, "Calculating transfer function secpfft: "
-                 f"{fftlength}, overlap: {overlap}")
+        self.logger.debug(
+            "Calculating transfer function secpfft: %f, overlap: %f",
+            fftlength,
+            overlap,
+        )
         if overlap is not None:
             overlap *= fftlength
 
-        self.log(3, f"Reference channel: {self.ref_chan}")
+        self.logger.debug("Reference channel: %s", self.ref_chan)
 
         # group data by segment
-        groups = OrderedDict()
+        groups: dict[Segment, dict[str, TimeSeries]] = {}
         for series in self.timeseries:
             seg = series.span
+            name = str(series.name or series.channel or "")
             try:
-                groups[seg][series.channel.name] = series
+                groups[seg][name] = series
             except KeyError:
                 groups[seg] = OrderedDict()
-                groups[seg][series.channel.name] = series
+                groups[seg][name] = series
 
         # -- plot
 
-        plot = BodePlot(figsize=self.figsize, dpi=self.dpi,
-                        dB=self.plot_dB)
-        # ax = plot.gca()
+        plot = BodePlot(
+            figsize=self.figsize,
+            dpi=self.dpi,
+            dB=self.plot_dB,
+        )
         self.tfs = []
 
         # calculate transfer function
-        for seg in groups:
-            refts = groups[seg].pop(self.ref_chan)
-            for name in groups[seg]:
-                series = groups[seg][name]
+        for datadict in groups.values():
+            refts = datadict.pop(self.ref_chan)
+            for name, series in datadict.items():
                 self.test_chan = name
-                tf = series.transfer_function(refts, fftlength=fftlength,
-                                              overlap=overlap,
-                                              window=args.window)
+                tf = series.transfer_function(
+                    refts,
+                    fftlength=fftlength,
+                    overlap=overlap,
+                    window=args.window,
+                )
 
                 label = name
                 if len(self.start_list) > 1:
-                    label += f", {series.epoch.gps}"
+                    label += f", {series.t0.value}"
                 if self.usetex:
                     label = label_to_latex(label)
 
@@ -288,6 +259,6 @@ class TransferFunction(FFTMixin, TransferFunctionProduct):
                 self.tfs.append(tf)
 
         if args.xscale == "log" and not args.xmin:
-            args.xmin = 1/fftlength
+            args.xmin = 1 / fftlength
 
         return plot

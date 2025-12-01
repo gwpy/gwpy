@@ -18,6 +18,9 @@
 
 """Generate plots of GW observatory data using GWpy."""
 
+from __future__ import annotations
+
+import logging
 import os
 import sys
 import time
@@ -26,6 +29,7 @@ from argparse import (
     ArgumentParser,
     RawTextHelpFormatter,
 )
+from typing import TYPE_CHECKING
 
 from matplotlib import use
 
@@ -33,14 +37,29 @@ from .. import __version__
 from ..log import init_logger
 from . import PRODUCTS
 
+if TYPE_CHECKING:
+    from argparse import (
+        Action,
+        Namespace,
+        _MutuallyExclusiveGroup,
+    )
+    from collections.abc import Iterable
+
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
+
+if __name__ == "__main__":
+    if __spec__ is None:
+        _log_name = "gwpy.cli.gwpy_plot"
+    else:
+        _log_name = __spec__.name
+else:
+    _log_name = __name__
+logger = logging.getLogger(_log_name)
 
 # if launched from a terminal with no display
 # Must be done before modules like pyplot are imported
 if len(os.getenv("DISPLAY", "")) == 0:
     use("Agg")
-
-PROG_START = time.time()    # verbose enough times major ops
 
 INTERACTIVE = hasattr(sys, "ps1")
 
@@ -58,7 +77,7 @@ Report bugs to https://gitlab.com/gwpy/gwpy/-/issues/.
 """  # noqa: E501
 
 
-def _init_logging(verbosity):
+def _init_logging(verbosity: int) -> None:
     """Set up logging."""
     # If user did not specify verbosity, don't change anything;
     # this allows the logging level to be configured by other means,
@@ -70,10 +89,19 @@ def _init_logging(verbosity):
     init_logger("gwpy", level=level)
 
 
-# -- init command line --------------------------------------------------------
+# -- init command line ---------------
 
 class HelpFormatter(ArgumentDefaultsHelpFormatter, RawTextHelpFormatter):
-    def _format_usage(self, usage, actions, groups, prefix):
+    """Custom help formatter for `gwpy-plot`."""
+
+    def _format_usage(
+        self,
+        usage: str | None,
+        actions: Iterable[Action],
+        groups: Iterable[_MutuallyExclusiveGroup],
+        prefix: str | None,
+    ) -> str:
+        """Format the usage string for the help message."""
         if prefix is None:
             prefix = "Usage: "
         return super()._format_usage(
@@ -85,28 +113,45 @@ class HelpFormatter(ArgumentDefaultsHelpFormatter, RawTextHelpFormatter):
 
 
 class _ArgumentParser(ArgumentParser):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    """Custom argument parser for `gwpy-plot`."""
+
+    def __init__(self, **kwargs) -> None:
+        """Initialize the argument parser."""
+        super().__init__(**kwargs)
         self._positionals.title = "Positional arguments"
         self._optionals.title = "Options"
 
 
-def create_parser():
+def create_parser() -> _ArgumentParser:
+    """Create the command line argument parser for `gwpy-plot`."""
     parser = _ArgumentParser(
         description=__doc__,
         formatter_class=HelpFormatter,
         epilog=EPILOG,
     )
-    parser.add_argument("-V", "--version", action="version",
-                        version=__version__)
+    parser.add_argument(
+        "-V", "--version",
+        action="version",
+        version=__version__,
+        help="show program's version number and exit",
+    )
 
     # set the argument parser to act as the parent
     parentparser = _ArgumentParser(add_help=False)
     parentparser._optionals.title = "Verbosity options"
-    parentparser.add_argument("-v", "--verbose", action="count", default=0,
-                              help="increase verbose output")
-    parentparser.add_argument("-s", "--silent", action="store_true",
-                              help="show only fatal errors")
+    parentparser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="increase verbose output",
+    )
+    parentparser.add_argument(
+        "-s",
+        "--silent",
+        action="store_true",
+        help="show only fatal errors",
+    )
 
     # subparsers are dependent on which action is chosen
     subparsers = parser.add_subparsers(
@@ -115,8 +160,10 @@ def create_parser():
 
     # Add the subparsers for each plot product
     for product, product_class in PRODUCTS.items():
+        doc = product_class.__doc__ or ""
         subparser = subparsers.add_parser(
-            product, help=product_class.__doc__.strip().split("\n")[0],
+            product,
+            help=doc.strip().split("\n", maxsplit=1)[0],
             parents=[parentparser],
             formatter_class=ArgumentDefaultsHelpFormatter,
         )
@@ -125,27 +172,33 @@ def create_parser():
     return parser
 
 
-def parse_command_line(args=None):
+def parse_command_line(args: list[str] | None = None) -> Namespace:
+    """Parse the command line arguments and return the parsed arguments."""
     parser = create_parser()
     return parser.parse_args(args=args)
 
 
-# -- run ----------------------------------------------------------------------
+# -- run -----------------------------
 
-def main(args=None):
+def main(args: list[str] | None = None) -> int:
     """Run gwpy-plot.
 
     Returns the relevant exit code, that can be passed to :func:`sys.exit`.
     """
-    # parse the command line and create a product object
-    args = parse_command_line(args=args)
-    _init_logging(args.verbose)
-    prod = PRODUCTS[args.mode](args)
-    prod.log(2, f"{prod.action} created")
+    start = time.time()
+
+    # parse the command line
+    opts = parse_command_line(args=args)
+    _init_logging(opts.verbose)
+    logger.info("-- Welcome to gwpy-plot v%s --", __version__)
+
+    # create a product object
+    prod = PRODUCTS[opts.mode](opts)
+    logger.debug("%s created", prod.action)
 
     # log how long it took us to get here
-    setup_time = time.time() - PROG_START
-    prod.log(2, f"Setup time {setup_time:.1f} sec")
+    setup_time = time.time() - start
+    logger.debug("Setup time %.1fs", setup_time)
 
     # -- generate the plot
     prod.run()
@@ -157,15 +210,16 @@ def main(args=None):
         plot = prod.plot
         # pull raw data and plotted results from product for their use
         timeseries = prod.timeseries  # noqa: F841
-        result = prod.result  # noqa: F841
-        print('Raw data is in "timeseries", plotted data is in "result"')
         ax = plot.gca()  # noqa: F841
+        print("Raw data is in 'timeseries', plot product is in 'prod'")  # noqa: T201
 
-    run_time = time.time() - PROG_START
-    prod.log(1, f"Program run time: {run_time:.1f}")
+    run_time = time.time() - start
+    logger.debug("Program run time: %.1fs", run_time)
     if prod.got_error:
-        return 2     # make sure when running batch they can test for error
+        # Make sure when running batch they can test for error
+        return 2
+    return 0
 
 
-if __name__ == "__main__":  # pragma: no-cover
+if __name__ == "__main__":
     sys.exit(main())

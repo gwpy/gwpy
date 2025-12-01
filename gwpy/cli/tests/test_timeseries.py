@@ -17,18 +17,27 @@
 
 """Unit tests for :mod:`gwpy.cli.timeseries`."""
 
+from __future__ import annotations
+
 from ... import cli
-from .base import _TestTimeDomainProduct, update_namespace
+from .base import (
+    _TestTimeDomainProduct,
+    update_namespace,
+)
 
 
-class TestCliTimeSeries(_TestTimeDomainProduct):
-    TEST_CLASS = cli.TimeSeries
+class TestTimeSeriesProduct(_TestTimeDomainProduct[cli.TimeSeriesProduct]):
+    """Tests for `gwpy.cli.TimeSeriesProduct`."""
+
+    TEST_CLASS = cli.TimeSeriesProduct
     ACTION = "timeseries"
 
-    def test_get_title(self, prod):
+    def test_get_title(self, prod: cli.TimeSeriesProduct):
+        """Test `TimeSeriesProduct.get_title`."""
         update_namespace(prod.args, highpass=10, lowpass=100)
         t = f"Fs: (), duration: {prod.args.duration}, band pass (10.0-100.0)"
         assert prod.get_title() == t
 
-    def test_get_suptitle(self, prod):
+    def test_get_suptitle(self, prod: cli.TimeSeriesProduct):
+        """Test `TimeSeriesProduct.get_suptitle`."""
         assert prod.get_suptitle() == f"Time series: {prod.chan_list[0]}"

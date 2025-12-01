@@ -18,75 +18,105 @@
 
 """Coherence spectrogram."""
 
-import logging
+from __future__ import annotations
 
-from .spectrogram import Spectrogram
+import logging
+from typing import TYPE_CHECKING
+
+from .spectrogram import SpectrogramProduct
+
+if TYPE_CHECKING:
+    from argparse import (
+        ArgumentParser,
+        Namespace,
+        _ArgumentGroup,
+    )
+    from logging import Logger
+    from typing import ClassVar
+
+    from ..spectrogram import Spectrogram
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
 logger = logging.getLogger(__name__)
 
 
-class Coherencegram(Spectrogram):
+class CoherencegramProduct(SpectrogramProduct):
     """Plot the coherence-spectrogram comparing two time series."""
 
-    DEFAULT_CMAP = "plasma"
-    MIN_DATASETS = 2
-    MAX_DATASETS = 2
-    action = "coherencegram"
+    DEFAULT_CMAP: ClassVar[str] = "plasma"
+    MIN_DATASETS: ClassVar[int] = 2
+    MAX_DATASETS: ClassVar[int] = 2
+    action: ClassVar[str] = "coherencegram"
 
-    def __init__(self, *args, logger=logger, **kwargs):
-        super().__init__(*args, logger=logger, **kwargs)
+    def __init__(
+        self,
+        args: Namespace,
+        logger: Logger = logger,
+    ) -> None:
+        """Create a new `CoherencegramProduct`."""
+        super().__init__(args, logger=logger)
         self.ref_chan = self.args.ref or self.chan_list[0]
         # deal with channel type (e.g. m-trend)
-        if "," in self.ref_chan:
-            self.ref_chan = self.ref_chan.split(",")[0]
+        self.ref_chan = self.ref_chan.split(",", maxsplit=1)[0]
 
     @classmethod
-    def arg_channels(cls, parser):
+    def arg_channels(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Configure `~argparse.ArgumentParser` arguments for channels."""
         group = super().arg_channels(parser)
-        group.add_argument("--ref", help="Reference channel against which "
-                                         "others will be compared")
+        group.add_argument(
+            "--ref",
+            help="Reference channel against which others will be compared",
+        )
         return group
 
-    def _finalize_arguments(self, args):
+    def _finalize_arguments(self, args: Namespace) -> None:
+        """Finalise arguments with defaults."""
         if args.color_scale is None:
             args.color_scale = "linear"
         if args.color_scale == "linear":
             if args.imin is None:
-                args.imin = 0.
+                args.imin = 0.0
             if args.imax is None:
-                args.imax = 1.
+                args.imax = 1.0
         return super()._finalize_arguments(args)
 
-    def get_ylabel(self):
+    def get_ylabel(self) -> str:
         """Text for y-axis label."""
         return "Frequency (Hz)"
 
-    def get_suptitle(self):
+    def get_suptitle(self) -> str:
         """Start of default super title, first channel is appended to it."""
         a, b = self.chan_list
         return f"Coherence spectrogram: {a} vs {b}"
 
-    def get_color_label(self):
+    def get_color_label(self) -> str:
+        """Return the default colorbar label."""
         if self.args.norm:
             return f"Normalized to {self.args.norm}"
         return "Coherence"
 
-    def get_stride(self):
+    def get_stride(self) -> float:
+        """Calculate the stride for the coherencegram."""
         fftlength = float(self.args.secpfft)
         overlap = self.args.overlap  # fractional overlap
-        return max(self.duration / (self.width * 0.8),
-                   fftlength * (1 + (1-overlap)*32),
-                   fftlength * 2)
+        return max(
+            self.duration / (self.width * 0.8),
+            fftlength * (1 + (1 - overlap) * 32),
+            fftlength * 2,
+        )
 
-    def get_spectrogram(self):
+    def get_spectrogram(self) -> Spectrogram:
+        """Calculate the `Spectrogram` to be plotted."""
         args = self.args
         fftlength = float(args.secpfft)
         overlap = args.overlap  # fractional overlap
         stride = self.get_stride()
-        self.log(2, "Calculating coherence spectrogram, "
-                    f"secpfft: {fftlength}, overlap: {overlap}")
+        self.logger.debug(
+            "Calculating coherence spectrogram, secpfft: %s, overlap: %s",
+            fftlength,
+            overlap,
+        )
 
         if overlap is not None:  # overlap in seconds
             overlap *= fftlength
@@ -98,5 +128,9 @@ class Coherencegram(Spectrogram):
             ref = 1
             other = 0
         return self.timeseries[ref].coherence_spectrogram(
-            self.timeseries[other], stride, fftlength=fftlength,
-            overlap=overlap, window=args.window)
+            self.timeseries[other],
+            stride,
+            fftlength=fftlength,
+            overlap=overlap,
+            window=args.window,
+        )

@@ -31,7 +31,6 @@ from typing import (
 import numpy
 from astropy.time import Time
 from matplotlib import (
-    __version__ as _matplotlib_version,
     _docstring,
     rcParams,
 )
@@ -41,7 +40,6 @@ from matplotlib.axes._base import _process_plot_var_args
 from matplotlib.collections import PolyCollection
 from matplotlib.lines import Line2D
 from matplotlib.projections import register_projection
-from packaging.version import Version
 
 from ..time import to_gps
 from .colorbar import colorbar
@@ -86,8 +84,6 @@ if TYPE_CHECKING:
     from gwpy.typing import GpsLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-
-matplotlib_version = Version(_matplotlib_version)
 
 
 def _sortby(
@@ -178,10 +174,7 @@ class Axes(_Axes):
         super().__init__(fig, *args, **kwargs)
 
         # handle Series in `ax.plot()`
-        if matplotlib_version >= Version("3.8.0"):
-            self._get_lines = PlotArgsProcessor()
-        else:
-            self._get_lines = PlotArgsProcessor(self)
+        self._get_lines = PlotArgsProcessor()
 
         # reset data formatters (for interactive plots) to support
         # GPS time display

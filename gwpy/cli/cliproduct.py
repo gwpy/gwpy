@@ -18,12 +18,19 @@
 
 """Base class for CLI (`gwpy-plot`) products."""
 
+from __future__ import annotations
+
 import abc
 import logging
 import os.path
 import re
 import time
+import warnings
 from functools import wraps
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 from astropy.time import Time
 from astropy.units import Quantity
@@ -43,31 +50,71 @@ from ..timeseries import (
 from ..timeseries.timeseries import DEFAULT_FFT_METHOD
 from ..utils import unique
 
+if TYPE_CHECKING:
+    from argparse import (
+        ArgumentParser,
+        Namespace,
+        _ArgumentGroup,
+    )
+    from collections.abc import Callable
+    from logging import Logger
+    from os import PathLike
+    from typing import (
+        BinaryIO,
+        ClassVar,
+        Literal,
+        ParamSpec,
+        SupportsFloat,
+        TypeVar,
+    )
+
+    from astropy.units import UnitBase
+    from astropy.units.typing import QuantityLike
+    from matplotlib.legend import Legend
+
+    from ..plot import (
+        Axes,
+        Plot,
+    )
+    from ..signal.filter_design import ZpkType
+
+    P = ParamSpec("P")
+    R = TypeVar("R")
+
+    TimeSeriesType = TypeVar("TimeSeriesType", bound=TimeSeries)
+
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
-BAD_UNITS = {"*", "Counts." }
+BAD_UNITS = {
+    "*",
+    "Counts.",
+}
+
+#: GPS value below which it's probably not a GPS
+MIN_GPS = 1e8
 
 logger = logging.getLogger(__name__)
 
 
-# -- utilities ----------------------------------------------------------------
+# -- utilities -----------------------
 
-def timer(func):
-    """Time a method and print its duration after return."""
+def timer(func: Callable[P, R]) -> Callable[P, R]:
+    """Decorate a function to time itself and log its duration after return."""
     name = func.__name__
 
     @wraps(func)
-    def timed_func(self, *args, **kwargs):  # pylint: disable=missing-docstring
+    def timed_func(*args: P.args, **kwargs: P.kwargs) -> R:
+        inst = cast("CliProduct", args[0])
         _start = time.time()
-        out = func(self, *args, **kwargs)
-        self.log(2, f"{name} took {time.time() - _start:.1f} sec")
+        out = func(*args, **kwargs)
+        inst.logger.debug("%s took %.1f sec", name, time.time() - _start)
         return out
 
     return timed_func
 
 
-def to_float(unit):
-    """Factory to build a converter from quantity string to float.
+def to_float(unit: str | UnitBase) -> Callable:
+    """Return a function to convert a qantity string to a float in the given unit.
 
     Examples
     --------
@@ -75,19 +122,19 @@ def to_float(unit):
     >>> conv('4 mHz')
     >>> 0.004
     """
-    def converter(x):
-        """Convert the input to a `float` in %s."""
+
+    def converter(x: QuantityLike) -> float:
         return Quantity(x, unit).value
 
-    converter.__doc__ %= str(unit)  # pylint: disable=no-member
+    converter.__doc__ = f"Convert the input to a `float` in {unit}."
     return converter
 
 
-to_hz = to_float("Hz")  # pylint: disable=invalid-name
-to_s = to_float("s")  # pylint: disable=invalid-name
+to_hz = to_float("Hz")
+to_s = to_float("s")
 
 
-# -- base product class -------------------------------------------------------
+# -- base product class --------------
 
 class CliProduct(metaclass=abc.ABCMeta):
     """Base class for all cli plot products.
@@ -125,19 +172,23 @@ class CliProduct(metaclass=abc.ABCMeta):
       one figure
     """
 
-    MIN_CHANNELS = 1
-    MIN_DATASETS = 1
-    MAX_DATASETS = 1e100
+    MIN_CHANNELS: ClassVar[int] = 1
+    MIN_DATASETS: ClassVar[int] = 1
+    MAX_DATASETS: ClassVar[int] = int(1e100)
 
-    action = None
+    action: ClassVar[str | None] = None
 
-    def __init__(self, args, logger=logger):
+    def __init__(
+        self,
+        args: Namespace,
+        logger: Logger = logger,
+    ) -> None:
+        """Initialise this `CliProduct`."""
+        #: input argument Namespace
+        self.args = args
 
         #: Logger
         self.logger = logger
-
-        #: input argument Namespace
-        self.args = args
 
         # NB: finalizing may want to log if we're being verbose
         self._finalize_arguments(args)  # post-process args
@@ -146,20 +197,22 @@ class CliProduct(metaclass=abc.ABCMeta):
             style.use(args.style)
 
         #: the current figure object
-        self.plot = None
+        self.plot: Plot | None = None
 
         #: figure number
         self.plot_num = 0
 
         #: start times for data sets
-        self.start_list = unique(
-            map(int, (gps for gpsl in args.start for gps in gpsl)))
+        self.start_list = unique(map(
+            int,
+            (gps for gpsl in args.start for gps in gpsl),
+        ))
 
         #: duration of each time segment
         self.duration = args.duration
 
         #: channels to load
-        self.chan_list = unique(c for clist in args.chan for c in clist)
+        self.chan_list: list[str] = unique(c for clist in args.chan for c in clist)
 
         # use reduced as an alias for rds in channel name
         for idx in range(len(self.chan_list)):
@@ -169,7 +222,7 @@ class CliProduct(metaclass=abc.ABCMeta):
         self.n_datasets = len(self.chan_list) * len(self.start_list)
 
         #: list of input data series (populated by get_data())
-        self.timeseries = []
+        self.timeseries: list[TimeSeries] = []
 
         #: dots-per-inch for figure
         self.dpi = args.dpi
@@ -183,61 +236,102 @@ class CliProduct(metaclass=abc.ABCMeta):
         # please leave this last
         self._validate_arguments()
 
-    # -- abstract methods ------------------------
+    # -- abstract methods ------------
 
     @abc.abstractmethod
-    def make_plot(self):
-        """Generate the plot from time series and arguments."""
-        return
+    def make_plot(self) -> Plot | None:
+        """Generate the plot from time series and arguments.
 
-    # -- properties -----------------------------
+        This method must be overridden by subclasses.
+
+        Returns
+        -------
+        plot : `~gwpy.plot.Plot` or `None`
+            The generated plot, or `None` if no plot could be made.
+        """
+
+    # -- properties ------------------
 
     @property
-    def ax(self):  # pylint: disable=invalid-name
+    def plot(self) -> Plot:
+        """The current `~gwpy.plot.Plot` of this product.
+
+        Raises a `RuntimeError` if the plot has not yet been created.
+        """
+        msg = "plot has not been created yet"
+        try:
+            plot = self._plot
+        except AttributeError as exc:
+            raise RuntimeError(msg) from exc
+        if plot is None:
+            raise RuntimeError(msg)
+        return plot
+
+    @plot.setter
+    def plot(self, plot: Plot | None) -> None:
+        """Set the current `~gwpy.plot.Plot` of this product."""
+        self._plot = plot
+
+    @property
+    def axes(self) -> list[Axes]:
+        """The list of `~matplotlib.axes.Axes` of this product's plot."""
+        return cast("list[Axes]", self.plot.axes)
+
+    @property
+    def ax(self) -> Axes:
         """The current `~matplotlib.axes.Axes` of this product's plot."""
-        return self.plot.gca()
+        return cast("Axes", self.plot.gca())
 
     @property
-    def units(self):
+    def units(self) -> list[UnitBase]:
         """The (unique) list of data units for this product."""
         return unique(ts.unit for ts in self.timeseries)
 
     @property
-    def usetex(self):
+    def usetex(self) -> bool:
         """Switch denoting whether LaTeX will be used or not."""
         return rcParams["text.usetex"]
 
-    # -- utilities ------------------------------
+    # -- utilities -------------------
 
-    def log(self, level, msg):
-        """Print log message if verbosity is set high enough
-        :rtype: object.
-        """
+    def log(
+        self,
+        level: int,
+        msg: str,
+        *args: object,
+        **kwargs,
+    ) -> None:
+        """Print log message if verbosity is set high enough."""
+        warnings.warn(
+            "`CliProduct.log` is deprecated, use `CliProduct.logger` instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         # Convert verbosity level int to logging level
         lvl = max(3 - level, 0) * 10
-        self.logger.log(lvl, msg)
+        self.logger.log(lvl, msg, *args, **kwargs)
 
-    # -- argument parsing -----------------------
+    # -- argument parsing ------------
 
     # each method below is a classmethod so that the command-line
     # for a product can be set up without having to create an instance
     # of the class
 
     @classmethod
-    def init_cli(cls, parser):
+    def init_cli(cls, parser: ArgumentParser) -> None:
         """Set up the argument list for this product."""
         cls.init_data_options(parser)
         cls.init_plot_options(parser)
 
     @classmethod
-    def init_data_options(cls, parser):
+    def init_data_options(cls, parser: ArgumentParser) -> None:
         """Set up data input and signal processing options."""
         cls.arg_channels(parser)
         cls.arg_data(parser)
         cls.arg_signal(parser)
 
     @classmethod
-    def init_plot_options(cls, parser):
+    def init_plot_options(cls, parser: ArgumentParser) -> None:
         """Set up plotting options."""
         cls.arg_plot(parser)
         cls.arg_xaxis(parser)
@@ -246,8 +340,8 @@ class CliProduct(metaclass=abc.ABCMeta):
     # -- data options
 
     @classmethod
-    def arg_channels(cls, parser):
-        """Add an `~argparse.ArgumentGroup` for channel options."""
+    def arg_channels(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Add an `~argparse._ArgumentGroup` for channel options."""
         group = parser.add_argument_group(
             "Data options",
             "What data to load",
@@ -268,9 +362,7 @@ class CliProduct(metaclass=abc.ABCMeta):
             nargs="+",
             action="append",
             required=True,
-            help=(
-                "one or more starting times (integer GPS or date/time string)"
-            ),
+            help=("one or more starting times (integer GPS or date/time string)"),
         )
         group.add_argument(
             "--duration",
@@ -281,8 +373,8 @@ class CliProduct(metaclass=abc.ABCMeta):
         return group
 
     @classmethod
-    def arg_data(cls, parser):
-        """Add an `~argparse.ArgumentGroup` for data options."""
+    def arg_data(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Add an `~argparse._ArgumentGroup` for data options."""
         group = parser.add_argument_group(
             "Data source options",
             "Where to get the data",
@@ -293,8 +385,7 @@ class CliProduct(metaclass=abc.ABCMeta):
             "--framecache",
             type=os.path.abspath,
             help=(
-                "path to a file containing a list of paths "
-                "from which to read data"
+                "path to a file containing a list of paths from which to read data"
             ),
         )
         meg.add_argument(
@@ -316,8 +407,8 @@ class CliProduct(metaclass=abc.ABCMeta):
         return group
 
     @classmethod
-    def arg_signal(cls, parser):
-        """Add an `~argparse.ArgumentGroup` for signal-processing options."""
+    def arg_signal(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Add an `~argparse._ArgumentGroup` for signal-processing options."""
         group = parser.add_argument_group(
             "Signal processing options",
             "What to do with the data before plotting",
@@ -343,8 +434,8 @@ class CliProduct(metaclass=abc.ABCMeta):
     # -- plot options
 
     @classmethod
-    def arg_plot(cls, parser):
-        """Add an `~argparse.ArgumentGroup` for basic plot options."""
+    def arg_plot(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Add an `~argparse._ArgumentGroup` for basic plot options."""
         group = parser.add_argument_group("Plot options")
         group.add_argument(
             "-g",
@@ -418,17 +509,22 @@ class CliProduct(metaclass=abc.ABCMeta):
         return group
 
     @classmethod
-    def arg_xaxis(cls, parser):
-        """Add an `~argparse.ArgumentGroup` for X-axis options."""
+    def arg_xaxis(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Add an `~argparse._ArgumentGroup` for X-axis options."""
         return cls._arg_axis("x", parser)
 
     @classmethod
-    def arg_yaxis(cls, parser):
-        """Add an `~argparse.ArgumentGroup` for Y-axis options."""
+    def arg_yaxis(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Add an `~argparse._ArgumentGroup` for Y-axis options."""
         return cls._arg_axis("y", parser)
 
     @classmethod
-    def _arg_axis(cls, axis, parser, **defaults):
+    def _arg_axis(
+        cls,
+        axis: str,
+        parser: ArgumentParser,
+        **defaults,
+    ) -> _ArgumentGroup:
         name = f"{axis.title()} axis"
         group = parser.add_argument_group(f"{name} options")
 
@@ -480,8 +576,7 @@ class CliProduct(metaclass=abc.ABCMeta):
             )
         return group
 
-    def _finalize_arguments(self, args):
-        # pylint: disable=no-self-use
+    def _finalize_arguments(self, args: Namespace) -> None:
         """Sanity-check and set defaults for arguments."""
         # this method is called by __init__ (after command-line arguments
         # have been parsed)
@@ -489,7 +584,7 @@ class CliProduct(metaclass=abc.ABCMeta):
         if args.out is None:
             args.out = "gwpy.png"
 
-    def _validate_arguments(self):
+    def _validate_arguments(self) -> None:
         """Sanity check arguments and raise errors if required."""
         # validate number of data sets requested
         if len(self.chan_list) < self.MIN_CHANNELS:
@@ -508,16 +603,14 @@ class CliProduct(metaclass=abc.ABCMeta):
             )
             raise ValueError(msg)
 
-    # -- data transfer --------------------------
+    # -- data transfer ---------------
 
     @timer
-    def get_data(self):
+    def get_data(self) -> None:
         """Get all the data.
 
         This method populates the `timeseries` list attribute
         """
-        self.log(2, "---- Loading data -----")
-
         args = self.args
 
         # determine how we're supposed get our data
@@ -543,71 +636,84 @@ class CliProduct(metaclass=abc.ABCMeta):
                     data.name = f"{ifo}:{data.name}"
                     tsd.append({data.name: data})
             elif source.lower() == "nds2":
-                tsd = TimeSeriesDict.get(self.chan_list, start, end,
-                                         host=args.nds2_server,
-                                         frametype=args.frametype)
+                tsd = TimeSeriesDict.get(
+                    self.chan_list,
+                    start,
+                    end,
+                    host=args.nds2_server,
+                    frametype=args.frametype,
+                )
             else:
-                tsd = TimeSeriesDict.read(args.framecache, self.chan_list,
-                                          start=start, end=end)
+                tsd = TimeSeriesDict.read(
+                    args.framecache,
+                    self.chan_list,
+                    start=start,
+                    end=end,
+                )
 
             for data in tsd.values():
                 if str(data.unit) in BAD_UNITS:
                     data.override_unit("undef")
 
-                data = self._filter_timeseries(
-                    data, highpass=args.highpass, lowpass=args.lowpass,
-                    notch=args.notch)
+                filtered = self._filter_timeseries(
+                    data,
+                    highpass=args.highpass,
+                    lowpass=args.lowpass,
+                    notch=args.notch,
+                )
 
-                if data.dtype.kind == "f":  # cast single to double
-                    data = data.astype("float64", order="A", copy=False)
+                if filtered.dtype.kind == "f":  # cast single to double
+                    filtered = filtered.astype("float64", order="A", copy=False)
 
-                self.timeseries.append(data)
+                self.timeseries.append(filtered)
 
         # report what we have if they asked for it
-        self.log(3, f"Channels: {self.chan_list}")
-        self.log(
-            3,
-            f"Start times: {self.start_list}, duration {self.duration}",
+        self.logger.debug("Channels: %s", self.chan_list)
+        self.logger.debug(
+            "Start times: %s, duration %s",
+            self.start_list,
+            self.duration,
         )
-        self.log(3, f"Number of time series: {len(self.timeseries)}")
+        self.logger.debug("Number of time series: %d", len(self.timeseries))
 
     @staticmethod
-    def _filter_timeseries(data, highpass=None, lowpass=None, notch=None):
+    def _filter_timeseries(
+        data: TimeSeriesType,
+        highpass: SupportsFloat | None = None,
+        lowpass: SupportsFloat | None = None,
+        notch: list[SupportsFloat] | None = None,
+    ) -> TimeSeriesType:
         """Apply highpass, lowpass, and notch filters to some data."""
         # catch nothing to do
         if all(x is None for x in (highpass, lowpass, notch)):
             return data
 
         # build ZPK
-        zpks = []
+        zpks: list[ZpkType] = []
         if highpass is not None and lowpass is not None:
-            zpks.append(filter_design.bandpass(highpass, lowpass,
-                                               data.sample_rate))
+            zpks.append(filter_design.bandpass(highpass, lowpass, data.sample_rate))
         elif highpass is not None:
             zpks.append(filter_design.highpass(highpass, data.sample_rate))
         elif lowpass is not None:
             zpks.append(filter_design.lowpass(lowpass, data.sample_rate))
-        for freq in notch or []:
-            zpks.append(filter_design.notch(freq, data.sample_rate))
+        zpks.extend(filter_design.notch(freq, data.sample_rate) for freq in notch or [])
         zpk = filter_design.concatenate_zpks(*zpks)
 
         # apply forward-backward (zero-phase) filter
-        return data.filter(*zpk, filtfilt=True)
+        return data.filter(zpk, filtfilt=True)
 
-    # -- plotting -------------------------------
+    # -- plotting --------------------
 
-    @staticmethod
-    def get_xlabel():
-        """Default X-axis label for plot."""
-        return
+    def get_xlabel(self) -> str | None:
+        """Return default X-axis label for plot."""
+        return None
 
-    @staticmethod
-    def get_ylabel():
-        """Default Y-axis label for plot."""
-        return
+    def get_ylabel(self) -> str | None:
+        """Return default Y-axis label for plot."""
+        return None
 
-    def get_title(self):
-        """Default title for plot."""
+    def get_title(self) -> str:
+        """Return default title for plot."""
         highpass = self.args.highpass
         lowpass = self.args.lowpass
         notch = self.args.notch
@@ -622,35 +728,50 @@ class CliProduct(metaclass=abc.ABCMeta):
             filt += f", notch ({', '.join(map(str, notch))})"
         return filt
 
-    def get_suptitle(self):
-        """Default super-title for plot."""
-        return self.timeseries[0].channel.name
+    def get_suptitle(self) -> str:
+        """Return default super-title for plot."""
+        ts = self.timeseries[0]
+        return str(
+            ts.name
+            or ts.channel
+            or "",
+        )
 
-    def set_plot_properties(self):
+    def set_plot_properties(self) -> None:
         """Finalize figure object and show() or save()."""
         self.set_axes_properties()
         self.set_legend()
         self.set_title(self.args.title)
         self.set_suptitle(self.args.suptitle)
-        self.set_grid(self.args.nogrid)
+        self.set_grid(enable=self.args.nogrid)
 
-    def set_axes_properties(self):
+    def set_axes_properties(self) -> None:
         """Set properties for each axis (scale, limits, label)."""
-        self.scale_axes_from_data()
-        self.set_xaxis_properties()
-        self.set_yaxis_properties()
+        for ax in self.axes:
+            self._scale_axes_from_data(ax=ax)
+            self._set_xaxis_properties(ax=ax)
+            self._set_yaxis_properties(ax=ax)
 
-    def scale_axes_from_data(self):
-        """Auto-scale the view based on visible data."""
+    @abc.abstractmethod
+    def _scale_axes_from_data(self, ax: Axes) -> None:
+        """Auto-scale the view based on visible data.
 
-    def _set_axis_properties(self, axis):
-        """Generic method to set properties for X/Y axis."""
-        def _get(param):
-            return getattr(self.ax, f"get_{axis}{param}")()
+        In this base class, this method does nothing.
+        """
 
-        def _set(param, *args, **kwargs):
-            return getattr(self.ax, f"set_{axis}{param}")(
-                *args, **kwargs)
+    def _set_axis_properties(
+        self,
+        ax: Axes,
+        axis: str,
+    ) -> None:
+        """Set properties for X/Y axis."""
+        axis_name = axis[0]
+
+        def _get(param: str) -> object:
+            return getattr(ax, f"get_{axis_name}{param}")()
+
+        def _set(param: str, *args: object, **kwargs) -> None:
+            getattr(ax, f"set_{axis_name}{param}")(*args, **kwargs)
 
         scale = getattr(self.args, f"{axis}scale")
         label = getattr(self.args, f"{axis}label")
@@ -662,7 +783,7 @@ class CliProduct(metaclass=abc.ABCMeta):
             scale == "auto-gps"
             and min_ is not None
             and max_ is not None
-            and max_ < 1e8
+            and max_ < MIN_GPS
         ):
             limits = (min_, min_ + max_)
         else:
@@ -682,34 +803,38 @@ class CliProduct(metaclass=abc.ABCMeta):
 
         # set label
         if label is None:
-            label = getattr(self, f"get_{axis}label")()
+            label = getattr(self, f"get_{axis_name}label")()
         if label:
             if self.usetex:
                 label = label_to_latex(label)
             _set("label", label)
 
         # log
-        limits = _get("lim")
-        scale = _get("scale")
-        label = _get("label")
-        self.log(
-            2,
-            f"{axis.upper()}-axis parameters | "
-            f"scale: {scale} | "
-            f"limits: {limits[0]!s} - {limits[1]!s}",
+        dname = axis_name.upper()
+        self.logger.debug(
+            "%s-axis parameters: scale: %s, limits: %f -> %f",
+            dname,
+            _get("scale"),
+            *cast("tuple[float, float]", _get("lim")),
         )
-        self.log(3, (f"{axis.upper()}-axis label: {label}"))
+        self.logger.debug(
+            "%s-axis label: %r",
+            dname,
+            _get("label"),
+        )
 
-    def set_xaxis_properties(self):
+    def _set_xaxis_properties(self, ax: Axes) -> None:
         """Set properties for X-axis."""
-        self._set_axis_properties("x")
+        self._set_axis_properties(ax, "x")
 
-    def set_yaxis_properties(self):
+    def _set_yaxis_properties(self, ax: Axes) -> None:
         """Set properties for Y-axis."""
-        self._set_axis_properties("y")
+        self._set_axis_properties(ax, "y")
 
-    def set_legend(self):
+    def set_legend(self, ax: Axes | None = None) -> Legend | None:
         """Create a legend for this product (if applicable)."""
+        if ax is None:
+            ax = self.ax
         leg = self.ax.legend(prop={"size": 10})
         if leg and self.n_datasets == 1:
             try:
@@ -718,8 +843,8 @@ class CliProduct(metaclass=abc.ABCMeta):
                 leg.set_visible(False)
         return leg
 
-    def set_title(self, title):
-        """Set the title(s) for this plot.
+    def set_title(self, title: str, ax: Axes | None = None) -> None:
+        """Set the title(s) for these `~matplotlib.axes.Axes`.
 
         The `Axes.title` actually serves at the sub-title for the plot,
         typically giving processing parameters and information.
@@ -732,45 +857,63 @@ class CliProduct(metaclass=abc.ABCMeta):
         if self.usetex:
             title_line = label_to_latex(title_line)
         if title_line:
-            self.ax.set_title(title_line, fontsize=12)
-            self.log(3, f"Title is: {title_line}")
+            (ax or self.ax).set_title(title_line, fontsize=12)
+            self.logger.debug("Title is: %s", title_line)
 
-    def set_suptitle(self, suptitle):
+    def set_suptitle(self, suptitle: str | None) -> None:
         """Set the super title for this plot."""
         if not suptitle:
             suptitle = self.get_suptitle()
         if self.usetex:
             suptitle = label_to_latex(suptitle)
         self.plot.suptitle(suptitle, fontsize=18)
-        self.log(3, f"Super title is: {suptitle}")
+        self.logger.debug("Super title is: %s", suptitle)
 
-    def set_grid(self, enable):
+    def set_grid(
+        self,
+        ax: Axes | None = None,
+        *,
+        enable: bool,
+    ) -> None:
         """Set the grid parameters for this plot."""
-        if enable:
-            self.ax.grid(True, which="major",
-                         color="k", linestyle="solid")
-            self.ax.grid(True, which="minor",
-                         color="0.06", linestyle="dotted")
-        else:
-            self.ax.grid(False)
+        ax = ax or self.ax
 
-    def save(self, outfile):
+        # Disable
+        if not enable:
+            ax.grid(visible=False)
+            return
+
+        # Major
+        ax.grid(
+            visible=True,
+            which="major",
+            color="k",
+            linestyle="solid",
+        )
+
+        # Minor
+        ax.grid(
+            visible=True,
+            which="minor",
+            color="0.06",
+            linestyle="dotted",
+        )
+
+    def save(self, outfile: str | PathLike | BinaryIO) -> None:
         """Save this product to the target `outfile`."""
         self.plot.savefig(outfile, edgecolor="white", bbox_inches="tight")
-        self.log(3, f"wrote {outfile}")
+        self.logger.info("Wrote %s", outfile)
 
-    def has_more_plots(self):
+    def has_more_plots(self) -> bool:
         """Determine whether this product has more plots to be created."""
-        if self.plot_num == 0:
-            return True
-        return False
+        return self.plot_num == 0
 
     @timer
-    def _make_plot(self):
+    def _make_plot(self) -> None:
         """Override when product needs multiple saves."""
         self.plot = self.make_plot()
 
-    def _color_by_ifo(self):
+    def _color_by_ifo(self) -> list[str | None]:
         """Return a list of colours to use for datasets.
 
         In the specific case where each dataset name has a recognised IFO
@@ -799,40 +942,46 @@ class CliProduct(metaclass=abc.ABCMeta):
         # assigned colour
         return [GW_OBSERVATORY_COLORS[n] for n in names]
 
-    # -- the one that does all the work ---------
+    # -- the one that does all the work
 
-    def run(self):
+    def run(self) -> None:
         """Make the plot."""
-        self.log(3, "Arguments:")
+        self.logger.debug("Arguments:")
         argsd = vars(self.args)
         for key in sorted(argsd):
-            self.log(3, f"{key:>15s} = {argsd[key]}")
+            self.logger.debug("%15s = %s", key, argsd[key])
 
         # grab the data
+        self.logger.info("---- Loading data ----")
         self.get_data()
 
         # for each plot
-        show_error = True       # control ours separate from product's
+        self.logger.info("---- Generating figures ----")
+        show_error = True  # control ours separate from product's
         while self.has_more_plots():
             self._make_plot()
             if self.plot:
                 self.set_plot_properties()
                 self.add_segs(self.args)
                 if self.args.interactive:
-                    self.log(3, "Interactive manipulation of "
-                                "image should be available.")
+                    self.logger.debug(
+                        "Interactive manipulation of image should be available.",
+                    )
                     self.plot.show()
                 else:
                     self.save(self.args.out)
             elif show_error:
-                # Some plots reject inpput data for reasons like all zeroes
-                self.log(0, "No plot produced because of data "
-                            "validation error.")
+                # Some plots reject input data for reasons like all zeroes
+                self.logger.warning(
+                    "No plot produced because of data validation error.",
+                )
                 self.got_error = True
                 show_error = False
             self.plot_num += 1
 
-    def add_segs(self, args):
+        self.logger.info("---- Complete ----")
+
+    def add_segs(self, args: Namespace) -> None:
         """If requested add DQ segments."""
         std_segments = [
             "{ifo}:DMT-GRD_ISC_LOCK_NOMINAL:1",
@@ -840,7 +989,7 @@ class CliProduct(metaclass=abc.ABCMeta):
             "{ifo}:DMT-CALIBRATED:1",
             "{ifo}:DMT-ANALYSIS_READY:1",
         ]
-        segments = list()
+        segments = []
         if hasattr(args, "std_seg"):
             if args.std_seg:
                 segments = std_segments
@@ -853,7 +1002,7 @@ class CliProduct(metaclass=abc.ABCMeta):
             m = re.match("^([A-Za-z][0-9]):", chan)
             ifo = m.group(1) if m else "?:"
 
-            start = None
+            start: Quantity | None = None
             end = 0
             for ts in self.timeseries:
                 if start is not None:
@@ -874,22 +1023,23 @@ class CliProduct(metaclass=abc.ABCMeta):
                 self.plot.add_segments_bar(seg_data, label=seg_name)
 
 
-# -- extensions ---------------------------------------------------------------
+# -- extensions ----------------------
 
 class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
     """Base class for all x/y/color plots."""
 
-    DEFAULT_CMAP = "viridis"
-    MAX_DATASETS = 1
+    DEFAULT_CMAP: ClassVar[str] = "viridis"
+    MAX_DATASETS: ClassVar[int] = 1
 
     @classmethod
-    def init_plot_options(cls, parser):
+    def init_plot_options(cls, parser: ArgumentParser) -> None:
+        """Configure plotting options, including colorbar."""
         super().init_plot_options(parser)
         cls.arg_color_axis(parser)
 
     @classmethod
-    def arg_color_axis(cls, parser):
-        """Add an `~argparse.ArgumentGroup` for colour-axis options."""
+    def arg_color_axis(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Add an `~argparse._ArgumentGroup` for colour-axis options."""
         group = parser.add_argument_group("Colour axis options")
         group.add_argument(
             "--imin",
@@ -927,46 +1077,47 @@ class ImageProduct(CliProduct, metaclass=abc.ABCMeta):
             action="store_true",
             help="hide the colour bar",
         )
+        return group
 
-    @staticmethod
-    def get_color_label():
-        """Returns the default colorbar label."""
-        return
+    def get_color_label(self) -> str | None:
+        """Return default colorbar label."""
+        return None
 
-    def set_axes_properties(self):
-        """Set properties for each axis (scale, limits, label) and create
-        a colorbar.
-        """
+    def set_axes_properties(self) -> None:
+        """Set properties for each axis (scale, limits, label) and create a colorbar."""
         super().set_axes_properties()
         if not self.args.nocolorbar:
             self.set_colorbar()
 
-    def set_colorbar(self):
+    def set_colorbar(self) -> None:
         """Create a colorbar for this product."""
         self.ax.colorbar(label=self.get_color_label())
 
-    def set_legend(self):
-        """This method does nothing, since image plots don't have legends."""
-        return  # image plots don't have legends
+    def set_legend(self, ax: Axes | None = None) -> None:  # noqa: ARG002
+        """Create a legend for this plot.
+
+        This method does nothing, since image plots don't have legends.
+        """
+        return
 
 
-class FFTMixin(metaclass=abc.ABCMeta):
+class FFTMixin:
     """Mixin for `CliProduct` class that will perform FFTs.
 
     This just adds FFT-based command line options
     """
 
-    DEFAULT_FFTLENGTH = 1.
+    DEFAULT_FFTLENGTH: ClassVar[float] = 1.0
 
     @classmethod
-    def init_data_options(cls, parser):
+    def init_data_options(cls, parser: ArgumentParser) -> None:
         """Set up data input and signal processing options including FFTs."""
-        super().init_data_options(parser)
+        super().init_data_options(parser)  # type: ignore[misc]
         cls.arg_fft(parser)
 
     @classmethod
-    def arg_fft(cls, parser):
-        """Add an `~argparse.ArgumentGroup` for FFT options."""
+    def arg_fft(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Add an `~argparse._ArgumentGroup` for FFT options."""
         group = parser.add_argument_group("Fourier transform options")
         group.add_argument(
             "--secpfft",
@@ -995,9 +1146,13 @@ class FFTMixin(metaclass=abc.ABCMeta):
         return group
 
     @classmethod
-    def _arg_faxis(cls, axis, parser, **defaults):
+    def _arg_faxis(
+        cls,
+        axis: Literal["x", "y"],
+        parser: ArgumentParser,
+        **defaults,
+    ) -> _ArgumentGroup:
         defaults.setdefault("scale", "log")
-        axis = axis.lower()
         name = f"{axis.title()} axis"
         group = parser.add_argument_group(f"{name} options")
 
@@ -1052,21 +1207,21 @@ class FFTMixin(metaclass=abc.ABCMeta):
 
         return group
 
-    def _finalize_arguments(self, args):
+    def _finalize_arguments(self, args: Namespace) -> None:
         if args.overlap is None:
             try:
                 args.overlap = recommended_overlap(args.window)
             except ValueError:
-                args.overlap = .5
-        return super()._finalize_arguments(args)
+                args.overlap = 0.5
+        return super()._finalize_arguments(args)  # type: ignore[misc]
 
 
 class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
     """`CliProduct` with time on the X-axis."""
 
     @classmethod
-    def arg_xaxis(cls, parser):
-        """Add an `~argparse.ArgumentGroup` for X-axis options.
+    def arg_xaxis(cls, parser: ArgumentParser) -> _ArgumentGroup:
+        """Add an `~argparse._ArgumentGroup` for X-axis options.
 
         This method includes the standard X-axis options, as well as a new
         ``--epoch`` option for the time axis.
@@ -1076,8 +1231,7 @@ class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
             "--epoch",
             type=to_gps,
             help=(
-                "center X axis on this GPS time, "
-                "may be absolute date/time or delta"
+                "center X axis on this GPS time, may be absolute date/time or delta"
             ),
         )
 
@@ -1095,7 +1249,7 @@ class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
         )
         return group
 
-    def _finalize_arguments(self, args):
+    def _finalize_arguments(self, args: Namespace) -> None:
         starts = [float(gps) for gpsl in args.start for gps in gpsl]
         if args.xscale is None:  # set default x-axis scale
             args.xscale = "auto-gps"
@@ -1103,36 +1257,27 @@ class TimeDomainProduct(CliProduct, metaclass=abc.ABCMeta):
             args.xmin = min(starts)
         if args.epoch is None:
             args.epoch = args.xmin
-        elif args.epoch < 1e8:
+        elif args.epoch < MIN_GPS:
             args.epoch += min(starts)
 
         if args.xmax is None:
             args.xmax = max(starts) + args.duration
         return super()._finalize_arguments(args)
 
-    def get_xlabel(self):
-        """Default X-axis label for plot."""
+    def get_xlabel(self) -> str:
+        """Return default X-axis label for plot."""
         trans = self.ax.xaxis.get_transform()
         if isinstance(trans, GPSTransform):
             epoch = trans.get_epoch()
             unit = trans.get_unit_name()
-            utc = re.sub(r"\.0+", "",
-                         Time(epoch, format="gps", scale="utc").iso)
+            utc = re.sub(r"\.0+", "", Time(epoch, format="gps", scale="utc").iso)
             return f"Time ({unit}) from {utc} ({epoch})"
         return ""
 
 
-class FrequencyDomainProduct(CliProduct, metaclass=abc.ABCMeta):
+class FrequencyDomainProduct(FFTMixin, CliProduct, metaclass=abc.ABCMeta):
     """`CliProduct` with frequency on the X-axis."""
 
-    def get_xlabel(self):
-        """Default X-axis label for plot."""
+    def get_xlabel(self) -> str:
+        """Return default X-axis label for plot."""
         return "Frequency (Hz)"
-
-
-class TransferFunctionProduct(FrequencyDomainProduct):
-    """`CliProduct` with frequency on the X-axis and a complex
-    frequency series.
-    """
-
-    MIN_DATASETS = 2

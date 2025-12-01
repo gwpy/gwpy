@@ -27,8 +27,9 @@ from .. import (
 from .base import NDS2_CONNECTION_FIXTURE_DATA  # noqa: F401
 
 
-@pytest.mark.parametrize("mode", [None, *list(PRODUCTS.keys())])
+@pytest.mark.parametrize("mode", [None, *PRODUCTS.keys()])
 def test_gwpy_plot_help(mode):
+    """Test the help message for `gwpy-plot` command line module."""
     args = [mode, "--help"] if mode else ["--help"]
     with pytest.raises(SystemExit) as exc:
         gwpy_plot.main(args)
@@ -36,15 +37,22 @@ def test_gwpy_plot_help(mode):
 
 
 @pytest.mark.requires("nds2")
-def test_gwpy_plot_timeseries(tmp_path, nds2_connection):
+@pytest.mark.usefixtures("nds2_connection")
+def test_gwpy_plot_timeseries(tmp_path):
+    """Test the `gwpy-plot` command line module with a timeseries plot."""
     tmp = tmp_path / "plot.png"
-    args = [
+    args = list(map(str, [
         "timeseries",
         "--chan", "X1:TEST-CHANNEL",
         "--start", 0,
         "--nds2-server", "nds.test.gwpy",  # don't use datafind
-        "--out", str(tmp),
-    ]
+        "--out", tmp,
+    ]))
     exitcode = gwpy_plot.main(args)
-    assert not exitcode  # passed
-    assert tmp.is_file()  # plot was created
+
+    # Check that it worked
+    assert exitcode == 0
+
+    # Check that the output file is a PNG
+    with tmp.open("rb") as f:
+        assert f.read(4) == b"\x89PNG"
