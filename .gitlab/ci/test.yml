@@ -113,6 +113,7 @@ include:
 
 # all development versions
 .dev_test:
+  needs: []
   extends: .test
   parallel:
     matrix:
@@ -123,6 +124,7 @@ include:
 
 # only well-supported production versions
 .prod_test:
+  needs: []
   extends: .test
   parallel:
     matrix:
@@ -258,6 +260,32 @@ python_test_windows:
     - !reference [.windows, rules]
     - !reference [.rules_full_test, rules]
 
+# anchors for needs statements
+
+.needs_python_test_linux:
+  needs:
+    - job: python_test_linux
+      artifacts: false
+      parallel:
+        matrix:
+          - PYTHON_VERSION: ['$[[ matrix.PYTHON_VERSION ]]']
+
+.needs_python_test_macos:
+  needs:
+    - job: python_test_macos
+      artifacts: false
+      parallel:
+        matrix:
+          - PYTHON_VERSION: ['$[[ matrix.PYTHON_VERSION ]]']
+
+.needs_python_test_windows:
+  needs:
+    - job: python_test_windows
+      artifacts: false
+      parallel:
+        matrix:
+          - PYTHON_VERSION: ['$[[ matrix.PYTHON_VERSION ]]']
+
 # -- conda tests
 #
 # Full test suite using Conda to provide the widest possible set of
@@ -301,6 +329,7 @@ conda_test_linux:
   extends:
     - .conda_test
     - .linux
+    - .needs_python_test_linux
   rules:
     - !reference [.linux, rules]
     - !reference [.rules_full_test, rules]
@@ -331,6 +360,7 @@ conda_test_macos:
   extends:
     - .conda_test
     - .macos
+    - .needs_python_test_macos
   rules:
     - !reference [.macos, rules]
     - !reference [.rules_full_test, rules]
@@ -354,6 +384,7 @@ conda_test_windows:
     - .conda_test
     - .choco
     - .uv_windows
+    - .needs_python_test_windows
   rules:
     - !reference [.windows, rules]
     - !reference [.rules_full_test, rules]
