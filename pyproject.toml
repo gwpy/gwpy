@@ -31,6 +31,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Scientific/Engineering :: Astronomy",
   "Topic :: Scientific/Engineering :: Physics",
 ]
@@ -158,7 +159,7 @@ dev = [
   "lalsuite ; sys_platform != 'win32' and python_version < '3.14'",
   "lscsoft-glue ; sys_platform != 'win32'",
   "psycopg2 ; sys_platform == 'linux'",
-  "pycbc >=1.13.4 ; sys_platform == 'linux'",
+  "pycbc >=1.13.4 ; sys_platform == 'linux' and python_version < '3.14'",
   "pymysql",
   "requests-pelican",
   "requests-scitokens",

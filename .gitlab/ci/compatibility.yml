@@ -54,7 +54,8 @@ include:
       stage: $[[ inputs.stage ]]
       job_name: "dependency-scanning"
 
-.compat_rules:
+.compat:
+  needs: []
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[skip compat\]/'
       when: never
@@ -65,7 +66,7 @@ include:
 compat_minimum:
   extends:
     - .compat_minimum
-    - .compat_rules
+    - .compat
   image: "ghcr.io/astral-sh/uv:python$[[ inputs.minimum_python_version ]]-bookworm"
   before_script:
     # replace the requirements as follows:
@@ -96,11 +97,11 @@ compat_minimum:
 compat_experimental:
   extends:
     - .compat_experimental
-    - .compat_rules
+    - .compat
   image: "ghcr.io/astral-sh/uv:python$[[ inputs.experimental_python_version ]]-bookworm"
 
 # run dependency scanning against minimum specified requirements
 # (most likely to highlight issues)
 dependency-scanning:
   needs: ["compat_minimum"]
-  rules: !reference [.compat_rules, rules]
+  rules: !reference [.compat, rules]
