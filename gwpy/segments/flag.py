@@ -220,6 +220,17 @@ class DataQualityFlag:
         self.isgood = isgood
         self.padding = padding
 
+    # -- utilities -------------------
+
+    def _to_segmentlist(
+        self,
+        segmentlist: SegmentListLike | None,
+    ) -> SegmentList:
+        """Convert input to SegmentList of the correct type."""
+        if segmentlist is None:
+            return self._ListClass()
+        return self._ListClass(self._EntryClass(*seg) for seg in segmentlist)
+
     # -- properties ------------------
 
     @property
@@ -302,10 +313,7 @@ class DataQualityFlag:
 
     @active.setter
     def active(self, segmentlist: SegmentListLike | None) -> None:
-        if segmentlist is None:
-            del self.active
-        else:
-            self._active = self._ListClass(map(self._EntryClass, segmentlist))
+        self._active = self._to_segmentlist(segmentlist)
 
     @active.deleter
     def active(self) -> None:
@@ -318,10 +326,7 @@ class DataQualityFlag:
 
     @known.setter
     def known(self, segmentlist: SegmentListLike | None) -> None:
-        if segmentlist is None:
-            del self.known
-        else:
-            self._known = self._ListClass(map(self._EntryClass, segmentlist))
+        self._known = self._to_segmentlist(segmentlist)
 
     @known.deleter
     def known(self) -> None:
