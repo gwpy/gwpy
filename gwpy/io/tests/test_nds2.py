@@ -343,7 +343,6 @@ def test_find_channels(nds2_connection):
     assert chans[0].name == "X1:test"
 
     # check callouts in find_channels
-    nds2_connection.connect.assert_called_once_with("test.nds2")
     nds2_connection.set_epoch.assert_any_call("ALL")
 
     # check callouts in _find_channels

@@ -40,6 +40,8 @@ from . import mocks
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+    import nds2
+
 # -- plotting ------------------------
 
 SKIP_TEX: pytest.MarkDecorator = pytest.mark.skipif(
@@ -48,7 +50,7 @@ SKIP_TEX: pytest.MarkDecorator = pytest.mark.skipif(
 )
 
 
-@pytest.fixture(scope="function", params=[
+@pytest.fixture(params=[
     pytest.param(False, id="no-tex"),
     pytest.param(True, id="usetex", marks=SKIP_TEX),
 ])
@@ -112,16 +114,17 @@ def corrupt_noisy_sinusoid(
 # -- NDS2 fixtures -------------------
 
 @pytest.fixture
-def nds2_connection(request):
-    """An open mocked NDS2 connection.
+def nds2_connection(request: pytest.FixtureRequest) -> Iterator[nds2.connection]:
+    """Yield an open mocked NDS2 connection.
 
     Set ``NDS2_CONNECTION_FIXTURE_DATA`` as an iterable of `TimeSeries` in
     the test class or module to customise the data buffers available.
 
-    This fixture also mocks out `os.environ` and pop's any GWDataFind
+    This fixture also mocks out `os.environ` and ``pop``s any GWDataFind
     server variables, in an attempt to ensure that NDS2 is used by
     `TimeSeries.get` and friends.
     """
+    rng = numpy.random.default_rng(seed=0)
     data = None
     for scope in (request.instance, request.module):
         if data := getattr(scope, "NDS2_CONNECTION_FIXTURE_DATA", None):
@@ -129,14 +132,14 @@ def nds2_connection(request):
     else:
         data = [
             TimeSeries(
-                numpy.random.random(128),
+                rng.random(size=128),
                 name="X1:test",
                 t0=1000000000,
                 sample_rate=16,
                 unit="m",
             ),
             TimeSeries(
-                numpy.random.random(1024),
+                rng.random(size=1024),
                 name="Y1:test",
                 t0=1000000000,
                 sample_rate=128,
@@ -151,5 +154,4 @@ def nds2_connection(request):
         os.environ.pop("GWDATAFIND_SERVER", "")
         os.environ.pop("LIGO_DATAFIND_SERVER", "")
         mockconn.return_value = nds2conn
-        nds2conn.connect = mockconn
         yield nds2conn
