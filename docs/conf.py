@@ -85,16 +85,16 @@ extensions = [
     "myst_parser",
     "numpydoc",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.coverage",
     "sphinx.ext.doctest",
     "sphinx.ext.extlinks",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.todo",
-    "sphinx.ext.coverage",
-    "sphinx.ext.imgmath",
-    "sphinx.ext.autosummary",
-    "sphinx.ext.inheritance_diagram",
-    "sphinx.ext.linkcode",
     "sphinx.ext.ifconfig",
+    "sphinx.ext.inheritance_diagram",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.linkcode",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.todo",
     "sphinx_automodapi.automodapi",
     "sphinx_copybutton",
     "sphinx_design",
@@ -248,6 +248,15 @@ numpydoc_use_blockquotes = True
 
 # auto-insert plot directive in examples
 numpydoc_use_plots = True
+
+# enable cross-referencing of parameter types
+numpydoc_xref_param_type = True
+numpydoc_xref_ignore = {
+    "of",
+    "optional",
+    "or",
+    "subclass",
+}
 
 # update the plot detection to include .show() calls
 parts = re.split(r"[\(\)|]", docscrape_sphinx.IMPORT_MATPLOTLIB_RE)[1:-1]
