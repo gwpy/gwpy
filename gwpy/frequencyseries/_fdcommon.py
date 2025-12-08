@@ -26,25 +26,32 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy
-from scipy import signal
 
-from ..signal.filter_design import parse_filter
+from ..signal import filter_design
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
+    from typing import TypeVar
+
+    from astropy.units.typing import QuantityLike
 
     from ..frequencyseries import FrequencySeries
-    from ..signal.filter_design import FilterType
+    from ..signal.filter_design import FilterCompatible
     from ..spectrogram import Spectrogram
 
-    FreqDomainData: TypeAlias = FrequencySeries | Spectrogram
+    FreqDomainData = TypeVar("FreqDomainData", FrequencySeries, Spectrogram)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
-def fdfilter(
+def _fdfilter(
     data: FreqDomainData,
-    *filt: FilterType,
+    filt: FilterCompatible,
+    *,
+    sample_rate: QuantityLike | None = None,
+    analog: bool = False,
+    unit: str = "rad/s",
+    normalize_gain: bool = False,
+    inplace: bool = False,
     **kwargs,
 ) -> FreqDomainData:
     """Filter a frequency-domain data object.
@@ -54,31 +61,19 @@ def fdfilter(
     gwpy.frequencyseries.FrequencySeries.filter
     gwpy.spectrogram.Spectrogram.filter
     """
-    # parse keyword args
-    inplace = kwargs.pop("inplace", False)
-    analog = kwargs.pop("analog", False)
-    fs = kwargs.pop("sample_rate", None)
-    if kwargs:
-        msg = f"filter() got an unexpected keyword argument '{list(kwargs).pop()}'"
-        raise TypeError(msg)
-    # parse filter
-    if fs is None:
-        fs = 2 * data.frequencies[-1].to("Hz").value
-    _, _filt = parse_filter(filt)
-    freqs = data.frequencies.value.copy()
+    freqs = data.frequencies.to("Hz").value
+    if sample_rate is None:
+        sample_rate = freqs[-1] * 2
 
-    if analog:
-        lti = signal.lti(*_filt).to_zpk()
-        z, p, k = lti.zeros, lti.poles, lti.gain
-        # dlti.freqresp does not take into account fs
-        # better to use the more straightforward functions
-        _, fr = signal.freqs_zpk(z, p, k, worN=freqs)
-    else:
-        lti = signal.dlti(*_filt).to_zpk()
-        z, p, k = lti.zeros, lti.poles, lti.gain
-        _, fr = signal.freqz_zpk(z, p, k, worN=freqs, fs=fs)
-
-    fresp = numpy.nan_to_num(abs(fr))
+    _, fresp = numpy.abs(filter_design.frequency_response(
+        filt,
+        freqs,
+        analog=analog,
+        sample_rate=sample_rate,
+        unit=unit,
+        normalize_gain=normalize_gain,
+        **kwargs,
+    ))
 
     # apply to array
     if inplace:

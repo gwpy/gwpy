@@ -78,13 +78,13 @@ zpk = filter_design.concatenate_zpks(bp, *notches)
 hfilt = hdata.filter(zpk, filtfilt=True)
 
 # %%
-# .. note::
-#
-#    The :mod:`~gwpy.signal.filter_design` methods return digital filters
-#    by default, so we apply them using `TimeSeries.filter`. If we had
-#    analogue filters (perhaps by passing `analog=True` to the filter design
-#    method), the easiest application would be `TimeSeries.zpk`
-#
+# We can quickly visualise the filtered data using the
+# :meth:`~TimeSeries.plot` method:
+
+plot = hfilt.plot(figsize=[12, 4])
+plot.show()
+
+# %%
 # The :mod:`~gwpy.signal.filter_design` methods return infinite impulse
 # response filters by default, which, when applied, corrupt a small amount of
 # data at the beginning and the end of our original `TimeSeries`.

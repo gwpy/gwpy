@@ -76,12 +76,16 @@ if TYPE_CHECKING:
 
     from ..frequencyseries import FrequencySeries, SpectralVariance
     from ..signal.filter_design import (
-        FilterType,
+        BAType,
+        FilterCompatible,
+        SosType,
+        TapsType,
         ZpkType,
     )
     from ..signal.window import WindowLike
     from ..spectrogram import Spectrogram
     from ..table import EventTable
+    from ..typing import ArrayLike1D
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -696,13 +700,13 @@ class TimeSeries(TimeSeriesBase):
         overlap: float | None = None,
         method: str = DEFAULT_FFT_METHOD,
         window: WindowLike = "hann",
+        *,
         nproc: int = 1,
-        filter_: tuple[float, float] | None = None,
+        filter_: FilterCompatible | None = None,
         bins: ArrayLike | None = None,
         low: float | None = None,
         high: float | None = None,
         nbins: int = 500,
-        *,
         log: bool = False,
         norm: bool = False,
         density: bool = False,
@@ -733,6 +737,10 @@ class TimeSeries(TimeSeriesBase):
         nproc : `int`
             Maximum number of independent frame reading processes, default
             is set to single-process file reading.
+
+        filter_ : `FilterCompatible`, optional
+            Filter to apply to each time-bin of the spectrogram prior to
+            variance calculation.
 
         bins : `numpy.ndarray`, optional, default `None`
             Array of histogram bin edges, including the rightmost edge.
@@ -784,8 +792,8 @@ class TimeSeries(TimeSeriesBase):
             window=window,
             nproc=nproc,
         ) ** (1/2.)
-        if filter_:
-            specgram = specgram.filter(*filter_)
+        if filter_ is not None:
+            specgram = specgram.filter(filter_)
         return specgram.variance(
             bins=bins,
             low=low,
@@ -1014,12 +1022,13 @@ class TimeSeries(TimeSeriesBase):
             gstop=gstop,
             analog=False,
             type=type,
+            output="zpk",
             **kwargs,
         )
         # filter_design.highpass returns rad/sample already
-        return self.filter(
-            *filt,
-            unit="rad/sample",
+        return self._filter(
+            "zpk" if type == "iir" else "ba",
+            filt,
             filtfilt=filtfilt,
         )
 
@@ -1083,10 +1092,15 @@ class TimeSeries(TimeSeriesBase):
             gstop=gstop,
             analog=False,
             type=type,
+            output="zpk",
             **kwargs,
         )
         # apply filter, it is already rad/sample
-        return self.filter(*filt, unit="rad/sample", filtfilt=filtfilt)
+        return self._filter(
+            "zpk" if type == "iir" else "ba",
+            filt,
+            filtfilt=filtfilt,
+        )
 
     def bandpass(
         self,
@@ -1153,10 +1167,15 @@ class TimeSeries(TimeSeriesBase):
             gstop=gstop,
             analog=False,
             type=type,
+            output="zpk",
             **kwargs,
         )
         # apply filter
-        return self.filter(*filt, unit="rad/sample", filtfilt=filtfilt)
+        return self._filter(
+            "zpk" if type == "iir" else "ba",
+            filt,
+            filtfilt=filtfilt,
+        )
 
     def resample(
         self,
@@ -1242,34 +1261,60 @@ class TimeSeries(TimeSeriesBase):
 
     def zpk(
         self,
-        zeros: ArrayLike,
-        poles: ArrayLike,
+        zeros: ArrayLike1D,
+        poles: ArrayLike1D,
         gain: float,
         *,
-        analog: bool = True,
-        unit: str = "Hz",
+        analog: bool = False,
+        unit: str = "rad/s",
+        normalize_gain: bool = False,
+        filtfilt: bool = True,
         **kwargs,
     ) -> TimeSeries:
-        """Filter this `TimeSeries` by applying a zero-pole-gain filter.
+        """Filter this `TimeSeries` by applying a digital zero-pole-gain filter.
 
         Parameters
         ----------
         zeros : `array-like`
-            List of zero frequencies (in Hertz).
+            Zeros of the transfer function.
 
         poles : `array-like`
-            List of pole frequencies (in Hertz).
+            Poles of the transfer function.
 
         gain : `float`
-            DC gain of filter.
+            System gain.
 
         analog : `bool`, optional
-            Type of ZPK being applied, if `analog=True` all parameters
-            will be converted in the Z-domain for digital filtering.
+            Type of filter being applied.
+            If ``analog=True`` the zeros/poles/gain will be transformed from
+            analogue (s-plane) to digital (z-plane) representation using
+            the bilinear transform.
 
-        unit: `str`
-            The frequency response units this filter was designed for
-            either Hz or rad/s. Default: 'Hz'.
+        unit : `str`
+            For analogue ZPK filters, the units in which the zeros and poles are
+            specified. Either ``'Hz'`` or ``'rad/s'`` (default).
+
+        normalize_gain : `bool`, optional
+            Whether to normalize the gain when converting from Hz to rad/s.
+
+            - `False` (default):
+              Multiply zeros/poles by -2π but leave gain unchanged.
+              This matches the LIGO GDS **'f' plane** convention
+              (``plane='f'`` in ``s2z()``).
+
+            - `True`:
+              Normalize gain to preserve frequency response magnitude.
+              Gain is scaled by :math:`|∏p_i/∏z_i| · (2π)^{(n_p - n_z)}`.
+              Use this when your filter was designed with the transfer
+              function :math:`H(f) = k·∏(f-z_i)/∏(f-p_i)` in Hz.
+              This matches the LIGO GDS **'n' plane** convention
+              (``plane='n'`` in ``s2z()``).
+
+            Only used for analogue filters in Hz (``analog=True, unit="Hz"``).
+
+        filtfilt : `bool`, optional
+            If `True` (default), apply the filter using a forward-backward
+            filter design, otherwise apply the filter in a single pass.
 
         kwargs
             Other keyword arguments are passed to the filter method.
@@ -1283,6 +1328,8 @@ class TimeSeries(TimeSeriesBase):
         --------
         TimeSeries.filter
             For details on how a digital ZPK-format filter is applied.
+        gwpy.signal.filter_design.prepare_digital_filter
+            For details on preparing the digital ZPK filter for application.
 
         Examples
         --------
@@ -1291,32 +1338,46 @@ class TimeSeries(TimeSeriesBase):
 
         >>> data2 = data.zpk([100]*5, [1]*5, 1e-10)
         """
-        return self.filter(
-            zeros,
-            poles,
-            gain,
+        zpk = filter_design.prepare_digital_filter(
+            (zeros, poles, gain),
             analog=analog,
+            sample_rate=self.sample_rate,
             unit=unit,
+            normalize_gain=normalize_gain,
+            output="zpk",
+        )
+        return self._filter(
+            "zpk",
+            zpk,
+            filtfilt=filtfilt,
             **kwargs,
         )
 
     def filter(
         self,
-        *filt: FilterType,
+        filt: FilterCompatible,
+        *,
+        analog: bool = False,
+        unit: str = "rad/s",
+        normalize_gain: bool = False,
+        filtfilt: bool = True,
         **kwargs,
     ) -> Self:
         """Filter this `TimeSeries` with an IIR or FIR filter.
 
         Parameters
         ----------
-        *filt : filter arguments
-            1, 2, 3, or 4 arguments defining the filter to be applied,
+        filt : `numpy.ndarray` or `tuple`
+            The filter to be applied.
+            This can be specified in any of the following forms, with
+            the appropriate number of elements in the tuple:
 
-                - an ``Nx1`` `~numpy.ndarray` of FIR coefficients
-                - an ``Nx6`` `~numpy.ndarray` of SOS coefficients
-                - ``(numerator, denominator)`` polynomials
-                - ``(zeros, poles, gain)``
-                - ``(A, B, C, D)`` 'state-space' representation
+            - `numpy.ndarray` - 1D array of FIR filter coefficients.
+            - `tuple[numpy.ndarray, numpy.ndarray]` - numerator/demoinator
+              polynomials of the transfer function.
+            - `numpy.ndarray` - 2D array of SOS coefficients.
+            - `tuple[numpy.ndarray, numpy.ndarray, float]` - zero-pole-gain
+              representation.
 
         filtfilt : `bool`, optional
             Filter forward and backwards to preserve phase,
@@ -1330,9 +1391,28 @@ class TimeSeries(TimeSeriesBase):
             If `True`, this array will be overwritten with the filtered
             version, default: `False`.
 
-        unit: `str`
-            If zpk, the frequency response units this filter was designed for,
-             either Hz or rad/s. Default: 'Hz' if analog. Rad/s if digital.
+
+        unit : `str`, optional
+            For analogue ZPK filters, the units in which the zeros and poles are
+            specified. Either ``'Hz'`` or ``'rad/s'`` (default).
+
+        normalize_gain : `bool`, optional
+            Whether to normalize the gain when converting from Hz to rad/s.
+
+            - `False` (default):
+              Multiply zeros/poles by -2π but leave gain unchanged.
+              This matches the LIGO GDS **'f' plane** convention
+              (``plane='f'`` in ``s2z()``).
+
+            - `True`:
+              Normalize gain to preserve frequency response magnitude.
+              Gain is scaled by :math:`|∏p_i/∏z_i| · (2π)^{(n_p - n_z)}`.
+              Use this when your filter was designed with the transfer
+              function :math:`H(f) = k·∏(f-z_i)/∏(f-p_i)` in Hz.
+              This matches the LIGO GDS **'n' plane** convention
+              (``plane='n'`` in ``s2z()``).
+
+            Only used for analogue filters in Hz (``analog=True, unit="Hz"``).
 
         kwargs
             Other keyword arguments are passed to the filter method.
@@ -1344,8 +1424,8 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
-        IIR filters are converted into cascading second-order sections before
-        being applied to this `TimeSeries`.
+        IIR filters are converted into digital cascading second-order sections
+        before being applied to the data.
 
         FIR filters are passed directly to :func:`scipy.signal.lfilter` or
         :func:`scipy.signal.filtfilt` without any conversions.
@@ -1393,46 +1473,79 @@ class TimeSeries(TimeSeriesBase):
         >>> plot = Plot(data, filtered[128:-128], separate=True)
         >>> plot.show()
         """
-        # parse keyword arguments
-        filtfilt = kwargs.pop("filtfilt", False)
+        # prepare filter (handles parsing, unit conversion,
+        # digital conversion, gain extraction)
+        filter_ = filter_design.prepare_digital_filter(
+            filt,
+            analog=analog,
+            sample_rate=self.sample_rate,
+            unit=unit or "rad/s",
+            normalize_gain=normalize_gain,
+            output="zpk",
+        )
 
-        # parse filter
-        form, filter_ = filter_design.parse_filter(filt)
+        return self._filter(
+            "zpk",
+            filter_,
+            filtfilt=filtfilt,
+            **kwargs,
+        )
 
-        unit = kwargs.pop("unit", None)
-        if not unit:
-            if kwargs.get("analog", False):
-                unit = "Hz"
-            else:
-                unit = "rad/s"
+    def _filter(
+        self,
+        form: Literal["ba", "sos", "zpk"],
+        filter_: BAType | TapsType | ZpkType | SosType,
+        *,
+        filtfilt: bool = False,
+        **kwargs,
+    ) -> Self:
+        """Apply a prepared filter to this TimeSeries.
 
-        # convert units if the system was designed in Hz
-        if form == "zpk":
-            filter_ = cast("ZpkType", filter_)
-            filter_ = filter_design.convert_zpk_units(filter_, unit)
+        This method just applies a digital filter,
+        handling conversion to second-order-sections as necessary,
+        and supporting zero-phase ``filtfilt``.
 
-        if kwargs.pop("analog", False):
-            form, filter_ = filter_design.convert_to_digital(
+        Parameters
+        ----------
+        form : `str`
+            The filter form, one of ``'zpk'``, ``'ba'``, or ``'sos'``.
+
+        filter_ : filter arguments
+            The filter coefficients in the specified form.
+
+        filtfilt : `bool`, optional
+            If `True`, apply the filter using a forward-backward
+            filter design, otherwise apply the filter in a single pass.
+            Defaults to `False`.
+
+        kwargs
+            Other keyword arguments are passed to the filter method.
+
+        Returns
+        -------
+        result : `TimeSeries`
+            The filtered time series with gain applied.
+        """
+        # Transform ZPK to SOS
+        sos = None
+        if form != "ba":
+            filter_ = cast("ZpkType | SosType", filter_)
+            sos = filter_design._transform(
                 filter_,
-                sample_rate=self.sample_rate.to("Hz").value,
+                form,
+                "sos",
             )
-
-        if form == "zpk":
-            sos = signal.zpk2sos(*filter_)
-        else:
-            sos = None
-            b, a = filter_
 
         # perform filter
         kwargs.setdefault("axis", 0)
-        if sos is not None and filtfilt:
-            out = signal.sosfiltfilt(sos, self, **kwargs)
-        elif sos is not None:
-            out = signal.sosfilt(sos, self, **kwargs)
+        if sos is None and filtfilt:
+            out = signal.filtfilt(*filter_, self, **kwargs)
+        elif sos is None:
+            out = signal.lfilter(*filter_, self, **kwargs)
         elif filtfilt:
-            out = signal.filtfilt(b, a, self, **kwargs)
+            out = signal.sosfiltfilt(sos, self, **kwargs)
         else:
-            out = signal.lfilter(b, a, self, **kwargs)
+            out = signal.sosfilt(sos, self, **kwargs)
 
         # format as type(self)
         new = cast("Self", out.view(type(self)))
@@ -2707,7 +2820,7 @@ class TimeSeries(TimeSeriesBase):
             Whether to apply zero-phase filtering (default is True).
 
         kwargs
-            Other keyword arguments to pass to `scipy.signal.iirdesign`.
+            Other keyword arguments to pass to `gwpy.signal.filter_design.notch`.
 
         Returns
         -------
@@ -2717,9 +2830,9 @@ class TimeSeries(TimeSeriesBase):
         See Also
         --------
         TimeSeries.filter
-           for details on the filtering method
-        scipy.signal.iirdesign
-            for details on the IIR filter design method
+            For details on the filtering method.
+        gwpy.signal.filter_design.notch
+            For details on the IIR filter design method.
         """
         zpk = filter_design.notch(
             frequency,
@@ -2728,7 +2841,11 @@ class TimeSeries(TimeSeriesBase):
             output="zpk",
             **kwargs,
         )
-        return self.filter(*zpk, filtfilt=filtfilt)
+        return self._filter(
+            "zpk",
+            zpk,
+            filtfilt=filtfilt,
+        )
 
     def q_gram(
         self,

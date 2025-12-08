@@ -64,7 +64,6 @@ if TYPE_CHECKING:
         ClassVar,
         Literal,
         ParamSpec,
-        SupportsFloat,
         TypeVar,
     )
 
@@ -679,9 +678,9 @@ class CliProduct(metaclass=abc.ABCMeta):
     @staticmethod
     def _filter_timeseries(
         data: TimeSeriesType,
-        highpass: SupportsFloat | None = None,
-        lowpass: SupportsFloat | None = None,
-        notch: list[SupportsFloat] | None = None,
+        highpass: QuantityLike | None = None,
+        lowpass: QuantityLike | None = None,
+        notch: list[QuantityLike] | None = None,
     ) -> TimeSeriesType:
         """Apply highpass, lowpass, and notch filters to some data."""
         # catch nothing to do
