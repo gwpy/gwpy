@@ -56,6 +56,8 @@ if TYPE_CHECKING:
     from ..spectrogram import Spectrogram
     from ..types import Series
     from ..typing import (
+        Array1D,
+        ArrayLike1D,
         GpsLike,
         UnitLike,
     )
@@ -72,7 +74,7 @@ def _default_bins(
     unit: UnitBase,
     *,
     log: bool,
-) -> numpy.ndarray:
+) -> Array1D:
     if low is None:
         low = data.min() / 2
     if high is None:
@@ -105,11 +107,11 @@ class SpectralVariance(Array2D):
     def __new__(
         cls,
         data: ArrayLike,
-        bins: ArrayLike,
+        bins: ArrayLike1D,
         unit: UnitLike = None,
         f0: Quantity | float | None = None,
         df: Quantity | float | None = None,
-        frequencies: ArrayLike | None = None,
+        frequencies: ArrayLike1D | None = None,
         name: str | None = None,
         channel: Channel | str | None = None,
         epoch: GpsLike | None = None,
@@ -232,7 +234,7 @@ class SpectralVariance(Array2D):
     def from_spectrogram(
         cls,
         *spectrograms: Spectrogram,
-        bins: ArrayLike | None = None,
+        bins: ArrayLike1D | None = None,
         low: float | None = None,
         high: float | None = None,
         nbins: int = 500,

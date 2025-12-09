@@ -21,7 +21,10 @@
 from __future__ import annotations
 
 from math import pi
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 import numpy
 from astropy.units import Quantity
@@ -39,8 +42,12 @@ if TYPE_CHECKING:
         NDArray,
     )
 
-    from gwpy.frequencyseries import FrequencySeries
-    from gwpy.signal.filter_design import FilterType
+    from ..frequencyseries import FrequencySeries
+    from ..signal.filter_design import FilterType
+    from ..typing import (
+        Array1D,
+        ArrayLike1D,
+    )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
@@ -48,7 +55,7 @@ __all__ = [
 ]
 
 
-def to_db(a: ArrayLike) -> ArrayLike:
+def to_db(a: ArrayLike) -> NDArray:
     """Convert the input array into decibels.
 
     Parameters
@@ -109,7 +116,7 @@ class BodePlot(Plot):
         self,
         *filters: FilterType,
         dB: bool = True,  # noqa: N803
-        frequencies: NDArray | None = None,
+        frequencies: ArrayLike1D | None = None,
         **kwargs,
     ) -> None:
         """Initialise a new `BodePlot`."""
@@ -178,6 +185,7 @@ class BodePlot(Plot):
         ):
             frequencies = filters[0].frequencies.value
         if not isinstance(frequencies, type(None) | int):
+            frequencies = numpy.asarray(frequencies)
             frequencies = frequencies[frequencies > 0]
             self.maxes.set_xlim(frequencies.min(), frequencies.max())
 
@@ -194,7 +202,7 @@ class BodePlot(Plot):
     def add_filter(
         self,
         filter_: FilterType,
-        frequencies: NDArray | None = None,
+        frequencies: ArrayLike1D | None = None,
         *,
         dB: bool = True,  # noqa: N803
         analog: bool = False,
@@ -256,8 +264,7 @@ class BodePlot(Plot):
             sample_rate = Quantity(sample_rate, "Hz").value
             dt = 2 * pi / sample_rate
             if not isinstance(frequencies, type(None) | int):
-                frequencies = numpy.atleast_1d(frequencies).copy()
-                frequencies *= dt
+                frequencies = numpy.asarray(frequencies) * dt
 
         # parse filter (without digital conversions)
         _, fcomp = parse_filter(filter_)
@@ -316,7 +323,7 @@ class BodePlot(Plot):
         kwargs.setdefault("label", spectrum.name)
 
         # get magnitude
-        mag = numpy.absolute(spectrum.value)
+        mag = numpy.absolute(cast("Array1D", spectrum.value))
         if dB:
             mag = to_db(mag)
             if not power:

@@ -91,7 +91,6 @@ if TYPE_CHECKING:
     from astropy.units import UnitBase
     from astropy.units.typing import QuantityLike
     from numpy.typing import (
-        ArrayLike,
         DTypeLike,
         NDArray,
     )
@@ -99,6 +98,7 @@ if TYPE_CHECKING:
     from ..plot import Plot
     from ..segments import Segment
     from ..typing import (
+        ArrayLike1D,
         GpsLike,
         UnitLike,
     )
@@ -227,12 +227,12 @@ class TimeSeriesBase(Series):
 
     def __new__(
         cls,
-        data: ArrayLike,
+        data: ArrayLike1D,
         unit: UnitLike = None,
         t0: GpsLike | None = None,
         dt: float | Quantity | None = None,
         sample_rate: float | Quantity | None = None,
-        times: ArrayLike | None = None,
+        times: ArrayLike1D | None = None,
         channel: Channel | str | None = None,
         name: str | None = None,
         **kwargs,

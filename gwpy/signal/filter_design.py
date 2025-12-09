@@ -43,10 +43,8 @@ from .window import get_window
 if TYPE_CHECKING:
     from collections.abc import (
         Callable,
-        Collection,
     )
     from typing import (
-        Any,
         Literal,
         SupportsFloat,
         TypeAlias,
@@ -60,22 +58,22 @@ if TYPE_CHECKING:
     )
     from scipy.signal import lti
 
+    from ..typing import (
+        Array1D,
+        ArrayLike1D,
+    )
     from .window import WindowLike
 
-    TArray = TypeVar("TArray", bound=NDArray[Any])
-
-    # Helper types
-    _Array1D: TypeAlias = numpy.ndarray[tuple[int]]
-    _ArrayLike1D = Collection[complex] | _Array1D
+    TArray = TypeVar("TArray", bound=Array1D)
 
     # FIR
-    TapsType: TypeAlias = NDArray
+    TapsType = Array1D
     # IIR
     FilterTypeName: TypeAlias = Literal["butter", "cheby1", "cheby2", "ellip"]
     SosType: TypeAlias = NDArray
-    ZpkCompatible: TypeAlias = tuple[_ArrayLike1D, _ArrayLike1D, float]
-    ZpkType: TypeAlias = tuple[_Array1D, _Array1D, float]
-    BAType: TypeAlias = tuple[_Array1D, _Array1D]
+    ZpkCompatible: TypeAlias = tuple[ArrayLike1D, ArrayLike1D, float]
+    ZpkType: TypeAlias = tuple[Array1D, Array1D, float]
+    BAType: TypeAlias = tuple[Array1D, Array1D]
     IirFilterType: TypeAlias = SosType | ZpkType | BAType
     # generic
     FilterType = TapsType | IirFilterType
@@ -474,7 +472,7 @@ def truncate_impulse(
 
 
 def fir_from_transfer(
-    transfer: numpy.ndarray,
+    transfer: Array1D,
     ntaps: int,
     window: WindowLike = "hann",
     ncorner: int | None = None,
