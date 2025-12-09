@@ -67,6 +67,11 @@ a.image-reference {
 		font-style: normal;
 }
 
+dl.field-list span.classifier {
+		font-style: normal;
+		font-weight: 400;
+}
+
 /*
  * Sphinx-gallery
  */
