@@ -88,11 +88,12 @@ TEST_HDF5_URL = (
     ).as_posix()
 )
 
+SKIP_GWF_BACKEND = pytest.mark.skipif(
+    not HAVE_GWF_BACKEND,
+    reason="no GWF backend",
+)
 GWF_BACKENDS = [
-    pytest.param(
-        None,
-        marks=pytest.mark.skipif(not HAVE_GWF_BACKEND, reason="no GWF backend"),
-    ),
+    pytest.param(None, marks=SKIP_GWF_BACKEND),
     pytest.param("lalframe", marks=pytest.mark.requires("lalframe")),
     pytest.param("framecpp", marks=pytest.mark.requires("LDAStools.frameCPP")),
     pytest.param("framel", marks=pytest.mark.requires("framel")),
@@ -406,6 +407,25 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             array.crop(end=end),
             exclude=["channel"],
         )
+
+    @SKIP_GWF_BACKEND
+    def test_write_gwf_overwrite(self, tmp_path):
+        """Test that writing GWF with overwrite works."""
+        tmp = tmp_path / "test.gwf"
+
+        # Create a file (that mustn't already exist)
+        array = self.create(name="TEST")
+        array.write(tmp, format="gwf", overwrite=False)
+
+        # check that we can't write again without overwrite
+        with pytest.raises(
+            OSError,
+            match="File exists",
+        ):
+            array.write(tmp, format="gwf", overwrite=False)
+
+        # check that overwrite=True is default and works
+        array.write(tmp, format="gwf")
 
     @pytest.mark.parametrize("backend", GWF_BACKENDS)
     def test_read_gwf_end_error(self, backend):
