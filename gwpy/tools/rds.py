@@ -15,25 +15,47 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Create a reduced data set (RDS) using GWpy."""
+r"""Create a reduced data set (RDS) using GWpy.
+
+This tool allows you to create a reduced data set (RDS) by specifying
+a list of channels, a start and end time, and an output file.
+The tool will fetch the data for the specified channels and time range,
+and write it to the output file in the specified format.
+
+Example usage:
+
+    gwpy-rds \
+        -c H1:GWOSC-4KHZ_R1_STRAIN \
+        -c L1:GWOSC-4KHZ_R1_STRAIN \
+        -s 1126259462 \
+        -e 1126259522 \
+        -o gw150914.gwf
+"""
 
 from __future__ import annotations
 
-import argparse
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .. import init_logging
+from .. import __version__
 from ..time import to_gps
 from ..timeseries import TimeSeriesDict
+from . import _utils
 
 if TYPE_CHECKING:
+    from argparse import ArgumentParser
     from collections.abc import Sequence
 
     from ..typing import GpsLike
 
-logger = logging.getLogger(__name__)
+logger = _utils.get_logger(__name__)
+
+DOC_VERSION = "latest" if "dev" in __version__ else __version__
+DOC_EPILOG = rf"""
+For more information, see the online documentation at:
+
+https://gwpy.readthedocs.io/en/{DOC_VERSION}/tools/rds/
+"""
 
 
 def create_rds(
@@ -43,8 +65,6 @@ def create_rds(
     outfile: Path,
     source: Sequence[str] | str | None = None,
     format: str | None = None,  # noqa: A002
-    *,
-    verbose: bool = False,
     **kwargs,
 ) -> None:
     """Create a reduced data set by grabbing data and writing to a file.
@@ -71,9 +91,6 @@ def create_rds(
         Default is inferred from the output file path.
         See `TimeSeriesDict.write.help()` for details on supported formats.
 
-    verbose : `bool`, optional
-        Show debug-level logging output.
-
     kwargs
         Other keyword arguments are passed to `TimeSeriesDict.get`.
 
@@ -85,29 +102,29 @@ def create_rds(
     TimeSeriesDict.write
         For details of how data are written.
     """
-    logger.debug("Getting data")
+    logger.info("Getting data")
     data = TimeSeriesDict.get(
         channels,
         start,
         end,
         source=source,
-        verbose=verbose,
         **kwargs,
     )
-    logger.debug("Received data for %d channels", len(data))
+    logger.info("Received data for %d channels", len(data))
     data.write(
         outfile,
         format=format,
         overwrite=True,
     )
-    logger.debug("Wrote %s", outfile)
+    logger.info("Wrote %s", outfile)
 
 
-def create_parser() -> argparse.ArgumentParser:
+def create_parser() -> ArgumentParser:
     """Create an `argparse.ArgumentParser` for this tool."""
-    parser = argparse.ArgumentParser(
+    parser = _utils.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        epilog=DOC_EPILOG,
+        prog="gwpy-rds",
     )
     parser.add_argument(
         "-s",
@@ -126,9 +143,14 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-c",
         "--channel",
+        "--ifo",
         action="append",
         dest="channels",
-        help="Data channel to request",
+        help=(
+            "Data channel or IFO to request; can be specified multiple times; "
+            "an IFO prefix (e.g., 'H1') can be passed to request the latest "
+            "public strain data from GWOSC"
+        ),
     )
     parser.add_argument(
         "-g",
@@ -158,9 +180,16 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-v",
         "--verbose",
-        action="store_true",
-        default=False,
-        help="Print verbose output",
+        action="count",
+        default=0,
+        help="Increase verbosity; pass once for INFO, twice for DEBUG",
+    )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=__version__,
+        help="Show the version number and exit",
     )
     return parser
 
@@ -171,8 +200,8 @@ def main(args: list[str] | None = None) -> None:
     parser = create_parser()
     opts = parser.parse_args(args=args)
 
-    # Set the logging level
-    logging.getLogger("gwpy").setLevel(logging.DEBUG if opts.verbose else logging.INFO)
+    # Init verbose logging
+    _utils.init_verbose_logging("gwpy", opts.verbose)
 
     # Create the RDS
     create_rds(
@@ -182,10 +211,8 @@ def main(args: list[str] | None = None) -> None:
         opts.output_file,
         opts.source,
         format=opts.format,
-        verbose=opts.verbose,
     )
 
 
 if __name__ == "__main__":
-    init_logging()
     main()
