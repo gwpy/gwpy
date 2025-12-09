@@ -2,6 +2,7 @@
 
 [build-system]
 requires = [
+  "argparse-manpage[setuptools]",
   "setuptools >=77.0.3",
   "setuptools_scm[toml] >=8.3.1",
   "wheel",
@@ -149,6 +150,7 @@ dev = [
   { "include-group" = "docs" },
   { "include-group" = "qa" },
   { "include-group" = "test" },
+  "argparse-manpage >=1.6.0",
   "arrakis >=0.2.0",
   "ciecplib",
   "gssapi >=1.9.0",
@@ -211,6 +213,13 @@ test = [
 ]
 
 # -- tools ---------------------------
+
+# -- argparse-manpage
+
+[tool.build_manpages]
+manpages = [
+  "man/gwpy-rds.1:prog=gwpy-rds:function=create_parser:module=gwpy.tools.rds",
+]
 
 # -- coverage.py
 
