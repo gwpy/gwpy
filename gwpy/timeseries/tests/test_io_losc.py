@@ -55,7 +55,7 @@ def test_read_hdf5_gwosc(gw150914_hdf5):
         format="hdf5.gwosc",
     )
     assert data.span == (1126259447, 1126259479)
-    assert data.name == "Strain"
+    assert data.name == "L1:Strain"
     assert data.max().value == pytest.approx(-4.60035111e-20)
 
 
@@ -65,5 +65,5 @@ def test_read_hdf5_gwosc_state(gw150914_hdf5):
         gw150914_hdf5,
         format="hdf5.gwosc",
     )
-    assert state.name == "quality/simple"
+    assert state.name == "L1:DQmask"
     assert state.max().value == 127

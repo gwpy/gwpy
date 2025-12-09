@@ -223,30 +223,33 @@ def _overlapping(files: Iterable[str]) -> bool:
     return False
 
 
-def _name_from_gwosc_hdf5(f: h5py.HLObject, path: str) -> str:
-    """Forge a name from a path in a GWOSC HDF5 file.
-
-    We want to be as close as possible to the GWF channel name.
+def _name_from_gwosc_hdf5(
+    h5ds: h5py.Dataset,
+    name: str = "GWOSCmeta",
+) -> str:
+    """Construct a channel-like name for a dataset in a GWOSC HDF5 file.
 
     New files (starting at O2 circa 2016-2017) contain a dataset called
-    GWOSCmeta (in the path) that stores the GWF channel (without the ifo name)
-    so we use this to reconstruct the GWF channel.
+    ``GWOSCmeta`` alongside the main dataset that stores the GWF channel
+    (without the ifo name) so we use this to reconstruct the GWF channel.
     It works for strain, DQ and injections.
 
-    For old files, we return the path.
+    For old files, we return the name of the dataset prefixed with the
+    detector prefix from the ``/meta/Detector`` dataset.
     """
+    h5g = h5ds.parent
+
+    # New files store the channel name in GWOSCmeta
     try:
-        # New files store the channel name in GWOSCmeta
-        meta_ds = io_hdf5.find_dataset(f, f"{path}/GWOSCmeta")
-    except KeyError:
-        # GWOSCmeta isn't stored in old files
-        return path
-    channel = meta_ds[()].decode("utf-8")
-    # We can then find the observatory
-    # This is just the letter code, not the number so we assume 1
-    ifo_ds = io_hdf5.find_dataset(f, "meta/Observatory")
+        meta_ds = h5g[name]
+    except KeyError:  # no GWOSCmeta
+        channel = h5ds.name.rsplit("/", maxsplit=1)[-1]
+    else:
+        channel = meta_ds[()].decode("utf-8")
+    # We can then find the detector prefix
+    ifo_ds = io_hdf5.find_dataset(h5g.file, "meta/Detector")
     ifo = ifo_ds[()].decode("utf-8")
-    return f"{ifo}1:{channel}"
+    return f"{ifo}:{channel}"
 
 
 # -- remote data access (the main event)
@@ -596,12 +599,13 @@ def read_gwosc_hdf5(
     dt = Quantity(dataset.attrs["Xspacing"], xunit)
     unit = dataset.attrs["Yunits"]
     # build and return
+    name = _name_from_gwosc_hdf5(dataset)
     return TimeSeries(
         nddata,
         epoch=epoch,
         sample_rate=(1/dt).to("Hertz"),
         unit=unit,
-        name=path.rsplit("/", 1)[1],
+        name=name,
         copy=copy,
     ).crop(start=start, end=end)
 
@@ -663,7 +667,7 @@ def read_gwosc_hdf5_state(
         xunit = parse_unit(bits_ds.attrs["Xunits"])
         dt = Quantity(dt, xunit)
     # Name
-    name = _name_from_gwosc_hdf5(f, path)
+    name = _name_from_gwosc_hdf5(bits_ds)
     return StateVector(
         bits,
         bits=bit_def,
