@@ -20,41 +20,26 @@
 
 from __future__ import annotations
 
-import logging
 import os
 import sys
 import time
-from argparse import (
-    ArgumentDefaultsHelpFormatter,
-    ArgumentParser,
-    RawTextHelpFormatter,
-)
 from typing import TYPE_CHECKING
 
 from matplotlib import use
 
 from .. import __version__
-from ..log import init_logger
+from ..tools import _utils
 from . import PRODUCTS
 
 if TYPE_CHECKING:
     from argparse import (
-        Action,
+        ArgumentParser,
         Namespace,
-        _MutuallyExclusiveGroup,
     )
-    from collections.abc import Iterable
 
 __author__ = "Joseph Areeda <joseph.areeda@ligo.org>"
 
-if __name__ == "__main__":
-    if __spec__ is None:
-        _log_name = "gwpy.cli.gwpy_plot"
-    else:
-        _log_name = __spec__.name
-else:
-    _log_name = __name__
-logger = logging.getLogger(_log_name)
+logger = _utils.get_logger(__name__)
 
 # if launched from a terminal with no display
 # Must be done before modules like pyplot are imported
@@ -77,56 +62,12 @@ Report bugs to https://gitlab.com/gwpy/gwpy/-/issues/.
 """  # noqa: E501
 
 
-def _init_logging(verbosity: int) -> None:
-    """Set up logging."""
-    # If user did not specify verbosity, don't change anything;
-    # this allows the logging level to be configured by other means,
-    # e.g. a config file or environment variable.
-    if not verbosity:
-        return
-    # Otherwise, set the level for the gwpy logger based on verbosity
-    level = max(3 - verbosity, 0) * 10
-    init_logger("gwpy", level=level)
-
-
 # -- init command line ---------------
 
-class HelpFormatter(ArgumentDefaultsHelpFormatter, RawTextHelpFormatter):
-    """Custom help formatter for `gwpy-plot`."""
-
-    def _format_usage(
-        self,
-        usage: str | None,
-        actions: Iterable[Action],
-        groups: Iterable[_MutuallyExclusiveGroup],
-        prefix: str | None,
-    ) -> str:
-        """Format the usage string for the help message."""
-        if prefix is None:
-            prefix = "Usage: "
-        return super()._format_usage(
-            usage,
-            actions,
-            groups,
-            prefix,
-        )
-
-
-class _ArgumentParser(ArgumentParser):
-    """Custom argument parser for `gwpy-plot`."""
-
-    def __init__(self, **kwargs) -> None:
-        """Initialize the argument parser."""
-        super().__init__(**kwargs)
-        self._positionals.title = "Positional arguments"
-        self._optionals.title = "Options"
-
-
-def create_parser() -> _ArgumentParser:
+def create_parser() -> ArgumentParser:
     """Create the command line argument parser for `gwpy-plot`."""
-    parser = _ArgumentParser(
+    parser = _utils.ArgumentParser(
         description=__doc__,
-        formatter_class=HelpFormatter,
         epilog=EPILOG,
     )
     parser.add_argument(
@@ -137,7 +78,7 @@ def create_parser() -> _ArgumentParser:
     )
 
     # set the argument parser to act as the parent
-    parentparser = _ArgumentParser(add_help=False)
+    parentparser = _utils.ArgumentParser(add_help=False)
     parentparser._optionals.title = "Verbosity options"
     parentparser.add_argument(
         "-v",
@@ -165,7 +106,7 @@ def create_parser() -> _ArgumentParser:
             product,
             help=doc.strip().split("\n", maxsplit=1)[0],
             parents=[parentparser],
-            formatter_class=ArgumentDefaultsHelpFormatter,
+            formatter_class=_utils.HelpFormatter,
         )
         product_class.init_cli(subparser)
 
@@ -189,7 +130,7 @@ def main(args: list[str] | None = None) -> int:
 
     # parse the command line
     opts = parse_command_line(args=args)
-    _init_logging(opts.verbose)
+    _utils.init_verbose_logging("gwpy", opts.verbose)
     logger.info("-- Welcome to gwpy-plot v%s --", __version__)
 
     # create a product object
