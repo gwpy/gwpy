@@ -23,15 +23,25 @@ from functools import wraps
 from math import ceil
 
 import numpy
-
-from scipy.signal import get_window as _get_window
+from scipy.signal import (
+    get_window as _get_window,
+    windows as scipy_windows,
+)
 from scipy.special import expit
-try:
-    from scipy.signal.windows._windows import _win_equiv as WINDOWS
-except ImportError:  # scipy < 1.8.0
-    from scipy.signal.windows.windows import _win_equiv as WINDOWS
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+try:
+    from scipy.signal.windows._windows import _WIN_FUNCS
+except ImportError:  # scipy < 1.17
+    try:
+        from scipy.signal.windows._windows import (
+            _win_equiv as WINDOWS,  # noqa: N812
+        )
+    except ImportError:  # scipy < 1.8.0
+        from scipy.signal.windows.windows import _win_equiv as WINDOWS
+else:
+    WINDOWS = {name: func for name, (func, _) in _WIN_FUNCS.items()}
+
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 @wraps(_get_window)
@@ -80,14 +90,20 @@ def canonical_name(name):
     >>> canonical_name('ksr')
     'kaiser'
     """
-    if name.lower() == 'planck':  # make sure to handle the Planck window
-        return 'planck'
-    try:  # use equivalence introduced in scipy 0.16.0
-        # pylint: disable=protected-access
+    # Strip any _symmetric or _periodic suffixes
+    if name.endswith("_symmetric"):
+        name = name[:-10]
+    elif name.endswith("_periodic"):
+        name = name[:-9]
+
+    # Use equivalence introduced in scipy 0.16.0
+    try:
         return WINDOWS[name.lower()].__name__
     except KeyError:  # no match
-        raise ValueError('no window function in scipy.signal equivalent to %r'
-                         % name,)
+        if hasattr(scipy_windows, name):
+            return name
+        msg = f"no window function in scipy.signal equivalent to '{name}'"
+        raise ValueError(msg)
 
 
 # -- recommended overlap ------------------------------------------------------
@@ -201,3 +217,5 @@ def planck(N, nleft=0, nright=0):
                              for k in range(1, nright)])
         w[N-nright:N-1] *= expit(-zright)
     return w
+
+WINDOWS["planck"] = (planck, "OPTIONAL")
