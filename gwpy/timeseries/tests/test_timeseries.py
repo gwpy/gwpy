@@ -40,12 +40,12 @@ from astropy import units
 from numpy import testing as nptest
 from requests.exceptions import HTTPError
 from scipy import signal
+from scipy.signal.windows import tukey
 
 from ...frequencyseries import FrequencySeries, SpectralVariance
 from ...io.gwf import get_backend as get_gwf_backend
 from ...segments import DataQualityFlag, Segment, SegmentList
 from ...signal import filter_design
-from ...signal.window import planck
 from ...spectrogram import Spectrogram
 from ...table import EventTable
 from ...testing import mocks, utils
@@ -1467,8 +1467,8 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         data = TimeSeries(numpy.ones(8192), sample_rate=128)
         masked = data.mask(flag="X1:TEST-FLAG:1")
 
-        # create objects to test against
-        window = planck(128, nleft=64, nright=64)
+        # create tukey window for comparison
+        window = tukey(128, alpha=1.0)
         times = (data.t0 + numpy.arange(data.size) * data.dt).value
         (live, ) = numpy.nonzero([t in LIVETIME.active for t in times])
         (dead, ) = numpy.nonzero([t not in LIVETIME.active for t in times])
@@ -1479,7 +1479,9 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         assert numpy.all(numpy.isfinite(masked.value[live]))
         assert numpy.all(numpy.isnan(masked.value[dead]))
         utils.assert_allclose(masked.value[:4032], numpy.ones(4032))
+        # First segment [0, 32): only right side tapered, use last 64 samples
         utils.assert_allclose(masked.value[4032:4096], window[-64:])
+        # Second segment [34, 34.5): both sides tapered
         utils.assert_allclose(
             masked.value[4352:4416],
             window[:64] * window[-64:],
@@ -1566,6 +1568,7 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
             array.heterodyne(array[0:len(array) // 2])
 
     def test_taper(self):
+        """Test `TimeSeries.taper()`."""
         # create a flat timeseries, then taper it
         t = numpy.linspace(0, 1, 2048)
         data = TimeSeries(numpy.cos(10*numpy.pi*t), times=t, unit="")

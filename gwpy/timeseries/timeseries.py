@@ -33,6 +33,7 @@ from astropy import units
 from astropy.units import Quantity
 from numpy import fft as npfft
 from scipy import signal
+from scipy.signal.windows import tukey
 
 from ..io.registry import UnifiedReadWriteMethod
 from ..segments import (
@@ -47,7 +48,6 @@ from ..signal import (
 )
 from ..signal.window import (
     get_window,
-    planck,
     recommended_overlap,
 )
 from .connect import (
@@ -1740,6 +1740,7 @@ class TimeSeries(TimeSeriesBase):
         query_open_data: bool = False,
         const: float = numpy.nan,
         tpad: float = 0.5,
+        inplace: bool = False,
         **kwargs,
     ) -> Self:
         """Mask portions of this `TimeSeries` that fall within a given list of segments.
@@ -1765,6 +1766,11 @@ class TimeSeries(TimeSeriesBase):
             Length of time (in seconds) over which to taper off data at
             mask segment boundaries.
 
+        inplace : `bool`, optional
+            If `True`, this array will be overwritten with the masked
+            version, otherwise (`False`, default) a modified copy will be
+            returned.
+
         kwargs : `dict`, optional
             Additional keyword arguments to
             `~gwpy.segments.DataQualityFlag.query` or
@@ -1778,9 +1784,9 @@ class TimeSeries(TimeSeriesBase):
 
         Notes
         -----
-        If `tpad` is nonzero, the Planck-taper window is used to smoothly
-        ramp data down to zero over a timescale `tpad` approaching every
-        segment boundary in `deadtime`. However, this does not apply to
+        If `tpad` is nonzero, the Tukey (tapered cosine) window is used to
+        smoothly ramp data down to zero over a timescale `tpad` approaching
+        every segment boundary in `deadtime`. However, this does not apply to
         the left or right bounds of the original `TimeSeries`.
 
         The `deadtime` segment list will always be coalesced and restricted to
@@ -1801,12 +1807,14 @@ class TimeSeries(TimeSeriesBase):
         gwpy.segments.DataQualityFlag.fetch_open_data
             For the method to query data-quality flags from the GWOSC database.
 
-        gwpy.signal.window.planck
-            For the generic Planck-taper window.
+        scipy.signal.windows.tukey
+            For the Tukey (tapered cosine) window used for tapering.
         """
         if deadtime is None and flag is None:
             msg = "either 'deadtime' or 'flag' must be given"
             raise ValueError(msg)
+
+        # Format arguments
         query_method = (
             DataQualityFlag.fetch_open_data if query_open_data
             else DataQualityFlag.query
@@ -1815,8 +1823,14 @@ class TimeSeries(TimeSeriesBase):
         span = SegmentList([self.span])
         sample = self.sample_rate.to("Hz").value
         npad = int(tpad * sample)
-        out = self.copy()
-        # query the requested data-quality flag
+
+        # Prepare output TimeSeries
+        if inplace:
+            out = self
+        else:
+            out = self.copy()
+
+        # Query the requested data-quality flag
         if deadtime is None:
             start = kwargs.pop("start", tstart)
             end = kwargs.pop("end", tend)
@@ -1827,25 +1841,29 @@ class TimeSeries(TimeSeriesBase):
                 **kwargs,
             )
             deadtime = ~dqflag.active if dqflag.isgood else dqflag.active
-        # identify timestamps and mask out
+
+        # Identify timestamps and mask out
         deadtime = (deadtime & span).coalesce()
         timestamps = tstart + numpy.arange(self.size) / sample
         (masked, ) = numpy.nonzero([t in deadtime for t in timestamps])
         out.value[masked] = const
-        # taper off at segment boundaries, being careful not to taper
+
+        # Create tukey window
+        window_full = tukey(2*npad, alpha=1.0)
+
+        # Taper off at segment boundaries, being careful not to taper
         # at either edge of the original TimeSeries, and to cut off
         # the taper window in segments that are too short
         for seg in (span - deadtime):
             k = int((seg[0] - tstart) * sample)
-            N = math.ceil(abs(seg) * sample)
-            nhalf = min(npad, N)
-            window = planck(
-                2*npad,
-                nleft=(int(k != 0) * npad),
-                nright=(int(k + N != self.size) * npad),
-            )
-            out[k:k+nhalf] *= window[:nhalf]
-            out[k+N-nhalf:k+N] *= window[-nhalf:]
+            n = math.ceil(abs(seg) * sample)
+            nhalf = min(npad, n)
+            taper_left = (k != 0)  # taper left edge if not at start
+            taper_right = (k + n != self.size)  # taper right edge if not at end
+            if taper_left:
+                out[k:k+nhalf] *= window_full[:nhalf]
+            if taper_right:
+                out[k+n-nhalf:k+n] *= window_full[-nhalf:]
         return out
 
     @overload
@@ -2095,7 +2113,7 @@ class TimeSeries(TimeSeriesBase):
 
         Examples
         --------
-        To see the effect of the Planck-taper window, we can taper a
+        To see the effect of the Tukey (tapered cosine) window, we can taper a
         sinusoidal `TimeSeries` at both ends:
 
         >>> import numpy
@@ -2118,9 +2136,9 @@ class TimeSeries(TimeSeriesBase):
         the full width of the `TimeSeries`, and will fail if there are no
         stationary points.
 
-        See :func:`~gwpy.signal.window.planck` for the generic Planck taper
-        window, and see :func:`scipy.signal.get_window` for other common
-        window formats.
+        See :func:`scipy.signal.windows.tukey` for the Tukey (tapered cosine)
+        window used for tapering, and see :func:`scipy.signal.get_window`
+        for other common window formats.
         """
         # check window properties
         if side not in ("left", "right", "leftright"):
@@ -2144,7 +2162,15 @@ class TimeSeries(TimeSeriesBase):
         if "right" in side:
             nright = nsamples or out.size - min(mini[-1], maxi[-1])
             nright = min(nright, int(self.size/2))
-        out *= planck(out.size, nleft=nleft, nright=nright)
+
+        # Create tukey window and apply the appropriate portions
+        nmax = max(nleft, nright)
+        if nmax > 0:
+            window_full = tukey(2 * nmax, alpha=1.0)
+            if "left" in side and nleft > 0:
+                out.value[:nleft] *= window_full[:nleft]
+            if "right" in side and nright > 0:
+                out.value[-nright:] *= window_full[-nright:]
         return out
 
     def whiten(
@@ -2339,7 +2365,7 @@ class TimeSeries(TimeSeriesBase):
         cluster_window: float = 0.5,
         **whiten_kwargs,
     ) -> Self:
-        """Remove high amplitude peaks from data using inverse Planck window.
+        """Remove high amplitude peaks from data using inverse Tukey window.
 
         Points will be discovered automatically using a provided threshold
         and clustered within a provided time window.
@@ -2351,7 +2377,7 @@ class TimeSeries(TimeSeriesBase):
             set to zero.
 
         tpad : `int`, optional
-            Half-width time duration (seconds) in which the Planck window
+            Half-width time duration (seconds) in which the Tukey window
             is tapered.
 
         whiten : `bool`, optional
