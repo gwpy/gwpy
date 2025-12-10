@@ -35,11 +35,9 @@ import numpy
 from astropy.units import Quantity
 from numpy import fft as npfft
 from scipy import signal
+from scipy.signal.windows import tukey
 
-from .window import (
-    get_window,
-    planck,
-)
+from .window import get_window
 
 # filter type definitions
 if TYPE_CHECKING:
@@ -396,6 +394,7 @@ def num_taps(
 
 def truncate_transfer(
     transfer: TArray,
+    nsamples: int = 5,
     ncorner: int | None = None,
 ) -> TArray:
     """Smoothly zero the edges of a frequency domain transfer function.
@@ -404,6 +403,9 @@ def truncate_transfer(
     ----------
     transfer : `numpy.ndarray`
         Transfer function to start from, must have at least ten samples.
+
+    nsamples : `int`, optional
+        Number of samples to taper on each side.
 
     ncorner : `int`, optional
         Number of extra samples to zero off at low frequency.
@@ -422,13 +424,18 @@ def truncate_transfer(
 
     See Also
     --------
-    gwpy.signal.window.planck
+    scipy.signal.windows.tukey
     """
     nsamp = transfer.size
     ncorner = ncorner if ncorner else 0
     out = transfer.copy()
     out[0:ncorner] = 0
-    out[ncorner:nsamp] *= planck(nsamp - ncorner, nleft=5, nright=5)
+    # Apply tukey window to taper edges (5 samples on each side)
+    ntaper = nsamp - ncorner
+    if ntaper > 0:
+        window_full = tukey(2 * nsamples, alpha=1.0)
+        out[ncorner:ncorner+nsamples] *= window_full[:nsamples]
+        out[nsamp-nsamples:nsamp] *= window_full[-nsamples:]
     return out
 
 
