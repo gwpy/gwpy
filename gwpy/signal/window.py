@@ -165,7 +165,7 @@ def canonical_name(name: str) -> str:
         if hasattr(scipy_windows, name):
             return name
         msg = f"no window function in scipy.signal equivalent to '{name}'"
-        raise ValueError(msg)
+        raise ValueError(msg) from None
 
 
 # -- recommended overlap -------------
@@ -217,14 +217,14 @@ def recommended_overlap(
     try:
         name = canonical_name(name)
     except KeyError as exc:
-        raise ValueError(str(exc))
+        raise ValueError(str(exc)) from None
     try:
         rov = ROV[name]
     except KeyError:
         msg = f"no recommended overlap for '{name}' window"
-        raise ValueError(msg)
+        raise ValueError(msg) from None
     if nfft:
-        return int(ceil(nfft * rov))
+        return ceil(nfft * rov)
     return rov
 
 
