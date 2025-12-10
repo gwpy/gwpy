@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import warnings
 from math import ceil
 from typing import TYPE_CHECKING
 
@@ -273,6 +274,12 @@ def planck(
     .. [2] Wikipedia, "Window function",
            https://en.wikipedia.org/wiki/Window_function#Planck-taper_window
     """
+    warnings.warn(
+        "The planck window is deprecated and will be removed in a future "
+        "release; consider implementing your own version if needed.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     # construct a Planck taper window
     w = numpy.ones(size)
     if nleft:
