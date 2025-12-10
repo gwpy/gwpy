@@ -24,11 +24,23 @@ from math import ceil
 from typing import TYPE_CHECKING
 
 import numpy
-from scipy.signal import get_window as _get_window
-from scipy.signal.windows._windows import (
-    _win_equiv as WINDOWS,  # noqa: N812
+from scipy.signal import (
+    get_window as _get_window,
+    windows as scipy_windows,
 )
 from scipy.special import expit
+
+try:
+    from scipy.signal.windows._windows import _WIN_FUNCS
+except ImportError:  # scipy < 1.17
+    try:
+        from scipy.signal.windows._windows import (
+            _win_equiv as WINDOWS,  # noqa: N812
+        )
+    except ImportError:  # Cannot find window equivalences
+        WINDOWS = {}
+else:
+    WINDOWS = {name: func for name, (func, _) in _WIN_FUNCS.items()}
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -140,12 +152,18 @@ def canonical_name(name: str) -> str:
     >>> canonical_name("ksr")
     'kaiser'
     """
-    if name.lower() == "planck":  # make sure to handle the Planck window
-        return "planck"
-    try:  # use equivalence introduced in scipy 0.16.0
-        # pylint: disable=protected-access
+    # Strip any _symmetric or _periodic suffixes
+    if name.endswith("_symmetric"):
+        name = name[:-10]
+    elif name.endswith("_periodic"):
+        name = name[:-9]
+
+    # Use equivalence introduced in scipy 0.16.0
+    try:
         return WINDOWS[name.lower()].__name__
     except KeyError:  # no match
+        if hasattr(scipy_windows, name):
+            return name
         msg = f"no window function in scipy.signal equivalent to '{name}'"
         raise ValueError(msg)
 
@@ -270,3 +288,5 @@ def planck(
         ])
         w[size - nright:size - 1] *= expit(-zright)
     return w
+
+WINDOWS["planck"] = (planck, "OPTIONAL")
