@@ -171,3 +171,8 @@ class TestSpectralVariance(_TestArray2D[SpectralVariance]):
         ) == self.data[8][1] * array.unit
         with pytest.raises(IndexError):
             array.value_at(1.6, 5.8)
+
+    @pytest.mark.parametrize("inplace", [True, False])
+    def test_inject(self, inplace):  # noqa: ARG002
+        """Skip test for `SpectralVariance.inject`."""
+        pytest.skip(f"not implemented for {self.TEST_CLASS.__name__}")

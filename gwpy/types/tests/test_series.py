@@ -630,3 +630,46 @@ class TestSeries(_TestArray[SeriesType], Generic[SeriesType]):
             match=r"'Hz' \(frequency\) and 's' \(time\) are not convertible",
         ):
             a.shift("1 Hz")
+
+    @pytest.mark.parametrize("inplace", [True, False])
+    def test_inject(self, inplace: bool):
+        """Test `Series.inject()`."""
+        # Create a series of zeros (supporting multi-dim series)
+        duration = 16
+        ndim = self.TEST_CLASS._ndim
+        nsamp = duration * ndim
+        shape = () if ndim == 1 else (ndim,)
+        zshape = (duration, *shape)
+        data = self.TEST_CLASS(numpy.zeros(zshape))
+
+        # Create a second series to inject into the first
+        ishape = (duration // 2, *shape)
+        start = duration // 4
+        injection = self.TEST_CLASS(
+            numpy.linspace(1, 2, num=nsamp // 2).reshape(ishape),
+            x0=start + .1,  # non-grid-aligned start time
+        )
+
+        # Test that we recover this injection when we add it to data
+        with pytest.warns(
+            UserWarning,
+            match="will round",
+        ):
+            new = data.inject(injection, inplace=inplace)
+        assert new.unit == data.unit
+        assert new.size == data.size
+
+        # Check that the injection is where we expect it to be
+        nzind = new.value.nonzero()
+        assert nzind[0].size == injection.size
+        first = tuple(nzind[i][0] for i in range(len(nzind)))
+        assert first[0] == start * data.dx.value
+
+        # Check that the injected values are correct
+        utils.assert_allclose(new.value[nzind], injection.value.flatten())
+
+        # Check that inplace does what we expect
+        if inplace:
+            assert new is data
+        else:
+            utils.assert_allclose(data.value, numpy.zeros(zshape))

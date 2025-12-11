@@ -1375,13 +1375,23 @@ class Series(Array):
         new.x0 = new.x0 - self.dx * pad_width[0]
         return new
 
-    def inject(self, other: Series) -> Self:
+    def inject(
+        self,
+        other: Series,
+        *,
+        inplace: bool = False,
+    ) -> Self:
         """Add two compatible `Series` along their shared x-axis values.
 
         Parameters
         ----------
         other : `Series`
             A `Series` whose xindex intersects with `self.xindex`.
+
+        inplace : `bool`, optional
+            If `True` (default) perform the operation in-place,
+            modifying the current series.
+            If `False` copy the data to new memory before modifying.
 
         Returns
         -------
@@ -1395,15 +1405,14 @@ class Series(Array):
 
         Notes
         -----
-        If `other.xindex` and `self.xindex` do not intersect, this method will
-        return a copy of `self`. If the series have uniformly offset indices,
-        this method will raise a warning.
+        The offset between ``self`` and ``other`` will be rounded to the nearest
+        sample if they are not exactly aligned.
 
         If `self.xindex` is an array of timestamps, and if `other.xspan` is
         not a subset of `self.xspan`, then `other` will be cropped before
         being adding to `self`.
 
-        Users who wish to taper or window their `Series` should do so before
+        Users may wish to taper or window their `Series` before
         passing it to this method. See :meth:`TimeSeries.taper` and
         :func:`~gwpy.signal.window.planck` for more information.
         """
@@ -1416,18 +1425,23 @@ class Series(Array):
         if (self.xunit == second) and (other.xspan[1] > self.xspan[1]):
             other = other.crop(end=self.xspan[1])
 
+        # find index offset
         ox0 = other.x0.to(self.x0.unit)
         idx = ((ox0 - self.x0) / self.dx).value
         if not idx.is_integer():
             warn(
-                "Series have overlapping xspan but their x-axis values are "
-                "uniformly offset. Returning a copy of the original Series.",
+                "Series have overlapping xspan but their x-axis values are not "
+                "offset by an integer number of samples, "
+                "will round to the nearest sample.",
                 stacklevel=2,
             )
-            return self.copy()
+            idx = round(idx)
 
         # add the Series along their shared samples
-        slice_ = slice(int(idx), int(idx) + other.size)
-        out = self.copy()
+        slice_ = slice(int(idx), int(idx) + other.shape[0])
+        if inplace:
+            out = self
+        else:
+            out = self.copy()
         out.value[slice_] += other.value
         return out
