@@ -17,31 +17,22 @@
 
 """Tests for :mod:`gwpy.tools.rds`."""
 
-import os
-from unittest import mock
-
-import pytest
-
-from gwpy.testing.utils import skip_kerberos_credential
-from gwpy.timeseries import TimeSeries
-from gwpy.tools.rds import main as gwpy_rds
+from ...testing.errors import pytest_skip_network_error
+from ...timeseries import TimeSeries
+from ..rds import main as gwpy_rds
 
 
-@pytest.mark.requires("nds2")
-@skip_kerberos_credential
-@mock.patch.dict(os.environ)
+@pytest_skip_network_error
 def test_rds(tmp_path):
     """Test the ``gwpy-rds`` tool."""
-    # get using NDS2 (if datafind could have been used to start with)
-    os.environ.pop("GWDATAFIND_SERVER", None)
+    ifo = "H1"
     outfile = tmp_path / "test.h5"
     gwpy_rds([
         "-s", "1126259460",
         "-e", "1126259464",
-        "-c", "H1:GDS-CALIB_STRAIN",
+        "-c", ifo,
         "-o", str(outfile),
     ])
-    data = TimeSeries.read(outfile, "H1:GDS-CALIB_STRAIN")
-    hdata = data["H1:GDS-CALIB_STRAIN"]
-    assert len(hdata) == 4 * 16384
-    assert hdata.t0.value == 1126259460
+    data = TimeSeries.read(outfile, ifo)
+    assert len(data) == 4 * 4096
+    assert data.t0.value == 1126259460
