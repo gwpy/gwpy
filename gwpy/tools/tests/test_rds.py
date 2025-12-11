@@ -28,9 +28,9 @@ def test_rds(tmp_path):
     ifo = "H1"
     outfile = tmp_path / "test.h5"
     gwpy_rds([
-        "-s", "1126259460",
-        "-e", "1126259464",
-        "-c", ifo,
+        "1126259460",
+        "1126259464",
+        ifo,
         "-o", str(outfile),
     ])
     data = TimeSeries.read(outfile, ifo)

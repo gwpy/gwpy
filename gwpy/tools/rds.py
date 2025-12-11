@@ -18,7 +18,7 @@
 r"""Create a reduced data set (RDS) using GWpy.
 
 This tool allows you to create a reduced data set (RDS) by specifying
-a list of channels, a start and end time, and an output file.
+a start and end time, a list of channels, and an output file.
 The tool will fetch the data for the specified channels and time range,
 and write it to the output file in the specified format.
 
@@ -127,29 +127,31 @@ def create_parser() -> ArgumentParser:
         prog="gwpy-rds",
     )
     parser.add_argument(
-        "-s",
-        "--start",
-        required=True,
+        "start",
         type=to_gps,
-        help="Start time of data request",
-    )
-    parser.add_argument(
-        "-e",
-        "--end",
-        required=True,
-        type=to_gps,
-        help="End time of data request",
-    )
-    parser.add_argument(
-        "-c",
-        "--channel",
-        "--ifo",
-        action="append",
-        dest="channels",
         help=(
-            "Data channel or IFO to request; can be specified multiple times; "
-            "an IFO prefix (e.g., 'H1') can be passed to request the latest "
-            "public strain data from GWOSC"
+            "Start time of data request. "
+            "Can be specified as a GPS time, date/time string, or relative time; "
+            "please ensure that date strings containing spaces are quoted."
+        ),
+    )
+    parser.add_argument(
+        "end",
+        type=to_gps,
+        help=(
+            "End time of data request. "
+            "Can be specified as a GPS time, date/time string, or relative time; "
+            "please ensure that date strings containing spaces are quoted."
+        ),
+    )
+    parser.add_argument(
+        "channels",
+        nargs="+",
+        metavar="channel|ifo",
+        help=(
+            "Data channel or IFO to request; can be specified multiple times. "
+            "An IFO prefix (e.g., 'H1') can be passed to request public strain "
+            "data from GWOSC."
         ),
     )
     parser.add_argument(
@@ -159,22 +161,23 @@ def create_parser() -> ArgumentParser:
         help=(
             "Source from which to get data. "
             "See `help(TimeSeries.get)` for documentation on the "
-            "supported sources"
+            "supported sources."
         ),
     )
     parser.add_argument(
         "-o",
         "--output-file",
-        required=True,
+        default="gwpy-rds.h5",
         type=Path,
-        help="Output file in which to write data",
+        help="Output file in which to write data.",
     )
     parser.add_argument(
         "-f",
         "--format",
         help=(
             "Format in which to write output data. "
-            "Default is inferred from -o/--output-file"
+            "Default is inferred from -o/--output-file. "
+            "See `help(TimeSeriesDict.write)` for supported formats."
         ),
     )
     parser.add_argument(
@@ -182,14 +185,14 @@ def create_parser() -> ArgumentParser:
         "--verbose",
         action="count",
         default=0,
-        help="Increase verbosity; pass once for INFO, twice for DEBUG",
+        help="Increase verbosity; pass once for INFO, twice for DEBUG.",
     )
     parser.add_argument(
         "-V",
         "--version",
         action="version",
         version=__version__,
-        help="Show the version number and exit",
+        help="Show the version number and exit.",
     )
     return parser
 
