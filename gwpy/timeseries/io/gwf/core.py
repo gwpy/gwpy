@@ -27,14 +27,19 @@ the same subpackage.
 
 from __future__ import annotations
 
+import warnings
 from functools import partial
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ....io import (
     cache as io_cache,
     gwf as io_gwf,
 )
-from ....io.utils import FileLike
+from ....io.utils import (
+    FileLike,
+    file_path,
+)
 from ....segments import Segment
 from ....time import to_gps
 from ....utils.decorators import deprecated_function
@@ -47,7 +52,6 @@ from ... import (
 from .utils import _channel_dict_kwarg
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from typing import IO
 
     from ....typing import GpsLike
@@ -411,6 +415,9 @@ def write_timeseriesdict(
     compression: str | int | None = None,
     compression_level: int | None = None,
     backend: str | None = None,
+    *,
+    overwrite: bool = True,
+    append: bool = False,
 ) -> None:
     """Write a `TimeSeriesDict` in GWF format.
 
@@ -468,7 +475,40 @@ def write_timeseriesdict(
     backend : `str`, optional
         GWF backend to use when reading.
         Default is 'frameCPP'.
+
+    overwrite : `bool`, optional
+        If `True` (default), overwrite existing files.
+
+    append : `bool`, optional
+        DO NOT USE. This option is not supported for writing GWF files;
+        the entire file will be overwritten.
+        This option is only present for API consistency with other
+        GWpy I/O functions.
+
+    Raises
+    ------
+    OSError
+        If the target file exists and neither ``overwrite`` nor ``append``
+        is `True`.
     """
+    try:
+        target_path = Path(file_path(target))
+    except ValueError:
+        # not a file path, so cannot check for existence, that's fine
+        pass
+    else:
+        _exists = target_path.exists()
+        if _exists and not overwrite:
+            msg = f"File exists: {target_path}"
+            raise OSError(msg)
+        if _exists and append:
+            warnings.warn(
+                "append=True is not supported for writing GWF files; "
+                "the entire file will be overwritten.",
+                category=UserWarning,
+                stacklevel=2,
+            )
+
     # get backend function
     write_func = io_gwf.get_backend_function(
         "write",
@@ -512,6 +552,9 @@ def write_timeseries(
     compression: str | int | None = None,
     compression_level: int | None = None,
     backend: str | None = None,
+    *,
+    overwrite: bool = True,
+    append: bool = False,
 ) -> None:
     """Write a `TimeSeries` to disk in GWF format.
 
@@ -570,6 +613,21 @@ def write_timeseries(
     backend : `str`, optional
         GWF backend to use when reading.
         Default is 'frameCPP'.
+
+    overwrite : `bool`, optional
+        If `True` (default), overwrite existing files.
+
+    append : `bool`, optional
+        DO NOT USE. This option is not supported for writing GWF files;
+        the entire file will be overwritten.
+        This option is only present for API consistency with other
+        GWpy I/O functions.
+
+    Raises
+    ------
+    OSError
+        If the target file exists and neither ``overwrite`` nor ``append``
+        is `True`.
     """
     write_timeseriesdict(
         series.DictClass({None: series}),
@@ -582,6 +640,8 @@ def write_timeseries(
         compression=compression,
         compression_level=compression_level,
         backend=backend,
+        overwrite=overwrite,
+        append=append,
     )
 
 

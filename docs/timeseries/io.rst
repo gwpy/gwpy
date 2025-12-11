@@ -189,7 +189,8 @@ To write data held in any of the :mod:`gwpy.timeseries` classes to a GWF file, s
 
     >>> data.write('output.gwf')
 
-**If the output file already exists it will be overwritten.**
+**If the output file already exists it will be overwritten,** use ``overwrite=False`` to
+prevent this (an `OSError` will be raised).
 
 .. note::
 
