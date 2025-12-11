@@ -22,6 +22,8 @@ from __future__ import annotations
 import argparse
 import inspect
 import logging
+import os
+import textwrap
 from argparse import (
     ArgumentDefaultsHelpFormatter,
     RawDescriptionHelpFormatter,
@@ -35,10 +37,24 @@ if TYPE_CHECKING:
         Action,
         _MutuallyExclusiveGroup,
     )
-    from collections.abc import Iterable
+    from collections.abc import (
+        Iterable,
+        Mapping,
+    )
     from logging import Logger
+    from typing import TypeVar
+
+    _ActionT = TypeVar("_ActionT", bound=Action)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+
+def is_manpage() -> bool:
+    """Return `True` if being called to generate a man page."""
+    return any(
+        "argparse_manpage" in frame.filename
+        for frame in inspect.stack()
+    )
 
 
 def get_logger(name: str, fallback: str = "__main__") -> logging.Logger:
@@ -99,12 +115,30 @@ class ArgumentParser(argparse.ArgumentParser):
 
     def __init__(self, **kwargs) -> None:
         """Initialize the argument parser."""
-        # Options for argparse-manpage
+        # Extract docstring parameters
+        description = kwargs.pop("description", None)
+        epilog = kwargs.pop("epilog", None)
+        examples: Mapping[str, str | list[str]] | None = kwargs.pop("examples", {})
         manpage: list[dict[str, str]] = kwargs.pop("manpage", [])
+
+        # Format the docstring
+        if description is not None:
+            description, epilog, manpage_sections = (
+                self._compile_docstring(
+                    description,
+                    epilog,
+                    examples,
+                )
+            )
+            manpage.extend(manpage_sections)
 
         # Initialize the base class
         kwargs.setdefault("formatter_class", HelpFormatter)
-        super().__init__(**kwargs)
+        super().__init__(
+            description=description,
+            epilog=epilog,
+            **kwargs,
+        )
 
         # Rename the argument groups to use title case
         self._positionals.title = "Positional arguments"
@@ -112,3 +146,64 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Add manpage generation if requested
         self._manpage = manpage
+
+    def _format_examples(self, examples: Mapping[str, str | list[str]]) -> str:
+        """Format examples for the docstring."""
+        # Manpage format
+        if is_manpage():
+            lines: list[str] = []
+            for desc, cmd in examples.items():
+                if isinstance(cmd, str):
+                    cmd = cmd.strip().splitlines()
+                lines.extend((
+                    r".IP \[bu]",
+                    fr"\fB{desc}:\fR",
+                    ".sp",
+                    r".RS 4",
+                    ".nf",
+                    *(f"$ {line}" for line in cmd),
+                    ".fi",
+                    r".RE",
+                ))
+            return os.linesep.join(lines)
+        # Argparse help format
+        indnt = "  "
+        lines = ["Examples:"]
+        for desc, cmd in examples.items():
+            lines.extend((
+                "",
+                textwrap.indent(f"{desc}:", indnt),
+                "",
+                textwrap.indent(f"$ {cmd}", indnt * 2),
+            ))
+        return os.linesep.join(lines)
+
+    def _compile_docstring(
+        self,
+        description: str,
+        epilog: str | None,
+        examples: Mapping[str, str | list[str]] | None,
+    ) -> tuple[str, str | None, list[dict[str, str]]]:
+        """Compile the docstring for this tool, either for a manual page, or --help."""
+        examples_doc = self._format_examples(examples or {})
+        if examples and is_manpage():
+            if epilog:
+                description += os.linesep * 2 + epilog
+            manpage_sections = [
+                {
+                    "heading": "examples",
+                    "content": examples_doc,
+                },
+            ]
+            return description, "", manpage_sections
+        if examples and epilog:
+            epilog = examples_doc + os.linesep * 2 + epilog
+        elif examples:
+            epilog = examples_doc
+        return description, epilog, []
+
+    def _add_action(self, action: _ActionT) -> _ActionT:
+        """Add an action to the parser, combining groups for manpages."""
+        if is_manpage():
+            return self._optionals._add_action(action)
+        return super()._add_action(action)
