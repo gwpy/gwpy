@@ -90,7 +90,11 @@ def test_recommended_overlap_error():
 
 def test_planck():
     series = numpy.ones(64)
-    wseries = series * window.planck(64, nleft=5, nright=5)
+    with pytest.warns(
+        DeprecationWarning,
+        match="planck",
+    ):
+        wseries = series * window.planck(64, nleft=5, nright=5)
     assert wseries[0] == 0
     assert wseries[-1] == 0
     utils.assert_allclose(wseries[5:59], series[5:59])

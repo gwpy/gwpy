@@ -20,15 +20,28 @@
 
 from __future__ import annotations
 
+import warnings
 from math import ceil
 from typing import TYPE_CHECKING
 
 import numpy
-from scipy.signal import get_window as _get_window
-from scipy.signal.windows._windows import (
-    _win_equiv as WINDOWS,  # noqa: N812
+from scipy.signal import (
+    get_window as _get_window,
+    windows as scipy_windows,
 )
 from scipy.special import expit
+
+try:
+    from scipy.signal.windows._windows import _WIN_FUNCS
+except ImportError:  # scipy < 1.17
+    try:
+        from scipy.signal.windows._windows import (
+            _win_equiv as WINDOWS,  # noqa: N812
+        )
+    except ImportError:  # Cannot find window equivalences
+        WINDOWS = {}
+else:
+    WINDOWS = {name: func for name, (func, _) in _WIN_FUNCS.items()}
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -140,14 +153,20 @@ def canonical_name(name: str) -> str:
     >>> canonical_name("ksr")
     'kaiser'
     """
-    if name.lower() == "planck":  # make sure to handle the Planck window
-        return "planck"
-    try:  # use equivalence introduced in scipy 0.16.0
-        # pylint: disable=protected-access
+    # Strip any _symmetric or _periodic suffixes
+    if name.endswith("_symmetric"):
+        name = name[:-10]
+    elif name.endswith("_periodic"):
+        name = name[:-9]
+
+    # Use equivalence introduced in scipy 0.16.0
+    try:
         return WINDOWS[name.lower()].__name__
     except KeyError:  # no match
+        if hasattr(scipy_windows, name):
+            return name
         msg = f"no window function in scipy.signal equivalent to '{name}'"
-        raise ValueError(msg)
+        raise ValueError(msg) from None
 
 
 # -- recommended overlap -------------
@@ -199,14 +218,14 @@ def recommended_overlap(
     try:
         name = canonical_name(name)
     except KeyError as exc:
-        raise ValueError(str(exc))
+        raise ValueError(str(exc)) from None
     try:
         rov = ROV[name]
     except KeyError:
         msg = f"no recommended overlap for '{name}' window"
-        raise ValueError(msg)
+        raise ValueError(msg) from None
     if nfft:
-        return int(ceil(nfft * rov))
+        return ceil(nfft * rov)
     return rov
 
 
@@ -255,6 +274,12 @@ def planck(
     .. [2] Wikipedia, "Window function",
            https://en.wikipedia.org/wiki/Window_function#Planck-taper_window
     """
+    warnings.warn(
+        "The planck window is deprecated and will be removed in a future "
+        "release; consider implementing your own version if needed.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     # construct a Planck taper window
     w = numpy.ones(size)
     if nleft:
@@ -270,3 +295,5 @@ def planck(
         ])
         w[size - nright:size - 1] *= expit(-zright)
     return w
+
+WINDOWS["planck"] = (planck, "OPTIONAL")
