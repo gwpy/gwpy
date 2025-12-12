@@ -51,7 +51,8 @@ def test_query_director():
         "osdf:///igwn/ligo",
     )
     assert len(urls) >= 1
-    assert all(u.endswith(":8443/igwn/ligo") for u in urls)
+    for u in urls:
+        assert u.endswith(":8443/igwn/ligo")
     assert needauth is True
     # /igwn namespace doesn't get issuer info
     assert "issuer" not in authkw
