@@ -20,6 +20,7 @@
 from unittest import mock
 
 import pytest
+from urllib3.util import parse_url
 
 from ...testing.errors import pytest_skip_flaky_network
 from .. import pelican as io_pelican
@@ -51,7 +52,9 @@ def test_query_director():
         "osdf:///igwn/ligo",
     )
     assert len(urls) >= 1
-    assert all(u.endswith(":8443/igwn/ligo") for u in urls)
+    for u in urls:
+        parsed = parse_url(u)
+        assert parsed.path == "/igwn/ligo"
     assert needauth is True
     # /igwn namespace doesn't get issuer info
     assert "issuer" not in authkw
