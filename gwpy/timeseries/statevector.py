@@ -85,11 +85,7 @@ if TYPE_CHECKING:
         Quantity,
         Unit,
     )
-    from numpy.typing import (
-        ArrayLike,
-        DTypeLike,
-        NDArray,
-    )
+    from numpy.typing import DTypeLike
 
     from ..plot import Plot
     from ..segments import (
@@ -97,6 +93,7 @@ if TYPE_CHECKING:
         DataQualityFlag,
     )
     from ..typing import (
+        ArrayLike1D,
         GpsLike,
         UnitLike,
     )
@@ -236,11 +233,11 @@ class StateTimeSeries(TimeSeriesBase):
 
     def __new__(
         cls,
-        data: NDArray | list | tuple,
+        data: ArrayLike1D,
         t0: GpsLike | None = None,
         dt: float | Quantity | None = None,
         sample_rate: float | Quantity | None = None,
-        times: ArrayLike | None = None,
+        times: ArrayLike1D | None = None,
         channel: Channel | str | None = None,
         name: str | None = None,
         **kwargs,
@@ -250,9 +247,7 @@ class StateTimeSeries(TimeSeriesBase):
             msg = f"{cls.__name__} does not accept keyword argument 'unit'"
             raise TypeError(msg)
 
-        if isinstance(data, list | tuple):
-            data = numpy.asarray(data)
-
+        data = numpy.asarray(data)
         if not isinstance(data, cls):
             data = data.astype(bool, copy=False)
 
@@ -675,12 +670,12 @@ class StateVector(TimeSeriesBase):
 
     def __new__(
         cls,
-        data: ArrayLike,
+        data: ArrayLike1D,
         bits: BitsInput | None = None,
         t0: GpsLike | None = None,
         dt: float | Quantity | None = None,
         sample_rate: float | Quantity | None = None,
-        times: ArrayLike | None = None,
+        times: ArrayLike1D | None = None,
         channel: Channel | str | None = None,
         name: str | None = None,
         **kwargs,

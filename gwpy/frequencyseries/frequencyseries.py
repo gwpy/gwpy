@@ -46,16 +46,13 @@ if TYPE_CHECKING:
         Quantity,
         UnitBase,
     )
-    from numpy.typing import (
-        ArrayLike,
-        NDArray,
-    )
 
     from ..detector import Channel
     from ..plot import Plot
     from ..signal.filter_design import FilterType
     from ..timeseries import TimeSeries
     from ..typing import (
+        ArrayLike1D,
         GpsLike,
         UnitLike,
     )
@@ -128,11 +125,11 @@ class FrequencySeries(Series):
 
     def __new__(
         cls,
-        data: ArrayLike,
+        data: ArrayLike1D,
         unit: UnitLike = None,
         f0: Quantity | float | None = None,
         df: Quantity | float | None = None,
-        frequencies: ArrayLike | None = None,
+        frequencies: ArrayLike1D | None = None,
         name: str | None = None,
         epoch: GpsLike | None = None,
         channel: Channel | str | None = None,
@@ -233,8 +230,8 @@ class FrequencySeries(Series):
 
     def zpk(
         self,
-        zeros: NDArray,
-        poles: NDArray,
+        zeros: ArrayLike1D,
+        poles: ArrayLike1D,
         gain: float,
         *,
         analog: bool = True,

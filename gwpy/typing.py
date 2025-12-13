@@ -19,11 +19,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from typing import (
     Self,
     TypeAlias,
 )
 
+import numpy
 from astropy.units import UnitBase
 from astropy.units.typing import QuantityLike
 from numpy.typing import (
@@ -36,8 +38,20 @@ from .time import (
     GpsType,
 )
 
-# Gps types
+__all__ = [
+    "Array1D",
+    "ArrayLike1D",
+    "GpsLike",
+    "UnitLike",
+]
+
+#: Type alias for GPS-compatible or GPS-like types.
 GpsLike: TypeAlias = GpsType | GpsConvertible
 
-# Unit types
+#: Type alias for Unit-like types.
 UnitLike: TypeAlias = UnitBase | str | None
+
+#: Type alias for 1-dimensional numpy arrays.
+Array1D: TypeAlias = numpy.ndarray[tuple[int]]
+#: Type alias for 1-dimensional array-like types.
+ArrayLike1D = Collection[complex] | Array1D

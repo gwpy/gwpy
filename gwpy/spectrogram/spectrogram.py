@@ -56,14 +56,18 @@ if TYPE_CHECKING:
     )
 
     from astropy.units import Quantity, UnitBase
-    from numpy.typing import ArrayLike, NDArray
+    from numpy.typing import ArrayLike
 
     from ..detector import Channel
     from ..frequencyseries import SpectralVariance
     from ..plot import Plot
     from ..signal.filter_design import FilterType
     from ..types.sliceutils import SliceLike
-    from ..typing import GpsLike, UnitLike
+    from ..typing import (
+        ArrayLike1D,
+        GpsLike,
+        UnitLike,
+    )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org"
 
@@ -180,8 +184,8 @@ class Spectrogram(Array2D):
         dt: Quantity | float | None = None,
         f0: Quantity | float | None = None,
         df: Quantity | float | None = None,
-        times: ArrayLike | None = None,
-        frequencies: ArrayLike | None = None,
+        times: ArrayLike1D | None = None,
+        frequencies: ArrayLike1D | None = None,
         name: str | None = None,
         channel: Channel | str | None = None,
         **kwargs,
@@ -451,8 +455,8 @@ class Spectrogram(Array2D):
 
     def zpk(
         self,
-        zeros: NDArray,
-        poles: NDArray,
+        zeros: ArrayLike1D,
+        poles: ArrayLike1D,
         gain: float,
         *,
         analog: bool = True,
@@ -549,7 +553,7 @@ class Spectrogram(Array2D):
 
     def variance(
         self,
-        bins: NDArray | None = None,
+        bins: ArrayLike1D | None = None,
         low: float | None = None,
         high: float | None = None,
         nbins: int = 500,
