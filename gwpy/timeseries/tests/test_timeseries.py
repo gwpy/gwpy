@@ -124,7 +124,7 @@ GWOSC_GW150914_SEGMENT_32: Segment[float] = Segment(
     GWOSC_GW150914 + 16,
 )
 GWOSC_GW150914_DQ_NAME = {
-    "hdf5": "quality/simple",
+    "hdf5": "L1:DQmask",
     "gwf": "L1:GWOSC-4KHZ_R1_DQMASK",
 }
 GWOSC_GW150914_DQ_BITS = {
@@ -148,7 +148,7 @@ GWOSC_GW150914_DQ_BITS = {
     ],
 }
 GWOSC_GW150914_INJ_NAME = {
-    "hdf5": "quality/injections",
+    "hdf5": "L1:Injmask",
     "gwf": "L1:GWOSC-4KHZ_R1_INJMASK",
 }
 GWOSC_GW150914_INJ_BITS = {
