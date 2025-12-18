@@ -82,25 +82,31 @@ ruff:
 
 mypy:
   extends: .qa
-  image: python
+  image: ghcr.io/astral-sh/uv:debian
+  variables:
+    UV_MANAGED_PYTHON: 1
   script:
-    - python -m pip install
+    # Install the project, its dependencies, and mypy itself in a venv
+    - uv venv --seed
+    - uv pip install
+          -e . --group dev
           mypy
           mypy-gitlab-code-quality
-    # run mypy and print to console
+    - . .venv/bin/activate
+    # Run mypy and print to console
     - python -m mypy
           $[[ inputs.mypy_options ]]
           --install-types
           --non-interactive
           $[[ inputs.project_dir ]]
       || exitcode="$?"
-    # run mypy again and format as code quality report
+    # Run mypy again and format as code quality report
     - python -m mypy
           $[[ inputs.mypy_options ]]
           --no-error-summary
           $[[ inputs.project_dir ]]
       | mypy-gitlab-code-quality > gl-mypy-code-quality.json || true
-    # propagate fatal exitcode
+    # Propagate fatal exitcode
     - if [ "${exitcode:-0}" -gt 1 ]; then exit ${exitcode}; fi
   artifacts:
     reports:
