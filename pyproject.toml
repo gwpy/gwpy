@@ -195,8 +195,8 @@ docs = [
 
 # quality assurance
 qa = [
-  "mypy",
   "ruff",
+  "ty",
 ]
 
 # test suite
@@ -245,18 +245,6 @@ omit = [
 ]
 # print report with one decimal point
 precision = 1
-
-# -- mypy
-
-[tool.mypy]
-check_untyped_defs = true
-exclude = [
-  "^docs/",
-  "^examples/",
-  "^worktrees/",
-]
-follow_untyped_imports = true
-mypy_path = "typings"
 
 # -- pip2conda
 
@@ -440,3 +428,17 @@ include = [
 [tool.setuptools_scm]
 write_to = "gwpy/_version.py"
 version_scheme = "release-branch-semver"
+
+# -- ty
+
+[tool.ty.environment]
+extra-paths = [
+  "./typings",
+]
+
+[tool.ty.src]
+exclude = [
+  "docs/",
+  "examples/",
+  "worktrees/",
+]
