@@ -110,11 +110,10 @@ rstcheck:
   extends:
     - .python_base
     - .qa
-  image: python
+  image: ghcr.io/astral-sh/uv:debian
   script:
-    - python -m pip install rstcheck[sphinx]
-    - python .gitlab/ci/rstcheck.py > rstcheck.json
-    - python -m json.tool rstcheck.json
+    - uvx --with rstcheck[sphinx] python .gitlab/ci/rstcheck.py > gl-rstcheck.json
+    - uvx python -m json.tool gl-rstcheck.json
   artifacts:
     reports:
-      codequality: rstcheck.json
+      codequality: gl-rstcheck.json
