@@ -64,18 +64,15 @@ semgrep-sast:
 
 ruff:
   extends: .qa
-  image: python
+  image: ghcr.io/astral-sh/ruff:alpine
   script:
-    - python -m pip install
-          ruff
-          $[[ inputs.requirements ]]
-    - python -m ruff check
-          $[[ inputs.ruff_options ]]
+    - ruff check
           $[[ inputs.project_dir ]]
+          $[[ inputs.ruff_options ]]
           --exit-zero
-    - python -m ruff check
-          $[[ inputs.ruff_options ]]
+    - ruff check
           $[[ inputs.project_dir ]]
+          $[[ inputs.ruff_options ]]
           --exit-zero
           --output-format gitlab
           --output-file gl-ruff.json
