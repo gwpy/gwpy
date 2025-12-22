@@ -12,6 +12,10 @@ spec:
 
 .macos:
   rules:
+    # Only run macOS jobs inside the GWpy namespace where
+    # macOS runners are available
+    - if: '$CI_PROJECT_ROOT_NAMESPACE != "gwpy"'
+      when: never
     - if: '$CI_COMMIT_MESSAGE =~ /\[skip macos\]/'
       when: never
   tags:
