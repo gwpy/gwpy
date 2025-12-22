@@ -196,6 +196,7 @@ docs = [
 # quality assurance
 qa = [
   "ruff",
+  "scipy-stubs",
   "ty",
 ]
 
