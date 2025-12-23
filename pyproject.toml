@@ -142,6 +142,11 @@ sql = [
   "sqlalchemy",
 ]
 
+# Type checking
+typing = [
+  "optype[numpy]",
+]
+
 [dependency-groups]
 # development environments
 # NOTE: this should include everything in all of the other groups,
@@ -196,6 +201,7 @@ docs = [
 
 # quality assurance
 qa = [
+  "optype[numpy]",
   "rstcheck",
   "ruff",
   "scipy-stubs",
