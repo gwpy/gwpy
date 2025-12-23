@@ -28,11 +28,11 @@ def test_rds(tmp_path):
     ifo = "H1"
     outfile = tmp_path / "test.h5"
     gwpy_rds([
-        "-s", "1126259460",
-        "-e", "1126259464",
-        "-c", ifo,
+        "1126259460",
+        "1126259464",
+        ifo,
         "-o", str(outfile),
     ])
     data = TimeSeries.read(outfile, ifo)
-    assert len(data) == 4 * 4096
-    assert data.t0.value == 1126259460
+    assert data.name == "H1:Strain"
+    assert data.span == (1126259460, 1126259464)
