@@ -22,6 +22,10 @@ spec:
       default: ""
       description: "Extra options to pass to mypy"
       type: string
+    python_version:
+      default: "3.13"
+      description: "Python version to use for testing"
+      type: string
 
 ---
 
@@ -87,7 +91,7 @@ ty:
     UV_MANAGED_PYTHON: 1
   script:
     # Install the project
-    - uv venv
+    - uv venv --python $[[ inputs.python_version ]]
     - uv pip install -e . --group dev
     # Run ty and format for gitlab
     - uvx ty check
