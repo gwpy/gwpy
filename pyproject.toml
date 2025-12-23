@@ -195,6 +195,7 @@ docs = [
 
 # quality assurance
 qa = [
+  "rstcheck",
   "ruff",
   "scipy-stubs",
   "ty",
