@@ -104,4 +104,7 @@ compat_experimental:
 # (most likely to highlight issues)
 dependency-scanning:
   needs: ["compat_minimum"]
-  rules: !reference [.compat, rules]
+  rules:
+    - if: '$GITLAB_FEATURES !~ /\bdependency_scanning\b/'
+      when: never
+    - !reference [.compat, rules]
