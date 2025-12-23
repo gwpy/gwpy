@@ -60,10 +60,8 @@ if TYPE_CHECKING:
     from astropy.units.typing import QuantityLike
     from numpy.typing import DTypeLike
 
-    from ..typing import (
-        GpsLike,
-        UnitLike,
-    )
+    from ..time import SupportsToGps
+    from ..typing import UnitLike
     from .sliceutils import SliceLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -142,7 +140,7 @@ class Array(Quantity):
         unit: UnitBase | str | None = None,
         # new attrs
         name: str | None = None,
-        epoch: GpsLike | None = None,
+        epoch: SupportsToGps | None = None,
         channel: Channel | str | None = None,
         # ndarray attrs
         dtype: DTypeLike = None,
@@ -377,7 +375,7 @@ class Array(Quantity):
             return self._epoch
 
     @epoch.setter
-    def epoch(self, epoch: GpsLike | None) -> None:
+    def epoch(self, epoch: SupportsToGps | None) -> None:
         if epoch is None:
             self._epoch = None
         else:

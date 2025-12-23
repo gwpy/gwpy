@@ -69,8 +69,7 @@ if TYPE_CHECKING:
 
     import sqlalchemy
 
-    from gwpy.typing import GpsLike
-
+    from ...time import SupportsToGps
     from .sql import WhereExpression
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -108,8 +107,8 @@ DYNAMIC_COLUMN_INPUT: dict[str, set[str]] = {
 # -- HACR DB integration -------------
 
 def get_database_names(
-    start: GpsLike,
-    end: GpsLike,
+    start: SupportsToGps,
+    end: SupportsToGps,
 ) -> list[str]:
     """Return the list of HACR database names covering the given interval.
 
@@ -154,7 +153,7 @@ def get_database_names(
 
 
 def get_hacr_channels(
-    gps: GpsLike | None = None,
+    gps: SupportsToGps | None = None,
     database: str | None = None,
     engine: sqlalchemy.Engine | None = None,
     **kwargs,
@@ -213,8 +212,8 @@ def get_hacr_channels(
 def get_hacr_triggers(
     # query options
     channel: str | None = None,
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     columns: Iterable[str] | None = None,
     tablename: str = "mhacr",
     process_id: int | None = None,
@@ -437,8 +436,8 @@ def _process_id_query(
 
 def _query_database(
     engine: sqlalchemy.Engine,
-    start: GpsLike | None,
-    end: GpsLike | None,
+    start: SupportsToGps | None,
+    end: SupportsToGps | None,
     channel: str | None,
     process_id: int | None,
     columns: Iterable[str] | None,
@@ -491,8 +490,8 @@ def _query_database(
 
 def _query_hacr(
     engine: sqlalchemy.Engine,
-    start: GpsLike | None,
-    end: GpsLike | None,
+    start: SupportsToGps | None,
+    end: SupportsToGps | None,
     process_id: int | None,
     tablename: str,
     columns: Iterable[str] | None,

@@ -35,8 +35,10 @@ if TYPE_CHECKING:
 
     from igwn_ligolw import ligolw
 
-    from ...time import LIGOTimeGPS
-    from ...typing import GpsLike
+    from ...time import (
+        LIGOTimeGPS,
+        SupportsToGps,
+    )
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -61,7 +63,7 @@ def _get_time(time: ligolw.Element) -> LIGOTimeGPS:
 
 def _match_time(
     elem: ligolw.Element,
-    gps: LIGOTimeGPS,
+    gps: SupportsToGps,
 ) -> bool:
     """Return `True` if the ``elem``'s ``<Time>`` matches ``gps``.
 
@@ -77,7 +79,7 @@ def _match_time(
 def _match_array(
     xmldoc: ligolw.Document,
     name: str | None = None,
-    epoch: LIGOTimeGPS | None = None,
+    epoch: SupportsToGps | None = None,
     **params,
 ) -> ligolw.Array:
     """Return the LIGO_LW ``<Array>`` element that matches the request.
@@ -176,7 +178,7 @@ def _update_metadata_from_ligolw(
 def read_series(
     source: str | Path | IO | ligolw.Document,
     name: str | None = None,
-    epoch: GpsLike | None = None,
+    epoch: SupportsToGps | None = None,
     contenthandler: ligolw.ContentHandler | None = None,
     **params,
 ) -> Series:

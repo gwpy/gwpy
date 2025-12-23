@@ -31,6 +31,7 @@ from typing import (
     TYPE_CHECKING,
     SupportsFloat,
     cast,
+    overload,
 )
 
 from astropy.time import Time
@@ -38,11 +39,12 @@ from astropy.units import Quantity
 from dateparser import parse as dateparser_parse
 
 from . import LIGOTimeGPS
+from ._ligotimegps import LIGOTimeGPSLike
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-GpsConvertible = SupportsFloat | datetime.date | str
+SupportsToGps = LIGOTimeGPSLike | SupportsFloat | datetime.date | str
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
@@ -52,8 +54,20 @@ __all__ = [
 ]
 
 
+@overload
 def tconvert(
-    gpsordate: GpsConvertible = "now",
+    gpsordate: SupportsFloat,
+) -> datetime.datetime:
+    ...
+
+@overload
+def tconvert(
+    gpsordate: datetime.date | str,
+) -> LIGOTimeGPS:
+    ...
+
+def tconvert(
+    gpsordate: SupportsToGps = "now",
 ) -> datetime.date | LIGOTimeGPS:
     """Convert GPS times to ISO-format date-times and vice-versa.
 
@@ -116,7 +130,7 @@ def tconvert(
 
 
 def to_gps(
-    t: GpsConvertible,
+    t: SupportsToGps,
     *,
     tzinfo: datetime.tzinfo = datetime.UTC,
 ) -> LIGOTimeGPS:
@@ -166,6 +180,14 @@ def to_gps(
     >>> to_gps(Time(57754, format="mjd"))
     LIGOTimeGPS(1167264018, 0)
     """
+    if isinstance(t, LIGOTimeGPS):
+        return t
+    if isinstance(t, LIGOTimeGPSLike):
+        return LIGOTimeGPS(
+            t.gpsSeconds,
+            t.gpsNanoSeconds,
+        )
+
     # -- convert input to Time, or something we can pass to LIGOTimeGPS
 
     if isinstance(t, str):
@@ -195,9 +217,9 @@ def to_gps(
     if isinstance(t, Time):
         return _time_to_gps(t)
     try:
-        return LIGOTimeGPS(t)  # type: ignore[call-arg,call-overload]
+        return LIGOTimeGPS(t)  # type: ignore[arg-type]
     except (TypeError, ValueError):
-        return LIGOTimeGPS(float(t))  # type: ignore[arg-type]
+        return LIGOTimeGPS(float(t))
 
 
 def from_gps(

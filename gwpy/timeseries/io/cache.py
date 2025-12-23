@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     )
 
     from ...io.utils import FileSystemPath
-    from ...typing import GpsLike
+    from ...time import SupportsToGps
 
 inf = infinity()
 
@@ -49,8 +49,8 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 def preformat_cache(
     cache: Readable | Iterable[FileSystemPath],
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     sort: Callable = file_segment,
 ) -> list[str]:
     """Preprocess a `list` of file paths for reading.

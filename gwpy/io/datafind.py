@@ -88,7 +88,7 @@ if TYPE_CHECKING:
     )
 
     from ..segments import Segment
-    from ..typing import GpsLike
+    from ..time import SupportsToGps
 
     P = ParamSpec("P")
     T = TypeVar("T")
@@ -336,7 +336,7 @@ def _rank_types(
 @overload
 def find_frametype(
     channel: str | Channel,
-    gpstime: GpsLike | None = None,
+    gpstime: SupportsToGps | None = None,
     *,
     frametype_match: str | re.Pattern | None = None,
     host: str | None = None,
@@ -352,7 +352,7 @@ def find_frametype(
 @overload
 def find_frametype(
     channel: str | Channel,
-    gpstime: GpsLike | None = None,
+    gpstime: SupportsToGps | None = None,
     *,
     frametype_match: str | re.Pattern | None = None,
     host: str | None = None,
@@ -368,7 +368,7 @@ def find_frametype(
 @overload
 def find_frametype(
     channel: str | Channel,
-    gpstime: GpsLike | None = None,
+    gpstime: SupportsToGps | None = None,
     *,
     frametype_match: str | re.Pattern | None = None,
     host: str | None = None,
@@ -383,7 +383,7 @@ def find_frametype(
 @overload
 def find_frametype(
     channel: Iterable[ChannelLike],
-    gpstime: GpsLike | None = None,
+    gpstime: SupportsToGps | None = None,
     *,
     frametype_match: str | re.Pattern | None = None,
     host: str | None = None,
@@ -399,7 +399,7 @@ def find_frametype(
 @overload
 def find_frametype(
     channel: Iterable[ChannelLike],
-    gpstime: GpsLike | None = None,
+    gpstime: SupportsToGps | None = None,
     *,
     frametype_match: str | re.Pattern | None = None,
     host: str | None = None,
@@ -415,7 +415,7 @@ def find_frametype(
 @overload
 def find_frametype(
     channel: Iterable[ChannelLike],
-    gpstime: GpsLike | None = None,
+    gpstime: SupportsToGps | None = None,
     *,
     frametype_match: str | re.Pattern | None = None,
     host: str | None = None,
@@ -428,7 +428,7 @@ def find_frametype(
 
 def find_frametype(
     channel: str | Channel | Iterable[ChannelLike],
-    gpstime: GpsLike | None = None,
+    gpstime: SupportsToGps | None = None,
     *,
     frametype_match: str | re.Pattern | None = None,
     urltype: str = "file",
@@ -769,8 +769,8 @@ def _inspect_ftype(
 @overload
 def find_best_frametype(
     channel: str | Channel,
-    start: GpsLike,
-    end: GpsLike,
+    start: SupportsToGps,
+    end: SupportsToGps,
     *,
     allow_tape: bool = True,
     **kwargs,
@@ -781,8 +781,8 @@ def find_best_frametype(
 @overload
 def find_best_frametype(
     channel: Iterable[ChannelLike],
-    start: GpsLike,
-    end: GpsLike,
+    start: SupportsToGps,
+    end: SupportsToGps,
     *,
     allow_tape: bool = True,
     **kwargs,
@@ -792,8 +792,8 @@ def find_best_frametype(
 
 def find_best_frametype(
     channel: str | Channel | Iterable[ChannelLike],
-    start: GpsLike,
-    end: GpsLike,
+    start: SupportsToGps,
+    end: SupportsToGps,
     *,
     allow_tape: bool = True,
     **kwargs,
@@ -923,8 +923,8 @@ def find_types(
 def find_urls(
     observatory: str,
     frametype: str,
-    start: GpsLike,
-    end: GpsLike,
+    start: SupportsToGps,
+    end: SupportsToGps,
     on_gaps: Literal["error", "ignore", "warn"] = "error",
     **kwargs,
 ) -> list[str]:
@@ -980,7 +980,7 @@ def find_urls(
 def find_latest(
     observatory: str,
     frametype: str,
-    gpstime: GpsLike | None = None,
+    gpstime: SupportsToGps | None = None,
     *,
     allow_tape: bool = False,
     **kwargs,

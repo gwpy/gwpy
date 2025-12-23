@@ -62,14 +62,17 @@ if TYPE_CHECKING:
 
     from lal.utils import CacheEntry
 
-    from ..time import GpsType
+    from ..time import LIGOTimeGPSLike
     from .utils import (
         FileSystemPath,
         NamedReadable,
     )
 
-    T = TypeVar("T")
     CacheEntryType = TypeVar("CacheEntryType", bound=FileSystemPath | CacheEntry)
+    GpsParser = (
+        Callable[[str], LIGOTimeGPSLike | float]
+        | type[LIGOTimeGPS | LIGOTimeGPSLike | float]
+    )
 
 try:
     from lal.utils import CacheEntry
@@ -142,7 +145,7 @@ def _format_entry_lal(entry: NamedReadable | bytes | CacheEntry) -> str:
 
 def _parse_entry_lal(
     line: list[str],
-    gpstype: type[GpsType | float] = LIGOTimeGPS,
+    gpstype: GpsParser = LIGOTimeGPS,
 ) -> _CacheEntry:
     obs, desc, start, dur, path = line
     gpsstart = gpstype(start)
@@ -157,7 +160,7 @@ def _format_entry_ffl(entry: NamedReadable | bytes | CacheEntry) -> str:
 
 def _parse_entry_ffl(
     line: list[str],
-    gpstype: type[GpsType | float] = LIGOTimeGPS,
+    gpstype: GpsParser = LIGOTimeGPS,
 ) -> _CacheEntry:
     path, start, dur, _, _ = line
     with _silence_lal_debug_warnings():
@@ -203,7 +206,7 @@ class _CacheEntry(NamedTuple):
     def parse(
         cls,
         line: str | bytes,
-        gpstype: type[GpsType | float] = LIGOTimeGPS,
+        gpstype: GpsParser = LIGOTimeGPS,
     ) -> _CacheEntry:
 
         # format line string
@@ -233,7 +236,7 @@ class _CacheEntry(NamedTuple):
 
 def _iter_cache(
     cachefile: Iterable[str],
-    gpstype: type[GpsType | float] = LIGOTimeGPS,
+    gpstype: GpsParser = LIGOTimeGPS,
 ) -> Iterator[_CacheEntry]:
     """Yield a `_CacheEntry` for each line in the file.
 
@@ -259,7 +262,7 @@ def _iter_cache(
 @with_open
 def read_cache(
     cachefile: Readable,
-    coltype: type[GpsType | float] = LIGOTimeGPS,
+    coltype: GpsParser = LIGOTimeGPS,
     sort: Callable[[str], Any] | None = None,
     segment: Segment | None = None,
     *,
@@ -310,7 +313,7 @@ def read_cache(
 
 def read_cache_entry(
     line: str | bytes,
-    gpstype: type[GpsType | float] = LIGOTimeGPS,
+    gpstype: GpsParser = LIGOTimeGPS,
 ) -> str:
     """Read a file path from a line in a cache file.
 

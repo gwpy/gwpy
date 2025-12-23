@@ -23,7 +23,6 @@ from datetime import (
     datetime,
 )
 from decimal import Decimal
-from operator import attrgetter
 
 import numpy
 import pytest
@@ -40,9 +39,6 @@ try:
     from glue.lal import LIGOTimeGPS as GlueGPS
 except ImportError:
     GlueGPS = LIGOTimeGPS
-    HAS_GLUE = False
-else:
-    HAS_GLUE = True
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -142,14 +138,16 @@ def test_tconvert(in_, out):
     assert time.tconvert(in_) == out
 
 
-@pytest.mark.parametrize(
-    "gpstype",
-    time.GPS_TYPES,
-    ids=attrgetter("__module__"),
-)
-def test_gps_types(gpstype):
-    assert gpstype.__name__ == "LIGOTimeGPS"
-    gps = gpstype(123, 456000000)
+@pytest.mark.parametrize("gpsmod", [
+    "glue.lal",
+    "lal",
+    "ligotimegps",
+])
+def test_gps_types(gpsmod):
+    """Test that the module's `LIGOTimeGPS` matches the protocol."""
+    mod = pytest.importorskip(gpsmod)
+    gps = mod.LIGOTimeGPS(123, 456000000)
+    assert isinstance(gps, time.LIGOTimeGPSLike)
     assert gps.gpsSeconds == 123
     assert gps.gpsNanoSeconds == 456000000
     assert gps == 123.456

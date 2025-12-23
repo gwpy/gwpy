@@ -97,9 +97,9 @@ if TYPE_CHECKING:
 
     from ..plot import Plot
     from ..segments import Segment
+    from ..time import SupportsToGps
     from ..typing import (
         ArrayLike1D,
-        GpsLike,
         UnitLike,
     )
     from ..utils.lal import LALTimeSeriesType
@@ -229,7 +229,7 @@ class TimeSeriesBase(Series):
         cls,
         data: ArrayLike1D,
         unit: UnitLike = None,
-        t0: GpsLike | None = None,
+        t0: SupportsToGps | None = None,
         dt: float | Quantity | None = None,
         sample_rate: float | Quantity | None = None,
         times: ArrayLike1D | None = None,
@@ -297,7 +297,7 @@ class TimeSeriesBase(Series):
             return None
 
     @epoch.setter
-    def epoch(self, epoch: Time | GpsLike | None) -> None:
+    def epoch(self, epoch: Time | SupportsToGps | None) -> None:
         if epoch is None:
             del self.t0
         elif isinstance(epoch, Time):
@@ -349,8 +349,8 @@ class TimeSeriesBase(Series):
     def fetch(
         cls,
         channel: str | Channel,
-        start: GpsLike,
-        end: GpsLike,
+        start: SupportsToGps,
+        end: SupportsToGps,
         *,
         host: str | None = None,
         port: int | None = None,
@@ -447,8 +447,8 @@ class TimeSeriesBase(Series):
     def fetch_open_data(
         cls,
         ifo: str,
-        start: GpsLike,
-        end: GpsLike,
+        start: SupportsToGps,
+        end: SupportsToGps,
         sample_rate: float = 4096,
         version: int | None = None,
         format: Literal["gwf", "hdf5"] = "hdf5",  # noqa: A002
@@ -568,8 +568,8 @@ class TimeSeriesBase(Series):
     def find(
         cls,
         channel: str | Channel,
-        start: GpsLike,
-        end: GpsLike,
+        start: SupportsToGps,
+        end: SupportsToGps,
         *,
         observatory: str | None = None,
         frametype: str | None = None,
@@ -1118,8 +1118,8 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
 
     def crop(
         self,
-        start: GpsLike | None = None,
-        end: GpsLike | None = None,
+        start: SupportsToGps | None = None,
+        end: SupportsToGps | None = None,
         *,
         copy: bool = False,
     ) -> Self:
@@ -1180,8 +1180,8 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
     def fetch(
         cls,
         channels: list[str | Channel],
-        start: GpsLike,
-        end: GpsLike,
+        start: SupportsToGps,
+        end: SupportsToGps,
         *,
         host: str | None = None,
         port: int | None = None,
@@ -1287,8 +1287,8 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
     def fetch_open_data(
         cls,
         detectors: str,
-        start: GpsLike,
-        end: GpsLike,
+        start: SupportsToGps,
+        end: SupportsToGps,
         *,
         sample_rate: float = 4096,
         version: int | None = None,
@@ -1403,8 +1403,8 @@ class TimeSeriesBaseDict(dict[str | Channel, _V], Generic[_V]):
     def find(
         cls,
         channels: list[str | Channel],
-        start: GpsLike,
-        end: GpsLike,
+        start: SupportsToGps,
+        end: SupportsToGps,
         *,
         observatory: str | None = None,
         frametype: str | None = None,

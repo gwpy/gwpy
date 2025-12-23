@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 
     from numpy.typing import DTypeLike
 
-    from ..typing import GpsLike
+    from ..time import SupportsToGps
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -468,7 +468,7 @@ def from_lal_unit(
 
 
 def to_lal_ligotimegps(
-    gps: GpsLike,
+    gps: SupportsToGps,
 ) -> lal.LIGOTimeGPS:
     """Convert the given GPS time to a |lal.LIGOTimeGPS|_ object.
 

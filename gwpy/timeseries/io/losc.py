@@ -78,7 +78,7 @@ if TYPE_CHECKING:
 
     import h5py
 
-    from ...typing import GpsLike
+    from ...time import SupportsToGps
 
     T = TypeVar("T", bound=TimeSeriesBase)
 
@@ -256,8 +256,8 @@ def _name_from_gwosc_hdf5(
 
 def fetch_gwosc_data(
     detector: str,
-    start: GpsLike,
-    end: GpsLike,
+    start: SupportsToGps,
+    end: SupportsToGps,
     dataset: str | None = None,
     version: int | None = None,
     sample_rate: int = 4096,
@@ -435,8 +435,8 @@ def fetch_gwosc_data(
 
 def fetch_dict(
     detectors: Collection[str | Channel],
-    start: GpsLike,
-    end: GpsLike,
+    start: SupportsToGps,
+    end: SupportsToGps,
     dataset: str | None = None,
     version: int | None = None,
     sample_rate: int = 4096,
@@ -561,8 +561,8 @@ def fetch_dict(
 def read_gwosc_hdf5(
     h5f: str | h5py.HLObject,
     path: str = "strain/Strain",
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     *,
     copy: bool = False,
 ) -> TimeSeries:
@@ -614,8 +614,8 @@ def read_gwosc_hdf5(
 def read_gwosc_hdf5_state(
     f: str | h5py.HLObject,
     path: str = "quality/simple",
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     *,
     copy: bool = False,
     value_dataset: str = "DQmask",

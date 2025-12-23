@@ -44,7 +44,7 @@ if TYPE_CHECKING:
         Literal,
     )
 
-    from ...typing import GpsLike
+    from ...time import SupportsToGps
 
 
 def open_gwf(
@@ -272,7 +272,7 @@ def write_frames(
 
 
 def create_frame(
-    time: GpsLike,
+    time: SupportsToGps,
     duration: float,
     name: str = "gwpy",
     run: int = -1,

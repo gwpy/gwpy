@@ -18,54 +18,47 @@
 
 """LIGOTimeGPS object discovery."""
 
+# ruff: noqa: I001
+
 from __future__ import annotations
 
-from importlib import import_module
-from typing import TYPE_CHECKING
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+
+from typing import (
+    TYPE_CHECKING,
+    Protocol,
+    runtime_checkable,
+)
+
+if TYPE_CHECKING:
+    from typing import Self
 
 # try and import LIGOTimeGPS from LAL, otherwise use the pure-python backup
 # provided by the ligotimegps package, its slower, but works
 try:
     # import h5py first to avoid https://git.ligo.org/lscsoft/lalsuite/-/issues/821
     import h5py  # noqa: F401
-    # then install LAL
+    # then import LAL
     from lal import LIGOTimeGPS
 except ImportError:
-    from ligotimegps import LIGOTimeGPS  # noqa: F401
+    from ligotimegps import LIGOTimeGPS
+
+__all__ = [
+    "LIGOTimeGPS",
+    "LIGOTimeGPSLike",
+]
 
 
-def _import_ligotimegps(
-    modname: str,
-) -> type | None:
-    """Return `True` if ``modname`` provides a usable ``LIGOTimeGPS``."""
-    try:
-        mod = import_module(modname)
-    except ImportError:  # library not installed
-        return None
-    try:
-        return mod.LIGOTimeGPS
-    except AttributeError:  # no LIGOTimeGPS available
-        return None
+@runtime_checkable
+class LIGOTimeGPSLike(Protocol):
+    """Protocol for types that are instances of LIGOTimeGPS."""
 
+    gpsSeconds: int      # noqa: N815
+    gpsNanoSeconds: int  # noqa: N815
 
-GPS_TYPES: tuple[type, ...] = tuple(filter(None, map(
-    _import_ligotimegps,
-    (
-        "lal",
-        "ligotimegps",
-        "glue.lal",
-    ),
-)))
+    def __init__(self, new: float | LIGOTimeGPS | str) -> None: ...
 
-if TYPE_CHECKING:
-    from glue.lal import LIGOTimeGPS as _Glue_LIGOTimeGPS
-    from lal import LIGOTimeGPS as _LAL_LIGOTimeGPS
-    from ligotimegps import LIGOTimeGPS as _Ligotimegps_LIGOTimeGPS
+    def __float__(self) -> float: ...
 
-    GpsType = (
-        _Ligotimegps_LIGOTimeGPS
-        | _Glue_LIGOTimeGPS
-        | _LAL_LIGOTimeGPS
-    )
+    def __add__(self, other: Self | float) -> Self: ...
+    def __radd__(self, other: Self | float) -> Self: ...

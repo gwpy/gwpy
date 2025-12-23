@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     )
     from re import Pattern
 
-    from ...typing import GpsLike
+    from ...time import SupportsToGps
     from .. import (
         TimeSeriesBase,
         TimeSeriesBaseDict,
@@ -71,8 +71,8 @@ logger = logging.getLogger(__name__)
 
 def find_series(
     channel: str | Channel,
-    start: GpsLike,
-    end: GpsLike,
+    start: SupportsToGps,
+    end: SupportsToGps,
     *,
     observatory: str | None = None,
     frametype: str | None = None,
@@ -190,8 +190,8 @@ def find_series(
 
 def find_dict(
     channels: Collection[str | Channel],
-    start: GpsLike,
-    end: GpsLike,
+    start: SupportsToGps,
+    end: SupportsToGps,
     *,
     observatory: str | None = None,
     frametype: str | dict[str | Channel, str | None] | None = None,

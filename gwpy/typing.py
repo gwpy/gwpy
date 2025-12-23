@@ -33,20 +33,11 @@ from numpy.typing import (
     DTypeLike,
 )
 
-from .time import (
-    GpsConvertible,
-    GpsType,
-)
-
 __all__ = [
     "Array1D",
     "ArrayLike1D",
-    "GpsLike",
     "UnitLike",
 ]
-
-#: Type alias for GPS-compatible or GPS-like types.
-GpsLike: TypeAlias = GpsType | GpsConvertible
 
 #: Type alias for Unit-like types.
 UnitLike: TypeAlias = UnitBase | str | None

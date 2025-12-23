@@ -60,10 +60,8 @@ if TYPE_CHECKING:
     from matplotlib.axis import Axis
     from numpy.typing import ArrayLike
 
-    from gwpy.typing import (
-        GpsLike,
-        UnitLike,
-    )
+    from ..time import SupportsToGps
+    from ..typing import UnitLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -110,7 +108,7 @@ class GPSMixin:
         self,
         *args: Any,  # noqa: ANN401
         unit: UnitBase | None = None,
-        epoch: Number | Decimal | GpsLike | None = None,
+        epoch: Number | Decimal | SupportsToGps | None = None,
         **kwargs,
     ) -> None:
         """Initialise a new GPS-scaled object."""
@@ -125,7 +123,7 @@ class GPSMixin:
         """Return the GPS epoch."""
         return self._epoch
 
-    def set_epoch(self, epoch: Number | Decimal | GpsLike | None) -> None:
+    def set_epoch(self, epoch: Number | Decimal | SupportsToGps | None) -> None:
         """Set the GPS epoch."""
         if epoch is None:
             self._epoch = None
@@ -466,7 +464,7 @@ class GPSScale(GPSMixin, LinearScale):
         self,
         axis: Axis,
         unit: UnitBase | None = None,
-        epoch: Number | Decimal | GpsLike | None = None,
+        epoch: Number | Decimal | SupportsToGps | None = None,
     ) -> None:
         """Initialise this `GPSScale`."""
         super().__init__(unit=unit, epoch=epoch)
@@ -581,7 +579,7 @@ def _gps_scale_factory(unit: UnitBase) -> type[GPSScale]:
         def __init__(
             self,
             axis: Axis,
-            epoch: Number | Decimal | GpsLike | None = None,
+            epoch: Number | Decimal | SupportsToGps | None = None,
         ) -> None:
             super().__init__(axis, epoch=epoch, unit=unit)
 

@@ -58,7 +58,7 @@ if TYPE_CHECKING:
 
     from ..detector import Channel
     from ..segments import SegmentListDict
-    from ..typing import GpsLike
+    from ..time import SupportsToGps
 
     # Type variables for function decorators
     P = ParamSpec("P")
@@ -274,7 +274,7 @@ def parse_nds_env(
 def host_resolution_order(
     ifo: str | None,
     env: str | None = "NDSSERVER",
-    epoch: GpsLike = "now",
+    epoch: SupportsToGps = "now",
     lookback: float = 14*86400,
     *,
     include_gwosc: bool = True,

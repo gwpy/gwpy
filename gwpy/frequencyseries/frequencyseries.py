@@ -53,10 +53,10 @@ if TYPE_CHECKING:
     from ..detector import Channel
     from ..plot import Plot
     from ..signal.filter_design import FilterCompatible
+    from ..time import SupportsToGps
     from ..timeseries import TimeSeries
     from ..typing import (
         ArrayLike1D,
-        GpsLike,
         QuantityLike,
         UnitLike,
     )
@@ -135,7 +135,7 @@ class FrequencySeries(Series):
         df: Quantity | float | None = None,
         frequencies: ArrayLike1D | None = None,
         name: str | None = None,
-        epoch: GpsLike | None = None,
+        epoch: SupportsToGps | None = None,
         channel: Channel | str | None = None,
         **kwargs,
     ) -> Self:

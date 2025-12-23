@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from argparse import ArgumentParser
     from collections.abc import Sequence
 
-    from ..typing import GpsLike
+    from ..time import SupportsToGps
 
 logger = _utils.get_logger(__name__)
 
@@ -64,8 +64,8 @@ https://gwpy.readthedocs.io/en/{DOC_VERSION}/tools/rds/
 
 def create_rds(
     channels: Sequence[str],
-    start: GpsLike,
-    end: GpsLike,
+    start: SupportsToGps,
+    end: SupportsToGps,
     outfile: Path,
     source: Sequence[str] | str | None = None,
     format: str | None = None,  # noqa: A002

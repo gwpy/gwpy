@@ -77,11 +77,11 @@ if TYPE_CHECKING:
     from numpy.typing import ArrayLike
 
     from gwpy.plot.gps import GPSTransform
+    from gwpy.time import SupportsToGps
     from gwpy.types import (
         Array2D,
         Series,
     )
-    from gwpy.typing import GpsLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -220,8 +220,8 @@ class Axes(_Axes):
     @wraps(_Axes.set_xlim)
     def set_xlim(
         self,
-        left: float | GpsLike | tuple[float | GpsLike, float | GpsLike] | None = None,
-        right: float | GpsLike | None = None,
+        left: SupportsToGps | tuple[SupportsToGps, SupportsToGps] | None = None,
+        right: float | SupportsToGps | None = None,
         **kwargs,
     ) -> tuple[float, float]:
         """Set the X-axis view limits."""
@@ -234,7 +234,7 @@ class Axes(_Axes):
                 right = numpy.longdouble(str(to_gps(right)))
         return super().set_xlim(left=left, right=right, **kwargs)
 
-    def set_epoch(self, epoch: GpsLike) -> None:
+    def set_epoch(self, epoch: SupportsToGps) -> None:
         """Set the epoch for the current GPS scale.
 
         This method will fail if the current X-axis scale isn't one of
