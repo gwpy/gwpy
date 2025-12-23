@@ -117,8 +117,8 @@ def tconvert(
 
 def to_gps(
     t: GpsConvertible,
-    *args,
-    **kwargs,
+    *,
+    tzinfo: datetime.tzinfo = datetime.UTC,
 ) -> LIGOTimeGPS:
     """Convert any input date/time into a `LIGOTimeGPS`.
 
@@ -132,8 +132,10 @@ def to_gps(
         `LIGOTimeGPS`, `~astropy.time.Time`, or `~datetime.datetime`,
         is acceptable.
 
-    args, kwargs
-        Other arguments to pass to pass to `~astropy.time.Time` if given.
+    tzinfo : `datetime.tzinfo`,
+        Timezone information to attach to `tuple` inputs that
+        become `datetime.datetime` objects.
+        Defaults to `datetime.UTC`.
 
     Returns
     -------
@@ -174,7 +176,7 @@ def to_gps(
 
     # tuple -> datetime.date
     if isinstance(t, tuple | list):
-        t = datetime.datetime(*t)
+        t = datetime.datetime(*t, tzinfo=tzinfo)  # ty: ignore
 
     # datetime.datetime -> Time
     if isinstance(t, datetime.date):
@@ -191,7 +193,7 @@ def to_gps(
     # -- convert to LIGOTimeGPS
 
     if isinstance(t, Time):
-        return _time_to_gps(t, *args, **kwargs)
+        return _time_to_gps(t)
     try:
         return LIGOTimeGPS(t)  # type: ignore[call-arg,call-overload]
     except (TypeError, ValueError):
@@ -211,7 +213,8 @@ def from_gps(
     Returns
     -------
     datetime : `datetime.datetime`
-        ISO-format datetime equivalent of input GPS time
+        ISO-format datetime equivalent of input GPS time in
+        the UTC timezone.
 
     Notes
     -----
@@ -248,7 +251,10 @@ def from_gps(
                 "directly",
             )
         raise
-    return date + datetime.timedelta(microseconds=nano * 1e-3)
+    return (
+        date.replace(tzinfo=datetime.UTC)
+        + datetime.timedelta(microseconds=nano * 1e-3)
+    )
 
 
 # -- utilities ----------------------------------------------------------------
@@ -260,7 +266,7 @@ def _now() -> datetime.datetime:
 
 
 def _today() -> datetime.date:
-    return datetime.date.today()
+    return _now().date()
 
 
 def _today_delta(**delta) -> datetime.date:
