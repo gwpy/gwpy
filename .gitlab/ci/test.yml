@@ -1,3 +1,16 @@
+spec:
+  inputs:
+    minimum_python_version:
+      default: "3.11"
+      description: "Python version for minimum dependency compatibility check"
+      type: string
+    experimental_python_version:
+      default: "3.14"
+      description: "Python version for experimental dependency compatibility check"
+      type: string
+
+---
+
 # -- GWpy test pipeline
 
 include:
@@ -50,8 +63,8 @@ include:
   - local: .gitlab/ci/compatibility.yml
     inputs:
       stage: test
-      minimum_python_version: "3.11"
-      experimental_python_version: "3.14"
+      minimum_python_version: $[[ inputs.minimum_python_version ]]
+      experimental_python_version: $[[ inputs.experimental_python_version ]]
       pytest_options: "--color yes --cov gwpy --numprocesses auto gwpy/"
 
   # measure coverage over all jobs

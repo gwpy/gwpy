@@ -26,10 +26,18 @@ spec:
       default: "3.13"
       description: "Python version to use for testing"
       type: string
+    minimum_python_version:
+      default: "3.11"
+      description: "Python version for minimum dependency compatibility check"
+      type: string
 
 ---
 
 include:
+  - component: gitlab.com/components/dependency-scanning/main@~latest
+    inputs:
+      stage: $[[ inputs.stage ]]
+      job_name: "dependency-scanning"
   - component: gitlab.com/components/sast/sast@~latest
     inputs:
       stage: $[[ inputs.stage ]]
@@ -118,3 +126,18 @@ rstcheck:
   artifacts:
     reports:
       codequality: gl-rstcheck.json
+
+uv.lock:
+  image: ghcr.io/astral-sh/uv:debian
+  extends:
+    - .qa
+  script:
+    # Generate uv.lock file with minimum dependencies
+    - uv venv --python $[[ inputs.minimum_python_version ]]
+    - uv lock --resolution lowest-direct
+  artifacts:
+    paths:
+      - uv.lock
+
+dependency-scanning:
+  needs: ["uv.lock"]
