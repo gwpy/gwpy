@@ -24,21 +24,33 @@ to convert to a GPS time.
 
 from __future__ import annotations
 
-import argparse
 import datetime
+from typing import TYPE_CHECKING
 
 from dateutil import tz
 
 from .. import __version__
+from ..tools import _utils
 from . import tconvert
 
+if TYPE_CHECKING:
+    from argparse import ArgumentParser
 
-def main(
-    args: list[str] | None = None,
-):
+EXAMPLES = {
+    "Convert GPS time to date string": "gwpy-tconvert 1126259462",
+    "Convert date string to GPS time": "gwpy-tconvert 2015-09-14 09:50:45",
+    "Find GPS time now": "gwpy-tconvert now",
+    "Find GPS time for the start of today": "gwpy-tconvert today",
+}
+
+
+def create_parser() -> ArgumentParser:
     """Parse command-line arguments, tconvert inputs, and print."""
     # define command line arguments
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = _utils.ArgumentParser(
+        description=__doc__,
+        examples=EXAMPLES,
+    )
     parser.add_argument(
         "-V",
         "--version",
@@ -65,8 +77,13 @@ def main(
         help="GPS or datetime string to convert",
         nargs="*",
     )
+    return parser
 
+
+def main(args: list[str] | None = None) -> None:
+    """Run this tool."""
     # parse and convert
+    parser = create_parser()
     opts = parser.parse_args(args)
     input_ = " ".join(opts.input)
     output = tconvert(input_)

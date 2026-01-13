@@ -36,3 +36,4 @@ User Guide
    logging
    env
    tools/rds
+   tools/tconvert

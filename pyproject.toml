@@ -71,6 +71,7 @@ dynamic = [
 [project.scripts]
 gwpy-plot = "gwpy.cli.gwpy_plot:main"
 gwpy-rds = "gwpy.tools.rds:main"
+gwpy-tconvert = "gwpy.time.__main__:main"
 
 [project.urls]
 "Bug Tracker" = "https://gitlab.com/gwpy/gwpy/-/issues"
@@ -221,6 +222,7 @@ test = [
 [tool.build_manpages]
 manpages = [
   "man/gwpy-rds.1:prog=gwpy-rds:function=create_parser:module=gwpy.tools.rds",
+  "man/gwpy-tconvert.1:prog=gwpy-tconvert:function=create_parser:module=gwpy.time.__main__",
 ]
 
 # -- coverage.py
