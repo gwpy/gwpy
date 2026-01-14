@@ -24,17 +24,21 @@ so isn't really for direct user interaction.
 
 from __future__ import annotations
 
+import concurrent.futures
 from functools import wraps
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 import numpy
+from astropy import units
 from astropy.units import Quantity
 from scipy.signal import (
     get_window,
     periodogram as scipy_periodogram,
 )
 
-from ...utils import mp as mp_utils
 from ..window import (
     canonical_name,
     recommended_overlap,
@@ -43,16 +47,25 @@ from . import _utils as fft_utils
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from typing import Any
+    from typing import (
+        Any,
+        ParamSpec,
+        TypeVar,
+    )
 
     from astropy.units.typing import QuantityLike
-    from numpy.typing import NDArray
+    from numpy.typing import DTypeLike
 
     from ...frequencyseries import FrequencySeries
     from ...spectrogram import Spectrogram
     from ...timeseries import TimeSeries
     from ...types import Series
+    from ...typing import Array1D
+    from ...utils.lal import LALWindowType
     from ..window import WindowLike
+
+    P = ParamSpec("P")
+    R = TypeVar("R")
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -134,7 +147,7 @@ def normalize_fft_params(
     """
     # parse keywords
     if kwargs is None:
-        kwargs = dict()
+        kwargs = {}
     samp = series.sample_rate
     fftlength = kwargs.pop("fftlength", None) or series.duration
     overlap = kwargs.pop("overlap", None)
@@ -144,7 +157,7 @@ def normalize_fft_params(
     if func is None:
         method = library = None
     else:
-        method = func.__name__
+        method = str(getattr(func, "__name__", "unknown"))
         library = _fft_library(func)
 
     # fftlength -> nfft
@@ -182,11 +195,11 @@ def normalize_fft_params(
 
 
 def _normalize_overlap(
-    overlap,
-    window,
-    nfft,
-    samp,
-    method="welch",
+    overlap: QuantityLike | None,
+    window: WindowLike,
+    nfft: int,
+    samp: Quantity,
+    method: str | None = "welch",
 ) -> int:
     """Normalise an overlap in physical units to a number of samples.
 
@@ -228,8 +241,8 @@ def _normalize_window(
     window: WindowLike,
     nfft: int,
     library: str | None,
-    dtype: type,
-):
+    dtype: DTypeLike | None,
+) -> Array1D | LALWindowType:
     """Normalise a window specification for a PSD calculation.
 
     Parameters
@@ -265,11 +278,14 @@ def _normalize_window(
     return window
 
 
-def set_fft_params(func: Callable) -> Callable:
+def set_fft_params(func: Callable[P, R]) -> Callable[P, R]:
     """Decorate a method to automatically convert quantities to samples."""
     @wraps(func)
-    def wrapped_func(series, method_func, *args, **kwargs):
+    def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> R:
         """Wrap function to normalize FFT params before execution."""
+        # unpack series
+        series = cast("TimeSeries | tuple[TimeSeries, TimeSeries]", args[0])
+        method_func = cast("Callable", args[1])
         if isinstance(series, tuple):
             data = series[0]
         else:
@@ -278,7 +294,7 @@ def set_fft_params(func: Callable) -> Callable:
         # normalise FFT parameters for all libraries
         normalize_fft_params(data, kwargs=kwargs, func=method_func)
 
-        return func(series, method_func, *args, **kwargs)
+        return func(*args, **kwargs)
 
     return wrapped_func
 
@@ -412,16 +428,14 @@ def average_spectrogram(
     inputs = [(chunk, method_func, args, kwargs) for chunk in tschunks]
 
     # calculate PSDs
-    psds = mp_utils.multiprocess_with_queues(nproc, _psd, inputs)
+    if nproc == 1:
+        psds = [_psd(inp) for inp in inputs]
+    else:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=nproc) as executor:
+            psds = list(executor.map(_psd, inputs))
 
     # recombobulate PSDs into a spectrogram
     return Spectrogram.from_spectra(*psds, epoch=epoch, dt=stride)
-
-
-def _periodogram(bundle: tuple[NDArray, dict[str, Any]]) -> NDArray:
-    """Calculate a single periodogram for a spectrogram."""
-    series, kwargs = bundle
-    return scipy_periodogram(series, **kwargs)[1]
 
 
 def spectrogram(timeseries: TimeSeries, **kwargs) -> Spectrogram:
@@ -454,18 +468,18 @@ def spectrogram(timeseries: TimeSeries, **kwargs) -> Spectrogram:
         y = min(timeseries.size, x + nfft)
         chunks.append((x, y))
         x += nstride
-
     tschunks = (timeseries.value[i:j] for i, j in chunks)
 
-    # bundle inputs for _psd
-    inputs = [(chunk, kwargs) for chunk in tschunks]
+    def _periodogram(chunk: Array1D) -> Array1D:
+        """Calculate a single periodogram for a spectrogram."""
+        return scipy_periodogram(chunk, **kwargs)[1]
 
     # calculate PSDs with multiprocessing
-    psds = mp_utils.multiprocess_with_queues(
-        nproc,
-        _periodogram,
-        inputs,
-    )
+    if nproc == 1:
+        psds = list(map(_periodogram, tschunks))
+    else:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=nproc) as executor:
+            psds = list(executor.map(_periodogram, tschunks))
 
     # convert PSDs to array with spacing for averages
     numtimes = 1 + int((timeseries.size - nstride) / nstride)
@@ -475,7 +489,9 @@ def spectrogram(timeseries: TimeSeries, **kwargs) -> Spectrogram:
 
     # create output spectrogram
     unit = fft_utils.scale_timeseries_unit(
-        timeseries.unit, scaling=kwargs.get("scaling", "density"))
+        timeseries.unit or units.dimensionless_unscaled,
+        scaling=kwargs.get("scaling", "density"),
+    )
     out = Spectrogram(
         numpy.empty((numtimes, numfreqs), dtype=timeseries.dtype),
         copy=False,
