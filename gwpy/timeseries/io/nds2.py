@@ -51,12 +51,14 @@ if TYPE_CHECKING:
         Iterable,
         Sequence,
     )
-    from typing import TypeVar
+    from typing import (
+        SupportsFloat,
+        TypeVar,
+    )
 
     import nds2
 
-    from ...time import LIGOTimeGPS
-    from ...typing import GpsLike
+    from ...time import SupportsToGps
     from .. import (
         TimeSeriesBase,
         TimeSeriesBaseDict,
@@ -134,8 +136,8 @@ def _set_parameter(
 
 def fetch_series(
     channel: str | Channel,
-    start: GpsLike,
-    end: GpsLike,
+    start: SupportsToGps,
+    end: SupportsToGps,
     *,
     type: str | int | dict | None = None,  # noqa: A002
     dtype: str | int | dict | None = None,
@@ -233,8 +235,8 @@ def fetch_series(
 
 def fetch_dict(
     channels: Sequence[str | Channel],
-    start: GpsLike,
-    end: GpsLike,
+    start: SupportsToGps,
+    end: SupportsToGps,
     *,
     type: str | int | dict | None = None,  # noqa: A002
     dtype: str | int | dict | None = None,
@@ -459,8 +461,8 @@ def fetch_dict(
 def _create_series(
     ndschan: nds2.channel,
     value: float,
-    start: LIGOTimeGPS,
-    end: LIGOTimeGPS,
+    start: SupportsFloat,
+    end: SupportsFloat,
     series_class: type[TimeSeriesBase] = TimeSeries,
 ) -> TimeSeriesBase:
     """Create a timeseries to cover the specified [start, end) limits.
@@ -499,7 +501,7 @@ def _get_data_segments(
 def identify_nds2_sources(
     origin: str,
     channels: str | Channel | Iterable[str | Channel],
-    start: GpsLike | None,
+    start: SupportsToGps | None,
     *args,  # noqa: ARG001
     connection: nds2.connection | None = None,
     host: str | None = None,

@@ -39,7 +39,7 @@ from ..io.registry import (
     inherit_unified_io,
 )
 from ..time import (
-    GPS_TYPES,
+    LIGOTimeGPSLike,
     to_gps,
 )
 from .connect import (
@@ -66,11 +66,11 @@ if TYPE_CHECKING:
     from astropy.table import Column
 
     from ..plot import Plot
+    from ..time import SupportsToGps
     from ..timeseries import (
         TimeSeries,
         TimeSeriesDict,
     )
-    from ..typing import GpsLike
     from .filter import FilterLike
 
     # ParamSpec for decorators
@@ -91,10 +91,10 @@ TIME_LIKE_COLUMN_NAMES = [
 def _rates_preprocess(func: Callable[P, R]) -> Callable[P, R]:
     @wraps(func)
     def wrapped_func(*args: P.args, **kwargs: P.kwargs) -> R:
-        self: Table = args[0]  # type: ignore[assignment]
+        self: EventTable = args[0]  # type: ignore[assignment]
         timecolumn = kwargs.get("timecolumn")
-        start: GpsLike | None = kwargs.get("start")
-        end: GpsLike | None = kwargs.get("end")
+        start = cast("SupportsToGps | None", kwargs.get("start"))
+        end = cast("SupportsToGps | None", kwargs.get("end"))
 
         # get timecolumn if we are going to need it
         if (
@@ -148,19 +148,16 @@ class EventTable(Table):
         """Return `True` if a column in this table represents 'time'.
 
         This method checks the name of the column against a hardcoded list
-        of time-like names, then checks the `dtype` of the column (or the
-        first element in the column) against a hardcoded list of time-like
-        dtypes (`gwpy.time.GPS_TYPES`).
+        of time-like names, then checks the first element of the named
+        columne to see if it looks like a `LIGOTimeGPS`-like object.
         """
         # if the name looks like a time column, accept that
         if name.lower() in TIME_LIKE_COLUMN_NAMES:
             return True
 
         # if the dtype of this column looks right, accept that
-        if self[name].dtype in GPS_TYPES:
-            return True
         try:
-            return isinstance(self[name][0], GPS_TYPES)
+            return isinstance(self[name][0], LIGOTimeGPSLike)
         except IndexError:
             return False
 
@@ -272,8 +269,8 @@ class EventTable(Table):
     def event_rate(
         self,
         stride: float,
-        start: GpsLike | None = None,
-        end: GpsLike | None = None,
+        start: SupportsToGps | None = None,
+        end: SupportsToGps | None = None,
         timecolumn: str | None = None,
     ) -> TimeSeries:
         """Calculate the rate `~gwpy.timeseries.TimeSeries` for this `Table`.
@@ -333,8 +330,8 @@ class EventTable(Table):
         column: str,
         bins: Sequence[tuple[float, float]] | Sequence[float],
         operator: str | Callable[[object, object], bool] = ">=",
-        start: GpsLike | None = None,
-        end: GpsLike | None = None,
+        start: SupportsToGps | None = None,
+        end: SupportsToGps | None = None,
         timecolumn: str | None = None,
     ) -> TimeSeriesDict:
         """Calculate an event rate `~gwpy.timeseries.TimeSeriesDict`.

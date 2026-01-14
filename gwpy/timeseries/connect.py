@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from typing import (
         Any,
         Literal,
+        SupportsFloat,
         TypeVar,
     )
 
@@ -42,9 +43,7 @@ if TYPE_CHECKING:
 
     from ..detector import Channel
     from ..io.utils import NamedReadable
-    from ..time import GpsConvertible
-    from ..types import Series
-    from ..typing import GpsLike
+    from ..time import SupportsToGps
     from . import (
         TimeSeriesBase,
         TimeSeriesBaseDict,
@@ -58,13 +57,13 @@ if TYPE_CHECKING:
 # -- utilities -----------------------
 
 def _pad_series(
-    ts: Series,
+    ts: TimeSeriesType,
     pad: float | None,
-    start: GpsConvertible | None = None,
-    end: GpsConvertible | None = None,
+    start: SupportsFloat | None = None,
+    end: SupportsFloat | None = None,
     *,
     error: bool = False,
-) -> Series:
+) -> TimeSeriesType:
     """Pad a timeseries to match the specified [start, end) limits.
 
     To cover a gap in data returned from a data source.
@@ -136,8 +135,8 @@ class _TimeSeriesRead(UnifiedRead):
         items: Sequence[T],
         pad: float | None = None,
         gap: Literal["raise", "ignore", "pad"] | None = None,
-        start: GpsConvertible | None = None,
-        end: GpsConvertible | None = None,
+        start: SupportsFloat | None = None,
+        end: SupportsFloat | None = None,
     ) -> T:
         """Combine a list of `TimeSeries` or `TimeSeriesDict` into one.
 
@@ -146,10 +145,10 @@ class _TimeSeriesRead(UnifiedRead):
 
     def __call__(  # type: ignore[override]
         self,
-        source: NamedReadable | list[NamedReadable],
+        source: NamedReadable | Sequence[NamedReadable],
         name: str | Channel | None = None,
-        start: GpsConvertible | None = None,
-        end: GpsConvertible | None = None,
+        start: SupportsToGps | None = None,
+        end: SupportsToGps | None = None,
         *,
         pad: float | None = None,
         gap: Literal["raise", "ignore", "pad"] | None = None,
@@ -209,8 +208,8 @@ class TimeSeriesBaseRead(_TimeSeriesRead):
         items: Sequence[TimeSeriesBase],
         pad: float | None = None,
         gap: Literal["raise", "ignore", "pad"] | None = None,
-        start: GpsConvertible | None = None,
-        end: GpsConvertible | None = None,
+        start: SupportsFloat | None = None,
+        end: SupportsFloat | None = None,
     ) -> TimeSeriesBase:
         """Combine a list of `TimeSeriesBase` objects into one `Series`."""
         from . import TimeSeriesBaseList
@@ -248,8 +247,8 @@ class TimeSeriesBaseGet(UnifiedGet):
     def __call__(  # type: ignore[override]
         self,
         name: str | Channel,
-        start: GpsLike,
-        end: GpsLike,
+        start: SupportsToGps,
+        end: SupportsToGps,
         *,
         source: str | list[str | dict[str, Any]] | None = None,
         **kwargs,
@@ -557,8 +556,8 @@ class TimeSeriesBaseDictRead(_TimeSeriesRead):
         items: Sequence[TimeSeriesBaseDict],
         pad: float | None = None,
         gap: Literal["raise", "ignore", "pad"] | None = None,
-        start: GpsConvertible | None = None,
-        end: GpsConvertible | None = None,
+        start: SupportsFloat | None = None,
+        end: SupportsFloat | None = None,
     ) -> TimeSeriesBaseDict:
         """Combine a list of `TimeSeriesBaseDict` objects into one `Series`."""
         out = self._cls()
@@ -593,8 +592,8 @@ class TimeSeriesBaseDictGet(UnifiedGet):
     def __call__(  # type: ignore[override]
         self,
         names: Sequence[str | Channel],
-        start: GpsLike,
-        end: GpsLike,
+        start: SupportsToGps,
+        end: SupportsToGps,
         *,
         source: str | list[str | dict[str, Any]] | None = None,
         pad: float | None = None,

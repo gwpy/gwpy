@@ -54,11 +54,11 @@ if TYPE_CHECKING:
     from ..detector import Channel
     from ..plot import Plot
     from ..spectrogram import Spectrogram
+    from ..time import SupportsToGps
     from ..types import Series
     from ..typing import (
         Array1D,
         ArrayLike1D,
-        GpsLike,
         UnitLike,
     )
 
@@ -114,7 +114,7 @@ class SpectralVariance(Array2D):
         frequencies: ArrayLike1D | None = None,
         name: str | None = None,
         channel: Channel | str | None = None,
-        epoch: GpsLike | None = None,
+        epoch: SupportsToGps | None = None,
         **kwargs,
     ) -> Self:
         """Generate a new SpectralVariance histogram."""

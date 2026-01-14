@@ -96,7 +96,7 @@ if TYPE_CHECKING:
     import igwn_ligolw
 
     from ...plot import Plot
-    from ...typing import GpsLike
+    from ...time import SupportsToGps
 
     P = ParamSpec("P")
     R = TypeVar("R")
@@ -120,7 +120,9 @@ TAG_VERSION_REGEX = re.compile(r"\A(?P<tag>[^/]+):(?P<version>\d+)\Z")
 # -- utilities -----------------------
 
 def _parse_query_segments(
-    args: tuple[SegmentList | tuple[GpsLike, GpsLike]] | tuple[GpsLike, GpsLike],
+    args: tuple[
+        SegmentList | tuple[SupportsToGps, SupportsToGps]
+    ] | tuple[SupportsToGps, SupportsToGps],
     func: Callable,
 ) -> SegmentList:
     """Parse ``args`` for query_dqsegdb() or query_segdb().
@@ -410,7 +412,7 @@ class DataQualityFlag:
     def query_dqsegdb(
         cls,
         flag: str,
-        *args: GpsLike | Segment | SegmentList,
+        *args: SupportsToGps | Segment | SegmentList,
         host: str | None = DEFAULT_SEGMENT_SERVER,
         **kwargs,
     ) -> Self:
@@ -520,8 +522,8 @@ class DataQualityFlag:
     def fetch_open_data(
         cls,
         flag: str,
-        start: GpsLike,
-        end: GpsLike,
+        start: SupportsToGps,
+        end: SupportsToGps,
         **kwargs,
     ) -> Self:
         """Fetch Open Data timeline segments into a flag.
@@ -1031,7 +1033,7 @@ class DataQualityDict(dict):
     def query_dqsegdb(
         cls,
         flags: list[str],
-        *args: GpsLike | Segment | SegmentList,
+        *args: SupportsToGps | Segment | SegmentList,
         host: str | None = DEFAULT_SEGMENT_SERVER,
         on_error: str = "raise",
         parallel: int = 10,
@@ -1128,8 +1130,8 @@ class DataQualityDict(dict):
     def from_veto_definer_file(
         cls,
         source: str,
-        start: GpsLike | None = None,
-        end: GpsLike | None = None,
+        start: SupportsToGps | None = None,
+        end: SupportsToGps | None = None,
         ifo: str | None = None,
         **read_kw,
     ) -> Self:

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides time conversion utilities.
+"""GPS time conversion utilities.
 
 The :class:`~astropy.time.Time` object from the astropy package
 is imported for user convenience, and a GPS time conversion function
@@ -31,8 +31,8 @@ from typing import TYPE_CHECKING
 from astropy.time import Time
 
 from ._ligotimegps import (
-    GPS_TYPES,
     LIGOTimeGPS,
+    LIGOTimeGPSLike,
 )
 from ._tconvert import (
     from_gps,
@@ -41,8 +41,7 @@ from ._tconvert import (
 )
 
 if TYPE_CHECKING:
-    from ._ligotimegps import GpsType
-    from ._tconvert import GpsConvertible
+    from ._tconvert import SupportsToGps
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

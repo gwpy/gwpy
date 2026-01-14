@@ -32,7 +32,8 @@ from .. import __main__ as gwpy_time_cli
     (["1161887657", "--local"], "2016-10-30 13:34:00.000000 CDT"),
 ])
 @mock.patch("dateutil.tz.tzlocal", return_value=tz.gettz("America/Chicago"))
-def test_main(tzlocal, args, result, capsys):
+def test_main(mock_tzlocal, args, result, capsys):
+    """Test the `gwpy.time` command-line interface."""
     gwpy_time_cli.main(args)
     out, err = capsys.readouterr()
     assert not err

@@ -33,15 +33,15 @@ if TYPE_CHECKING:
     from pathlib import Path
     from typing import IO
 
-    from ...typing import GpsLike
+    from ...time import SupportsToGps
 
 WAV_SIGNATURE = ("RIFF", "WAVE")
 
 
 def read(
     fobj: str | Path | IO,
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     **kwargs,
 ) -> TimeSeries:
     """Read a WAV file into a `TimeSeries`.

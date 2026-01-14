@@ -60,7 +60,7 @@ if TYPE_CHECKING:
 
     import LDAStools.frameCPP
 
-    from ....typing import GpsLike
+    from ....time import SupportsToGps
     from ... import (
         TimeSeriesBase,
         TimeSeriesBaseDict,
@@ -118,8 +118,8 @@ def get_frame_segment(frame: LDAStools.frameCPP.FrameH) -> Segment:
 def read(
     source: str | Path | IO,
     channels: list[str],
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     scaled: bool | None = None,
     type: str | dict[str, str] | None = None,
     series_class: type[TimeSeriesBase] = TimeSeries,
@@ -199,8 +199,8 @@ def read(
 def _read_gwf(
     filename: str,
     channels: list[str],
-    start: GpsLike | None,
-    end: GpsLike | None,
+    start: SupportsToGps | None,
+    end: SupportsToGps | None,
     ctype: Mapping[str, str | None],
     scaled: bool | None,
     series_class: type[_TimeSeriesType],

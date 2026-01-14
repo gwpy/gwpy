@@ -54,7 +54,7 @@ from .utils import _channel_dict_kwarg
 if TYPE_CHECKING:
     from typing import IO
 
-    from ....typing import GpsLike
+    from ....time import SupportsToGps
     from ... import (
         Bits,
         TimeSeriesBase,
@@ -76,8 +76,8 @@ BACKENDS: list[str] = [
 def read_timeseriesdict(
     source: str | list[str],
     channels: list[str],
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     scaled: bool | None = None,
     type: str | dict[str, str] | None = None,
     backend: str | None = None,
@@ -177,8 +177,8 @@ def read_timeseriesdict(
 def read_timeseries(
     source: str | list[str],
     channel: str,
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     scaled: bool | None = None,
     type: str | dict[str, str] | None = None,
     backend: str | None = None,
@@ -247,8 +247,8 @@ def read_timeseries(
 def read_statevector(
     source: str | list[str],
     channel: str,
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     bits: list[str] | Bits | None = None,
     scaled: bool | None = None,
     type: str | dict[str, str] | None = None,
@@ -323,8 +323,8 @@ def read_statevector(
 def read_statevectordict(
     source: str | list[str],
     channels: list[str],
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     bits: list[str] | Bits | None = None,
     scaled: bool | None = None,
     type: str | dict[str, str] | None = None,
@@ -407,8 +407,8 @@ def read_statevectordict(
 def write_timeseriesdict(
     seriesdict: TimeSeriesBaseDict,
     target: str | Path | IO,
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     type: str | None = None,
     name: str | None = None,
     run: int = 0,
@@ -544,8 +544,8 @@ def write_timeseriesdict(
 def write_timeseries(
     series: TimeSeriesBase,
     target: str | Path | IO,
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     type: str | None = None,
     name: str | None = None,
     run: int = 0,

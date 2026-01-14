@@ -57,10 +57,8 @@ if TYPE_CHECKING:
     )
 
     from ..segments import SegmentListDict
-    from ..typing import (
-        GpsLike,
-        UnitLike,
-    )
+    from ..time import SupportsToGps
+    from ..typing import UnitLike
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -629,7 +627,7 @@ class Channel:
     @overload
     def find_frametype(
         self,
-        gpstime: GpsLike | None = None,
+        gpstime: SupportsToGps | None = None,
         *,
         frametype_match: str | re.Pattern | None = None,
         return_all: Literal[False] = False,
@@ -640,7 +638,7 @@ class Channel:
     @overload
     def find_frametype(
         self,
-        gpstime: GpsLike | None = None,
+        gpstime: SupportsToGps | None = None,
         *,
         frametype_match: str | re.Pattern | None = None,
         return_all: Literal[True] = True,
@@ -650,7 +648,7 @@ class Channel:
 
     def find_frametype(
         self,
-        gpstime: GpsLike | None = None,
+        gpstime: SupportsToGps | None = None,
         *,
         frametype_match: str | re.Pattern | None = None,
         return_all: bool = False,
@@ -984,8 +982,8 @@ class ChannelList(list):
     def query_nds2_availability(
         cls,
         channels: list[str | Channel],
-        start: GpsLike,
-        end: GpsLike,
+        start: SupportsToGps,
+        end: SupportsToGps,
         ctype: int | str = io_nds2.Nds2ChannelType.any().value,
         connection: nds2.connection | None = None,
         host: str | None = None,

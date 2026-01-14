@@ -54,8 +54,8 @@ if TYPE_CHECKING:
         Literal,
     )
 
+    from ...time import SupportsToGps
     from ...types import Series
-    from ...typing import GpsLike
 
 _FrVect = frameCPP.FrVect
 
@@ -252,7 +252,7 @@ def write_frames(
 
 
 def create_frame(
-    time: GpsLike = 0,
+    time: SupportsToGps = 0,
     duration: float | None = None,
     name: str = "gwpy",
     run: int = -1,
@@ -311,7 +311,7 @@ def create_frame(
 
 def create_fradcdata(
     series: Series,
-    frame_epoch: GpsLike = 0,
+    frame_epoch: SupportsToGps = 0,
     channelgroup: int = 0,
     channelid: int = 0,
     nbits: int = 16,
@@ -374,7 +374,7 @@ def _get_series_frange(series: Series) -> float:
 
 def create_frprocdata(
     series: Series,
-    frame_epoch: GpsLike = 0,
+    frame_epoch: SupportsToGps = 0,
     comment: str | None = None,
     type: int | str | None = None,
     subtype: int | str | None = None,
@@ -455,7 +455,7 @@ def create_frprocdata(
 
 def create_frsimdata(
     series: Series,
-    frame_epoch: GpsLike = 0,
+    frame_epoch: SupportsToGps = 0,
     comment: str | None = None,
     fshift: float = 0,
     phase: float = 0,

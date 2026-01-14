@@ -63,10 +63,10 @@ if TYPE_CHECKING:
     from ..frequencyseries import SpectralVariance
     from ..plot import Plot
     from ..signal.filter_design import FilterCompatible
+    from ..time import SupportsToGps
     from ..types.sliceutils import SliceLike
     from ..typing import (
         ArrayLike1D,
-        GpsLike,
         UnitLike,
     )
 
@@ -181,7 +181,7 @@ class Spectrogram(Array2D):
         cls,
         data: ArrayLike,
         unit: UnitLike = None,
-        t0: GpsLike | None = None,
+        t0: SupportsToGps | None = None,
         dt: Quantity | float | None = None,
         f0: Quantity | float | None = None,
         df: Quantity | float | None = None,

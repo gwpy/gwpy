@@ -18,9 +18,11 @@
 
 """Tests for :mod:`gwpy.time`."""
 
-from datetime import datetime
+from datetime import (
+    UTC,
+    datetime,
+)
 from decimal import Decimal
-from operator import attrgetter
 
 import numpy
 import pytest
@@ -37,14 +39,11 @@ try:
     from glue.lal import LIGOTimeGPS as GlueGPS
 except ImportError:
     GlueGPS = LIGOTimeGPS
-    HAS_GLUE = False
-else:
-    HAS_GLUE = True
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 GW150914 = LIGOTimeGPS(1126259462, 391000000)
-GW150914_DT = datetime(2015, 9, 14, 9, 50, 45, 391000)
+GW150914_DT = datetime(2015, 9, 14, 9, 50, 45, 391000, tzinfo=UTC)
 FREEZE = "2015-09-14 09:50:45.391"
 NOW = 1126259462
 TODAY = 1126224017
@@ -62,7 +61,7 @@ YESTERDAY = 1126137617
     ("Sep 14 2015 09:50:45.391", GW150914),
     ("Oct 30 2016 12:34 CST", 1161887657),
     ((2017, 1, 1), 1167264018),
-    (datetime(2017, 1, 1), 1167264018),
+    (datetime(2017, 1, 1, tzinfo=UTC), 1167264018),
     (Time(57754, format="mjd"), 1167264018),
     (Time(57754.0001, format="mjd"), LIGOTimeGPS(1167264026, 640000000)),
     (Quantity(1167264018, "s"), 1167264018),
@@ -94,10 +93,10 @@ def test_to_gps_error(in_, err):
 
 
 @pytest.mark.parametrize(("in_", "out"), [
-    (1167264018, datetime(2017, 1, 1)),
-    ("1167264018", datetime(2017, 1, 1)),
-    (1126259462.391, datetime(2015, 9, 14, 9, 50, 45, 391000)),
-    ("1.13e9", datetime(2015, 10, 27, 16, 53, 3)),
+    (1167264018, datetime(2017, 1, 1, tzinfo=UTC)),
+    ("1167264018", datetime(2017, 1, 1, tzinfo=UTC)),
+    (1126259462.391, datetime(2015, 9, 14, 9, 50, 45, 391000, tzinfo=UTC)),
+    ("1.13e9", datetime(2015, 10, 27, 16, 53, 3, tzinfo=UTC)),
     pytest.param(
         GlueGPS(GW150914.gpsSeconds, GW150914.gpsNanoSeconds),
         GW150914_DT,
@@ -139,14 +138,16 @@ def test_tconvert(in_, out):
     assert time.tconvert(in_) == out
 
 
-@pytest.mark.parametrize(
-    "gpstype",
-    time.GPS_TYPES,
-    ids=attrgetter("__module__"),
-)
-def test_gps_types(gpstype):
-    assert gpstype.__name__ == "LIGOTimeGPS"
-    gps = gpstype(123, 456000000)
+@pytest.mark.parametrize("gpsmod", [
+    "glue.lal",
+    "lal",
+    "ligotimegps",
+])
+def test_gps_types(gpsmod):
+    """Test that the module's `LIGOTimeGPS` matches the protocol."""
+    mod = pytest.importorskip(gpsmod)
+    gps = mod.LIGOTimeGPS(123, 456000000)
+    assert isinstance(gps, time.LIGOTimeGPSLike)
     assert gps.gpsSeconds == 123
     assert gps.gpsNanoSeconds == 456000000
     assert gps == 123.456

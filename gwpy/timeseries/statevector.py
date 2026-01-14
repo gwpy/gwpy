@@ -92,9 +92,9 @@ if TYPE_CHECKING:
         DataQualityDict,
         DataQualityFlag,
     )
+    from ..time import SupportsToGps
     from ..typing import (
         ArrayLike1D,
-        GpsLike,
         UnitLike,
     )
 
@@ -234,7 +234,7 @@ class StateTimeSeries(TimeSeriesBase):
     def __new__(
         cls,
         data: ArrayLike1D,
-        t0: GpsLike | None = None,
+        t0: SupportsToGps | None = None,
         dt: float | Quantity | None = None,
         sample_rate: float | Quantity | None = None,
         times: ArrayLike1D | None = None,
@@ -672,7 +672,7 @@ class StateVector(TimeSeriesBase):
         cls,
         data: ArrayLike1D,
         bits: BitsInput | None = None,
-        t0: GpsLike | None = None,
+        t0: SupportsToGps | None = None,
         dt: float | Quantity | None = None,
         sample_rate: float | Quantity | None = None,
         times: ArrayLike1D | None = None,
@@ -880,8 +880,8 @@ class StateVector(TimeSeriesBase):
     def fetch(
         cls,
         channel: str | Channel,
-        start: GpsLike,
-        end: GpsLike,
+        start: SupportsToGps,
+        end: SupportsToGps,
         *,
         bits: Bits | BitsInput | None = None,
         host: str | None = None,

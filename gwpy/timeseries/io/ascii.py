@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from typing import IO
 
-    from ...typing import GpsLike
+    from ...time import SupportsToGps
 
 
 def read_ascii(
@@ -43,8 +43,8 @@ def read_ascii(
     array_type: type = TimeSeries,
     *,
     unpack: bool = True,
-    start: GpsLike | None = None,
-    end: GpsLike | None = None,
+    start: SupportsToGps | None = None,
+    end: SupportsToGps | None = None,
     **kwargs,
 ) -> TimeSeries:
     """Read a `TimeSeries` from an ASCII file.
