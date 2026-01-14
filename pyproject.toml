@@ -83,10 +83,10 @@ conda = [
 dev = [
   "ciecplib",
   "inspiral-range >=0.9.3",
-  "lalsuite ; sys_platform != 'win32' and python_version < '3.13'",
-  "lscsoft-glue ; sys_platform != 'win32' and python_version < '3.12'",
+  "lalsuite ; sys_platform != 'win32' and python_version < '3.14'",
+  "lscsoft-glue ; sys_platform != 'win32'",
   "psycopg2 ; sys_platform == 'linux'",
-  "pycbc >=1.13.4 ; sys_platform != 'win32' and python_version < '3.13'",
+  "pycbc >=1.13.4 ; sys_platform == 'linux'",
   "pymysql",
   "python-ligo-lw >=1.7.0,<2.0.0 ; sys_platform != 'win32'",
   "sqlalchemy",
