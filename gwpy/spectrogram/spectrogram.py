@@ -27,10 +27,10 @@ from typing import (
 )
 
 import numpy
-from astropy import units
+from astropy.units import Quantity
 
 from ..frequencyseries import FrequencySeries
-from ..frequencyseries._fdcommon import fdfilter
+from ..frequencyseries._fdcommon import _fdfilter
 from ..io.registry import UnifiedReadWriteMethod
 from ..timeseries import (
     TimeSeries,
@@ -55,13 +55,14 @@ if TYPE_CHECKING:
         Self,
     )
 
-    from astropy.units import Quantity, UnitBase
+    from astropy.units import UnitBase
+    from astropy.units.typing import QuantityLike
     from numpy.typing import ArrayLike
 
     from ..detector import Channel
     from ..frequencyseries import SpectralVariance
     from ..plot import Plot
-    from ..signal.filter_design import FilterType
+    from ..signal.filter_design import FilterCompatible
     from ..types.sliceutils import SliceLike
     from ..typing import (
         ArrayLike1D,
@@ -69,7 +70,7 @@ if TYPE_CHECKING:
         UnitLike,
     )
 
-__author__ = "Duncan Macleod <duncan.macleod@ligo.org"
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 __all__ = ["Spectrogram", "SpectrogramList"]
 
@@ -459,7 +460,10 @@ class Spectrogram(Array2D):
         poles: ArrayLike1D,
         gain: float,
         *,
-        analog: bool = True,
+        analog: bool = False,
+        sample_rate: QuantityLike | None = None,
+        unit: str = "rad/s",
+        normalize_gain: bool = False,
     ) -> Self:
         """Filter this `Spectrogram` by applying a zero-pole-gain filter.
 
@@ -477,6 +481,33 @@ class Spectrogram(Array2D):
         analog : `bool`, optional
             Type of ZPK being applied, if `analog=True` all parameters
             will be converted in the Z-domain for digital filtering.
+
+        sample_rate : `float`, `~astropy.units.Quantity`, optional
+            Sample rate of data (in Hertz), used to apply a digital filter.
+            Defaults to the last frequency value of this `Spectrogram`
+            (i.e. the Nyquist frequency).
+
+        unit : `str`, optional
+            For analogue ZPK filters, the units in which the zeros and poles are
+            specified. Either ``'Hz'`` or ``'rad/s'`` (default).
+
+        normalize_gain : `bool`, optional
+            Whether to normalize the gain when converting from Hz to rad/s.
+
+            - `False` (default):
+              Multiply zeros/poles by -2π but leave gain unchanged.
+              This matches the LIGO GDS **'f' plane** convention
+              (``plane='f'`` in ``s2z()``).
+
+            - `True`:
+              Normalize gain to preserve frequency response magnitude.
+              Gain is scaled by :math:`|∏p_i/∏z_i| · (2π)^{(n_p - n_z)}`.
+              Use this when your filter was designed with the transfer
+              function :math:`H(f) = k·∏(f-z_i)/∏(f-p_i)` in Hz.
+              This matches the LIGO GDS **'n' plane** convention
+              (``plane='n'`` in ``s2z()``).
+
+            Only used for analogue filters in Hz (``analog=True, unit="Hz"``).
 
         Returns
         -------
@@ -498,31 +529,68 @@ class Spectrogram(Array2D):
         return self.filter(
             (zeros, poles, gain),
             analog=analog,
+            unit=unit,
+            sample_rate=sample_rate,
+            normalize_gain=normalize_gain,
         )
 
     def filter(
         self,
-        *filt: FilterType,
+        filt: FilterCompatible,
+        *,
         analog: bool = False,
+        sample_rate: QuantityLike | None = None,
+        unit: str = "rad/s",
+        normalize_gain: bool = False,
         inplace: bool = False,
         **kwargs,
-    ) -> Spectrogram:
+    ) -> Self:
         """Apply the given filter to this `Spectrogram`.
 
         Parameters
         ----------
-        *filt : filter arguments
-            1, 2, 3, or 4 arguments defining the filter to be applied,
+        filt : `numpy.ndarray` or `tuple`
+            The filter to be applied.
+            This can be specified in any of the following forms, with
+            the appropriate number of elements in the tuple:
 
-            - an ``Nx1`` `~numpy.ndarray` of FIR coefficients
-            - an ``Nx6`` `~numpy.ndarray` of SOS coefficients
-            - ``(numerator, denominator)`` polynomials
-            - ``(zeros, poles, gain)``
-            - ``(A, B, C, D)`` 'state-space' representation
+            - `numpy.ndarray` - 1D array of FIR filter coefficients.
+            - `tuple[numpy.ndarray, numpy.ndarray]` - numerator/demoinator
+              polynomials of the transfer function.
+            - `numpy.ndarray` - 2D array of SOS coefficients.
+            - `tuple[numpy.ndarray, numpy.ndarray, float]` - zero-pole-gain
+              representation.
 
         analog : `bool`, optional
             If `True`, filter definition will be converted from Hertz
             to Z-domain digital representation, default: `False`.
+
+        sample_rate : `float`, `~astropy.units.Quantity`, optional
+            Sample rate of data (in Hertz), used to apply a digital filter.
+            Defaults to the last frequency value of this `Spectrogram`
+            (i.e. the Nyquist frequency).
+
+        unit : `str`, optional
+            For analogue ZPK filters, the units in which the zeros and poles are
+            specified. Either ``'Hz'`` or ``'rad/s'`` (default).
+
+        normalize_gain : `bool`, optional
+            Whether to normalize the gain when converting from Hz to rad/s.
+
+            - `False` (default):
+              Multiply zeros/poles by -2π but leave gain unchanged.
+              This matches the LIGO GDS **'f' plane** convention
+              (``plane='f'`` in ``s2z()``).
+
+            - `True`:
+              Normalize gain to preserve frequency response magnitude.
+              Gain is scaled by :math:`|∏p_i/∏z_i| · (2π)^{(n_p - n_z)}`.
+              Use this when your filter was designed with the transfer
+              function :math:`H(f) = k·∏(f-z_i)/∏(f-p_i)` in Hz.
+              This matches the LIGO GDS **'n' plane** convention
+              (``plane='n'`` in ``s2z()``).
+
+            Only used for analogue filters in Hz (``analog=True, unit="Hz"``).
 
         inplace : `bool`, optional
             If `True`, this array will be overwritten with the filtered
@@ -543,13 +611,16 @@ class Spectrogram(Array2D):
         ValueError
             If ``filt`` arguments cannot be interpreted properly.
         """
-        return fdfilter(
+        return cast("Self", _fdfilter(
             self,
-            *filt,
+            filt,
             analog=analog,
+            sample_rate=sample_rate,
+            unit=unit,
+            normalize_gain=normalize_gain,
             inplace=inplace,
             **kwargs,
-        )
+        ))
 
     def variance(
         self,
@@ -639,9 +710,9 @@ class Spectrogram(Array2D):
         """
         # Convert floats to Quantities
         if low is not None:
-            low = units.Quantity(low, self._default_yunit)
+            low = Quantity(low, self._default_yunit)
         if high is not None:
-            high = units.Quantity(high, self._default_yunit)
+            high = Quantity(high, self._default_yunit)
 
         # Cast for type checker
         low = cast("Quantity | None", low)
@@ -659,7 +730,7 @@ class Spectrogram(Array2D):
             )
 
         # Check high frequency
-        peak = units.Quantity(self.band[1], self.yunit)
+        peak = Quantity(self.band[1], self.yunit)
         if high is not None and high == peak:
             high = None
         elif high is not None and high > peak:

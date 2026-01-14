@@ -21,7 +21,10 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    cast,
+)
 
 import numpy
 from astropy import units
@@ -49,11 +52,12 @@ if TYPE_CHECKING:
 
     from ..detector import Channel
     from ..plot import Plot
-    from ..signal.filter_design import FilterType
+    from ..signal.filter_design import FilterCompatible
     from ..timeseries import TimeSeries
     from ..typing import (
         ArrayLike1D,
         GpsLike,
+        QuantityLike,
         UnitLike,
     )
     from ..utils.lal import LALFrequencySeriesType
@@ -235,6 +239,9 @@ class FrequencySeries(Series):
         gain: float,
         *,
         analog: bool = True,
+        sample_rate: QuantityLike | None = None,
+        unit: str = "rad/s",
+        normalize_gain: bool = False,
     ) -> Self:
         """Filter this `FrequencySeries` by applying a zero-pole-gain filter.
 
@@ -251,7 +258,35 @@ class FrequencySeries(Series):
 
         analog : `bool`, optional
             Type of ZPK being applied, if ``analog=True`` all parameters
-            will be converted in the Z-domain for digital filtering.
+            will be converted in the Z-domain for digital filtering via
+            the bilinear transform.
+
+        sample_rate : `float`, `~astropy.units.Quantity`, optional
+            Sample rate of data (in Hertz), used to apply a digital filter.
+            Defaults to the last frequency value of this `FrequencySeries`
+            (i.e. the Nyquist frequency).
+
+        unit : `str`, optional
+            For analogue ZPK filters, the units in which the zeros and poles are
+            specified. Either ``'Hz'`` or ``'rad/s'`` (default).
+
+        normalize_gain : `bool`, optional
+            Whether to normalize the gain when converting from Hz to rad/s.
+
+            - `False` (default):
+              Multiply zeros/poles by -2π but leave gain unchanged.
+              This matches the LIGO GDS **'f' plane** convention
+              (``plane='f'`` in ``s2z()``).
+
+            - `True`:
+              Normalize gain to preserve frequency response magnitude.
+              Gain is scaled by :math:`|∏p_i/∏z_i| · (2π)^{(n_p - n_z)}`.
+              Use this when your filter was designed with the transfer
+              function :math:`H(f) = k·∏(f-z_i)/∏(f-p_i)` in Hz.
+              This matches the LIGO GDS **'n' plane** convention
+              (``plane='n'`` in ``s2z()``).
+
+            Only used for analogue filters in Hz (``analog=True, unit="Hz"``).
 
         Returns
         -------
@@ -272,7 +307,10 @@ class FrequencySeries(Series):
         """
         return self.filter(
             (zeros, poles, gain),
+            sample_rate=sample_rate,
             analog=analog,
+            unit=unit,
+            normalize_gain=normalize_gain,
         )
 
     def interpolate(self, df: float) -> Self:
@@ -310,33 +348,69 @@ class FrequencySeries(Series):
 
     def filter(
         self,
-        *filt: FilterType,
+        filt: FilterCompatible,
+        *,
         analog: bool = False,
+        sample_rate: QuantityLike | None = None,
+        unit: str = "rad/s",
+        normalize_gain: bool = False,
         inplace: bool = False,
-        **kwargs) -> Self:
+    ) -> Self:
         """Apply a filter to this `FrequencySeries`.
+
+        The input filter argument is designed to accept any filter created
+        by the :mod:`scipy.signal` filter design functions, and operates on
+        the conventions of that module.
 
         Parameters
         ----------
-        *filt : filter arguments
-            1, 2, 3, or 4 arguments defining the filter to be applied,
+        filt : `numpy.ndarray` or `tuple`
+            The filter to be applied.
+            This can be specified in any of the following forms, with
+            the appropriate number of elements in the tuple:
 
-            - an ``Nx1`` `~numpy.ndarray` of FIR coefficients
-            - an ``Nx6`` `~numpy.ndarray` of SOS coefficients
-            - ``(numerator, denominator)`` polynomials
-            - ``(zeros, poles, gain)``
-            - ``(A, B, C, D)`` 'state-space' representation
+            - `numpy.ndarray` - 1D array of FIR filter coefficients.
+            - `tuple[numpy.ndarray, numpy.ndarray]` - numerator/demoinator
+              polynomials of the transfer function.
+            - `numpy.ndarray` - 2D array of SOS coefficients.
+            - `tuple[numpy.ndarray, numpy.ndarray, float]` - zero-pole-gain
+              representation.
 
         analog : `bool`, optional
-            If `True`, filter definition will be converted from Hertz
-            to Z-domain digital representation, default: `False`.
+            Type of ZPK being applied, if ``analog=True`` all parameters
+            will be converted in the Z-domain for digital filtering via
+            the bilinear transform.
 
-        inplace : `bool`, optional
+        sample_rate : `float`, `~astropy.units.Quantity`, optional
+            Sample rate of data (in Hertz), used to apply a digital filter.
+            Defaults to the last frequency value of this `FrequencySeries`
+            (i.e. the Nyquist frequency).
+
+        unit : `str`, optional
+            For analogue ZPK filters, the units in which the zeros and poles are
+            specified. Either ``'Hz'`` or ``'rad/s'`` (default).
+
+        normalize_gain : `bool`, optional
+            Whether to normalize the gain when converting from Hz to rad/s.
+
+            - `False` (default):
+              Multiply zeros/poles by -2π but leave gain unchanged.
+              This matches the LIGO GDS **'f' plane** convention
+              (``plane='f'`` in ``s2z()``).
+
+            - `True`:
+              Normalize gain to preserve frequency response magnitude.
+              Gain is scaled by :math:`|∏p_i/∏z_i| · (2π)^{(n_p - n_z)}`.
+              Use this when your filter was designed with the transfer
+              function :math:`H(f) = k·∏(f-z_i)/∏(f-p_i)` in Hz.
+              This matches the LIGO GDS **'n' plane** convention
+              (``plane='n'`` in ``s2z()``).
+
+            Only used for analogue filters in Hz (``analog=True, unit="Hz"``).
+
+        inplace : bool, optional
             If `True`, this array will be overwritten with the filtered
-            version, default: `False`.
-
-        kwargs
-            Additional keyword arguments passed to the filter function.
+            version.
 
         Returns
         -------
@@ -349,15 +423,23 @@ class FrequencySeries(Series):
         ------
         ValueError
             If ``filt`` arguments cannot be interpreted properly.
+
+        See Also
+        --------
+        FrequencySeries.zpk
+            For applying a zero-pole-gain filter, including in other
+            units (e.g. poles and zeros specified in Hertz).
         """
-        from ._fdcommon import fdfilter
-        return fdfilter(
+        from ._fdcommon import _fdfilter
+        return cast("Self", _fdfilter(
             self,
-            *filt,
+            filt,
             analog=analog,
             inplace=inplace,
-            **kwargs,
-        )
+            sample_rate=sample_rate,
+            unit=unit,
+            normalize_gain=normalize_gain,
+        ))
 
     @classmethod
     def from_lal(

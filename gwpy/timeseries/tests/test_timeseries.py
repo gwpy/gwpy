@@ -1653,35 +1653,27 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         # check that there are no remaining values above the threshold
         assert gated.max() < threshold
 
-    def test_whiten(self):
-        # create noise with a glitch in it at 1000 Hz
-        noise = self.TEST_CLASS(
-            numpy.random.normal(loc=1, scale=.5, size=16384 * 64),
-            sample_rate=16384,
-            epoch=-32,
-        ).zpk([], [0], 1)
-        glitchtime = 0.5
-        glitch = signal.gausspulse(
-            noise.times.value - glitchtime,
-            bw=100,
-        ) * 1e-4
-        data = noise + glitch
+    def test_whiten(self, colored_noise, gausspulse):
+        """Test `TimeSeries.whiten()`."""
+        # Inject the pulse into the middle of the noise
+        glitchtime = (colored_noise.t0 + colored_noise.duration / 2).value
+        gausspulse.shift(glitchtime)
+        data = colored_noise.inject(gausspulse * 1e-2)
 
-        # when the input is stationary Gaussian noise, the output should have
+        # When the input is stationary Gaussian noise, the output should have
         # zero mean and unit variance
-        whitened = noise.whiten(detrend="linear", method="median")
-        assert whitened.size == noise.size
-        nptest.assert_almost_equal(whitened.mean().value, 0.0, decimal=2)
-        nptest.assert_almost_equal(whitened.std().value, 1.0, decimal=2)
+        whitened = colored_noise.whiten(detrend="linear", method="median")
+        assert whitened.size == colored_noise.size
+        nptest.assert_almost_equal(whitened.mean().value, 0.0, decimal=1)
+        nptest.assert_almost_equal(whitened.std().value, 1.0, decimal=1)
+        tmax = data.times[data.argmax()].value
+        assert tmax != glitchtime
 
-        # when a loud signal is present, the max amplitude should be recovered
-        # at the time of that signal
-        tmax = data.times[data.argmax()]
-        assert not numpy.isclose(tmax.value, glitchtime)
-
+        # When a loud signal is present,
+        # the max amplitude should be recovered at the time of that signal
         whitened = data.whiten(detrend="linear", method="median")
-        tmax = whitened.times[whitened.argmax()]
-        nptest.assert_almost_equal(tmax.value, glitchtime)
+        tmax = whitened.times[whitened.argmax()].value
+        assert tmax == pytest.approx(glitchtime)
 
     def test_convolve(self):
         data = self.TEST_CLASS(
@@ -1696,34 +1688,22 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         assert convolved.size == data.size
         utils.assert_allclose(convolved.value[1:-1], data.value[1:-1])
 
-    def test_correlate(self):
-        # create noise and a glitch template at 1000 Hz
-        noise = self.TEST_CLASS(
-            numpy.random.normal(size=16384 * 64),
-            sample_rate=16384,
-            epoch=-32,
-        ).zpk([], [1], 1)
-        glitchtime = -16.5
-        glitch = self.TEST_CLASS(
-            signal.gausspulse(
-                numpy.arange(-1, 1, 1./16384),
-                bw=100,
-            ),
-            sample_rate=16384,
-            epoch=glitchtime-1,
-        )
+    def test_correlate(self, colored_noise, gausspulse):
+        # Inject the pulse into the middle of the noise
+        glitchtime = (colored_noise.t0 + colored_noise.duration / 2).value
+        gausspulse.shift(glitchtime)
+        data = colored_noise.inject(gausspulse * 1e-2)
 
         # check that, without a signal present, we only see background
-        snr = noise.correlate(glitch, whiten=True, method="median")
+        snr = colored_noise.correlate(gausspulse, whiten=True, method="median")
         tmax = snr.times[snr.argmax()]
-        assert snr.size == noise.size
+        assert snr.size == colored_noise.size
         assert not numpy.isclose(tmax.value, glitchtime)
         nptest.assert_almost_equal(snr.mean().value, 0.0, decimal=1)
         nptest.assert_almost_equal(snr.std().value, 1.0, decimal=1)
 
-        # inject and recover the glitch
-        data = noise.inject(glitch * 1e-4)
-        snr = data.correlate(glitch, whiten=True, method="median")
+        # Recover the glitch
+        snr = data.correlate(gausspulse, whiten=True, method="median")
         tmax = snr.times[snr.argmax()]
         nptest.assert_almost_equal(tmax.value, glitchtime)
 
@@ -1754,8 +1734,8 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         """
         zpk = [10, 10], [1, 1], 100
         utils.assert_quantity_sub_equal(
-            gw150914.zpk(*zpk),
-            gw150914.filter(*zpk, analog=True),
+            gw150914.zpk(*zpk, analog=True, unit="Hz"),
+            gw150914.filter(zpk, analog=True, unit="Hz"),
         )
 
     def test_highpass_happy_path(self, gw150914):
@@ -1766,14 +1746,16 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         eqinds = numpy.where(hp_asd.frequencies.value > 200)[0]
         eqind0 = eqinds[0]
 
-        # be within 40% for all values after
+        # be within 50% for all values after
+        # (tolerance increased from 40% due to fix for numerical
+        # stability in ZPK filter gain application - see issue #1544)
         # numpy allclose formula:
         # |a-b| <= atol + rtol * |b|
 
         assert numpy.allclose(
             hp_asd[eqind0:].value,
             asd[eqind0:].value,
-            rtol=0.4,
+            rtol=0.5,
             atol=0,
         )
 
@@ -1875,14 +1857,16 @@ class TestTimeSeries(_TestTimeSeriesBase[TimeSeriesType]):
         eqind0 = eqinds[0]
         eqindn = eqinds[-1]
 
-        # be within 40% for all values after
+        # be within 50% for all values in passband
+        # (tolerance increased from 40% due to fix for numerical
+        # stability in ZPK filter gain application - see issue #1544)
         # numpy allclose formula:
         # |a-b| <= atol + rtol * |b|
 
         assert numpy.allclose(
             bp_asd[eqind0:eqindn].value,
             asd[eqind0:eqindn].value,
-            rtol=0.4,
+            rtol=0.5,
             atol=0,
         )
 

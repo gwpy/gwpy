@@ -69,16 +69,61 @@ def usetex(
 
 # -- various useful mock data series -
 
+_FIXTURE_TS_SAMPLE_RATE = 2048.
+_FIXTURE_TS_DURATION = 10.  # seconds
+_FIXTURE_TS_NSAMPLES = int(_FIXTURE_TS_SAMPLE_RATE * _FIXTURE_TS_DURATION)
+
+@pytest.fixture
+def white_noise() -> TimeSeries:
+    """10s of white noise, sampled at 2kHz, starting at t0=0s."""
+    rng = numpy.random.default_rng(seed=0)
+    noise = rng.normal(size=_FIXTURE_TS_NSAMPLES)
+    return TimeSeries(
+        noise / numpy.std(noise),  # Scale to 1V/rtHz
+        dt=1 / _FIXTURE_TS_SAMPLE_RATE,
+        t0=0,
+        name="noise",
+    )
+
+@pytest.fixture
+def colored_noise(white_noise: TimeSeries) -> TimeSeries:
+    """10s of 1/f^2 coloured noise, sampled at 2kHz, starting at t0=0s."""
+    freqs = numpy.fft.rfftfreq(_FIXTURE_TS_NSAMPLES, 1/_FIXTURE_TS_SAMPLE_RATE)
+
+    # Create coloured noise
+    noise_fft = numpy.fft.rfft(white_noise)
+    coloring_filter = numpy.ones_like(freqs)
+    coloring_filter[1:] = 1 / (freqs[1:]**2)
+    coloring_filter[0] = coloring_filter[1]  # Handle DC
+    colored_noise = numpy.fft.irfft(noise_fft * coloring_filter, n=_FIXTURE_TS_NSAMPLES)
+    return TimeSeries(
+        colored_noise / numpy.std(colored_noise) * 5.0,  # Scale noise
+        dt=1 / _FIXTURE_TS_SAMPLE_RATE,
+        t0=0,
+        name="noise",
+    )
+
+
+@pytest.fixture
+def gausspulse() -> TimeSeries:
+    """0.25s Gaussian pulse at 200 Hz, centred on t0=0."""
+    from scipy.signal import gausspulse
+    dur = 0.25
+    nsamp = int(dur * _FIXTURE_TS_SAMPLE_RATE)
+    times = numpy.linspace(-dur/2, dur/2, nsamp, endpoint=False)
+    pulse = gausspulse(times, fc=200, bw=.5)
+    return TimeSeries(
+        pulse,
+        times=times,
+        name="gausspulse",
+    )
+
+
 @pytest.fixture
 def noisy_sinusoid() -> TimeSeries:
-    """10s of 2V/rtHz RMS sine wave at 500Hz with 1mV/rtHz white noise (2kHz).
-
-    See Also
-    --------
-    scipy.signal.welch
-    """
+    """10s of 2V/rtHz RMS sine wave at 500Hz with 1mV/rtHz white noise (2kHz)."""
     # see :func:`scipy.signal.welch`
-    numpy.random.seed(1234)
+    rng = numpy.random.default_rng(seed=1234)
 
     # params
     freq = 500.
@@ -90,20 +135,18 @@ def noisy_sinusoid() -> TimeSeries:
     noise_power = 1e-3 * rate / 2  # mV RMS white noise
     time = numpy.arange(size) / rate
     x = amp * numpy.sin(2 * numpy.pi * freq * time)
-    x += numpy.random.normal(scale=numpy.sqrt(noise_power), size=time.shape)
-    return TimeSeries(x, xindex=time, unit="V", name="noisy sinusoid")
+    x += rng.normal(scale=numpy.sqrt(noise_power), size=time.shape)
+    return TimeSeries(
+        x,
+        times=time,
+        unit="V",
+        name="noisy sinusoid",
+    )
 
 
 @pytest.fixture
-def corrupt_noisy_sinusoid(
-    noisy_sinusoid: TimeSeries,
-) -> TimeSeries:
-    """The `noisy_sinusoid` but with 10 samples of corruption in the middle.
-
-    See Also
-    --------
-    scipy.signal.welch
-    """
+def corrupt_noisy_sinusoid(noisy_sinusoid: TimeSeries) -> TimeSeries:
+    """Return the `noisy_sinusoid` with 10 samples of corruption in the middle."""
     # add corruption in part of the signal
     size = noisy_sinusoid.size
     noisy_sinusoid.value[int(size // 2):int(size // 2) + 10] *= 50.

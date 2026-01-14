@@ -27,8 +27,10 @@ import numpy
 import pytest
 from astropy import units
 from numpy import shares_memory
+from numpy.testing import assert_allclose
 from scipy import signal
 
+from ...signal import filter_design
 from ...testing import utils
 from ...timeseries import TimeSeries
 from ...types.tests.test_series import TestSeries as _TestSeries
@@ -135,66 +137,63 @@ class TestFrequencySeries(_TestSeries):
         utils.assert_quantity_sub_equal(ts.fft().ifft(), ts)
         utils.assert_allclose(ts.fft().ifft().value, ts.value)
 
-    def test_filter_analog(self, array):
-        """Test `FrequencySeries.filter` with analog filter."""
-        a2 = array.filter([100], [1], 1e-2, analog=True)
-        a3 = array.zpk([100], [1], 1e-2)
+    @pytest.mark.parametrize(("filter_form", "analog"), [
+        pytest.param("zpk", True, id="zpk-analog"),
+        pytest.param("zpk", False, id="zpk-digital"),
+        pytest.param("ba", True, id="ba-analog"),
+        pytest.param("ba", False, id="ba-digital"),
+        pytest.param("sos", False, id="sos-digital"),
+    ])
+    def test_filter(
+        self,
+        array: FrequencySeries,
+        filter_form: str,
+        analog: bool,
+    ):
+        """Test `FrequencySeries.filter()`."""
+        # Design a lowpass filter at nyquist/2
+        nyq = array.frequencies.value[-1]
+        filt_kw = {
+            "btype": "low",
+            "analog": analog,
+            "output": filter_form,
+        }
+        if not analog:
+            filt_kw["fs"] = nyq * 2
+        filt = signal.butter(3, nyq / 2, **filt_kw)
+
+        # Apply the filter
+        a2 = array.filter(filt, analog=analog)
+
+        # Check that we get back a FrequencySeries with the correct frequencies
         assert isinstance(a2, type(array))
         utils.assert_quantity_equal(a2.frequencies, array.frequencies)
 
-        # manually rebuild the filter to test it works
-        b, a, = signal.zpk2tf([100], [1], 1e-2)
-        fresp = abs(signal.freqs(b, a, array.frequencies.value)[1])
+        # Manually compute the filter response
+        _, fresp = numpy.abs(filter_design.frequency_response(
+            filt,
+            array.frequencies.to("Hz").value,
+            analog=analog,
+            sample_rate=nyq * 2,
+            unit="rad/s",
+        ))
+
+        # Check that the filter was applied correctly
+        assert_allclose(a2.value, fresp * array.value)
+
+    def test_zpk_analog_hertz(self, array):
+        """Test `FrequencySeries.zpk(..., analog=True)`."""
+        from gwpy.signal.filter_design import _convert_zpk_units
+
+        zpk = ([100], [1], 1e-2)
+        a2 = array.zpk(*zpk, unit="Hertz", analog=True)
+
+        # Rebuild frequency-response manually
+        z_rad, p_rad, k_rad = _convert_zpk_units(zpk, "Hz")
+        omega = array.frequencies.value * 2 * numpy.pi
+        fresp = numpy.abs(signal.freqs_zpk(z_rad, p_rad, k_rad, omega)[1])
+
         utils.assert_array_equal(a2.value, fresp * array.value)
-        utils.assert_array_equal(a3.value, fresp * array.value)
-
-    def test_filter_digital(self, array):
-        """Test `FrequencySeries.filter` with digital filter."""
-        # fs is 2 * nyquist
-        fs = 2 * array.frequencies.value[-1]
-        z, p, k = signal.butter(
-            3,
-            30,
-            "low",
-            analog=False,
-            output="zpk",
-            fs=fs,
-        )
-        za, pa, ka = signal.butter(
-            3,
-            30,
-            "low",
-            analog=True,
-            output="zpk",
-        )
-
-        a2 = array.filter(za, pa, ka, analog=True)
-        a3 = array.zpk(z, p, k, analog=False)
-        assert isinstance(a2, type(array))
-
-        utils.assert_quantity_equal(a2.frequencies, array.frequencies)
-
-        # manually rebuild the filter to test it works
-        _, fr = signal.freqz_zpk(z, p, k, worN=array.frequencies.value, fs=fs)
-        _, fr_a = signal.freqs_zpk(za, pa, ka, worN=array.frequencies.value)
-        fr_d = abs(fr)
-        fr_a = abs(fr_a)
-
-        assert numpy.allclose(a2.value, fr_a * array.value)
-        assert numpy.allclose(a3.value, fr_d * array.value)
-
-        # check that, in this case, digital and analog filters are close
-        # this check is not essential, since there is no guarantee
-        # filters will have the same frequency response after bilinear
-        # transform, but it is still useful
-        eps = 0.1 * numpy.abs(numpy.max(a3))
-        assert all(numpy.abs(a2.value-a3.value) < eps)
-
-    def test_zpk(self, array):
-        """Test `FrequencySeries.zpk`."""
-        a2 = array.zpk([100], [1], 1e-2)
-        assert isinstance(a2, type(array))
-        utils.assert_quantity_equal(a2.frequencies, array.frequencies)
 
     def test_inject(self):
         """Test `FrequencySeries.inject`."""

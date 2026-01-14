@@ -27,10 +27,9 @@ from typing import (
 )
 
 import numpy
-from astropy.units import Quantity
 from matplotlib.ticker import MaxNLocator
 
-from ..signal.filter_design import parse_filter
+from ..signal import filter_design
 from . import Plot
 
 if TYPE_CHECKING:
@@ -44,10 +43,7 @@ if TYPE_CHECKING:
 
     from ..frequencyseries import FrequencySeries
     from ..signal.filter_design import FilterType
-    from ..typing import (
-        Array1D,
-        ArrayLike1D,
-    )
+    from ..typing import Array1D
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
@@ -55,7 +51,7 @@ __all__ = [
 ]
 
 
-def to_db(a: ArrayLike) -> NDArray:
+def _to_db(a: ArrayLike, *, power: bool = False) -> NDArray:
     """Convert the input array into decibels.
 
     Parameters
@@ -63,17 +59,24 @@ def to_db(a: ArrayLike) -> NDArray:
     a : `float`, `numpy.ndarray`
         Value or array of values to convert to decibels.
 
+    power : `bool`, optional
+        If `True`, convert power-based quantity to dB (:math:`10 * log_{10}(a)`),
+        otherwise (default) convert amplitude (:math:`20 * log_{10}(a)`).
+
     Returns
     -------
     dB : `float`
-        ``10 * numpy.log10(a)``
+        The input value converted to decibels.
 
     Examples
     --------
     >>> to_db(1000)
     30.0
     """
-    return 10 * numpy.log10(a)
+    db = 10 * numpy.log10(a)
+    if power:
+        return db
+    return 2 * db
 
 
 class BodePlot(Plot):
@@ -93,12 +96,42 @@ class BodePlot(Plot):
         - complex-valued `spectra <gwpy.frequencyseries.FrequencySeries>`
           representing a transfer function
 
-    frequencies : `numpy.ndarray`, optional
-        List of frequencies (in Hertz) at which to plot
+    frequencies : `numpy.ndarray`, `int`, optional
+        List of frequencies (in Hertz) at which to plot, or an integer
+        specifying the number of frequencies to generate.
 
     dB : `bool`, optional
         If `True`, display magnitude in decibels, otherwise display
         amplitude.
+
+    analog : `bool`, optional
+        If `True`, indicates that the input filters are analogue filters.
+
+    sample_rate : `float`, `~astropy.units.Quantity`, optional
+        The sampling rate of a digital filter.
+        If ``analog=False`` this option is required.
+
+    unit : `str`, optional
+        For analogue ZPK filters, the units in which the zeros and poles are
+        specified. Either ``'Hz'`` or ``'rad/s'`` (default).
+
+    normalize_gain : `bool`, optional
+        Whether to normalize the gain when converting from Hz to rad/s.
+
+        - `False` (default):
+          Multiply zeros/poles by -2π but leave gain unchanged.
+          This matches the LIGO GDS **'f' plane** convention
+          (``plane='f'`` in ``s2z()``).
+
+        - `True`:
+          Normalize gain to preserve frequency response magnitude.
+          Gain is scaled by :math:`|∏p_i/∏z_i| · (2π)^{(n_p - n_z)}`.
+          Use this when your filter was designed with the transfer
+          function :math:`H(f) = k·∏(f-z_i)/∏(f-p_i)` in Hz.
+          This matches the LIGO GDS **'n' plane** convention
+          (``plane='n'`` in ``s2z()``).
+
+        Only used for analogue filters in Hz (``analog=True, unit="Hz"``).
 
     kwargs
         All other keyword arguments are passed to
@@ -116,7 +149,7 @@ class BodePlot(Plot):
         self,
         *filters: FilterType,
         dB: bool = True,  # noqa: N803
-        frequencies: ArrayLike1D | None = None,
+        frequencies: Array1D | int | None = None,
         **kwargs,
     ) -> None:
         """Initialise a new `BodePlot`."""
@@ -164,7 +197,10 @@ class BodePlot(Plot):
         else:
             self.maxes.set_yscale("log")
             self.maxes.set_ylabel("Amplitude")
-        self.paxes.set_xlabel("Frequency [Hz]")
+        if not kwargs.get("analog", False) or kwargs.get("unit") == "Hz":
+            self.paxes.set_xlabel("Frequency [Hz]")
+        else:
+            self.paxes.set_xlabel("Frequency [rad/s]")
         self.paxes.set_ylabel("Phase [deg]")
         self.maxes.set_xscale("log")
         self.paxes.set_xscale("log")
@@ -202,11 +238,13 @@ class BodePlot(Plot):
     def add_filter(
         self,
         filter_: FilterType,
-        frequencies: ArrayLike1D | None = None,
+        frequencies: Array1D | int | None = None,
         *,
         dB: bool = True,  # noqa: N803
         analog: bool = False,
-        sample_rate: QuantityLike | None = None,
+        sample_rate: QuantityLike = 1.0,
+        unit: str | None = None,
+        normalize_gain: bool = False,
         **kwargs,
     ) -> tuple[Line2D, Line2D]:
         """Add a linear time-invariant filter to this BodePlot.
@@ -235,6 +273,28 @@ class BodePlot(Plot):
             The sampling rate of a digital filter.
             If ``analog=False`` this option is required.
 
+        unit : `str`, optional
+            For analogue ZPK filters, the units in which the zeros and poles are
+            specified. Either ``'Hz'`` or ``'rad/s'`` (default).
+
+        normalize_gain : `bool`, optional
+            Whether to normalize the gain when converting from Hz to rad/s.
+
+            - `False` (default):
+              Multiply zeros/poles by -2π but leave gain unchanged.
+              This matches the LIGO GDS **'f' plane** convention
+              (``plane='f'`` in ``s2z()``).
+
+            - `True`:
+              Normalize gain to preserve frequency response magnitude.
+              Gain is scaled by :math:`|∏p_i/∏z_i| · (2π)^{(n_p - n_z)}`.
+              Use this when your filter was designed with the transfer
+              function :math:`H(f) = k·∏(f-z_i)/∏(f-p_i)` in Hz.
+              This matches the LIGO GDS **'n' plane** convention
+              (``plane='n'`` in ``s2z()``).
+
+            Only used for analogue filters in Hz (``analog=True, unit="Hz"``).
+
         kwargs
             All other keyword arguments are passed to
             :meth:`~matplotlib.axes.Axes.plot`.
@@ -249,40 +309,29 @@ class BodePlot(Plot):
         ValueError
             If ``analog=False`` is given and ``sample_rate`` isn't.
         """
-        from scipy.signal import (
-            dlti,
-            lti,
+        frequencies, fresp = filter_design.frequency_response(
+            filter_,
+            frequencies,
+            analog=analog,
+            sample_rate=sample_rate,
+            unit=unit or "rad/s",
+            normalize_gain=normalize_gain,
         )
+        if frequencies[0] == 0:
+            frequencies = frequencies[1:]
+            fresp = fresp[1:]
 
-        if not analog:
-            if not sample_rate:
-                msg = (
-                    "Must give sample_rate frequency to display "
-                    "digital (analog=False) filter"
-                )
-                raise ValueError(msg)
-            sample_rate = Quantity(sample_rate, "Hz").value
-            dt = 2 * pi / sample_rate
-            if not isinstance(frequencies, type(None) | int):
-                frequencies = numpy.asarray(frequencies) * dt
-
-        # parse filter (without digital conversions)
-        _, fcomp = parse_filter(filter_)
+        mag = abs(fresp)
+        if dB:
+            mag = _to_db(mag, power=False)
         if analog:
-            _lti = lti(*fcomp)
+            phase = numpy.unwrap(numpy.arctan2(fresp.imag, fresp.real)) * 180.0 / pi
         else:
-            _lti = dlti(*fcomp, dt=dt)
-
-        # calculate frequency response
-        w, mag, phase = _lti.bode(w=frequencies)
-
-        # convert from decibels
-        if not dB:
-            mag = 10 ** (mag / 10.)
+            phase = numpy.rad2deg(numpy.unwrap(numpy.angle(fresp)))
 
         # draw
-        mline = self.maxes.plot(w, mag, **kwargs)[0]
-        pline = self.paxes.plot(w, phase, **kwargs)[0]
+        mline = self.maxes.plot(frequencies, mag, **kwargs)[0]
+        pline = self.paxes.plot(frequencies, phase, **kwargs)[0]
         return mline, pline
 
     def add_frequencyseries(
@@ -325,9 +374,7 @@ class BodePlot(Plot):
         # get magnitude
         mag = numpy.absolute(cast("Array1D", spectrum.value))
         if dB:
-            mag = to_db(mag)
-            if not power:
-                mag *= 2.
+            mag = _to_db(mag, power=power)
 
         # get phase
         phase = numpy.angle(spectrum.value, deg=True)

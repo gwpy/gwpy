@@ -47,8 +47,9 @@ if TYPE_CHECKING:
     from typing import TypeAlias
 
     from numpy.typing import NDArray
+    from optype.numpy import Array1D
 
-    WindowLike: TypeAlias = str | float | tuple | numpy.ndarray
+    WindowLike: TypeAlias = str | float | tuple | Array1D[numpy.float64]
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [

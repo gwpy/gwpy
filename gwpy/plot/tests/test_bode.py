@@ -55,7 +55,7 @@ class TestBodePlot(FigureTestBase):
 
     def test_add_filter(self, fig):
         """Test `BodePlot.add_filter()`."""
-        lm, lp = fig.add_filter(ZPK, analog=True)
+        lm, lp = fig.add_filter(ZPK, analog=True, frequencies=100)
         assert lm is fig.maxes.get_lines()[-1]
         assert lp is fig.paxes.get_lines()[-1]
         nptest.assert_array_equal(lm.get_xdata(), FREQUENCIES)
@@ -65,7 +65,7 @@ class TestBodePlot(FigureTestBase):
 
     def test_init_with_filter(self):
         """Test ``BodePlot(filter_)``."""
-        fig = self.FIGURE_CLASS(ZPK, analog=True, title="ZPK")
+        fig = self.FIGURE_CLASS(ZPK, analog=True, title="ZPK", frequencies=100)
         lm = fig.maxes.get_lines()[0]
         lp = fig.paxes.get_lines()[0]
         nptest.assert_array_equal(lm.get_xdata(), FREQUENCIES)

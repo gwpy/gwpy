@@ -234,17 +234,20 @@ class TestSpectrogram(_TestArray2D[Spectrogram]):
         """Test `Spectrogram.zpk` method."""
         utils.assert_quantity_sub_equal(
             array.zpk(*zpk),
-            array.filter(*zpk, analog=True),
+            array.filter(zpk, analog=False, unit="rad/s"),
         )
 
     def test_filter(self, array, zpk):
         """Test `Spectrogram.filter` method."""
-        # build filter
+        # build filter - convert to rad/s since freqresp expects rad/s
+        # and filter() defaults to rad/s
         lti = signal.lti(*zpk)
-        fresp = numpy.nan_to_num(abs(lti.freqresp(w=array.frequencies.value)[1]))
+        # freqresp expects omega (rad/s), convert Hz to rad/s
+        omega = array.frequencies.value * 2 * numpy.pi
+        fresp = numpy.nan_to_num(abs(lti.freqresp(w=omega)[1]))
 
         # test simple filter
-        a2 = array.filter(*zpk, analog=True)
+        a2 = array.filter(zpk, analog=True)
         utils.assert_quantity_sub_equal(array * fresp, a2)
 
     def test_filter_inplace(self, array, zpk):
@@ -258,7 +261,7 @@ class TestSpectrogram(_TestArray2D[Spectrogram]):
         # test errors
         with pytest.raises(
             TypeError,
-            match=r"filter\(\) got an unexpected keyword argument 'blah'",
+            match=r"got an unexpected keyword argument 'blah'",
         ):
             array.filter(zpk, blah=1)
 

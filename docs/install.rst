@@ -134,6 +134,9 @@ GWpy has several optional dependencies for additional functionality:
     * - Pelican data access
       - ``pip install gwpy[pelican,scitokens]``
       - Read data from Pelican servers
+    * - Type checking
+      - ``pip install gwpy[typing]``
+      - Install type checking dependencies (e.g., ``optype``)
 
 .. note::
 
