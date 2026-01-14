@@ -25,51 +25,80 @@ for more details
 This module is deprecated and will be removed in a future release.
 """
 
+from __future__ import annotations
+
 import re
 import warnings
+from typing import (
+    TYPE_CHECKING,
+    Literal,
+    cast,
+)
 
 import numpy
+from astropy import units
 
 from ...frequencyseries import FrequencySeries
-from ...time import to_gps
 from ..window import canonical_name
 from . import _registry as fft_registry
 from ._utils import scale_timeseries_unit
 
+if TYPE_CHECKING:
+    from numpy.typing import DTypeLike
+
+    from ...timeseries import TimeSeries
+    from ...utils.lal import (
+        LALFFTPlanType,
+        LALWindowType,
+    )
+    from ..window import WindowLike
+
+    LALAverageSpectrumMethods = Literal[
+        "AverageSpectrumMedianMean",
+        "AverageSpectrumMedian",
+        "AverageSpectrumWelch",
+    ]
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # cache windows and FFT plans internally
-LAL_WINDOWS = {}
-LAL_FFTPLANS = {}
+LAL_WINDOWS: dict[tuple[int, str, str], LALWindowType] = {}
+LAL_FFTPLANS: dict[tuple[int, bool, str], LALFFTPlanType] = {}
 
 #: Default FFT plan level for LAL FFT plans
 LAL_FFTPLAN_LEVEL = 1
 
 
-# -- utilities ----------------------------------------------------------------
+# -- utilities -----------------------
 
-def generate_fft_plan(length, level=None, dtype="float64", forward=True):
+def generate_fft_plan(
+    length: int,
+    level: int | None = None,
+    dtype: DTypeLike = "float64",
+    *,
+    forward: bool = True,
+) -> LALFFTPlanType:
     """Build a `REAL8FFTPlan` for a fast Fourier transform.
 
     Parameters
     ----------
     length : `int`
-        number of samples to plan for in each FFT.
+        Number of samples to plan for in each FFT.
 
     level : `int`, optional
-        amount of work to do when planning the FFT, default set by
+        Amount of work to do when planning the FFT, default set by
         `LAL_FFTPLAN_LEVEL` module variable.
 
     dtype : :class:`numpy.dtype`, `type`, `str`, optional
-        numeric type of data to plan for
+        Numeric type of data to plan for
 
     forward : bool, optional, default: `True`
-        whether to create a forward or reverse FFT plan
+        Whether to create a forward or reverse FFT plan.
 
     Returns
     -------
     plan : `REAL8FFTPlan` or similar
-        FFT plan of the relevant data type
+        FFT plan of the relevant data type.
     """
     from ...utils.lal import find_typed_function, to_lal_type_str
 
@@ -89,31 +118,38 @@ def generate_fft_plan(length, level=None, dtype="float64", forward=True):
         return LAL_FFTPLANS[key]
 
 
-def generate_window(length, window=None, dtype="float64"):
+def generate_window(
+    length: int,
+    window: WindowLike | None = None,
+    dtype: DTypeLike | None = "float64",
+) -> LALWindowType:
     """Generate a time-domain window for use in a LAL FFT.
 
     Parameters
     ----------
     length : `int`
-        length of window in samples.
+        Length of window in samples.
 
     window : `str`, `tuple`
-        name of window to generate, default: ``('kaiser', 24)``. Give
+        Name of window to generate, default: ``('kaiser', 24)``. Give
         `str` for simple windows, or tuple of ``(name, *args)`` for
-         complicated windows
+        complicated windows.
 
-    dtype : :class:`numpy.dtype`
-        numeric type of window, default `numpy.dtype(numpy.float64)`
+    dtype : `numpy.dtype`
+        Numeric type of window, default ``numpy.dtype(numpy.float64)``.
 
     Returns
     -------
     `window` : `REAL8Window` or similar
-        time-domain window to use for FFT
+        Time-domain window to use for FFT.
     """
     from ...utils.lal import find_typed_function, to_lal_type_str
 
     if window is None:
         window = ("kaiser", 24)
+
+    if dtype is None:
+        dtype = float
 
     # generate key for caching window
     laltype = to_lal_type_str(dtype)
@@ -124,19 +160,25 @@ def generate_window(length, window=None, dtype="float64"):
         return LAL_WINDOWS[key]
     # or create one
     except KeyError:
+        # handle arrays directly
+        if isinstance(window, numpy.ndarray):
+            return window_from_array(window, dtype=dtype)
         # parse window as name and arguments, e.g. ('kaiser', 24)
         if isinstance(window, list | tuple):
             window, beta = window
         else:
             beta = 0
-        window = canonical_name(window)
+        window = canonical_name(str(window))
         # create window
         create = find_typed_function(dtype, "CreateNamed", "Window")
         LAL_WINDOWS[key] = create(window, beta, length)
         return LAL_WINDOWS[key]
 
 
-def window_from_array(array, dtype=None):
+def window_from_array(
+    array: numpy.ndarray,
+    dtype: DTypeLike | None = None,
+) -> LALWindowType:
     """Convert a `numpy.ndarray` into a LAL `Window` object."""
     from ...utils.lal import find_typed_function
 
@@ -151,40 +193,49 @@ def window_from_array(array, dtype=None):
     return find_typed_function(dtype, "Create", "WindowFromSequence")(seq)
 
 
-# -- spectrumm methods ------------------------------------------------------
+# -- spectrumm methods ---------------
 
-def _lal_spectrum(timeseries, segmentlength, noverlap=None, method="welch",
-                  window=None, plan=None):
+def _lal_spectrum(
+    timeseries: TimeSeries,
+    segmentlength: int,
+    noverlap: int | None = None,
+    method: str = "welch",
+    window: LALWindowType | WindowLike | None = None,
+    plan: LALFFTPlanType | None = None,
+) -> FrequencySeries:
     """Generate a PSD `FrequencySeries` using |lal|_.
 
     Parameters
     ----------
     timeseries : `~gwpy.timeseries.TimeSeries`
-        input `TimeSeries` data.
+        Input `TimeSeries` data.
 
     segmentlength : `int`
-        number of samples in single average.
+        Number of samples in single average.
 
     method : `str`
-        average PSD method
+        Average PSD method.
 
     noverlap : `int`
-        number of samples to overlap between segments, defaults to 50%.
+        Number of samples to overlap between segments, defaults to 50%.
 
     window : `lal.REAL8Window`, optional
-        window to apply to timeseries prior to FFT
+        Window to apply to timeseries prior to FFT.
 
     plan : `lal.REAL8FFTPlan`, optional
-        LAL FFT plan to use when generating average spectrum
+        LAL FFT plan to use when generating average spectrum.
 
     Returns
     -------
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
-        average power `FrequencySeries`
+        Average power `FrequencySeries`.
     """
     import lal
 
-    from ...utils.lal import find_typed_function
+    from ...utils.lal import (
+        LALWindowType,
+        find_typed_function,
+    )
 
     # default to 50% overlap
     if noverlap is None:
@@ -192,8 +243,12 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method="welch",
     stride = segmentlength - noverlap
 
     # get window
-    if window is None:
-        window = generate_window(segmentlength, dtype=timeseries.dtype)
+    if not isinstance(window, LALWindowType):
+        window = generate_window(
+            segmentlength,
+            window=window,
+            dtype=timeseries.dtype,
+        )
 
     # get FFT plan
     if plan is None:
@@ -223,8 +278,8 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method="welch",
     # generate output spectrum
     create = find_typed_function(timeseries.dtype, "Create", "FrequencySeries")
     lalfs = create(
-        timeseries.name,
-        lal.LIGOTimeGPS(to_gps(timeseries.epoch.gps)),
+        timeseries.name or "",
+        lal.LIGOTimeGPS(timeseries.t0.value),
         0,
         1 / segmentlength,
         lal.StrainUnit,
@@ -232,8 +287,15 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method="welch",
     )
 
     # find LAL method (e.g. median-mean -> lal.REAL8AverageSpectrumMedianMean)
-    methodname = "".join(map(str.title, re.split("[-_]", method)))
-    spec_func = find_typed_function(timeseries.dtype, "", f"AverageSpectrum{methodname}")
+    methodname = cast(
+        "LALAverageSpectrumMethods",
+        f"AverageSpectrum{''.join(map(str.title, re.split('[-_]', method)))}",
+    )
+    spec_func = find_typed_function(
+        timeseries.dtype,
+        "",
+        methodname,
+    )
 
     # calculate spectrum
     spec_func(lalfs, timeseries.to_lal(), segmentlength, stride, window, plan)
@@ -242,79 +304,113 @@ def _lal_spectrum(timeseries, segmentlength, noverlap=None, method="welch",
     spec = FrequencySeries.from_lal(lalfs)
     spec.name = timeseries.name
     spec.channel = timeseries.channel
-    spec.override_unit(scale_timeseries_unit(
-        timeseries.unit, scaling="density"))
+    spec.override_unit(
+        scale_timeseries_unit(
+            timeseries.unit or units.dimensionless_unscaled,
+            scaling="density",
+        ),
+    )
     return spec
 
 
-def welch(timeseries, segmentlength, noverlap=None, window=None, plan=None):
+def welch(
+    timeseries: TimeSeries,
+    segmentlength: int,
+    noverlap: int | None = None,
+    window: WindowLike | None = None,
+    plan: LALFFTPlanType | None = None,
+) -> FrequencySeries:
     """Calculate an PSD of this `TimeSeries` using Welch's method.
 
     Parameters
     ----------
     timeseries : `~gwpy.timeseries.TimeSeries`
-        input `TimeSeries` data.
+        Input `TimeSeries` data.
 
     segmentlength : `int`
-        number of samples in single average.
+        Number of samples in single average.
 
     noverlap : `int`
-        number of samples to overlap between segments, defaults to 50%.
+        Number of samples to overlap between segments, defaults to 50%.
 
     window : `tuple`, `str`, optional
-        window parameters to apply to timeseries prior to FFT
+        Window parameters to apply to timeseries prior to FFT.
 
     plan : `REAL8FFTPlan`, optional
-        LAL FFT plan to use when generating average spectrum
+        LAL FFT plan to use when generating average spectrum.
 
     Returns
     -------
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
-        average power `FrequencySeries`
+        Average power `FrequencySeries`.
 
     See Also
     --------
     lal.REAL8AverageSpectrumWelch
     """
-    return _lal_spectrum(timeseries, segmentlength, noverlap=noverlap,
-                         method="welch", window=window, plan=plan)
+    return _lal_spectrum(
+        timeseries,
+        segmentlength,
+        noverlap=noverlap,
+        method="welch",
+        window=window,
+        plan=plan,
+    )
 
 
-def bartlett(timeseries, segmentlength, noverlap=None, window=None, plan=None):
+def bartlett(
+    timeseries: TimeSeries,
+    segmentlength: int,
+    noverlap: int | None = None,  # noqa: ARG001
+    window: WindowLike | None = None,
+    plan: LALFFTPlanType | None = None,
+) -> FrequencySeries:
     # pylint: disable=unused-argument
     """Calculate an PSD of this `TimeSeries` using Bartlett's method.
 
     Parameters
     ----------
     timeseries : `~gwpy.timeseries.TimeSeries`
-        input `TimeSeries` data.
+        Input `TimeSeries` data.
 
     segmentlength : `int`
-        number of samples in single average.
+        Number of samples in single average.
 
     noverlap : `int`
-        number of samples to overlap between segments, defaults to 50%.
+        Number of samples to overlap between segments, defaults to 50%.
 
     window : `tuple`, `str`, optional
-        window parameters to apply to timeseries prior to FFT
+        Window parameters to apply to timeseries prior to FFT.
 
     plan : `REAL8FFTPlan`, optional
-        LAL FFT plan to use when generating average spectrum
+        LAL FFT plan to use when generating average spectrum.
 
     Returns
     -------
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
-        average power `FrequencySeries`
+        Average power `FrequencySeries`
 
     See Also
     --------
     lal.REAL8AverageSpectrumWelch
     """
-    return _lal_spectrum(timeseries, segmentlength, noverlap=0,
-                         method="welch", window=window, plan=plan)
+    return _lal_spectrum(
+        timeseries,
+        segmentlength,
+        noverlap=0,
+        method="welch",
+        window=window,
+        plan=plan,
+    )
 
 
-def median(timeseries, segmentlength, noverlap=None, window=None, plan=None):
+def median(
+    timeseries: TimeSeries,
+    segmentlength: int,
+    noverlap: int | None = None,
+    window: WindowLike | None = None,
+    plan: LALFFTPlanType | None = None,
+) -> FrequencySeries:
     """Calculate a PSD of this `TimeSeries` using a median average method.
 
     The median average is similar to Welch's method, using a median average
@@ -323,35 +419,46 @@ def median(timeseries, segmentlength, noverlap=None, window=None, plan=None):
     Parameters
     ----------
     timeseries : `~gwpy.timeseries.TimeSeries`
-        input `TimeSeries` data.
+        Input `TimeSeries` data.
 
     segmentlength : `int`
-        number of samples in single average.
+        Number of samples in single average.
 
     noverlap : `int`
-        number of samples to overlap between segments, defaults to 50%.
+        Number of samples to overlap between segments, defaults to 50%.
 
     window : `tuple`, `str`, optional
-        window parameters to apply to timeseries prior to FFT
+        Window parameters to apply to timeseries prior to FFT.
 
     plan : `REAL8FFTPlan`, optional
-        LAL FFT plan to use when generating average spectrum
+        LAL FFT plan to use when generating average spectrum.
 
     Returns
     -------
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
-        average power `FrequencySeries`
+        Average power `FrequencySeries`.
 
     See Also
     --------
     lal.REAL8AverageSpectrumMedian
     """
-    return _lal_spectrum(timeseries, segmentlength, noverlap=noverlap,
-                         method="median", window=window, plan=plan)
+    return _lal_spectrum(
+        timeseries,
+        segmentlength,
+        noverlap=noverlap,
+        method="median",
+        window=window,
+        plan=plan,
+    )
 
 
-def median_mean(timeseries, segmentlength, noverlap=None,
-                window=None, plan=None):
+def median_mean(
+    timeseries: TimeSeries,
+    segmentlength: int,
+    noverlap: int | None = None,
+    window: WindowLike | None = None,
+    plan: LALFFTPlanType | None = None,
+) -> FrequencySeries:
     """Calculate a PSD of this `TimeSeries` using a median-mean average method.
 
     The median-mean average method divides overlapping segments into "even"
@@ -362,31 +469,37 @@ def median_mean(timeseries, segmentlength, noverlap=None,
     Parameters
     ----------
     timeseries : `~gwpy.timeseries.TimeSeries`
-        input `TimeSeries` data.
+        Input `TimeSeries` data.
 
     segmentlength : `int`
-        number of samples in single average.
+        Number of samples in single average.
 
     noverlap : `int`
-        number of samples to overlap between segments, defaults to 50%.
+        Number of samples to overlap between segments, defaults to 50%.
 
     window : `tuple`, `str`, optional
-        window parameters to apply to timeseries prior to FFT
+        Window parameters to apply to timeseries prior to FFT.
 
     plan : `REAL8FFTPlan`, optional
-        LAL FFT plan to use when generating average spectrum
+        LAL FFT plan to use when generating average spectrum.
 
     Returns
     -------
     spectrum : `~gwpy.frequencyseries.FrequencySeries`
-        average power `FrequencySeries`
+        Average power `FrequencySeries`.
 
     See Also
     --------
     lal.REAL8AverageSpectrumMedianMean
     """
-    return _lal_spectrum(timeseries, segmentlength, noverlap=noverlap,
-                         method="median-mean", window=window, plan=plan)
+    return _lal_spectrum(
+        timeseries,
+        segmentlength,
+        noverlap=noverlap,
+        method="median-mean",
+        window=window,
+        plan=plan,
+    )
 
 
 # register LAL methods without overriding scipy method

@@ -345,7 +345,7 @@ def from_lal_type(laltype: type) -> type:
 
 # -- units ---------------------------
 
-_LAL_UNIT_INDEX: list[units.Quantity] = [
+_LAL_UNIT_INDEX: list[units.UnitBase] = [
     # the order corresponds to how LAL stores compound units
     units.meter,
     units.kilogram,
@@ -359,7 +359,7 @@ _LAL_UNIT_INDEX: list[units.Quantity] = [
 
 def to_lal_unit(
     astropy_unit: units.Unit | str,
-) -> tuple[lal.Unit, float]:
+) -> tuple[lal.Unit, float | complex]:
     """Convert the input unit into a |lal.Unit|_ and a scaling factor.
 
     Parameters
@@ -372,7 +372,7 @@ def to_lal_unit(
     lal_unit : |lal.Unit|_
         The LAL representation of the base unit.
 
-    scale : `float`
+    scale : `float`, `complex`
         The linear scaling factor that should be applied to any associated
         data, see _Notes_ below.
 

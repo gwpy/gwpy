@@ -33,7 +33,7 @@ TRUE: tuple[str, ...] = (
 
 def bool_env(
     key: str,
-    default: bool = False,
+    default: bool = False,  # noqa: FBT001,FBT002
 ) -> bool:
     """Parse an environment variable as a boolean switch.
 

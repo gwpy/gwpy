@@ -22,7 +22,10 @@ from __future__ import annotations
 
 import warnings
 from functools import wraps
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    no_type_check,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -46,6 +49,7 @@ DEPRECATED_FUNCTION_WARNING: str = (
 class deprecated_property(property):  # noqa: N801
     """Sub-class of `property` that invokes DeprecationWarning on every call."""
 
+    @no_type_check
     def __init__(
         self,
         fget: Callable,
@@ -54,7 +58,15 @@ class deprecated_property(property):  # noqa: N801
         doc: str | None = None,
     ) -> None:
         """Create a property that will issue a DeprecationWarning."""
-        # get name  of property
+        warnings.warn(
+            "the deprecated_property decorator is itself deprecated and will be "
+            "removed in a future release, please use the warnings.deprecated decorator "
+            "from the Python 3.13+ standard library instead",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+
+        # get name of property
         pname = fget.__name__
 
         # build a wrapper that will spawn a DeprecationWarning for all calls
@@ -143,9 +155,10 @@ def return_as(
             try:
                 return returntype(result)
             except (TypeError, ValueError) as exc:
+                fname = getattr(func, "__name__", str(func))
+                rname = getattr(returntype, "__name__", str(returntype))
                 exc.args = (
-                    f"failed to cast return from {func.__name__} as "
-                    f"{returntype.__name__}: {exc}",
+                    f"failed to cast return from {fname} as {rname}: {exc}",
                 )
                 raise
 

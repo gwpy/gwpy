@@ -21,7 +21,11 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    cast,
+    overload,
+)
 from warnings import warn
 
 from astropy.units import (
@@ -204,10 +208,17 @@ class Array2D(Series):
 
         return new
 
+    @overload
+    def __getitem__(self, item: tuple[int, int]) -> Quantity: ...
+    @overload
+    def __getitem__(self, item: int) -> Series: ...
+    @overload
+    def __getitem__(self, item: SliceLike | tuple[SliceLike, ...]) -> Self: ...
+
     # rebuild getitem to handle complex slicing
-    def __getitem__(
+    def __getitem__(  # ty: ignore[invalid-method-override]
         self,
-        item: SliceLike | tuple[SliceLike, ...],  # type: ignore[override]
+        item: tuple[int, int] | int | SliceLike | tuple[SliceLike, ...],
     ) -> Self | Series | Quantity:
         """Get an item or a slice from this `Array2D."""
         new = super().__getitem__(item)
@@ -217,14 +228,14 @@ class Array2D(Series):
 
         # Column slice
         if new.ndim == 1 and isinstance(colslice, int):
-            new = new.view(self._columnclass)
+            new = cast("Series", new.view(self._columnclass))
             del new.xindex
             new.__metadata_finalize__(self)
             sliceutils.slice_axis_attributes(self, "y", new, "x", rowslice)
 
         # Row slice
         elif new.ndim == 1:
-            new = new.view(self._rowclass)
+            new = cast("Series", new.view(self._rowclass))
 
         # Slice axis 1 for Array2D
         # (Series.__getitem__ will have performed column slice already)

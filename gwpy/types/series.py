@@ -25,6 +25,7 @@ from math import floor
 from typing import (
     TYPE_CHECKING,
     cast,
+    overload,
 )
 from warnings import warn
 
@@ -679,6 +680,11 @@ class Series(Array):
         except AttributeError:  # irregular xindex
             out.x0 = self.xindex[n]
         return out
+
+    @overload
+    def __getitem__(self, item: int) -> Quantity: ...
+    @overload
+    def __getitem__(self, item: SliceLike | tuple[SliceLike, ...]) -> Self: ...
 
     def __getitem__(
         self,
