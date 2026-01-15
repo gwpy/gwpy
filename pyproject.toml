@@ -28,6 +28,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Astronomy",
   "Topic :: Scientific/Engineering :: Physics",
 ]
@@ -82,10 +83,10 @@ conda = [
 dev = [
   "ciecplib",
   "inspiral-range >=0.9.3",
-  "lalsuite ; sys_platform != 'win32'",
+  "lalsuite ; sys_platform != 'win32' and python_version < '3.14'",
   "lscsoft-glue ; sys_platform != 'win32'",
   "psycopg2 ; sys_platform == 'linux'",
-  "pycbc >=1.13.4 ; sys_platform != 'win32'",
+  "pycbc >=1.13.4 ; sys_platform == 'linux'",
   "pymysql",
   "python-ligo-lw >=1.7.0,<2.0.0 ; sys_platform != 'win32'",
   "sqlalchemy",
