@@ -62,7 +62,7 @@ dynamic = [
 
 # astronomy/cosmology calculations
 astro = [
-  "inspiral-range >=0.9.0",
+  "inspiral-range >=0.9.3",
 ]
 
 # -- build/dev
@@ -81,7 +81,7 @@ conda = [
 #       but may contain more
 dev = [
   "ciecplib",
-  "inspiral-range >=0.9.0",
+  "inspiral-range >=0.9.3",
   "lalsuite ; sys_platform != 'win32'",
   "lscsoft-glue ; sys_platform != 'win32'",
   "psycopg2 ; sys_platform == 'linux'",
