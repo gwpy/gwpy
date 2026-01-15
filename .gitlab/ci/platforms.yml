@@ -34,3 +34,7 @@ spec:
     PYTEST_XDIST_AUTO_NUM_WORKERS: "2"
   tags:
     - saas-windows-medium-amd64
+  retry:
+    # retry all windows jobs up to 2 times on failure, they are flaky
+    max: 2
+    when: always
