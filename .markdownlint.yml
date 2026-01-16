@@ -1,0 +1,25 @@
+# enable all rules
+default: true
+
+# don't check code-block style, markdownlint chokes on non-code fenced blocks,
+# e.g. tabbed content
+code-block-style: false
+
+# don't check line length
+line-length: true
+
+# markdownlint doesn't understand attr_list fragments
+link-fragments: false
+
+list-marker-space:
+  ul_single: 1
+  ul_multi: 3
+  ol_multi: 2
+
+no-duplicate-heading: false
+
+no-trailing-punctuation:
+  punctuation: ".,;:"
+
+ul-indent:
+  indent: 4

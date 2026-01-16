@@ -8,6 +8,7 @@ About GWpy
 
     citing
     license
+    changelog
 
 .. toctree::
     :maxdepth: 1

@@ -238,6 +238,12 @@ linkcode_resolve = sphinx_github_style.get_linkcode_resolve(
     repo_dir=os.getenv("READTHEDOCS_REPOSITORY_PATH"),
 )
 
+# -- myst_parser
+
+myst_enable_extensions = [
+    "attrs_block",
+]
+
 # -- numpydoc
 
 # fix numpydoc autosummary
