@@ -86,6 +86,77 @@ def init_verbose_logging(
     return init_logger(name, level=level)
 
 
+def parse_option(value: str) -> tuple[str, bool | float | str | None]:
+    """Parse a key=value option string into a key and value tuple.
+
+    This function attempts to convert the value to a boolean or numeric
+    type if possible; otherwise, it is returned as a string.
+
+    Parameters
+    ----------
+    value : str
+        The option string in the format "key=value".
+
+    Returns
+    -------
+    key, value: tuple[str, bool | float | str | None]
+        The parsed key and value.
+
+    Examples
+    --------
+    >>> parse_option("threshold=0.5")
+    ('threshold', 0.5)
+    >>> parse_option("enable_feature=true")
+    ('enable_feature', True)
+    >>> parse_option("name=example")
+    ('name', 'example')
+    """
+    key, val = value.split("=", 1)
+
+    # Handle boolean and None
+    if (vall := val.lower()) in ("true", "yes"):
+        return key, True
+    if vall in ("false", "no"):
+        return key, False
+    if vall == "none":
+        return key, None
+
+    # Handle numeric
+    try:
+        val = float(val)
+    except ValueError:
+        # String
+        return key, val
+    if val.is_integer():
+        val = int(val)
+    return key, val
+
+
+def parse_options_dict(options: list[str]) -> dict[str, bool | float | str | None]:
+    """Parse a list of key=value option strings into a dictionary.
+
+    Parameters
+    ----------
+    options : list[str]
+        A list of option strings in the format "key=value".
+
+    Returns
+    -------
+    dict[str, str | bool | int | float]
+        A dictionary of parsed key-value pairs.
+
+    Examples
+    --------
+    >>> parse_options_dict(["threshold=0.5", "enable_feature=true", "name=example"])
+    {'threshold': 0.5, 'enable_feature': True, 'name': 'example'}
+    """
+    out: dict[str, bool | float | str | None ] = {}
+    for optstr in options:
+        key, val = parse_option(optstr)
+        out[key] = val
+    return out
+
+
 class HelpFormatter(
     ArgumentDefaultsHelpFormatter,
     RawDescriptionHelpFormatter,

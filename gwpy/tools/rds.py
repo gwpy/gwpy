@@ -51,6 +51,7 @@ EXAMPLES = {
         "H1:GWOSC-4KHZ_R1_STRAIN",
         "L1:GWOSC-4KHZ_R1_STRAIN",
         "-o gw150914.gwf",
+        "-O version=4",
     )),
 }
 
@@ -68,7 +69,7 @@ def create_rds(
     end: SupportsToGps,
     outfile: Path,
     source: Sequence[str] | str | None = None,
-    format: str | None = None,  # noqa: A002
+    write_format: str | None = None,
     **kwargs,
 ) -> None:
     """Create a reduced data set by grabbing data and writing to a file.
@@ -90,7 +91,7 @@ def create_rds(
     source : `str`, `list` of `str`, optional
         One or more supported data sources to use.
 
-    format : `str`, optional
+    write_format : `str`, optional
         The format option to use when writing data.
         Default is inferred from the output file path.
         See `TimeSeriesDict.write.help()` for details on supported formats.
@@ -117,7 +118,7 @@ def create_rds(
     logger.info("Received data for %d channels", len(data))
     data.write(
         outfile,
-        format=format,
+        format=write_format,
         overwrite=True,
     )
     logger.info("Wrote %s", outfile)
@@ -230,6 +231,23 @@ def create_parser() -> ArgumentParser:
         ),
     )
     parser.add_argument(
+        "-O",
+        "--option",
+        action="append",
+        default=None,
+        metavar="key=value",
+        help="Additional options to pass to the TimeSeriesDict.get.",
+    )
+    parser.add_argument(
+        "-L",
+        "--log-name",
+        default="gwpy",
+        help=(
+            "Name of the logger to configure for verbose output; "
+            "use 'root' to enable logging in all modules."
+        ),
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="count",
@@ -253,7 +271,10 @@ def main(args: list[str] | None = None) -> None:
     opts = parser.parse_args(args=args)
 
     # Init verbose logging
-    _utils.init_verbose_logging("gwpy", opts.verbose)
+    _utils.init_verbose_logging(opts.log_name, opts.verbose)
+
+    # Parse additional options
+    kwargs = _utils.parse_options_dict(opts.option or [])
 
     # Create the RDS
     create_rds(
@@ -262,7 +283,8 @@ def main(args: list[str] | None = None) -> None:
         opts.end,
         opts.output_file,
         opts.source,
-        format=opts.format,
+        write_format=opts.format,
+        **kwargs,
     )
 
 
