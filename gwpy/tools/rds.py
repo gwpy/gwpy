@@ -68,7 +68,7 @@ def create_rds(
     end: SupportsToGps,
     outfile: Path,
     source: Sequence[str] | str | None = None,
-    format: str | None = None,  # noqa: A002
+    write_format: str | None = None,  # noqa: A002
     **kwargs,
 ) -> None:
     """Create a reduced data set by grabbing data and writing to a file.
@@ -90,7 +90,7 @@ def create_rds(
     source : `str`, `list` of `str`, optional
         One or more supported data sources to use.
 
-    format : `str`, optional
+    write_format : `str`, optional
         The format option to use when writing data.
         Default is inferred from the output file path.
         See `TimeSeriesDict.write.help()` for details on supported formats.
@@ -117,7 +117,7 @@ def create_rds(
     logger.info("Received data for %d channels", len(data))
     data.write(
         outfile,
-        format=format,
+        format=write_format,
         overwrite=True,
     )
     logger.info("Wrote %s", outfile)
@@ -262,7 +262,7 @@ def main(args: list[str] | None = None) -> None:
         opts.end,
         opts.output_file,
         opts.source,
-        format=opts.format,
+        write_format=opts.format,
     )
 
 
