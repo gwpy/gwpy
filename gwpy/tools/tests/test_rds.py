@@ -32,6 +32,9 @@ def test_rds(tmp_path):
         "1126259464",
         ifo,
         "-o", str(outfile),
+        "-O", "format=hdf5",
+        "-O", "sample_rate=4096",
+        "-O", "version=4",
     ])
     data = TimeSeries.read(outfile, ifo)
     assert data.name == "H1:Strain"
