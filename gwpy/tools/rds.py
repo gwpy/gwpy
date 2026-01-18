@@ -68,7 +68,7 @@ def create_rds(
     end: SupportsToGps,
     outfile: Path,
     source: Sequence[str] | str | None = None,
-    write_format: str | None = None,  # noqa: A002
+    write_format: str | None = None,
     **kwargs,
 ) -> None:
     """Create a reduced data set by grabbing data and writing to a file.
