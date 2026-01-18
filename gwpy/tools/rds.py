@@ -239,6 +239,15 @@ def create_parser() -> ArgumentParser:
         help="Additional options to pass to the TimeSeriesDict.get.",
     )
     parser.add_argument(
+        "-L",
+        "--log-name",
+        default="gwpy",
+        help=(
+            "Name of the logger to configure for verbose output; "
+            "use 'root' to enable logging in all modules."
+        ),
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="count",
@@ -262,7 +271,7 @@ def main(args: list[str] | None = None) -> None:
     opts = parser.parse_args(args=args)
 
     # Init verbose logging
-    _utils.init_verbose_logging("gwpy", opts.verbose)
+    _utils.init_verbose_logging(opts.log_name, opts.verbose)
 
     # Parse additional options
     kwargs = _utils.parse_options_dict(opts.option or [])
