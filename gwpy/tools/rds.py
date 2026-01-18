@@ -51,6 +51,7 @@ EXAMPLES = {
         "H1:GWOSC-4KHZ_R1_STRAIN",
         "L1:GWOSC-4KHZ_R1_STRAIN",
         "-o gw150914.gwf",
+        "-O version=4",
     )),
 }
 
@@ -230,6 +231,14 @@ def create_parser() -> ArgumentParser:
         ),
     )
     parser.add_argument(
+        "-O",
+        "--option",
+        action="append",
+        default=None,
+        metavar="key=value",
+        help="Additional options to pass to the TimeSeriesDict.get.",
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="count",
@@ -255,6 +264,9 @@ def main(args: list[str] | None = None) -> None:
     # Init verbose logging
     _utils.init_verbose_logging("gwpy", opts.verbose)
 
+    # Parse additional options
+    kwargs = _utils.parse_options_dict(opts.option or [])
+
     # Create the RDS
     create_rds(
         opts.channels,
@@ -263,6 +275,7 @@ def main(args: list[str] | None = None) -> None:
         opts.output_file,
         opts.source,
         write_format=opts.format,
+        **kwargs,
     )
 
 
