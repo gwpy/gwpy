@@ -3,9 +3,9 @@
 
 .. _gwpy-timeseries-get:
 
-##########################
-Accessing Observatory data
-##########################
+##############
+Data Discovery
+##############
 
 .. _gwpy-timeseries-data:
 
