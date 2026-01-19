@@ -12,4 +12,5 @@ Miscellanous Utilities (:mod:`gwpy.utils`)
     :caption: Utility Modules
     :maxdepth: 1
 
+    gwpy.utils.decorators
     gwpy.utils.lal
