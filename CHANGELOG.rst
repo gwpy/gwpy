@@ -12,8 +12,9 @@ Patch release.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.14>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix compatibility with Scipy 1.17
   [:mr:`1981`]
@@ -22,8 +23,9 @@ Bug Fixes
 - Fix usage of chained classmethod decorator
   [:mr:`1906`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 - Add support for Python 3.13
   [:mr:`1905`]
@@ -38,8 +40,9 @@ Patch release.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.13>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix incompatibility with numpy 2.3.x
   [:mr:`1896`]
@@ -52,8 +55,9 @@ Bug Fixes
 - Add missing ``detection_snr`` argument in call to `gwpy.astro.inspiral_range`
   [:mr:`1615`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 - Pin to python-ligo-lw <2.0.0
   [:mr:`1899`]
@@ -72,8 +76,9 @@ Patch release.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.12>`__
 
+------------
 API Changes
-~~~~~~~~~~~
+------------
 
 - Add support for timeout in `~gwpy.timeseries.TimeSeries.fetch_open_data`
   [:mr:`1832`]
@@ -89,20 +94,23 @@ latest release of Matplotlib.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.11>`__
 
+------------
 API Changes
-~~~~~~~~~~~
+------------
 
 - Migrate from ligo-segments to igwn-segments
   [:mr:`1819`]
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix version comparisons in `gwpy.plot`
   [:mr:`1799`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 Changes:
 
@@ -122,8 +130,9 @@ latest release of NumPy.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.10>`__
 
+------------
 API Changes
-~~~~~~~~~~~
+------------
 
 - Modify coherence unit to be an alias for ``dimensionless_unscaled``
   [:mr:`1779`]
@@ -132,8 +141,9 @@ API Changes
   when attempting to change to an unsupported unit
   [:mr:`1787`]
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix use of numpy types for v2.0
   [:mr:`1782`]
@@ -142,8 +152,9 @@ Bug Fixes
 - Update import of ``interactive_bk`` for Matplotlib 3.9
   [:mr:`1770`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 - Skip `ReadTimeout` errors as standard for network tests
   [:mr:`1775`]
@@ -175,8 +186,9 @@ latest releases of NumPy and SciPy.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.9>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix argument reuse bug in `gwpy.cli`
   [:mr:`1747`]
@@ -191,8 +203,9 @@ Bug Fixes
 - Fix usage of Scipy trapezoid in gwpy.astro
   [:mr:`1763`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 Changes:
 
@@ -219,8 +232,9 @@ Patch release.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.8>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix bug in :meth:`TimeSeriesDict.find <gwpy.timeseries.TimeSeriesDict.find>`
   [:mr:`1672`]
@@ -232,8 +246,9 @@ Bug Fixes
 - Fix bugs in inverse FFT normalisation
   [:mr:`1728`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 - Sieve URLs from gwosc client before fetch
   [:mr:`1665`]
@@ -300,16 +315,18 @@ Patch release.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.6>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix type comparison lint
   [:mr:`1654`]
 - Fix compatibility with matplotlib 3.8.0
   [:mr:`1661`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 - Drop support for Python 3.7
   [:mr:`1636`]
@@ -330,8 +347,9 @@ Patch release.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.5>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix issues writing ``StateVector.bits`` to HDF5
   [:mr:`1608`]
@@ -343,8 +361,9 @@ Bug Fixes
   averaging methods
   [:mr:`1619`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 - Update all GWOSC URLs to gwosc.org
   [:mr:`1613`]
@@ -368,8 +387,9 @@ Bug fix release.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.4>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix incompatibility with gwosc 0.7.0
   [:mr:`1606`]
@@ -384,8 +404,9 @@ Bug fix release.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.3>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix incompatibilities with matplotlib 3.7.0
   [:mr:`1586`]
@@ -394,8 +415,9 @@ Bug Fixes
 - Address floating point errors for index creation
   [:mr:`1600`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 - Update usage of ``pytest.raises`` throughout the codebase
   [:mr:`1542`]
@@ -434,14 +456,16 @@ Other Changes
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.2>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix reading ILWD chars from LIGO_LW XML with python-ligo-lw
   [:mr:`1570`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 - Declare support for Python 3.11
   [:mr:`1555`]
@@ -456,14 +480,16 @@ Bug-fix release for 3.0.x.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.1>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix Python 3.11 compatibility in ``gwpy.io.nds2``
   [:mr:`1558`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 - Handle optional kerberos with requests-ecp
   [:mr:`1554`]
@@ -478,15 +504,17 @@ Major feature release.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v3.0.0>`__
 
+------------
 Deprecations
-~~~~~~~~~~~~
+------------
 
 - ``gwpy.testing.utils.skip_missing_dependency`` is now deprecated and
   will be removed in a future release
   [:mr:`1531`]
 
+--------------------
 Expired Deprecations
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 - Remove support for S6-style SegDB server
   [:mr:`1356`]
@@ -505,8 +533,9 @@ Expired Deprecations
 - Remove deprecated ``Spectrogram.plot`` keyword
   [:mr:`1472`]
 
+------------
 New Features
-~~~~~~~~~~~~
+------------
 
 - Add support for reading GstLAL trigger files
   [:mr:`1265`]
@@ -518,8 +547,9 @@ New Features
 - Support writing ROOT files with ``uproot4``
   [:mr:`1419`]
 
+------------
 API Changes
-~~~~~~~~~~~
+------------
 
 - Refactor gwpy.astro to depend on inspiral-range
   [:mr:`1284`]
@@ -530,8 +560,9 @@ API Changes
 - Update ``Axes.tile`` to use ``sortbycolor`` keyword
   [:mr:`1483`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 - Improve handling of empty arrays when writing GWF with LALFrame
   [:mr:`1501`]
@@ -553,16 +584,18 @@ Patch release for GWpy 2.1.x.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v2.1.5>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - Fix compatibility with scipy 1.9.0
   [:mr:`1521`]
 - Deprecate the ``gwpy.utils.null_context`` function
   [:mr:`1523`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 - Fix some lint
   [:mr:`1530`]
@@ -575,8 +608,9 @@ Other Changes
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v2.1.4>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - handle cases in ``EventTable.cluster()`` where table is empty or
   already clustered
@@ -596,8 +630,9 @@ Bug Fixes
 - work around a bug in frameCPP
   [:mr:`1517`]
 
+-------------
 Other Changes
-~~~~~~~~~~~~~
+-------------
 
 - Python >=3.7
   [:mr:`1441`]
@@ -620,8 +655,9 @@ Patch release for GWpy 2.1.x.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v2.1.3>`__
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - update test suite to use tmp_path fixture in pytest
   [:mr:`1401`]
@@ -648,14 +684,16 @@ Patch release for GWpy 2.1.x.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v2.1.2>`__
 
+------------
 Deprecations
-~~~~~~~~~~~~
+------------
 
 - ``gwpy.utils.shell.which()`` is now deprecated
   [:mr:`1411`]
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - writing a ``TimeSeries`` with no ``name`` to GWF now has consistent
   behaviour across all GWF APIs
@@ -673,20 +711,23 @@ Patch release.
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v2.1.1>`__
 
+------------
 Deprecations
-~~~~~~~~~~~~
+------------
 
 - ``gwpy.utils.shell.call()`` is now deprecated
   [:mr:`1412`]
 
+-----------
 API Changes
-~~~~~~~~~~~
+-----------
 
 - a ``strict`` keyword was added to ``gwpy.io.cache.sieve()``
   [:mr:`1417`]
 
+---------
 Bug Fixes
-~~~~~~~~~
+---------
 
 - ``Series.crop()`` can now handle irregular indices (thanks :ghu:`mattpitkin`!)
   [:mr:`1414`]
@@ -702,8 +743,9 @@ Bug Fixes
 
 `Full details <https://gitlab.com/gwpy/gwpy/-/releases/v2.1.0>`__
 
+------------
 Deprecations
-~~~~~~~~~~~~
+------------
 
 - the ``gwpy.testing.utils.TemporaryFile`` context manager is now
   deprecated
@@ -711,8 +753,9 @@ Deprecations
 - ``gwpy.astro.inspiral_range`` function renamed to ``sensemon_range``
   [:mr:`1293`]
 
+------------
 New Features
-~~~~~~~~~~~~
+------------
 
 - ROOT I/O now uses ``uproot`` as the backend
   [:mr:`1263`,
@@ -730,8 +773,9 @@ New Features
 - ``TimeSeries.rayleigh_spectrum`` now supports a ``window`` keyword
   [:mr:`1285`]
 
+-----------
 API Changes
-~~~~~~~~~~~
+-----------
 
 - passing a ``channel`` name is now optional when reading files in the
   ``hdf5.snax`` format
