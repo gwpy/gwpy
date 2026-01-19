@@ -2,6 +2,250 @@
 Changelog
 #########
 
+.. _v4.0.0:
+
+=====================
+4.0.0rc1 - 2026-01-19
+=====================
+
+GWpy 4.0.0 represents a major version release with significant improvements to
+I/O, logging, and signal processing, as well as modernization of dependencies,
+and several breaking changes.
+The source code has been significantly refactored to include type annotations
+throughout, and to improve code quality in order to improve maintainability.
+
+The project online documentation has been restructured and relocated to
+`https://gwpy.readthedocs.io/ <https://gwpy.readthedocs.io/>`__ and
+now includes a full :doc:`API reference </reference/index>`,
+and improved :doc:`User Guide </guide>` and :doc:`Examples </examples/index>`.
+
+This release includes over 1,000 commits since the last release.
+
+`Full details <https://gitlab.com/gwpy/gwpy/-/releases/v4.0.0>`__
+
+----------------
+Breaking Changes
+----------------
+
+- Python 4.11 is now the minimum supported version, and support
+  for Python 4.14 has been added.
+
+- The I/O system used by GWpy to support ``.read()`` and ``.write()`` methods
+  in all classes has been completely rewritten to use the updated class-based
+  Astropy :doc:`astropy:io/registry`.
+
+  Existing custom I/O read/write function regsitrations may need to be updated
+  to register to a new custom registry, or to use the new
+  `gwpy.io.registry.default_registry` instance.
+
+- The :class:`~gwpy.timeseries.TimeSeries` (and friends)
+  `~gwpy.timeseries.TimeSeries.get` method has been with its own
+  registry of supported data sources, and will now try each data source
+  in turn until data are found.
+
+  A ``source`` keyword argument has been added to allow specifying one or more
+  data sources to try, or to restrict to a single source.
+
+  Some existing usage may need to be updated to work with this new API.
+
+  See :doc:`/timeseries/get` for more details.
+
+- GWpy now uses :doc:`igwn-ligolw <igwn-ligolw:index>`
+  instead of `python-ligo-lw` for LIGO_LW XML file handling.
+
+  The APIs should be the same, but the objects used internally and returned by functions
+  in the :mod:`gwpy.io.ligolw` and ``gwpy.<subpackage>.io.ligolw`` submodules have changed
+  to the `igwn_ligolw` equivalents.
+
+- The `gwpy.signal.filter_design` module has been significantly updated.
+
+  The ``gwpy.signal.filter_design.bilinear_zpk`` function has been removed in
+  favour of `scipy.signal.bilinear_zpk`,
+  and the `~gwpy.signal.filter_design.parse_filter` function now has an updated API.
+
+  All filter_design and filter application functions and methods throughout GWpy
+  now default to digital filters in rad/s units, to match the behaviour of
+  :mod:`scipy.signal` functions.
+
+- The `gwpy.io.mp` module was removed in favour of the multiprocessing
+  utilities provided by the Python standard library,
+  i.e., :mod:`multiprocessing` and :mod:`concurrent.futures`.
+
+See :ref:`v4.0.0-expired-deprecations` below for more details of  other breaking
+changes related to removed deprecated features.
+
+.. _v4.0.0-deprecations:
+
+------------
+Deprecations
+------------
+
+- The `gwpy.utils.decorators.deprecated_property` decorator is now deprecated
+  and will be removed in a future release.
+  Use the `warnings.deprecated` decorator instead.
+
+- The :meth:`TimeSeries.fetch <gwpy.timeseries.TimeSeries.fetch>`,
+  :meth:`TimeSeries.fetch_open_data <gwpy.timeseries.TimeSeries.fetch_open_data>`,
+  and :meth:`TimeSeries.find <gwpy.timeseries.TimeSeries.find>`
+  methods are all now simple wrappers around the unified
+  :meth:`TimeSeries.get <gwpy.timeseries.TimeSeries.get>` method,
+  with appropriate default values for the `source` keyword.
+
+  These methods are not currently deprecated, but may be in a future release.
+
+- The ``url`` keyword argument in
+  :meth:`DataQualityDict.query_dqsegdb <gwpy.segments.DataQualityDict.query_dqsegdb>`
+  has been renamed to ``host`` to better reflect its purpose.
+  The ``url`` keyword is now deprecated and will be removed in a future release.
+
+- The ``krb5ccname`` argument to `gwpy.io.kerberos.kinit` was renamed to
+  ``ccache`` to better reflect its purpose.
+  The ``krb5ccname`` keyword is now deprecated and will be removed in a future release.
+
+- The ``verbose`` argument to most GWpy functions and methods is now deprecated and
+  will be removed in future releases.
+  Use the :mod:`gwpy.log` module to configure logging instead.
+
+- The ``nproc`` argument to most `.read()` classmethods was renamed to
+  ``parallel`` to better reflect its purpose.
+  The ``nproc`` keyword is now deprecated and will be removed in a future release.
+
+- The `gwpy.io.utils.gopen` function is now deprecated and will be removed
+  in a future release.
+  Use the built-in `gzip.open` function instead.
+
+- The ``flag`` keyword argument to
+  :meth:`DataQualityFlag.read <gwpy.segments.DataQualityFlag.read>` was renamed to
+  ``name`` to better reflect its purpose.
+  The ``flag`` keyword is now deprecated and will be removed in a future release.
+
+- The `gwpy.signal.window.planck` function is now deprecated and will be removed
+  in a future release.
+  Use a different windowing function instead.
+
+- The ``selection`` keyword to
+  :meth:`EventTable.read <gwpy.table.EventTable.read>`,
+  :meth:`EventTable.fetch <gwpy.table.EventTable.fetch>`
+  and similar methods was renamed to ``where`` to better reflect its purpose.
+  The ``selection`` keyword is now deprecated and will be removed in a future release.
+
+.. _v4.0.0-expired-deprecations:
+
+--------------------
+Expired Deprecations
+--------------------
+
+- The deprecated `FrequencySeries.filterba` method was removed,
+  use `FrequencySeries.filter` instead.
+
+- The deprecated `gwpy.io.cache.open_cache` function was removed,
+  use `gwpy.io.cache.read_cache` instead.
+
+- The deprecated `gwpy.io.cache.file_name` function was removed,
+  use `gwpy.io.utils.file_path` instead.
+
+- The deprecated `gwpy.io.cache.file_list` function was removed,
+  use `gwpy.io.utils.file_list` instead.
+
+- The deprecated `c_sort` keyword argument to `gwpy.plot.Axes` methods
+  was removed, use `sortbycolor` instead.
+
+- The deprecated `gwpy.signal.fft` module was removed/
+
+- The deprecated `EventTable.plot` method was removed,
+  use :meth:`EventTable.scatter <gwpy.table.eventTable.scatter>` instead.
+
+- The deprecated `gwpy.utils.misc.null_context` function was removed,
+  use `contextlib.nullcontext` instead.
+
+- The deprecated `gwpy.utils.shell.which` function was removed,
+  use `shutil.which` instead.
+
+- The deprecated `gwpy.utils.shell.call` function was removed,
+  use `subprocess.run` instead.
+
+.. _v4.0.0-new-features:
+
+------------
+New Features
+------------
+
+- A new `gwpy-rds` command line tool has been added for getting timeseries
+  data and writing to a new 'reduced data set' (RDS).
+  See :doc:`/tools/rds` for more details.
+
+- A new ``gwpy-tconvert`` command line tool has been added for converting
+  to and from GPS times.
+  See :doc:`/tools/tconvert` for more details.
+
+- A new :mod:`gwpy.log` module has been added for general support for log messages
+  throughout GWpy and user code.
+  This module supports automatic configuration of logging from the environment.
+  See :doc:`/logging` for more details.
+
+  Almost all GWpy modules now use this logging module instead of internal `print`
+  statements triggered by a `verbose` keyword.
+
+- All GWF writing operations now support the `overwrite` keyword (default is `True`)
+  to support explicitly allowing or disabling overwriting existing files.
+
+- Support for reading `TimeSeries` data from an Arrakis data block was added.
+  See the new `TimeSeries.from_arrakis` method for details.
+
+- All GWpy ``read()`` calls now support reading directly from URLs, including
+  ``http{s}``.
+  Files are downloaded using :doc:`astropy:utils/data`.
+
+- All GWpy ``read()`` methods now support reading from Pelican URLs.
+  These may required authorisation tokens, depending on the URL, and so support
+  has been added for dynamically discovering SciTokens from the host system.
+
+- The :mod:`gwpy.io.gwf` module has been refactored to provide a generic API for
+  reading and writing GWF files using multiple backends.
+
+  Support has been added for using :ref:`LALFrame <gwpy-external-lalframe>`
+  as a backend for GWF I/O.
+
+- The default GWF I/O backend can noe be configured using the
+  ``GWPY_FRAME_LIBRARY`` environment variable.
+  See :doc:`/env` for more details.
+
+.. _v4.0.0-bug-fixes:
+
+---------
+Bug Fixes
+---------
+
+- Fix masking of GWOSC catalog data in
+  `Table.fetch_open_data <gwpy.table.Table.fetch_open_data>`
+  [:mr:`1854`]
+
+.. _v4.0.0-other-changes:
+
+-------------
+Other Changes
+-------------
+
+- Update ``name`` returned for GWOSC HDF5 data
+  [:mr:`1963`]
+
+- Improvements to `Series.inject <gwpy.types.Series.inject>` method
+  [:mr:`1962`]
+
+- Refactor project documentation
+  [:mr:`1952`]
+
+- Plots made with :doc:`gwpy-plot </cli/index>` will automatically use the
+  GW Observatory Colour Scheme if the data are determined to be
+  from one or more GW observatories.
+
+- Kerberos authentication utilities in :mod:`gwpy.io.kerberos` are now
+  implemented using :doc:`python-gssapi <python-gssapi:index>`,
+  instead of calling out to the ``kinit`` command line tool.
+
+  This should not present any breaking changes to users, but
+  error messages may be different in some cases.
+
 .. _v3.0.14:
 
 ===================
