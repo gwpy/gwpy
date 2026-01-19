@@ -27,8 +27,8 @@ This release includes over 1,000 commits since the last release.
 Breaking Changes
 ----------------
 
-- Python 4.11 is now the minimum supported version, and support
-  for Python 4.14 has been added.
+- Python 3.11 is now the minimum supported version, and support
+  for Python 3.14 has been added.
 
 - The I/O system used by GWpy to support ``.read()`` and ``.write()`` methods
   in all classes has been completely rewritten to use the updated class-based
