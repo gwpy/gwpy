@@ -47,7 +47,13 @@ DEPRECATED_FUNCTION_WARNING: str = (
 
 
 class deprecated_property(property):  # noqa: N801
-    """Sub-class of `property` that invokes DeprecationWarning on every call."""
+    """Sub-class of `property` that invokes DeprecationWarning on every call.
+
+    .. deprecated:: 4.0.0
+
+        This property is deprecated and will be removed in a future release.
+        Use `warnings.deprecated` instead.
+    """
 
     @no_type_check
     def __init__(
@@ -103,6 +109,11 @@ def deprecated_function(
     message: str = DEPRECATED_FUNCTION_WARNING,
 ) -> Callable:
     """Add a `DeprecationWarning` to a function.
+
+    .. deprecated:: 4.0.0
+
+        This function is deprecated and will be removed in a future release.
+        Use `warnings.deprecated` instead.
 
     Parameters
     ----------

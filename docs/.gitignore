@@ -42,6 +42,7 @@ reference/*.rst
 !reference/gwpy.timeseries.rst
 !reference/gwpy.types.rst
 !reference/gwpy.utils.rst
+!reference/gwpy.utils.decorators.rst
 !reference/gwpy.utils.lal.rst
 tutorials/*.pdf
 tutorials/*.png

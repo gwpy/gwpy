@@ -29,11 +29,56 @@ different arguments and keywords based on the input/output file format,
 see :ref:`gwpy-timeseries-io-formats` for details on reading/writing for
 each of the built-in formats.
 
+.. _gwpy-timeseries-io-remote:
+
+*******************
+Reading remote data
+*******************
+
+`TimeSeries.read` supports reading data directly from remote sources,
+where the input filename is a ``http://``, ``https://``, or ``ftp://`` URL,
+as supported by Astropy's :doc:`astropy:utils/data`.
+
+Additionally, GWpy supports reading data directly from Pelican or OSDF
+URLs, where the input filename is a ``pelican://`` or ``osdf://`` URL,
+if the additional :doc:`requests-pelican <requests-pelican:index>`
+package is installed.
+
+.. code-block:: python
+    :caption: Reading data from Pelican
+
+    >>> from gwpy.timeseries import TimeSeries
+    >>> data = TimeSeries.read(
+    ...     "osdf:///gwdata/O3b/strain.4k/hdf.v1/H1/1268776960/"
+    ...     "H-H1_GWOSC_O3b_4KHZ_R1-1269358592-4096.hdf5",
+    ...     format="hdf5.gwosc",
+    ... )
+    >>> print(data)
+    TimeSeries([2.69325914e-20, 2.98416387e-20, 2.56382655e-20, ...,
+                3.49428204e-20, 3.19402495e-20, 2.73257992e-20],
+               unit: dimensionless,
+               t0: 1269358592.0 s,
+               dt: 0.000244140625 s,
+               name: H1:GWOSC-4KHZ_R1_STRAIN,
+               channel: None)
+
+
+.. admonition:: Tip: Installing GWpy with Pelican support
+    :class: tip
+
+    To install GWpy with Pelican support, use:
+
+    .. code-block:: console
+
+        pip install gwpy[pelican]
+
 ******************************
 Automatic discovery of GW data
 ******************************
 
-For full details on automatic data discovery, see :ref:`gwpy-timeseries-get`.
+For full details on automatic data discovery,
+including data from GWOSC or GWDataFind,
+see :ref:`gwpy-timeseries-get`.
 
 .. _gwpy-timeseries-io-formats:
 
@@ -111,7 +156,7 @@ To read data from a GWF file, pass the input file path (or paths) and the name o
 
 .. note::
 
-    The ``HLV-HW100916-968654552-1.gwf`` file is included with the GWpy source under `/gwpy/testing/data/ <https://github.com/gwpy/gwpy/tree/main/gwpy/testing/data>`_.
+    The ``HLV-HW100916-968654552-1.gwf`` file is included with the GWpy source under `/gwpy/testing/data/ <https://gitlab.com/gwpy/gwpy/-/tree/main/gwpy/testing/data>`_.
 
 Reading a `StateVector` uses the same syntax:
 

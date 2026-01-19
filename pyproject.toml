@@ -336,8 +336,11 @@ ignore_roles = [
   # extlinks
   "dcc",
   "doi",
+  "ghu",
+  "glu",
   "issue",
   "mr",
+  "release",
   # doxylink
   "lal",
   "lalframe",

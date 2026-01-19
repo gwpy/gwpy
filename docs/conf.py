@@ -182,10 +182,18 @@ copybutton_line_continuation_character = "\\"
 # -- extlinks
 
 extlinks = {
-    "dcc": ("https://dcc.ligo.org/%s/public", "%s"),
-    "doi": ("https://doi.org/%s", "doi:%s"),
+    # GWpy project links
     "issue": (f"{PROJECT_URL}/-/issues/%s", "gwpy/gwpy#%s"),
     "mr": (f"{PROJECT_URL}/-/merge_requests/%s", "gwpy/gwpy!%s"),
+    "release": (f"{PROJECT_URL}/-/releases/%s", "%s"),
+    # DCC document
+    "dcc": ("https://dcc.ligo.org/%s/public", "%s"),
+    # DOI link
+    "doi": ("https://doi.org/%s", "doi:%s"),
+    # GitHub user profile
+    "ghu": ("https://github.com/%s", "@%s"),
+    # GitLab User profile
+    "glu": ("https://gitlab.com/%s", "@%s"),
 }
 
 # -- inhertance_diagram

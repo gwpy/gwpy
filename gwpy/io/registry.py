@@ -90,6 +90,7 @@ __all__ = [
     "UnifiedIORegistry",
     "UnifiedRead",
     "UnifiedWrite",
+    "default_registry",
     "identify_factory",
     "inherit_unified_io",
 ]
@@ -238,7 +239,12 @@ class UnifiedIORegistry(astropy_registry.UnifiedIORegistry):
     )
 
 
+#: The default unified I/O registry instance.
+#:
+#: Most classes should use this registry unless they have a specific reason
+#: to use a custom registry.
 default_registry = UnifiedIORegistry()
+
 
 
 class MergeProtocol(Protocol[T]):

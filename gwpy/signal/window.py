@@ -240,6 +240,12 @@ def planck(
 ) -> NDArray:
     """Return a Planck taper window.
 
+    .. deprecated:: 4.0.0
+
+        This function is deprecated and will be removed in a future release.
+        Use a different window function (e.g. `~scipy.signal.windows.tukey`)
+        or implement your own version of the Planck window if needed.
+
     Parameters
     ----------
     size : `int`
