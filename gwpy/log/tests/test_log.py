@@ -31,13 +31,14 @@ from gwpy import log as gwpy_log
 @mock.patch.dict("os.environ", clear=True)
 @pytest.mark.parametrize(("env", "expected"), [
     pytest.param(None, logging.NOTSET, id="default"),
-    pytest.param("DEBUG", logging.DEBUG, id="debug"),
+    pytest.param("DEBUG", logging.DEBUG, id="DEBUG"),
+    pytest.param("debug", logging.DEBUG, id="debug"),
     pytest.param(10, logging.DEBUG, id="debug-int"),
-    pytest.param("INFO", logging.INFO, id="info"),
+    pytest.param("INFO", logging.INFO, id="INFO"),
     pytest.param(20, logging.INFO, id="info-int"),
-    pytest.param("WARNING", logging.WARNING, id="warning"),
-    pytest.param("ERROR", logging.ERROR, id="error"),
-    pytest.param("CRITICAL", logging.CRITICAL, id="critical"),
+    pytest.param("WARNING", logging.WARNING, id="WARNING"),
+    pytest.param("ERROR", logging.ERROR, id="ERROR"),
+    pytest.param("CRITICAL", logging.CRITICAL, id="CRITICAL"),
 ])
 def test_get_default_level(env, expected):
     """Test :func:`gwpy.log.get_default_level`."""

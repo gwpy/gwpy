@@ -78,7 +78,7 @@ def get_default_level() -> int:
 
     Examples
     --------
-    >>> os.environ["GWPY_LOG_LEVEL"] = "DEBUG"
+    >>> os.environ["GWPY_LOG_LEVEL"] = "debug"
     >>> get_default_level()
     10
     >>> os.environ["GWPY_LOG_LEVEL"] = logging.INFO
@@ -86,16 +86,12 @@ def get_default_level() -> int:
     20
     """
     try:
-        level = os.environ["GWPY_LOG_LEVEL"]
+        level = os.environ["GWPY_LOG_LEVEL"].upper()
     except KeyError:
         return logging.NOTSET
     if level.isdigit():
         return int(level)
-    try:
-        levels = logging.getLevelNamesMapping()
-    except AttributeError:  # python < 3.10
-        levels = logging._nameToLevel
-    return levels[level]
+    return _LOG_LEVELS[level]
 
 
 def init_logger(
