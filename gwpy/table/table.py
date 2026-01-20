@@ -22,7 +22,6 @@ from __future__ import annotations
 
 from functools import wraps
 from math import ceil
-from operator import attrgetter
 from typing import (
     TYPE_CHECKING,
     cast,
@@ -516,11 +515,9 @@ class EventTable(Table):
 
         # set default labels
         ax = plot.gca()
-        for axis, col in zip(
-            filter(attrgetter("isDefault_label"), (ax.xaxis, ax.yaxis)),
-            args[:2],
-            strict=True,
-        ):
+        for axis, col in zip((ax.xaxis, ax.yaxis), args[:2], strict=False):
+            if not axis.isDefault_label:
+                continue
             name = col.name
             if rcParams["text.usetex"]:
                 name = rf"\texttt{{{label_to_latex(col.name)}}}"

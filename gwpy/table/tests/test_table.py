@@ -315,6 +315,18 @@ class TestEventTable(TestTable[EventTableType]):
         plot.save(BytesIO(), format="png")
         plot.close()
 
+    def test_scatter_default_label(self, table: EventTableType):
+        """Test `EventTable.scatter` default axis labeling.
+
+        Checks regression against https://gitlab.com/gwpy/gwpy/-/issues/1844.
+        """
+        plot = table.scatter("time", "frequency", ylabel="My label")
+        try:
+            assert plot.gca().get_xlabel() == "time"
+            assert plot.gca().get_ylabel() == "My label"
+        finally:
+            plot.close()
+
     def test_hist(self, table: EventTableType):
         """Test `EventTable.hist`."""
         plot = table.hist("snr")
