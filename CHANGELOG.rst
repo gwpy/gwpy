@@ -106,7 +106,7 @@ Deprecations
   will be removed in future releases.
   Use the :mod:`gwpy.log` module to configure logging instead.
 
-- The ``nproc`` argument to most `.read()` classmethods was renamed to
+- The ``nproc`` argument to most ``.read()`` classmethods was renamed to
   ``parallel`` to better reflect its purpose.
   The ``nproc`` keyword is now deprecated and will be removed in a future release.
 
@@ -240,7 +240,7 @@ Other Changes
   from one or more GW observatories.
 
 - Kerberos authentication utilities in :mod:`gwpy.io.kerberos` are now
-  implemented using :doc:`python-gssapi <python-gssapi:index>`,
+  implemented using :doc:`python-gssapi <gssapi:index>`,
   instead of calling out to the ``kinit`` command line tool.
 
   This should not present any breaking changes to users, but
