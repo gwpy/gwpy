@@ -120,7 +120,7 @@ Each of these will return filter coefficients that can be passed directly into
 `~TimeSeries.filter`.
 
 For a worked example of designing a digital filter, and then visualising it,
-see :ref:`sphx_glr_examples_signal_bode.py`.
+see :ref:`gwpy-plot-bode`.
 
 ==========================
 Cross-channel correlations
