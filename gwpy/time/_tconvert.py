@@ -44,7 +44,7 @@ from ._ligotimegps import LIGOTimeGPSLike
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-SupportsToGps = LIGOTimeGPSLike | SupportsFloat | datetime.date | str
+SupportsToGps = LIGOTimeGPSLike | SupportsFloat | datetime.date | Time | str
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
@@ -62,7 +62,7 @@ def tconvert(
 
 @overload
 def tconvert(
-    gpsordate: datetime.date | str,
+    gpsordate: datetime.date | Time | str,
 ) -> LIGOTimeGPS:
     ...
 
