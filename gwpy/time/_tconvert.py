@@ -358,7 +358,7 @@ def _datetime_to_time(
 def _time_to_gps(
     time: Time,
 ) -> LIGOTimeGPS:
-    """Convert a `Time` into `LIGOTimeGPS`.
+    """Convert `astropy.time.Time` into `LIGOTimeGPS`.
 
     This method uses `datetime.datetime` underneath, which restricts
     to microsecond precision by design. This should probably be fixed...
@@ -366,7 +366,7 @@ def _time_to_gps(
     Parameters
     ----------
     time : `~astropy.time.Time`
-        Formatted `Time` object to convert.
+        Time object to convert.
 
     Returns
     -------

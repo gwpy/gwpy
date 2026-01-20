@@ -51,7 +51,16 @@ __all__ = [
 
 @runtime_checkable
 class LIGOTimeGPSLike(Protocol):
-    """Protocol for types that are instances of LIGOTimeGPS."""
+    """Protocol for types that are implementations of LIGOTimeGPS.
+
+    This is used for type hinting functions that can accept
+    |lal.LIGOTimeGPS|_, or `ligotimegps.LIGOTimeGPS`, or any
+    other implementation of the ``LIGOTimeGPS`` standard.
+
+    This can also be used at runtime with `isinstance` to check if an
+    object is a LIGOTimeGPS-like object, but cannot be used with
+    `issubclass`.
+    """
 
     gpsSeconds: int      # noqa: N815
     gpsNanoSeconds: int  # noqa: N815

@@ -47,7 +47,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 __all__ = [
     "LIGOTimeGPS",
-    "Time",
+    "LIGOTimeGPSLike",
     "from_gps",
     "tconvert",
     "to_gps",

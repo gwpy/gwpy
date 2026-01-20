@@ -219,6 +219,7 @@ intersphinx_mapping = {key: (value, None) for key, value in {
     "igwn-ligolw": "https://igwn-ligolw.readthedocs.io/en/stable/",
     "igwn-segments": "https://igwn-segments.readthedocs.io/en/stable/",
     "ligo.skymap": "https://lscsoft.docs.ligo.org/ligo.skymap/",
+    "ligotimegps": "https://ligotimegps.readthedocs.io/en/stable/",
     "lscsoft-glue": "https://lscsoft.docs.ligo.org/glue/",
     "matplotlib": "https://matplotlib.org/",
     "numpy": "https://numpy.org/doc/stable/",
