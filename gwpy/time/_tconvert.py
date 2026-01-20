@@ -44,7 +44,7 @@ from ._ligotimegps import LIGOTimeGPSLike
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-SupportsToGps = LIGOTimeGPSLike | SupportsFloat | datetime.date | str
+SupportsToGps = LIGOTimeGPSLike | SupportsFloat | datetime.date | Time | str
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __all__ = [
@@ -62,7 +62,7 @@ def tconvert(
 
 @overload
 def tconvert(
-    gpsordate: datetime.date | str,
+    gpsordate: datetime.date | Time | str,
 ) -> LIGOTimeGPS:
     ...
 
@@ -70,6 +70,12 @@ def tconvert(
     gpsordate: SupportsToGps = "now",
 ) -> datetime.date | LIGOTimeGPS:
     """Convert GPS times to ISO-format date-times and vice-versa.
+
+    .. warning::
+
+       This method cannot convert exact leap seconds to
+       `datetime.datetime`, that object doesn't support it,
+       so you should consider using `astropy.time.Time` directly.
 
     Parameters
     ----------
@@ -83,15 +89,14 @@ def tconvert(
 
     Notes
     -----
-    If the input object is a `float` or `LIGOTimeGPS`, it will get
-    converted from GPS format into a `datetime.datetime`, otherwise
-    the input will be converted into `LIGOTimeGPS`.
+    - If the input object is a `float` or `LIGOTimeGPS`, it will get
+      converted from GPS format into a `datetime.datetime`, otherwise
+      the input will be converted into `LIGOTimeGPS`.
 
-    .. warning::
-
-       This method cannot convert exact leap seconds to
-       `datetime.datetime`, that object doesn't support it,
-       so you should consider using `astropy.time.Time` directly.
+    - All `~datetime.datetime` objects returned by this function are 'aware'
+      in the UTC timezone.
+      For more details on timezone handling in `~datetime.datetime` objects,
+      see :ref:`python:datetime-naive-aware`.
 
     Examples
     --------
@@ -100,9 +105,9 @@ def tconvert(
 
     >>> from gwpy.time import tconvert
     >>> tconvert(0)
-    datetime.datetime(1980, 1, 6, 0, 0)
+    datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
     >>> tconvert(1126259462.3910)
-    datetime.datetime(2015, 9, 14, 9, 50, 45, 391000)
+    datetime.datetime(2015, 9, 14, 9, 50, 45, 391000, tzinfo=datetime.timezone.utc)
 
     while strings are automatically converted to `~gwpy.time.LIGOTimeGPS`:
 
@@ -227,24 +232,28 @@ def from_gps(
 ) -> datetime.datetime:
     """Convert a GPS time into a `datetime.datetime`.
 
-    Parameters
-    ----------
-    gps : `LIGOTimeGPS`, `int`, `float`
-        GPS time to convert
-
-    Returns
-    -------
-    datetime : `datetime.datetime`
-        ISO-format datetime equivalent of input GPS time in
-        the UTC timezone.
-
-    Notes
-    -----
     .. warning::
 
        This method cannot convert exact leap seconds to
        `datetime.datetime`, that object doesn't support it,
        so you should consider using `astropy.time.Time` directly.
+
+    Parameters
+    ----------
+    gps : `LIGOTimeGPS`, `int`, `float`
+        GPS time to convert.
+
+    Returns
+    -------
+    datetime : `datetime.datetime`
+        UTC-aware `~datetime.datetime` representation of the input GPS time.
+
+    Notes
+    -----
+    - All `~datetime.datetime` objects returned by this function are 'aware'
+      in the UTC timezone.
+      For more details on timezone handling in `~datetime.datetime` objects,
+      see :ref:`python:datetime-naive-aware`.
 
     Examples
     --------
@@ -349,7 +358,7 @@ def _datetime_to_time(
 def _time_to_gps(
     time: Time,
 ) -> LIGOTimeGPS:
-    """Convert a `Time` into `LIGOTimeGPS`.
+    """Convert `astropy.time.Time` into `LIGOTimeGPS`.
 
     This method uses `datetime.datetime` underneath, which restricts
     to microsecond precision by design. This should probably be fixed...
@@ -357,7 +366,7 @@ def _time_to_gps(
     Parameters
     ----------
     time : `~astropy.time.Time`
-        Formatted `Time` object to convert.
+        Time object to convert.
 
     Returns
     -------
