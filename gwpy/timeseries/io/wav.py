@@ -160,6 +160,7 @@ def _is_wav(
             return True
     except (
         AttributeError,  # not a file-like object
+        TypeError,  # wave.open failed for some other reason
         wave.Error,  # scipy failed to read this as a WAV file
     ):
         return False

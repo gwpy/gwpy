@@ -433,16 +433,24 @@ class UnifiedRead(astropy_registry.UnifiedReadWrite, ABC, Generic[T]):
                     **kwargs,
                 )
 
-        # read all files in parallel threads
         outputs: list[T] = []
-        with ThreadPoolExecutor(
-            max_workers=parallel,
-        ) as pool:
-            futures = [pool.submit(_read, source) for source in sources]
-            for future in as_completed(futures):
-                outputs.append(future.result())
+
+        # read files in series
+        if parallel <= 1:
+            for src in sources:
+                outputs.append(_read(src))
                 if progress:
                     progress.update(1)
+        # read all files in parallel threads
+        else:
+            with ThreadPoolExecutor(
+                max_workers=parallel,
+            ) as pool:
+                futures = [pool.submit(_read, source) for source in sources]
+                for future in as_completed(futures):
+                    outputs.append(future.result())
+                    if progress:
+                        progress.update(1)
 
         # Merge results
         return merge_function(outputs, **merge_kwargs)

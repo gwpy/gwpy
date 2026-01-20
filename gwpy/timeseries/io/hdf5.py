@@ -41,7 +41,10 @@ from .. import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import (
+        Callable,
+        Iterable,
+    )
 
     import h5py
 
@@ -81,7 +84,7 @@ def _is_timeseries_dataset(dataset: h5py.Dataset) -> bool:
 @with_read_hdf5
 def read_hdf5_dict(
     h5f: h5py.Group,
-    names: list[str] | None = None,
+    names: Iterable[str] | None = None,
     group: str | None = None,
     **kwargs,
 ) -> dict:
