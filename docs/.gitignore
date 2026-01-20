@@ -29,6 +29,7 @@ reference/*.rst
 !reference/gwpy.io.root.rst
 !reference/gwpy.io.scitokens.rst
 !reference/gwpy.io.utils.rst
+!reference/gwpy.log.rst
 !reference/gwpy.plot.rst
 !reference/gwpy.segments.rst
 !reference/gwpy.signal.rst

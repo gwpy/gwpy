@@ -22,6 +22,7 @@ Complete reference documentation for all GWpy classes, functions, and modules.
     gwpy.detector
     gwpy.frequencyseries
     gwpy.io
+    gwpy.log
     gwpy.plot
     gwpy.segments
     gwpy.signal

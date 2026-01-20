@@ -15,11 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Logging utilities for GWpy.
-
-For more information about logging in GWpy, see
-:ref:`gwpy-logging`.
-"""
+"""Logging utilities for GWpy."""
 
 from __future__ import annotations
 
@@ -31,10 +27,10 @@ from typing import TYPE_CHECKING
 try:
     from coloredlogs import (
         ColoredFormatter,
-        terminal_supports_colors,
+        terminal_supports_colors as _terminal_supports_colors,
     )
 except ImportError:
-    def terminal_supports_colors(stream: IO) -> bool:   # noqa: ARG001
+    def _terminal_supports_colors(stream: IO) -> bool:   # noqa: ARG001
         """Return `False` to indicate that colours are unsupported."""
         return False
 
@@ -42,11 +38,28 @@ if TYPE_CHECKING:
     from typing import IO
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__all__ = [
+    "DEFAULT_LOG_DATEFMT",
+    "DEFAULT_LOG_FORMAT",
+    "get_default_level",
+    "init_logger",
+]
 
+_LOG_LEVELS = logging.getLevelNamesMapping()
+
+#: The default log message format.
+#:
+#: The format can be overridden by setting the ``GWPY_LOG_FORMAT``
+#: environment variable.
 DEFAULT_LOG_FORMAT = os.getenv(
     "GWPY_LOG_FORMAT",
     "%(asctime)s:%(name)s:%(levelname)s:%(message)s",
 )
+
+#: The default log date format.
+#:
+#: The format can be overridden by setting the ``GWPY_LOG_DATEFMT``
+#: environment variable.
 DEFAULT_LOG_DATEFMT = os.getenv(
     "GWPY_LOG_DATEFMT",
     "%Y-%m-%dT%H:%M:%S%z",
@@ -65,23 +78,20 @@ def get_default_level() -> int:
 
     Examples
     --------
-    >>> os.environ["GWPY_LOG_LEVEL"] = "DEBUG"
+    >>> os.environ["GWPY_LOG_LEVEL"] = "debug"
     >>> get_default_level()
     10
     >>> os.environ["GWPY_LOG_LEVEL"] = logging.INFO
+    >>> get_default_level()
     20
     """
     try:
-        level = os.environ["GWPY_LOG_LEVEL"]
+        level = os.environ["GWPY_LOG_LEVEL"].upper()
     except KeyError:
         return logging.NOTSET
     if level.isdigit():
         return int(level)
-    try:
-        levels = logging.getLevelNamesMapping()
-    except AttributeError:  # python < 3.10
-        levels = logging._nameToLevel
-    return levels[level]
+    return _LOG_LEVELS[level]
 
 
 def init_logger(
@@ -160,7 +170,7 @@ def init_logger(
     # attach a new handler as needed
     if not logger.hasHandlers():
         handler = logging.StreamHandler(stream)
-        if color and terminal_supports_colors(stream):
+        if color and _terminal_supports_colors(stream):
             formatter_class = ColoredFormatter
         else:
             formatter_class = logging.Formatter
