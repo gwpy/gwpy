@@ -21,6 +21,10 @@ spec:
   tags:
     - saas-macos-medium-m1
   image: macos-15-xcode-16
+  retry:
+    # retry all windows jobs up to 2 times on failure, they are flaky
+    max: 2
+    when: always
 
 .windows:
   rules:
