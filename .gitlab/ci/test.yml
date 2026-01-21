@@ -311,6 +311,10 @@ python_test_windows:
 
 .conda_create_test_env:
   before_script:
+    # install rattler solver
+    - retry conda install --quiet --yes --name base --channel conda-forge
+        conda-rattler-solver
+    - conda config --system --set solver rattler
     - conda info --all
     # use pip2conda to solve (sort of) the test environment
     - retry uvx --with "pip2conda>=0.9.0"
