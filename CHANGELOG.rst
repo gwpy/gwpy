@@ -5,7 +5,7 @@ Changelog
 .. _v4.0.0:
 
 =====================
-4.0.0rc1 - 2026-01-19
+4.0.0rc2 - 2026-01-21
 =====================
 
 GWpy 4.0.0 represents a major version release with significant improvements to
@@ -34,7 +34,11 @@ Breaking Changes
   in all classes has been completely rewritten to use the updated class-based
   Astropy :doc:`astropy:io/registry`.
 
-  Existing custom I/O read/write function regsitrations may need to be updated
+  Additionally, the builtin parallel I/O support has been reworked to use
+  multiple threads, controlled via the ``parallel`` keyword argument,
+  rather than multiple processes (via ``nproc``).
+
+  Existing custom I/O read/write function registrations may need to be updated
   to register to a new custom registry, or to use the new
   `gwpy.io.registry.default_registry` instance.
 
