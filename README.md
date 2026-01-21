@@ -1,10 +1,8 @@
-GWpy is a collaboration-driven Python package providing tools for
-studying data from ground-based gravitational-wave detectors.
+GWpy is a collaboration‑driven Python package providing tools for studying data from ground‑based gravitational‑wave detectors. It offers a user‑friendly interface to time‑ and frequency‑domain data from the LIGO, Virgo, and KAGRA observatories, with step‑by‑step tutorials.
 
-GWpy provides a user-friendly, intuitive interface to the common
-time-domain and frequency-domain data produced by the LIGO and Virgo
-observatories and their analyses, with easy-to-follow tutorials at each
-step.
+The GWpy package contains classes and utilities for astrophysical and instrumental analysis. It targets users who want to “do the science” without worrying about low‑level details, through simple, well‑documented APIs and sensible examples.
+
+GWpy builds on, and extends, the functionality of Astropy and the LVK LALSuite libraries (via SWIG Python bindings), combining rich astronomy abstractions with the completeness and speed of mature C99 routines.
 
 <https://gwpy.github.io>
 
@@ -40,6 +38,20 @@ You can test your installation, and its version by
 
 ```
 python -c "import gwpy; print(gwpy.__version__)"
+```
+
+# Quick example
+
+Here is how you can fetch, filter, whiten, and visualize real LIGO data from GWOSC in just a few lines:
+
+```python
+from gwpy.timeseries import TimeSeries
+from gwosc import datasets
+gps = datasets.event_gps("GW150914")
+h = TimeSeries.fetch_open_data("H1", gps-4, gps+4, sample_rate=4096)
+w = h.bandpass(20, 1024).whiten(4, 2)
+spec = w.spectrogram2(fftlength=0.25, overlap=0.20)
+spec.plot(norm="log").show()
 ```
 
 # License
