@@ -141,3 +141,8 @@ uv.lock:
 
 dependency-scanning:
   needs: ["uv.lock"]
+  rules:
+    # skip if we can't run advanced dependency scanning
+    - if: '$GITLAB_FEATURES =~ /\bdependency_scanning\b/'
+      when: never
+    - !reference [.qa, rules]
