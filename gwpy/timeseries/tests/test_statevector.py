@@ -125,6 +125,16 @@ class TestStateTimeSeries(_TestTimeSeriesBase):
         assert a2.dtype is numpy.dtype(bool)
         utils.assert_array_equal(array.value, a2.value)
 
+    @pytest.mark.requires("arrakis")
+    @pytest.mark.parametrize("copy", [False, True])
+    @pytest.mark.parametrize("dtype", [
+        pytest.param(bool, id="bool"),
+        pytest.param(numpy.dtype('bool'), id="np_bool"),
+    ])
+    def test_from_arrakis(self, copy, dtype):
+        """Test `StateTimeSeries.from_arrakis`."""
+        super().test_from_arrakis(copy, dtype)
+
     @pytest.mark.requires("nds2")
     def test_from_nds2_buffer(self):
         # build fake buffer

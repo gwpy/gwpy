@@ -185,19 +185,27 @@ class TestTimeSeriesBase(_TestSeries[TimeSeriesBaseType], Generic[TimeSeriesBase
 
     @pytest.mark.requires("arrakis")
     @pytest.mark.parametrize("copy", [False, True])
-    def test_from_arrakis(self, copy):
+    @pytest.mark.parametrize("dtype", [
+        pytest.param(numpy.float64, id="float64"),
+        pytest.param(numpy.int32, id="int32"),
+        pytest.param(bool, id="bool"),
+        pytest.param(numpy.dtype('bool'), id="np_bool"),
+    ])
+    def test_from_arrakis(self, copy, dtype):
         """Test `TimeSeriesBase.from_arrakis`."""
         from arrakis import Channel as ArrakisChannel
         from arrakis.block import Series as ArrakisSeries
 
+        data = self.data.astype(dtype)
+
         # create arrakis objects
         achan = ArrakisChannel(
             "X1:TEST-CHANNEL",
-            self.data.dtype,
+            dtype,
             128,
         )
         aseries = ArrakisSeries(
-            data=self.data,
+            data=data,
             time_ns=int(1e18),
             channel=achan,
         )
@@ -206,7 +214,7 @@ class TestTimeSeriesBase(_TestSeries[TimeSeriesBaseType], Generic[TimeSeriesBase
         ts = self.TEST_CLASS.from_arrakis(aseries, copy=copy)
 
         # check data
-        utils.assert_array_equal(ts.value, self.data)
+        utils.assert_array_equal(ts.value, data)
         assert shares_memory(ts.value, aseries.data) is not copy
 
         # check metadata
@@ -214,6 +222,7 @@ class TestTimeSeriesBase(_TestSeries[TimeSeriesBaseType], Generic[TimeSeriesBase
         assert ts.t0 == aseries.t0 * units.s
         assert ts.dt == aseries.dt * units.s
         assert ts.sample_rate == aseries.sample_rate * units.Hz
+        assert ts.dtype == numpy.dtype(dtype)
         assert abs(ts.span) == aseries.duration
         utils.assert_array_equal(ts.times.value, aseries.times)
         # see https://git.ligo.org/ngdd/arrakis-python/-/issues/22:
