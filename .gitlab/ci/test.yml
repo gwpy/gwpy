@@ -313,8 +313,7 @@ python_test_windows:
   before_script:
     # install rattler solver
     - retry conda install --quiet --yes --name base --channel conda-forge
-        "conda-rattler-solver=0.0.4"
-        "py-rattler<0.21.0"
+        "conda-rattler-solver>=0.0.5"
     - conda config --system --set solver rattler
     - conda info --all
     # use pip2conda to solve (sort of) the test environment
