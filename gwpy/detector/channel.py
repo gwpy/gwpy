@@ -64,7 +64,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # NOTE: when we depend on numpy>=2.0, numpy.bool_ here can
 #       be replaced with numpy.bool.
-BOOL_TYPES = {bool, numpy.bool_, numpy.dtype(bool)}
+BOOL_TYPES = {bool, numpy.bool_, numpy.dtype(bool), "bool"}
 
 QUOTE_REGEX = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 
