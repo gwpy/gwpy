@@ -4,9 +4,9 @@ Changelog
 
 .. _v4.0.0:
 
-=====================
-4.0.0rc2 - 2026-01-21
-=====================
+==================
+4.0.0 - 2026-01-30
+==================
 
 GWpy 4.0.0 represents a major version release with significant improvements to
 I/O, logging, and signal processing, as well as modernization of dependencies,
