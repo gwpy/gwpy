@@ -2,10 +2,12 @@ name: gwpy
 channels:
   - conda-forge
 dependencies:
-  - pip
+  - graphviz
+  - igwn-ligolw
+  - pycbc
   - python
-  # include things that aren't (easily) installed using pip
-  - ligo-segments
   - python-framel
+  - python-gssapi
+  - python-lalframe
   - python-ldas-tools-framecpp
   - python-nds2-client
