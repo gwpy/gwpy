@@ -19,15 +19,14 @@
 
 from __future__ import annotations
 
-import socket
 from functools import wraps
-from ssl import SSLError
 from typing import TYPE_CHECKING
-from urllib.error import URLError
 
 import pytest
 import requests.exceptions
 from igwn_segments import segment
+
+from ..io.remote import NETWORK_ERROR
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -42,16 +41,6 @@ if TYPE_CHECKING:
 # -- Network/HTTP --------------------
 
 SERVER_ERROR = segment(500, 600)
-
-NETWORK_ERROR: tuple[type[Exception], ...] = (
-    ConnectionError,
-    requests.exceptions.ConnectionError,
-    requests.exceptions.ReadTimeout,
-    socket.timeout,
-    SSLError,
-    TimeoutError,
-    URLError,
-)
 
 # attempt to also catch errors from pytest_socket,
 # this should enable the test suite to run on machines that

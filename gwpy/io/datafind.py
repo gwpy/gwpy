@@ -60,7 +60,6 @@ from igwn_segments import segment as LigoSegment  # noqa: N812
 from urllib3.util import parse_url
 
 from ..detector import Channel
-from ..testing.errors import NETWORK_ERROR
 from ..time import to_gps
 from . import ffldatafind
 from .cache import cache_segments
@@ -69,6 +68,7 @@ from .gwf import (
     num_channels,
 )
 from .remote import (
+    NETWORK_ERROR,
     download_file,
     is_remote,
 )
