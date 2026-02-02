@@ -586,8 +586,8 @@ def parse_filter(
         Any of the following formats are supported:
 
         - FIR taps as a 1D `numpy.ndarray`
-        - IIR transfer function as a 2-tuple of 1D `numpy.ndarray`s
-        - IIR zero-pole-gain as a 3-tuple of 1D `numpy.ndarray`s and a `float`
+        - IIR transfer function as a 2-tuple of 1D `numpy.ndarray`
+        - IIR zero-pole-gain as a 3-tuple of 1D `numpy.ndarray` and a `float`
         - IIR second-order-sections as a 2D `numpy.ndarray`
         - `scipy.signal.lti` or `scipy.signal.dlti` object
 
