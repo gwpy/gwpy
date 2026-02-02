@@ -2,6 +2,7 @@ name: gwpy
 channels:
   - conda-forge
 dependencies:
+  - graphviz
   - igwn-ligolw
   - pycbc
   - python
