@@ -40,6 +40,12 @@ if TYPE_CHECKING:
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
+__all__ = [
+    "deprecated_property",
+    "deprecated_function",
+    "return_as",
+]
+
 DEPRECATED_FUNCTION_WARNING: str = (
     "{0.__module__}.{0.__name__} has been deprecated, and will be "
     "removed in a future release."
