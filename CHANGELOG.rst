@@ -2,6 +2,28 @@
 Changelog
 #########
 
+.. _v4.0.1:
+
+==================
+4.0.1 - 2026-02-02
+==================
+
+Patch release for GWpy 4.0.x.
+
+`Full details <https://gitlab.com/gwpy/gwpy/-/releases/v4.0.1>`__.
+
+.. _v4.0.1-bug-fixes:
+
+---------
+Bug Fixes
+---------
+
+- Fix erroneous development warning on online docs pages
+  [:mr:`2000`]
+
+- Fix incorrect dependency on pytest outside of testing
+  [:mr:`2002`]
+
 .. _v4.0.0:
 
 ==================
