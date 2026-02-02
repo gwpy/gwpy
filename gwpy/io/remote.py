@@ -30,13 +30,17 @@ URLs, via a hand-off to the function of the same name in `gwpy.io.pelican`.
 from __future__ import annotations
 
 import logging
+import socket
 from pathlib import PureWindowsPath
+from ssl import SSLError
 from typing import (
     TYPE_CHECKING,
     overload,
 )
 from unittest import mock
+from urllib.error import URLError
 
+import requests.exceptions
 from astropy.utils import data as astropy_data
 from urllib3.util import parse_url
 
@@ -61,6 +65,18 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
+#: Tuple of exception types that indicate a network error.
+#:
+#: Used to catch network errors when attempting to download remote files.
+NETWORK_ERROR: tuple[type[Exception], ...] = (
+    ConnectionError,
+    requests.exceptions.ConnectionError,
+    requests.exceptions.ReadTimeout,
+    socket.timeout,
+    SSLError,
+    TimeoutError,
+    URLError,
+)
 
 # -- Patch astropy to log downloads
 
