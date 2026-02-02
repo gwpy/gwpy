@@ -230,7 +230,7 @@ Bug Fixes
 Other Changes
 -------------
 
-- :func:`gwpy.time.from_gps`, `:func:`gwpy.time.tconvert`, and other
+- `gwpy.time.from_gps`, `gwpy.time.tconvert`, and other
   time-conversion functions now return timezone-aware `datetime.datetime`
   objects in UTC
   [:mr:`1977`]
