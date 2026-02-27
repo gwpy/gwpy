@@ -170,7 +170,7 @@ dev = [
   "igwn-ligolw ; sys_platform != 'win32'",
   "inspiral-range >=0.9.3",
   "lalsuite ; sys_platform != 'win32' and python_version < '3.14'",
-  "lscsoft-glue ; sys_platform != 'win32'",
+  "lscsoft-glue >=3.0.0 ; sys_platform != 'win32'",
   "pandas >=2.3.3",
   "psycopg2 >=2.9.11 ; sys_platform == 'linux'",
   "PyCBC >=2.8.5 ; sys_platform == 'linux' and python_version < '3.14'",
