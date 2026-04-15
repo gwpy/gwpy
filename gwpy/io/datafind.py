@@ -194,7 +194,7 @@ def on_tape(*files: str) -> bool:
             return False
         try:
             stat = Path(url.path).stat()
-        except FileNotFoundError:
+        except OSError:
             return False
         try:
             return stat.st_blocks == 0
