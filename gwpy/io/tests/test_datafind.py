@@ -259,6 +259,12 @@ def test_on_tape_true(stat):
     assert io_datafind.on_tape(TEST_GWF_FILE) is True
 
 
+@mock.patch("pathlib.Path.stat", side_effect=OSError(64, "network name unavailable"))
+def test_on_tape_oserror(mock_stat):
+    """Test that `on_tape` returns `False` when stat raises `OSError`."""
+    assert io_datafind.on_tape(TEST_GWF_FILE) is False
+
+
 @pytest.mark.parametrize(("ftype", "trend", "priority"), [
     pytest.param("L1_HOFT_C00", None, 1, id="hoft"),
     pytest.param("H1_HOFT_C02_T1700406_v3", None, 1, id="cleaned"),
