@@ -23,6 +23,7 @@ include:
       job_name: "basic_test"
       pip_cmd: "uv pip"
       pip_options: "--group test"
+      run_cmd: "uv run"
       pytest_options: >-
         --color yes
         --cov gwpy
@@ -36,7 +37,8 @@ include:
     inputs:
       pip_cmd: "uv pip"
       pip_options: "--group dev"
-      pytest_options: >-
+      run_cmd: "uv run"
+      pytest_options: &full_pytest_options >-
         --color yes
         --cov gwpy
         --numprocesses auto
@@ -44,12 +46,22 @@ include:
         --timeout 1800
         gwpy/
 
+  # conda test template
+  - local: .gitlab/ci/test-job.yml
+    inputs:
+      job_name: "conda_test_job"
+      pip_cmd: "uv pip"
+      pip_options: "--group dev"
+      run_cmd: "pixi run --manifest-path cicd"
+      pytest_options: *full_pytest_options
+
   # examples tests
   - local: .gitlab/ci/test-job.yml
     inputs:
       job_name: "examples_test"
       pip_cmd: "uv pip"
       pip_options: "--group dev"
+      run_cmd: "pixi run --manifest-path cicd"
       pytest_options: >-
         --color yes
         --cov gwpy
@@ -135,27 +147,18 @@ include:
           - "3.12"
           - "3.13"
           - "3.14"
+  variables:
+    PYTHON: "python${PYTHON_VERSION}"
 
 # only well-supported production versions
 .prod_test:
-  needs: []
-  extends: .test
+  extends: .dev_test
   parallel:
     matrix:
       - PYTHON_VERSION:
           - "3.11"
           - "3.12"
           - "3.13"
-
-.brew:
-  extends: .macos
-  variables:
-    HOMEBREW_CACHE: "$CI_PROJECT_DIR/.cache/brew"
-    HOMEBREW_NO_AUTO_UPDATE: 1
-  cache:
-    key: "brew-${CI_JOB_NAME_SLUG}"
-    paths:
-      - .cache/brew
 
 .choco:
   extends: .windows
@@ -166,6 +169,14 @@ include:
     paths:
       - .cache/choco
 
+.pixi_install: &pixi_install
+  - curl -fsSL https://pixi.sh/install.sh | sh
+  - export PATH="${PIXI_HOME:-${HOME}/.pixi}/bin:${PATH}"
+
+.pixi_install_windows: &pixi_install_windows
+  - powershell -ExecutionPolicy ByPass -c "irm -useb https://pixi.sh/install.ps1 | iex"
+  - $env:PATH += ";$PIXI_HOME\\bin"
+
 .uv_install: &uv_install
   # install uv
   - *retry_sh
@@ -174,19 +185,13 @@ include:
 
 .uv_venv: &uv_venv
   # configure a virtual environment for the right Python version
-  - uv venv --python ${PYTHON_VERSION}
-  - source .venv/bin/activate
+  - uv venv --python ${PYTHON}
 
 .uv_install_windows: &uv_install_windows
   # install uv
   - *retry_psh
   - retry 'powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"'
   - $env:PATH += ";$UV_INSTALL_DIR"
-
-.uv_venv_windows: &uv_venv_windows
-  # configure a virtual environment for the right Python version
-  - uv venv --python ${PYTHON_VERSION}
-  - .venv\Scripts\activate
 
 .uv:
   image: "ghcr.io/astral-sh/uv:python$PYTHON_VERSION-bookworm"
@@ -211,7 +216,7 @@ include:
     - .windows
   before_script:
     - *uv_install_windows
-    - *uv_venv_windows
+    - *uv_venv
 
 # -- basic tests for new branches without MRs
 #
@@ -309,35 +314,48 @@ python_test_windows:
 # tests defined above
 #
 
-.conda_create_test_env:
-  before_script:
-    - conda info --all
-    # use pip2conda to solve (sort of) the test environment
-    - retry uvx --with "pip2conda[rattler]>=0.10.0"
-      pip2conda
-        --all-extras
-        --all-groups
-        --output environment.txt
-        --python-version ${PYTHON_VERSION}
-        --solver rattler
-    - cat environment.txt
-    # create the test environment
-    - retry conda create --quiet --yes --name test --file environment.txt
-    - conda list --name test
-    - conda activate test
+.pixi_create_test_env: &pixi_create_test_env
+  - pixi --version
+  - uv --version
+  # use pip2conda to solve (sort of) the test environment
+  - uvx --with "pip2conda[rattler]>=0.9.0"
+    pip2conda
+      --all-extras
+      --all-groups
+      --output environment.yml
+      --python-version ${PYTHON_VERSION}
+      --solver rattler
+  - cat environment.yml
+  # create the test environment using pixi
+  - pixi init cicd -i environment.yml
+  - retry pixi install --manifest-path cicd
+  - pixi list --manifest-path cicd
+
+.pixi_create_test_env_unix: &pixi_create_test_env_unix
+  - *pixi_create_test_env
+  # activate the environment to set CONDA_PREFIX (used by uv)
+  - eval "$(pixi shell-hook --manifest-path cicd)"
+
+.pixi_create_test_env_windows: &pixi_create_test_env_windows
+  - *pixi_create_test_env
+  # activate the environment to set CONDA_PREFIX (used by uv)
+  - (pixi shell-hook --manifest-path cicd) | Out-String | Invoke-Expression
 
 .conda_test:
   extends:
+    - .conda_test_job
     - .prod_test
     - .uv
   stage: conda
   variables:
-    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/.cache/conda/pkgs"
+    PIXI_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pixi"
+    PIXI_HOME: "${CI_PROJECT_DIR}/.pixi"
+  script: !reference [.conda_test_job, script]
   cache:
     - !reference [.uv, cache]
-    - key: "conda-${CI_JOB_NAME_SLUG}"
+    - key: "pixi-${CI_JOB_NAME_SLUG}"
       paths:
-        - .cache/conda/pkgs/*.conda
+        - .cache/pixi
 
 # Linux
 conda_test_linux:
@@ -348,25 +366,23 @@ conda_test_linux:
   rules:
     - !reference [.linux, rules]
     - !reference [.rules_full_test, rules]
-  image: quay.io/condaforge/miniforge3
+  image: ghcr.io/prefix-dev/pixi:latest
   variables:
     DEBIAN_FRONTEND: noninteractive
   before_script:
     - *retry_sh
-    # install latex packages
+    # install required system packages
     - apt-get -yqq update && apt-get install -yqq --no-install-recommends
         cm-super-minimal
         dvipng
+        git
         texlive-fonts-recommended
         texlive-latex-extra
-    # install curl
+    # install tooling
     - apt-get -yqq update && apt-get -yqq install curl
-    # install uv
     - *uv_install
-    # init conda
-    - . $(conda info --base)/etc/profile.d/conda.sh
-    # create the test environment using conda, uv, and pip2conda
-    - !reference [.conda_create_test_env, before_script]
+    # configure the test environment
+    - *pixi_create_test_env_unix
     # initialise credentials
     - bash -ex .gitlab/ci/init-creds.sh
 
@@ -381,12 +397,11 @@ conda_test_macos:
     - !reference [.rules_full_test, rules]
   before_script:
     - *retry_sh
-    # install miniforge
-    - retry curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
-    - retry bash Miniforge3-$(uname)-$(uname -m).sh -b -p "$CI_PROJECT_DIR/miniforge3"
-    - . $CI_PROJECT_DIR/miniforge3/etc/profile.d/conda.sh
-    # then do the same init as Linux
-    - !reference [conda_test_linux, before_script]
+    # install tooling
+    - *pixi_install
+    - *uv_install
+    # configure the test environment
+    - *pixi_create_test_env_unix
   cache:
     # cache uv/conda packages
     - !reference [.conda_test, cache]
@@ -405,23 +420,14 @@ conda_test_windows:
     - !reference [.rules_full_test, rules]
   before_script:
     - *retry_psh
-    # install uv
+    # install tooling
+    - *pixi_install_windows
     - *uv_install_windows
-    # install miniforge using choco
-    - retry choco install
-        --cache $CHOCO_CACHE_DIR
-        --yes
-        miniforge3
-    - $env:PATH += ";C:\tools\miniforge3\Scripts;C:\tools\miniforge3"
-    - conda init powershell
-    - . C:\tools\miniforge3\shell\condabin\conda-hook.ps1
-    # create the test environment using conda, uv, and pip2conda
-    - !reference [.conda_create_test_env, before_script]
+    # create the test environment
+    - *pixi_create_test_env_windows
   cache:
     # cache conda packages
     - !reference [.conda_test, cache]
-    # and choco packages
-    - !reference [.choco, cache]
 
 # -- examples tests
 #
