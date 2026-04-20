@@ -1,0 +1,58 @@
+# -- Publish
+
+spec:
+  inputs:
+    stage:
+      default: deploy
+      description: "Pipeline stage in which to add jobs"
+      type: string
+    dependencies:
+      description: "List of job names that must complete before this job runs"
+      type: array
+
+---
+
+include:
+  - local: .gitlab/ci/rules.yml
+
+  # Production
+  - local: .gitlab/ci/publish-job.yml
+    inputs:
+      stage: $[[ inputs.stage ]]
+      dependencies: $[[ inputs.dependencies ]]
+      deployment_tier: production
+      pypi_repository: "pypi"
+      pypi_hostname: "pypi.org"
+      rules:
+        - !reference [.rules_deploy, rules]
+
+  # Testing (test.pypi.org)
+  - local: .gitlab/ci/publish-job.yml
+    inputs:
+      stage: $[[ inputs.stage ]]
+      dependencies: $[[ inputs.dependencies ]]
+      deployment_tier: testing
+      pypi_repository: &test_pypi_repository "testpypi"
+      pypi_repository_upper: &test_pypi_repository_upper "TESTPYPI"
+      pypi_hostname: &test_pypi_hostname     "test.pypi.org"
+      rules:
+        - !reference [.rules_protected_push, rules]
+
+  # MR (test.pypi.org, dry run)
+  - local: .gitlab/ci/publish-job.yml
+    inputs:
+      job_name: "publish_mr"
+      stage: $[[ inputs.stage ]]
+      dependencies: $[[ inputs.dependencies ]]
+      deployment_tier: testing
+      pypi_repository: *test_pypi_repository
+      pypi_repository_upper: *test_pypi_repository_upper
+      pypi_hostname: *test_pypi_hostname
+      uv_publish_options: "--dry-run"
+      rules:
+        - !reference [.rules_nightly, rules]
+        - !reference [.rules_merge_request, rules]
+
+# The publish-mr job doesn't actually deploy anything
+publish_mr:
+  environment: null

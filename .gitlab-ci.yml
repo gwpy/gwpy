@@ -54,6 +54,7 @@ include:
 
   - local: .gitlab/ci/python-dist.yml
     inputs:
+      job_name: &python_dist_job build
       stage: build
 
   # -- Test
@@ -71,6 +72,12 @@ include:
 
   # -- Deploy release
 
-  - local: .gitlab/ci/twine.yml
+  - local: .gitlab/ci/publish.yml
     inputs:
       stage: deploy
+      dependencies:
+        - *python_dist_job
+    rules:
+      - if: '$CI_COMMIT_MESSAGE =~ /\[skip deploy\]/'
+        when: never
+      - when: always

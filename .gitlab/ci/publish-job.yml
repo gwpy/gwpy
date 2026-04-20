@@ -1,0 +1,51 @@
+spec:
+  inputs:
+    job_name:
+      description: "Name of the publish job"
+      default: "publish"
+    stage:
+      description: "Pipeline stage to run the publish job in"
+      default: "deploy"
+    dependencies:
+      description: "List of job dependencies (e.g. ['build'])"
+      type: array
+    rules:
+      description: "Rules to determine when the publish job should run (e.g. 'if: $CI_COMMIT_TAG')"
+      type: array
+    deployment_tier:
+      description: "Deployment tier for the environment (e.g. 'production' or 'testing')"
+      default: "production"
+    pypi_repository:
+      description: "PyPI repository to publish to (e.g. 'pypi' or 'testpypi')"
+      default: "pypi"
+    pypi_repository_upper:
+      description: "Uppercase version of the PyPI repository name (e.g. 'PYPI' or 'TESTPYPI')"
+      default: "PYPI"
+    pypi_hostname:
+      description: "Hostname of the PyPI repository (e.g. 'pypi.org' or 'test.pypi.org')"
+      default: "pypi.org"
+    uv_publish_options:
+      description: "Additional options to pass to 'uv upload' (e.g. '--verbose')"
+      default: ""
+
+---
+
+$[[ inputs.job_name ]]:
+  interruptible: false
+  rules: $[[ inputs.rules ]]
+  stage: $[[ inputs.stage ]]
+  dependencies: $[[ inputs.dependencies ]]
+  image: ghcr.io/astral-sh/uv:alpine
+  environment:
+    name: $[[ inputs.pypi_repository ]]
+    url: https://$[[ inputs.pypi_hostname ]]/project/$CI_PROJECT_NAME
+    deployment_tier: $[[ inputs.deployment_tier ]]
+  id_tokens:
+    $[[ inputs.pypi_repository_upper ]]_ID_TOKEN:
+      aud: $[[ inputs.pypi_repository ]]
+  script:
+    - uv publish
+        --index "$[[ inputs.pypi_repository ]]"
+        $[[ inputs.uv_publish_options ]]
+        *.tar.*
+        *.whl
