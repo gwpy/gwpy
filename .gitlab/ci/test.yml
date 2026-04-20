@@ -351,11 +351,6 @@ python_test_windows:
     PIXI_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pixi"
     PIXI_HOME: "${CI_PROJECT_DIR}/.pixi"
   script: !reference [.conda_test_job, script]
-  cache:
-    - !reference [.uv, cache]
-    - key: "pixi-${CI_JOB_NAME_SLUG}"
-      paths:
-        - .cache/pixi
 
 # Linux
 conda_test_linux:
