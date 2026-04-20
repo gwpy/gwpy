@@ -54,3 +54,10 @@ pip-delete-this-directory.txt
 # dqsegdb files
 __dqsegdb*.json
 __segments*.json
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+# right now we only use pixi as a CI/CD tool
+pixi.lock
+pixi.toml

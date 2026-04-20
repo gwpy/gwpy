@@ -11,7 +11,7 @@ spec:
       description: "Name to give this job"
       type: string
     install_target:
-      default: "."
+      default: "-e ."
       description: "Directory/distribution/package to install"
       type: string
     install_extra:
@@ -25,6 +25,10 @@ spec:
     pip_options:
       default: ""
       description: "Extra options to pass to pip install"
+      type: string
+    run_cmd:
+      default: ""
+      description: "Command prefix to use when running Python commands (e.g. 'uv run')"
       type: string
     pytest_options:
       default: ""
@@ -52,14 +56,14 @@ include:
     XDG_CACHE_HOME: "$CI_PROJECT_DIR/.cache"
   script:
     # print some basic information about python
-    - python --version
-    - python -m site
-    - python -m sysconfig
+    - $[[ inputs.run_cmd ]] python --version
+    - $[[ inputs.run_cmd ]] python -m site
+    - $[[ inputs.run_cmd ]] python -m sysconfig
     # update pip
     - $[[ inputs.pip_cmd ]] install --upgrade "pip>=25.1"
     # create the cache directory (so that astropy will actually use it)
     # (this isn't just 'mkdir -p ...' because Windows)
-    - python -c "import os;
+    - $[[ inputs.run_cmd ]] python -c "import os;
       from pathlib import Path;
       (Path(os.getenv('XDG_CACHE_HOME')) / 'astropy').mkdir(parents=True, exist_ok=True)
       "
@@ -70,11 +74,11 @@ include:
     # list installed packages
     - $[[ inputs.pip_cmd ]] list
 # run the tests
-    - python -m pytest --junit-xml=junit.xml $[[ inputs.pytest_options ]]
+    - $[[ inputs.run_cmd ]] python -m pytest --junit-xml=junit.xml $[[ inputs.pytest_options ]]
     # run any extra tests
     - $[[ inputs.extra_test_commands ]]
     # format the coverage report
-    - python -m coverage xml -o coverage.xml
+    - $[[ inputs.run_cmd ]] python -m coverage xml -o coverage.xml
   artifacts:
     reports:
       # coverage report

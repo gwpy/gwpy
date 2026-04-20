@@ -37,6 +37,7 @@ include:
       install_target: "."
       pip_cmd: "uv pip"
       pip_options: "--group test --resolution lowest-direct"
+      run_cmd: "uv run"
       pytest_options: $[[ inputs.pytest_options ]]
 
   # configure experimental dependency compatibility job
@@ -47,6 +48,7 @@ include:
       install_target: "."
       pip_cmd: "uv pip"
       pip_options: "--group dev --upgrade --resolution highest --prerelease allow"
+      run_cmd: "uv run"
       pytest_options: $[[ inputs.pytest_options ]]
 
 .compat:
@@ -58,7 +60,6 @@ include:
     - !reference [.rules_full_test, rules]
   before_script:
     - uv venv --python ${PYTHON_VERSION}
-    - source .venv/bin/activate
 
 # test against the minimum specified requirements
 compat_minimum:
