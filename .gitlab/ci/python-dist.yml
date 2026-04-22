@@ -2,6 +2,10 @@
 
 spec:
   inputs:
+    job_name:
+      default: build
+      description: "Name of the job to create"
+      type: string
     stage:
       default: build
       description: "Pipeline stage in which to add jobs"
@@ -12,7 +16,7 @@ spec:
 include:
   - local: .gitlab/ci/rules.yml
 
-build:
+$[[ inputs.job_name ]]:
   rules: !reference [.rules_build, rules]
   needs: []
   stage: $[[ inputs.stage ]]
