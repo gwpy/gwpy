@@ -158,6 +158,7 @@ typing = [
 #       but may contain more
 dev = [
   { "include-group" = "ci" },
+  { "include-group" = "constraints" },
   { "include-group" = "docs" },
   { "include-group" = "qa" },
   { "include-group" = "test" },
@@ -186,6 +187,12 @@ dev = [
 ci = [
   # Unknown conda issue on Windows with jupyterlab_widgets 3.0.16
   "jupyterlab_widgets !=3.0.16 ; sys_platform == 'win32'",
+]
+
+# Misc constraints for development and testing
+constraints = [
+  # PyArrow 24.0.0 crashes on Windows via pytest
+  "pyarrow <24.0.0 ; sys_platform == 'win32'",
 ]
 
 # sphinx documentation
