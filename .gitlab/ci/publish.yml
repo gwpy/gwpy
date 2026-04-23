@@ -50,7 +50,6 @@ include:
       pypi_hostname: *test_pypi_hostname
       uv_publish_options: "--dry-run"
       rules:
-        - !reference [.rules_nightly, rules]
         - !reference [.rules_merge_request, rules]
 
 # The publish-mr job doesn't actually deploy anything
