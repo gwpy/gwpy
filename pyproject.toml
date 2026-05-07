@@ -125,7 +125,7 @@ kerberos = [
 
 # Pelican federation data access
 pelican = [
-  "requests-pelican >=0.2.0",
+  "requests-pelican[scitokens] >=0.2.0",
 ]
 
 # PyCBC integration
