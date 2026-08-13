@@ -130,7 +130,7 @@ pelican = [
 
 # PyCBC integration
 pycbc = [
-  "PyCBC >=2.8.5",
+  "PyCBC >=2.10.0",
 ]
 
 # SciTokens
@@ -175,7 +175,7 @@ dev = [
   "pandas >=2.3.3",
   "psycopg2 >=2.9.11 ; sys_platform == 'linux'",
   "pyarrow >=13.0.0",  # for arrakis-0.2.0
-  "PyCBC >=2.8.5 ; sys_platform == 'linux' and python_version < '3.14'",
+  "PyCBC >=2.10.0 ; sys_platform == 'linux' and python_version < '3.14'",
   "PyMySQL >=1.1.2",
   "requests-pelican",
   "requests-scitokens",
@@ -290,12 +290,8 @@ filterwarnings = [
   # ignore pkg_resources deprecation warnings
   "ignore:pkg_resources is deprecated",
   "ignore:Deprecated call to `pkg_resources",
-  # ignore invalid escape sequence warnings from third-party packages
-  "ignore:.*invalid escape sequence::pycbc",
   # ignore ResourceWarning for unclosed closed socket
   "ignore:unclosed.*SSLSocket.*closed",
-  # https://github.com/gwastro/pycbc/pull/3701
-  "ignore:`np.int` is a deprecated alias::pycbc..*",
   # https://git.ligo.org/lscsoft/glue/-/merge_requests/69
   "ignore:PY_SSIZE_T_CLEAN will be required",
   # https://github.com/pyreadline/pyreadline/issues/65
