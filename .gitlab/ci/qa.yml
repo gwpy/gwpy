@@ -34,10 +34,11 @@ spec:
 ---
 
 include:
-  - component: gitlab.com/components/dependency-scanning/main@~latest
+  - component: gitlab.com/components/dependency-scanning/main@2
     inputs:
       stage: $[[ inputs.stage ]]
       job_name: "dependency-scanning"
+      disabled_resolution_jobs: "python"  # we solve ourselves with uv
   - component: gitlab.com/components/sast/sast@~latest
     inputs:
       stage: $[[ inputs.stage ]]
