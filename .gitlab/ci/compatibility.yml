@@ -37,7 +37,7 @@ include:
       install_target: "."
       pip_cmd: "uv pip"
       pip_options: "--group test --resolution lowest-direct"
-      run_cmd: "uv run"
+      run_cmd: "uv run --resolution lowest-direct"
       pytest_options: $[[ inputs.pytest_options ]]
 
   # configure experimental dependency compatibility job
