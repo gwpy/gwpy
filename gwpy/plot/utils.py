@@ -23,7 +23,10 @@ from __future__ import annotations
 import itertools
 from typing import TYPE_CHECKING
 
-from matplotlib import rcParams
+from matplotlib import (
+    colors as mcolors,
+    rcParams,
+)
 
 if TYPE_CHECKING:
     from collections.abs import (
@@ -72,9 +75,9 @@ def color_cycle(colors: Iterable[str] | None = None) -> Iterator[str]:
     colors : iterator of `str`
         The new iterator that yields colour strings infinitely.
     """
-    if colors:
-        return itertools.cycle(colors)
-    return itertools.cycle(p["color"] for p in rcParams["axes.prop_cycle"])
+    if not colors:
+        colors = map(mcolors.to_hex, rcParams["axes.prop_cycle"].by_key()["color"])
+    return itertools.cycle(colors)
 
 
 def marker_cycle(markers: Iterable[str] | None = None) -> Iterator[str]:
