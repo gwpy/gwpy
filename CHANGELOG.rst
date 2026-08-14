@@ -2,6 +2,49 @@
 Changelog
 #########
 
+.. _v4.0.2:
+
+==================
+4.0.2 - 2026-08-14
+==================
+
+Patch release for GWpy 4.0.x.
+
+`Full details <https://gitlab.com/gwpy/gwpy/-/releases/v4.0.2>`__.
+
+.. _v4.0.2-bug-fixes:
+
+---------
+Bug Fixes
+---------
+
+- Fix compatibility with matplotlib 3.11 default colour ``prop_cycle``
+  [:mr:`2012`]
+
+- Ensure the ``pelican`` extra comes with ``scitokens`` support
+  [:mr:`2010`]
+
+- Catch ``OSError`` inside ``on_tape``
+  [:mr:`2005`]
+
+.. _v4.0.2-other-changes:
+
+-------------
+Other Changes
+-------------
+
+- Update minimum version of ``lscsoft-glue``
+  [:mr:`2003`]
+
+- Update minimum version of ``scitokens`` to 1.9.7
+  [:mr:`2008`]
+
+- Use ``pytest`` >=9.0.3 to avoid vulnerability
+  [:mr:`2009`]
+
+- Improve minimum acceptable dependencies and testing
+  [:mr:`2014`]
+
 .. _v4.0.1:
 
 ==================
