@@ -388,6 +388,9 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)|mock_.*)$"
 # allow adding __future__ annotations
 future-annotations = true
 
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
+
 [tool.ruff.lint.isort]
 combine-as-imports = true
 force-wrap-aliases = true
