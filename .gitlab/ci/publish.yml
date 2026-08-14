@@ -16,17 +16,17 @@ include:
   # Production
   - local: .gitlab/ci/publish-job.yml
     inputs:
+      job_name: "publish"
       stage: $[[ inputs.stage ]]
       dependencies: $[[ inputs.dependencies ]]
       deployment_tier: production
-      pypi_repository: "pypi"
-      pypi_hostname: "pypi.org"
       rules:
         - !reference [.rules_deploy, rules]
 
   # Testing (test.pypi.org)
   - local: .gitlab/ci/publish-job.yml
     inputs:
+      job_name: "publish_testpypi"
       stage: $[[ inputs.stage ]]
       dependencies: $[[ inputs.dependencies ]]
       deployment_tier: testing
