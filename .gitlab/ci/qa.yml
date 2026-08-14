@@ -51,7 +51,6 @@ include:
       run_advanced_sast: false
     rules:
       - if: '$GITLAB_FEATURES !~ /\bsast_advanced\b/'
-  - local: .gitlab/ci/rules.yml
   - local: .gitlab/ci/python-base.yml
 
 .qa:

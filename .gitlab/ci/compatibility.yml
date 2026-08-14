@@ -27,8 +27,6 @@ spec:
 ---
 
 include:
-  - local: .gitlab/ci/rules.yml
-
   # configure minimum dependency compatibility job
   - local: .gitlab/ci/test-job.yml
     inputs:

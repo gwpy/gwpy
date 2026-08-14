@@ -5,9 +5,6 @@ spec:
 
 ---
 
-include:
-  - local: .gitlab/ci/rules.yml
-
 coverage:
   stage: .post
   image: python

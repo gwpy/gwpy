@@ -34,7 +34,6 @@ spec:
 ---
 
 include:
-  - local: .gitlab/ci/rules.yml
   - local: .gitlab/ci/python-base.yml
   - local: .gitlab/ci/conda-test.yml
     inputs:
