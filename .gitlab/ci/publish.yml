@@ -13,8 +13,6 @@ spec:
 ---
 
 include:
-  - local: .gitlab/ci/rules.yml
-
   # Production
   - local: .gitlab/ci/publish-job.yml
     inputs:

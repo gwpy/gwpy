@@ -43,6 +43,10 @@ workflow:
 .experimental_python_version: &experimental_python_version "3.14"
 
 include:
+  # -- Global config
+
+  - local: .gitlab/ci/rules.yml
+
   # -- Quality assurance checks
 
   - local: .gitlab/ci/qa.yml
