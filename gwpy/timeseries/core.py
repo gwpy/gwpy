@@ -37,6 +37,7 @@ user-facing objects.**
 
 from __future__ import annotations
 
+import contextlib
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -707,6 +708,7 @@ class TimeSeriesBase(Series):
         cls,
         series: arrakis.block.Series,
         *,
+        fill: bool = True,
         copy: bool = True,
         **metadata,
     ) -> Self:
@@ -716,6 +718,9 @@ class TimeSeriesBase(Series):
         ----------
         series : `arrakis.Series`
             The input Arrakis data series to read.
+
+        fill : `bool`, optional
+            If `True` (default), apply any masking configured in the Arrakis Series.
 
         copy : `bool`, optional
             If `True`, copy the contained data array to new to a new array.
@@ -743,8 +748,14 @@ class TimeSeriesBase(Series):
         }
         metadata = {**defaults, **metadata}
 
+        # apply masking
+        data = series.data
+        if fill:
+            with contextlib.suppress(AttributeError):
+                data = data.filled()
+
         # construct new TimeSeries-like object
-        return cls(series.data, copy=copy, **metadata)
+        return cls(data, copy=copy, **metadata)
 
     @classmethod
     def from_nds2_buffer(
