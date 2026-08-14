@@ -205,6 +205,7 @@ inheritance_graph_attrs = {"rankdir": "TB"}
 
 # Intersphinx
 intersphinx_mapping = {key: (value, None) for key, value in {
+    "arrakis": "https://ngdd.docs.ligo.org/arrakis-python/",
     "astropy": "https://docs.astropy.org/en/stable/",
     "coloredlogs": "https://coloredlogs.readthedocs.io/en/latest/",
     "dateparser": "https://dateparser.readthedocs.io/en/stable/",

@@ -82,7 +82,7 @@ gwpy-tconvert = "gwpy.time.__main__:main"
 [project.optional-dependencies]
 # arrakis I/O
 arrakis = [
-  "arrakis >=0.2.0",
+  "arrakis >=0.14.0",
 ]
 
 # astronomy/cosmology calculations
@@ -163,7 +163,7 @@ dev = [
   { "include-group" = "qa" },
   { "include-group" = "test" },
   "argparse-manpage >=1.6.0",
-  "arrakis >=0.2.0",
+  "arrakis >=0.14.0",
   "ciecplib >=0.7.0",
   "gssapi >=1.9.0",
   "htgettoken >=2.1",
@@ -174,7 +174,7 @@ dev = [
   "lscsoft-glue >=4.0.0 ; sys_platform != 'win32'",
   "pandas >=2.3.3",
   "psycopg2 >=2.9.11 ; sys_platform == 'linux'",
-  "pyarrow >=13.0.0",  # for arrakis-0.2.0
+  "pyarrow >=13.0.0",  # for arrakis-0.14.0
   "PyCBC >=2.10.0 ; sys_platform == 'linux' and python_version < '3.14'",
   "PyMySQL >=1.1.2",
   "requests-pelican",
