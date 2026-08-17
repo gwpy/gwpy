@@ -297,7 +297,10 @@ class Array(Quantity):
         )
 
         # format unit
-        metadata = [("unit", print_(self.unit) or "dimensionless")]
+        metadata = [
+            ("unit", print_(self.unit) or "dimensionless"),
+            ("dtype", print_(self.dtype) or "None"),
+        ]
 
         # format other metadata
         try:
