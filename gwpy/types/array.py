@@ -307,7 +307,7 @@ class Array(Quantity):
             attrs = self._print_slots
         except AttributeError:
             attrs = self._metadata_slots
-        for attr in attrs:
+        for attr in dict.fromkeys(attrs):
             try:
                 val = getattr(self, attr)
             except (AttributeError, KeyError):
