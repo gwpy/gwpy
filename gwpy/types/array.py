@@ -297,14 +297,17 @@ class Array(Quantity):
         )
 
         # format unit
-        metadata = [("unit", print_(self.unit) or "dimensionless")]
+        metadata = [
+            ("unit", print_(self.unit) or "dimensionless"),
+            ("dtype", print_(self.dtype) or "None"),
+        ]
 
         # format other metadata
         try:
             attrs = self._print_slots
         except AttributeError:
             attrs = self._metadata_slots
-        for attr in attrs:
+        for attr in dict.fromkeys(attrs):
             try:
                 val = getattr(self, attr)
             except (AttributeError, KeyError):
