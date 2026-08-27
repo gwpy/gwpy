@@ -82,7 +82,7 @@ def init_verbose_logging(
         return init_logger(name)
 
     # Otherwise, set the level for the gwpy logger based on verbosity
-    level = max(3 - verbosity, 0) * 10
+    level = max(logging.WARNING - verbosity * 10, logging.DEBUG)
     return init_logger(name, level=level)
 
 
