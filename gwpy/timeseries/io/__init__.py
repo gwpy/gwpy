@@ -19,6 +19,7 @@
 """Input/Output routines for the TimeSeries and its sub-classes."""
 
 from . import (  # pylint: disable=unused-import
+    arrakis,
     ascii,
     gwdatafind,
     gwf,

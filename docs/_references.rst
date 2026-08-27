@@ -1,5 +1,11 @@
 .. -- Software -----------------------
 
+.. |Arrakis| replace:: Arrakis
+.. _Arrakis: https://ngdd.docs.ligo.org/arrakis-python/
+
+.. |arrakis-mod| replace:: `arrakis`
+.. _arrakis-mod: https://ngdd.docs.ligo.org/arrakis-python/
+
 .. |cWB| replace:: cWB
 .. _cWB: https://gwburst.gitlab.io/documentation/latest/html/
 

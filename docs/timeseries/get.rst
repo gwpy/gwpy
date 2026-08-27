@@ -168,6 +168,27 @@ customise and optimise the data retrieval process.
 Data sources
 ============
 
+.. _gwpy-timeseries-get-arrakis:
+
+-------
+Arrakis
+-------
+
+|Arrakis|_ is a data delivery system developed by the LIGO Laboratory providing
+real-time and archival access to interferometer data via gRPC.
+
+The :meth:`TimeSeries.get` method uses the |arrakis-mod|_ Python package to
+connect to the Arrakis service and retrieve data for the requested channel(s)
+and time range, if available.
+
+For full details of getting data from Arrakis with `TimeSeries.get` see
+
+.. code-block:: python
+    :caption: Show usage for TimeSeries.get with Arrakis
+
+    from gwpy.timeseries import TimeSeries
+    TimeSeries.get.help(source="arrakis")
+
 .. _gwpy-timeseries-get-gwdatafind:
 
 ----------
