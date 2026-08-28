@@ -1,0 +1,67 @@
+spec:
+  inputs:
+    template_name:
+      type: string
+      description: "The name of the job template."
+      default: ".pixi"
+    image:
+      type: string
+      description: "The Docker image to use for the job."
+      default: "ghcr.io/prefix-dev/pixi:latest"
+    cache_dir:
+      type: string
+      description: "The directory to use for caching."
+      default: ".cache/pixi"
+    pixi_manifest_path:
+      type: string
+      description: "The directory in which to create the pixi manifest file."
+      default: "cicd"
+    python_version:
+      type: string
+      description: "The Python version to use."
+      default: "3.13"
+    pip2conda_options:
+      type: string
+      description: "Additional options to pass to pip2conda."
+      default: "--all-extras --all-groups"
+---
+
+$[[ inputs.template_name ]]_base:
+  image: $[[ inputs.image ]]
+  variables:
+    PIXI_CACHE_DIR: "${CI_PROJECT_DIR}/$[[ inputs.cache_dir ]]"
+
+$[[ inputs.template_name ]]_install:
+  extends: $[[ inputs.template_name ]]_base
+  variables:
+    PIXI_HOME: "${CI_PROJECT_DIR}/.pixi"
+  before_script:
+    - curl -fsSL https://pixi.sh/install.sh | sh
+    - export PATH="${PIXI_HOME:-${HOME}/.pixi}/bin:${PATH}"
+
+$[[ inputs.template_name ]]_install_win:
+  extends: $[[ inputs.template_name ]]_base
+  variables:
+    PIXI_HOME: "${CI_PROJECT_DIR}/.pixi"
+  before_script:
+    - powershell -ExecutionPolicy ByPass -c "irm -useb https://pixi.sh/install.ps1 | iex"
+    - $env:PATH += ";$PIXI_HOME\\bin"
+
+# Use pip2conda to solve the test environment
+# and use pixi to install it
+$[[ inputs.template_name ]]_env:
+  extends: $[[ inputs.template_name ]]_base
+  before_script:
+    - pixi --version
+    # use pip2conda to solve (sort of) the test environment
+    - pixi global install "pip2conda>=0.9.0"
+    - pip2conda
+        --output pixi_environment.yml
+        --python-version $[[ inputs.python_version ]]
+        --solver rattler
+        $[[ inputs.pip2conda_options ]]
+    - cat pixi_environment.yml
+    # create the test environment using pixi
+    - pixi init $[[ inputs.pixi_manifest_path ]] -i pixi_environment.yml
+    - pixi install --manifest-path $[[ inputs.pixi_manifest_path ]]
+    - pixi list --manifest-path $[[ inputs.pixi_manifest_path ]]
