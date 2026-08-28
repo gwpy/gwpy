@@ -17,6 +17,13 @@ include:
   # platform-specific job templates
   - local: .gitlab/ci/platforms.yml
 
+  # pixi template
+  - local: .gitlab/ci/pixi.yml
+    inputs:
+      template_name: ".pixi_test"
+      python_version: "${PYTHON_VERSION}"
+      pixi_manifest_path: "cicd"
+
   # basic test template
   - local: .gitlab/ci/test-job.yml
     inputs:
@@ -169,14 +176,6 @@ include:
     paths:
       - .cache/choco
 
-.pixi_install: &pixi_install
-  - curl -fsSL https://pixi.sh/install.sh | sh
-  - export PATH="${PIXI_HOME:-${HOME}/.pixi}/bin:${PATH}"
-
-.pixi_install_windows: &pixi_install_windows
-  - powershell -ExecutionPolicy ByPass -c "irm -useb https://pixi.sh/install.ps1 | iex"
-  - $env:PATH += ";$PIXI_HOME\\bin"
-
 .uv_install: &uv_install
   # install uv
   - *retry_sh
@@ -314,54 +313,24 @@ python_test_windows:
 # tests defined above
 #
 
-.pixi_create_test_env: &pixi_create_test_env
-  - pixi --version
-  - uv --version
-  # use pip2conda to solve (sort of) the test environment
-  - uvx --with "pip2conda[rattler]>=0.9.0"
-    pip2conda
-      --all-extras
-      --all-groups
-      --output environment.yml
-      --python-version ${PYTHON_VERSION}
-      --solver rattler
-  - cat environment.yml
-  # create the test environment using pixi
-  - pixi init cicd -i environment.yml
-  - retry pixi install --manifest-path cicd
-  - pixi list --manifest-path cicd
-
-.pixi_create_test_env_unix: &pixi_create_test_env_unix
-  - *pixi_create_test_env
-  # activate the environment to set CONDA_PREFIX (used by uv)
-  - eval "$(pixi shell-hook --manifest-path cicd)"
-
-.pixi_create_test_env_windows: &pixi_create_test_env_windows
-  - *pixi_create_test_env
-  # activate the environment to set CONDA_PREFIX (used by uv)
-  - (pixi shell-hook --manifest-path cicd) | Out-String | Invoke-Expression
-
 .conda_test:
   extends:
     - .conda_test_job
     - .prod_test
     - .uv
   stage: conda
-  variables:
-    PIXI_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pixi"
-    PIXI_HOME: "${CI_PROJECT_DIR}/.pixi"
   script: !reference [.conda_test_job, script]
 
 # Linux
 conda_test_linux:
   extends:
     - .conda_test
+    - .pixi_test_env
     - .linux
     - .needs_python_test_linux
   rules:
     - !reference [.linux, rules]
     - !reference [.rules_full_test, rules]
-  image: ghcr.io/prefix-dev/pixi:latest
   variables:
     DEBIAN_FRONTEND: noninteractive
   before_script:
@@ -374,10 +343,11 @@ conda_test_linux:
         texlive-fonts-recommended
         texlive-latex-extra
     # install tooling
-    - apt-get -yqq update && apt-get -yqq install curl
+    - apt-get -yqq install --no-install-recommends curl
     - *uv_install
     # configure the test environment
-    - *pixi_create_test_env_unix
+    - !reference [.pixi_test_env, before_script]
+    - eval "$(pixi shell-hook --manifest-path cicd)"
     # initialise credentials
     - bash -ex .gitlab/ci/init-creds.sh
 
@@ -385,6 +355,7 @@ conda_test_linux:
 conda_test_macos:
   extends:
     - .conda_test
+    - .pixi_test_env
     - .macos
     - .needs_python_test_macos
   rules:
@@ -393,10 +364,11 @@ conda_test_macos:
   before_script:
     - *retry_sh
     # install tooling
-    - *pixi_install
+    - !reference [.pixi_test_install, before_script]
     - *uv_install
     # configure the test environment
-    - *pixi_create_test_env_unix
+    - !reference [.pixi_test_env, before_script]
+    - eval "$(pixi shell-hook --manifest-path cicd)"
   cache:
     # cache uv/conda packages
     - !reference [.conda_test, cache]
@@ -408,7 +380,9 @@ conda_test_windows:
   extends:
     - .conda_test
     - .choco
-    - .uv_windows
+    - .pixi_test_install_win
+    - .pixi_test_env
+    - .windows
     - .needs_python_test_windows
   rules:
     - !reference [.windows, rules]
@@ -416,10 +390,11 @@ conda_test_windows:
   before_script:
     - *retry_psh
     # install tooling
-    - *pixi_install_windows
+    - !reference [.pixi_test_install_win, before_script]
     - *uv_install_windows
     # create the test environment
-    - *pixi_create_test_env_windows
+    - !reference [.pixi_test_env, before_script]
+    - (pixi shell-hook --manifest-path cicd) | Out-String | Invoke-Expression
   cache:
     # cache conda packages
     - !reference [.conda_test, cache]
