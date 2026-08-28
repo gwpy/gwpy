@@ -52,6 +52,10 @@ include:
     rules:
       - if: '$GITLAB_FEATURES !~ /\bsast_advanced\b/'
   - local: .gitlab/ci/python-base.yml
+  - local: .gitlab/ci/pixi.yml
+    inputs:
+      template_name: .pixi_ty
+      pixi_manifest_path: pixi_ty
 
 .qa:
   extends: .rules_qa_security
@@ -93,22 +97,20 @@ ruff:
       codequality: gl-ruff.json
 
 ty:
-  extends: .qa
-  image: ghcr.io/astral-sh/uv:debian
-  variables:
-    UV_MANAGED_PYTHON: 1
+  extends:
+    - .pixi_ty_env
+    - .qa
   script:
-    # Install the project
-    - uv venv --python $[[ inputs.python_version ]]
-    - uv pip install -e . --group dev
     # Run ty and format for gitlab
-    - uvx ty check
+    - pixi run --manifest-path pixi_ty
+      ty check
           $[[ inputs.project_dir ]]
           --exit-zero
           --output-format gitlab
-          > gl-ty.json
+          > $CI_PROJECT_DIR/gl-ty.json
     # Run ty and print to console
-    - uvx ty check
+    - pixi run --manifest-path pixi_ty
+      ty check
           $[[ inputs.project_dir ]]
           --exit-zero
   artifacts:
