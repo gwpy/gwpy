@@ -1,4 +1,4 @@
-# Copyright (c) 2024-2025 Cardiff University
+# Copyright (c) 2024-2026 Cardiff University
 #
 # This file is part of GWpy.
 #
@@ -70,6 +70,7 @@ def create_rds(
     outfile: Path,
     source: Sequence[str] | str | None = None,
     write_format: str | None = None,
+    input_file: Sequence[Path] | None = None,
     **kwargs,
 ) -> None:
     """Create a reduced data set by grabbing data and writing to a file.
@@ -90,14 +91,21 @@ def create_rds(
 
     source : `str`, `list` of `str`, optional
         One or more supported data sources to use.
+        Mutually exclusive with `input_file`.
 
     write_format : `str`, optional
         The format option to use when writing data.
         Default is inferred from the output file path.
         See `TimeSeriesDict.write.help()` for details on supported formats.
 
+    input_file : `list` of `pathlib.Path`, optional
+        One or more input data/cache files to read from instead of discovering data.
+        If provided, `TimeSeriesDict.read` is used instead of `TimeSeriesDict.get`.
+        Mutually exclusive with `source`.
+
     kwargs
-        Other keyword arguments are passed to `TimeSeriesDict.get`.
+        Other keyword arguments are passed to `TimeSeriesDict.get` or
+        `TimeSeriesDict.read`.
 
     See Also
     --------
@@ -107,14 +115,26 @@ def create_rds(
     TimeSeriesDict.write
         For details of how data are written.
     """
-    logger.info("Getting data")
-    data = TimeSeriesDict.get(
-        channels,
-        start,
-        end,
-        source=source,
-        **kwargs,
-    )
+    if input_file:
+        logger.info("Reading data from %d file(s)", len(input_file))
+        # convert Path objects to strings where needed
+        sources = [str(p) for p in input_file]
+        data = TimeSeriesDict.read(
+            sources,
+            channels,
+            start=start,
+            end=end,
+            **kwargs,
+        )
+    else:
+        logger.info("Getting data")
+        data = TimeSeriesDict.get(
+            channels,
+            start,
+            end,
+            source=source,
+            **kwargs,
+        )
     logger.info("Received data for %d channels", len(data))
     data.write(
         outfile,
@@ -204,14 +224,29 @@ def create_parser() -> ArgumentParser:
             "data from GWOSC."
         ),
     )
-    parser.add_argument(
+    # Create a mutually exclusive group for source vs input file
+    source_group = parser.add_mutually_exclusive_group()
+    source_group.add_argument(
         "-g",
         "--source",
         action="append",
         help=(
             "Source from which to get data. "
             "See `help(TimeSeries.get)` for documentation on the "
-            "supported sources."
+            "supported sources. "
+            "Mutually exclusive with -i/--input-file."
+        ),
+    )
+    source_group.add_argument(
+        "-i",
+        "--input-file",
+        nargs="+",
+        type=Path,
+        dest="input_file",
+        help=(
+            "One or more input data/cache files to read instead of discovering "
+            "data. Presence of this option makes the tool use TimeSeriesDict.read. "
+            "Mutually exclusive with -g/--source."
         ),
     )
     parser.add_argument(
@@ -284,6 +319,7 @@ def main(args: list[str] | None = None) -> None:
         opts.output_file,
         opts.source,
         write_format=opts.format,
+        input_file=opts.input_file,
         **kwargs,
     )
 
